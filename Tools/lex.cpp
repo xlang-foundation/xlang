@@ -24,7 +24,9 @@ std::vector<std::string> _kws
 	//Python Bitwise Operators
 	"&","|","^","~","<<",">>",
 	//Other
-	"(",")",":",".","[","]","{","}"
+	"(",")",":",".","[","]","{","}",
+	//misc
+	"\t","\n","\r"
 };
 struct KwTree
 {

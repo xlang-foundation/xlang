@@ -245,11 +245,6 @@ short GetToken(String& id)
 	return retIndex;
 }
 
-void check_new_word(char* code,
-	char* word_start, char* word_end)
-{
-
-}
 
 void PyInit(short* kwTree)
 {
