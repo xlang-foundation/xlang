@@ -10,22 +10,25 @@ static std::vector<short> _kwTree;
 
 void RunCore()
 {
-	std::string code =
+	std::string code0 =
 		"k=1.2345\
 		st='this is \"a\" string'\
 		s0 =\"another strng\"\
-		x=1\
+		x=1+k\
 		def func1(ddd:str,i1:int):\
 			y=2\
 			z=x+y\
 		var1 = func1(st,100)";
-	std::string code0 = "var1 = func1(st,100)";
+	std::string code = 
+		"x=1000\
+		y=100.1234\
+		";
 
-	PyInit(&_kwTree[0]);
+	XPython::PyInit(&_kwTree[0]);
 
-	PyHandle h = PyLoad((char*)code.c_str(), (int)code.size());
-	PyRun(h);
-	PyClose(h);
+	XPython::PyHandle h = XPython::PyLoad((char*)code.c_str(), (int)code.size());
+	XPython::PyRun(h);
+	XPython::PyClose(h);
 }
 void RunTools()
 {

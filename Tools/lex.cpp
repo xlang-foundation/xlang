@@ -5,27 +5,28 @@
 //import keyword
 //print(keyword.kwlist)
 std::vector<std::string> _kws
-{
-	"False", "None", "True", "and", 
-	"as", "assert", "async", "await", 
-	"break", "class", "continue", 
-	"def", "del", "elif", "else", 
-	"except", "finally", "for", 
-	"from", "global", "if", "import", 
-	"in", "is", "lambda", "nonlocal", 
-	"not", "or", "pass", "raise", "return", 
-	"try", "while", "with", "yield",
-	//Python Arithmetic Operators
-	"+","-","*","/","%","**","//",
-	//Python Assignment Operators
+{	
+	//KW: --index range[0,34]
+	"False", "None", "True", "and", /*4*/
+	"as", "assert", "async", "await", /*4*/
+	"break", "class", "continue", /*3*/
+	"def", "del", "elif", "else", /*4*/
+	"except", "finally", "for", /*3*/
+	"from", "global", "if", "import", /*4*/
+	"in", "is", "lambda", "nonlocal", /*4*/
+	"not", "or", "pass", "raise", "return", /*5*/
+	"try", "while", "with", "yield",/*4*/
+	//Python Assignment Operators --index range[35,47]
 	"=","+=","-=","*=","/=","%=","//=","**=","&=","|=","^=",">>=","<<=",
-	//Python Comparison Operators
+	//Python Arithmetic Operators --index range[48,54]
+	"+","-","*","/","%","**","//",
+	//Python Comparison Operators --index range[55,60]
 	"==","!=",">","<",">=","<=",
-	//Python Bitwise Operators
+	//Python Bitwise Operators --index range[61,66]
 	"&","|","^","~","<<",">>",
-	//Other
+	//Other  --index range[67,76]
 	"(",")",":",".","[","]","{","}",",",
-	//misc
+	//misc --index range[77,79]
 	"\t","\n","\r"
 };
 struct KwTree

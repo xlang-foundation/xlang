@@ -1,9 +1,19 @@
 #include "pycore.h"
-
+#include "exp.h"
 #include <iostream>
 #include <string>
 
+namespace XPython {
 #define nil 0
+
+enum class ParseState
+{
+	Wrong_Fmt,
+	Null,
+	Non_Number,
+	Double,
+	Long_Long
+};
 
 enum LastCharType
 {
@@ -37,10 +47,9 @@ struct Node
 	unsigned short child_ptrs[];//number is same as child_cnt
 };
 
-struct String
+struct Number
 {
-	char* s;
-	int size;
+
 };
 
 enum TokenIndex
@@ -106,7 +115,9 @@ inline bool InStr(char c, char* str)
 	}
 	return bYes;
 }
-short GetToken(String& id)
+
+
+short Scan(String& id)
 {
 	static const char ops[] = "~`!@#$%^&*()-+={}[]|\\:;\"'<>,.?/\t\r\n";
 	id.s = nil;
@@ -244,7 +255,15 @@ short GetToken(String& id)
 	}
 	return retIndex;
 }
-
+short GetToken(String& id)
+{
+	short retIndex = -1;
+	while (retIndex == -1)
+	{
+		retIndex = Scan(id);
+	}
+	return retIndex;
+}
 
 void PyInit(short* kwTree)
 {
@@ -254,6 +273,88 @@ void PyInit(short* kwTree)
 	_context.token_start = nil;
 }
 
+enum num_state
+{
+	num_state_first_zero,
+
+};
+ParseState ParseHexBinOctNumber(String& str)
+{
+	return ParseState::Null;
+}
+
+ParseState ParseNumber(String& str,double& dVal,long long& llVal)
+{
+	ParseState st = ParseState::Null;
+	if (str.s == nil || str.size == 0)
+	{
+		return st;
+	}
+	if (str.size >= 2 && *str.s =='0' )
+	{
+		char c = *(str.s + 1);
+		//for hex(0x),oct(0o),bin(0b), also require first letter is 0
+		//so this is true if it is number
+		if (c == 'x' || c == 'o' || c == 'b')
+		{
+			String str2 = { str.s + 2,str.size - 2 };
+			return ParseHexBinOctNumber(str2);
+		}
+	}
+	long long primary[2]={0,0};
+	int digit_cnt[2] = { 0,0 };
+	char* end = str.s + str.size;
+	int it = 0;
+	bool meetDot = false;
+	bool correctSyntax = true;
+	char* p = str.s;
+	while(p < end)
+	{
+		char c = *p++;
+		if (c >= '0' && c <= '9')
+		{
+			primary[it] = primary[it] * 10 + c - '0';
+			digit_cnt[it]++;
+		}
+		else if (c == '.')
+		{
+			if (meetDot)
+			{//more than one
+				//error
+				correctSyntax = false;
+				break;
+			}
+			meetDot = true;
+			it++;
+		}
+		else
+		{
+			//error
+			correctSyntax = false;
+			break;
+		}
+	}
+	if (correctSyntax)
+	{
+		if (meetDot)
+		{
+			dVal = primary[1];
+			for (int i = 0; i < digit_cnt[1];i++)
+			{
+				dVal /= 10;
+			}
+			dVal += primary[0];
+			st = ParseState::Double;
+		}
+		else
+		{
+			st = ParseState::Long_Long;
+			llVal = primary[0];
+			st = ParseState::Long_Long;
+		}
+	}
+	return st;
+}
 
 PyHandle PyLoad(char* code, int size)
 {
@@ -269,12 +370,30 @@ PyHandle PyLoad(char* code, int size)
 		{
 			break;
 		}
-		if (s.s !=nil && s.size > 0)
+		if (s.s == nil || s.size == 0)
+		{
+			continue;
+		}
+		if (idx == TokenID)
+		{
+			double dVal = 0;
+			long long llVal = 0;
+			ParseState st = ParseNumber(s, dVal, llVal);
+			if (st == ParseState::Double || st == ParseState::Long_Long)
+			{
+				idx = TokenNum;
+			}
+			else
+			{
+				//Construct AST::Var
+
+			}
+		}
+		else
 		{
 			std::string str(s.s, s.s + s.size);
-			std::cout <<"Id:"<<idx<<",Val:" << str << std::endl;
+			std::cout << "Id:" << idx << ",Val:" << str << std::endl;
 		}
-		idx = idx;
 	}
 
 	return PyHandle();
@@ -287,4 +406,5 @@ bool PyRun(PyHandle h)
 
 void PyClose(PyHandle)
 {
+}
 }
