@@ -2,9 +2,10 @@
 #include "exp.h"
 #include <iostream>
 #include <string>
+#include <stack>
+#include <vector>
 
 namespace XPython {
-#define nil 0
 
 enum class ParseState
 {
@@ -68,6 +69,11 @@ struct node
 };
 #pragma pack(pop)
 
+static int _precedence[(short)KWIndex::MaxCount];
+inline int Precedence(short idx)
+{
+	return _precedence[idx];
+}
 inline char GetChar()
 {
 	return *_context.spos++;
@@ -251,6 +257,10 @@ short Scan(String& id)
 				_context.token_start = _context.spos - 1;
 			}
 			ResetToRoot();
+			if (lct == LCT_Ops)
+			{
+				b = MatchInTree(c);
+			}
 		}
 	}
 	return retIndex;
@@ -271,6 +281,16 @@ void PyInit(short* kwTree)
 	_context.lct = LCT_None;
 	_context.curNode = 0;
 	_context.token_start = nil;
+
+	for (short i = 0; i < (short)KWIndex::MaxCount; i++)
+	{
+		_precedence[i] = 1000;
+	}
+	for (short i = (short)KWIndex::Assign_Op_S; 
+		i <= (short)KWIndex::Assign_Op_E; i++)
+	{
+		_precedence[i] = 0;
+	}
 }
 
 enum num_state
@@ -356,12 +376,82 @@ ParseState ParseNumber(String& str,double& dVal,long long& llVal)
 	return st;
 }
 
+void DoOpTop(std::stack<AST::Expression*>& operands,
+	std::stack<AST::Operator*>& ops)
+{
+	auto top = ops.top();
+	ops.pop();
+	if (top->m_type == AST::ObType::UnaryOp)
+	{
+		auto operand = operands.top();
+		operands.pop();
+		((AST::UnaryOp*)top)->SetR(operand);
+		operands.push(top);
+	}
+	else if (top->m_type == AST::ObType::Assign)
+	{
+		auto operandR = operands.top();
+		operands.pop();
+		auto operandL = operands.top();
+		operands.pop();
+		((AST::Assign*)top)->SetLR(operandL, operandR);
+		operands.push(top);
+	}
+	else if (top->m_type == AST::ObType::BinaryOp)
+	{
+		auto operandR = operands.top();
+		operands.pop();
+		auto operandL = operands.top();
+		operands.pop();
+		((AST::BinaryOp*)top)->SetLR(operandL, operandR);
+		operands.push(top);
+	}
+}
+
+/* from https://www.geeksforgeeks.org/expression-evaluation/
+1. While there are still tokens to be read in,
+   1.1 Get the next token.
+   1.2 If the token is:
+	   1.2.1 A number: push it onto the value stack.
+	   1.2.2 A variable: get its value, and push onto the value stack.
+	   1.2.3 A left parenthesis: push it onto the operator stack.
+	   1.2.4 A right parenthesis:
+		 1 While the thing on top of the operator stack is not a
+		   left parenthesis,
+			 1 Pop the operator from the operator stack.
+			 2 Pop the value stack twice, getting two operands.
+			 3 Apply the operator to the operands, in the correct order.
+			 4 Push the result onto the value stack.
+		 2 Pop the left parenthesis from the operator stack, and discard it.
+	   1.2.5 An operator (call it thisOp):
+		 1 While the operator stack is not empty, and the top thing on the
+		   operator stack has the same or greater precedence as thisOp,
+		   1 Pop the operator from the operator stack.
+		   2 Pop the value stack twice, getting two operands.
+		   3 Apply the operator to the operands, in the correct order.
+		   4 Push the result onto the value stack.
+		 2 Push thisOp onto the operator stack.
+2. While the operator stack is not empty,
+	1 Pop the operator from the operator stack.
+	2 Pop the value stack twice, getting two operands.
+	3 Apply the operator to the operands, in the correct order.
+	4 Push the result onto the value stack.
+3. At this point the operator stack should be empty, and the value
+   stack should have only one value in it, which is the final result.
+*/
 PyHandle PyLoad(char* code, int size)
 {
 	_context.src_code = code;
 	_context.src_code_size = size;
 	_context.spos = _context.src_code;
 	std::cout << "Token->" << std::endl;
+
+	std::stack<AST::Expression*> operands;
+	std::stack<AST::Operator*> ops;
+
+	std::vector<AST::Expression*> Lines;
+
+	bool PreTokenIsOp = false;
 	while (true)
 	{
 		String s;
@@ -379,23 +469,132 @@ PyHandle PyLoad(char* code, int size)
 			double dVal = 0;
 			long long llVal = 0;
 			ParseState st = ParseNumber(s, dVal, llVal);
-			if (st == ParseState::Double || st == ParseState::Long_Long)
+			AST::Expression* v = nil;
+			if (st == ParseState::Double)
 			{
 				idx = TokenNum;
+				v = new AST::Double(dVal);
+			}
+			else if (st == ParseState::Long_Long)
+			{
+				idx = TokenNum;
+				v = new AST::Number(llVal, s.size);
 			}
 			else
 			{
 				//Construct AST::Var
-
+				v = new AST::Var(s);
 			}
+			operands.push(v);
+			PreTokenIsOp = false;
 		}
 		else
 		{
 			std::string str(s.s, s.s + s.size);
-			std::cout << "Id:" << idx << ",Val:" << str << std::endl;
-		}
-	}
+			std::cout << "KW:" << idx << ",Val:" << str << std::endl;
+			AST::Operator* op = nil;
+			if (idx >= (short)KWIndex::Assign_Op_S 
+				&& idx <= (short)KWIndex::Assign_Op_E)
+			{
+				op = new AST::Assign(idx);
+			}
+			else if (idx >= (short)KWIndex::Assign_Op_S
+				&& idx <= (short)KWIndex::Assign_Op_E ||
+				idx == (short)KWIndex::Dot)
+			{
+				op = new AST::BinaryOp(idx);
+			}
+			else if (idx == (short)KWIndex::Parenthesis_R)
+			{
 
+			}
+			else if (idx == (short)KWIndex::Brackets_R)
+			{
+
+			}
+			else if (idx == (short)KWIndex::Curlybracket_R)
+			{
+
+			}
+			else if (idx == (short)KWIndex::Colon)
+			{//end block head
+
+			}
+			else if (idx == (short)KWIndex::Add ||
+				idx == (short)KWIndex::Minus)
+			{
+				if (PreTokenIsOp)
+				{
+					op = new AST::UnaryOp(idx);
+				}
+				else
+				{
+					op = new AST::BinaryOp(idx);
+				}
+			}
+			else if (idx == (short)KWIndex::Invert)
+			{
+				if (PreTokenIsOp)
+				{
+					op = new AST::UnaryOp(idx);
+				}
+				else
+				{
+					//error
+				}
+			}
+			else if (idx == (short)KWIndex::Misc_Op_E)//end of code line
+			{
+				std::cout << "new Line" << std::endl;
+				while (!ops.empty())
+				{
+					DoOpTop(operands, ops);
+				}
+				if (!operands.empty())
+				{
+					Lines.push_back(operands.top());
+					operands.pop();
+				}
+			}
+			if (op)
+			{
+				while (!ops.empty())
+				{
+					auto top = ops.top();
+					if(Precedence(top->getOp())
+						>/*=*/ Precedence(op->getOp()))
+					//should use > not >+ fetch the right opernand for unary ops
+					//for example x=-+-+10
+					//but this calcluate right expresssion first
+					//TODO:
+					{
+						DoOpTop(operands, ops);
+					}
+					else
+					{
+						break;
+					}
+				}
+				ops.push(op);
+			}
+			PreTokenIsOp = true;
+		}//end if (idx == TokenID)
+	}//end while (true)
+	while (!ops.empty())
+	{
+		DoOpTop(operands, ops);
+	}
+	if (!operands.empty())
+	{
+		Lines.push_back(operands.top());
+		operands.pop();
+	}
+	for(auto l:Lines)
+	{
+		AST::Value v;
+		bool  b = l->Run(v);
+		b = b;
+	}
 	return PyHandle();
 }
 
@@ -407,4 +606,5 @@ bool PyRun(PyHandle h)
 void PyClose(PyHandle)
 {
 }
+
 }

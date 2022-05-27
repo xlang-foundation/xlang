@@ -24,10 +24,10 @@ std::vector<std::string> _kws
 	"==","!=",">","<",">=","<=",
 	//Python Bitwise Operators --index range[61,66]
 	"&","|","^","~","<<",">>",
-	//Other  --index range[67,76]
-	"(",")",":",".","[","]","{","}",",",
-	//misc --index range[77,79]
-	"\t","\n","\r"
+	//Other  --index range[67,75]
+	"(",")","[","]","{","}",":",".",",",
+	//misc --index range[76,79]
+	"\t","\r","\n"
 };
 struct KwTree
 {

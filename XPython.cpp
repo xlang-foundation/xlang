@@ -20,8 +20,9 @@ void RunCore()
 			z=x+y\
 		var1 = func1(st,100)";
 	std::string code = 
-		"x=1000\
-		y=100.1234\
+		"x=1000.1234\n\
+		y=x+-5\n\
+		z = x+y+10\
 		";
 
 	XPython::PyInit(&_kwTree[0]);
