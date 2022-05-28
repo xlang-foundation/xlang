@@ -1,21 +1,21 @@
 #include "lex.h"
 #include <string>
-#include <vector>
+
 
 //import keyword
 //print(keyword.kwlist)
 std::vector<std::string> _kws
 {	
 	//KW: --index range[0,34]
-	"False", "None", "True", "and", /*4*/
-	"as", "assert", "async", "await", /*4*/
-	"break", "class", "continue", /*3*/
-	"def", "del", "elif", "else", /*4*/
-	"except", "finally", "for", /*3*/
-	"from", "global", "if", "import", /*4*/
-	"in", "is", "lambda", "nonlocal", /*4*/
-	"not", "or", "pass", "raise", "return", /*5*/
-	"try", "while", "with", "yield",/*4*/
+	"False", "None", "True", "and", /*0-3*/
+	"as", "assert", "async", "await", /*4-7*/
+	"break", "class", "continue", /*8-10*/
+	"def", "del", "elif", "else", /*11-14*/
+	"except", "finally", "for", /*15-17*/
+	"from", "global", "if", "import", /*18-21*/
+	"in", "is", "lambda", "nonlocal", /*22-25*/
+	"not", "or", "pass", "raise", "return", /*26-30*/
+	"try", "while", "with", "yield",/*31-34*/
 	//Python Assignment Operators --index range[35,47]
 	"=","+=","-=","*=","/=","%=","//=","**=","&=","|=","^=",">>=","<<=",
 	//Python Arithmetic Operators --index range[48,54]
@@ -27,7 +27,7 @@ std::vector<std::string> _kws
 	//Other  --index range[67,75]
 	"(",")","[","]","{","}",":",".",",",
 	//misc --index range[76,79]
-	"\t","\r","\n"
+	"\t","\r","\n","\\"
 };
 struct KwTree
 {

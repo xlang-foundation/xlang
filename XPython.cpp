@@ -5,26 +5,14 @@
 #include "Core/pycore.h"
 #include "Tools/lex.h"
 
+#include <fstream>
+#include <sstream>
+
 
 static std::vector<short> _kwTree;
 
-void RunCore()
+void RunCore(std::string& code)
 {
-	std::string code0 =
-		"k=1.2345\
-		st='this is \"a\" string'\
-		s0 =\"another strng\"\
-		x=1+k\
-		def func1(ddd:str,i1:int):\
-			y=2\
-			z=x+y\
-		var1 = func1(st,100)";
-	std::string code = 
-		"x=1000.1234\n\
-		y=x+-5\n\
-		z = x+y+10\
-		";
-
 	XPython::PyInit(&_kwTree[0]);
 
 	XPython::PyHandle h = XPython::PyLoad((char*)code.c_str(), (int)code.size());
@@ -35,11 +23,16 @@ void RunTools()
 {
 	MakeLexTree(_kwTree);
 }
-int main()
+int main(int argc, char* argv[])
 {
 	RunTools();
 
-	RunCore();
+	std::string pyFileName = "C:/Dev/XPython/test/test1.py";
+	std::ifstream pyFile(pyFileName);
+	std::string code((std::istreambuf_iterator<char>(pyFile)),
+		std::istreambuf_iterator<char>());
+
+	RunCore(code);
 	std::cout << "End." << std::endl;
 	return 0;
 }

@@ -286,7 +286,13 @@ void PyInit(short* kwTree)
 	{
 		_precedence[i] = 1000;
 	}
-	for (short i = (short)KWIndex::Assign_Op_S; 
+	for (short i = (short)KWIndex::Minus+1;
+		i <= (short)KWIndex::Arithmetic_Op_S; i++)
+	{//for "*","/","%","**","//"
+		_precedence[i] = 1001;
+	}
+	_precedence[(short)KWIndex::Colon] = 1002;
+	for (short i = (short)KWIndex::Assign_Op_S;
 		i <= (short)KWIndex::Assign_Op_E; i++)
 	{
 		_precedence[i] = 0;
@@ -381,7 +387,61 @@ void DoOpTop(std::stack<AST::Expression*>& operands,
 {
 	auto top = ops.top();
 	ops.pop();
-	if (top->m_type == AST::ObType::UnaryOp)
+	if (top->getOp() == (short)KWIndex::Colon)
+	{//:
+		auto operandR = operands.top();
+		operands.pop();
+		auto operandL = operands.top();
+		operands.pop();
+		auto param = new AST::Param(operandL, operandR);
+		operands.push(param);
+	}
+	else if (top->getOp() == (short)KWIndex::Comma)
+	{//,
+		auto operandR = operands.top();
+		operands.pop();
+		auto operandL = operands.top();
+		operands.pop();
+		AST::List* list = nil;
+		if (operandL->m_type != AST::ObType::List)
+		{
+			list = new AST::List(operandL);
+		}
+		else
+		{
+			list = (AST::List*)operandL;
+		}
+		if (operandR->m_type != AST::ObType::List)
+		{
+			*list += operandR;
+		}
+		else
+		{
+			*list += (AST::List*)operandR;
+			delete operandR;
+		}
+		operands.push(list);
+	}
+	else if (top->m_type == AST::ObType::Func)
+	{
+		AST::Func* func = (AST::Func*)top;
+		auto params = operands.top();
+		operands.pop();
+		if (params->m_type != AST::ObType::List)
+		{
+			AST::List* list = new AST::List(params);
+			delete params;
+			func->SetParams(list);
+		}
+		else
+		{
+			func->SetParams((AST::List*)params);
+		}
+		func->SetName(operands.top());
+		operands.pop();
+		operands.push(func);//as new block's head object
+	}
+	else if (top->m_type == AST::ObType::UnaryOp)
 	{
 		auto operand = operands.top();
 		operands.pop();
@@ -452,6 +512,8 @@ PyHandle PyLoad(char* code, int size)
 	std::vector<AST::Expression*> Lines;
 
 	bool PreTokenIsOp = false;
+	int pair_cnt = 0;//count for {} () and [],if
+	//pair_cnt >0, eat new line
 	while (true)
 	{
 		String s;
@@ -498,15 +560,37 @@ PyHandle PyLoad(char* code, int size)
 			{
 				op = new AST::Assign(idx);
 			}
+			else if (idx == (short)KWIndex::def)
+			{
+				op = new AST::Func();
+			}
 			else if (idx >= (short)KWIndex::Assign_Op_S
 				&& idx <= (short)KWIndex::Assign_Op_E ||
 				idx == (short)KWIndex::Dot)
 			{
 				op = new AST::BinaryOp(idx);
 			}
+			else if (idx == (short)KWIndex::Parenthesis_L)
+			{
+				pair_cnt++;
+				op = new AST::Operator(idx);
+			}
 			else if (idx == (short)KWIndex::Parenthesis_R)
 			{
-
+				pair_cnt--;
+				while (!ops.empty())
+				{
+					auto top = ops.top();
+					if (top->getOp() == (short)KWIndex::Parenthesis_L)
+					{
+						ops.pop();
+						break;
+					}
+					else
+					{
+						DoOpTop(operands, ops);
+					}
+				}
 			}
 			else if (idx == (short)KWIndex::Brackets_R)
 			{
@@ -516,12 +600,14 @@ PyHandle PyLoad(char* code, int size)
 			{
 
 			}
-			else if (idx == (short)KWIndex::Colon)
+			else if (idx == (short)KWIndex::Colon ||
+				idx == (short)KWIndex::Comma)
 			{//end block head
-
+				op = new AST::Operator(idx);
 			}
 			else if (idx == (short)KWIndex::Add ||
-				idx == (short)KWIndex::Minus)
+				idx == (short)KWIndex::Minus || 
+				idx == (short)KWIndex::Multiply)
 			{
 				if (PreTokenIsOp)
 				{
@@ -543,8 +629,32 @@ PyHandle PyLoad(char* code, int size)
 					//error
 				}
 			}
-			else if (idx == (short)KWIndex::Misc_Op_E)//end of code line
+			else if (idx == (short)KWIndex::Slash)
 			{
+				op = new AST::Operator(idx);
+			}
+			else if (idx == (short)KWIndex::Newline)//end of code line
+			{
+				if ( pair_cnt>0 )
+				{//line continue
+					if (ops.top()->getOp() == (short)KWIndex::Slash)
+					{
+						delete ops.top();
+						ops.pop();
+					}
+					continue;
+				}
+				else if (ops.top()->getOp() == (short)KWIndex::Slash)
+				{//line continue
+					delete ops.top();
+					ops.pop();
+					continue;
+				}
+				else if (ops.top()->getOp() == (short)KWIndex::Colon)
+				{//end block head
+					delete ops.top();
+					ops.pop();
+				}
 				std::cout << "new Line" << std::endl;
 				while (!ops.empty())
 				{
@@ -577,7 +687,14 @@ PyHandle PyLoad(char* code, int size)
 				}
 				ops.push(op);
 			}
-			PreTokenIsOp = true;
+			if (idx == (short)KWIndex::Parenthesis_R)
+			{
+				PreTokenIsOp = false;
+			}
+			else
+			{
+				PreTokenIsOp = true;
+			}
 		}//end if (idx == TokenID)
 	}//end while (true)
 	while (!ops.empty())

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "pycore.h"
+#include <string>
+#include <vector>
 
 namespace XPython {namespace AST{
 
@@ -10,7 +12,9 @@ enum class ValueType
 	None,
 	Int64,
 	Double,
-	Pointer
+	Pointer,
+	Str,
+
 };
 class Value
 {
@@ -103,6 +107,39 @@ public:
 		}
 		return *this;
 	}
+	Value& operator*=(const Value& rhs)
+	{
+		switch (t)
+		{
+		case ValueType::None:
+			break;
+		case ValueType::Int64:
+			if (rhs.t == ValueType::Int64)
+			{
+				x.l *= rhs.x.l;
+			}
+			else
+			{
+				x.l *= (long long)rhs.x.d;
+			}
+			break;
+		case ValueType::Double:
+			if (rhs.t == ValueType::Int64)
+			{
+				x.d *= rhs.x.l;
+			}
+			else
+			{
+				x.d *= rhs.x.d;
+			}
+			break;
+		case ValueType::Pointer:
+			break;
+		default:
+			break;
+		}
+		return *this;
+	}
 	Value& operator-=(const Value& rhs)
 	{
 		switch (t)
@@ -157,6 +194,9 @@ enum class ObType
 	Var,
 	Number,
 	Double,
+	Param,
+	List,
+	Func
 };
 
 class Expression
@@ -184,6 +224,14 @@ class Operator :
 protected:
 	short Op;//index of _kws
 public:
+	Operator()
+	{
+		Op = 0;
+	}
+	Operator(short op)
+	{
+		Op = op;
+	}
 	inline short getOp()
 	{
 		return Op;
@@ -218,6 +266,7 @@ public:
 		{
 			L->Set(v_r);
 		}
+		return true;
 	}
 };
 
@@ -260,6 +309,14 @@ public:
 			v_l += v_r;
 			v = v_l;
 			break;
+		case KWIndex::Minus:
+			v_l -= v_r;
+			v = v_l;
+			break;
+		case KWIndex::Multiply:
+			v_l *= v_r;
+			v = v_l;
+			break;
 		case KWIndex::Dot:
 		{
 			int cnt = v_r.GetF();
@@ -275,6 +332,7 @@ public:
 		default:
 			break;
 		}
+		return true;
 	}
 };
 class UnaryOp :
@@ -361,4 +419,65 @@ public:
 	}
 };
 
+class List :
+	public Expression
+{
+	std::vector<Expression*> list;
+public:
+	List()
+	{
+		m_type = ObType::List;
+	}
+	List(Expression* item):List()
+	{
+		list.push_back(item);
+	}
+	List& operator+=(const List& rhs)
+	{
+		list.insert(list.end(), rhs.list.begin(), rhs.list.begin() + rhs.list.size());
+		return *this;
+	}
+	List& operator+=(Expression* item)
+	{
+		list.push_back(item);
+		return *this;
+	}
+};
+class Param :
+	public Expression
+{
+	Expression* Name = nil;
+	Expression* Type = nil;
+public:
+	Param(Expression* name, Expression* type)
+	{
+		Name = name;
+		Type = type;
+		m_type = ObType::Param;
+	}
+};
+class Func :
+	public Operator
+{
+	Expression* Name = nil;
+	List* Params;
+	Expression* RetType = nil;
+public:
+	Func()
+	{
+		m_type = ObType::Func;
+	}
+	void SetName(Expression* n)
+	{
+		Name = n;
+	}
+	void SetParams(List* p)
+	{
+		Params = p;
+	}
+	void SetRetType(Expression* p)
+	{
+		RetType = p;
+	}
+};
 }}
