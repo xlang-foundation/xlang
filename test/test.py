@@ -1,3 +1,4 @@
+s ='this is a test'
 x=1000.1234
 y=x+\
     -5

@@ -91,17 +91,15 @@ public:
 		_context.src_code_size = size;
 		_context.spos = _context.src_code;
 	}
-	short Get(String& id)
+	short Get(String& tk)
 	{
 		short retIndex = -1;
-		while (retIndex == -1)
+		do
 		{
-			retIndex = Scan(id);
-		}
-		if (retIndex == TokenID)
-		{
+			retIndex = Scan(tk);
+		} while (retIndex == -1 || 
+			(retIndex!= TokenEOS && tk.size ==0));
 
-		}
 		return retIndex;
 	}
 };

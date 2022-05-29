@@ -256,11 +256,14 @@ bool Parser::Compile(char* code, int size)
 		{
 			break;
 		}
-		if (s.s == nil || s.size == 0)
+
+		if (idx == TokenStr)
 		{
-			continue;
+			AST::Str* v = new AST::Str(s.s, s.size);
+			operands.push(v);
+			PreTokenIsOp = false;
 		}
-		if (idx == TokenID)
+		else if (idx == TokenID)
 		{
 			double dVal = 0;
 			long long llVal = 0;

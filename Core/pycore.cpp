@@ -21,8 +21,10 @@ bool PyRun(PyHandle h)
 	return false;
 }
 
-void PyClose(PyHandle)
+void PyClose(PyHandle h)
 {
+	Parser* p = (Parser*)h;
+	delete p;
 }
 
 }

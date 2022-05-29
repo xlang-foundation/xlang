@@ -54,6 +54,12 @@ public:
 		t = ValueType::Double;
 		x.d = d;
 	}
+	Value(char* s,int size)
+	{
+		t = ValueType::Str;
+		flags = size;
+		x.p = s;
+	}
 	Value(void* p)
 	{
 		t = ValueType::Pointer;
@@ -385,6 +391,24 @@ public:
 	}
 	virtual void Set(Value& v) override;
 	virtual bool Run(Value& v) override;
+};
+class Str :
+	public Expression
+{
+	char* m_s = nil;
+	int m_size = 0;
+public:
+	Str(char* s, int size)
+	{
+		m_s = s;
+		m_size = size;
+	}
+	virtual bool Run(Value& v) override
+	{
+		Value v0(m_s,m_size);
+		v = v0;
+		return true;
+	}
 };
 class Number :
 	public Expression

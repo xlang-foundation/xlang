@@ -41,13 +41,12 @@ short Token::Scan(String& id)
 		} while (c != begin_c && c != 0);
 		id.size = int(_context.spos - id.s - 1);
 
-		retIndex = _context.lct;
 		//reset for next
 		ResetToRoot();
 		_context.token_start = _context.spos;
 		_context.lct = LCT_None;
 
-		return retIndex;
+		return TokenStr;
 	}
 	c = GetChar();
 
