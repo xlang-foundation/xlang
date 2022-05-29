@@ -8,7 +8,7 @@ project ("XPython")
 # Add source to this project's executable.
 add_executable (XPython 
 	"XPython.cpp" 
-	"XPython.h" "Core/pycore.h" "Core/pycore.cpp" "Tools/lex.h" "Tools/lex.cpp" "Core/exp.h" "Core/exp.cpp")
+	"XPython.h" "Core/pycore.h" "Core/pycore.cpp" "Tools/lex.h" "Tools/lex.cpp" "Core/exp.h" "Core/exp.cpp" "Core/parser.h" "Core/parser.cpp" "Core/token.h" "Core/token.cpp" "Core/def.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET XPython PROPERTY CXX_STANDARD 20)

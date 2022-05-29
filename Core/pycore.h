@@ -2,14 +2,8 @@
 #define __PYCORE_H__
 
 namespace XPython {
-#define nil 0
 
 typedef void* PyHandle;
-struct String
-{
-	char* s;
-	int size;
-};
 
 enum class KWIndex
 {

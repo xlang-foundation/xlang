@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 {
 	RunTools();
 
-	std::string pyFileName = "C:/Dev/XPython/test/test1.py";
+	std::string pyFileName = "C:/Dev/XPython/test/test.py";
 	std::ifstream pyFile(pyFileName);
 	std::string code((std::istreambuf_iterator<char>(pyFile)),
 		std::istreambuf_iterator<char>());

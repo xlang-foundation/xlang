@@ -1,12 +1,11 @@
 #pragma once
 
 #include "pycore.h"
+#include "def.h"
 #include <string>
 #include <vector>
 
 namespace XPython {namespace AST{
-
-
 enum class ValueType
 {
 	None,
