@@ -39,7 +39,7 @@ short Token::Scan(String& id)
 		{
 			c = GetChar();
 		} while (c != begin_c && c != 0);
-		id.size = _context.spos - id.s - 1;
+		id.size = int(_context.spos - id.s - 1);
 
 		retIndex = _context.lct;
 		//reset for next
@@ -90,7 +90,7 @@ short Token::Scan(String& id)
 		if (_context.token_start != nil)
 		{
 			id.s = _context.token_start;
-			id.size = _context.spos - _context.token_start - 1;
+			id.size = int(_context.spos - _context.token_start - 1);
 		}
 		else
 		{
@@ -144,7 +144,7 @@ short Token::Scan(String& id)
 				if (_context.token_start != nil)
 				{
 					id.s = _context.token_start;
-					id.size = _context.spos - _context.token_start - 1;
+					id.size = int(_context.spos - _context.token_start - 1);
 				}
 				else
 				{

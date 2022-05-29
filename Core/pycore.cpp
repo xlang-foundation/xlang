@@ -1,9 +1,4 @@
 #include "pycore.h"
-#include "exp.h"
-#include <iostream>
-#include <string>
-#include <stack>
-#include <vector>
 #include "parser.h"
 
 namespace XPython {
