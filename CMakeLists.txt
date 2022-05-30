@@ -5,10 +5,13 @@ cmake_minimum_required (VERSION 3.8)
 
 project ("XPython")
 
-# Add source to this project's executable.
+FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp")
+
 add_executable (XPython 
 	"XPython.cpp" 
-	"XPython.h" "Core/pycore.h" "Core/pycore.cpp" "Tools/lex.h" "Tools/lex.cpp" "Core/exp.h" "Core/exp.cpp" "Core/parser.h" "Core/parser.cpp" "Core/token.h" "Core/token.cpp" "Core/def.h")
+	"XPython.h"
+	${Core_SRC}
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET XPython PROPERTY CXX_STANDARD 20)

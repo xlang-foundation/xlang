@@ -5,7 +5,6 @@ namespace XPython {
 
 typedef void* PyHandle;
 
-void PyInit(short* kwTree);
 PyHandle PyLoad(char* code, int size);
 bool PyRun(PyHandle h);
 void PyClose(PyHandle h);

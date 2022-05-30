@@ -3,8 +3,11 @@
 #include <string>
 #include <vector>
 
-namespace XPython {
-int Parser::_precedence[(short)KWIndex::MaxCount];
+
+namespace XPython {	
+
+std::vector<short> Parser::_kwTree;
+std::vector<OpAction> Parser::OpActions;
 
 ParseState Parser::ParseHexBinOctNumber(String& str)
 {
@@ -96,26 +99,10 @@ Parser::~Parser()
 	}
 }
 
-bool Parser::Init(short* kwTree)
+bool Parser::Init()
 {
-	mToken = new Token(kwTree);
-
-	for (short i = 0; i < (short)KWIndex::MaxCount; i++)
-	{
-		_precedence[i] = 1000;
-	}
-	for (short i = (short)KWIndex::Minus + 1;
-		i <= (short)KWIndex::Arithmetic_Op_S; i++)
-	{//for "*","/","%","**","//"
-		_precedence[i] = 1001;
-	}
-	_precedence[(short)KWIndex::Colon] = 1002;
-	for (short i = (short)KWIndex::Assign_Op_S;
-		i <= (short)KWIndex::Assign_Op_E; i++)
-	{
-		_precedence[i] = 0;
-	}
-
+	MakeLexTree(OPList,_kwTree, OpActions);
+	mToken = new Token(&_kwTree[0]);
 	return true;
 }
 void Parser::DoOpTop(
@@ -123,8 +110,9 @@ void Parser::DoOpTop(
 	std::stack<AST::Operator*>& ops)
 {
 	auto top = ops.top();
+	auto al = OpAct(top->getOp()).alias;
 	ops.pop();
-	if (top->getOp() == (short)KWIndex::Colon)
+	if ( al == Alias::Colon)
 	{//:
 		auto operandR = operands.top();
 		operands.pop();
@@ -133,7 +121,7 @@ void Parser::DoOpTop(
 		auto param = new AST::Param(operandL, operandR);
 		operands.push(param);
 	}
-	else if (top->getOp() == (short)KWIndex::Comma)
+	else if (al == Alias::Comma)
 	{//,
 		auto operandR = operands.top();
 		operands.pop();
@@ -238,16 +226,11 @@ void Parser::DoOpTop(
 */
 bool Parser::Compile(char* code, int size)
 {
-	mToken->SetStream(code, size);
-
-	std::stack<AST::Expression*> operands;
-	std::stack<AST::Operator*> ops;
-
 	std::vector<AST::Expression*> Lines;
 
-	bool PreTokenIsOp = false;
-	int pair_cnt = 0;//count for {} () and [],if
-	//pair_cnt >0, eat new line
+	mToken->SetStream(code, size);
+	m_pair_cnt = 0;
+	m_PreTokenIsOp = false;
 	while (true)
 	{
 		String s;
@@ -256,12 +239,11 @@ bool Parser::Compile(char* code, int size)
 		{
 			break;
 		}
-
 		if (idx == TokenStr)
 		{
 			AST::Str* v = new AST::Str(s.s, s.size);
-			operands.push(v);
-			PreTokenIsOp = false;
+			m_operands.push(v);
+			m_PreTokenIsOp = false;
 		}
 		else if (idx == TokenID)
 		{
@@ -284,163 +266,46 @@ bool Parser::Compile(char* code, int size)
 				//Construct AST::Var
 				v = new AST::Var(s);
 			}
-			operands.push(v);
-			PreTokenIsOp = false;
+			m_operands.push(v);
+			m_PreTokenIsOp = false;
 		}
 		else
-		{
-			std::string str(s.s, s.s + s.size);
-			std::cout << "KW:" << idx << ",Val:" << str << std::endl;
+		{//Operator
+			m_PreTokenIsOp = true;//some action will change to false
+			OpAction opAct = OpAct(idx);
 			AST::Operator* op = nil;
-			if (idx >= (short)KWIndex::Assign_Op_S
-				&& idx <= (short)KWIndex::Assign_Op_E)
+			if (opAct.process)
 			{
-				op = new AST::Assign(idx);
-			}
-			else if (idx == (short)KWIndex::def)
-			{
-				op = new AST::Func();
-			}
-			else if (idx >= (short)KWIndex::Assign_Op_S
-				&& idx <= (short)KWIndex::Assign_Op_E ||
-				idx == (short)KWIndex::Dot)
-			{
-				op = new AST::BinaryOp(idx);
-			}
-			else if (idx == (short)KWIndex::Parenthesis_L)
-			{
-				pair_cnt++;
-				op = new AST::Operator(idx);
-			}
-			else if (idx == (short)KWIndex::Parenthesis_R)
-			{
-				pair_cnt--;
-				while (!ops.empty())
-				{
-					auto top = ops.top();
-					if (top->getOp() == (short)KWIndex::Parenthesis_L)
-					{
-						ops.pop();
-						break;
-					}
-					else
-					{
-						DoOpTop(operands, ops);
-					}
-				}
-			}
-			else if (idx == (short)KWIndex::Brackets_R)
-			{
-
-			}
-			else if (idx == (short)KWIndex::Curlybracket_R)
-			{
-
-			}
-			else if (idx == (short)KWIndex::Colon ||
-				idx == (short)KWIndex::Comma)
-			{//end block head
-				op = new AST::Operator(idx);
-			}
-			else if (idx == (short)KWIndex::Add ||
-				idx == (short)KWIndex::Minus ||
-				idx == (short)KWIndex::Multiply)
-			{
-				if (PreTokenIsOp)
-				{
-					op = new AST::UnaryOp(idx);
-				}
-				else
-				{
-					op = new AST::BinaryOp(idx);
-				}
-			}
-			else if (idx == (short)KWIndex::Invert)
-			{
-				if (PreTokenIsOp)
-				{
-					op = new AST::UnaryOp(idx);
-				}
-				else
-				{
-					//error
-				}
-			}
-			else if (idx == (short)KWIndex::Slash)
-			{
-				op = new AST::Operator(idx);
-			}
-			else if (idx == (short)KWIndex::Newline)//end of code line
-			{
-				if (pair_cnt > 0)
-				{//line continue
-					if (ops.top()->getOp() == (short)KWIndex::Slash)
-					{
-						delete ops.top();
-						ops.pop();
-					}
-					continue;
-				}
-				else if (ops.top()->getOp() == (short)KWIndex::Slash)
-				{//line continue
-					delete ops.top();
-					ops.pop();
-					continue;
-				}
-				else if (ops.top()->getOp() == (short)KWIndex::Colon)
-				{//end block head
-					delete ops.top();
-					ops.pop();
-				}
-				std::cout << "new Line" << std::endl;
-				while (!ops.empty())
-				{
-					DoOpTop(operands, ops);
-				}
-				if (!operands.empty())
-				{
-					Lines.push_back(operands.top());
-					operands.pop();
-				}
+				op = opAct.process(this, idx, &opAct);
 			}
 			if (op)
 			{
-				while (!ops.empty())
+				while (!m_ops.empty())
 				{
-					auto top = ops.top();
-					if (Precedence(top->getOp())>/*=*/ Precedence(op->getOp()))
-						//should use > not >+ fetch the right opernand for unary ops
-						//for example x=-+-+10
-						//but this calcluate right expresssion first
-						//TODO:
+					auto top = m_ops.top();
+					OpAction topAct = OpAct(top->getOp());
+					OpAction opAct = OpAct(op->getOp());
+					if (opAct.precedence> opAct.precedence)
 					{
-						DoOpTop(operands, ops);
+						DoOpTop(m_operands, m_ops);
 					}
 					else
 					{
 						break;
 					}
 				}
-				ops.push(op);
+				m_ops.push(op);
 			}
-			if (idx == (short)KWIndex::Parenthesis_R)
-			{
-				PreTokenIsOp = false;
-			}
-			else
-			{
-				PreTokenIsOp = true;
-			}
-		}//end if (idx == TokenID)
-	}//end while (true)
-	while (!ops.empty())
-	{
-		DoOpTop(operands, ops);
+		}
 	}
-	if (!operands.empty())
+	while (!m_ops.empty())
 	{
-		Lines.push_back(operands.top());
-		operands.pop();
+		DoOpTop(m_operands, m_ops);
+	}
+	if (!m_operands.empty())
+	{
+		Lines.push_back(m_operands.top());
+		m_operands.pop();
 	}
 	for (auto l : Lines)
 	{
@@ -448,7 +313,57 @@ bool Parser::Compile(char* code, int size)
 		bool  b = l->Run(v);
 		b = b;
 	}
-	return PyHandle();
+	return true;
 }
 
+void Parser::NewLine()
+{
+	if (m_pair_cnt > 0)
+	{//line continue
+		if (m_ops.top()->getOp() == (short)KWIndex::Slash)
+		{
+			delete m_ops.top();
+			m_ops.pop();
+		}
+		return;
+	}
+	else if (m_ops.top()->getOp() == (short)KWIndex::Slash)
+	{//line continue
+		delete m_ops.top();
+		m_ops.pop();
+		return;
+	}
+	else if (m_ops.top()->getOp() == (short)KWIndex::Colon)
+	{//end block head
+		delete m_ops.top();
+		m_ops.pop();
+	}
+	while (!m_ops.empty())
+	{
+		DoOpTop(m_operands, m_ops);
+	}
+	if (!m_operands.empty())
+	{
+		//TODO:Lines.push_back(m_operands.top());
+		m_operands.pop();
+	}
+}
+void Parser::PairRight(Alias leftOpToMeetAsEnd)
+{
+	DecPairCnt();
+	while (!m_ops.empty())
+	{
+		auto top = m_ops.top();
+		if (OpAct(top->getOp()).alias == leftOpToMeetAsEnd)
+		{
+			m_ops.pop();
+			break;
+		}
+		else
+		{
+			DoOpTop(m_operands, m_ops);
+		}
+	}
+	m_PreTokenIsOp = false;
+}
 }

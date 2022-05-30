@@ -3,15 +3,10 @@
 
 namespace XPython {
 
-static short* _kwTree = nil;
-void PyInit(short* kwTree)
-{
-	_kwTree = kwTree;
-}
 PyHandle PyLoad(char* code, int size)
 {
 	Parser* p = new Parser();
-	p->Init(_kwTree);
+	p->Init();
 	p->Compile(code, size);
 	return (PyHandle)p;
 }
