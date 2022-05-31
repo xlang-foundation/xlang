@@ -4,25 +4,9 @@
 #include "token.h"
 #include <stack>
 #include <vector>
+#include "def.h"
 
 namespace XPython {
-
-enum class Alias
-{
-	None,
-	Func,
-	Colon,
-	Dot,
-	Comma,
-	Parenthesis_L,
-	Brackets_L,
-	Curlybracket_L,
-	Tab,
-	CR,//'\r'
-	Slash,
-	Invert, //'~'
-};
-
 class Parser;
 struct OpAction;
 typedef AST::Operator* (*OpProc)(
@@ -97,8 +81,17 @@ class Parser
 	std::stack<AST::Operator*> m_ops;
 	int m_pair_cnt = 0;//count for {} () and [],if
 	bool m_PreTokenIsOp = false;
+	//below,before meet first non-tab char,it is true 
+	bool m_NewLine_WillStart = true;
+	int m_TabCountAtLineBegin = 0;
+	std::stack<AST::Block*> m_stackBlocks;
 public:
+	void PushBlockStack(AST::Block* b)
+	{
+		m_stackBlocks.push(b);
+	}
 	void NewLine();
+	AST::Operator* PairLeft(short opIndex,OpAction* opAct);//For "(","[","{"
 	void PairRight(Alias leftOpToMeetAsEnd); //For ')',']', and '}'
 	inline void IncPairCnt() { m_pair_cnt++; }
 	inline bool PreTokenIsOp() { return m_PreTokenIsOp; }
@@ -121,5 +114,6 @@ public:
 	~Parser();
 	bool Init();
 	bool Compile(char* code, int size);
+	bool Run();
 };
 }

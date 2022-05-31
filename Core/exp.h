@@ -201,6 +201,7 @@ enum class ObType
 	Double,
 	Param,
 	List,
+	Pair,
 	Func
 };
 
@@ -339,6 +340,30 @@ public:
 		}
 		return true;
 	}
+};
+class PairOp :
+	public Operator
+{
+	Expression* L = nil;
+	Expression* R = nil;
+	Alias A = Alias::None;
+public:
+	PairOp(short opIndex,Alias a) :
+		Operator(opIndex)
+	{
+		A = a;
+		m_type = ObType::Pair;
+	}
+	void SetL(Expression* l)
+	{
+		L = l;
+	}
+	void SetR(Expression* r)
+	{
+		R = r;
+	}
+	Expression* GetR() { return R; }
+	Expression* GetL() { return L; }
 };
 class UnaryOp :
 	public Operator
@@ -479,8 +504,34 @@ public:
 		m_type = ObType::Param;
 	}
 };
-class Func :
+class Block :
 	public Operator
+{
+	int IndentCount = 0;
+	std::vector<Expression*> Body;
+public:
+	Block() :Operator()
+	{
+	}
+	void Add(Expression* item)
+	{
+		Body.push_back(item);
+	}
+	inline int GetIndentCount() { return IndentCount; }
+	inline void SetIndentCount(int cnt) { IndentCount = cnt; }
+};
+class Module :
+	public Block
+{
+public:
+	Module() :
+		Block()
+	{
+		SetIndentCount(-1);//then each line will have 0 indent
+	}
+};
+class Func :
+	public Block
 {
 	Expression* Name = nil;
 	List* Params;

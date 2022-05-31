@@ -13,10 +13,15 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 			"not", "or", "pass", "raise", "return", /*26-30*/
 			"try", "while", "with", "yield",/*31-34*/
 	}},
+	OpInfo{{"return"},[](Parser* p,short opIndex,OpAction* opAct)
+	{
+		auto op = new AST::UnaryOp(opIndex);
+		return (AST::Operator*)op;
+	}},
 	OpInfo{{"def"},[](Parser* p,short opIndex,OpAction* opAct) 
 	{
-		auto op = new AST::Func();
-		return (AST::Operator*)op;
+		auto func = new AST::Func();
+		return (AST::Operator*)func;
 	},Alias::Func},
 	OpInfo{{
 			//Python Assignment Operators --index range[35,47]
@@ -70,17 +75,14 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 	},Alias::Invert},
 	OpInfo{{"(","[","{"},[](Parser* p,short opIndex,OpAction* opAct) 
 	{
-		p->IncPairCnt();
-		auto op = new AST::BinaryOp(opIndex);
-		return (AST::Operator*)op;
+		return p->PairLeft(opIndex,opAct);
 	},AList(Alias::Parenthesis_L,
 		Alias::Brackets_L,
 		Alias::Curlybracket_L)},
 	OpInfo{{")"},[](Parser* p,short opIndex,OpAction* opAct)
 	{
-		AST::Operator* op = nil;
 		p->PairRight(Alias::Parenthesis_L);
-		return op;
+		return (AST::Operator*)nil;
 	}},
 	OpInfo{{"]"},[](Parser* p,short opIndex,OpAction* opAct)
 	{

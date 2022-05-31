@@ -152,18 +152,32 @@ void Parser::DoOpTop(
 		AST::Func* func = (AST::Func*)top;
 		auto params = operands.top();
 		operands.pop();
-		if (params->m_type != AST::ObType::List)
-		{
-			AST::List* list = new AST::List(params);
-			delete params;
-			func->SetParams(list);
+		if (params->m_type == AST::ObType::Pair)
+		{//have to be a pair
+			AST::PairOp* pair = (AST::PairOp*)params;
+			AST::Expression* r = pair->GetR();
+			if (r)
+			{
+				if (r->m_type != AST::ObType::List)
+				{
+					AST::List* list = new AST::List(r);
+					func->SetParams(list);
+				}
+				else
+				{
+					func->SetParams((AST::List*)r);
+					pair->SetR(nil);//clear R, because it used by SetParams
+				}
+				delete r;
+			}
+			AST::Expression* l = pair->GetL();
+			if (l)
+			{
+				func->SetName(l);
+				pair->SetL(nil);
+			}
+			delete pair;
 		}
-		else
-		{
-			func->SetParams((AST::List*)params);
-		}
-		func->SetName(operands.top());
-		operands.pop();
 		operands.push(func);//as new block's head object
 	}
 	else if (top->m_type == AST::ObType::UnaryOp)
@@ -226,27 +240,32 @@ void Parser::DoOpTop(
 */
 bool Parser::Compile(char* code, int size)
 {
-	std::vector<AST::Expression*> Lines;
-
 	mToken->SetStream(code, size);
 	m_pair_cnt = 0;
 	m_PreTokenIsOp = false;
+	//prepare top module for this code
+	AST::Module* pTopModule = new AST::Module();
+	m_stackBlocks.push(pTopModule);
 	while (true)
 	{
 		String s;
 		short idx = mToken->Get(s);
 		if (idx == TokenEOS)
 		{
+			m_NewLine_WillStart = false;
 			break;
 		}
 		if (idx == TokenStr)
 		{
+			m_NewLine_WillStart = false;
 			AST::Str* v = new AST::Str(s.s, s.size);
 			m_operands.push(v);
 			m_PreTokenIsOp = false;
 		}
 		else if (idx == TokenID)
 		{
+			m_NewLine_WillStart = false;
+
 			double dVal = 0;
 			long long llVal = 0;
 			ParseState st = ParseNumber(s, dVal, llVal);
@@ -271,8 +290,19 @@ bool Parser::Compile(char* code, int size)
 		}
 		else
 		{//Operator
-			m_PreTokenIsOp = true;//some action will change to false
 			OpAction opAct = OpAct(idx);
+			if (m_NewLine_WillStart)
+			{
+				if (opAct.alias == Alias::Tab)
+				{
+					m_TabCountAtLineBegin++;
+					continue;
+				}
+				else
+				{
+					m_NewLine_WillStart = false;
+				}
+			}
 			AST::Operator* op = nil;
 			if (opAct.process)
 			{
@@ -295,24 +325,15 @@ bool Parser::Compile(char* code, int size)
 					}
 				}
 				m_ops.push(op);
+				m_PreTokenIsOp = true;
+			}
+			else
+			{//may meet ')',']','}', no OP here, already evaluated as an operand
+				m_PreTokenIsOp = false;
 			}
 		}
 	}
-	while (!m_ops.empty())
-	{
-		DoOpTop(m_operands, m_ops);
-	}
-	if (!m_operands.empty())
-	{
-		Lines.push_back(m_operands.top());
-		m_operands.pop();
-	}
-	for (auto l : Lines)
-	{
-		AST::Value v;
-		bool  b = l->Run(v);
-		b = b;
-	}
+	NewLine();//just call it to process the last line
 	return true;
 }
 
@@ -342,20 +363,54 @@ void Parser::NewLine()
 	{
 		DoOpTop(m_operands, m_ops);
 	}
-	if (!m_operands.empty())
+	if (!m_operands.empty() && !m_stackBlocks.empty())
 	{
-		//TODO:Lines.push_back(m_operands.top());
+		auto line = m_operands.top();
 		m_operands.pop();
+
+		auto curBlock = m_stackBlocks.top();
+		int indentCnt_CurBlock = curBlock->GetIndentCount();
+		if (m_TabCountAtLineBegin == indentCnt_CurBlock + 1)
+		{
+			curBlock->Add(line);
+		}
+		else if(m_TabCountAtLineBegin == indentCnt_CurBlock)
+		{//go back to parent
+			m_stackBlocks.pop();
+			if (!m_stackBlocks.empty())
+			{
+				curBlock = m_stackBlocks.top();
+				curBlock->Add(line);
+			}
+			else
+			{
+				//TODO:: error
+			}
+		}
+		else
+		{
+			//TODO:Indent error
+		}
+		//check if this is a block
+		AST::Block* pValidBlock = dynamic_cast<AST::Block*>(line);
+		if (pValidBlock)
+		{
+			PushBlockStack(pValidBlock);
+		}
 	}
+	m_NewLine_WillStart = true;
+	m_TabCountAtLineBegin = 0;
 }
 void Parser::PairRight(Alias leftOpToMeetAsEnd)
 {
 	DecPairCnt();
+	AST::PairOp* pPair = nil;
 	while (!m_ops.empty())
 	{
 		auto top = m_ops.top();
 		if (OpAct(top->getOp()).alias == leftOpToMeetAsEnd)
 		{
+			pPair = (AST::PairOp*)top;
 			m_ops.pop();
 			break;
 		}
@@ -364,6 +419,29 @@ void Parser::PairRight(Alias leftOpToMeetAsEnd)
 			DoOpTop(m_operands, m_ops);
 		}
 	}
-	m_PreTokenIsOp = false;
+	if (!m_operands.empty() && pPair!=nil)
+	{
+		pPair->SetR(m_operands.top());
+		m_operands.pop();
+		m_operands.push(pPair);
+	}
+}
+AST::Operator* Parser::PairLeft(short opIndex,OpAction* opAct)
+{
+	IncPairCnt();
+	auto op = new AST::PairOp(opIndex,opAct->alias);
+	if (!m_PreTokenIsOp)
+	{//for case func(...),x[...] etc
+		if (!m_operands.empty())
+		{
+			op->SetL(m_operands.top());
+			m_operands.pop();
+		}
+	}
+	return op;
+}
+bool Parser::Run()
+{
+	return true;
 }
 }
