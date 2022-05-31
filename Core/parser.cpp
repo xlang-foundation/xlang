@@ -168,7 +168,6 @@ void Parser::DoOpTop(
 					func->SetParams((AST::List*)r);
 					pair->SetR(nil);//clear R, because it used by SetParams
 				}
-				delete r;
 			}
 			AST::Expression* l = pair->GetL();
 			if (l)
@@ -176,6 +175,8 @@ void Parser::DoOpTop(
 				func->SetName(l);
 				pair->SetL(nil);
 			}
+			//content used by func,and clear to nil,
+			//not be used anymore, so delete it
 			delete pair;
 		}
 		operands.push(func);//as new block's head object
@@ -314,8 +315,8 @@ bool Parser::Compile(char* code, int size)
 				{
 					auto top = m_ops.top();
 					OpAction topAct = OpAct(top->getOp());
-					OpAction opAct = OpAct(op->getOp());
-					if (opAct.precedence> opAct.precedence)
+					OpAction cur_opAct = OpAct(op->getOp());
+					if (topAct.precedence> cur_opAct.precedence)
 					{
 						DoOpTop(m_operands, m_ops);
 					}
@@ -339,22 +340,23 @@ bool Parser::Compile(char* code, int size)
 
 void Parser::NewLine()
 {
+	short topIdx = m_ops.top()->getOp();
 	if (m_pair_cnt > 0)
 	{//line continue
-		if (m_ops.top()->getOp() == (short)KWIndex::Slash)
+		if (OpAct(topIdx).alias == Alias::Slash)
 		{
 			delete m_ops.top();
 			m_ops.pop();
 		}
 		return;
 	}
-	else if (m_ops.top()->getOp() == (short)KWIndex::Slash)
+	else if (OpAct(topIdx).alias == Alias::Slash)
 	{//line continue
 		delete m_ops.top();
 		m_ops.pop();
 		return;
 	}
-	else if (m_ops.top()->getOp() == (short)KWIndex::Colon)
+	else if (OpAct(topIdx).alias == Alias::Colon)
 	{//end block head
 		delete m_ops.top();
 		m_ops.pop();
@@ -442,6 +444,13 @@ AST::Operator* Parser::PairLeft(short opIndex,OpAction* opAct)
 }
 bool Parser::Run()
 {
-	return true;
+	if (m_stackBlocks.empty())
+	{
+		return false;//empty
+	}
+	AST::Module* pTopModule = (AST::Module* )m_stackBlocks.top();
+	AST::Value v;
+	bool bOK = pTopModule->Run(v);
+	return bOK;
 }
 }

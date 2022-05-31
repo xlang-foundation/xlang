@@ -4,6 +4,7 @@
 #include "def.h"
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace XPython {namespace AST{
 enum class ValueType
@@ -205,11 +206,23 @@ enum class ObType
 	Func
 };
 
+class Scope;
 class Expression
 {
+protected:
+	Expression* m_parent = nil;
 public:
 	Expression()
 	{
+	}
+	Scope* FindScope();
+	void SetParent(Expression* p)
+	{
+		m_parent = p;
+	}
+	Expression* GetParent()
+	{
+		return m_parent;
 	}
 	virtual ~Expression()
 	{
@@ -229,19 +242,22 @@ class Operator :
 {
 protected:
 	short Op;//index of _kws
+	Alias A = Alias::None;
 public:
 	Operator()
 	{
 		Op = 0;
 	}
-	Operator(short op)
+	Operator(short op, Alias a)
 	{
 		Op = op;
+		A = a;
 	}
 	inline short getOp()
 	{
 		return Op;
 	}
+	inline Alias getAlias() { return A; }
 };
 class Assign:
 	public Operator
@@ -258,6 +274,8 @@ public:
 	{
 		L = l;
 		R = r;
+		if(L) L->SetParent(this);
+		if(R) R->SetParent(this);
 	}
 	virtual bool Run(Value& v) override
 	{
@@ -291,6 +309,8 @@ public:
 	{
 		L = l;
 		R = r;
+		if(L) L->SetParent(this);
+		if(R) R->SetParent(this);
 	}
 	virtual bool Run(Value& v) override
 	{
@@ -308,22 +328,21 @@ public:
 		{
 			return false;
 		}
-		KWIndex kwOp = (KWIndex)Op;
-		switch (kwOp)
+		switch (A)
 		{
-		case KWIndex::Add:
+		case Alias::Add:
 			v_l += v_r;
 			v = v_l;
 			break;
-		case KWIndex::Minus:
+		case Alias::Minus:
 			v_l -= v_r;
 			v = v_l;
 			break;
-		case KWIndex::Multiply:
+		case Alias::Multiply:
 			v_l *= v_r;
 			v = v_l;
 			break;
-		case KWIndex::Dot:
+		case Alias::Dot:
 		{
 			int cnt = v_r.GetF();
 			double d = (double)v_r.GetLongLong();
@@ -346,10 +365,9 @@ class PairOp :
 {
 	Expression* L = nil;
 	Expression* R = nil;
-	Alias A = Alias::None;
 public:
 	PairOp(short opIndex,Alias a) :
-		Operator(opIndex)
+		Operator(opIndex,a)
 	{
 		A = a;
 		m_type = ObType::Pair;
@@ -357,13 +375,22 @@ public:
 	void SetL(Expression* l)
 	{
 		L = l;
+		if (L)
+		{
+			L->SetParent(this);
+		}
 	}
 	void SetR(Expression* r)
 	{
 		R = r;
+		if (R)
+		{
+			R->SetParent(this);
+		}
 	}
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
+	virtual bool Run(Value& v) override;
 };
 class UnaryOp :
 	public Operator
@@ -378,6 +405,7 @@ public:
 	void SetR(Expression* r)
 	{
 		R = r;
+		if(R) R->SetParent(this);
 	}
 	virtual bool Run(Value& v) override
 	{
@@ -386,13 +414,12 @@ public:
 		{
 			return false;
 		}
-		KWIndex kwOp = (KWIndex)Op;
-		switch (kwOp)
+		switch (A)
 		{
-		case KWIndex::Add:
+		case Alias::Add:
 			//+ keep 
 			break;
-		case KWIndex::Minus:
+		case Alias::Minus:
 			v = Value((long long)0);//set to 0
 			v-= v_r;
 			break;
@@ -414,6 +441,7 @@ public:
 		Name = n;
 		m_type = ObType::Var;
 	}
+	String& GetName() { return Name; }
 	virtual void Set(Value& v) override;
 	virtual bool Run(Value& v) override;
 };
@@ -479,15 +507,21 @@ public:
 	List(Expression* item):List()
 	{
 		list.push_back(item);
+		if(item) item->SetParent(this);
 	}
 	List& operator+=(const List& rhs)
 	{
-		list.insert(list.end(), rhs.list.begin(), rhs.list.begin() + rhs.list.size());
+		for (auto i : rhs.list)
+		{
+			list.push_back(i);
+			if(i) i->SetParent(this);
+		}
 		return *this;
 	}
 	List& operator+=(Expression* item)
 	{
 		list.push_back(item);
+		if(item) item->SetParent(this);
 		return *this;
 	}
 };
@@ -501,9 +535,18 @@ public:
 	{
 		Name = name;
 		Type = type;
+		if (Name)
+		{
+			Name->SetParent(this);
+		}
+		if (Type)
+		{
+			Type->SetParent(this);
+		}
 		m_type = ObType::Param;
 	}
 };
+class Func;
 class Block :
 	public Operator
 {
@@ -516,42 +559,110 @@ public:
 	void Add(Expression* item)
 	{
 		Body.push_back(item);
+		if(item) item->SetParent(this);
 	}
+	virtual Func* FindFuncByName(Var* name);
 	inline int GetIndentCount() { return IndentCount; }
 	inline void SetIndentCount(int cnt) { IndentCount = cnt; }
+	virtual bool Run(Value& v) override
+	{
+		bool bOk = true;
+		for (auto i : Body)
+		{
+			Value v0;
+			bOk = i->Run(v0);
+			if (!bOk)
+			{
+				break;
+			}
+		}
+		return bOk;
+	}
+};
+class Scope:
+	public Block
+{//variables scope support, for Module and Func/Class
+protected:
+	std::unordered_map < std::string, Value> _VarMap;
+public:
+	Scope() :
+		Block()
+	{
+	}
+	bool Have(std::string& name)
+	{
+		auto it = _VarMap.find(name);
+		return (it != _VarMap.end());
+	}
+	bool Set(std::string& name, Value& v)
+	{
+		_VarMap[name] = v;
+		return true;
+	}
+	bool Get(std::string& name, Value& v)
+	{
+		bool bFind = false;
+		auto it = _VarMap.find(name);
+		if (it != _VarMap.end())
+		{
+			v = it->second;
+			bFind = true;
+		}
+		return bFind;
+	}
 };
 class Module :
-	public Block
+	public Scope
 {
 public:
 	Module() :
-		Block()
+		Scope()
 	{
 		SetIndentCount(-1);//then each line will have 0 indent
 	}
 };
 class Func :
-	public Block
+	public Scope
 {
 	Expression* Name = nil;
-	List* Params;
+	List* Params =nil;
 	Expression* RetType = nil;
 public:
-	Func()
+	Func():
+		Scope()
 	{
 		m_type = ObType::Func;
 	}
+	Expression* GetName() { return Name; }
 	void SetName(Expression* n)
 	{
 		Name = n;
+		if (Name)
+		{
+			Name->SetParent(this);
+		}
 	}
 	void SetParams(List* p)
 	{
 		Params = p;
+		if (Params)
+		{
+			Params->SetParent(this);
+		}
 	}
 	void SetRetType(Expression* p)
 	{
 		RetType = p;
+		if (RetType)
+		{
+			RetType->SetParent(this);
+		}
+	}
+	bool Call(List* params,Value& retValue);
+	virtual bool Run(Value& v) override
+	{// func doesn't need to run in module
+	 // but will call by callee
+		return true;
 	}
 };
 }}

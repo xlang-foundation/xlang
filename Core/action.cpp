@@ -56,7 +56,7 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 			op = new AST::BinaryOp(opIndex);
 		}
 		return op;
-	}},
+	},AList(Alias::Add,Alias::Minus,Alias::Multiply)},
 
 	//Python Bitwise Operators --index range[61,66]
 	OpInfo{{"&","|","^","~","<<",">>",}},
@@ -109,7 +109,7 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 	}},
 	OpInfo{{"\t","\r","\\"},[](Parser* p,short opIndex,OpAction* opAct)
 	{
-		auto op = new AST::Operator(opIndex);
+		auto op = new AST::Operator(opIndex,opAct->alias);
 		return op;
 	},AList(Alias::Tab,Alias::CR,Alias::Slash)},
 };

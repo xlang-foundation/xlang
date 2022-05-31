@@ -1,4 +1,9 @@
 def func1(i0:int,i1:int):
+	x =1
+	y=2
+	z=x+y
+	return z
+def func2(i0:int,i1:int):
 	x =i0
 	y=i1
 	z=x+y
