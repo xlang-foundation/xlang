@@ -24,6 +24,10 @@ enum class Alias
 	Add,
 	Minus,
 	Multiply,
+	Return,
+	In,
+	Range,
+	For
 };
 
 }

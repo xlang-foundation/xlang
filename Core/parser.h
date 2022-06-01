@@ -85,6 +85,8 @@ class Parser
 	bool m_NewLine_WillStart = true;
 	int m_TabCountAtLineBegin = 0;
 	std::stack<AST::Block*> m_stackBlocks;
+private:
+	void ResetForNewLine();
 public:
 	void PushBlockStack(AST::Block* b)
 	{

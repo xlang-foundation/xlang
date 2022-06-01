@@ -206,6 +206,29 @@ void Parser::DoOpTop(
 		((AST::BinaryOp*)top)->SetLR(operandL, operandR);
 		operands.push(top);
 	}
+	else if (al == Alias::In)
+	{
+		auto operandR = operands.top();
+		operands.pop();
+		AST::Var* var = dynamic_cast<AST::Var*>(operands.top());
+		operands.pop();
+		((AST::InOp*)top)->Set(var, operandR);
+		operands.push(top);
+	}
+	else if (al == Alias::Range) 
+	{
+		auto operand = operands.top();
+		operands.pop();
+		((AST::Range*)top)->SetR(operand);
+		operands.push(top);
+	}
+	else if (al == Alias::For)
+	{
+		auto operand = operands.top();
+		operands.pop();
+		((AST::For*)top)->SetCondition(operand);
+		operands.push(top);
+	}
 }
 
 /* from https://www.geeksforgeeks.org/expression-evaluation/
@@ -338,32 +361,41 @@ bool Parser::Compile(char* code, int size)
 	return true;
 }
 
+void Parser::ResetForNewLine()
+{
+	m_NewLine_WillStart = true;
+	m_TabCountAtLineBegin = 0;
+}
+
 void Parser::NewLine()
 {
-	short topIdx = m_ops.top()->getOp();
-	if (m_pair_cnt > 0)
-	{//line continue
-		if (OpAct(topIdx).alias == Alias::Slash)
-		{
+	if (!m_ops.empty())
+	{
+		short topIdx = m_ops.top()->getOp();
+		if (m_pair_cnt > 0)
+		{//line continue
+			if (OpAct(topIdx).alias == Alias::Slash)
+			{
+				delete m_ops.top();
+				m_ops.pop();
+			}
+			return;
+		}
+		else if (OpAct(topIdx).alias == Alias::Slash)
+		{//line continue
+			delete m_ops.top();
+			m_ops.pop();
+			return;
+		}
+		else if (OpAct(topIdx).alias == Alias::Colon)
+		{//end block head
 			delete m_ops.top();
 			m_ops.pop();
 		}
-		return;
-	}
-	else if (OpAct(topIdx).alias == Alias::Slash)
-	{//line continue
-		delete m_ops.top();
-		m_ops.pop();
-		return;
-	}
-	else if (OpAct(topIdx).alias == Alias::Colon)
-	{//end block head
-		delete m_ops.top();
-		m_ops.pop();
-	}
-	while (!m_ops.empty())
-	{
-		DoOpTop(m_operands, m_ops);
+		while (!m_ops.empty())
+		{
+			DoOpTop(m_operands, m_ops);
+		}
 	}
 	if (!m_operands.empty() && !m_stackBlocks.empty())
 	{
@@ -400,8 +432,7 @@ void Parser::NewLine()
 			PushBlockStack(pValidBlock);
 		}
 	}
-	m_NewLine_WillStart = true;
-	m_TabCountAtLineBegin = 0;
+	ResetForNewLine();
 }
 void Parser::PairRight(Alias leftOpToMeetAsEnd)
 {
@@ -449,8 +480,13 @@ bool Parser::Run()
 		return false;//empty
 	}
 	AST::Module* pTopModule = (AST::Module* )m_stackBlocks.top();
+	AST::StackFrame* frame = new AST::StackFrame();
+	pTopModule->PushFrame(frame);
+
 	AST::Value v;
 	bool bOK = pTopModule->Run(v);
+	pTopModule->PopFrame();
+	delete frame;
 	return bOK;
 }
 }

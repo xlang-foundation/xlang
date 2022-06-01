@@ -1,11 +1,9 @@
 def func1(i0:int,i1:int):
-	x =1
-	y=2
-	z=x+y
-	return z
-def func2(i0:int,i1:int):
 	x =i0
 	y=i1
 	z=x+y
 	return z
-var1 = func1(10,100)
+var1 =0
+for i in range(10):
+	var1 += func1(i,100)
+print("var1=",var1)

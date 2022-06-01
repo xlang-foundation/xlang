@@ -13,11 +13,26 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 			"not", "or", "pass", "raise", "return", /*26-30*/
 			"try", "while", "with", "yield",/*31-34*/
 	}},
+	OpInfo{{"range"},[](Parser* p,short opIndex,OpAction* opAct)
+	{
+		auto op = new AST::Range(opIndex,opAct->alias);
+		return (AST::Operator*)op;
+	},Alias::Range},
 	OpInfo{{"return"},[](Parser* p,short opIndex,OpAction* opAct)
 	{
-		auto op = new AST::UnaryOp(opIndex);
+		auto op = new AST::UnaryOp(opIndex,opAct->alias);
 		return (AST::Operator*)op;
-	}},
+	},Alias::Return},
+	OpInfo{{"for"},[](Parser* p,short opIndex,OpAction* opAct)
+	{
+		auto op = new AST::For(opIndex,opAct->alias);
+		return (AST::Operator*)op;
+	},Alias::For},
+	OpInfo{{"in"},[](Parser* p,short opIndex,OpAction* opAct)
+	{
+		auto op = new AST::InOp(opIndex,opAct->alias);
+		return (AST::Operator*)op;
+	},Alias::In},
 	OpInfo{{"def"},[](Parser* p,short opIndex,OpAction* opAct) 
 	{
 		auto func = new AST::Func();
@@ -28,7 +43,7 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 			"=","+=","-=","*=","/=","%=","//=","**=","&=","|=","^=",">>=","<<=",
 	},[](Parser* p,short opIndex,OpAction* opAct) 
 	{
-		auto op = new AST::Assign(opIndex);
+		auto op = new AST::Assign(opIndex,opAct->alias);
 		return (AST::Operator*)op;
 	},Alias::None,Precedence_Min},
 	OpInfo{{
@@ -38,7 +53,7 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 			"==","!=",">","<",">=","<=",
 	},[](Parser* p,short opIndex,OpAction* opAct) 
 	{
-		auto op = new AST::BinaryOp(opIndex);
+		auto op = new AST::BinaryOp(opIndex,opAct->alias);
 		return (AST::Operator*)op;
 	}},
 	//set precedence just higher 1 with reqular
@@ -49,11 +64,11 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 		AST::Operator* op = nil;
 		if (p->PreTokenIsOp())
 		{
-			op = new AST::UnaryOp(opIndex);
+			op = new AST::UnaryOp(opIndex, opAct->alias);
 		}
 		else
 		{
-			op = new AST::BinaryOp(opIndex);
+			op = new AST::BinaryOp(opIndex, opAct->alias);
 		}
 		return op;
 	},AList(Alias::Add,Alias::Minus,Alias::Multiply)},
@@ -65,7 +80,7 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 		AST::Operator* op = nil;
 		if (p->PreTokenIsOp())
 		{
-			op = new AST::UnaryOp(opIndex);
+			op = new AST::UnaryOp(opIndex, opAct->alias);
 		}
 		else
 		{
@@ -97,10 +112,11 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 	}},
 	OpInfo{{":",".",","},[](Parser* p,short opIndex,OpAction* opAct) 
 	{
-		auto op = new AST::BinaryOp(opIndex);
+		auto op = new AST::BinaryOp(opIndex,opAct->alias);
 		return (AST::Operator*)op;
 	},AList(Alias::Colon,Alias::Dot,Alias::Comma)},
 	//change precedence for ':'
+	//OpInfo{{"in"},nil,Alias::In,Precedence_Reqular + 1},
 	OpInfo{{":"},nil,Alias::None,Precedence_Reqular + 2},
 	OpInfo{{"\n"},[](Parser* p,short opIndex,OpAction* opAct) 
 	{

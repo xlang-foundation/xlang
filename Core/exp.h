@@ -4,199 +4,20 @@
 #include "def.h"
 #include <string>
 #include <vector>
+#include <stack>
 #include <unordered_map>
+#include "value.h"
+#include "stackframe.h"
 
 namespace XPython {namespace AST{
-enum class ValueType
-{
-	None,
-	Int64,
-	Double,
-	Pointer,
-	Str,
-
-};
-class Value
-{
-	int flags = 0;
-	ValueType t;
-	union 
-	{
-		long long l;
-		double d;
-		void* p;
-	} x;
-public:
-	double GetDouble()
-	{
-		return x.d;
-	}
-	long long GetLongLong()
-	{
-		return x.l;
-	}
-	void SetF(int f)
-	{
-		flags = f;
-	}
-	int GetF() { return flags; }
-	Value()
-	{
-		t = ValueType::None;
-		x.l = 0;
-	}
-	Value(long long l)
-	{
-		t = ValueType::Int64;
-		x.l = l;
-	}
-	Value(double d)
-	{
-		t = ValueType::Double;
-		x.d = d;
-	}
-	Value(char* s,int size)
-	{
-		t = ValueType::Str;
-		flags = size;
-		x.p = s;
-	}
-	Value(void* p)
-	{
-		t = ValueType::Pointer;
-		x.p = p;
-	}
-	Value(Value& v)
-	{
-		flags = v.flags;
-		t = v.t;
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			x.l = v.x.l;
-			break;
-		case ValueType::Double:
-			x.d = v.x.d;
-			break;
-		case ValueType::Pointer:
-			x.p = v.x.p;
-			break;
-		default:
-			break;
-		}
-	}
-	Value& operator+=(const Value& rhs)
-	{
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			x.l += rhs.x.l;
-			break;
-		case ValueType::Double:
-			if (rhs.t == ValueType::Int64)
-			{
-				x.d += rhs.x.l;
-			}
-			else
-			{
-				x.d += rhs.x.d;
-			}
-			break;
-		case ValueType::Pointer:
-			break;
-		default:
-			break;
-		}
-		return *this;
-	}
-	Value& operator*=(const Value& rhs)
-	{
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			if (rhs.t == ValueType::Int64)
-			{
-				x.l *= rhs.x.l;
-			}
-			else
-			{
-				x.l *= (long long)rhs.x.d;
-			}
-			break;
-		case ValueType::Double:
-			if (rhs.t == ValueType::Int64)
-			{
-				x.d *= rhs.x.l;
-			}
-			else
-			{
-				x.d *= rhs.x.d;
-			}
-			break;
-		case ValueType::Pointer:
-			break;
-		default:
-			break;
-		}
-		return *this;
-	}
-	Value& operator-=(const Value& rhs)
-	{
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			x.l -= rhs.x.l;
-			break;
-		case ValueType::Double:
-			x.d -= rhs.x.d;
-			break;
-		case ValueType::Pointer:
-			break;
-		default:
-			break;
-		}
-		return *this;
-	}
-	Value& operator/=(const Value& rhs)
-	{
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			x.l /= rhs.x.l;
-			break;
-		case ValueType::Double:
-			x.d /= rhs.x.d;
-			break;
-		case ValueType::Pointer:
-			break;
-		default:
-			break;
-		}
-		return *this;
-	}
-	friend Value& operator+(Value lhs,const Value& rhs)
-	{
-		lhs += rhs;
-		return lhs;
-	}
-};
-
+typedef AST::Value(*U_FUNC) (...);
 enum class ObType
 {
 	Base,
 	Assign,
 	BinaryOp,
 	UnaryOp,
+	Range,
 	Var,
 	Number,
 	Double,
@@ -207,6 +28,8 @@ enum class ObType
 };
 
 class Scope;
+class Var;
+class Func;
 class Expression
 {
 protected:
@@ -216,6 +39,7 @@ public:
 	{
 	}
 	Scope* FindScope();
+	Func* FindFuncByName(Var* name);
 	void SetParent(Expression* p)
 	{
 		m_parent = p;
@@ -265,9 +89,9 @@ class Assign:
 	Expression* L=nil;
 	Expression* R =nil;
 public:
-	Assign(short op)
+	Assign(short op, Alias a):
+		Operator(op,a)
 	{
-		Op = op;
 		m_type = ObType::Assign;
 	}
 	void SetLR(Expression* l, Expression* r)
@@ -300,9 +124,9 @@ class BinaryOp :
 	Expression* L=nil;
 	Expression* R = nil;
 public:
-	BinaryOp(short op)
+	BinaryOp(short op, Alias a):
+		Operator(op,a)
 	{
-		Op = op;
 		m_type = ObType::BinaryOp;
 	}
 	void SetLR(Expression* l, Expression* r)
@@ -369,7 +193,6 @@ public:
 	PairOp(short opIndex,Alias a) :
 		Operator(opIndex,a)
 	{
-		A = a;
 		m_type = ObType::Pair;
 	}
 	void SetL(Expression* l)
@@ -397,9 +220,9 @@ class UnaryOp :
 {
 	Expression* R = nil;
 public:
-	UnaryOp(short op)
+	UnaryOp(short op, Alias a):
+		Operator(op,a)
 	{
-		Op = op;
 		m_type = ObType::UnaryOp;
 	}
 	void SetR(Expression* r)
@@ -407,27 +230,30 @@ public:
 		R = r;
 		if(R) R->SetParent(this);
 	}
-	virtual bool Run(Value& v) override
+	virtual bool Run(Value& v) override;
+};
+class Range :
+	public Operator
+{
+	Expression* R = nil;
+	bool m_evaluated = false;
+	long long m_start=0;
+	long long m_stop =0;
+	long long m_step = 1;
+
+	bool Eval();
+public:
+	Range(short op, Alias a) :
+		Operator(op, a)
 	{
-		Value v_r;
-		if (!R->Run(v_r))
-		{
-			return false;
-		}
-		switch (A)
-		{
-		case Alias::Add:
-			//+ keep 
-			break;
-		case Alias::Minus:
-			v = Value((long long)0);//set to 0
-			v-= v_r;
-			break;
-		default:
-			break;
-		}
-		return true;
+		m_type = ObType::Range;
 	}
+	void SetR(Expression* r)
+	{
+		R = r;
+		if (R) R->SetParent(this);
+	}
+	virtual bool Run(Value& v) override;
 };
 
 class Var:
@@ -504,6 +330,10 @@ public:
 	{
 		m_type = ObType::List;
 	}
+	std::vector<Expression*>& GetList()
+	{
+		return list;
+	}
 	List(Expression* item):List()
 	{
 		list.push_back(item);
@@ -545,6 +375,8 @@ public:
 		}
 		m_type = ObType::Param;
 	}
+	inline Expression* GetName() { return Name; }
+	inline Expression* GetType() { return Type; }
 };
 class Func;
 class Block :
@@ -579,36 +411,78 @@ public:
 		return bOk;
 	}
 };
+class InOp :
+	public Operator
+{
+	Expression* m_var = nil;
+	Expression* m_exp = nil;
+public:
+	InOp(short op, Alias a) :
+		Operator(op, a)
+	{
+	}
+	void Set(Expression* var, Expression* e)
+	{
+		m_var = var;
+		m_exp = e;
+		if (m_var) m_var->SetParent(this);
+		if (m_exp) m_exp->SetParent(this);
+	}
+	virtual bool Run(Value& v) override;
+};
+class For :
+	public Block
+{
+	Expression* m_condition = nil;
+public:
+	For(short op, Alias a)
+	{
+		Op = op;
+		A = a;
+	}
+	void SetCondition(Expression* e)
+	{
+		m_condition = e;
+	}
+	virtual bool Run(Value& v) override;
+};
 class Scope:
 	public Block
 {//variables scope support, for Module and Func/Class
 protected:
-	std::unordered_map < std::string, Value> _VarMap;
+	std::stack<StackFrame*> mStackFrames;
 public:
 	Scope() :
 		Block()
 	{
 	}
+	void PushFrame(StackFrame* frame)
+	{
+		mStackFrames.push(frame);
+	}
+	StackFrame* PopFrame()
+	{
+		return mStackFrames.empty() ? nil : mStackFrames.top();
+	}
 	bool Have(std::string& name)
 	{
-		auto it = _VarMap.find(name);
-		return (it != _VarMap.end());
+		return mStackFrames.empty()?false:
+			mStackFrames.top()->Have(name);
 	}
 	bool Set(std::string& name, Value& v)
 	{
-		_VarMap[name] = v;
-		return true;
+		return mStackFrames.empty() ? false :
+			mStackFrames.top()->Set(name,v);
+	}
+	bool SetReturn(Value& v)
+	{
+		return mStackFrames.empty() ? false :
+			mStackFrames.top()->SetReturn(v);
 	}
 	bool Get(std::string& name, Value& v)
 	{
-		bool bFind = false;
-		auto it = _VarMap.find(name);
-		if (it != _VarMap.end())
-		{
-			v = it->second;
-			bFind = true;
-		}
-		return bFind;
+		return mStackFrames.empty() ? false :
+			mStackFrames.top()->Get(name, v);
 	}
 };
 class Module :
@@ -627,6 +501,7 @@ class Func :
 	Expression* Name = nil;
 	List* Params =nil;
 	Expression* RetType = nil;
+	bool SetParamsIntoFrame(StackFrame* frame, List* param_values);
 public:
 	Func():
 		Scope()
@@ -658,11 +533,24 @@ public:
 			RetType->SetParent(this);
 		}
 	}
-	bool Call(List* params,Value& retValue);
+	virtual bool Call(List* params,Value& retValue);
 	virtual bool Run(Value& v) override
 	{// func doesn't need to run in module
 	 // but will call by callee
 		return true;
 	}
+};
+class ExternFunc
+	:public Func
+{
+	std::string m_funcName;
+	U_FUNC m_func;
+public:
+	ExternFunc(std::string& funcName,U_FUNC func)
+	{
+		m_funcName = funcName;
+		m_func = func;
+	}
+	virtual bool Call(List* params, Value& retValue) override;
 };
 }}
