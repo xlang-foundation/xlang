@@ -169,7 +169,10 @@ public:
 		case ValueType::None:
 			break;
 		case ValueType::Int64:
-			x.l /= rhs.x.l;
+			if (rhs.x.l != 0)
+			{
+				x.l /= rhs.x.l;
+			}
 			break;
 		case ValueType::Double:
 			x.d /= rhs.x.d;

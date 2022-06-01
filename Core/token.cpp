@@ -20,7 +20,7 @@ bool Token::MatchInTree(char c)
 	}
 	return bMatched;
 }
-short Token::Scan(String& id)
+short Token::Scan(String& id, int& leadingSpaceCnt)
 {
 	static const char ops[] = "~`!@#$%^&*()-+={}[]|\\:;\"'<>,.?/\t\r\n";
 	id.s = nil;
@@ -29,6 +29,7 @@ short Token::Scan(String& id)
 	short retIndex = -1;
 	if (LCT_EOS == _context.lct)
 	{
+		leadingSpaceCnt = _context.leadingSpaceCount;
 		return TokenEOS;
 	}
 	else if (LCT_Str == _context.lct || LCT_Str2 == _context.lct)
@@ -40,10 +41,12 @@ short Token::Scan(String& id)
 			c = GetChar();
 		} while (c != begin_c && c != 0);
 		id.size = int(_context.spos - id.s - 1);
+		leadingSpaceCnt = _context.leadingSpaceCount;
 
 		//reset for next
 		ResetToRoot();
 		_context.token_start = _context.spos;
+		_context.leadingSpaceCount = 0;
 		_context.lct = LCT_None;
 
 		return TokenStr;
@@ -96,16 +99,21 @@ short Token::Scan(String& id)
 			id.s = nil;
 			id.size = 0;
 		}
+		leadingSpaceCnt = _context.leadingSpaceCount;
 		//prepare for next
 		ResetToRoot();
 		_context.token_start = _context.spos - 1;
+		_context.leadingSpaceCount = 0;
 	}
 	if (c == ' ')
 	{
+		int sp_cnt = 0;
 		do
 		{
+			sp_cnt++;
 			c = GetChar();
 		} while (c == ' ');
+		_context.leadingSpaceCount = sp_cnt;
 		if (c == 0)
 		{//end
 			lct = LCT_EOS;
@@ -150,6 +158,7 @@ short Token::Scan(String& id)
 					id.s = nil;
 					id.size = 0;
 				}
+				leadingSpaceCnt = _context.leadingSpaceCount;
 				_context.token_start = _context.spos - 1;
 			}
 			ResetToRoot();

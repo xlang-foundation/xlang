@@ -23,6 +23,7 @@ struct CoreContext
 	//Cursor
 	char* spos;//source pos
 	short curNode;//offset in kwTree
+	int leadingSpaceCount = 0;
 	LastCharType lct;
 	char* token_start;
 };
@@ -75,7 +76,7 @@ class Token
 		}
 		return bYes;
 	}
-	short Scan(String& id);
+	short Scan(String& id,int& leadingSpaceCnt);
 
 public:
 	Token(short* kwTree)
@@ -91,12 +92,13 @@ public:
 		_context.src_code_size = size;
 		_context.spos = _context.src_code;
 	}
-	short Get(String& tk)
+	short Get(String& tk, int& leadingSpaceCnt)
 	{
 		short retIndex = -1;
+		leadingSpaceCnt = 0;
 		do
 		{
-			retIndex = Scan(tk);
+			retIndex = Scan(tk, leadingSpaceCnt);
 		} while (retIndex == -1 || 
 			(retIndex!= TokenEOS && tk.size ==0));
 

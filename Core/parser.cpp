@@ -273,7 +273,12 @@ bool Parser::Compile(char* code, int size)
 	while (true)
 	{
 		String s;
-		short idx = mToken->Get(s);
+		int leadingSpaceCnt = 0;
+		short idx = mToken->Get(s, leadingSpaceCnt);
+		if (m_NewLine_WillStart)
+		{
+			m_LeadingSpaceCountAtLineBegin += leadingSpaceCnt;
+		}
 		if (idx == TokenEOS)
 		{
 			m_NewLine_WillStart = false;
@@ -358,6 +363,10 @@ bool Parser::Compile(char* code, int size)
 		}
 	}
 	NewLine();//just call it to process the last line
+	while (m_stackBlocks.size() > 1)
+	{
+		m_stackBlocks.pop();//only keep top one
+	}
 	return true;
 }
 
@@ -365,6 +374,7 @@ void Parser::ResetForNewLine()
 {
 	m_NewLine_WillStart = true;
 	m_TabCountAtLineBegin = 0;
+	m_LeadingSpaceCountAtLineBegin = 0;
 }
 
 void Parser::NewLine()
@@ -402,18 +412,44 @@ void Parser::NewLine()
 		auto line = m_operands.top();
 		m_operands.pop();
 
+		AST::Indent lineIndent = {
+			m_TabCountAtLineBegin,m_LeadingSpaceCountAtLineBegin };
 		auto curBlock = m_stackBlocks.top();
-		int indentCnt_CurBlock = curBlock->GetIndentCount();
-		if (m_TabCountAtLineBegin == indentCnt_CurBlock + 1)
+		auto indentCnt_CurBlock = curBlock->GetIndentCount();
+		if (indentCnt_CurBlock < lineIndent)
 		{
-			curBlock->Add(line);
+			auto child_indent_CurBlock = 
+				curBlock->GetChildIndentCount();
+			if (child_indent_CurBlock == AST::Indent{-1, -1})
+			{
+				curBlock->SetChildIndentCount(lineIndent);
+				curBlock->Add(line);
+			}
+			else if (child_indent_CurBlock == lineIndent)
+			{
+				curBlock->Add(line);
+			}
+			else
+			{
+				//todo:error
+			}
 		}
-		else if(m_TabCountAtLineBegin == indentCnt_CurBlock)
+		else
 		{//go back to parent
 			m_stackBlocks.pop();
-			if (!m_stackBlocks.empty())
+			curBlock = nil;
+			while (!m_stackBlocks.empty())
 			{
 				curBlock = m_stackBlocks.top();
+				auto indentCnt = curBlock->GetChildIndentCount();
+				//must already have child lines or block
+				if (indentCnt == lineIndent)
+				{
+					break;
+				}
+			}
+			if (curBlock!=nil)
+			{
 				curBlock->Add(line);
 			}
 			else
@@ -421,14 +457,11 @@ void Parser::NewLine()
 				//TODO:: error
 			}
 		}
-		else
-		{
-			//TODO:Indent error
-		}
 		//check if this is a block
 		AST::Block* pValidBlock = dynamic_cast<AST::Block*>(line);
 		if (pValidBlock)
 		{
+			pValidBlock->SetIndentCount(lineIndent);
 			PushBlockStack(pValidBlock);
 		}
 	}

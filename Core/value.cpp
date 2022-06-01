@@ -10,7 +10,7 @@ namespace XPython {namespace AST {
 		case ValueType::Int64:
 		{
 			char v[1000];
-			snprintf(v, sizeof(v), "%llx",x.l);
+			snprintf(v, sizeof(v), "%lld",x.l);
 			str = v;
 		}
 			break;

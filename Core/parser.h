@@ -84,6 +84,7 @@ class Parser
 	//below,before meet first non-tab char,it is true 
 	bool m_NewLine_WillStart = true;
 	int m_TabCountAtLineBegin = 0;
+	int m_LeadingSpaceCountAtLineBegin = 0;
 	std::stack<AST::Block*> m_stackBlocks;
 private:
 	void ResetForNewLine();

@@ -18,6 +18,10 @@ void RunCore(std::string& code)
 int main(int argc, char* argv[])
 {
 	std::string pyFileName = "C:/Dev/XPython/test/test2.py";
+	if (argc >= 2)
+	{
+		pyFileName = argv[1];
+	}
 	std::ifstream pyFile(pyFileName);
 	std::string code((std::istreambuf_iterator<char>(pyFile)),
 		std::istreambuf_iterator<char>());

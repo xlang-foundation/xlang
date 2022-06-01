@@ -49,9 +49,16 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 	OpInfo{{
 			//Python Arithmetic Operators --index range[48,54]
 			"+","-","*","/","%","**","//",
+	},[](Parser* p,short opIndex,OpAction* opAct) 
+	{
+		auto op = new AST::BinaryOp(opIndex,opAct->alias);
+		return (AST::Operator*)op;
+	},AList(Alias::Add,Alias::Minus,Alias::Multiply,Alias::Div,
+		Alias::Modulus,Alias::Exponentiation,Alias::FloorDivision)},
+	OpInfo{{
 			//Python Comparison Operators --index range[55,60]
 			"==","!=",">","<",">=","<=",
-	},[](Parser* p,short opIndex,OpAction* opAct) 
+	},[](Parser* p,short opIndex,OpAction* opAct)
 	{
 		auto op = new AST::BinaryOp(opIndex,opAct->alias);
 		return (AST::Operator*)op;
@@ -71,7 +78,7 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 			op = new AST::BinaryOp(opIndex, opAct->alias);
 		}
 		return op;
-	},AList(Alias::Add,Alias::Minus,Alias::Multiply)},
+	}},
 
 	//Python Bitwise Operators --index range[61,66]
 	OpInfo{{"&","|","^","~","<<",">>",}},

@@ -143,7 +143,17 @@ bool PairOp::Run(Value& v)
 			if (pFunc)
 			{
 				Value retValue;
-				if (pFunc->Call((List*)R, retValue))
+				List* inParam = nil;
+				if (R->m_type != ObType::List)
+				{
+					inParam = new List(R);
+					inParam->SetParent(this);
+				}
+				else
+				{
+					inParam = (List*)R;
+				}
+				if (pFunc->Call(inParam, retValue))
 				{//v is return value if changed
 					v = retValue;
 					bOK = true;

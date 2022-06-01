@@ -166,6 +166,10 @@ public:
 			v_l *= v_r;
 			v = v_l;
 			break;
+		case Alias::Div:
+			v_l /= v_r;
+			v = v_l;
+			break;
 		case Alias::Dot:
 		{
 			int cnt = v_r.GetF();
@@ -379,10 +383,32 @@ public:
 	inline Expression* GetType() { return Type; }
 };
 class Func;
+
+struct Indent
+{
+	int tab_cnt =0;
+	int space_cnt =0;
+	bool operator>=(const Indent& other)
+	{
+		return (tab_cnt >= other.tab_cnt) 
+			&& (space_cnt >= other.space_cnt);
+	}
+	bool operator==(const Indent& other)
+	{
+		return (tab_cnt == other.tab_cnt)
+			&& (space_cnt == other.space_cnt);
+	}
+	bool operator<(const Indent& other)
+	{
+		return (tab_cnt <= other.tab_cnt && space_cnt < other.space_cnt)
+			|| (tab_cnt < other.tab_cnt && space_cnt <= other.space_cnt);
+	}
+};
 class Block :
 	public Operator
 {
-	int IndentCount = 0;
+	Indent IndentCount = { -1,-1 };
+	Indent ChildIndentCount = { -1,-1 };
 	std::vector<Expression*> Body;
 public:
 	Block() :Operator()
@@ -394,8 +420,10 @@ public:
 		if(item) item->SetParent(this);
 	}
 	virtual Func* FindFuncByName(Var* name);
-	inline int GetIndentCount() { return IndentCount; }
-	inline void SetIndentCount(int cnt) { IndentCount = cnt; }
+	inline Indent GetIndentCount() { return IndentCount; }
+	inline Indent GetChildIndentCount() { return ChildIndentCount; }
+	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
+	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
 	virtual bool Run(Value& v) override
 	{
 		bool bOk = true;
@@ -443,6 +471,10 @@ public:
 	void SetCondition(Expression* e)
 	{
 		m_condition = e;
+		if (m_condition)
+		{
+			m_condition->SetParent(this);
+		}
 	}
 	virtual bool Run(Value& v) override;
 };
@@ -492,7 +524,7 @@ public:
 	Module() :
 		Scope()
 	{
-		SetIndentCount(-1);//then each line will have 0 indent
+		SetIndentCount({ -1,-1 });//then each line will have 0 indent
 	}
 };
 class Func :
