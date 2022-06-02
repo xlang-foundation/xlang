@@ -62,7 +62,8 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 	{
 		auto op = new AST::BinaryOp(opIndex,opAct->alias);
 		return (AST::Operator*)op;
-	}},
+	},AList(Alias::Equal,Alias::NotEqual,Alias::Greater,
+		Alias::Less,Alias::GreaterEqual,Alias::LessEqual)},
 	//set precedence just higher 1 with reqular
 	OpInfo{{"*","/","%","**","//"},nil,Alias::None,Precedence_Reqular+1},
 	//Override for +-* which may be an unary Operator

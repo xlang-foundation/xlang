@@ -9,9 +9,16 @@ namespace XPython {namespace AST {
 			break;
 		case ValueType::Int64:
 		{
-			char v[1000];
-			snprintf(v, sizeof(v), "%lld",x.l);
-			str = v;
+			if (flags == BOOL_FLAG)
+			{
+				str = (x.l == 1) ? "True" : "False";
+			}
+			else
+			{
+				char v[1000];
+				snprintf(v, sizeof(v), "%lld", x.l);
+				str = v;
+			}
 		}
 			break;
 		case ValueType::Double:

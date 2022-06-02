@@ -12,6 +12,58 @@ enum class ValueType
 	Str,
 
 };
+
+#define ToDouble(v) \
+	((v.t == ValueType::Int64) ? (double)v.x.l:((v.t == ValueType::Double)?v.x.d:0.0))
+#define ToInt64(v) \
+	((v.t == ValueType::Int64) ? v.x.l:((v.t == ValueType::Double)?(long long)v.x.d:0))
+
+
+#define ARITH_OP(op)\
+Value& operator op (const Value& r)\
+{\
+	switch (t)\
+	{\
+	case ValueType::None:\
+		break;\
+	case ValueType::Int64:\
+		x.l op ToInt64(r);\
+		break;\
+	case ValueType::Double:\
+		x.d op ToDouble(r);\
+		break;\
+	case ValueType::Pointer:\
+		break;\
+	default:\
+		break;\
+	}\
+	return *this;\
+}
+
+
+#define COMPARE_OP(op)\
+bool operator op (const Value& r)\
+{\
+	bool bRet = false;\
+	switch (t)\
+	{\
+	case ValueType::None:\
+		break;\
+	case ValueType::Int64:\
+		bRet = (x.l op ToInt64(r));\
+		break;\
+	case ValueType::Double:\
+		bRet = (x.d op ToDouble(r));\
+		break;\
+	case ValueType::Pointer:\
+		break;\
+	default:\
+		break;\
+	}\
+	return bRet;\
+}
+
+#define BOOL_FLAG -10
 class Value
 {
 	int flags = 0;
@@ -21,7 +73,7 @@ class Value
 		long long l;
 		double d;
 		void* p;
-	} x;
+	}x;
 public:
 	double GetDouble()
 	{
@@ -35,12 +87,40 @@ public:
 	{
 		flags = f;
 	}
+	inline bool IsZero()
+	{
+		bool bRet = false;
+		switch (t)
+		{
+		case ValueType::None:
+			bRet = true;
+			break;
+		case ValueType::Int64:
+			bRet = (x.l == 0);
+			break;
+		case ValueType::Double:
+			bRet = (x.d == 0);
+			break;
+		case ValueType::Pointer:
+			bRet = (x.p == 0);
+			break;
+		default:
+			break;
+		}
+		return bRet;
+	}
 	ValueType GetType() { return t; }
 	int GetF() { return flags; }
 	Value()
 	{
 		t = ValueType::None;
 		x.l = 0;
+	}
+	Value(bool b)
+	{//use 1 as true and 0 as false, set flag to -1
+		t = ValueType::Int64;
+		flags = BOOL_FLAG;
+		x.l = b ? 1 : 0;
 	}
 	Value(long long l)
 	{
@@ -72,10 +152,10 @@ public:
 		case ValueType::None:
 			break;
 		case ValueType::Int64:
-			x.l = v.x.l;
+			x.l = ToInt64(v);
 			break;
 		case ValueType::Double:
-			x.d = v.x.d;
+			x.d = ToDouble(v);
 			break;
 		case ValueType::Pointer:
 			x.p = v.x.p;
@@ -84,111 +164,17 @@ public:
 			break;
 		}
 	}
-	Value& operator+=(const Value& rhs)
-	{
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			x.l += rhs.x.l;
-			break;
-		case ValueType::Double:
-			if (rhs.t == ValueType::Int64)
-			{
-				x.d += rhs.x.l;
-			}
-			else
-			{
-				x.d += rhs.x.d;
-			}
-			break;
-		case ValueType::Pointer:
-			break;
-		default:
-			break;
-		}
-		return *this;
-	}
-	Value& operator*=(const Value& rhs)
-	{
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			if (rhs.t == ValueType::Int64)
-			{
-				x.l *= rhs.x.l;
-			}
-			else
-			{
-				x.l *= (long long)rhs.x.d;
-			}
-			break;
-		case ValueType::Double:
-			if (rhs.t == ValueType::Int64)
-			{
-				x.d *= rhs.x.l;
-			}
-			else
-			{
-				x.d *= rhs.x.d;
-			}
-			break;
-		case ValueType::Pointer:
-			break;
-		default:
-			break;
-		}
-		return *this;
-	}
-	Value& operator-=(const Value& rhs)
-	{
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			x.l -= rhs.x.l;
-			break;
-		case ValueType::Double:
-			x.d -= rhs.x.d;
-			break;
-		case ValueType::Pointer:
-			break;
-		default:
-			break;
-		}
-		return *this;
-	}
-	Value& operator/=(const Value& rhs)
-	{
-		switch (t)
-		{
-		case ValueType::None:
-			break;
-		case ValueType::Int64:
-			if (rhs.x.l != 0)
-			{
-				x.l /= rhs.x.l;
-			}
-			break;
-		case ValueType::Double:
-			x.d /= rhs.x.d;
-			break;
-		case ValueType::Pointer:
-			break;
-		default:
-			break;
-		}
-		return *this;
-	}
-	friend Value& operator+(Value lhs, const Value& rhs)
-	{
-		lhs += rhs;
-		return lhs;
-	}
+	ARITH_OP(+= );
+	ARITH_OP(-= );
+	ARITH_OP(*= );
+	ARITH_OP(/= );
+	COMPARE_OP(==);
+	COMPARE_OP(!=);
+	COMPARE_OP(>);
+	COMPARE_OP(<);
+	COMPARE_OP(>=);
+	COMPARE_OP(<=);
+
 	std::string ToString();
 };
 }

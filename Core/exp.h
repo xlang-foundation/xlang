@@ -152,6 +152,7 @@ public:
 		{
 			return false;
 		}
+		bool bRet = true;
 		switch (A)
 		{
 		case Alias::Add:
@@ -167,8 +168,33 @@ public:
 			v = v_l;
 			break;
 		case Alias::Div:
-			v_l /= v_r;
-			v = v_l;
+			if (!v_r.IsZero())
+			{
+				v_l /= v_r;
+				v = v_l;
+			}
+			else
+			{
+				bRet = false;
+			}
+			break;
+		case Alias::Equal:
+			v = Value(v_l == v_r);
+			break;
+		case Alias::NotEqual:
+			v = Value(v_l != v_r);
+			break;
+		case Alias::Greater:
+			v = Value(v_l > v_r);
+			break;
+		case Alias::Less:
+			v = Value(v_l < v_r);
+			break;
+		case Alias::GreaterEqual:
+			v = Value(v_l >= v_r);
+			break;
+		case Alias::LessEqual:
+			v = Value(v_l <= v_r);
 			break;
 		case Alias::Dot:
 		{
@@ -185,7 +211,7 @@ public:
 		default:
 			break;
 		}
-		return true;
+		return bRet;
 	}
 };
 class PairOp :

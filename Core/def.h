@@ -31,7 +31,13 @@ enum class Alias
 	Return,
 	In,
 	Range,
-	For
+	For,
+	Equal,
+	NotEqual,
+	Greater,
+	Less,
+	GreaterEqual,
+	LessEqual,
 };
 
 }
