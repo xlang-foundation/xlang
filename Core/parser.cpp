@@ -266,7 +266,7 @@ bool Parser::Compile(char* code, int size)
 {
 	mToken->SetStream(code, size);
 	m_pair_cnt = 0;
-	m_PreTokenIsOp = false;
+	reset_preceding_token();
 	//prepare top module for this code
 	AST::Module* pTopModule = new AST::Module();
 	m_stackBlocks.push(pTopModule);
@@ -289,7 +289,7 @@ bool Parser::Compile(char* code, int size)
 			m_NewLine_WillStart = false;
 			AST::Str* v = new AST::Str(s.s, s.size);
 			m_operands.push(v);
-			m_PreTokenIsOp = false;
+			push_preceding_token(idx);
 		}
 		else if (idx == TokenID)
 		{
@@ -315,7 +315,7 @@ bool Parser::Compile(char* code, int size)
 				v = new AST::Var(s);
 			}
 			m_operands.push(v);
-			m_PreTokenIsOp = false;
+			push_preceding_token(idx);
 		}
 		else
 		{//Operator
@@ -354,11 +354,11 @@ bool Parser::Compile(char* code, int size)
 					}
 				}
 				m_ops.push(op);
-				m_PreTokenIsOp = true;
+				push_preceding_token(idx);
 			}
 			else
 			{//may meet ')',']','}', no OP here, already evaluated as an operand
-				m_PreTokenIsOp = false;
+				//push_preceding_token(TokenID);
 			}
 		}
 	}
@@ -388,6 +388,7 @@ void Parser::NewLine()
 			{
 				delete m_ops.top();
 				m_ops.pop();
+				pop_preceding_token();//pop Slash
 			}
 			return;
 		}
@@ -395,6 +396,7 @@ void Parser::NewLine()
 		{//line continue
 			delete m_ops.top();
 			m_ops.pop();
+			pop_preceding_token();//pop Slash
 			return;
 		}
 		else if (OpAct(topIdx).alias == Alias::Colon)
@@ -491,12 +493,14 @@ void Parser::PairRight(Alias leftOpToMeetAsEnd)
 		m_operands.pop();
 		m_operands.push(pPair);
 	}
+	//already evaluated as an operand
+	push_preceding_token(TokenID);
 }
 AST::Operator* Parser::PairLeft(short opIndex,OpAction* opAct)
 {
 	IncPairCnt();
 	auto op = new AST::PairOp(opIndex,opAct->alias);
-	if (!m_PreTokenIsOp)
+	if (!PreTokenIsOp())
 	{//for case func(...),x[...] etc
 		if (!m_operands.empty())
 		{

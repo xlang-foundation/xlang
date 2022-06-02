@@ -4,6 +4,6 @@ def func1(i0:int,i1:int):
 	z=x+y
 	return z
 var1 =0
-for i in range(10):
+for i in range(1000):
 	var1 += func1(i,100)
 print("var1=",var1)

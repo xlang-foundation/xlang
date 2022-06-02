@@ -25,6 +25,7 @@ int main(int argc, char* argv[])
 	std::ifstream pyFile(pyFileName);
 	std::string code((std::istreambuf_iterator<char>(pyFile)),
 		std::istreambuf_iterator<char>());
+	pyFile.close();
 	std::vector<std::pair<std::string, std::string>> params;
 	XPython::Builtin::I().Register("print", nullptr, params);
 	RunCore(code);

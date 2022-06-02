@@ -80,7 +80,29 @@ class Parser
 	std::stack<AST::Expression*> m_operands;
 	std::stack<AST::Operator*> m_ops;
 	int m_pair_cnt = 0;//count for {} () and [],if
-	bool m_PreTokenIsOp = false;
+	//use this stack to keep 3 preceding tokens' index
+	//and if meet slash, will pop one, because slash means line continuing
+	inline void reset_preceding_token()
+	{
+		m_preceding_token_indexstack.clear();
+	}
+	inline void push_preceding_token(short idx)
+	{
+		if (m_preceding_token_indexstack.size() > 3)
+		{
+			m_preceding_token_indexstack.erase(
+				m_preceding_token_indexstack.begin());
+		}
+		m_preceding_token_indexstack.push_back(idx);
+	}
+	inline void pop_preceding_token()
+	{
+		if (m_preceding_token_indexstack.size() > 0)
+		{
+			m_preceding_token_indexstack.pop_back();
+		}
+	}
+	std::vector<short> m_preceding_token_indexstack;
 	//below,before meet first non-tab char,it is true 
 	bool m_NewLine_WillStart = true;
 	int m_TabCountAtLineBegin = 0;
@@ -97,7 +119,17 @@ public:
 	AST::Operator* PairLeft(short opIndex,OpAction* opAct);//For "(","[","{"
 	void PairRight(Alias leftOpToMeetAsEnd); //For ')',']', and '}'
 	inline void IncPairCnt() { m_pair_cnt++; }
-	inline bool PreTokenIsOp() { return m_PreTokenIsOp; }
+	inline bool PreTokenIsOp() 
+	{ 
+		if (m_preceding_token_indexstack.size() == 0)
+		{
+			return false;
+		}
+		else
+		{
+			return m_preceding_token_indexstack[m_preceding_token_indexstack.size() - 1] >= 0;
+		}
+	}
 	inline void DecPairCnt() { m_pair_cnt--; }
 	inline void PushExp(AST::Expression* exp)
 	{

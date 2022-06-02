@@ -160,6 +160,10 @@ bool PairOp::Run(Value& v)
 				}
 			}
 		}
+		else if(R)
+		{//like (x+1), just need to use R to eval
+			bOK = R->Run(v);
+		}
 	}
 	return bOK;
 }
