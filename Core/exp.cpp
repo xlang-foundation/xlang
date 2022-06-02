@@ -74,6 +74,9 @@ bool UnaryOp::Run(Value& v)
 		v = Value((long long)0);//set to 0
 		v -= v_r;
 		break;
+	case Alias::Not:
+		v = Value(v_r.IsZero());
+		break;
 	case Alias::Return:
 	{
 		Scope* pScope = FindScope();
@@ -83,6 +86,7 @@ bool UnaryOp::Run(Value& v)
 		}
 	}
 	break;
+
 	default:
 		break;
 	}
@@ -167,7 +171,19 @@ bool PairOp::Run(Value& v)
 	}
 	return bOK;
 }
-
+void Block::Add(Expression* item)
+{
+	if (Body.size() > 0)
+	{//for if elif else 
+		Expression* pLastExp = Body[Body.size() - 1];
+		if (pLastExp->EatMe(item))
+		{
+			return;
+		}
+	}
+	Body.push_back(item);
+	if (item) item->SetParent(this);
+}
 Func* Block::FindFuncByName(Var* name)
 {
 	Func* func = nil;
@@ -232,7 +248,28 @@ bool ExternFunc::Call(List* params, Value& retValue)
 	}
 	return true;
 }
-
+bool While::Run(Value& v)
+{
+	if (m_condition == nil)
+	{
+		return false;
+	}
+	Value v0;
+	while (true)
+	{
+		Value v0;
+		bool bOK = m_condition->Run(v0);
+		if (bOK && v0 == Value(true))
+		{
+			Block::Run(v);
+		}
+		else
+		{
+			break;
+		}
+	}
+	return true;
+}
 bool For::Run(Value& v)
 {
 	Value v0;
@@ -312,5 +349,54 @@ bool Range::Run(Value& v)
 	}
 	return (v.GetLongLong()<m_stop);
 }
+bool If::EatMe(Expression* other)
+{
+	If* elseIf = dynamic_cast<If*>(other);
+	if (elseIf)
+	{
+		If* p = this;
+		If* n = m_next;
+		while (n != nil)
+		{
+			p = n;
+			n = n->m_next;
+		}
+		p->m_next = elseIf;
+		elseIf->SetParent(p);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+bool If::Run(Value& v)
+{
+	bool bRet = true;
+	bool bCanRun = false;
+	if (m_condition)
+	{
+		Value v0;
+		bool bOK = m_condition->Run(v0);
+		if (bOK && v0 == Value(true))
+		{
+			bCanRun = true;
+		}
+	}
+	else
+	{//for Else in if 
+		bCanRun = true;
+	}
+	if (bCanRun)
+	{
+		bRet = Block::Run(v);
+	}
+	else if(m_next)
+	{
+		bRet = m_next->Run(v);
+	}
+	return bRet;
+}
+
 }
 }

@@ -28,6 +28,16 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 		auto op = new AST::For(opIndex,opAct->alias);
 		return (AST::Operator*)op;
 	},Alias::For},
+	OpInfo{{"while"},[](Parser* p,short opIndex,OpAction* opAct)
+	{
+		auto op = new AST::While(opIndex,opAct->alias);
+		return (AST::Operator*)op;
+	},Alias::While},
+	OpInfo{{"if","elif","else"},[](Parser* p,short opIndex,OpAction* opAct)
+	{
+		auto op = new AST::If(opIndex,opAct->alias);
+		return (AST::Operator*)op;
+	},AList(Alias::If,Alias::Elif,Alias::Else)},
 	OpInfo{{"in"},[](Parser* p,short opIndex,OpAction* opAct)
 	{
 		auto op = new AST::InOp(opIndex,opAct->alias);
@@ -58,12 +68,15 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 	OpInfo{{
 			//Python Comparison Operators --index range[55,60]
 			"==","!=",">","<",">=","<=",
+			//Python Logical  Operators
+			"and","or",
 	},[](Parser* p,short opIndex,OpAction* opAct)
 	{
 		auto op = new AST::BinaryOp(opIndex,opAct->alias);
 		return (AST::Operator*)op;
 	},AList(Alias::Equal,Alias::NotEqual,Alias::Greater,
-		Alias::Less,Alias::GreaterEqual,Alias::LessEqual)},
+		Alias::Less,Alias::GreaterEqual,Alias::LessEqual,
+		Alias::And,Alias::Or)},
 	//set precedence just higher 1 with reqular
 	OpInfo{{"*","/","%","**","//"},nil,Alias::None,Precedence_Reqular+1},
 	//Override for +-* which may be an unary Operator
@@ -83,7 +96,7 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 
 	//Python Bitwise Operators --index range[61,66]
 	OpInfo{{"&","|","^","~","<<",">>",}},
-	OpInfo{{"~"},[](Parser* p,short opIndex,OpAction* opAct)
+	OpInfo{{"~","not"},[](Parser* p,short opIndex,OpAction* opAct)
 	{
 		AST::Operator* op = nil;
 		if (p->PreTokenIsOp())
@@ -95,7 +108,7 @@ std::vector<XPython::OpInfo> XPython::Parser::OPList = {
 			//error
 		}
 		return op;
-	},Alias::Invert},
+	},AList(Alias::Invert,Alias::Not)},
 	OpInfo{{"(","[","{"},[](Parser* p,short opIndex,OpAction* opAct) 
 	{
 		return p->PairLeft(opIndex,opAct);

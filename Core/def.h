@@ -32,12 +32,17 @@ enum class Alias
 	In,
 	Range,
 	For,
+	While,
+	If,Elif,Else,
 	Equal,
 	NotEqual,
 	Greater,
 	Less,
 	GreaterEqual,
 	LessEqual,
+	Not,
+	And,
+	Or,
 };
 
 }

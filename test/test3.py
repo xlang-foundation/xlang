@@ -1,4 +1,10 @@
-x = 1.2
-y = 10
-z = (x+1.1)<=y
-print("z=",z)
+x =100
+y=2
+if (x<=3) and (y==2):
+ print("x<=3")
+elif (x<=2) or (y<=3):
+ print("x<=2")
+else:
+ print("else")
+
+

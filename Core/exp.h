@@ -59,6 +59,10 @@ public:
 	{
 		return false;
 	}
+	virtual bool EatMe(Expression* other)
+	{
+		return false;
+	}
 	ObType m_type = ObType::Base;
 };
 class Operator :
@@ -195,6 +199,12 @@ public:
 			break;
 		case Alias::LessEqual:
 			v = Value(v_l <= v_r);
+			break;
+		case Alias::And:
+			v = Value(v_l.IsTrue() && v_r.IsTrue());
+			break;
+		case Alias::Or:
+			v = Value(v_l.IsTrue() || v_r.IsTrue());
 			break;
 		case Alias::Dot:
 		{
@@ -440,11 +450,7 @@ public:
 	Block() :Operator()
 	{
 	}
-	void Add(Expression* item)
-	{
-		Body.push_back(item);
-		if(item) item->SetParent(this);
-	}
+	void Add(Expression* item);
 	virtual Func* FindFuncByName(Var* name);
 	inline Indent GetIndentCount() { return IndentCount; }
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
@@ -504,6 +510,50 @@ public:
 	}
 	virtual bool Run(Value& v) override;
 };
+class While :
+	public Block
+{
+	Expression* m_condition = nil;
+public:
+	While(short op, Alias a)
+	{
+		Op = op;
+		A = a;
+	}
+	void SetCondition(Expression* e)
+	{
+		m_condition = e;
+		if (m_condition)
+		{
+			m_condition->SetParent(this);
+		}
+	}
+	virtual bool Run(Value& v) override;
+};
+
+class If :
+	public Block
+{
+	Expression* m_condition = nil;//if it is nil, like else
+	If* m_next = nil;//elif  or else
+public:
+	If(short op, Alias a)
+	{
+		Op = op;
+		A = a;
+	}
+	void SetCondition(Expression* e)
+	{
+		m_condition = e;
+		if (m_condition)
+		{
+			m_condition->SetParent(this);
+		}
+	}
+	virtual bool EatMe(Expression* other) override;
+	virtual bool Run(Value& v) override;
+};
+
 class Scope:
 	public Block
 {//variables scope support, for Module and Func/Class

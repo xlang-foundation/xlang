@@ -229,6 +229,23 @@ void Parser::DoOpTop(
 		((AST::For*)top)->SetCondition(operand);
 		operands.push(top);
 	}
+	else if (al == Alias::While)
+	{
+		auto operand = operands.top();
+		operands.pop();
+		((AST::While*)top)->SetCondition(operand);
+		operands.push(top);
+	}
+	else if (al == Alias::If || al == Alias::Elif || al == Alias::Else)
+	{
+		if (!operands.empty())
+		{
+			auto operand = operands.top();
+			operands.pop();
+			((AST::If*)top)->SetCondition(operand);
+		}
+		operands.push(top);
+	}
 }
 
 /* from https://www.geeksforgeeks.org/expression-evaluation/

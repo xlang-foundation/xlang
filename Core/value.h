@@ -87,6 +87,10 @@ public:
 	{
 		flags = f;
 	}
+	inline bool IsTrue()
+	{
+		return !IsZero();
+	}
 	inline bool IsZero()
 	{
 		bool bRet = false;
