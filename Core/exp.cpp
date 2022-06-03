@@ -65,32 +65,8 @@ bool UnaryOp::Run(Value& v)
 	{
 		return false;
 	}
-	switch (A)
-	{
-	case Alias::Add:
-		//+ keep 
-		break;
-	case Alias::Minus:
-		v = Value((long long)0);//set to 0
-		v -= v_r;
-		break;
-	case Alias::Not:
-		v = Value(v_r.IsZero());
-		break;
-	case Alias::Return:
-	{
-		Scope* pScope = FindScope();
-		if (pScope)
-		{
-			pScope->SetReturn(v_r);
-		}
-	}
-	break;
-
-	default:
-		break;
-	}
-	return true;
+	auto func = G::I().OpAct(Op).unaryop;
+	return func ? func(this, v_r, v) : false;
 }
 bool Func::SetParamsIntoFrame(StackFrame* frame, List* param_values)
 {
@@ -139,7 +115,7 @@ bool Func::Call(List* params, Value& retValue)
 bool PairOp::Run(Value& v)
 {
 	bool bOK = false;
-	if (A == Alias::Parenthesis_L)
+	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
 	{//Call Func
 		if (L && L->m_type == ObType::Var)
 		{
@@ -250,7 +226,7 @@ bool ExternFunc::Call(List* params, Value& retValue)
 }
 bool While::Run(Value& v)
 {
-	if (m_condition == nil)
+	if (R == nil)
 	{
 		return false;
 	}
@@ -258,7 +234,7 @@ bool While::Run(Value& v)
 	while (true)
 	{
 		Value v0;
-		bool bOK = m_condition->Run(v0);
+		bool bOK = R->Run(v0);
 		if (bOK && v0 == Value(true))
 		{
 			Block::Run(v);
@@ -275,9 +251,9 @@ bool For::Run(Value& v)
 	Value v0;
 	while (true)
 	{
-		if (m_condition)
+		if (R)
 		{
-			bool bC0 = m_condition->Run(v0);
+			bool bC0 = R->Run(v0);
 			if (!bC0)
 			{
 				break;
@@ -291,15 +267,15 @@ bool For::Run(Value& v)
 bool InOp::Run(Value& v)
 {
 	bool bIn = false;
-	if (m_exp)
+	if (R)
 	{
-		if (m_exp->m_type == ObType::Range)
+		if (R->m_type == ObType::Range)
 		{
-			Range* r = dynamic_cast<Range*>(m_exp);
+			Range* r = dynamic_cast<Range*>(R);
 			bIn = r->Run(v);//will update v
 			if (bIn)
 			{
-				m_var->Set(v);
+				L->Set(v);
 			}
 		}
 	}
@@ -374,10 +350,10 @@ bool If::Run(Value& v)
 {
 	bool bRet = true;
 	bool bCanRun = false;
-	if (m_condition)
+	if (R)
 	{
 		Value v0;
-		bool bOK = m_condition->Run(v0);
+		bool bOK = R->Run(v0);
 		if (bOK && v0 == Value(true))
 		{
 			bCanRun = true;
@@ -396,6 +372,44 @@ bool If::Run(Value& v)
 		bRet = m_next->Run(v);
 	}
 	return bRet;
+}
+
+void ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
+{
+	auto operandR = operands.top();
+	operands.pop();
+	auto operandL = operands.top();
+	operands.pop();
+	auto param = new AST::Param(operandL, operandR);
+	operands.push(param);
+}
+
+void CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
+{
+	auto operandR = operands.top();
+	operands.pop();
+	auto operandL = operands.top();
+	operands.pop();
+	AST::List* list = nil;
+	if (operandL->m_type != AST::ObType::List)
+	{
+		list = new AST::List(operandL);
+	}
+	else
+	{
+		list = (AST::List*)operandL;
+	}
+	if (operandR->m_type != AST::ObType::List)
+	{
+		*list += operandR;
+	}
+	else
+	{
+		*list += (AST::List*)operandR;
+		delete operandR;
+	}
+	operands.push(list);
+
 }
 
 }

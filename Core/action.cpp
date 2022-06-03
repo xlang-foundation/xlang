@@ -1,152 +1,303 @@
+#include "action.h"
 #include "parser.h"
 #include "exp.h"
 
-std::vector<XPython::OpInfo> XPython::Parser::OPList = {
-	OpInfo{{
-			"False", "None", "True", "and", /*0-3*/
-			"as", "assert", "async", "await", /*4-7*/
-			"break", "class", "continue", /*8-10*/
-			"def", "del", "elif", "else", /*11-14*/
-			"except", "finally", "for", /*15-17*/
-			"from", "global", "if", "import", /*18-21*/
-			"in", "is", "lambda", "nonlocal", /*22-25*/
-			"not", "or", "pass", "raise", "return", /*26-30*/
-			"try", "while", "with", "yield",/*31-34*/
-	}},
-	OpInfo{{"range"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		auto op = new AST::Range(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},Alias::Range},
-	OpInfo{{"return"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		auto op = new AST::UnaryOp(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},Alias::Return},
-	OpInfo{{"for"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		auto op = new AST::For(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},Alias::For},
-	OpInfo{{"while"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		auto op = new AST::While(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},Alias::While},
-	OpInfo{{"if","elif","else"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		auto op = new AST::If(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},AList(Alias::If,Alias::Elif,Alias::Else)},
-	OpInfo{{"in"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		auto op = new AST::InOp(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},Alias::In},
-	OpInfo{{"def"},[](Parser* p,short opIndex,OpAction* opAct) 
-	{
-		auto func = new AST::Func();
-		return (AST::Operator*)func;
-	},Alias::Func},
-	OpInfo{{
-			//Python Assignment Operators --index range[35,47]
-			"=","+=","-=","*=","/=","%=","//=","**=","&=","|=","^=",">>=","<<=",
-	},[](Parser* p,short opIndex,OpAction* opAct) 
-	{
-		auto op = new AST::Assign(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},Alias::None,Precedence_Min},
-	OpInfo{{
-			//Python Arithmetic Operators --index range[48,54]
-			"+","-","*","/","%","**","//",
-	},[](Parser* p,short opIndex,OpAction* opAct) 
-	{
-		auto op = new AST::BinaryOp(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},AList(Alias::Add,Alias::Minus,Alias::Multiply,Alias::Div,
-		Alias::Modulus,Alias::Exponentiation,Alias::FloorDivision)},
-	OpInfo{{
-			//Python Comparison Operators --index range[55,60]
-			"==","!=",">","<",">=","<=",
-			//Python Logical  Operators
-			"and","or",
-	},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		auto op = new AST::BinaryOp(opIndex,opAct->alias);
-		return (AST::Operator*)op;
-	},AList(Alias::Equal,Alias::NotEqual,Alias::Greater,
-		Alias::Less,Alias::GreaterEqual,Alias::LessEqual,
-		Alias::And,Alias::Or)},
-	//set precedence just higher 1 with reqular
-	OpInfo{{"*","/","%","**","//"},nil,Alias::None,Precedence_Reqular+1},
-	//Override for +-* which may be an unary Operator
-	OpInfo{{"+","-","*"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		AST::Operator* op = nil;
-		if (p->PreTokenIsOp())
-		{
-			op = new AST::UnaryOp(opIndex, opAct->alias);
-		}
-		else
-		{
-			op = new AST::BinaryOp(opIndex, opAct->alias);
-		}
-		return op;
-	}},
+namespace XPython {
 
-	//Python Bitwise Operators --index range[61,66]
-	OpInfo{{"&","|","^","~","<<",">>",}},
-	OpInfo{{"~","not"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		AST::Operator* op = nil;
-		if (p->PreTokenIsOp())
+void RegisterOps()
+{
+	RegOP("+")
+	.SetUnaryop([](AST::UnaryOp* op,AST::Value& R, AST::Value& v) {
+		v = R;//just keep as + does
+		return true;
+	})
+	.SetBinaryop([](AST::BinaryOp* op,AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = L;
+		v += R;
+		return true;
+	});
+	RegOP("-")
+	.SetUnaryop([](AST::UnaryOp* op,AST::Value& R, AST::Value& v) {
+		v = AST::Value((long long)0);//set to 0
+		v -= R;
+		return true;
+	})
+	.SetBinaryop([](AST::BinaryOp* op,AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = L;
+		v -= R;
+		return true;
+	});
+	RegOP("*")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+			v = L;
+			v *= R;
+			return true;
+	});
+	RegOP(".")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		int cnt = R.GetF();
+		double d = (double)R.GetLongLong();
+		for (int i = 0; i < cnt; i++)
 		{
-			op = new AST::UnaryOp(opIndex, opAct->alias);
+			d /= 10;
+		}
+		d += (double)L.GetLongLong();
+		v = AST::Value(d);
+		return true;
+	});
+	RegOP("/")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		if (!R.IsZero())
+		{
+			v = L;
+			v /= R;
+			return true;
 		}
 		else
 		{
-			//error
+			return false;
 		}
-		return op;
-	},AList(Alias::Invert,Alias::Not)},
-	OpInfo{{"(","[","{"},[](Parser* p,short opIndex,OpAction* opAct) 
-	{
-		return p->PairLeft(opIndex,opAct);
-	},AList(Alias::Parenthesis_L,
-		Alias::Brackets_L,
-		Alias::Curlybracket_L)},
-	OpInfo{{")"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		p->PairRight(Alias::Parenthesis_L);
-		return (AST::Operator*)nil;
-	}},
-	OpInfo{{"]"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		AST::Operator* op = nil;
-		p->PairRight(Alias::Brackets_L);
-		return op;
-	}},
-	OpInfo{{"}"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		p->PairRight(Alias::Curlybracket_L);
-		return (AST::Operator*)nil;
-	}},
-	OpInfo{{":",".",","},[](Parser* p,short opIndex,OpAction* opAct) 
-	{
-		auto op = new AST::BinaryOp(opIndex,opAct->alias);
+	});
+	RegOP("==")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = AST::Value(L == R);
+		return true;
+	});
+	RegOP("!=")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = AST::Value(L != R);
+		return true;
+	});
+	RegOP(">")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = AST::Value(L > R);
+		return true;
+	});
+	RegOP("<")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = AST::Value(L < R);
+		return true;
+	});
+	RegOP(">=")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = AST::Value(L >= R);
+		return true;
+	});
+	RegOP("<=")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = AST::Value(L <= R);
+		return true;
+	});
+	RegOP("and")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = AST::Value(L.IsTrue() && R.IsTrue());
+		return true;
+	});
+	RegOP("or")
+	.SetBinaryop([](AST::BinaryOp* op, AST::Value& L, AST::Value& R, AST::Value& v) {
+		v = AST::Value(L.IsTrue() || R.IsTrue());
+		return true;
+	});
+	RegOP("not")
+	.SetUnaryop([](AST::UnaryOp* op,AST::Value& R, AST::Value& v) {
+		v = AST::Value(R.IsZero());
+		return true;
+	});
+	RegOP("return")
+	.SetUnaryop([](AST::UnaryOp* op,AST::Value& R, AST::Value& v) {
+		AST::Scope* pScope = op->FindScope();
+		if (pScope)
+		{
+			pScope->SetReturn(R);
+		}
+		v = R;
+		return true;
+	});
+}
+void Register()
+{
+	RegOP("False", "None", "True", "and", /*0-3*/
+		"as", "assert", "async", "await", /*4-7*/
+		"break", "class", "continue", /*8-10*/
+		"def", "del", "elif", "else", /*11-14*/
+		"except", "finally", "for", /*15-17*/
+		"from", "global", "if", "import", /*18-21*/
+		"in", "is", "lambda", "nonlocal", /*22-25*/
+		"not", "or", "pass", "raise", "return", /*26-30*/
+		"try", "while", "with", "yield"/*31-34*/);
+	RegOP("range")
+		.SetProcess(
+			[](Parser* p, short opIndex) {
+				auto op = new AST::Range(opIndex);
+				return (AST::Operator*)op;
+			});
+	RegOP("return")
+		.SetProcess([](Parser* p, short opIndex) {
+			auto op = new AST::UnaryOp(opIndex);
+			return (AST::Operator*)op;
+		});
+	RegOP("for")
+		.SetProcess([](Parser* p, short opIndex){
+			auto op = new AST::For(opIndex);
+			return (AST::Operator*)op;
+		});
+	RegOP("while")
+		.SetProcess([](Parser* p,short opIndex){
+			auto op = new AST::While(opIndex);
+			return (AST::Operator*)op;
+		});
+	RegOP("if", "elif")
+		.SetProcess([](Parser* p, short opIndex){
+			auto op = new AST::If(opIndex);
+			return (AST::Operator*)op;
+		});
+	RegOP("else")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::If(opIndex,false);
 		return (AST::Operator*)op;
-	},AList(Alias::Colon,Alias::Dot,Alias::Comma)},
+			});
+	RegOP("in")
+		.SetProcess([](Parser* p,short opIndex){
+			auto op = new AST::InOp(opIndex);
+			return (AST::Operator*)op;
+		});
+	RegOP("def")
+		.SetProcess([](Parser* p, short opIndex){
+			auto func = new AST::Func();
+			return (AST::Operator*)func;
+		});
+	RegOP(//Python Assignment Operators
+		"=", "+=", "-=", "*=", "/=", "%=", "//=",
+		"**=", "&=", "|=", "^=", ">>=", "<<=")
+		.SetProcess([](Parser* p, short opIndex){
+			auto op = new AST::Assign(opIndex);
+			return (AST::Operator*)op;
+		})
+		.SetPrecedence(Precedence_Min);
+
+	RegOP(
+		//Python Arithmetic Operators 
+		"+", "-", "*", "/", "%", "**", "//")
+	.SetProcess([](Parser* p, short opIndex){
+			auto op = new AST::BinaryOp(opIndex);
+			return (AST::Operator*)op;
+	});
+
+	RegOP(
+		//Python Comparison Operators --index range[55,60]
+		"==", "!=", ">", "<", ">=", "<=",
+		//Python Logical  Operators
+		"and", "or")
+		.SetProcess([](Parser* p, short opIndex){
+			auto op = new AST::BinaryOp(opIndex);
+			return (AST::Operator*)op;
+		});
+	//set precedence just higher 1 with reqular
+	RegOP("*", "/", "%", "**", "//")
+		.SetPrecedence(Precedence_Reqular + 1);
+
+	//Override for +-* which may be an unary Operator
+	RegOP("+", "-", "*")
+		.SetProcess([](Parser* p, short opIndex){
+			AST::Operator* op = nil;
+			if (p->PreTokenIsOp())
+			{
+				op = new AST::UnaryOp(opIndex);
+			}
+			else
+			{
+				op = new AST::BinaryOp(opIndex);
+			}
+			return op;
+		});
+	//Python Bitwise Operators --index range[61,66]
+	RegOP("&", "|", "^", "~", "<<", ">>");
+	RegOP("~", "not")
+		.SetProcess([](Parser* p, short opIndex){
+			AST::Operator* op = nil;
+			if (p->PreTokenIsOp())
+			{
+				op = new AST::UnaryOp(opIndex);
+			}
+			else
+			{
+				//error
+			}
+			return op;
+		});
+
+	RegOP("(", "[", "{")
+		.SetProcess([](Parser* p, short opIndex){
+			return p->PairLeft(opIndex);
+		});
+	RegOP(")")
+		.SetProcess([](Parser* p, short opIndex){
+			p->PairRight(OP_ID::Parenthesis_L);
+			return (AST::Operator*)nil;
+		});
+	RegOP("]")
+		.SetProcess([](Parser* p, short opIndex){
+			AST::Operator* op = nil;
+			p->PairRight(OP_ID::Brackets_L);
+			return op;
+		});
+	RegOP("}").SetProcess([](Parser* p, short opIndex)
+		{
+			p->PairRight(OP_ID::Curlybracket_L);
+			return (AST::Operator*)nil;
+		});
+	RegOP(".").SetProcess([](Parser* p, short opIndex)
+		{
+			auto op = new AST::BinaryOp(opIndex);
+			return (AST::Operator*)op;
+		});
+	RegOP(":").SetProcess([](Parser* p, short opIndex)
+		{
+			auto op = new AST::ColonOP(opIndex);
+			return (AST::Operator*)op;
+		});
+	RegOP(",").SetProcess([](Parser* p, short opIndex)
+		{
+			auto op = new AST::CommaOp(opIndex);
+			return (AST::Operator*)op;
+		});
 	//change precedence for ':'
 	//OpInfo{{"in"},nil,Alias::In,Precedence_Reqular + 1},
-	OpInfo{{":"},nil,Alias::None,Precedence_Reqular + 2},
-	OpInfo{{"\n"},[](Parser* p,short opIndex,OpAction* opAct) 
+	RegOP(":").SetPrecedence(Precedence_Reqular + 2);
+	RegOP("\n").SetProcess([](Parser* p, short opIndex)
+		{
+			p->NewLine();
+			return (AST::Operator*)nil;
+		});
+
+	RegOP("\t", "\r", "\\").SetProcess([](Parser* p, short opIndex)
+		{
+			auto op = new AST::Operator(opIndex);
+			return op;
+		});
+	
+	RegOP("(").SetId(OP_ID::Parenthesis_L);
+	RegOP("[").SetId(OP_ID::Brackets_L);
+	RegOP("{").SetId(OP_ID::Curlybracket_L);
+	RegOP("\\").SetId(OP_ID::Slash);
+	RegOP(":").SetId(OP_ID::Colon);
+	RegOP("\t").SetId(OP_ID::Tab);
+}
+
+std::vector<OpInfo> RegOP::OPList;
+void BuildOps()
+{
+	Register();
+	RegisterOps();
+	MakeLexTree(RegOP::OPList,G::I().GetKwTree(),
+		G::I().GetOpActions());
+}
+RegOP& RegOP::SetId(OP_ID id)
+{
+	if (ops.size() > 0)
 	{
-		p->NewLine();
-		return (AST::Operator*)nil;
-	}},
-	OpInfo{{"\t","\r","\\"},[](Parser* p,short opIndex,OpAction* opAct)
-	{
-		auto op = new AST::Operator(opIndex,opAct->alias);
-		return op;
-	},AList(Alias::Tab,Alias::CR,Alias::Slash)},
-};
+		G::I().SetOpId(id, AddOrGet(ops[0]).id);
+	}
+	return *this;
+}
+}

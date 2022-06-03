@@ -2,12 +2,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
+#include "action.h"
 
 namespace XPython {	
-
-std::vector<short> Parser::_kwTree;
-std::vector<OpAction> Parser::OpActions;
 
 ParseState Parser::ParseHexBinOctNumber(String& str)
 {
@@ -101,151 +98,9 @@ Parser::~Parser()
 
 bool Parser::Init()
 {
-	MakeLexTree(OPList,_kwTree, OpActions);
-	mToken = new Token(&_kwTree[0]);
+	BuildOps();
+	mToken = new Token(&G::I().GetKwTree()[0]);
 	return true;
-}
-void Parser::DoOpTop(
-	std::stack<AST::Expression*>& operands,
-	std::stack<AST::Operator*>& ops)
-{
-	auto top = ops.top();
-	auto al = OpAct(top->getOp()).alias;
-	ops.pop();
-	if ( al == Alias::Colon)
-	{//:
-		auto operandR = operands.top();
-		operands.pop();
-		auto operandL = operands.top();
-		operands.pop();
-		auto param = new AST::Param(operandL, operandR);
-		operands.push(param);
-	}
-	else if (al == Alias::Comma)
-	{//,
-		auto operandR = operands.top();
-		operands.pop();
-		auto operandL = operands.top();
-		operands.pop();
-		AST::List* list = nil;
-		if (operandL->m_type != AST::ObType::List)
-		{
-			list = new AST::List(operandL);
-		}
-		else
-		{
-			list = (AST::List*)operandL;
-		}
-		if (operandR->m_type != AST::ObType::List)
-		{
-			*list += operandR;
-		}
-		else
-		{
-			*list += (AST::List*)operandR;
-			delete operandR;
-		}
-		operands.push(list);
-	}
-	else if (top->m_type == AST::ObType::Func)
-	{
-		AST::Func* func = (AST::Func*)top;
-		auto params = operands.top();
-		operands.pop();
-		if (params->m_type == AST::ObType::Pair)
-		{//have to be a pair
-			AST::PairOp* pair = (AST::PairOp*)params;
-			AST::Expression* r = pair->GetR();
-			if (r)
-			{
-				if (r->m_type != AST::ObType::List)
-				{
-					AST::List* list = new AST::List(r);
-					func->SetParams(list);
-				}
-				else
-				{
-					func->SetParams((AST::List*)r);
-					pair->SetR(nil);//clear R, because it used by SetParams
-				}
-			}
-			AST::Expression* l = pair->GetL();
-			if (l)
-			{
-				func->SetName(l);
-				pair->SetL(nil);
-			}
-			//content used by func,and clear to nil,
-			//not be used anymore, so delete it
-			delete pair;
-		}
-		operands.push(func);//as new block's head object
-	}
-	else if (top->m_type == AST::ObType::UnaryOp)
-	{
-		auto operand = operands.top();
-		operands.pop();
-		((AST::UnaryOp*)top)->SetR(operand);
-		operands.push(top);
-	}
-	else if (top->m_type == AST::ObType::Assign)
-	{
-		auto operandR = operands.top();
-		operands.pop();
-		auto operandL = operands.top();
-		operands.pop();
-		((AST::Assign*)top)->SetLR(operandL, operandR);
-		operands.push(top);
-	}
-	else if (top->m_type == AST::ObType::BinaryOp)
-	{
-		auto operandR = operands.top();
-		operands.pop();
-		auto operandL = operands.top();
-		operands.pop();
-		((AST::BinaryOp*)top)->SetLR(operandL, operandR);
-		operands.push(top);
-	}
-	else if (al == Alias::In)
-	{
-		auto operandR = operands.top();
-		operands.pop();
-		AST::Var* var = dynamic_cast<AST::Var*>(operands.top());
-		operands.pop();
-		((AST::InOp*)top)->Set(var, operandR);
-		operands.push(top);
-	}
-	else if (al == Alias::Range) 
-	{
-		auto operand = operands.top();
-		operands.pop();
-		((AST::Range*)top)->SetR(operand);
-		operands.push(top);
-	}
-	else if (al == Alias::For)
-	{
-		auto operand = operands.top();
-		operands.pop();
-		((AST::For*)top)->SetCondition(operand);
-		operands.push(top);
-	}
-	else if (al == Alias::While)
-	{
-		auto operand = operands.top();
-		operands.pop();
-		((AST::While*)top)->SetCondition(operand);
-		operands.push(top);
-	}
-	else if (al == Alias::If || al == Alias::Elif || al == Alias::Else)
-	{
-		if (!operands.empty())
-		{
-			auto operand = operands.top();
-			operands.pop();
-			((AST::If*)top)->SetCondition(operand);
-		}
-		operands.push(top);
-	}
 }
 
 /* from https://www.geeksforgeeks.org/expression-evaluation/
@@ -339,7 +194,7 @@ bool Parser::Compile(char* code, int size)
 			OpAction opAct = OpAct(idx);
 			if (m_NewLine_WillStart)
 			{
-				if (opAct.alias == Alias::Tab)
+				if (idx == G::I().GetOpId(OP_ID::Tab))
 				{
 					m_TabCountAtLineBegin++;
 					continue;
@@ -352,7 +207,7 @@ bool Parser::Compile(char* code, int size)
 			AST::Operator* op = nil;
 			if (opAct.process)
 			{
-				op = opAct.process(this, idx, &opAct);
+				op = opAct.process(this, idx);
 			}
 			if (op)
 			{
@@ -398,25 +253,26 @@ void Parser::NewLine()
 {
 	if (!m_ops.empty())
 	{
-		short topIdx = m_ops.top()->getOp();
+		auto top = m_ops.top();
+		short topIdx = top->getOp();
 		if (m_pair_cnt > 0)
 		{//line continue
-			if (OpAct(topIdx).alias == Alias::Slash)
+			if (topIdx == G::I().GetOpId(OP_ID::Slash))
 			{
-				delete m_ops.top();
+				delete top;
 				m_ops.pop();
 				pop_preceding_token();//pop Slash
 			}
 			return;
 		}
-		else if (OpAct(topIdx).alias == Alias::Slash)
+		else if (topIdx == G::I().GetOpId(OP_ID::Slash))
 		{//line continue
-			delete m_ops.top();
+			delete top;
 			m_ops.pop();
 			pop_preceding_token();//pop Slash
 			return;
 		}
-		else if (OpAct(topIdx).alias == Alias::Colon)
+		else if (topIdx == G::I().GetOpId(OP_ID::Colon))
 		{//end block head
 			delete m_ops.top();
 			m_ops.pop();
@@ -486,14 +342,14 @@ void Parser::NewLine()
 	}
 	ResetForNewLine();
 }
-void Parser::PairRight(Alias leftOpToMeetAsEnd)
+void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
 	DecPairCnt();
 	AST::PairOp* pPair = nil;
 	while (!m_ops.empty())
 	{
 		auto top = m_ops.top();
-		if (OpAct(top->getOp()).alias == leftOpToMeetAsEnd)
+		if (top->getOp() == G::I().GetOpId(leftOpToMeetAsEnd))
 		{
 			pPair = (AST::PairOp*)top;
 			m_ops.pop();
@@ -513,10 +369,10 @@ void Parser::PairRight(Alias leftOpToMeetAsEnd)
 	//already evaluated as an operand
 	push_preceding_token(TokenID);
 }
-AST::Operator* Parser::PairLeft(short opIndex,OpAction* opAct)
+AST::Operator* Parser::PairLeft(short opIndex)
 {
 	IncPairCnt();
-	auto op = new AST::PairOp(opIndex,opAct->alias);
+	auto op = new AST::PairOp(opIndex);
 	if (!PreTokenIsOp())
 	{//for case func(...),x[...] etc
 		if (!m_operands.empty())

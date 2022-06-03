@@ -7,51 +7,6 @@
 #include "def.h"
 
 namespace XPython {
-class Parser;
-struct OpAction;
-typedef AST::Operator* (*OpProc)(
-	Parser* p, short opIndex,OpAction* opAct);
-
-class AList
-{
-public:
-	AList()
-	{
-
-	}
-	template<typename... As>
-	AList(As... al)
-	{
-		m_list = std::vector <Alias>{ al... };
-	}
-
-	AList(Alias a)
-	{
-		m_list.push_back(a);
-	}
-	inline Alias operator[](int i)
-	{
-		return i>=(int)m_list.size()? Alias::None: m_list[i];
-	}
-private:
-	std::vector <Alias> m_list;
-};
-#define Precedence_Reqular 1000
-#define Precedence_Min 0
-
-struct OpInfo
-{
-	std::vector<std::string> ops;
-	OpProc process = nil;
-	AList alias=Alias::None;
-	int precedence = Precedence_Reqular;
-};
-struct OpAction
-{
-	OpProc process = nil;
-	Alias alias = Alias::None;
-	int precedence = Precedence_Reqular;
-};
 enum class ParseState
 {
 	Wrong_Fmt,
@@ -61,20 +16,19 @@ enum class ParseState
 	Long_Long
 };
 
-void MakeLexTree(std::vector<OpInfo>& opList,
-	std::vector<short>& buffer,
-	std::vector<OpAction>& opActions);
 class Parser
 {
-	static std::vector<short> _kwTree;
-	static std::vector<OpInfo> OPList;
-	static std::vector<OpAction> OpActions;
 	Token* mToken = nil;
 
 	ParseState ParseHexBinOctNumber(String& str);
 	ParseState ParseNumber(String& str, double& dVal, long long& llVal);
-	void DoOpTop(std::stack<AST::Expression*>& operands,
-		std::stack<AST::Operator*>& ops);
+	inline void DoOpTop(std::stack<AST::Expression*>& operands,
+		std::stack<AST::Operator*>& ops)
+	{
+		auto top = ops.top();
+		ops.pop();
+		top->OpWithOperands(operands);
+	}
 
 //for compile
 	std::stack<AST::Expression*> m_operands;
@@ -116,8 +70,8 @@ public:
 		m_stackBlocks.push(b);
 	}
 	void NewLine();
-	AST::Operator* PairLeft(short opIndex,OpAction* opAct);//For "(","[","{"
-	void PairRight(Alias leftOpToMeetAsEnd); //For ')',']', and '}'
+	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
+	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'
 	inline void IncPairCnt() { m_pair_cnt++; }
 	inline bool PreTokenIsOp() 
 	{ 
@@ -141,8 +95,7 @@ public:
 	}
 	inline OpAction OpAct(short idx)
 	{
-		return (idx>=0 && idx< (short)OpActions.size()) ?
-			OpActions[idx]:OpAction();
+		return G::I().OpAct(idx);
 	}
 public:
 	Parser();

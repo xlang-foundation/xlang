@@ -6,7 +6,7 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "XPython.exe",
-      "args": [ "C:/Dev/XPython/test/while.py" ],
+      "args": [ "C:/Dev/XPython/test/test2.py" ],
       "name": "XPython.exe"
     }
   ]

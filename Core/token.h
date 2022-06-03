@@ -15,17 +15,17 @@ enum LastCharType
 };
 struct CoreContext
 {
-	short* kwTree;
+	short* kwTree=nil;
 
-	char* src_code;
-	int src_code_size;
+	char* src_code=nil;
+	int src_code_size=0;
 
 	//Cursor
-	char* spos;//source pos
-	short curNode;//offset in kwTree
+	char* spos=nil;//source pos
+	short curNode=0;//offset in kwTree
 	int leadingSpaceCount = 0;
-	LastCharType lct;
-	char* token_start;
+	LastCharType lct = LastCharType::LCT_None;
+	char* token_start=0;
 };
 enum TokenIndex
 {

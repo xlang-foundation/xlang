@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "action.h"
 #include <string>
 
 namespace XPython {
@@ -52,73 +53,51 @@ void MakeLexTree(std::vector<OpInfo>& opList,
 	short lastOpIndex = 0;
 	for (OpInfo& opInfo : opList)
 	{
-		for (int i = 0; i < (int)opInfo.ops.size(); i++)
-		{
-			short curOpIndex = -1;
+		short curOpIndex = -1;
 
-			auto k = opInfo.ops[i];
-			KwTree* node = &root;
-			int len = (int)k.size();
-			for (int j = 0; j < (int)k.size(); j++)
+		auto& k = opInfo.name;
+		KwTree* node = &root;
+		int len = (int)k.size();
+		for (int j = 0; j < (int)k.size(); j++)
+		{
+			unsigned char c = k[j];
+			bool bFound = false;
+			for (auto& child : node->children)
 			{
-				unsigned char c = k[j];
-				bool bFound = false;
-				for (auto& child : node->children)
+				if (child.c == c)
 				{
-					if (child.c == c)
-					{
-						node = &child;
-						if (j == (len - 1))
-						{//last char, set index 
-							if (node->index != -1)
-							{
-								curOpIndex = node->index;
-								auto& prevAct= opActions[curOpIndex];
-								//override
-								if (opInfo.process)
-								{
-									prevAct.process = opInfo.process;
-								}
-								if (opInfo.alias[i] != Alias::None)
-								{
-									prevAct.alias = opInfo.alias[i];
-								}
-								if (opInfo.precedence != Precedence_Reqular)
-								{
-									prevAct.precedence = opInfo.precedence;
-								}
-							}
-							else
-							{
-								opActions.push_back(
-									OpAction{ opInfo.process,
-									opInfo.alias[i],opInfo.precedence}
-								);
-								node->index = lastOpIndex++;
-							}
-						}
-						bFound = true;
-						break;
-					}
-				}
-				if (!bFound)
-				{
-					short curOpIndex = -1;
+					node = &child;
 					if (j == (len - 1))
-					{
-						opActions.push_back(
-							OpAction{ opInfo.process,
-							opInfo.alias[i],opInfo.precedence }
-						);
-						curOpIndex = lastOpIndex++;
+					{//last char, set index 
+						if (node->index != -1)
+						{
+							curOpIndex = node->index;
+							opActions[curOpIndex] = opInfo.act;
+						}
+						else
+						{
+							opActions.push_back(opInfo.act);
+							node->index = lastOpIndex++;
+						}
 					}
-					node->children.push_back(
-						KwTree{ c,curOpIndex }
-					);
-					node = &node->children[node->children.size() - 1];
+					bFound = true;
+					break;
 				}
-			}//for (int j = 0
-		}//for (int i = 0
+			}
+			if (!bFound)
+			{
+				short curOpIndex = -1;
+				if (j == (len - 1))
+				{
+					opActions.push_back(opInfo.act);
+					curOpIndex = lastOpIndex++;
+				}
+				node->children.push_back(
+					KwTree{ c,curOpIndex }
+				);
+				node = &node->children[node->children.size() - 1];
+			}
+		}//for (int j = 0
 	}
 	BuildFinalTree(root, buffer);
 }

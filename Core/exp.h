@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include "value.h"
 #include "stackframe.h"
+#include "glob.h"
 
 namespace XPython {namespace AST{
 typedef AST::Value(*U_FUNC) (...);
@@ -70,40 +71,90 @@ class Operator :
 {
 protected:
 	short Op;//index of _kws
-	Alias A = Alias::None;
 public:
 	Operator()
 	{
 		Op = 0;
 	}
-	Operator(short op, Alias a)
+	Operator(short op)
 	{
 		Op = op;
-		A = a;
 	}
+
 	inline short getOp()
 	{
 		return Op;
 	}
-	inline Alias getAlias() { return A; }
+	virtual void SetL(Expression* l) {}
+	virtual void SetR(Expression* r) {}
+	virtual void OpWithOperands(
+		std::stack<AST::Expression*>& operands) {}
 };
-class Assign:
+
+class BinaryOp :
 	public Operator
 {
+protected:
 	Expression* L=nil;
-	Expression* R =nil;
+	Expression* R = nil;
 public:
-	Assign(short op, Alias a):
-		Operator(op,a)
+	BinaryOp(short op):
+		Operator(op)
 	{
-		m_type = ObType::Assign;
+		m_type = ObType::BinaryOp;
 	}
-	void SetLR(Expression* l, Expression* r)
+	virtual void OpWithOperands(
+		std::stack<AST::Expression*>& operands)
+	{
+		auto operandR = operands.top();
+		operands.pop();
+		SetR(operandR);
+		auto operandL = operands.top();
+		operands.pop();
+		SetL(operandL);
+		operands.push(this);
+	}
+	virtual void SetL(Expression* l) override
 	{
 		L = l;
+		if (L) L->SetParent(this);
+	}
+	virtual void SetR(Expression* r) override
+	{
 		R = r;
-		if(L) L->SetParent(this);
-		if(R) R->SetParent(this);
+		if (R) R->SetParent(this);
+	}
+	Expression* GetR() { return R; }
+	Expression* GetL() { return L; }
+
+	virtual bool Run(Value& v) override
+	{
+		if (!L || !R)
+		{
+			return false;
+		}
+		Value v_l;
+		if (!L->Run(v_l))
+		{
+			return false;
+		}
+		Value v_r;
+		if (!R->Run(v_r))
+		{
+			return false;
+		}
+		auto func = G::I().OpAct(Op).binaryop;
+		return func ? func(this, v_l, v_r, v) : false;
+	}
+};
+class Assign :
+	public BinaryOp
+{
+public:
+	Assign(short op) :
+		BinaryOp(op)
+	{
+		m_type = ObType::Assign;
 	}
 	virtual bool Run(Value& v) override
 	{
@@ -121,161 +172,77 @@ public:
 		return true;
 	}
 };
-
-class BinaryOp :
+class ColonOP :
 	public Operator
 {
-	Expression* L=nil;
-	Expression* R = nil;
 public:
-	BinaryOp(short op, Alias a):
-		Operator(op,a)
+	ColonOP(short op) :
+		Operator(op)
 	{
-		m_type = ObType::BinaryOp;
 	}
-	void SetLR(Expression* l, Expression* r)
+	virtual void OpWithOperands(
+		std::stack<AST::Expression*>& operands);
+};
+class CommaOp :
+	public Operator
+{
+public:
+	CommaOp(short op) :
+		Operator(op)
 	{
-		L = l;
-		R = r;
-		if(L) L->SetParent(this);
-		if(R) R->SetParent(this);
 	}
-	virtual bool Run(Value& v) override
-	{
-		if (!L || !R)
-		{
-			return false;
-		}
-		Value v_l;
-		if (!L->Run(v_l))
-		{
-			return false;
-		}
-		Value v_r;
-		if (!R->Run(v_r))
-		{
-			return false;
-		}
-		bool bRet = true;
-		switch (A)
-		{
-		case Alias::Add:
-			v_l += v_r;
-			v = v_l;
-			break;
-		case Alias::Minus:
-			v_l -= v_r;
-			v = v_l;
-			break;
-		case Alias::Multiply:
-			v_l *= v_r;
-			v = v_l;
-			break;
-		case Alias::Div:
-			if (!v_r.IsZero())
-			{
-				v_l /= v_r;
-				v = v_l;
-			}
-			else
-			{
-				bRet = false;
-			}
-			break;
-		case Alias::Equal:
-			v = Value(v_l == v_r);
-			break;
-		case Alias::NotEqual:
-			v = Value(v_l != v_r);
-			break;
-		case Alias::Greater:
-			v = Value(v_l > v_r);
-			break;
-		case Alias::Less:
-			v = Value(v_l < v_r);
-			break;
-		case Alias::GreaterEqual:
-			v = Value(v_l >= v_r);
-			break;
-		case Alias::LessEqual:
-			v = Value(v_l <= v_r);
-			break;
-		case Alias::And:
-			v = Value(v_l.IsTrue() && v_r.IsTrue());
-			break;
-		case Alias::Or:
-			v = Value(v_l.IsTrue() || v_r.IsTrue());
-			break;
-		case Alias::Dot:
-		{
-			int cnt = v_r.GetF();
-			double d = (double)v_r.GetLongLong();
-			for (int i = 0; i < cnt; i++)
-			{
-				d /= 10;
-			}
-			d += (double)v_l.GetLongLong();
-			v = Value(d);
-		}
-		break;
-		default:
-			break;
-		}
-		return bRet;
-	}
+	virtual void OpWithOperands(
+		std::stack<AST::Expression*>& operands);
 };
 class PairOp :
-	public Operator
+	public BinaryOp
 {
-	Expression* L = nil;
-	Expression* R = nil;
 public:
-	PairOp(short opIndex,Alias a) :
-		Operator(opIndex,a)
+	PairOp(short opIndex) :
+		BinaryOp(opIndex)
 	{
 		m_type = ObType::Pair;
 	}
-	void SetL(Expression* l)
-	{
-		L = l;
-		if (L)
-		{
-			L->SetParent(this);
-		}
-	}
-	void SetR(Expression* r)
-	{
-		R = r;
-		if (R)
-		{
-			R->SetParent(this);
-		}
-	}
-	Expression* GetR() { return R; }
-	Expression* GetL() { return L; }
 	virtual bool Run(Value& v) override;
 };
 class UnaryOp :
 	public Operator
 {
+protected:
 	Expression* R = nil;
+	bool NeedParam = true;//like else(), it is false
 public:
-	UnaryOp(short op, Alias a):
-		Operator(op,a)
+	UnaryOp()
+	{
+	}
+	UnaryOp(short op):
+		Operator(op)
 	{
 		m_type = ObType::UnaryOp;
 	}
-	void SetR(Expression* r)
+	virtual void OpWithOperands(
+		std::stack<AST::Expression*>& operands)
+	{
+		if (NeedParam)
+		{
+			auto operandR = operands.top();
+			operands.pop();
+			SetR(operandR);
+		}
+		operands.push(this);
+	}
+	virtual void SetR(Expression* r) override
 	{
 		R = r;
 		if(R) R->SetParent(this);
 	}
+	Expression* GetR() { return R; }
+
 	virtual bool Run(Value& v) override;
 };
 class Range :
-	public Operator
+	public UnaryOp
 {
-	Expression* R = nil;
 	bool m_evaluated = false;
 	long long m_start=0;
 	long long m_stop =0;
@@ -283,16 +250,12 @@ class Range :
 
 	bool Eval();
 public:
-	Range(short op, Alias a) :
-		Operator(op, a)
+	Range(short op) :
+		UnaryOp(op)
 	{
 		m_type = ObType::Range;
 	}
-	void SetR(Expression* r)
-	{
-		R = r;
-		if (R) R->SetParent(this);
-	}
+
 	virtual bool Run(Value& v) override;
 };
 
@@ -440,14 +403,18 @@ struct Indent
 			|| (tab_cnt < other.tab_cnt && space_cnt <= other.space_cnt);
 	}
 };
-class Block :
-	public Operator
+class Block:
+	public UnaryOp
 {
 	Indent IndentCount = { -1,-1 };
 	Indent ChildIndentCount = { -1,-1 };
 	std::vector<Expression*> Body;
 public:
-	Block() :Operator()
+	Block()
+	{
+	}
+	Block(short op) :
+		UnaryOp(op)
 	{
 	}
 	void Add(Expression* item);
@@ -456,7 +423,7 @@ public:
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
-	virtual bool Run(Value& v) override
+	virtual bool Run(Value& v)
 	{
 		bool bOk = true;
 		for (auto i : Body)
@@ -472,83 +439,46 @@ public:
 	}
 };
 class InOp :
-	public Operator
+	public BinaryOp
 {
-	Expression* m_var = nil;
-	Expression* m_exp = nil;
 public:
-	InOp(short op, Alias a) :
-		Operator(op, a)
+	InOp(short op) :
+		BinaryOp(op)
 	{
-	}
-	void Set(Expression* var, Expression* e)
-	{
-		m_var = var;
-		m_exp = e;
-		if (m_var) m_var->SetParent(this);
-		if (m_exp) m_exp->SetParent(this);
 	}
 	virtual bool Run(Value& v) override;
 };
 class For :
 	public Block
 {
-	Expression* m_condition = nil;
 public:
-	For(short op, Alias a)
+	For(short op):
+		Block(op)
 	{
-		Op = op;
-		A = a;
-	}
-	void SetCondition(Expression* e)
-	{
-		m_condition = e;
-		if (m_condition)
-		{
-			m_condition->SetParent(this);
-		}
 	}
 	virtual bool Run(Value& v) override;
 };
 class While :
 	public Block
 {
-	Expression* m_condition = nil;
 public:
-	While(short op, Alias a)
+	While(short op) :
+		Block(op)
 	{
-		Op = op;
-		A = a;
 	}
-	void SetCondition(Expression* e)
-	{
-		m_condition = e;
-		if (m_condition)
-		{
-			m_condition->SetParent(this);
-		}
-	}
+
 	virtual bool Run(Value& v) override;
 };
 
 class If :
 	public Block
 {
-	Expression* m_condition = nil;//if it is nil, like else
 	If* m_next = nil;//elif  or else
 public:
-	If(short op, Alias a)
+	If(short op,bool needParam =true) :
+		Block(op)
 	{
-		Op = op;
-		A = a;
-	}
-	void SetCondition(Expression* e)
-	{
-		m_condition = e;
-		if (m_condition)
-		{
-			m_condition->SetParent(this);
-		}
+		NeedParam = needParam;
 	}
 	virtual bool EatMe(Expression* other) override;
 	virtual bool Run(Value& v) override;
@@ -610,13 +540,6 @@ class Func :
 	List* Params =nil;
 	Expression* RetType = nil;
 	bool SetParamsIntoFrame(StackFrame* frame, List* param_values);
-public:
-	Func():
-		Scope()
-	{
-		m_type = ObType::Func;
-	}
-	Expression* GetName() { return Name; }
 	void SetName(Expression* n)
 	{
 		Name = n;
@@ -633,6 +556,45 @@ public:
 			Params->SetParent(this);
 		}
 	}
+public:
+	Func():
+		Scope()
+	{
+		m_type = ObType::Func;
+	}
+	Expression* GetName() { return Name; }
+
+	virtual void SetR(Expression* r) override
+	{
+		if (r->m_type == AST::ObType::Pair)
+		{//have to be a pair
+			AST::PairOp* pair = (AST::PairOp*)r;
+			AST::Expression* r = pair->GetR();
+			if (r)
+			{
+				if (r->m_type != AST::ObType::List)
+				{
+					AST::List* list = new AST::List(r);
+					SetParams(list);
+				}
+				else
+				{
+					SetParams((AST::List*)r);
+					pair->SetR(nil);//clear R, because it used by SetParams
+				}
+			}
+			AST::Expression* l = pair->GetL();
+			if (l)
+			{
+				SetName(l);
+				pair->SetL(nil);
+			}
+			//content used by func,and clear to nil,
+			//not be used anymore, so delete it
+			delete pair;
+		}
+	}
+
 	void SetRetType(Expression* p)
 	{
 		RetType = p;
