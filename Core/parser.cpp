@@ -344,12 +344,15 @@ void Parser::NewLine()
 }
 void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
+	short lastToken = get_last_token();
+	short pairLeftToken = G::I().GetOpId(leftOpToMeetAsEnd);
+	bool bEmptyParams = (lastToken == pairLeftToken);
 	DecPairCnt();
 	AST::PairOp* pPair = nil;
 	while (!m_ops.empty())
 	{
 		auto top = m_ops.top();
-		if (top->getOp() == G::I().GetOpId(leftOpToMeetAsEnd))
+		if (top->getOp() == pairLeftToken)
 		{
 			pPair = (AST::PairOp*)top;
 			m_ops.pop();
@@ -360,11 +363,18 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 			DoOpTop(m_operands, m_ops);
 		}
 	}
-	if (!m_operands.empty() && pPair!=nil)
+	if (bEmptyParams)
 	{
-		pPair->SetR(m_operands.top());
-		m_operands.pop();
 		m_operands.push(pPair);
+	}
+	else
+	{
+		if (!m_operands.empty() && pPair != nil)
+		{
+			pPair->SetR(m_operands.top());
+			m_operands.pop();
+			m_operands.push(pPair);
+		}
 	}
 	//already evaluated as an operand
 	push_preceding_token(TokenID);

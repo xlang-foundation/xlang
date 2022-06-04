@@ -49,6 +49,13 @@ class Parser
 		}
 		m_preceding_token_indexstack.push_back(idx);
 	}
+	inline short get_last_token()
+	{
+		return m_preceding_token_indexstack.size() > 0?
+			m_preceding_token_indexstack[
+				m_preceding_token_indexstack.size() - 1] :
+			(short)TokenIndex::TokenInvalid;
+	}
 	inline void pop_preceding_token()
 	{
 		if (m_preceding_token_indexstack.size() > 0)

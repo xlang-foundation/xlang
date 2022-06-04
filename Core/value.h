@@ -126,6 +126,16 @@ public:
 		flags = BOOL_FLAG;
 		x.l = b ? 1 : 0;
 	}
+	Value(int l)
+	{
+		t = ValueType::Int64;
+		x.l = l;
+	}
+	Value(long l)
+	{
+		t = ValueType::Int64;
+		x.l = l;
+	}
 	Value(long long l)
 	{
 		t = ValueType::Int64;

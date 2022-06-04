@@ -6,12 +6,15 @@ namespace XPython {namespace AST {
 
 Scope* Expression::FindScope()
 {
-	Scope* pMyScope = nil;
-	Expression* pa = m_parent;
-	while (pa != nil && pMyScope == nil)
+	Scope* pMyScope = dynamic_cast<Scope*>(this);
+	if (pMyScope == nil)
 	{
-		pMyScope = dynamic_cast<Scope*>(pa);
-		pa = pa->GetParent();
+		Expression* pa = m_parent;
+		while (pa != nil && pMyScope == nil)
+		{
+			pMyScope = dynamic_cast<Scope*>(pa);
+			pa = pa->GetParent();
+		}
 	}
 	return pMyScope;
 }
@@ -36,28 +39,6 @@ Func* Expression::FindFuncByName(Var* name)
 	return pFuncRet;
 }
 
-void Var::Set(Value& v)
-{
-	auto pScope = FindScope();
-	if (pScope)
-	{
-		std::string key(Name.s, Name.size);
-		pScope->Set(key, v);
-	}
-}
-
-bool Var::Run(Value& v)
-{
-	bool bOK = false;
-	std::string key(Name.s, Name.size);
-	auto pScope = FindScope();
-	if (pScope)
-	{
-		bOK = pScope->Get(key, v);
-	}
-	return bOK;
-}
-
 bool UnaryOp::Run(Value& v)
 {
 	Value v_r;
@@ -70,6 +51,7 @@ bool UnaryOp::Run(Value& v)
 }
 bool Func::SetParamsIntoFrame(StackFrame* frame, List* param_values)
 {
+#if __TODO__ //Process default value here
 	if (Params == nil)
 	{
 		return true;//no parameters required
@@ -97,6 +79,7 @@ bool Func::SetParamsIntoFrame(StackFrame* frame, List* param_values)
 			frame->Set(strName, v);
 		}
 	}
+#endif
 	return true;
 }
 bool Func::Call(List* params, Value& retValue)
@@ -124,14 +107,17 @@ bool PairOp::Run(Value& v)
 			{
 				Value retValue;
 				List* inParam = nil;
-				if (R->m_type != ObType::List)
+				if (R)
 				{
-					inParam = new List(R);
-					inParam->SetParent(this);
-				}
-				else
-				{
-					inParam = (List*)R;
+					if (R->m_type != ObType::List)
+					{
+						inParam = new List(R);
+						inParam->SetParent(this);
+					}
+					else
+					{
+						inParam = (List*)R;
+					}
 				}
 				if (pFunc->Call(inParam, retValue))
 				{//v is return value if changed
@@ -154,11 +140,14 @@ void Block::Add(Expression* item)
 		Expression* pLastExp = Body[Body.size() - 1];
 		if (pLastExp->EatMe(item))
 		{
+			item->ScopeLayout();
 			return;
 		}
 	}
 	Body.push_back(item);
-	if (item) item->SetParent(this);
+	item->SetParent(this);
+	item->ScopeLayout();
+
 }
 Func* Block::FindFuncByName(Var* name)
 {
@@ -206,24 +195,6 @@ Func* Block::FindFuncByName(Var* name)
 	return func;
 }
 
-bool ExternFunc::Call(List* params, Value& retValue)
-{
-	//DO PRINT first
-	if (params)
-	{
-		auto values = params->GetList();
-		for (int i = 0; i < (int)values.size(); i++)
-		{
-			Expression* exp = values[i];
-			Value v;
-			exp->Run(v);
-			std::string str = v.ToString();
-			std::cout << str;
-		}
-		std::cout << std::endl;
-	}
-	return true;
-}
 bool While::Run(Value& v)
 {
 	if (R == nil)
@@ -251,19 +222,17 @@ bool For::Run(Value& v)
 	Value v0;
 	while (true)
 	{
-		if (R)
+		bool bC0 = R->Run(v0);
+		if (!bC0)
 		{
-			bool bC0 = R->Run(v0);
-			if (!bC0)
-			{
-				break;
-			}
+			break;
 		}
 		Block::Run(v);
 	}
 	return true;
 }
 
+#if 0
 bool InOp::Run(Value& v)
 {
 	bool bIn = false;
@@ -281,7 +250,7 @@ bool InOp::Run(Value& v)
 	}
 	return bIn;
 }
-
+#endif
 bool Range::Eval()
 {
 	if (R && R->m_type == ObType::Pair)

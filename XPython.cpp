@@ -27,7 +27,8 @@ int main(int argc, char* argv[])
 		std::istreambuf_iterator<char>());
 	pyFile.close();
 	std::vector<std::pair<std::string, std::string>> params;
-	XPython::Builtin::I().Register("print", nullptr, params);
+	//XPython::Builtin::I().Register("print", nullptr, params);
+	XPython::Builtin::I().RegisterInternals();
 	RunCore(code);
 	std::cout << "End." << std::endl;
 	return 0;

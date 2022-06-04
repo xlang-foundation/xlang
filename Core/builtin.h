@@ -14,5 +14,6 @@ namespace XPython {
 		AST::ExternFunc* Find(std::string& name);
 		bool Register(const char* name, void* func,
 			std::vector<std::pair<std::string, std::string>>& params);
+		bool RegisterInternals();
 	};
 }

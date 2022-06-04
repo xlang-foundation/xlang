@@ -1,23 +1,41 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <unordered_map>
 #include "value.h"
 
 namespace XPython {namespace AST {
 class StackFrame
 {
 protected:
-	std::unordered_map < std::string, Value> m_VarMap;
+	Value* m_Values = nil;
 	Value m_retVal;
 public:
-	StackFrame();
-	~StackFrame();
-	bool Have(std::string& name);
-	bool Set(std::string& name, Value& v);
-	bool SetReturn(Value& v);
-	bool Get(std::string& name, Value& v);
-	Value& GetReturnValue()
+	StackFrame()
+	{
+	}
+	~StackFrame()
+	{
+		if (m_Values)
+		{
+			delete[] m_Values;
+		}
+	}
+	inline bool SetVarCount(int cnt)
+	{
+		m_Values =new Value(cnt);
+		return true;
+	}
+	inline void Set(int idx, Value& v)
+	{
+		m_Values[idx] = v;
+	}
+	inline void SetReturn(Value& v)
+	{
+		m_retVal = v;
+	}
+	inline void Get(int idx, Value& v)
+	{
+		v = m_Values[idx];
+	}
+	inline Value& GetReturnValue()
 	{
 		return m_retVal;
 	}

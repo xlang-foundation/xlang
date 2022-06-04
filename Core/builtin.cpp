@@ -1,4 +1,64 @@
 #include "builtin.h"
+#include "exp.h"
+#include <iostream>
+#include <time.h> 
+#include "utility.h"
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
+bool U_Print(XPython::AST::List* params, XPython::AST::Value& retValue)
+{
+	if (params)
+	{
+		auto values = params->GetList();
+		for (int i = 0; i < (int)values.size(); i++)
+		{
+			XPython::AST::Expression* exp = values[i];
+			XPython::AST::Value v;
+			exp->Run(v);
+			std::string str = v.ToString();
+			std::cout << str;
+		}
+		std::cout << std::endl;
+	}
+	retValue = XPython::AST::Value(true);
+	return true;
+}
+bool U_Rand(XPython::AST::List* params, XPython::AST::Value& retValue)
+{
+	srand((unsigned int)time(nullptr));
+	int r = rand();
+	retValue = XPython::AST::Value(r);
+	return true;
+}
+bool U_Sleep(XPython::AST::List* params, XPython::AST::Value& retValue)
+{
+	if (params)
+	{
+		auto values = params->GetList();
+		if (values.size() > 0)
+		{
+			XPython::AST::Expression* exp = values[0];
+			XPython::AST::Value v;
+			exp->Run(v);
+			long long t = v.GetLongLong();
+			Sleep(t);
+		}
+	}
+	retValue = XPython::AST::Value(true);
+	return true;
+}
+bool U_Time(XPython::AST::List* params, XPython::AST::Value& retValue)
+{
+	long long t = getCurMilliTimeStamp();
+	retValue = XPython::AST::Value(t);
+	return true;
+}
+
+
 namespace XPython {
 AST::ExternFunc* Builtin::Find(std::string& name)
 {
@@ -13,6 +73,15 @@ bool Builtin::Register(const char* name, void* func,
 		strName,
 		(AST::U_FUNC)func);
 	m_mapFuncs.emplace(std::make_pair(name,extFunc));
+	return true;
+}
+bool Builtin::RegisterInternals()
+{
+	std::vector<std::pair<std::string, std::string>> params;
+	Register("print", (void*)U_Print, params);
+	Register("rand", (void*)U_Rand, params);
+	Register("sleep", (void*)U_Sleep, params);
+	Register("time", (void*)U_Time, params);
 	return true;
 }
 }

@@ -11,7 +11,8 @@
 #include "glob.h"
 
 namespace XPython {namespace AST{
-typedef AST::Value(*U_FUNC) (...);
+class List;
+typedef bool (*U_FUNC) (List* params, Value& retValue);
 enum class ObType
 {
 	Base,
@@ -35,9 +36,18 @@ class Expression
 {
 protected:
 	Expression* m_parent = nil;
+	Scope* m_scope = nil;//set by compiling
 public:
 	Expression()
 	{
+	}
+	inline Scope* GetScope()
+	{
+		if (m_scope == nil)
+		{
+			m_scope = FindScope();
+		}
+		return m_scope;
 	}
 	Scope* FindScope();
 	Func* FindFuncByName(Var* name);
@@ -64,6 +74,8 @@ public:
 	{
 		return false;
 	}
+	virtual void ScopeLayout() {}
+
 	ObType m_type = ObType::Base;
 };
 class Operator :
@@ -113,6 +125,11 @@ public:
 		operands.pop();
 		SetL(operandL);
 		operands.push(this);
+	}
+	virtual void ScopeLayout() override
+	{
+		if (L) L->ScopeLayout();
+		if (R) R->ScopeLayout();
 	}
 	virtual void SetL(Expression* l) override
 	{
@@ -220,6 +237,10 @@ public:
 	{
 		m_type = ObType::UnaryOp;
 	}
+	virtual void ScopeLayout() override
+	{
+		if (R) R->ScopeLayout();
+	}
 	virtual void OpWithOperands(
 		std::stack<AST::Expression*>& operands)
 	{
@@ -256,22 +277,6 @@ public:
 		m_type = ObType::Range;
 	}
 
-	virtual bool Run(Value& v) override;
-};
-
-class Var:
-	public Expression
-{
-	String Name;
-
-public:
-	Var(String& n)
-	{
-		Name = n;
-		m_type = ObType::Var;
-	}
-	String& GetName() { return Name; }
-	virtual void Set(Value& v) override;
 	virtual bool Run(Value& v) override;
 };
 class Str :
@@ -332,6 +337,13 @@ public:
 	List()
 	{
 		m_type = ObType::List;
+	}
+	virtual void ScopeLayout() override
+	{
+		for (auto i : list)
+		{
+			i->ScopeLayout();
+		}
 	}
 	std::vector<Expression*>& GetList()
 	{
@@ -446,7 +458,15 @@ public:
 		BinaryOp(op)
 	{
 	}
-	virtual bool Run(Value& v) override;
+	inline virtual bool Run(Value& v) override
+	{
+		bool bIn = R->Run(v);
+		if(bIn)
+		{
+			L->Set(v);
+		}
+		return bIn;
+	}
 };
 class For :
 	public Block
@@ -488,41 +508,89 @@ class Scope:
 	public Block
 {//variables scope support, for Module and Func/Class
 protected:
+	std::unordered_map < std::string, int> m_Vars;
 	std::stack<StackFrame*> mStackFrames;
 public:
 	Scope() :
 		Block()
 	{
 	}
+	int AddOrGet(std::string& name)
+	{//alwasy append,no remove, so new item's index is size of m_Vars;
+		auto it = m_Vars.find(name);
+		if (it != m_Vars.end())
+		{
+			return it->second;
+		}
+		int idx = (int)m_Vars.size();
+		m_Vars.emplace(std::make_pair(name, idx));
+		return idx;
+	}
 	void PushFrame(StackFrame* frame)
 	{
+		frame->SetVarCount((int)m_Vars.size());
 		mStackFrames.push(frame);
 	}
 	StackFrame* PopFrame()
 	{
 		return mStackFrames.empty() ? nil : mStackFrames.top();
 	}
-	bool Have(std::string& name)
+
+	inline bool Set(int idx, Value& v)
 	{
-		return mStackFrames.empty()?false:
-			mStackFrames.top()->Have(name);
+		if (!mStackFrames.empty())
+		{
+			mStackFrames.top()->Set(idx, v);
+		}
+		return true;
 	}
-	bool Set(std::string& name, Value& v)
+	inline bool SetReturn(Value& v)
 	{
-		return mStackFrames.empty() ? false :
-			mStackFrames.top()->Set(name,v);
+		mStackFrames.top()->SetReturn(v);
+		return true;
 	}
-	bool SetReturn(Value& v)
+	inline bool Get(int idx, Value& v)
 	{
-		return mStackFrames.empty() ? false :
-			mStackFrames.top()->SetReturn(v);
-	}
-	bool Get(std::string& name, Value& v)
-	{
-		return mStackFrames.empty() ? false :
-			mStackFrames.top()->Get(name, v);
+		if (!mStackFrames.empty())
+		{
+			mStackFrames.top()->Get(idx, v);
+		}
+		return true;
 	}
 };
+
+class Var :
+	public Expression
+{
+	String Name;
+	int Index = -1;//index for this Var,set by compiling
+public:
+	Var(String& n)
+	{
+		Name = n;
+		m_type = ObType::Var;
+	}
+	virtual void ScopeLayout() override
+	{
+		Scope* pMyScope = GetScope();
+		if (pMyScope)
+		{
+			std::string strName(Name.s, Name.size);
+			Index = pMyScope->AddOrGet(strName);
+		}
+	}
+	String& GetName() { return Name; }
+	inline virtual void Set(Value& v) override
+	{
+		m_scope->Set(Index,v);
+	}
+	inline virtual bool Run(Value& v) override
+	{
+		m_scope->Get(Index, v);
+		return true;
+	}
+};
+
 class Module :
 	public Scope
 {
@@ -621,6 +689,9 @@ public:
 		m_funcName = funcName;
 		m_func = func;
 	}
-	virtual bool Call(List* params, Value& retValue) override;
+	virtual bool Call(List* params, Value& retValue) override
+	{
+		return m_func ? m_func(params, retValue) : false;
+	}
 };
 }}
