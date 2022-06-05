@@ -4,7 +4,7 @@
 #include "def.h"
 #include "parser.h"
 
-namespace XPython {
+namespace X {
 	struct OpInfo
 	{
 		int id;

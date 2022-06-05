@@ -1,7 +1,7 @@
 #pragma once
 #include "value.h"
 
-namespace XPython {namespace AST {
+namespace X {namespace AST {
 class StackFrame
 {
 protected:

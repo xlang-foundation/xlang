@@ -6,7 +6,7 @@
 #include <vector>
 #include "def.h"
 
-namespace XPython {
+namespace X {
 enum class ParseState
 {
 	Wrong_Fmt,

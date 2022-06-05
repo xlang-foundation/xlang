@@ -5,7 +5,7 @@
 #include <vector>
 #include "singleton.h"
 
-namespace XPython {
+namespace X {
 	class Builtin :
 		public Singleton<Builtin>
 	{

@@ -5,9 +5,9 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "XPython.exe",
-      "args": [ "C:/Dev/XPython/test/test.py" ],
-      "name": "XPython.exe"
+      "projectTarget": "X.exe",
+      "args": [ "C:/Dev/XPython/test/obj.py" ],
+      "name": "X.exe"
     }
   ]
 }

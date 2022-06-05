@@ -2,7 +2,7 @@
 #include "parser.h"
 #include "exp.h"
 
-namespace XPython {
+namespace X {
 
 void RegisterOps()
 {

@@ -1,5 +1,5 @@
 #include "value.h"
-namespace XPython {namespace AST {
+namespace X {namespace AST {
 	std::string Value::ToString()
 	{
 		std::string str;

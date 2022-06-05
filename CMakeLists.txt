@@ -3,18 +3,18 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-project ("XPython")
+project ("X")
 
 FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp")
 
-add_executable (XPython 
-	"XPython.cpp" 
-	"XPython.h"
+add_executable (X 
+	"X.cpp" 
+	"X.h"
 	${Core_SRC}
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET XPython PROPERTY CXX_STANDARD 20)
+  set_property(TARGET X PROPERTY CXX_STANDARD 20)
 endif()
 
 

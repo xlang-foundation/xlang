@@ -10,7 +10,7 @@
 #include "stackframe.h"
 #include "glob.h"
 
-namespace XPython {namespace AST{
+namespace X {namespace AST{
 class List;
 typedef bool (*U_FUNC) (List* params, Value& retValue);
 enum class ObType
@@ -350,6 +350,8 @@ public:
 	{
 		m_type = ObType::List;
 	}
+	void ClearList() { list.clear();}//before this call,
+	//copy all list into another List
 	~List()
 	{
 		for (auto e : list)

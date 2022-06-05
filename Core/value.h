@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace XPython {namespace AST {
+namespace X {namespace AST {
 enum class ValueType
 {
 	None,
@@ -10,7 +10,7 @@ enum class ValueType
 	Double,
 	Pointer,
 	Str,
-
+	Object
 };
 
 #define ToDouble(v) \
@@ -157,14 +157,12 @@ public:
 		t = ValueType::Pointer;
 		x.p = p;
 	}
-	Value(Value& v)
+	Value(const Value& v)
 	{
 		flags = v.flags;
 		t = v.t;
 		switch (t)
 		{
-		case ValueType::None:
-			break;
 		case ValueType::Int64:
 			x.l = ToInt64(v);
 			break;

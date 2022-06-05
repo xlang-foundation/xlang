@@ -2,7 +2,7 @@
 #include "action.h"
 #include <string>
 
-namespace XPython {
+namespace X {
 struct KwTree
 {
 	unsigned char c;

@@ -2,7 +2,7 @@
 
 #include "def.h"
 
-namespace XPython {
+namespace X {
 enum LastCharType
 {
 	LCT_None,

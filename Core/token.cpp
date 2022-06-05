@@ -1,5 +1,5 @@
 #include "token.h"
-namespace XPython {
+namespace X {
 
 bool Token::MatchInTree(char c)
 {

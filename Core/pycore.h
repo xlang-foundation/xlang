@@ -1,7 +1,7 @@
 #ifndef __PYCORE_H__
 #define __PYCORE_H__
 
-namespace XPython {
+namespace X {
 
 typedef void* PyHandle;
 

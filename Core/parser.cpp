@@ -4,7 +4,7 @@
 #include <vector>
 #include "action.h"
 
-namespace XPython {	
+namespace X {	
 
 ParseState Parser::ParseHexBinOctNumber(String& str)
 {

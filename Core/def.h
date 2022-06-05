@@ -1,6 +1,6 @@
 #pragma once
 
-namespace XPython {
+namespace X {
 #define nil 0
 struct String
 {

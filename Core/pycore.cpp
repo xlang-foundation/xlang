@@ -1,7 +1,7 @@
 #include "pycore.h"
 #include "parser.h"
 
-namespace XPython {
+namespace X {
 
 PyHandle PyLoad(char* code, int size)
 {

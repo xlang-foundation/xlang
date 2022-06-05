@@ -5,7 +5,7 @@
 #include <vector>
 #include "def.h"
 
-namespace XPython {
+namespace X {
 	class G:
 		public Singleton<G>
 	{

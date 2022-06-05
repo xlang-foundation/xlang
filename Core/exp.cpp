@@ -2,7 +2,7 @@
 #include "builtin.h"
 #include <iostream>
 
-namespace XPython {namespace AST {
+namespace X {namespace AST {
 	Scope* Expression::FindScope()
 {
 	Scope* pMyScope = dynamic_cast<Scope*>(this);
@@ -128,6 +128,17 @@ bool PairOp::Run(Value& v)
 		else if(R)
 		{//like (x+1), just need to use R to eval
 			bOK = R->Run(v);
+		}
+	}
+	else if (Op == G::I().GetOpId(OP_ID::Brackets_L))
+	{
+		if (L && L->m_type == ObType::Var)
+		{//usage: x[1,2]
+
+		}
+		else
+		{//Creating list with []
+
 		}
 	}
 	return bOK;
@@ -373,7 +384,9 @@ void CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 	}
 	else
 	{
-		*list += (AST::List*)operandR;
+		List& list_r = *(AST::List*)operandR;
+		*list += list_r;
+		list_r.ClearList();
 		delete operandR;
 	}
 	operands.push(list);

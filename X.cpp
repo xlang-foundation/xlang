@@ -1,7 +1,7 @@
 ﻿// LitePy.cpp : Defines the entry point for the application.
 //
 
-#include "XPython.h"
+#include "X.h"
 #include "Core/pycore.h"
 #include "Core/builtin.h"
 #include <fstream>
@@ -10,14 +10,14 @@
 
 void RunCore(std::string& code)
 {
-	XPython::PyHandle h = XPython::PyLoad((char*)code.c_str(), (int)code.size());
-	XPython::PyRun(h);
-	XPython::PyClose(h);
+	X::PyHandle h = X::PyLoad((char*)code.c_str(), (int)code.size());
+	X::PyRun(h);
+	X::PyClose(h);
 }
 
 int main(int argc, char* argv[])
 {
-	std::string pyFileName = "C:/Dev/XPython/test/test2.py";
+	std::string pyFileName = "C:/Dev/X/test/test2.py";
 	if (argc >= 2)
 	{
 		pyFileName = argv[1];
@@ -27,8 +27,8 @@ int main(int argc, char* argv[])
 		std::istreambuf_iterator<char>());
 	pyFile.close();
 	std::vector<std::pair<std::string, std::string>> params;
-	//XPython::Builtin::I().Register("print", nullptr, params);
-	XPython::Builtin::I().RegisterInternals();
+	//X::Builtin::I().Register("print", nullptr, params);
+	X::Builtin::I().RegisterInternals();
 	RunCore(code);
 	std::cout << "End." << std::endl;
 	return 0;
