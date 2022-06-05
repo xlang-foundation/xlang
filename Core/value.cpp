@@ -28,7 +28,7 @@ namespace X {namespace AST {
 			str = v;
 		}
 		break;
-		case ValueType::Pointer:
+		case ValueType::Object:
 			break;
 		case ValueType::Str:
 			str = std::string((char*)x.p, flags);

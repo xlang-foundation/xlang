@@ -31,9 +31,11 @@ public:
 	{
 		m_retVal = v;
 	}
-	inline void Get(int idx, Value& v)
+	inline void Get(int idx, Value& v, LValue* lValue = nullptr)
 	{
-		v = m_Values[idx];
+		Value& v0 = m_Values[idx];
+		v = v0;
+		if (lValue) *lValue = &v0;
 	}
 	inline Value& GetReturnValue()
 	{

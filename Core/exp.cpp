@@ -1,6 +1,7 @@
 #include "exp.h"
 #include "builtin.h"
 #include <iostream>
+#include "object.h"
 
 namespace X {namespace AST {
 	Scope* Expression::FindScope()
@@ -38,7 +39,7 @@ Func* Expression::FindFuncByName(Var* name)
 	return pFuncRet;
 }
 
-bool UnaryOp::Run(Value& v)
+bool UnaryOp::Run(Value& v,LValue* lValue)
 {
 	Value v_r;
 	if (!R->Run(v_r))
@@ -94,7 +95,7 @@ bool Func::Call(List* params, Value& retValue)
 	return true;
 }
 
-bool PairOp::Run(Value& v)
+bool PairOp::Run(Value& v,LValue* lValue)
 {
 	bool bOK = false;
 	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
@@ -134,11 +135,64 @@ bool PairOp::Run(Value& v)
 	{
 		if (L && L->m_type == ObType::Var)
 		{//usage: x[1,2]
-
+			Value v0;
+			bOK = L->Run(v0);
+			Data::List* pDataList = (Data::List*)v0.GetObject();
+			//Get Index
+			std::vector<long long> IdxAry;
+			if (R->m_type == ObType::List)
+			{
+				auto& list = ((List*)R)->GetList();
+				for (auto e : list)
+				{
+					Value v1;
+					if (e->Run(v1))
+					{
+						IdxAry.push_back(v1.GetLongLong());
+					}
+					else
+					{
+						bOK = false;
+						break;
+					}
+				}
+			}
+			else
+			{
+				Value vIdx;
+				bOK = R->Run(vIdx);
+				IdxAry.push_back(vIdx.GetLongLong());
+			}
+			if (bOK)
+			{
+				if (IdxAry.size() > 0)
+				{
+					pDataList->Get(IdxAry[0],v, lValue);
+				}
+			}
 		}
 		else
-		{//Creating list with []
-
+		{//Create list with []
+			bOK = true;
+			Data::List* pDataList = new Data::List();
+			if (R->m_type == ObType::List)
+			{
+				auto& list = ((List*)R)->GetList();
+				for (auto e : list)
+				{
+					Value v;
+					if (e->Run(v))
+					{
+						pDataList->Add(v);
+					}
+					else
+					{
+						bOK = false;
+						break;
+					}
+				}
+			}
+			v = Value(pDataList);
 		}
 	}
 	return bOK;
@@ -205,7 +259,7 @@ Func* Block::FindFuncByName(Var* name)
 	return func;
 }
 
-bool While::Run(Value& v)
+bool While::Run(Value& v,LValue* lValue)
 {
 	if (R == nil)
 	{
@@ -227,7 +281,7 @@ bool While::Run(Value& v)
 	}
 	return true;
 }
-bool For::Run(Value& v)
+bool For::Run(Value& v,LValue* lValue)
 {
 	Value v0;
 	while (true)
@@ -243,7 +297,7 @@ bool For::Run(Value& v)
 }
 
 #if 0
-bool InOp::Run(Value& v)
+bool InOp::Run(Value& v,LValue* lValue)
 {
 	bool bIn = false;
 	if (R)
@@ -288,7 +342,7 @@ bool Range::Eval()
 	m_evaluated = true;
 	return true;
 }
-bool Range::Run(Value& v)
+bool Range::Run(Value& v,LValue* lValue)
 {
 	if (!m_evaluated)
 	{
@@ -325,7 +379,7 @@ bool If::EatMe(Expression* other)
 		return false;
 	}
 }
-bool If::Run(Value& v)
+bool If::Run(Value& v,LValue* lValue)
 {
 	bool bRet = true;
 	bool bCanRun = false;

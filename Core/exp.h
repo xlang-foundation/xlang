@@ -64,7 +64,7 @@ public:
 	{
 
 	}
-	virtual bool Run(Value& v)
+	virtual bool Run(Value& v,LValue* lValue=nullptr)
 	{
 		return false;
 	}
@@ -149,7 +149,7 @@ public:
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
 
-	virtual bool Run(Value& v) override
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
@@ -178,18 +178,26 @@ public:
 	{
 		m_type = ObType::Assign;
 	}
-	virtual bool Run(Value& v) override
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
 			return false;
 		}
 		Value v_l;
-		L->Run(v_l);
+		LValue lValue_L = nullptr;
+		L->Run(v_l, &lValue_L);
 		Value v_r;
 		if (R->Run(v_r))
 		{
-			L->Set(v_r);
+			if (lValue_L)
+			{
+				*lValue_L = v_r;
+			}
+			else
+			{
+				L->Set(v_r);
+			}
 		}
 		return true;
 	}
@@ -225,7 +233,7 @@ public:
 	{
 		m_type = ObType::Pair;
 	}
-	virtual bool Run(Value& v) override;
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
 };
 class UnaryOp :
 	public Operator
@@ -271,7 +279,7 @@ public:
 	}
 	Expression* GetR() { return R; }
 
-	virtual bool Run(Value& v) override;
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
 	public UnaryOp
@@ -289,7 +297,7 @@ public:
 		m_type = ObType::Range;
 	}
 
-	virtual bool Run(Value& v) override;
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
 };
 class Str :
 	public Expression
@@ -302,7 +310,7 @@ public:
 		m_s = s;
 		m_size = size;
 	}
-	virtual bool Run(Value& v) override
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_s,m_size);
 		v = v0;
@@ -321,7 +329,7 @@ public:
 		m_digiNum = num;
 		m_type = ObType::Number;
 	}
-	virtual bool Run(Value& v) override
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		v0.SetF(m_digiNum);
@@ -477,7 +485,7 @@ public:
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
-	virtual bool Run(Value& v)
+	virtual bool Run(Value& v,LValue* lValue=nullptr)
 	{
 		bool bOk = true;
 		for (auto i : Body)
@@ -500,7 +508,7 @@ public:
 		BinaryOp(op)
 	{
 	}
-	inline virtual bool Run(Value& v) override
+	inline virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
 		bool bIn = R->Run(v);
 		if(bIn)
@@ -518,7 +526,7 @@ public:
 		Block(op)
 	{
 	}
-	virtual bool Run(Value& v) override;
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
 };
 class While :
 	public Block
@@ -529,7 +537,7 @@ public:
 	{
 	}
 
-	virtual bool Run(Value& v) override;
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
 };
 
 class If :
@@ -547,7 +555,7 @@ public:
 		if (m_next) delete m_next;
 	}
 	virtual bool EatMe(Expression* other) override;
-	virtual bool Run(Value& v) override;
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
 };
 
 class Scope:
@@ -595,11 +603,11 @@ public:
 		mStackFrames.top()->SetReturn(v);
 		return true;
 	}
-	inline bool Get(int idx, Value& v)
+	inline bool Get(int idx, Value& v, LValue* lValue = nullptr)
 	{
 		if (!mStackFrames.empty())
 		{
-			mStackFrames.top()->Get(idx, v);
+			mStackFrames.top()->Get(idx, v,lValue);
 		}
 		return true;
 	}
@@ -630,7 +638,7 @@ public:
 	{
 		m_scope->Set(Index,v);
 	}
-	inline virtual bool Run(Value& v) override
+	inline virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
 		m_scope->Get(Index, v);
 		return true;
@@ -724,7 +732,7 @@ public:
 		}
 	}
 	virtual bool Call(List* params,Value& retValue);
-	virtual bool Run(Value& v) override
+	virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{// func doesn't need to run in module
 	 // but will call by callee
 		return true;

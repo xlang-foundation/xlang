@@ -8,9 +8,8 @@ enum class ValueType
 	None,
 	Int64,
 	Double,
-	Pointer,
+	Object,
 	Str,
-	Object
 };
 
 #define ToDouble(v) \
@@ -32,7 +31,7 @@ Value& operator op (const Value& r)\
 	case ValueType::Double:\
 		x.d op ToDouble(r);\
 		break;\
-	case ValueType::Pointer:\
+	case ValueType::Object:\
 		break;\
 	default:\
 		break;\
@@ -55,7 +54,7 @@ bool operator op (const Value& r)\
 	case ValueType::Double:\
 		bRet = (x.d op ToDouble(r));\
 		break;\
-	case ValueType::Pointer:\
+	case ValueType::Object:\
 		break;\
 	default:\
 		break;\
@@ -83,6 +82,10 @@ public:
 	{
 		return x.l;
 	}
+	void* GetObject()
+	{
+		return x.p;
+	}
 	void SetF(int f)
 	{
 		flags = f;
@@ -105,7 +108,7 @@ public:
 		case ValueType::Double:
 			bRet = (x.d == 0);
 			break;
-		case ValueType::Pointer:
+		case ValueType::Object:
 			bRet = (x.p == 0);
 			break;
 		default:
@@ -154,7 +157,7 @@ public:
 	}
 	Value(void* p)
 	{
-		t = ValueType::Pointer;
+		t = ValueType::Object;
 		x.p = p;
 	}
 	Value(const Value& v)
@@ -169,7 +172,7 @@ public:
 		case ValueType::Double:
 			x.d = ToDouble(v);
 			break;
-		case ValueType::Pointer:
+		case ValueType::Object:
 			x.p = v.x.p;
 			break;
 		default:
@@ -189,5 +192,6 @@ public:
 
 	std::string ToString();
 };
+typedef Value* LValue;
 }
 }
