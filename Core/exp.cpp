@@ -3,8 +3,7 @@
 #include <iostream>
 
 namespace XPython {namespace AST {
-
-Scope* Expression::FindScope()
+	Scope* Expression::FindScope()
 {
 	Scope* pMyScope = dynamic_cast<Scope*>(this);
 	if (pMyScope == nil)

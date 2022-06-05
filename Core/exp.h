@@ -41,11 +41,12 @@ public:
 	Expression()
 	{
 	}
+	virtual ~Expression(){}
 	inline Scope* GetScope()
 	{
 		if (m_scope == nil)
 		{
-			m_scope = FindScope();
+			m_scope = FindScope();//FindScope will AddRef
 		}
 		return m_scope;
 	}
@@ -58,9 +59,6 @@ public:
 	Expression* GetParent()
 	{
 		return m_parent;
-	}
-	virtual ~Expression()
-	{
 	}
 	virtual void Set(Value& v)
 	{
@@ -93,14 +91,10 @@ public:
 		Op = op;
 	}
 
-	inline short getOp()
-	{
-		return Op;
-	}
+	inline short getOp(){return Op;}
 	virtual void SetL(Expression* l) {}
 	virtual void SetR(Expression* r) {}
-	virtual void OpWithOperands(
-		std::stack<AST::Expression*>& operands) {}
+	virtual void OpWithOperands(std::stack<AST::Expression*>& operands) {}
 };
 
 class BinaryOp :
@@ -114,6 +108,11 @@ public:
 		Operator(op)
 	{
 		m_type = ObType::BinaryOp;
+	}
+	~BinaryOp()
+	{
+		if (L) delete L;
+		if (R) delete R;
 	}
 	virtual void OpWithOperands(
 		std::stack<AST::Expression*>& operands)
@@ -134,12 +133,18 @@ public:
 	virtual void SetL(Expression* l) override
 	{
 		L = l;
-		if (L) L->SetParent(this);
+		if (L) 
+		{
+			L->SetParent(this);
+		}
 	}
 	virtual void SetR(Expression* r) override
 	{
 		R = r;
-		if (R) R->SetParent(this);
+		if (R)
+		{
+			R->SetParent(this);
+		}
 	}
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
@@ -237,6 +242,10 @@ public:
 	{
 		m_type = ObType::UnaryOp;
 	}
+	~UnaryOp()
+	{
+		if (R) delete R;
+	}
 	virtual void ScopeLayout() override
 	{
 		if (R) R->ScopeLayout();
@@ -255,7 +264,10 @@ public:
 	virtual void SetR(Expression* r) override
 	{
 		R = r;
-		if(R) R->SetParent(this);
+		if (R)
+		{
+			R->SetParent(this);
+		}
 	}
 	Expression* GetR() { return R; }
 
@@ -338,6 +350,13 @@ public:
 	{
 		m_type = ObType::List;
 	}
+	~List()
+	{
+		for (auto e : list)
+		{
+			delete e;
+		}
+	}
 	virtual void ScopeLayout() override
 	{
 		for (auto i : list)
@@ -352,21 +371,30 @@ public:
 	List(Expression* item):List()
 	{
 		list.push_back(item);
-		if(item) item->SetParent(this);
+		if (item)
+		{
+			item->SetParent(this);
+		}
 	}
 	List& operator+=(const List& rhs)
 	{
 		for (auto i : rhs.list)
 		{
 			list.push_back(i);
-			if(i) i->SetParent(this);
+			if (i)
+			{
+				i->SetParent(this);
+			}
 		}
 		return *this;
 	}
 	List& operator+=(Expression* item)
 	{
 		list.push_back(item);
-		if(item) item->SetParent(this);
+		if (item)
+		{
+			item->SetParent(this);
+		}
 		return *this;
 	}
 };
@@ -389,6 +417,11 @@ public:
 			Type->SetParent(this);
 		}
 		m_type = ObType::Param;
+	}
+	~Param()
+	{
+		if (Name) delete Name;
+		if (Type) delete Type;
 	}
 	inline Expression* GetName() { return Name; }
 	inline Expression* GetType() { return Type; }
@@ -428,6 +461,13 @@ public:
 	Block(short op) :
 		UnaryOp(op)
 	{
+	}
+	~Block()
+	{
+		for (auto b : Body)
+		{
+			delete b;
+		}
 	}
 	void Add(Expression* item);
 	virtual Func* FindFuncByName(Var* name);
@@ -499,6 +539,10 @@ public:
 		Block(op)
 	{
 		NeedParam = needParam;
+	}
+	~If()
+	{
+		if (m_next) delete m_next;
 	}
 	virtual bool EatMe(Expression* other) override;
 	virtual bool Run(Value& v) override;
@@ -629,6 +673,12 @@ public:
 		Scope()
 	{
 		m_type = ObType::Func;
+	}
+	~Func()
+	{
+		if (Name) delete Name;
+		if (Params) delete Params;
+		if (RetType) delete RetType;
 	}
 	Expression* GetName() { return Name; }
 

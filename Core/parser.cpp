@@ -407,6 +407,7 @@ bool Parser::Run()
 	bool bOK = pTopModule->Run(v);
 	pTopModule->PopFrame();
 	delete frame;
+	delete pTopModule;
 	return bOK;
 }
 }

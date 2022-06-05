@@ -105,7 +105,7 @@ void RegisterOps()
 	});
 	RegOP("return")
 	.SetUnaryop([](AST::UnaryOp* op,AST::Value& R, AST::Value& v) {
-		AST::Scope* pScope = op->FindScope();
+		AST::Scope* pScope = op->GetScope();
 		if (pScope)
 		{
 			pScope->SetReturn(R);

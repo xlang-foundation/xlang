@@ -1,5 +1,12 @@
-x =1
-while x<10000:
-    print("x=",x)
+x =0
+num = 10000000
+sum =0
+t1 = time()
+while x<num:
+    sum =sum+X
     x =x+1
+t2 = time()
+t2 = (t2-t1)
+print("sum=",sum)
+print("All->time spend:",t2)
 print("End While test")
