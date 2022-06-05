@@ -20,7 +20,7 @@ public:
 	}
 	inline bool SetVarCount(int cnt)
 	{
-		m_Values =new Value(cnt);
+		m_Values =new Value[cnt];
 		return true;
 	}
 	inline void Set(int idx, Value& v)
