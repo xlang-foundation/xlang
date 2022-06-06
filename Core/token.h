@@ -11,6 +11,7 @@ enum LastCharType
 	LCT_Str2,//with " "
 	LCT_Ops,
 	LCT_Alpha,//digit and alphabet
+	LCT_LineComment,//With #
 	LCT_EOS//End of Stream
 };
 struct CoreContext
@@ -33,7 +34,9 @@ enum TokenIndex
 	TokenID = -10,
 	TokenNum = -11,
 	TokenStr = -12,
-	TokenEOS = -13
+	TokenEOS = -13,
+	TokenLineComment = -20,
+	TokenComment = -21
 };
 
 #pragma pack(push,1)

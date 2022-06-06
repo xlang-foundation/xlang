@@ -49,7 +49,10 @@ typedef bool (*BinaryOpProc)(
 	AST::BinaryOp* op,AST::Value& L, AST::Value& R, AST::Value& out);
 
 
-#define Precedence_Reqular 1000
+#define Precedence_High 200
+#define Precedence_Reqular 100
+#define Precedence_LOW2 80
+#define Precedence_LOW1 60
 #define Precedence_Min 0
 
 struct OpAction

@@ -7,8 +7,6 @@ for i in range(num):
    x += i
    x = x+3
    x = x-3
-   x = x+1972
-   x = x-1972
 
 end_time = datetime.datetime.now()
 

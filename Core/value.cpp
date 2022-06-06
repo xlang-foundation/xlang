@@ -29,6 +29,11 @@ namespace X {namespace AST {
 		}
 		break;
 		case ValueType::Object:
+		{
+			char v[1000];
+			snprintf(v, sizeof(v), "Object:0x%llx", (unsigned long long)x.p);
+			str = v;
+		}
 			break;
 		case ValueType::Str:
 			str = std::string((char*)x.p, flags);

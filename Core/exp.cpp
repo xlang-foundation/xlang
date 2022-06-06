@@ -100,6 +100,19 @@ bool PairOp::Run(Value& v,LValue* lValue)
 	bool bOK = false;
 	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
 	{//Call Func
+		Value lVal;
+		if (L)
+		{
+			bOK = L->Run(lVal);
+			if (bOK)
+			{
+
+			}
+		}
+		Value rVal;
+		if (R)
+		{
+		}
 		if (L && L->m_type == ObType::Var)
 		{
 			Func* pFunc = FindFuncByName((Var*)L);
@@ -133,7 +146,7 @@ bool PairOp::Run(Value& v,LValue* lValue)
 	}
 	else if (Op == G::I().GetOpId(OP_ID::Brackets_L))
 	{
-		if (L && L->m_type == ObType::Var)
+		if (L)
 		{//usage: x[1,2]
 			Value v0;
 			bOK = L->Run(v0);
@@ -175,7 +188,7 @@ bool PairOp::Run(Value& v,LValue* lValue)
 		{//Create list with []
 			bOK = true;
 			Data::List* pDataList = new Data::List();
-			if (R->m_type == ObType::List)
+			if (R && R->m_type == ObType::List)
 			{
 				auto& list = ((List*)R)->GetList();
 				for (auto e : list)

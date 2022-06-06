@@ -169,12 +169,10 @@ void Register()
 	RegOP(//Python Assignment Operators
 		"=", "+=", "-=", "*=", "/=", "%=", "//=",
 		"**=", "&=", "|=", "^=", ">>=", "<<=")
-		.SetProcess([](Parser* p, short opIndex){
-			auto op = new AST::Assign(opIndex);
-			return (AST::Operator*)op;
-		})
-		.SetPrecedence(Precedence_Min);
-
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::Assign(opIndex);
+		return (AST::Operator*)op;
+		});
 	RegOP(
 		//Python Arithmetic Operators 
 		"+", "-", "*", "/", "%", "**", "//")
@@ -192,9 +190,6 @@ void Register()
 			auto op = new AST::BinaryOp(opIndex);
 			return (AST::Operator*)op;
 		});
-	//set precedence just higher 1 with reqular
-	RegOP("*", "/", "%", "**", "//")
-		.SetPrecedence(Precedence_Reqular + 1);
 
 	//Override for +-* which may be an unary Operator
 	RegOP("+", "-", "*")
@@ -261,9 +256,6 @@ void Register()
 			auto op = new AST::CommaOp(opIndex);
 			return (AST::Operator*)op;
 		});
-	//change precedence for ':'
-	//OpInfo{{"in"},nil,Alias::In,Precedence_Reqular + 1},
-	RegOP(":").SetPrecedence(Precedence_Reqular + 2);
 	RegOP("\n").SetProcess([](Parser* p, short opIndex)
 		{
 			p->NewLine();
@@ -282,6 +274,13 @@ void Register()
 	RegOP("\\").SetId(OP_ID::Slash);
 	RegOP(":").SetId(OP_ID::Colon);
 	RegOP("\t").SetId(OP_ID::Tab);
+
+	RegOP("[", "]", "{", "}", "(",")")
+		.SetPrecedence(Precedence_High);
+	RegOP("*", "/", "%", "**", "//")
+		.SetPrecedence(Precedence_Reqular + 1);
+	RegOP(",")
+		.SetPrecedence(Precedence_LOW1);
 }
 
 std::vector<OpInfo> RegOP::OPList;

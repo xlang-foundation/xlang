@@ -1,6 +1,12 @@
-x =[1,2,[31,32,33],4,5,6,
-    7,8,9,10]
-print(x[2][1])
+#test
+x =[](size=10,type='int')
+"""
+num =1000000
+for i in range(num):
+ x[i] =i
 for i in range(10):
- x[i] = x[i]+100
+ x[i] = x[i]
  print(x[i])
+"""
+
+

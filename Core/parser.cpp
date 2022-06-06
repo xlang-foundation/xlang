@@ -156,7 +156,10 @@ bool Parser::Compile(char* code, int size)
 			m_NewLine_WillStart = false;
 			break;
 		}
-		if (idx == TokenStr)
+		if (idx == TokenLineComment || idx == TokenComment)
+		{
+		}
+		else if (idx == TokenStr)
 		{
 			m_NewLine_WillStart = false;
 			AST::Str* v = new AST::Str(s.s, s.size);
@@ -216,7 +219,8 @@ bool Parser::Compile(char* code, int size)
 					auto top = m_ops.top();
 					OpAction topAct = OpAct(top->getOp());
 					OpAction cur_opAct = OpAct(op->getOp());
-					if (topAct.precedence> cur_opAct.precedence)
+					if (top->m_type != AST::ObType::Pair &&
+						topAct.precedence> cur_opAct.precedence)
 					{
 						DoOpTop(m_operands, m_ops);
 					}

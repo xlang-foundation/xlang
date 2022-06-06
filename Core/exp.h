@@ -640,7 +640,7 @@ public:
 	}
 	inline virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
-		m_scope->Get(Index, v);
+		m_scope->Get(Index, v, lValue);
 		return true;
 	}
 };
@@ -735,6 +735,7 @@ public:
 	virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{// func doesn't need to run in module
 	 // but will call by callee
+	 //put into Value Table
 		return true;
 	}
 };

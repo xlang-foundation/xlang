@@ -32,16 +32,56 @@ short Token::Scan(String& id, int& leadingSpaceCnt)
 		leadingSpaceCnt = _context.leadingSpaceCount;
 		return TokenEOS;
 	}
-	else if (LCT_Str == _context.lct || LCT_Str2 == _context.lct)
+	else if (LCT_Str == _context.lct 
+		|| LCT_Str2 == _context.lct)
 	{//fetch all string and return token
-		char begin_c = (LCT_Str == _context.lct) ? '\'' : '\"';
+		char begin_c = (LCT_Str == _context.lct) 
+			? '\'' : '\"';
 		id.s = _context.spos;
+		//do ''' ''' or """ """as comment
+		int begin_quoteCnt = 1;
+		int end_quoteCnt = 0;
 		do
 		{
 			c = GetChar();
+			if (begin_quoteCnt == 3)
+			{//count end quote to 3
+				if (c == begin_c)
+				{
+					end_quoteCnt++;
+					if (end_quoteCnt == 3)
+					{
+						break;
+					}
+					else
+					{
+						c = 1;//not break the while
+						continue;
+					}
+				}
+				else
+				{
+					end_quoteCnt = 0;
+				}
+			}
+			else
+			{
+				if (begin_quoteCnt >0 && c == begin_c)
+				{
+					begin_quoteCnt++;
+					c = 1;//not break the while
+					continue;
+				}
+				else
+				{//break, don't count again
+					begin_quoteCnt = 0;
+				}
+			}
 		} while (c != begin_c && c != 0);
 		id.size = int(_context.spos - id.s - 1);
 		leadingSpaceCnt = _context.leadingSpaceCount;
+		bool isComment = (begin_quoteCnt ==3) 
+			&& (end_quoteCnt==3);
 
 		//reset for next
 		ResetToRoot();
@@ -49,7 +89,7 @@ short Token::Scan(String& id, int& leadingSpaceCnt)
 		_context.leadingSpaceCount = 0;
 		_context.lct = LCT_None;
 
-		return TokenStr;
+		return isComment? TokenComment:TokenStr;
 	}
 	c = GetChar();
 
@@ -128,6 +168,28 @@ short Token::Scan(String& id, int& leadingSpaceCnt)
 		}
 		//new token starts
 		_context.token_start = _context.spos - 1;
+	}
+	else if (c == '#')
+	{
+		id.s = _context.spos;
+		do
+		{
+			c = GetChar();
+		} while (c != '\n' && c != 0);
+		ResetToRoot();
+		if (c != 0)
+		{//put \n into tree
+			MatchInTree(c);
+		}
+		id.size = int(_context.spos - id.s - 1);
+		//TODO: maybe LCT_LineComment
+		_context.lct = (c==0)? LCT_EOS:LCT_Ops;
+		retIndex = TokenLineComment;
+		//new token starts
+		_context.token_start = _context.spos - 1;
+		_context.leadingSpaceCount = 0;
+
+		return retIndex;
 	}
 	_context.lct = lct;
 
