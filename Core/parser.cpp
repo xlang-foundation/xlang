@@ -141,6 +141,7 @@ bool Parser::Compile(char* code, int size)
 	reset_preceding_token();
 	//prepare top module for this code
 	AST::Module* pTopModule = new AST::Module();
+	pTopModule->ScopeLayout();
 	m_stackBlocks.push(pTopModule);
 	while (true)
 	{
@@ -406,7 +407,7 @@ bool Parser::Run()
 	AST::Module* pTopModule = (AST::Module* )m_stackBlocks.top();
 	AST::StackFrame* frame = new AST::StackFrame();
 	pTopModule->PushFrame(frame);
-
+	pTopModule->AddBuiltins();
 	AST::Value v;
 	bool bOK = pTopModule->Run(v);
 	pTopModule->PopFrame();

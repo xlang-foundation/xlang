@@ -1,6 +1,10 @@
 import datetime
 start_time = datetime.datetime.now()
 
+def func1(x,y):
+   print("func1")
+f =func1
+f(1,1)
 x = 0
 num  =10000000
 for i in range(num):

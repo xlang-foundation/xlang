@@ -8,50 +8,41 @@
 #else
 #include <unistd.h>
 #endif
+#include <vector>
 
-bool U_Print(X::AST::List* params, X::AST::Value& retValue)
+bool U_Print(std::vector<X::AST::Value>& params,
+	X::AST::Value& retValue)
 {
-	if (params)
+	for (auto& v : params)
 	{
-		auto values = params->GetList();
-		for (int i = 0; i < (int)values.size(); i++)
-		{
-			X::AST::Expression* exp = values[i];
-			X::AST::Value v;
-			exp->Run(v);
-			std::string str = v.ToString();
-			std::cout << str;
-		}
-		std::cout << std::endl;
+		std::string str = v.ToString();
+		std::cout << str;
 	}
+	std::cout << std::endl;
 	retValue = X::AST::Value(true);
 	return true;
 }
-bool U_Rand(X::AST::List* params, X::AST::Value& retValue)
+bool U_Rand(std::vector<X::AST::Value>& params,
+	X::AST::Value& retValue)
 {
 	srand((unsigned int)time(nullptr));
 	int r = rand();
 	retValue = X::AST::Value(r);
 	return true;
 }
-bool U_Sleep(X::AST::List* params, X::AST::Value& retValue)
+bool U_Sleep(std::vector<X::AST::Value>& params,
+	X::AST::Value& retValue)
 {
-	if (params)
+	if (params.size()>0)
 	{
-		auto values = params->GetList();
-		if (values.size() > 0)
-		{
-			X::AST::Expression* exp = values[0];
-			X::AST::Value v;
-			exp->Run(v);
-			long long t = v.GetLongLong();
-			Sleep(t);
-		}
+		long long t = params[0].GetLongLong();
+		Sleep(t);
 	}
 	retValue = X::AST::Value(true);
 	return true;
 }
-bool U_Time(X::AST::List* params, X::AST::Value& retValue)
+bool U_Time(std::vector<X::AST::Value>& params,
+	X::AST::Value& retValue)
 {
 	long long t = getCurMilliTimeStamp();
 	retValue = X::AST::Value(t);

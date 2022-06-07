@@ -11,6 +11,10 @@ namespace X {
 	{
 		std::unordered_map<std::string, AST::ExternFunc*> m_mapFuncs;
 	public:
+		std::unordered_map<std::string, AST::ExternFunc*>& All()
+		{
+			return m_mapFuncs;
+		}
 		AST::ExternFunc* Find(std::string& name);
 		bool Register(const char* name, void* func,
 			std::vector<std::pair<std::string, std::string>>& params);

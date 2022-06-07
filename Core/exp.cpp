@@ -6,15 +6,12 @@
 namespace X {namespace AST {
 	Scope* Expression::FindScope()
 {
-	Scope* pMyScope = dynamic_cast<Scope*>(this);
-	if (pMyScope == nil)
+	Scope* pMyScope = nil;
+	Expression* pa = m_parent;
+	while (pa != nil && pMyScope == nil)
 	{
-		Expression* pa = m_parent;
-		while (pa != nil && pMyScope == nil)
-		{
-			pMyScope = dynamic_cast<Scope*>(pa);
-			pa = pa->GetParent();
-		}
+		pMyScope = dynamic_cast<Scope*>(pa);
+		pa = pa->GetParent();
 	}
 	return pMyScope;
 }
@@ -49,44 +46,100 @@ bool UnaryOp::Run(Value& v,LValue* lValue)
 	auto func = G::I().OpAct(Op).unaryop;
 	return func ? func(this, v_r, v) : false;
 }
-bool Func::SetParamsIntoFrame(StackFrame* frame, List* param_values)
+void Func::ScopeLayout()
 {
-#if __TODO__ //Process default value here
-	if (Params == nil)
+	Scope* pMyScope = GetScope();
+	if (pMyScope)
 	{
-		return true;//no parameters required
+		std::string strName(m_Name.s, m_Name.size);
+		m_Index = pMyScope->AddOrGet(strName, false);
 	}
-	auto param_def = Params->GetList();
-	auto values = param_values->GetList();
-	for (int i=0;i<(int)param_def.size();i++)
+	//prcoess parameters' default values
+	if (Params)
 	{
-		Param* p = dynamic_cast<Param*>(param_def[i]);
-		if (p)
+		auto& list = Params->GetList();
+		m_positionParamCnt = (int)list.size();
+		for (auto i : list)
 		{
-			Var* name = dynamic_cast<Var*>(p->GetName());
-			//TODO: type check
-			String& sName = name->GetName();
-			std::string strName(sName.s, sName.size);
-			Value v;
-			if (i < (int)values.size())
+			std::string strVarName;
+			std::string strVarType;
+			Value defaultValue;
+			switch (i->m_type)
 			{
-				Expression* val = values[i];
-				if (val)
+			case ObType::Var:
+			{
+				Var* varName = dynamic_cast<Var*>(i);
+				String& szName = varName->GetName();
+				strVarName = std::string(szName.s, szName.size);
+			}
+			break;
+			case ObType::Assign:
+			{
+				Assign* assign = dynamic_cast<Assign*>(i);
+				Var* varName = dynamic_cast<Var*>(assign->GetL());
+				String& szName = varName->GetName();
+				strVarName = std::string(szName.s, szName.size);
+				Expression* defVal = assign->GetR();
+				auto* pExprForDefVal = new Data::Expr(defVal);
+				defaultValue = Value(pExprForDefVal);
+			}
+			break;
+			case ObType::Param:
+			{ //two types: 1) name:type=val 2) name:type
+				Param* param = dynamic_cast<Param*>(i);
+				Var* varName = dynamic_cast<Var*>(param->GetName());
+				String& szName = varName->GetName();
+				strVarName = std::string(szName.s, szName.size);
+				Expression* typeCombine = param->GetType();
+				if (typeCombine->m_type == ObType::Assign)
 				{
-					val->Run(v);
+					Assign* assign = dynamic_cast<Assign*>(typeCombine);
+					Var* type = dynamic_cast<Var*>(assign->GetL());
+					if (type)
+					{
+						String& szName = type->GetName();
+						strVarType = std::string(szName.s, szName.size);
+					}
+					Expression* defVal = assign->GetR();
+					auto* pExprForDefVal = new Data::Expr(defVal);
+					defaultValue = Value(pExprForDefVal);
+				}
+				else if (typeCombine->m_type == ObType::Var)
+				{
+					Var* type = dynamic_cast<Var*>(typeCombine);
+					if (type)
+					{
+						String& szName = type->GetName();
+						strVarType = std::string(szName.s, szName.size);
+					}
 				}
 			}
-			frame->Set(strName, v);
+			break;
+			}
+			AddOrGet(strVarName, false);
 		}
 	}
-#endif
+}
+bool Func::Run(Value& v, LValue* lValue)
+{
+	Data::Function* f = new Data::Function(this);
+	Value v0(f);
+	m_scope->Set(m_Index, v0);
+	v = v0;
 	return true;
 }
-bool Func::Call(List* params, Value& retValue)
+
+bool Func::Call(std::vector<Value>& params, Value& retValue)
 {
 	StackFrame* frame = new StackFrame();
-	SetParamsIntoFrame(frame, params);
 	PushFrame(frame);
+	int num = m_positionParamCnt > (int)params.size() ?
+		(int)params.size() : m_positionParamCnt;
+	for (int i = 0; i < num; i++)
+	{
+		Set(i, params[i]);
+	}
+
 	Value v0;
 	Block::Run(v0);
 	PopFrame();
@@ -94,54 +147,62 @@ bool Func::Call(List* params, Value& retValue)
 	delete frame;
 	return true;
 }
-
+bool PairOp::GetParamList(Expression* e,
+	std::vector<Value>& params)
+{
+	bool bOK = true;
+	if (e->m_type != ObType::List)
+	{
+		Value v0;
+		bOK = e->Run(v0);
+		if (bOK)
+		{
+			params.push_back(v0);
+		}
+	}
+	else
+	{
+		auto& list = ((List*)e)->GetList();
+		for (auto i : list)
+		{
+			Value v0;
+			bOK = i->Run(v0);
+			if (bOK)
+			{
+				params.push_back(v0);
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	return bOK;
+}
 bool PairOp::Run(Value& v,LValue* lValue)
 {
 	bool bOK = false;
 	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
 	{//Call Func
 		Value lVal;
-		if (L)
+		bOK = L->Run(lVal);
+		if (!bOK || !lVal.IsObject())
 		{
-			bOK = L->Run(lVal);
-			if (bOK)
-			{
-
-			}
+			return bOK;
 		}
-		Value rVal;
+		std::vector<Value> params;
 		if (R)
 		{
-		}
-		if (L && L->m_type == ObType::Var)
-		{
-			Func* pFunc = FindFuncByName((Var*)L);
-			if (pFunc)
+			bOK = GetParamList(R, params);
+			if (!bOK)
 			{
-				Value retValue;
-				List* inParam = nil;
-				if (R)
-				{
-					if (R->m_type != ObType::List)
-					{
-						inParam = new List(R);
-						inParam->SetParent(this);
-					}
-					else
-					{
-						inParam = (List*)R;
-					}
-				}
-				if (pFunc->Call(inParam, retValue))
-				{//v is return value if changed
-					v = retValue;
-					bOK = true;
-				}
+				return bOK;
 			}
 		}
-		else if(R)
-		{//like (x+1), just need to use R to eval
-			bOK = R->Run(v);
+		Data::Object* obj = (Data::Object*)lVal.GetObject();
+		if (obj)
+		{
+			bOK = obj->Call(params, v);
 		}
 	}
 	else if (Op == G::I().GetOpId(OP_ID::Brackets_L))
@@ -459,6 +520,30 @@ void CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 	operands.push(list);
 
 }
-
+void Module::ScopeLayout()
+{
+	auto& funcs = Builtin::I().All();
+	for (auto it : funcs)
+	{
+		auto name = it.first;
+		int idx = AddOrGet(name, false);
+	}
+	Scope::ScopeLayout();
+}
+void Module::AddBuiltins()
+{
+	auto& funcs = Builtin::I().All();
+	for (auto it : funcs)
+	{
+		auto name = it.first;
+		int idx = AddOrGet(name, true);
+		if (idx >= 0)
+		{
+			auto* pFuncObj = new Data::Function(it.second);
+			Value v0(pFuncObj);
+			Set(idx, v0);
+		}
+	}
+}
 }
 }

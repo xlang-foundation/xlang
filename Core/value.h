@@ -90,6 +90,10 @@ public:
 	{
 		flags = f;
 	}
+	inline bool IsObject()
+	{
+		return (t == ValueType::Object);
+	}
 	inline bool IsTrue()
 	{
 		return !IsZero();
@@ -171,6 +175,9 @@ public:
 			break;
 		case ValueType::Double:
 			x.d = ToDouble(v);
+			break;
+		case ValueType::Str:
+			x.p = v.x.p;
 			break;
 		case ValueType::Object:
 			x.p = v.x.p;

@@ -12,7 +12,7 @@
 
 namespace X {namespace AST{
 class List;
-typedef bool (*U_FUNC) (List* params, Value& retValue);
+typedef bool (*U_FUNC) (std::vector<Value>& params, Value& retValue);
 enum class ObType
 {
 	Base,
@@ -37,9 +37,14 @@ class Expression
 protected:
 	Expression* m_parent = nil;
 	Scope* m_scope = nil;//set by compiling
+	bool m_isLeftValue = false;
 public:
 	Expression()
 	{
+	}
+	inline void SetIsLeftValue(bool b)
+	{
+		m_isLeftValue = b;
 	}
 	virtual ~Expression(){}
 	inline Scope* GetScope()
@@ -178,6 +183,14 @@ public:
 	{
 		m_type = ObType::Assign;
 	}
+	virtual void SetL(Expression* l) override
+	{
+		BinaryOp::SetL(l);
+		if (L)
+		{
+			L->SetIsLeftValue(true);
+		}
+	}
 	virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
@@ -227,6 +240,8 @@ public:
 class PairOp :
 	public BinaryOp
 {
+	bool GetParamList(Expression* e,
+		std::vector<Value>& params);
 public:
 	PairOp(short opIndex) :
 		BinaryOp(opIndex)
@@ -569,16 +584,23 @@ public:
 		Block()
 	{
 	}
-	int AddOrGet(std::string& name)
+	int AddOrGet(std::string& name,bool bGetOnly)
 	{//alwasy append,no remove, so new item's index is size of m_Vars;
 		auto it = m_Vars.find(name);
 		if (it != m_Vars.end())
 		{
 			return it->second;
 		}
-		int idx = (int)m_Vars.size();
-		m_Vars.emplace(std::make_pair(name, idx));
-		return idx;
+		else if (!bGetOnly)
+		{
+			int idx = (int)m_Vars.size();
+			m_Vars.emplace(std::make_pair(name, idx));
+			return idx;
+		}
+		else
+		{
+			return -1;
+		}
 	}
 	void PushFrame(StackFrame* frame)
 	{
@@ -627,11 +649,25 @@ public:
 	virtual void ScopeLayout() override
 	{
 		Scope* pMyScope = GetScope();
-		if (pMyScope)
+		int idx = -1;
+		while (pMyScope!= nullptr && idx ==-1)
 		{
 			std::string strName(Name.s, Name.size);
-			Index = pMyScope->AddOrGet(strName);
+			idx = pMyScope->AddOrGet(strName,
+				!m_isLeftValue);
+			if (m_isLeftValue)
+			{//Left value will add into local scope
+			//don't need to go up
+				break;
+			}
+			if (idx != -1)
+			{
+				break;
+			}
+			pMyScope = pMyScope->GetScope();
 		}
+		m_scope = pMyScope;
+		Index = idx;
 	}
 	String& GetName() { return Name; }
 	inline virtual void Set(Value& v) override
@@ -654,22 +690,32 @@ public:
 	{
 		SetIndentCount({ -1,-1 });//then each line will have 0 indent
 	}
+	virtual void ScopeLayout() override;
+	void AddBuiltins();
 };
 class Func :
 	public Scope
 {
-	Expression* Name = nil;
+	String m_Name;
+	int m_Index = -1;//index for this Var,set by compiling
+	int m_positionParamCnt = 0;
+	Expression* Name=nil;
 	List* Params =nil;
 	Expression* RetType = nil;
-	bool SetParamsIntoFrame(StackFrame* frame, List* param_values);
 	void SetName(Expression* n)
 	{
+		Var* vName = dynamic_cast<Var*>(n);
+		if (vName)
+		{
+			m_Name = vName->GetName();
+		}
 		Name = n;
 		if (Name)
 		{
 			Name->SetParent(this);
 		}
 	}
+	virtual void ScopeLayout() override;
 	void SetParams(List* p)
 	{
 		Params = p;
@@ -686,7 +732,6 @@ public:
 	}
 	~Func()
 	{
-		if (Name) delete Name;
 		if (Params) delete Params;
 		if (RetType) delete RetType;
 	}
@@ -731,13 +776,8 @@ public:
 			RetType->SetParent(this);
 		}
 	}
-	virtual bool Call(List* params,Value& retValue);
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override
-	{// func doesn't need to run in module
-	 // but will call by callee
-	 //put into Value Table
-		return true;
-	}
+	virtual bool Call(std::vector<Value>& params, Value& retValue);
+	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
 };
 class ExternFunc
 	:public Func
@@ -750,7 +790,7 @@ public:
 		m_funcName = funcName;
 		m_func = func;
 	}
-	virtual bool Call(List* params, Value& retValue) override
+	virtual bool Call(std::vector<Value>& params,Value& retValue) override
 	{
 		return m_func ? m_func(params, retValue) : false;
 	}
