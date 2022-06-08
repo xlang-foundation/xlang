@@ -1,6 +1,6 @@
 #pragma once
-
 #include "def.h"
+#include <vector>
 
 namespace X {
 enum LastCharType
@@ -48,6 +48,12 @@ struct node
 };
 #pragma pack(pop)
 
+struct OneToken
+{
+	String id;
+	short leadingSpaceCnt;
+	short index;
+};
 class Token
 {
 	CoreContext _context;
@@ -80,7 +86,9 @@ class Token
 		}
 		return bYes;
 	}
-	short Scan(String& id,int& leadingSpaceCnt);
+	std::vector<OneToken> m_tokens;
+	void Scan();
+	short Scan1(String& id, int& leadingSpaceCnt);
 
 public:
 	Token(short* kwTree)
@@ -98,15 +106,23 @@ public:
 	}
 	short Get(String& tk, int& leadingSpaceCnt)
 	{
-		short retIndex = -1;
-		leadingSpaceCnt = 0;
-		do
+		if (m_tokens.size() == 0)
 		{
-			retIndex = Scan(tk, leadingSpaceCnt);
-		} while (retIndex == -1 || 
-			(retIndex!= TokenEOS && tk.size ==0));
-
-		return retIndex;
+			Scan();
+		}
+		if (m_tokens.size() > 0)
+		{
+			OneToken& one = m_tokens[0];
+			tk = one.id;
+			leadingSpaceCnt = one.leadingSpaceCnt;
+			short retIdx =  one.index;
+			m_tokens.erase(m_tokens.begin());
+			return retIdx;
+		}
+		else
+		{
+			return TokenEOS;
+		}
 	}
 };
 }

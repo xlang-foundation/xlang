@@ -148,22 +148,27 @@ bool Func::Call(std::vector<Value>& params, Value& retValue)
 	return true;
 }
 bool PairOp::GetParamList(Expression* e,
-	std::vector<Value>& params)
+	std::vector<Value>& params,
+	std::unordered_map<std::string, Value>& kwParams)
 {
-	bool bOK = true;
-	if (e->m_type != ObType::List)
+	auto proc = [&](Expression* i)
 	{
-		Value v0;
-		bOK = e->Run(v0);
-		if (bOK)
+		bool bOK = true;
+		if (i->m_type == ObType::Assign)
 		{
-			params.push_back(v0);
+			Assign* assign = dynamic_cast<Assign*>(i);
+			Var* varName = dynamic_cast<Var*>(assign->GetL());
+			String& szName = varName->GetName();
+			std::string strVarName = std::string(szName.s, szName.size);
+			Expression* valExpr = assign->GetR();
+			Value v0;
+			bOK = valExpr->Run(v0);
+			if (bOK)
+			{
+				kwParams.emplace(std::make_pair(strVarName, v0));
+			}
 		}
-	}
-	else
-	{
-		auto& list = ((List*)e)->GetList();
-		for (auto i : list)
+		else
 		{
 			Value v0;
 			bOK = i->Run(v0);
@@ -171,7 +176,21 @@ bool PairOp::GetParamList(Expression* e,
 			{
 				params.push_back(v0);
 			}
-			else
+		}
+		return bOK;
+	};
+	bool bOK = true;
+	if (e->m_type != ObType::List)
+	{
+		bOK = proc(e);
+	}
+	else
+	{
+		auto& list = ((List*)e)->GetList();
+		for (auto i : list)
+		{
+			bOK = proc(i);
+			if (!bOK)
 			{
 				break;
 			}
@@ -185,15 +204,16 @@ bool PairOp::Run(Value& v,LValue* lValue)
 	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
 	{//Call Func
 		Value lVal;
-		bOK = L->Run(lVal);
+		bOK = L->Run(lVal, lValue);
 		if (!bOK || !lVal.IsObject())
 		{
 			return bOK;
 		}
 		std::vector<Value> params;
+		std::unordered_map<std::string, Value> kwParams;
 		if (R)
 		{
-			bOK = GetParamList(R, params);
+			bOK = GetParamList(R, params, kwParams);
 			if (!bOK)
 			{
 				return bOK;
@@ -202,7 +222,11 @@ bool PairOp::Run(Value& v,LValue* lValue)
 		Data::Object* obj = (Data::Object*)lVal.GetObject();
 		if (obj)
 		{
-			bOK = obj->Call(params, v);
+			bOK = obj->Call(params, kwParams, v);
+		}
+		if (bOK)
+		{
+			v = lVal;
 		}
 	}
 	else if (Op == G::I().GetOpId(OP_ID::Brackets_L))
@@ -544,6 +568,28 @@ void Module::AddBuiltins()
 			Set(idx, v0);
 		}
 	}
+}
+bool DotOp::Run(Value& v, LValue* lValue)
+{
+	if (!L || !R)
+	{
+		return false;
+	}
+	Value v_l;
+	if (!L->Run(v_l) || !v_l.IsObject())
+	{
+		return false;
+	}
+	auto* pLeftObj = (Data::Object*)v_l.GetObject();
+	Value v_r;
+	if (!R->Run(v_r))
+	{
+		return false;
+	}
+	return true;
+}
+void DotOp::ScopeLayout()
+{
 }
 }
 }

@@ -49,6 +49,7 @@ typedef bool (*BinaryOpProc)(
 	AST::BinaryOp* op,AST::Value& L, AST::Value& R, AST::Value& out);
 
 
+#define Precedence_High1 201
 #define Precedence_High 200
 #define Precedence_Reqular 100
 #define Precedence_LOW2 80

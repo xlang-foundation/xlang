@@ -1,4 +1,5 @@
 #include "token.h"
+#include <vector>
 namespace X {
 
 bool Token::MatchInTree(char c)
@@ -20,7 +21,90 @@ bool Token::MatchInTree(char c)
 	}
 	return bMatched;
 }
-short Token::Scan(String& id, int& leadingSpaceCnt)
+void Token::Scan()
+{
+	static const char ops[] = "~`!@#$%^&*()-+={}[]|\\:;\"'<>,.?/\t\r\n";
+	bool bMatchStarted = true;
+
+	static auto token_out = [&]()
+	{
+		OneToken one;
+		one.id.s = _context.token_start;
+		one.id.size = int(_context.spos - _context.token_start - 1);
+		one.index = GetLastMatchedNodeIndex();
+		m_tokens.push_back(one);
+		ResetToRoot();
+		_context.token_start = _context.spos-1;
+	};
+	static auto new_token_start = [&]()
+	{
+		_context.token_start = _context.spos - 1;
+	};
+
+	if (_context.token_start == nil)
+	{
+		_context.token_start = _context.spos;
+	}
+	while (true)
+	{
+		char c = GetChar();
+		if (c == 0)
+		{
+			break;
+		}
+		switch (c)
+		{
+		case ' ':
+			token_out();
+			do
+			{
+				c = GetChar();
+			} while (c == ' ' && c !=0);
+			new_token_start();
+			break;
+		case '\"':
+			token_out();
+			break;
+		case '\'':
+			token_out();
+			break;
+		case '#':
+			token_out();
+			break;
+		default:
+			break;
+		}
+		if (InStr(c, (char*)ops))
+		{
+			if (!bMatchStarted)
+			{//output 
+				token_out();
+				bMatchStarted = true;
+			}
+			bool b = MatchInTree(c);
+			if (!b)
+			{//maybe c is the new token's start char
+				token_out();
+				bMatchStarted = true;
+				b = MatchInTree(c);
+			}
+		}
+		else if(bMatchStarted)
+		{
+			bool b = MatchInTree(c);
+			if (!b)
+			{
+				ResetToRoot();
+				bMatchStarted = false;
+			}
+		}
+		if (m_tokens.size() > 0 || c == 0)
+		{
+			break;
+		}
+	}
+}
+short Token::Scan1(String& id, int& leadingSpaceCnt)
 {
 	static const char ops[] = "~`!@#$%^&*()-+={}[]|\\:;\"'<>,.?/\t\r\n";
 	id.s = nil;

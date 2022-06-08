@@ -26,7 +26,9 @@ enum class ObType
 	Param,
 	List,
 	Pair,
-	Func
+	Dot,
+	Func,
+	Class
 };
 
 class Scope;
@@ -241,7 +243,8 @@ class PairOp :
 	public BinaryOp
 {
 	bool GetParamList(Expression* e,
-		std::vector<Value>& params);
+		std::vector<Value>& params,
+		std::unordered_map<std::string,Value>& kwParams);
 public:
 	PairOp(short opIndex) :
 		BinaryOp(opIndex)
@@ -249,6 +252,20 @@ public:
 		m_type = ObType::Pair;
 	}
 	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
+};
+class DotOp :
+	public BinaryOp
+{
+	int m_dotNum = 1;
+public:
+	DotOp(short opIndex,int dotNum) :
+		BinaryOp(opIndex)
+	{
+		m_type = ObType::Dot;
+		m_dotNum = dotNum;
+	}
+	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
+	virtual void ScopeLayout() override;
 };
 class UnaryOp :
 	public Operator
@@ -532,6 +549,14 @@ public:
 		}
 		return bIn;
 	}
+	virtual void SetL(Expression* l) override
+	{
+		BinaryOp::SetL(l);
+		if (l)
+		{
+			l->SetIsLeftValue(true);
+		}
+	}
 };
 class For :
 	public Block
@@ -661,12 +686,12 @@ public:
 				break;
 			}
 			if (idx != -1)
-			{
+			{//use the scope to find this name as its scope
+				m_scope = pMyScope;
 				break;
 			}
 			pMyScope = pMyScope->GetScope();
 		}
-		m_scope = pMyScope;
 		Index = idx;
 	}
 	String& GetName() { return Name; }
@@ -676,6 +701,10 @@ public:
 	}
 	inline virtual bool Run(Value& v,LValue* lValue=nullptr) override
 	{
+		if (Index == -1 || m_scope == nullptr)
+		{
+			return false;
+		}
 		m_scope->Get(Index, v, lValue);
 		return true;
 	}
@@ -778,6 +807,19 @@ public:
 	}
 	virtual bool Call(std::vector<Value>& params, Value& retValue);
 	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
+};
+class XClass
+	:public Scope
+{
+	std::string m_name;
+public:
+	XClass():
+		Scope()
+	{
+		NeedParam = false;
+		m_type = ObType::Class;
+	}
+
 };
 class ExternFunc
 	:public Func

@@ -1,4 +1,7 @@
 import datetime
+
+x =1
+
 start_time = datetime.datetime.now()
 
 def func1(x,y):

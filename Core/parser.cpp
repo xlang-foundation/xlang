@@ -368,18 +368,22 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 			DoOpTop(m_operands, m_ops);
 		}
 	}
-	if (bEmptyParams)
-	{
-		m_operands.push(pPair);
-	}
-	else
+	if (!bEmptyParams)
 	{
 		if (!m_operands.empty() && pPair != nil)
 		{
 			pPair->SetR(m_operands.top());
 			m_operands.pop();
-			m_operands.push(pPair);
 		}
+	}
+	if (pPair)
+	{
+		if (!m_operands.empty())
+		{
+			pPair->SetL(m_operands.top());
+			m_operands.pop();
+		}
+		m_operands.push(pPair);
 	}
 	//already evaluated as an operand
 	push_preceding_token(TokenID);
@@ -388,6 +392,7 @@ AST::Operator* Parser::PairLeft(short opIndex)
 {
 	IncPairCnt();
 	auto op = new AST::PairOp(opIndex);
+#if 0
 	if (!PreTokenIsOp())
 	{//for case func(...),x[...] etc
 		if (!m_operands.empty())
@@ -396,6 +401,7 @@ AST::Operator* Parser::PairLeft(short opIndex)
 			m_operands.pop();
 		}
 	}
+#endif
 	return op;
 }
 bool Parser::Run()

@@ -161,11 +161,16 @@ void Register()
 			auto op = new AST::InOp(opIndex);
 			return (AST::Operator*)op;
 		});
-	RegOP("def")
+	RegOP("def","func","function")
 		.SetProcess([](Parser* p, short opIndex){
 			auto func = new AST::Func();
 			return (AST::Operator*)func;
 		});
+	RegOP("class")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto cls = new AST::XClass();
+		return (AST::Operator*)cls;
+			});
 	RegOP(//Python Assignment Operators
 		"=", "+=", "-=", "*=", "/=", "%=", "//=",
 		"**=", "&=", "|=", "^=", ">>=", "<<=")
@@ -243,7 +248,17 @@ void Register()
 		});
 	RegOP(".").SetProcess([](Parser* p, short opIndex)
 		{
-			auto op = new AST::BinaryOp(opIndex);
+			auto op = new AST::DotOp(opIndex,1);
+			return (AST::Operator*)op;
+		});
+	RegOP("..").SetProcess([](Parser* p, short opIndex)
+		{
+			auto op = new AST::DotOp(opIndex,2);
+			return (AST::Operator*)op;
+		});
+	RegOP("...").SetProcess([](Parser* p, short opIndex)
+		{
+			auto op = new AST::DotOp(opIndex, 3);
 			return (AST::Operator*)op;
 		});
 	RegOP(":").SetProcess([](Parser* p, short opIndex)
@@ -277,6 +292,8 @@ void Register()
 
 	RegOP("[", "]", "{", "}", "(",")")
 		.SetPrecedence(Precedence_High);
+	RegOP(".", "..", "...")
+		.SetPrecedence(Precedence_High1);
 	RegOP("*", "/", "%", "**", "//")
 		.SetPrecedence(Precedence_Reqular + 1);
 	RegOP(",")

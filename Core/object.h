@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include "value.h"
 #include "exp.h"
 
@@ -13,6 +14,7 @@ public:
 	{
 	}
 	virtual bool Call(std::vector<AST::Value>& params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue) = 0;
 };
 class Expr
@@ -26,6 +28,7 @@ public:
 		m_expr = e;
 	}
 	virtual bool Call(std::vector<AST::Value>& params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
 		return true;
@@ -42,6 +45,7 @@ public:
 		m_func = p;
 	}
 	virtual bool Call(std::vector<AST::Value>& params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
 		return m_func->Call(params, retValue);
@@ -59,8 +63,29 @@ public:
 
 	}
 	virtual bool Call(std::vector<AST::Value>&params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
+		//do twice, first to do size or other call with
+		//memory allocation
+		for (auto it : kwParams)
+		{
+			if (it.first == "size")
+			{
+				long long size = it.second.GetLongLong();
+				m_data.resize(size);
+			}
+		}
+		for (auto it : kwParams)
+		{
+			if (it.first == "init")
+			{
+				for (auto& v : m_data)
+				{
+					v = it.second;
+				}
+			}
+		}		
 		return true;
 	}
 	inline void Add(AST::Value& v)
@@ -80,7 +105,15 @@ public:
 		return true;
 	}
 };
+class Dict :
+	public Object
+{
+protected:
+	std::vector<Object*> m_bases;
+	std::vector<std::string> m_keys;
+public:
 
+};
 }
 }
 
