@@ -27,6 +27,11 @@ struct CoreContext
 	int leadingSpaceCount = 0;
 	LastCharType lct = LastCharType::LCT_None;
 	char* token_start=0;
+	int token_startline = 0;
+	int token_startCharPos = 0;
+	int lineNo = 0;
+	int charPos = 0;
+	char prevChar = 0;
 };
 enum TokenIndex
 {
@@ -39,6 +44,16 @@ enum TokenIndex
 	TokenComment = -21
 };
 
+enum class TokenErrorType
+{
+	WrongSlash,
+};
+struct TokenErrorInfo
+{
+	int lineNo;
+	int charPos;
+	TokenErrorType type;
+};
 #pragma pack(push,1)
 struct node
 {
@@ -47,19 +62,44 @@ struct node
 	unsigned char child_cnt;
 };
 #pragma pack(pop)
-
 struct OneToken
 {
 	String id;
-	short leadingSpaceCnt;
-	short index;
+	int leadingSpaceCnt;
+	int index;
+	int lineStart;
+	int lineEnd;
+	int charPos;
 };
 class Token
 {
 	CoreContext _context;
+	bool InSpace = false;
+	bool InQuote = false;
+	char quoteBeginChar = 0;
+	bool InLineComment = false;
+	bool InMatching = false;
+
+	int begin_quoteCnt = 0;
+	int end_quoteCnt = 0;
+
 	inline char GetChar()
 	{
+		if (_context.spos > _context.src_code)
+		{
+			_context.prevChar = *(_context.spos - 1);
+		}
+		_context.charPos++;
 		return *_context.spos++;
+	}
+	inline char PrevChar()
+	{
+		return _context.prevChar;
+	}
+	inline void IncLine()
+	{
+		_context.lineNo++;
+		_context.charPos = 0;
 	}
 	inline void ResetToRoot()
 	{
@@ -68,13 +108,35 @@ class Token
 	inline short GetLastMatchedNodeIndex()
 	{
 		node* pNode = (node*)(_context.kwTree + _context.curNode);
-		return pNode->index;
+		short idx = pNode->index;
+		if (idx == -1)
+		{
+			idx = TokenID;
+		}
+		return idx;
 	}
 	bool MatchInTree(char c);
-	inline bool InStr(char c, char* str)
+	void ScanStringOrComments(char& c);
+	void ScanSpaces(char& c);
+	void ScanLineComment(char& c);
+	void token_out(short idx,int offset =-1,bool callReset=true);
+	inline void ifnotstart_token_start()
+	{
+		if (_context.token_start == nil)
+		{
+			new_token_start();
+		}
+	}
+	inline void new_token_start(int addingOffset =0)
+	{
+		_context.token_start = _context.spos - 1+ addingOffset;
+		_context.token_startline = _context.lineNo;
+		_context.token_startCharPos = _context.charPos+ addingOffset-1;
+	}
+	inline bool InStr(char c, const char* str)
 	{
 		bool bYes = false;
-		char* p = str;
+		char* p = (char*)str;
 		while (*p)
 		{
 			if (*p == c)
@@ -87,7 +149,9 @@ class Token
 		return bYes;
 	}
 	std::vector<OneToken> m_tokens;
+	std::vector<TokenErrorInfo> m_errorInfos;
 	void Scan();
+	void Scan2();
 	short Scan1(String& id, int& leadingSpaceCnt);
 
 public:
@@ -104,7 +168,7 @@ public:
 		_context.src_code_size = size;
 		_context.spos = _context.src_code;
 	}
-	short Get(String& tk, int& leadingSpaceCnt)
+	short Get(OneToken& one)
 	{
 		if (m_tokens.size() == 0)
 		{
@@ -112,9 +176,7 @@ public:
 		}
 		if (m_tokens.size() > 0)
 		{
-			OneToken& one = m_tokens[0];
-			tk = one.id;
-			leadingSpaceCnt = one.leadingSpaceCnt;
+			one = m_tokens[0];
 			short retIdx =  one.index;
 			m_tokens.erase(m_tokens.begin());
 			return retIdx;
@@ -124,5 +186,6 @@ public:
 			return TokenEOS;
 		}
 	}
+	void Test();
 };
 }

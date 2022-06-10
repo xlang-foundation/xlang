@@ -1,3 +1,6 @@
+ #1234567890
+
+
 class test_class:
  prop1:int=1
  prop2:str='prop2'

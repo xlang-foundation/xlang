@@ -137,6 +137,7 @@ bool Parser::Init()
 bool Parser::Compile(char* code, int size)
 {
 	mToken->SetStream(code, size);
+	mToken->Test();
 	m_pair_cnt = 0;
 	reset_preceding_token();
 	//prepare top module for this code
@@ -147,7 +148,10 @@ bool Parser::Compile(char* code, int size)
 	{
 		String s;
 		int leadingSpaceCnt = 0;
-		short idx = mToken->Get(s, leadingSpaceCnt);
+		OneToken one;
+		short idx = mToken->Get(one);
+		s = one.id;
+		leadingSpaceCnt = one.leadingSpaceCnt;
 		if (m_NewLine_WillStart)
 		{
 			m_LeadingSpaceCountAtLineBegin += leadingSpaceCnt;
