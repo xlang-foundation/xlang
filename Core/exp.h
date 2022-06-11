@@ -777,20 +777,20 @@ public:
 		if (r->m_type == AST::ObType::Pair)
 		{//have to be a pair
 			AST::PairOp* pair = (AST::PairOp*)r;
-			AST::Expression* r = pair->GetR();
-			if (r)
+			AST::Expression* paramList = pair->GetR();
+			if (paramList)
 			{
-				if (r->m_type != AST::ObType::List)
+				if (paramList->m_type != AST::ObType::List)
 				{
-					AST::List* list = new AST::List(r);
+					AST::List* list = new AST::List(paramList);
 					SetParams(list);
 				}
 				else
 				{
-					SetParams((AST::List*)r);
-					pair->SetR(nil);//clear R, because it used by SetParams
+					SetParams((AST::List*)paramList);
 				}
 			}
+			pair->SetR(nil);//clear R, because it used by SetParams
 			AST::Expression* l = pair->GetL();
 			if (l)
 			{

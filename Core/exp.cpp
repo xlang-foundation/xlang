@@ -226,10 +226,6 @@ bool PairOp::Run(Value& v,LValue* lValue)
 			{
 				bOK = obj->Call(params, kwParams, v);
 			}
-			if (bOK)
-			{
-				v = lVal;
-			}
 		}
 		else
 		{
