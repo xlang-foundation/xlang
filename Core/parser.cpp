@@ -194,6 +194,7 @@ bool Parser::Compile(char* code, int size)
 				//Construct AST::Var
 				v = new AST::Var(s);
 			}
+			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
 			m_operands.push(v);
 			push_preceding_token(idx);
 		}
@@ -219,6 +220,7 @@ bool Parser::Compile(char* code, int size)
 			}
 			if (op)
 			{
+				op->SetHint(one.lineStart, one.lineEnd, one.charPos);
 				while (!m_ops.empty())
 				{
 					auto top = m_ops.top();
@@ -294,6 +296,7 @@ void Parser::NewLine()
 	if (!m_operands.empty() && !m_stackBlocks.empty())
 	{
 		auto line = m_operands.top();
+		int startLine = line->GetStartLine();
 		m_operands.pop();
 
 		AST::Indent lineIndent = {
@@ -331,6 +334,7 @@ void Parser::NewLine()
 				{
 					break;
 				}
+				m_stackBlocks.pop();
 			}
 			if (curBlock!=nil)
 			{

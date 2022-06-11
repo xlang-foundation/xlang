@@ -85,34 +85,9 @@ void Func::ScopeLayout()
 			}
 			break;
 			case ObType::Param:
-			{ //two types: 1) name:type=val 2) name:type
+			{ 
 				Param* param = dynamic_cast<Param*>(i);
-				Var* varName = dynamic_cast<Var*>(param->GetName());
-				String& szName = varName->GetName();
-				strVarName = std::string(szName.s, szName.size);
-				Expression* typeCombine = param->GetType();
-				if (typeCombine->m_type == ObType::Assign)
-				{
-					Assign* assign = dynamic_cast<Assign*>(typeCombine);
-					Var* type = dynamic_cast<Var*>(assign->GetL());
-					if (type)
-					{
-						String& szName = type->GetName();
-						strVarType = std::string(szName.s, szName.size);
-					}
-					Expression* defVal = assign->GetR();
-					auto* pExprForDefVal = new Data::Expr(defVal);
-					defaultValue = Value(pExprForDefVal);
-				}
-				else if (typeCombine->m_type == ObType::Var)
-				{
-					Var* type = dynamic_cast<Var*>(typeCombine);
-					if (type)
-					{
-						String& szName = type->GetName();
-						strVarType = std::string(szName.s, szName.size);
-					}
-				}
+				param->Parse(strVarName, strVarType, defaultValue);
 			}
 			break;
 			}
@@ -575,6 +550,11 @@ void Module::AddBuiltins()
 		}
 	}
 }
+void DotOp::ScopeLayout()
+{
+	if (L) L->ScopeLayout();
+	//R will be decided in run stage
+}
 bool DotOp::Run(Value& v, LValue* lValue)
 {
 	if (!L || !R)
@@ -588,14 +568,95 @@ bool DotOp::Run(Value& v, LValue* lValue)
 	}
 	auto* pLeftObj = (Data::Object*)v_l.GetObject();
 	Value v_r;
+	//TODO: use pLeftObj to decide R's scope and make cache 
+	//check L is changed or not
 	if (!R->Run(v_r))
 	{
 		return false;
 	}
 	return true;
 }
-void DotOp::ScopeLayout()
+bool XClass::Call(std::vector<Value>& params, Value& retValue)
 {
+	if (m_constructor)
+	{
+		m_constructor->Call(params, retValue);
+	}
+	Data::XClassObject* obj = new Data::XClassObject(this);
+	retValue = Value(obj);
+	return true;
 }
+void XClass::Add(Expression* item)
+{
+	switch (item->m_type)
+	{
+	case ObType::Param:
+	{
+		Param* param = dynamic_cast<Param*>(item);
+		std::string strVarName;
+		std::string strVarType;//TODO: deal with type
+		Value defaultValue;
+		if (param->Parse(strVarName, strVarType, defaultValue))
+		{
+			int idx = AddOrGet(strVarName,false);
+			Set(idx, defaultValue);
+		}
+	}
+		break;
+	case ObType::Func:
+	{
+		Func* func = dynamic_cast<Func*>(item);
+		String& funcName = func->GetNameStr();
+		std::string strName(funcName.s, funcName.size);
+		int idx = AddOrGet(strName, false);
+		Data::Function* f = new Data::Function(func);
+		Value funcObj(f);
+		Set(idx, funcObj);
+		if (strName == "constructor")//TODO: add class name also can be constructor
+		{
+			m_constructor = func;
+		}
+	}
+		break;
+	default:
+		break;
+	}
+
+	item->SetParent(this);
+	item->ScopeLayout();
+}
+bool Param::Parse(std::string& strVarName, 
+	std::string& strVarType, Value& defaultValue)
+{
+	//two types: 1) name:type=val 2) name:type
+	Var* varName = dynamic_cast<Var*>(GetName());
+	String& szName = varName->GetName();
+	strVarName = std::string(szName.s, szName.size);
+	Expression* typeCombine = GetType();
+	if (typeCombine->m_type == ObType::Assign)
+	{
+		Assign* assign = dynamic_cast<Assign*>(typeCombine);
+		Var* type = dynamic_cast<Var*>(assign->GetL());
+		if (type)
+		{
+			String& szName = type->GetName();
+			strVarType = std::string(szName.s, szName.size);
+		}
+		Expression* defVal = assign->GetR();
+		auto* pExprForDefVal = new Data::Expr(defVal);
+		defaultValue = Value(pExprForDefVal);
+	}
+	else if (typeCombine->m_type == ObType::Var)
+	{
+		Var* type = dynamic_cast<Var*>(typeCombine);
+		if (type)
+		{
+			String& szName = type->GetName();
+			strVarType = std::string(szName.s, szName.size);
+		}
+	}
+	return false;
+}
+
 }
 }

@@ -1,7 +1,4 @@
- #1234567890
-
-
-class test_class:
+class test_class():
  prop1:int=1
  prop2:str='prop2'
  
@@ -16,3 +13,5 @@ class test_class:
  def method2(z):
      print("method2:",z)
 
+x = test_class()
+x.method1(1,2)

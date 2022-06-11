@@ -51,6 +51,24 @@ public:
 		return m_func->Call(params, retValue);
 	}
 };
+class XClassObject :
+	public Object
+{
+protected:
+	AST::XClass* m_obj = nullptr;
+public:
+	XClassObject(AST::XClass* p)
+	{
+		m_obj = p;
+	}
+	virtual bool Call(std::vector<AST::Value>& params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
+		AST::Value& retValue)
+	{
+		return m_obj->Call(params, retValue);
+	}
+};
+
 class List :
 	public Object
 {
@@ -112,7 +130,16 @@ protected:
 	std::vector<Object*> m_bases;
 	std::vector<std::string> m_keys;
 public:
+	Dict()
+	{
 
+	}
+	virtual bool Call(std::vector<AST::Value>& params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
+		AST::Value& retValue)
+	{
+		return true;
+	}
 };
 }
 }

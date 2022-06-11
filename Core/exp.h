@@ -40,10 +40,23 @@ protected:
 	Expression* m_parent = nil;
 	Scope* m_scope = nil;//set by compiling
 	bool m_isLeftValue = false;
+	//hint
+	int m_lineStart=0;
+	int m_lineEnd=0;
+	int m_charPos=0;
 public:
 	Expression()
 	{
 	}
+	inline void SetHint(int startLine, int endLine, int charPos)
+	{
+		m_lineStart = startLine;
+		m_lineEnd = endLine;
+		m_charPos = charPos;
+	}
+	inline int GetStartLine() { return m_lineStart; }
+	inline int GetEndLine() { return m_lineEnd; }
+	inline int GetCharPos() { return m_charPos; }
 	inline void SetIsLeftValue(bool b)
 	{
 		m_isLeftValue = b;
@@ -473,6 +486,9 @@ public:
 	}
 	inline Expression* GetName() { return Name; }
 	inline Expression* GetType() { return Type; }
+	bool Parse(std::string& strVarName,
+		std::string& strVarType,
+		Value& defaultValue);
 };
 class Func;
 
@@ -517,7 +533,7 @@ public:
 			delete b;
 		}
 	}
-	void Add(Expression* item);
+	virtual void Add(Expression* item);
 	virtual Func* FindFuncByName(Var* name);
 	inline Indent GetIndentCount() { return IndentCount; }
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
@@ -616,7 +632,7 @@ public:
 	{
 	}
 	int AddOrGet(std::string& name,bool bGetOnly)
-	{//alwasy append,no remove, so new item's index is size of m_Vars;
+	{//Always append,no remove, so new item's index is size of m_Vars;
 		auto it = m_Vars.find(name);
 		if (it != m_Vars.end())
 		{
@@ -731,6 +747,7 @@ public:
 class Func :
 	public Scope
 {
+protected:
 	String m_Name;
 	int m_Index = -1;//index for this Var,set by compiling
 	int m_positionParamCnt = 0;
@@ -771,6 +788,7 @@ public:
 		if (RetType) delete RetType;
 	}
 	Expression* GetName() { return Name; }
+	String& GetNameStr() { return m_Name; }
 
 	virtual void SetR(Expression* r) override
 	{
@@ -815,17 +833,19 @@ public:
 	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
 };
 class XClass
-	:public Scope
+	:public Func
 {
-	std::string m_name;
+	Func* m_constructor = nil;
 public:
 	XClass():
-		Scope()
+		Func()
 	{
-		NeedParam = false;
 		m_type = ObType::Class;
+		StackFrame* frame = new StackFrame();
+		PushFrame(frame);//to hold properties and funcs
 	}
-
+	virtual void Add(Expression* item) override;
+	virtual bool Call(std::vector<Value>& params, Value& retValue);
 };
 class ExternFunc
 	:public Func
