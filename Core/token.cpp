@@ -81,7 +81,7 @@ void Token::token_out(short idx,int offset,bool callReset)
 	int size = int((_context.spos + offset) - _context.token_start);
 	if (idx !=TokenEOS && size <= 0)
 	{
-		_context.token_start = nil;//_context.spos - 1;
+		ClearToken();
 		return;
 	}
 	OneToken one;
@@ -98,7 +98,7 @@ void Token::token_out(short idx,int offset,bool callReset)
 	{
 		ResetToRoot();
 	}
-	_context.token_start = nil;//_context.spos - 1;
+	ClearToken();
 }
 void Token::ScanLineComment(char& c)
 {
@@ -151,9 +151,19 @@ void Token::Scan()
 			}
 			break;
 		case '\\':
+			if (InSpace)
+			{
+				InSpace = false;
+				ClearToken();
+			}
 			//just eat it
 			break;
 		case '\n':
+			if (InSpace)
+			{
+				InSpace = false;
+				ClearToken();
+			}
 			if (InQuote)
 			{//meet other, break the 3-quotes rules like """ or '''
 				if (begin_quoteCnt == 2)//empty string with ""  or ''
@@ -196,6 +206,11 @@ void Token::Scan()
 			break;
 		case '\"':
 		case '\'':
+			if (InSpace)
+			{
+				InSpace = false;
+				ClearToken();
+			}
 			if (!InQuote && InMatching)
 			{
 				token_out(GetLastMatchedNodeIndex());
@@ -249,6 +264,11 @@ void Token::Scan()
 			}
 			break;
 		case '#':
+			if (InSpace)
+			{
+				InSpace = false;
+				ClearToken();
+			}
 			if (!InQuote)
 			{
 				if (InLineComment)
@@ -264,6 +284,11 @@ void Token::Scan()
 			}
 			break;
 		default:
+			if (InSpace)
+			{
+				InSpace = false;
+				ClearToken();
+			}
 			if (InQuote)
 			{//meet other, break the 3-quotes rules like """ or '''
 				if (begin_quoteCnt == 2)//empty string with ""  or ''

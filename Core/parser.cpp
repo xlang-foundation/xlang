@@ -137,7 +137,7 @@ bool Parser::Init()
 bool Parser::Compile(char* code, int size)
 {
 	mToken->SetStream(code, size);
-	mToken->Test();
+	//mToken->Test();
 	m_pair_cnt = 0;
 	reset_preceding_token();
 	//prepare top module for this code
@@ -355,7 +355,7 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
 	short lastToken = get_last_token();
 	short pairLeftToken = G::I().GetOpId(leftOpToMeetAsEnd);
-	bool bEmptyParams = (lastToken == pairLeftToken);
+	bool bEmptyPair = (lastToken == pairLeftToken);
 	DecPairCnt();
 	AST::PairOp* pPair = nil;
 	while (!m_ops.empty())
@@ -372,7 +372,7 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 			DoOpTop(m_operands, m_ops);
 		}
 	}
-	if (!bEmptyParams)
+	if (!bEmptyPair)
 	{
 		if (!m_operands.empty() && pPair != nil)
 		{
@@ -382,10 +382,14 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 	}
 	if (pPair)
 	{
-		if (!m_operands.empty())
+		//for case [](x,y), [] will change ('s PrecedingToken to TokenID
+		if (pPair->GetPrecedingToken() == TokenID)
 		{
-			pPair->SetL(m_operands.top());
-			m_operands.pop();
+			if (!m_operands.empty())
+			{
+				pPair->SetL(m_operands.top());
+				m_operands.pop();
+			}
 		}
 		m_operands.push(pPair);
 	}
@@ -395,7 +399,10 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 AST::Operator* Parser::PairLeft(short opIndex)
 {
 	IncPairCnt();
-	auto op = new AST::PairOp(opIndex);
+	//case 1: x+(y+z), case 2: x+func(y,z)
+	//so use preceding token as ref to dectect which case it is 
+	short lastToken = get_last_token();
+	auto op = new AST::PairOp(opIndex, lastToken);
 #if 0
 	if (!PreTokenIsOp())
 	{//for case func(...),x[...] etc

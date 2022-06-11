@@ -202,31 +202,41 @@ bool PairOp::Run(Value& v,LValue* lValue)
 {
 	bool bOK = false;
 	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
-	{//Call Func
-		Value lVal;
-		bOK = L->Run(lVal, lValue);
-		if (!bOK || !lVal.IsObject())
-		{
-			return bOK;
-		}
-		std::vector<Value> params;
-		std::unordered_map<std::string, Value> kwParams;
-		if (R)
-		{
-			bOK = GetParamList(R, params, kwParams);
-			if (!bOK)
+	{	
+		if (L)
+		{//Call Func
+			Value lVal;
+			bOK = L->Run(lVal, lValue);
+			if (!bOK || !lVal.IsObject())
 			{
 				return bOK;
 			}
+			std::vector<Value> params;
+			std::unordered_map<std::string, Value> kwParams;
+			if (R)
+			{
+				bOK = GetParamList(R, params, kwParams);
+				if (!bOK)
+				{
+					return bOK;
+				}
+			}
+			Data::Object* obj = (Data::Object*)lVal.GetObject();
+			if (obj)
+			{
+				bOK = obj->Call(params, kwParams, v);
+			}
+			if (bOK)
+			{
+				v = lVal;
+			}
 		}
-		Data::Object* obj = (Data::Object*)lVal.GetObject();
-		if (obj)
+		else
 		{
-			bOK = obj->Call(params, kwParams, v);
-		}
-		if (bOK)
-		{
-			v = lVal;
+			if (R && R->m_type != ObType::List)
+			{
+				bOK = R->Run(v, lValue);
+			}
 		}
 	}
 	else if (Op == G::I().GetOpId(OP_ID::Brackets_L))

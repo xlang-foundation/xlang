@@ -133,8 +133,16 @@ class Token
 		_context.token_startline = _context.lineNo;
 		_context.token_startCharPos = _context.charPos+ addingOffset-1;
 	}
+	inline void ClearToken()
+	{
+		_context.token_start = nil;
+	}
 	inline bool InStr(char c, const char* str)
 	{
+		if (c == 0) //for first char's pre-char
+		{
+			return true;
+		}
 		bool bYes = false;
 		char* p = (char*)str;
 		while (*p)
@@ -178,6 +186,11 @@ public:
 		{
 			one = m_tokens[0];
 			short retIdx =  one.index;
+			if (retIdx == TokenStr)
+			{
+				one.id.s += 1;//skip " or '
+				one.id.size -= 2; //last " or '
+			}
 			m_tokens.erase(m_tokens.begin());
 			return retIdx;
 		}

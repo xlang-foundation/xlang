@@ -242,14 +242,20 @@ public:
 class PairOp :
 	public BinaryOp
 {
+	short m_preceding_token = 0;
 	bool GetParamList(Expression* e,
 		std::vector<Value>& params,
 		std::unordered_map<std::string,Value>& kwParams);
 public:
-	PairOp(short opIndex) :
+	PairOp(short opIndex, short preceding_token) :
 		BinaryOp(opIndex)
 	{
+		m_preceding_token = preceding_token;
 		m_type = ObType::Pair;
+	}
+	short GetPrecedingToken()
+	{
+		return m_preceding_token;
 	}
 	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
 };
