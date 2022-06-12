@@ -226,8 +226,12 @@ bool Parser::Compile(char* code, int size)
 					auto top = m_ops.top();
 					OpAction topAct = OpAct(top->getOp());
 					OpAction cur_opAct = OpAct(op->getOp());
-					if (top->m_type != AST::ObType::Pair &&
-						topAct.precedence> cur_opAct.precedence)
+					short lastToken = get_last_token();
+					//check this case .[test1,test2](....)
+					//after . it is a ops,not var
+					if (lastToken!=top->getOp() 
+						&& top->m_type != AST::ObType::Pair 
+						&& topAct.precedence> cur_opAct.precedence)
 					{
 						DoOpTop(m_operands, m_ops);
 					}

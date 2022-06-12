@@ -5,14 +5,25 @@
 #include "exp.h"
 
 namespace X {namespace Data{
+enum class Type
+{
+	Base,
+	Expr,
+	Function,
+	XClassObject,
+	List,
+	Dict
+};
 class Object
 {
 protected:
 	int m_ref = 0;
+	Type m_t = Type::Base;
 public:
 	Object()
 	{
 	}
+	Type GetType() { return m_t; }
 	virtual bool Call(std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue) = 0;
@@ -25,6 +36,7 @@ protected:
 public:
 	Expr(AST::Expression* e)
 	{
+		m_t = Type::Expr;
 		m_expr = e;
 	}
 	virtual bool Call(std::vector<AST::Value>& params,
@@ -42,6 +54,7 @@ protected:
 public:
 	Function(AST::Func* p)
 	{
+		m_t = Type::Function;
 		m_func = p;
 	}
 	virtual bool Call(std::vector<AST::Value>& params,
@@ -59,8 +72,10 @@ protected:
 public:
 	XClassObject(AST::XClass* p)
 	{
+		m_t = Type::XClassObject;
 		m_obj = p;
 	}
+	AST::XClass* GetClassObj() { return m_obj; }
 	virtual bool Call(std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
@@ -74,12 +89,15 @@ class List :
 {
 protected:
 	std::vector<AST::Value> m_data;
+	std::vector<AST::Expression*> m_bases;
 public:
 	List():
 		Object()
 	{
+		m_t = Type::List;
 
 	}
+	std::vector<AST::Expression*>& GetBases() { return m_bases; }
 	virtual bool Call(std::vector<AST::Value>&params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
@@ -108,6 +126,52 @@ public:
 	}
 	inline void Add(AST::Value& v)
 	{
+		if (v.IsObject())
+		{
+			Object* obj = (Object*)v.GetObject();
+			XClassObject* pClassObj = dynamic_cast<XClassObject*>(obj);
+			if (pClassObj)
+			{
+				AST::XClass* pXClass = pClassObj->GetClassObj();
+				if (pXClass)
+				{
+					auto& bases_0 = pXClass->GetBases();
+					if (m_bases.empty())//first item
+					{//append all
+						for (auto it : bases_0)
+						{
+							m_bases.push_back(it);
+						}
+						m_bases.push_back(pXClass);
+					}
+					else
+					{//find common
+						auto it = m_bases.begin();
+						while (it != m_bases.end())
+						{
+							if (*it != pXClass)
+							{
+								bool bFind = false;
+								for (auto it2 : bases_0)
+								{
+									if (*it == it2)
+									{
+										bFind = true;
+										break;
+									}
+								}//end for
+								if (!bFind)
+								{
+									it = m_bases.erase(it);
+									continue;
+								}
+							}
+							++it;
+						}//end while
+					}//end else
+				}
+			}
+		}
 		m_data.push_back(v);
 	}
 	inline bool Get(long long idx, AST::Value& v,
@@ -132,7 +196,7 @@ protected:
 public:
 	Dict()
 	{
-
+		m_t = Type::Dict;
 	}
 	virtual bool Call(std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,

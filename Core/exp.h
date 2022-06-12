@@ -693,6 +693,26 @@ public:
 		Name = n;
 		m_type = ObType::Var;
 	}
+	void ScopeLayout(std::vector<AST::Expression*>& candidates)
+	{
+		std::string strName(Name.s, Name.size);
+		for (auto it : candidates)
+		{
+			Scope* s = dynamic_cast<Scope*>(it);
+			if (s)
+			{
+				int idx = s->AddOrGet(strName,
+					!m_isLeftValue);
+				if (idx != -1)
+				{//use the scope to find this name as its scope
+					m_scope = s;
+					Index = idx;
+					break;
+				}
+			}
+		}
+	}
+
 	virtual void ScopeLayout() override
 	{
 		Scope* pMyScope = GetScope();
@@ -768,7 +788,7 @@ protected:
 		}
 	}
 	virtual void ScopeLayout() override;
-	void SetParams(List* p)
+	virtual void SetParams(List* p)
 	{
 		Params = p;
 		if (Params)
@@ -836,14 +856,18 @@ class XClass
 	:public Func
 {
 	Func* m_constructor = nil;
+	std::vector<XClass*> m_bases;
+	std::vector<std::pair<int, Value>> m_tempMemberList;
+	XClass* FindBase(std::string& strName);
 public:
 	XClass():
 		Func()
 	{
 		m_type = ObType::Class;
-		StackFrame* frame = new StackFrame();
-		PushFrame(frame);//to hold properties and funcs
 	}
+	inline std::vector<XClass*>& GetBases() { return m_bases; }
+	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
+	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
 	virtual bool Call(std::vector<Value>& params, Value& retValue);
 };

@@ -566,10 +566,71 @@ bool DotOp::Run(Value& v, LValue* lValue)
 	{
 		return false;
 	}
+	std::vector<AST::Expression*> scopes;
 	auto* pLeftObj = (Data::Object*)v_l.GetObject();
+	if (pLeftObj)
+	{
+		if (pLeftObj->GetType() == Data::Type::List)
+		{
+			Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
+			if (pList)
+			{
+				auto& bs = pList->GetBases();
+				for (auto it : bs)
+				{
+					scopes.push_back(it);
+				}
+			}
+		}
+		else if (pLeftObj->GetType() == Data::Type::XClassObject)
+		{
+			Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pLeftObj);
+			if (pClassObj)
+			{
+				scopes.push_back(pClassObj->GetClassObj());
+			}
+		}
+		else
+		{//TODO:
+
+		}
+	}
+	//R can be a Var or List
+	if (R)
+	{
+		if (R->m_type == ObType::Pair)
+		{
+			AST::List* pList = dynamic_cast<AST::List*>(((PairOp*)R)->GetR());
+			auto& list = pList->GetList();
+			for (auto it : list)
+			{
+				if (it->m_type == ObType::Var)
+				{
+					Var* var = dynamic_cast<Var*>(it);
+					var->ScopeLayout(scopes);
+				}
+			}
+		}
+		else if (R->m_type == ObType::Var)
+		{
+			Var* var = dynamic_cast<Var*>(R);
+			var->ScopeLayout(scopes);
+		}
+	}
+	if (pLeftObj->GetType() == Data::Type::List)
+	{
+		Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
+		if (pList)
+		{
+
+		}
+	}
+	else if (pLeftObj->GetType() == Data::Type::XClassObject)
+	{
+		Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pLeftObj);
+	}
+
 	Value v_r;
-	//TODO: use pLeftObj to decide R's scope and make cache 
-	//check L is changed or not
 	if (!R->Run(v_r))
 	{
 		return false;
@@ -586,6 +647,81 @@ bool XClass::Call(std::vector<Value>& params, Value& retValue)
 	retValue = Value(obj);
 	return true;
 }
+void XClass::ScopeLayout()
+{
+	Scope* pMyScope = GetScope();
+	if (pMyScope)
+	{
+		std::string strName(m_Name.s, m_Name.size);
+		m_Index = pMyScope->AddOrGet(strName, false);
+	}
+}
+XClass* XClass::FindBase(std::string& strName)
+{
+	XClass* pBase = nullptr;
+	auto* pScope = GetScope();
+	while (pScope != nullptr)
+	{
+		int idx = pScope->AddOrGet(strName, true);
+		if (idx != -1)
+		{
+			Value v0;
+			if (pScope->Get(idx, v0))
+			{
+				if (v0.IsObject())
+				{
+					Data::Object* pBaseObj = (Data::Object*)v0.GetObject();
+					auto* pXBaseObj = dynamic_cast<Data::XClassObject*>(pBaseObj);
+					if (pXBaseObj)
+					{
+						pBase = pXBaseObj->GetClassObj();
+						break;
+					}
+				}
+			}
+		}
+		pScope = pScope->GetScope();
+	}
+	return pBase;
+}
+bool XClass::Run(Value& v, LValue* lValue)
+{
+	StackFrame* frame = new StackFrame();
+	PushFrame(frame);//to hold properties and funcs
+	for (auto it : m_tempMemberList)
+	{
+		Set(it.first, it.second);
+	}
+	m_tempMemberList.clear();
+
+	Data::XClassObject* cls = new Data::XClassObject(this);
+	Value v0(cls);
+	bool bOK = m_scope->Set(m_Index, v0);
+	v = v0;
+
+	//prcoess base classes
+	if (Params)
+	{
+		auto& list = Params->GetList();
+		for (auto i : list)
+		{
+			std::string strVarName;
+			if (i->m_type == ObType::Var)
+			{
+				Var* varName = dynamic_cast<Var*>(i);
+				String& szName = varName->GetName();
+				strVarName = std::string(szName.s, szName.size);
+				auto* pBaseClass = FindBase(strVarName);
+				if (pBaseClass)
+				{
+					m_bases.push_back(pBaseClass);
+				}
+			}
+		}
+	}
+	return bOK;
+}
+
 void XClass::Add(Expression* item)
 {
 	switch (item->m_type)
@@ -599,7 +735,7 @@ void XClass::Add(Expression* item)
 		if (param->Parse(strVarName, strVarType, defaultValue))
 		{
 			int idx = AddOrGet(strVarName,false);
-			Set(idx, defaultValue);
+			m_tempMemberList.push_back(std::make_pair(idx, defaultValue));
 		}
 	}
 		break;
@@ -611,7 +747,7 @@ void XClass::Add(Expression* item)
 		int idx = AddOrGet(strName, false);
 		Data::Function* f = new Data::Function(func);
 		Value funcObj(f);
-		Set(idx, funcObj);
+		m_tempMemberList.push_back(std::make_pair(idx, funcObj));
 		if (strName == "constructor")//TODO: add class name also can be constructor
 		{
 			m_constructor = func;
