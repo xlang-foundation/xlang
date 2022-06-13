@@ -48,11 +48,16 @@ bool UnaryOp::Run(Value& v,LValue* lValue)
 }
 void Func::ScopeLayout()
 {
+	static std::string THIS("this");
 	Scope* pMyScope = GetScope();
 	if (pMyScope)
 	{
 		std::string strName(m_Name.s, m_Name.size);
 		m_Index = pMyScope->AddOrGet(strName, false);
+		if (pMyScope->m_type == ObType::Class)
+		{//it is class's member
+			AddOrGet(THIS, false);
+		}
 	}
 	//prcoess parameters' default values
 	if (Params)
@@ -104,15 +109,25 @@ bool Func::Run(Value& v, LValue* lValue)
 	return true;
 }
 
-bool Func::Call(std::vector<Value>& params, Value& retValue)
+bool Func::Call(void* This, std::vector<Value>& params, Value& retValue)
 {
+	static std::string THIS("this");
 	StackFrame* frame = new StackFrame();
 	PushFrame(frame);
+	//Add this if This is not null
+	int pre_item = 0;
+	if (This)
+	{
+		int thisIdx = AddOrGet(THIS, true);
+		Value v0(This);
+		Set(thisIdx, v0);
+		pre_item++;
+	}
 	int num = m_positionParamCnt > (int)params.size() ?
 		(int)params.size() : m_positionParamCnt;
 	for (int i = 0; i < num; i++)
 	{
-		Set(i, params[i]);
+		Set(pre_item+i, params[i]);
 	}
 
 	Value v0;
@@ -278,6 +293,7 @@ bool PairOp::Run(Value& v,LValue* lValue)
 }
 void Block::Add(Expression* item)
 {
+	int line = item->GetStartLine();
 	if (Body.size() > 0)
 	{//for if elif else 
 		Expression* pLastExp = Body[Body.size() - 1];
@@ -627,7 +643,8 @@ bool DotOp::Run(Value& v, LValue* lValue)
 		RunScopeLayoutWithScopes(R, scopes);
 	}
 
-	auto RunCallPerObj = [&](
+	auto RunCallPerObj = [](
+		Data::FuncCalls* pCalls,
 		Expression* pExpr,
 		Data::XClassObject* pClassObj)
 	{
@@ -650,7 +667,11 @@ bool DotOp::Run(Value& v, LValue* lValue)
 							Data::Function* pFuncObj = dynamic_cast<Data::Function*>(pObj0);
 							if (pFuncObj)
 							{
-								//pFuncObj->Call();
+								Func* func = pFuncObj->GetFunc();
+								if (func)
+								{
+									pCalls->Add(pClassObj, func);
+								}
 							}
 						}
 					}
@@ -659,11 +680,28 @@ bool DotOp::Run(Value& v, LValue* lValue)
 		}
 		else if (pExpr->m_type == ObType::Var)
 		{
-			Var* var = dynamic_cast<Var*>(R);
+			Var* var = dynamic_cast<Var*>(pExpr);
 			Value v0;
 			var->Run(v0);
+			if (v0.IsObject())
+			{
+				Data::Object* pObj0 = (Data::Object*)v0.GetObject();
+				if (pObj0 && pObj0->GetType() == Data::Type::Function)
+				{
+					Data::Function* pFuncObj = dynamic_cast<Data::Function*>(pObj0);
+					if (pFuncObj)
+					{
+						Func* func = pFuncObj->GetFunc();
+						if (func)
+						{
+							pCalls->Add(pClassObj, func);
+						}
+					}
+				}
+			}
 		}
 	};
+	Data::FuncCalls* pCallList = new Data::FuncCalls();
 	if (pLeftObj0)
 	{
 		Data::Object* pLeftObj = (Data::Object*)pLeftObj0;
@@ -672,29 +710,40 @@ bool DotOp::Run(Value& v, LValue* lValue)
 			Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
 			if (pList)
 			{
-
+				auto& data = pList->Data();
+				for (auto& it : data)
+				{
+					if (it.IsObject())
+					{
+						Data::XClassObject* pClassObj = 
+							dynamic_cast<Data::XClassObject*>((Data::Object*)it.GetObject());
+						if (pClassObj)
+						{
+							RunCallPerObj(pCallList, R, pClassObj);
+						}
+					}
+				}
 			}
 		}
 		else if (pLeftObj->GetType() == Data::Type::XClassObject)
 		{
 			Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pLeftObj);
-
+			if (pClassObj)
+			{
+				RunCallPerObj(pCallList, R, pClassObj);
+			}
 		}
 	}
-	Value v_r;
-	if (!R->Run(v_r))
-	{
-		return false;
-	}
+	v = Value(pCallList);
 	return true;
 }
 bool XClass::Call(std::vector<Value>& params, Value& retValue)
 {
+	Data::XClassObject* obj = new Data::XClassObject(this);
 	if (m_constructor)
 	{
-		m_constructor->Call(params, retValue);
+		m_constructor->Call(obj,params, retValue);
 	}
-	Data::XClassObject* obj = new Data::XClassObject(this);
 	retValue = Value(obj);
 	return true;
 }
@@ -842,7 +891,7 @@ bool Param::Parse(std::string& strVarName,
 			strVarType = std::string(szName.s, szName.size);
 		}
 	}
-	return false;
+	return true;
 }
 
 }

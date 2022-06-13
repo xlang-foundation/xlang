@@ -548,6 +548,7 @@ public:
 		for (auto i : Body)
 		{
 			Value v0;
+			int line = i->GetStartLine();
 			bOk = i->Run(v0);
 			if (!bOk)
 			{
@@ -634,7 +635,7 @@ public:
 		Block()
 	{
 	}
-	int AddOrGet(std::string& name,bool bGetOnly)
+	virtual int AddOrGet(std::string& name,bool bGetOnly)
 	{//Always append,no remove, so new item's index is size of m_Vars;
 		auto it = m_Vars.find(name);
 		if (it != m_Vars.end())
@@ -784,6 +785,7 @@ public:
 	virtual void ScopeLayout() override;
 	void AddBuiltins();
 };
+
 class Func :
 	public Scope
 {
@@ -807,6 +809,7 @@ protected:
 			Name->SetParent(this);
 		}
 	}
+
 	virtual void ScopeLayout() override;
 	virtual void SetParams(List* p)
 	{
@@ -869,9 +872,11 @@ public:
 			RetType->SetParent(this);
 		}
 	}
-	virtual bool Call(std::vector<Value>& params, Value& retValue);
+	virtual bool Call(void* This,std::vector<Value>& params, Value& retValue);
 	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
 };
+#define FastMatchThis(name) (name.size() ==4 \
+	&& name[0] =='t' && name[0] =='h' && name[0] =='i' && name[0] =='s')
 class XClass
 	:public Func
 {
@@ -884,6 +889,17 @@ public:
 		Func()
 	{
 		m_type = ObType::Class;
+		//std::string THIS("this");
+		//Func::AddOrGet(THIS, false);
+	}
+
+	virtual int AddOrGet(std::string& name, bool bGetOnly) override
+	{//Always append,no remove, so new item's index is size of m_Vars;
+		if (FastMatchThis(name))
+		{
+
+		}
+		return Func::AddOrGet(name, bGetOnly);
 	}
 	inline std::vector<XClass*>& GetBases() { return m_bases; }
 	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
@@ -902,7 +918,7 @@ public:
 		m_funcName = funcName;
 		m_func = func;
 	}
-	virtual bool Call(std::vector<Value>& params,Value& retValue) override
+	virtual bool Call(void* This,std::vector<Value>& params,Value& retValue) override
 	{
 		return m_func ? m_func(params, retValue) : false;
 	}

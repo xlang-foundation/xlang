@@ -11,6 +11,7 @@ enum class Type
 	Expr,
 	Function,
 	XClassObject,
+	FuncCalls,
 	List,
 	Dict
 };
@@ -46,6 +47,7 @@ public:
 		return true;
 	}
 };
+
 class Function :
 	public Object
 {
@@ -57,11 +59,12 @@ public:
 		m_t = Type::Function;
 		m_func = p;
 	}
+	AST::Func* GetFunc() { return m_func; }
 	virtual bool Call(std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
-		return m_func->Call(params, retValue);
+		return m_func->Call(nullptr,params, retValue);
 	}
 };
 class XClassObject :
@@ -83,7 +86,11 @@ public:
 		return m_obj->Call(params, retValue);
 	}
 };
-
+struct FuncCall
+{
+	XClassObject* m_thisObj = nil;
+	AST::Func* m_func = nil;
+};
 class List :
 	public Object
 {
@@ -96,6 +103,10 @@ public:
 	{
 		m_t = Type::List;
 
+	}
+	std::vector<AST::Value>& Data()
+	{
+		return m_data;
 	}
 	std::vector<AST::Expression*>& GetBases() { return m_bases; }
 	virtual bool Call(std::vector<AST::Value>&params,
@@ -205,6 +216,56 @@ public:
 		return true;
 	}
 };
+class FuncCalls :
+	public Object
+{
+protected:
+	std::vector<FuncCall> m_list;
+public:
+	FuncCalls()
+	{
+		m_t = Type::Function;
+	}
+	void Add(XClassObject* thisObj, AST::Func* func)
+	{
+		m_list.push_back(FuncCall{ thisObj ,func });
+	}
+	virtual bool Call(std::vector<AST::Value>& params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
+		AST::Value& retValue)
+	{
+		if (m_list.size() == 1)
+		{
+			auto& fc = m_list[0];
+			return fc.m_func->Call(fc.m_thisObj,params, retValue);
+		}
+		List* pValueList = new List();
+		bool bOK = true;
+		for (auto& fc : m_list)
+		{
+			AST::Value v0;
+			bool bOK = fc.m_func->Call(fc.m_thisObj,params, v0);
+			if (bOK)
+			{
+				pValueList->Add(v0);
+			}
+			else
+			{
+				break;
+			}
+		}
+		if (bOK)
+		{
+			retValue = AST::Value(pValueList);
+		}
+		else
+		{
+			delete pValueList;
+		}
+		return bOK;
+	}
+};
+
 }
 }
 

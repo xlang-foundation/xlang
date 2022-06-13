@@ -18,17 +18,20 @@ class test_class(base_class,another_class):
      print("deconstructor")
 
  def method1(x,y):
+     this.prop1 =100
      print("method1:",x,",",y)
+     return x+y
 
  def method2(z):
      print("method2:",z)
+     return z
 
 x0 = test_class()
 x1 = test_class()
 x2 = test_class()
 x =[x0,x1,x2].[method1,method2](1,2)
 
-x.[method1,method2](1,2)
+#x.[method1,method2](1,2)
 
 
 
