@@ -555,6 +555,55 @@ void DotOp::ScopeLayout()
 	if (L) L->ScopeLayout();
 	//R will be decided in run stage
 }
+void DotOp::QueryBases(void* pObj0,std::vector<Expression*>& bases)
+{
+	Data::Object* pObj = (Data::Object*)pObj0;
+	if (pObj->GetType() == Data::Type::List)
+	{
+		Data::List* pList = dynamic_cast<Data::List*>(pObj);
+		if (pList)
+		{
+			auto& bs = pList->GetBases();
+			for (auto it : bs)
+			{
+				bases.push_back(it);
+			}
+		}
+	}
+	else if (pObj->GetType() == Data::Type::XClassObject)
+	{
+		Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pObj);
+		if (pClassObj)
+		{
+			bases.push_back(pClassObj->GetClassObj());
+		}
+	}
+	else
+	{//TODO:
+
+	}
+}
+void DotOp::RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes)
+{
+	if (pExpr->m_type == ObType::Pair)
+	{
+		AST::List* pList = dynamic_cast<AST::List*>(((PairOp*)pExpr)->GetR());
+		auto& list = pList->GetList();
+		for (auto it : list)
+		{
+			if (it->m_type == ObType::Var)
+			{
+				Var* var = dynamic_cast<Var*>(it);
+				var->ScopeLayout(scopes);
+			}
+		}
+	}
+	else if (pExpr->m_type == ObType::Var)
+	{
+		Var* var = dynamic_cast<Var*>(R);
+		var->ScopeLayout(scopes);
+	}
+}
 bool DotOp::Run(Value& v, LValue* lValue)
 {
 	if (!L || !R)
@@ -567,69 +616,71 @@ bool DotOp::Run(Value& v, LValue* lValue)
 		return false;
 	}
 	std::vector<AST::Expression*> scopes;
-	auto* pLeftObj = (Data::Object*)v_l.GetObject();
-	if (pLeftObj)
+	void* pLeftObj0 = v_l.GetObject();
+	if (pLeftObj0)
 	{
-		if (pLeftObj->GetType() == Data::Type::List)
-		{
-			Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
-			if (pList)
-			{
-				auto& bs = pList->GetBases();
-				for (auto it : bs)
-				{
-					scopes.push_back(it);
-				}
-			}
-		}
-		else if (pLeftObj->GetType() == Data::Type::XClassObject)
-		{
-			Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pLeftObj);
-			if (pClassObj)
-			{
-				scopes.push_back(pClassObj->GetClassObj());
-			}
-		}
-		else
-		{//TODO:
-
-		}
+		QueryBases(pLeftObj0, scopes);
 	}
 	//R can be a Var or List
 	if (R)
 	{
-		if (R->m_type == ObType::Pair)
+		RunScopeLayoutWithScopes(R, scopes);
+	}
+
+	auto RunCallPerObj = [&](
+		Expression* pExpr,
+		Data::XClassObject* pClassObj)
+	{
+		if (pExpr->m_type == ObType::Pair)
 		{
-			AST::List* pList = dynamic_cast<AST::List*>(((PairOp*)R)->GetR());
+			AST::List* pList = dynamic_cast<AST::List*>(((PairOp*)pExpr)->GetR());
 			auto& list = pList->GetList();
 			for (auto it : list)
 			{
 				if (it->m_type == ObType::Var)
 				{
 					Var* var = dynamic_cast<Var*>(it);
-					var->ScopeLayout(scopes);
+					Value v0;
+					var->Run(v0);
+					if (v0.IsObject())
+					{
+						Data::Object* pObj0 = (Data::Object*)v0.GetObject();
+						if (pObj0 && pObj0->GetType() == Data::Type::Function)
+						{
+							Data::Function* pFuncObj = dynamic_cast<Data::Function*>(pObj0);
+							if (pFuncObj)
+							{
+								//pFuncObj->Call();
+							}
+						}
+					}
 				}
 			}
 		}
-		else if (R->m_type == ObType::Var)
+		else if (pExpr->m_type == ObType::Var)
 		{
 			Var* var = dynamic_cast<Var*>(R);
-			var->ScopeLayout(scopes);
+			Value v0;
+			var->Run(v0);
 		}
-	}
-	if (pLeftObj->GetType() == Data::Type::List)
+	};
+	if (pLeftObj0)
 	{
-		Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
-		if (pList)
+		Data::Object* pLeftObj = (Data::Object*)pLeftObj0;
+		if (pLeftObj->GetType() == Data::Type::List)
 		{
+			Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
+			if (pList)
+			{
+
+			}
+		}
+		else if (pLeftObj->GetType() == Data::Type::XClassObject)
+		{
+			Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pLeftObj);
 
 		}
 	}
-	else if (pLeftObj->GetType() == Data::Type::XClassObject)
-	{
-		Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pLeftObj);
-	}
-
 	Value v_r;
 	if (!R->Run(v_r))
 	{

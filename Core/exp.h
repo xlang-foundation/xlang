@@ -272,10 +272,13 @@ public:
 	}
 	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
 };
+
 class DotOp :
 	public BinaryOp
 {
 	int m_dotNum = 1;
+	void QueryBases(void* pObj0,std::vector<Expression*>& bases);
+	void RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes);
 public:
 	DotOp(short opIndex,int dotNum) :
 		BinaryOp(opIndex)
@@ -695,6 +698,23 @@ public:
 	}
 	void ScopeLayout(std::vector<AST::Expression*>& candidates)
 	{
+		bool matched = false;
+		if (m_scope && Index!=-1)
+		{//check if matche with one candidate
+			for (auto it : candidates)
+			{
+				Scope* s = dynamic_cast<Scope*>(it);
+				if (s == m_scope)
+				{
+					matched = true;
+					break;
+				}
+			}
+		}
+		if (matched)
+		{
+			return;
+		}
 		std::string strName(Name.s, Name.size);
 		for (auto it : candidates)
 		{
