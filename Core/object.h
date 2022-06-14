@@ -28,6 +28,13 @@ public:
 	virtual bool Call(std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue) = 0;
+	virtual std::string ToString()
+	{
+		char v[1000];
+		snprintf(v, sizeof(v), "Object:0x%llx", 
+			(unsigned long long)this);
+		return v;
+	}
 };
 class Expr
 	:public Object
@@ -40,6 +47,7 @@ public:
 		m_t = Type::Expr;
 		m_expr = e;
 	}
+	AST::Expression* Get() { return m_expr; }
 	virtual bool Call(std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
@@ -72,11 +80,23 @@ class XClassObject :
 {
 protected:
 	AST::XClass* m_obj = nullptr;
+	AST::StackFrame* m_stackFrame = nullptr;
 public:
 	XClassObject(AST::XClass* p)
 	{
 		m_t = Type::XClassObject;
 		m_obj = p;
+		m_stackFrame = new AST::StackFrame();
+		m_stackFrame->SetVarCount(p->GetVarNum());
+		auto* pClassStack = p->GetClassStack();
+		if (pClassStack)
+		{
+			m_stackFrame->Copy(pClassStack);
+		}
+	}
+	inline AST::StackFrame* GetStack()
+	{
+		return m_stackFrame;
 	}
 	AST::XClass* GetClassObj() { return m_obj; }
 	virtual bool Call(std::vector<AST::Value>& params,
@@ -86,16 +106,14 @@ public:
 		return m_obj->Call(params, retValue);
 	}
 };
-struct FuncCall
-{
-	XClassObject* m_thisObj = nil;
-	AST::Func* m_func = nil;
-};
+
 class List :
 	public Object
 {
 protected:
+	bool m_useLValue = false;
 	std::vector<AST::Value> m_data;
+	std::vector<AST::LValue> m_ptrs;
 	std::vector<AST::Expression*> m_bases;
 public:
 	List():
@@ -104,6 +122,20 @@ public:
 		m_t = Type::List;
 
 	}
+	virtual std::string ToString() override
+	{
+		std::string strList = "[\n";
+		size_t size = Size();
+		for (size_t i = 0; i < size; i++)
+		{
+			AST::Value v0;
+			Get(i, v0);
+			strList += '\t'+v0.ToString()+",\n";
+		}
+		strList += "]";
+		return strList;
+	}
+	inline size_t Size() { return m_useLValue? m_ptrs.size():m_data.size(); }
 	std::vector<AST::Value>& Data()
 	{
 		return m_data;
@@ -134,6 +166,11 @@ public:
 			}
 		}		
 		return true;
+	}
+	inline void Add(AST::LValue p)
+	{
+		m_useLValue = true;
+		m_ptrs.push_back(p);
 	}
 	inline void Add(AST::Value& v)
 	{
@@ -188,13 +225,26 @@ public:
 	inline bool Get(long long idx, AST::Value& v,
 		AST::LValue* lValue=nullptr)
 	{
-		if (idx >= (long long)m_data.size())
+		if (m_useLValue)
 		{
-			m_data.resize(idx + 1);
+			if (idx >= (long long)m_ptrs.size())
+			{
+				return false;
+			}
+			AST::LValue l = m_ptrs[idx];
+			v = *l;
+			if (lValue) *lValue = l;
 		}
-		AST::Value& v0 = m_data[idx];
-		v = v0;
-		if (lValue) *lValue = &v0;
+		else
+		{
+			if (idx >= (long long)m_data.size())
+			{
+				m_data.resize(idx + 1);
+			}
+			AST::Value& v0 = m_data[idx];
+			v = v0;
+			if (lValue) *lValue = &v0;
+		}
 		return true;
 	}
 };
@@ -216,19 +266,37 @@ public:
 		return true;
 	}
 };
+
+struct VectorCall
+{
+	XClassObject* m_thisObj = nil;
+	AST::Func* m_func = nil;
+	AST::LValue m_lVal = nil;
+};
 class FuncCalls :
 	public Object
 {
 protected:
-	std::vector<FuncCall> m_list;
+	std::vector<VectorCall> m_list;
 public:
 	FuncCalls()
 	{
-		m_t = Type::Function;
+		m_t = Type::FuncCalls;
 	}
-	void Add(XClassObject* thisObj, AST::Func* func)
+	void Add(XClassObject* thisObj, AST::Func* func, AST::LValue lVal)
 	{
-		m_list.push_back(FuncCall{ thisObj ,func });
+		m_list.push_back(VectorCall{ thisObj ,func,lVal });
+	}
+	bool SetValue(AST::Value& val)
+	{
+		for (auto& i : m_list)
+		{
+			if (i.m_lVal)
+			{
+				*i.m_lVal = val;
+			}
+		}
+		return true;
 	}
 	virtual bool Call(std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,

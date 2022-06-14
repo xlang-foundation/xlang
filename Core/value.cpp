@@ -1,4 +1,5 @@
 #include "value.h"
+#include "object.h"
 namespace X {namespace AST {
 	std::string Value::ToString()
 	{
@@ -29,10 +30,10 @@ namespace X {namespace AST {
 		}
 		break;
 		case ValueType::Object:
+		if(x.p)
 		{
-			char v[1000];
-			snprintf(v, sizeof(v), "Object:0x%llx", (unsigned long long)x.p);
-			str = v;
+			Data::Object* pObj = (Data::Object*)x.p;
+			str = pObj->ToString();
 		}
 			break;
 		case ValueType::Str:

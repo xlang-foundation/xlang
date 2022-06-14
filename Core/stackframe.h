@@ -5,6 +5,7 @@ namespace X {namespace AST {
 class StackFrame
 {
 protected:
+	int m_varCnt = 0;
 	Value* m_Values = nil;
 	Value m_retVal;
 public:
@@ -18,11 +19,20 @@ public:
 			delete[] m_Values;
 		}
 	}
+	void Copy(StackFrame* pFrom)
+	{
+		for (int i = 0; i < m_varCnt; i++)
+		{
+			m_Values[i] = pFrom->m_Values[i];
+		}
+		m_retVal = pFrom->m_retVal;
+	}
 	inline bool SetVarCount(int cnt)
 	{
 		if (cnt > 0)
 		{
 			m_Values = new Value[cnt];
+			m_varCnt = cnt;
 		}
 		return true;
 	}

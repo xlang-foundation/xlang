@@ -61,6 +61,7 @@ public:
 	{
 		m_isLeftValue = b;
 	}
+	inline bool IsLeftValue() { return m_isLeftValue; }
 	virtual ~Expression(){}
 	inline Scope* GetScope()
 	{
@@ -80,11 +81,11 @@ public:
 	{
 		return m_parent;
 	}
-	virtual void Set(Value& v)
+	virtual void Set(void* pContext, Value& v)
 	{
 
 	}
-	virtual bool Run(Value& v,LValue* lValue=nullptr)
+	virtual bool Run(void* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;
 	}
@@ -169,19 +170,19 @@ public:
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
 
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
 			return false;
 		}
 		Value v_l;
-		if (!L->Run(v_l))
+		if (!L->Run(pContext,v_l))
 		{
 			return false;
 		}
 		Value v_r;
-		if (!R->Run(v_r))
+		if (!R->Run(pContext, v_r))
 		{
 			return false;
 		}
@@ -192,6 +193,7 @@ public:
 class Assign :
 	public BinaryOp
 {
+	bool AssignToDataObject(void* pObjPtr);
 public:
 	Assign(short op) :
 		BinaryOp(op)
@@ -206,7 +208,7 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
@@ -214,9 +216,17 @@ public:
 		}
 		Value v_l;
 		LValue lValue_L = nullptr;
-		L->Run(v_l, &lValue_L);
+		L->Run(pContext, v_l, &lValue_L);
+		if (v_l.IsObject())
+		{
+			bool bOK = AssignToDataObject(v_l.GetObject());
+			if (bOK)
+			{
+				return true;
+			}
+		}
 		Value v_r;
-		if (R->Run(v_r))
+		if (R->Run(pContext, v_r))
 		{
 			if (lValue_L)
 			{
@@ -224,7 +234,7 @@ public:
 			}
 			else
 			{
-				L->Set(v_r);
+				L->Set(pContext, v_r);
 			}
 		}
 		return true;
@@ -270,7 +280,7 @@ public:
 	{
 		return m_preceding_token;
 	}
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class DotOp :
@@ -286,7 +296,7 @@ public:
 		m_type = ObType::Dot;
 		m_dotNum = dotNum;
 	}
-	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 };
 class UnaryOp :
@@ -333,7 +343,7 @@ public:
 	}
 	Expression* GetR() { return R; }
 
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
 	public UnaryOp
@@ -351,7 +361,7 @@ public:
 		m_type = ObType::Range;
 	}
 
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Str :
 	public Expression
@@ -364,7 +374,7 @@ public:
 		m_s = s;
 		m_size = size;
 	}
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_s,m_size);
 		v = v0;
@@ -383,7 +393,7 @@ public:
 		m_digiNum = num;
 		m_type = ObType::Number;
 	}
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		v0.SetF(m_digiNum);
@@ -542,14 +552,14 @@ public:
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
-	virtual bool Run(Value& v,LValue* lValue=nullptr)
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr)
 	{
 		bool bOk = true;
 		for (auto i : Body)
 		{
 			Value v0;
 			int line = i->GetStartLine();
-			bOk = i->Run(v0);
+			bOk = i->Run(pContext, v0);
 			if (!bOk)
 			{
 				break;
@@ -566,12 +576,12 @@ public:
 		BinaryOp(op)
 	{
 	}
-	inline virtual bool Run(Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
-		bool bIn = R->Run(v);
+		bool bIn = R->Run(pContext, v);
 		if(bIn)
 		{
-			L->Set(v);
+			L->Set(pContext, v);
 		}
 		return bIn;
 	}
@@ -592,7 +602,7 @@ public:
 		Block(op)
 	{
 	}
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class While :
 	public Block
@@ -603,7 +613,7 @@ public:
 	{
 	}
 
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class If :
@@ -621,7 +631,7 @@ public:
 		if (m_next) delete m_next;
 	}
 	virtual bool EatMe(Expression* other) override;
-	virtual bool Run(Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class Scope:
@@ -634,6 +644,10 @@ public:
 	Scope() :
 		Block()
 	{
+	}
+	int GetVarNum()
+	{
+		return (int)m_Vars.size();
 	}
 	virtual int AddOrGet(std::string& name,bool bGetOnly)
 	{//Always append,no remove, so new item's index is size of m_Vars;
@@ -663,7 +677,7 @@ public:
 		return mStackFrames.empty() ? nil : mStackFrames.top();
 	}
 
-	inline bool Set(int idx, Value& v)
+	inline virtual bool Set(void* pContext,int idx, Value& v)
 	{
 		if (!mStackFrames.empty())
 		{
@@ -676,7 +690,7 @@ public:
 		mStackFrames.top()->SetReturn(v);
 		return true;
 	}
-	inline bool Get(int idx, Value& v, LValue* lValue = nullptr)
+	inline virtual bool Get(void* pContext, int idx, Value& v, LValue* lValue = nullptr)
 	{
 		if (!mStackFrames.empty())
 		{
@@ -758,17 +772,17 @@ public:
 		Index = idx;
 	}
 	String& GetName() { return Name; }
-	inline virtual void Set(Value& v) override
+	inline virtual void Set(void* pContext,Value& v) override
 	{
-		m_scope->Set(Index,v);
+		m_scope->Set(pContext,Index,v);
 	}
-	inline virtual bool Run(Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (Index == -1 || m_scope == nullptr)
 		{
 			return false;
 		}
-		m_scope->Get(Index, v, lValue);
+		m_scope->Get(pContext,Index, v, lValue);
 		return true;
 	}
 };
@@ -873,7 +887,7 @@ public:
 		}
 	}
 	virtual bool Call(void* This,std::vector<Value>& params, Value& retValue);
-	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(void* pContext, Value& v, LValue* lValue = nullptr) override;
 };
 #define FastMatchThis(name) (name.size() ==4 \
 	&& name[0] =='t' && name[0] =='h' && name[0] =='i' && name[0] =='s')
@@ -892,7 +906,17 @@ public:
 		//std::string THIS("this");
 		//Func::AddOrGet(THIS, false);
 	}
-
+	inline StackFrame* GetClassStack()
+	{
+		if (mStackFrames.size() > 0)
+		{
+			return mStackFrames.top();
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 	virtual int AddOrGet(std::string& name, bool bGetOnly) override
 	{//Always append,no remove, so new item's index is size of m_Vars;
 		if (FastMatchThis(name))
@@ -901,8 +925,10 @@ public:
 		}
 		return Func::AddOrGet(name, bGetOnly);
 	}
+	virtual bool Set(void* pContext, int idx, Value& v) override;
+	virtual bool Get(void* pContext, int idx, Value& v, LValue* lValue = nullptr);
 	inline std::vector<XClass*>& GetBases() { return m_bases; }
-	virtual bool Run(Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
 	virtual bool Call(std::vector<Value>& params, Value& retValue);

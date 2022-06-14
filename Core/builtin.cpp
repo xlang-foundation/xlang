@@ -25,7 +25,12 @@ bool U_Print(std::vector<X::AST::Value>& params,
 bool U_Rand(std::vector<X::AST::Value>& params,
 	X::AST::Value& retValue)
 {
-	srand((unsigned int)time(nullptr));
+	static bool init = false;
+	if (!init)
+	{
+		srand((unsigned int)time(nullptr));
+		init = true;
+	}
 	int r = rand();
 	retValue = X::AST::Value(r);
 	return true;

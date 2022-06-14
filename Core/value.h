@@ -186,6 +186,28 @@ public:
 			break;
 		}
 	}
+	void operator = (const Value& v)
+	{
+		flags = v.flags;
+		t = v.t;
+		switch (t)
+		{
+		case ValueType::Int64:
+			x.l = ToInt64(v);
+			break;
+		case ValueType::Double:
+			x.d = ToDouble(v);
+			break;
+		case ValueType::Str:
+			x.p = v.x.p;
+			break;
+		case ValueType::Object:
+			x.p = v.x.p;
+			break;
+		default:
+			break;
+		}
+	}
 	ARITH_OP(+= );
 	ARITH_OP(-= );
 	ARITH_OP(*= );
