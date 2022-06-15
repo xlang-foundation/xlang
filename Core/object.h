@@ -25,7 +25,7 @@ public:
 	{
 	}
 	Type GetType() { return m_t; }
-	virtual bool Call(std::vector<AST::Value>& params,
+	virtual bool Call(AST::Module* pModule,std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue) = 0;
 	virtual std::string ToString()
@@ -48,7 +48,7 @@ public:
 		m_expr = e;
 	}
 	AST::Expression* Get() { return m_expr; }
-	virtual bool Call(std::vector<AST::Value>& params,
+	virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
@@ -68,11 +68,11 @@ public:
 		m_func = p;
 	}
 	AST::Func* GetFunc() { return m_func; }
-	virtual bool Call(std::vector<AST::Value>& params,
+	virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
-		return m_func->Call(nullptr,params, retValue);
+		return m_func->Call(pModule,nullptr,params, retValue);
 	}
 };
 class XClassObject :
@@ -99,11 +99,11 @@ public:
 		return m_stackFrame;
 	}
 	AST::XClass* GetClassObj() { return m_obj; }
-	virtual bool Call(std::vector<AST::Value>& params,
+	virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
-		return m_obj->Call(params, retValue);
+		return m_obj->Call(pModule,params, retValue);
 	}
 };
 
@@ -141,7 +141,7 @@ public:
 		return m_data;
 	}
 	std::vector<AST::Expression*>& GetBases() { return m_bases; }
-	virtual bool Call(std::vector<AST::Value>&params,
+	virtual bool Call(AST::Module* pModule, std::vector<AST::Value>&params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
@@ -259,7 +259,7 @@ public:
 	{
 		m_t = Type::Dict;
 	}
-	virtual bool Call(std::vector<AST::Value>& params,
+	virtual bool Call(void* pLineExpr, std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
@@ -298,21 +298,23 @@ public:
 		}
 		return true;
 	}
-	virtual bool Call(std::vector<AST::Value>& params,
+	virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		AST::Value& retValue)
 	{
 		if (m_list.size() == 1)
 		{
 			auto& fc = m_list[0];
-			return fc.m_func->Call(fc.m_thisObj,params, retValue);
+			return fc.m_func->Call(pModule,
+				fc.m_thisObj,params, retValue);
 		}
 		List* pValueList = new List();
 		bool bOK = true;
 		for (auto& fc : m_list)
 		{
 			AST::Value v0;
-			bool bOK = fc.m_func->Call(fc.m_thisObj,params, v0);
+			bool bOK = fc.m_func->Call(pModule,
+				fc.m_thisObj,params, v0);
 			if (bOK)
 			{
 				pValueList->Add(v0);

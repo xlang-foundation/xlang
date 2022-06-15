@@ -10,7 +10,7 @@
 #endif
 #include <vector>
 
-bool U_Print(std::vector<X::AST::Value>& params,
+bool U_Print(void* pLineExpr,std::vector<X::AST::Value>& params,
 	X::AST::Value& retValue)
 {
 	for (auto& v : params)
@@ -22,7 +22,7 @@ bool U_Print(std::vector<X::AST::Value>& params,
 	retValue = X::AST::Value(true);
 	return true;
 }
-bool U_Rand(std::vector<X::AST::Value>& params,
+bool U_Rand(void* pLineExpr, std::vector<X::AST::Value>& params,
 	X::AST::Value& retValue)
 {
 	static bool init = false;
@@ -35,7 +35,7 @@ bool U_Rand(std::vector<X::AST::Value>& params,
 	retValue = X::AST::Value(r);
 	return true;
 }
-bool U_Sleep(std::vector<X::AST::Value>& params,
+bool U_Sleep(void* pLineExpr, std::vector<X::AST::Value>& params,
 	X::AST::Value& retValue)
 {
 	if (params.size()>0)
@@ -46,7 +46,7 @@ bool U_Sleep(std::vector<X::AST::Value>& params,
 	retValue = X::AST::Value(true);
 	return true;
 }
-bool U_Time(std::vector<X::AST::Value>& params,
+bool U_Time(void* pLineExpr, std::vector<X::AST::Value>& params,
 	X::AST::Value& retValue)
 {
 	long long t = getCurMilliTimeStamp();
@@ -71,6 +71,15 @@ bool Builtin::Register(const char* name, void* func,
 	m_mapFuncs.emplace(std::make_pair(name,extFunc));
 	return true;
 }
+
+bool U_BreakPoint(void* pLineExpr, std::vector<X::AST::Value>& params,
+	X::AST::Value& retValue)
+{
+	AST::Module* pModule = (AST::Module*)pLineExpr;
+	pModule->SetDbg(AST::dbg::Step);
+	retValue = X::AST::Value(true);
+	return true;
+}
 bool Builtin::RegisterInternals()
 {
 	std::vector<std::pair<std::string, std::string>> params;
@@ -78,6 +87,7 @@ bool Builtin::RegisterInternals()
 	Register("rand", (void*)U_Rand, params);
 	Register("sleep", (void*)U_Sleep, params);
 	Register("time", (void*)U_Time, params);
+	Register("breakpoint", (void*)U_BreakPoint, params);
 	return true;
 }
 }

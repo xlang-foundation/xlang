@@ -434,7 +434,7 @@ bool Parser::Run()
 	pTopModule->PushFrame(frame);
 	pTopModule->AddBuiltins();
 	AST::Value v;
-	bool bOK = pTopModule->Run(nullptr,v);
+	bool bOK = pTopModule->Run(pTopModule,nullptr,v);
 	pTopModule->PopFrame();
 	delete frame;
 	delete pTopModule;

@@ -36,10 +36,10 @@ Func* Expression::FindFuncByName(Var* name)
 	return pFuncRet;
 }
 
-bool UnaryOp::Run(void* pContext,Value& v,LValue* lValue)
+bool UnaryOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 {
 	Value v_r;
-	if (!R->Run(pContext,v_r))
+	if (!R->Run(pModule,pContext,v_r))
 	{
 		return false;
 	}
@@ -100,7 +100,7 @@ void Func::ScopeLayout()
 		}
 	}
 }
-bool Func::Run(void* pContext,Value& v, LValue* lValue)
+bool Func::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);
 	Value v0(f);
@@ -109,7 +109,7 @@ bool Func::Run(void* pContext,Value& v, LValue* lValue)
 	return true;
 }
 
-bool Func::Call(void* This, std::vector<Value>& params, Value& retValue)
+bool Func::Call(AST::Module* pModule,void* This, std::vector<Value>& params, Value& retValue)
 {
 	static std::string THIS("this");
 	StackFrame* frame = new StackFrame();
@@ -131,13 +131,13 @@ bool Func::Call(void* This, std::vector<Value>& params, Value& retValue)
 	}
 
 	Value v0;
-	Block::Run(This,v0);
+	Block::Run(pModule,This,v0);
 	PopFrame();
 	retValue = frame->GetReturnValue();
 	delete frame;
 	return true;
 }
-bool PairOp::GetParamList(Expression* e,
+bool PairOp::GetParamList(Module* pModule,Expression* e,
 	std::vector<Value>& params,
 	std::unordered_map<std::string, Value>& kwParams)
 {
@@ -152,7 +152,7 @@ bool PairOp::GetParamList(Expression* e,
 			std::string strVarName = std::string(szName.s, szName.size);
 			Expression* valExpr = assign->GetR();
 			Value v0;
-			bOK = valExpr->Run(nullptr,v0);
+			bOK = valExpr->Run(pModule,nullptr,v0);
 			if (bOK)
 			{
 				kwParams.emplace(std::make_pair(strVarName, v0));
@@ -161,7 +161,7 @@ bool PairOp::GetParamList(Expression* e,
 		else
 		{
 			Value v0;
-			bOK = i->Run(nullptr,v0);
+			bOK = i->Run(pModule,nullptr,v0);
 			if (bOK)
 			{
 				params.push_back(v0);
@@ -188,7 +188,7 @@ bool PairOp::GetParamList(Expression* e,
 	}
 	return bOK;
 }
-bool PairOp::Run(void* pContext,Value& v,LValue* lValue)
+bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 {
 	bool bOK = false;
 	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
@@ -196,7 +196,7 @@ bool PairOp::Run(void* pContext,Value& v,LValue* lValue)
 		if (L)
 		{//Call Func
 			Value lVal;
-			bOK = L->Run(pContext,lVal, lValue);
+			bOK = L->Run(pModule,pContext,lVal, lValue);
 			if (!bOK || !lVal.IsObject())
 			{
 				return bOK;
@@ -205,7 +205,7 @@ bool PairOp::Run(void* pContext,Value& v,LValue* lValue)
 			std::unordered_map<std::string, Value> kwParams;
 			if (R)
 			{
-				bOK = GetParamList(R, params, kwParams);
+				bOK = GetParamList(pModule,R, params, kwParams);
 				if (!bOK)
 				{
 					return bOK;
@@ -214,14 +214,14 @@ bool PairOp::Run(void* pContext,Value& v,LValue* lValue)
 			Data::Object* obj = (Data::Object*)lVal.GetObject();
 			if (obj)
 			{
-				bOK = obj->Call(params, kwParams, v);
+				bOK = obj->Call(pModule,params, kwParams, v);
 			}
 		}
 		else
 		{
 			if (R && R->m_type != ObType::List)
 			{
-				bOK = R->Run(pContext,v, lValue);
+				bOK = R->Run(pModule,pContext,v, lValue);
 			}
 		}
 	}
@@ -230,7 +230,7 @@ bool PairOp::Run(void* pContext,Value& v,LValue* lValue)
 		if (L)
 		{//usage: x[1,2]
 			Value v0;
-			bOK = L->Run(pContext,v0);
+			bOK = L->Run(pModule,pContext,v0);
 			Data::List* pDataList = (Data::List*)v0.GetObject();
 			//Get Index
 			std::vector<long long> IdxAry;
@@ -240,7 +240,7 @@ bool PairOp::Run(void* pContext,Value& v,LValue* lValue)
 				for (auto e : list)
 				{
 					Value v1;
-					if (e->Run(pContext,v1))
+					if (e->Run(pModule,pContext,v1))
 					{
 						IdxAry.push_back(v1.GetLongLong());
 					}
@@ -254,7 +254,7 @@ bool PairOp::Run(void* pContext,Value& v,LValue* lValue)
 			else
 			{
 				Value vIdx;
-				bOK = R->Run(pContext,vIdx);
+				bOK = R->Run(pModule,pContext,vIdx);
 				IdxAry.push_back(vIdx.GetLongLong());
 			}
 			if (bOK)
@@ -275,7 +275,7 @@ bool PairOp::Run(void* pContext,Value& v,LValue* lValue)
 				for (auto e : list)
 				{
 					Value v;
-					if (e->Run(pContext,v))
+					if (e->Run(pModule,pContext,v))
 					{
 						pDataList->Add(v);
 					}
@@ -353,8 +353,38 @@ Func* Block::FindFuncByName(Var* name)
 	}
 	return func;
 }
-
-bool While::Run(void* pContext,Value& v,LValue* lValue)
+bool Block::Run(Module* pModule,void* pContext, Value& v, LValue* lValue)
+{
+	bool bOk = true;
+	for (auto i : Body)
+	{
+		Value v0;
+		bOk = i->Run(pModule,pContext, v0);
+		if (!bOk)
+		{
+			break;
+		}
+		if (pModule->GetDbg() == dbg::Step)
+		{
+			std::cout << v0.ToString() << std::endl;
+			int line = i->GetStartLine();
+			std::cout << "(" << line << ",(c)ontinue,(s)tep)>>";
+			X::AST::Value v0;
+			std::string yes;
+			std::cin >> yes;
+			if (yes == "c" || yes == "C")
+			{
+				pModule->SetDbg(AST::dbg::Continue);
+			}
+			else if (yes == "s" || yes == "S")
+			{
+				pModule->SetDbg(AST::dbg::Step);
+			}
+		}
+	}
+	return bOk;
+}
+bool While::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 {
 	if (R == nil)
 	{
@@ -364,10 +394,10 @@ bool While::Run(void* pContext,Value& v,LValue* lValue)
 	while (true)
 	{
 		Value v0;
-		bool bOK = R->Run(pContext,v0);
+		bool bOK = R->Run(pModule,pContext,v0);
 		if (bOK && v0 == Value(true))
 		{
-			Block::Run(pContext,v);
+			Block::Run(pModule,pContext,v);
 		}
 		else
 		{
@@ -376,41 +406,22 @@ bool While::Run(void* pContext,Value& v,LValue* lValue)
 	}
 	return true;
 }
-bool For::Run(void* pContext,Value& v,LValue* lValue)
+bool For::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 {
 	Value v0;
 	while (true)
 	{
-		bool bC0 = R->Run(pContext,v0);
+		bool bC0 = R->Run(pModule,pContext,v0);
 		if (!bC0)
 		{
 			break;
 		}
-		Block::Run(pContext,v);
+		Block::Run(pModule,pContext,v);
 	}
 	return true;
 }
 
-#if 0
-bool InOp::Run(void* pContext,Value& v,LValue* lValue)
-{
-	bool bIn = false;
-	if (R)
-	{
-		if (R->m_type == ObType::Range)
-		{
-			Range* r = dynamic_cast<Range*>(R);
-			bIn = r->Run(pContext,v);//will update v
-			if (bIn)
-			{
-				L->Set(v);
-			}
-		}
-	}
-	return bIn;
-}
-#endif
-bool Range::Eval()
+bool Range::Eval(Module* pModule)
 {
 	if (R && R->m_type == ObType::Pair)
 	{
@@ -425,7 +436,7 @@ bool Range::Eval()
 			else
 			{//only one parameter, means stop
 				Value vStop;
-				param->Run(nullptr,vStop);
+				param->Run(pModule,nullptr,vStop);
 				if (vStop.GetType() == ValueType::Int64)
 				{
 					m_stop = vStop.GetLongLong();
@@ -437,11 +448,11 @@ bool Range::Eval()
 	m_evaluated = true;
 	return true;
 }
-bool Range::Run(void* pContext,Value& v,LValue* lValue)
+bool Range::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 {
 	if (!m_evaluated)
 	{
-		Eval();
+		Eval(pModule);
 	}
 	if (v.GetType() != ValueType::Int64)
 	{//not started
@@ -474,14 +485,14 @@ bool If::EatMe(Expression* other)
 		return false;
 	}
 }
-bool If::Run(void* pContext,Value& v,LValue* lValue)
+bool If::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 {
 	bool bRet = true;
 	bool bCanRun = false;
 	if (R)
 	{
 		Value v0;
-		bool bOK = R->Run(pContext,v0);
+		bool bOK = R->Run(pModule,pContext,v0);
 		if (bOK && v0 == Value(true))
 		{
 			bCanRun = true;
@@ -493,11 +504,11 @@ bool If::Run(void* pContext,Value& v,LValue* lValue)
 	}
 	if (bCanRun)
 	{
-		bRet = Block::Run(pContext,v);
+		bRet = Block::Run(pModule,pContext,v);
 	}
 	else if(m_next)
 	{
-		bRet = m_next->Run(pContext,v);
+		bRet = m_next->Run(pModule,pContext,v);
 	}
 	return bRet;
 }
@@ -566,11 +577,11 @@ void Module::AddBuiltins()
 		}
 	}
 }
-bool Assign::AssignToDataObject(void* pObjPtr)
+bool Assign::AssignToDataObject(Module* pModule, void* pObjPtr)
 {
 	Data::Object* pObj = (Data::Object*)pObjPtr;
 	Value v_r;
-	if (!R->Run(nullptr,v_r))
+	if (!R->Run(pModule,nullptr,v_r))
 	{
 		return false;
 	}
@@ -639,14 +650,14 @@ void DotOp::RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>
 		var->ScopeLayout(scopes);
 	}
 }
-bool DotOp::Run(void* pContext,Value& v, LValue* lValue)
+bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 {
 	if (!L || !R)
 	{
 		return false;
 	}
 	Value v_l;
-	if (!L->Run(pContext,v_l) || !v_l.IsObject())
+	if (!L->Run(pModule,pContext,v_l) || !v_l.IsObject())
 	{
 		return false;
 	}
@@ -711,7 +722,7 @@ bool DotOp::Run(void* pContext,Value& v, LValue* lValue)
 					Var* var = dynamic_cast<Var*>(it);
 					Value v0;
 					LValue lVal = nil;
-					var->Run(pClassObj,v0,&lVal);
+					var->Run(pModule,pClassObj,v0,&lVal);
 					AddFunc(v0, lVal, pClassObj);
 				}
 			}
@@ -721,7 +732,7 @@ bool DotOp::Run(void* pContext,Value& v, LValue* lValue)
 			Var* var = dynamic_cast<Var*>(pExpr);
 			Value v0;
 			LValue lValue =nil;
-			var->Run(pClassObj,v0,&lValue);
+			var->Run(pModule,pClassObj,v0,&lValue);
 			AddFunc(v0, lValue, pClassObj);
 		}
 	};
@@ -780,12 +791,12 @@ bool DotOp::Run(void* pContext,Value& v, LValue* lValue)
 	}
 	return true;
 }
-bool XClass::Call(std::vector<Value>& params, Value& retValue)
+bool XClass::Call(Module* pModule, std::vector<Value>& params, Value& retValue)
 {
 	Data::XClassObject* obj = new Data::XClassObject(this);
 	if (m_constructor)
 	{
-		m_constructor->Call(obj,params, retValue);
+		m_constructor->Call(pModule,obj,params, retValue);
 	}
 	retValue = Value(obj);
 	return true;
@@ -853,7 +864,7 @@ bool XClass::Get(void* pContext, int idx, Value& v, LValue* lValue)
 	}
 	return true;
 }
-bool XClass::Run(void* pContext,Value& v, LValue* lValue)
+bool XClass::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 {
 	StackFrame* frame = new StackFrame();
 	PushFrame(frame);//to hold properties and funcs for this class
@@ -874,7 +885,7 @@ bool XClass::Run(void* pContext,Value& v, LValue* lValue)
 					if (pExpression)
 					{
 						Value v1;
-						if (pExpression->Run(pContext,v1))
+						if (pExpression->Run(pModule,pContext,v1))
 						{
 							Set(pContext,it.first, v1);
 							bSet = true;

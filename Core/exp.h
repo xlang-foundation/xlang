@@ -12,7 +12,7 @@
 
 namespace X {namespace AST{
 class List;
-typedef bool (*U_FUNC) (std::vector<Value>& params, Value& retValue);
+typedef bool (*U_FUNC) (void* pLineExpr,std::vector<Value>& params, Value& retValue);
 enum class ObType
 {
 	Base,
@@ -30,7 +30,7 @@ enum class ObType
 	Func,
 	Class
 };
-
+class Module;
 class Scope;
 class Var;
 class Func;
@@ -54,8 +54,8 @@ public:
 		m_lineEnd = endLine;
 		m_charPos = charPos;
 	}
-	inline int GetStartLine() { return m_lineStart; }
-	inline int GetEndLine() { return m_lineEnd; }
+	inline int GetStartLine() { return m_lineStart+1; }
+	inline int GetEndLine() { return m_lineEnd+1; }
 	inline int GetCharPos() { return m_charPos; }
 	inline void SetIsLeftValue(bool b)
 	{
@@ -85,7 +85,7 @@ public:
 	{
 
 	}
-	virtual bool Run(void* pContext,Value& v,LValue* lValue=nullptr)
+	virtual bool Run(Module* pModule,void* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;
 	}
@@ -170,19 +170,19 @@ public:
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
 
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
 			return false;
 		}
 		Value v_l;
-		if (!L->Run(pContext,v_l))
+		if (!L->Run(pModule,pContext,v_l))
 		{
 			return false;
 		}
 		Value v_r;
-		if (!R->Run(pContext, v_r))
+		if (!R->Run(pModule,pContext, v_r))
 		{
 			return false;
 		}
@@ -193,7 +193,7 @@ public:
 class Assign :
 	public BinaryOp
 {
-	bool AssignToDataObject(void* pObjPtr);
+	bool AssignToDataObject(Module* pModule,void* pObjPtr);
 public:
 	Assign(short op) :
 		BinaryOp(op)
@@ -208,7 +208,7 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
@@ -216,17 +216,17 @@ public:
 		}
 		Value v_l;
 		LValue lValue_L = nullptr;
-		L->Run(pContext, v_l, &lValue_L);
+		L->Run(pModule,pContext, v_l, &lValue_L);
 		if (v_l.IsObject())
 		{
-			bool bOK = AssignToDataObject(v_l.GetObject());
+			bool bOK = AssignToDataObject(pModule,v_l.GetObject());
 			if (bOK)
 			{
 				return true;
 			}
 		}
 		Value v_r;
-		if (R->Run(pContext, v_r))
+		if (R->Run(pModule,pContext, v_r))
 		{
 			if (lValue_L)
 			{
@@ -266,7 +266,7 @@ class PairOp :
 	public BinaryOp
 {
 	short m_preceding_token = 0;
-	bool GetParamList(Expression* e,
+	bool GetParamList(Module* pModule, Expression* e,
 		std::vector<Value>& params,
 		std::unordered_map<std::string,Value>& kwParams);
 public:
@@ -280,7 +280,7 @@ public:
 	{
 		return m_preceding_token;
 	}
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class DotOp :
@@ -296,7 +296,7 @@ public:
 		m_type = ObType::Dot;
 		m_dotNum = dotNum;
 	}
-	virtual bool Run(void* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 };
 class UnaryOp :
@@ -343,7 +343,7 @@ public:
 	}
 	Expression* GetR() { return R; }
 
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
 	public UnaryOp
@@ -353,7 +353,7 @@ class Range :
 	long long m_stop =0;
 	long long m_step = 1;
 
-	bool Eval();
+	bool Eval(Module* pModule);
 public:
 	Range(short op) :
 		UnaryOp(op)
@@ -361,7 +361,7 @@ public:
 		m_type = ObType::Range;
 	}
 
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Str :
 	public Expression
@@ -374,7 +374,7 @@ public:
 		m_s = s;
 		m_size = size;
 	}
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_s,m_size);
 		v = v0;
@@ -393,7 +393,7 @@ public:
 		m_digiNum = num;
 		m_type = ObType::Number;
 	}
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		v0.SetF(m_digiNum);
@@ -552,21 +552,7 @@ public:
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr)
-	{
-		bool bOk = true;
-		for (auto i : Body)
-		{
-			Value v0;
-			int line = i->GetStartLine();
-			bOk = i->Run(pContext, v0);
-			if (!bOk)
-			{
-				break;
-			}
-		}
-		return bOk;
-	}
+	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr);
 };
 class InOp :
 	public BinaryOp
@@ -576,9 +562,9 @@ public:
 		BinaryOp(op)
 	{
 	}
-	inline virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
-		bool bIn = R->Run(pContext, v);
+		bool bIn = R->Run(pModule,pContext, v);
 		if(bIn)
 		{
 			L->Set(pContext, v);
@@ -602,7 +588,7 @@ public:
 		Block(op)
 	{
 	}
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class While :
 	public Block
@@ -613,7 +599,7 @@ public:
 	{
 	}
 
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class If :
@@ -631,7 +617,7 @@ public:
 		if (m_next) delete m_next;
 	}
 	virtual bool EatMe(Expression* other) override;
-	virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class Scope:
@@ -776,7 +762,7 @@ public:
 	{
 		m_scope->Set(pContext,Index,v);
 	}
-	inline virtual bool Run(void* pContext, Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (Index == -1 || m_scope == nullptr)
 		{
@@ -787,9 +773,18 @@ public:
 	}
 };
 
+
+enum class dbg
+{
+	Continue,
+	Step
+};
 class Module :
 	public Scope
 {
+	//for debug
+	dbg m_dbg = dbg::Continue;
+	Expression* m_curRunningExpr = nil;
 public:
 	Module() :
 		Scope()
@@ -798,6 +793,20 @@ public:
 	}
 	virtual void ScopeLayout() override;
 	void AddBuiltins();
+	inline void SetCurExpr(Expression* pExpr)
+	{
+		m_curRunningExpr = pExpr;
+	}
+	inline Expression* GetCurExpr()
+	{
+		return m_curRunningExpr;
+	}
+	inline void SetDbg(dbg d)
+	{
+		m_dbg = d;
+	}
+	inline dbg GetDbg() { return m_dbg; }
+
 };
 
 class Func :
@@ -886,8 +895,8 @@ public:
 			RetType->SetParent(this);
 		}
 	}
-	virtual bool Call(void* This,std::vector<Value>& params, Value& retValue);
-	virtual bool Run(void* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Call(Module* pModule,void* This,std::vector<Value>& params, Value& retValue);
+	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr) override;
 };
 #define FastMatchThis(name) (name.size() ==4 \
 	&& name[0] =='t' && name[0] =='h' && name[0] =='i' && name[0] =='s')
@@ -928,10 +937,10 @@ public:
 	virtual bool Set(void* pContext, int idx, Value& v) override;
 	virtual bool Get(void* pContext, int idx, Value& v, LValue* lValue = nullptr);
 	inline std::vector<XClass*>& GetBases() { return m_bases; }
-	virtual bool Run(void* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
-	virtual bool Call(std::vector<Value>& params, Value& retValue);
+	virtual bool Call(Module* pModule, std::vector<Value>& params, Value& retValue);
 };
 class ExternFunc
 	:public Func
@@ -944,9 +953,9 @@ public:
 		m_funcName = funcName;
 		m_func = func;
 	}
-	virtual bool Call(void* This,std::vector<Value>& params,Value& retValue) override
+	virtual bool Call(Module* pModule,void* This,std::vector<Value>& params,Value& retValue) override
 	{
-		return m_func ? m_func(params, retValue) : false;
+		return m_func ? m_func(pModule,params, retValue) : false;
 	}
 };
 }}
