@@ -1,5 +1,6 @@
 #include "builtin.h"
 #include "exp.h"
+#include "object.h"
 #include <iostream>
 #include <time.h> 
 #include "utility.h"
@@ -10,7 +11,9 @@
 #endif
 #include <vector>
 
-bool U_Print(void* pLineExpr,std::vector<X::AST::Value>& params,
+bool U_Print(X::AST::Module* pModule,void* pContext,
+	std::vector<X::AST::Value>& params,
+	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
 {
 	for (auto& v : params)
@@ -22,7 +25,9 @@ bool U_Print(void* pLineExpr,std::vector<X::AST::Value>& params,
 	retValue = X::AST::Value(true);
 	return true;
 }
-bool U_Rand(void* pLineExpr, std::vector<X::AST::Value>& params,
+bool U_Rand(X::AST::Module* pModule, void* pContext,
+	std::vector<X::AST::Value>& params,
+	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
 {
 	static bool init = false;
@@ -35,18 +40,52 @@ bool U_Rand(void* pLineExpr, std::vector<X::AST::Value>& params,
 	retValue = X::AST::Value(r);
 	return true;
 }
-bool U_Sleep(void* pLineExpr, std::vector<X::AST::Value>& params,
+bool U_Sleep(X::AST::Module* pModule, void* pContext,
+	std::vector<X::AST::Value>& params,
+	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
 {
-	if (params.size()>0)
+	bool bOK = true;
+	long long t = 0;
+	if (pContext == nullptr)
 	{
-		long long t = params[0].GetLongLong();
-		Sleep(t);
+		if (params.size() > 0)
+		{
+			t = params[0].GetLongLong();
+		}
+		else
+		{
+			auto it = kwParams.find("time");
+			if (it != kwParams.end())
+			{
+				t = it->second.GetLongLong();
+			}
+		}
 	}
-	retValue = X::AST::Value(true);
-	return true;
+	else
+	{//must put into kwargs with time=t
+		auto it = kwParams.find("time");
+		if (it != kwParams.end())
+		{
+			t = it->second.GetLongLong();
+		}
+	}
+	Sleep(t);
+	if (pContext)
+	{//with a function, means after sleep, call this function
+		X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
+		X::AST::Func* pFunc = pFuncObj->GetFunc();
+		bOK = pFunc->Call(pModule, nullptr, params, kwParams, retValue);
+	}
+	else
+	{
+		retValue = X::AST::Value(bOK);
+	}
+	return bOK;
 }
-bool U_Time(void* pLineExpr, std::vector<X::AST::Value>& params,
+bool U_Time(X::AST::Module* pModule, void* pContext,
+	std::vector<X::AST::Value>& params,
+	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
 {
 	long long t = getCurMilliTimeStamp();
@@ -72,13 +111,24 @@ bool Builtin::Register(const char* name, void* func,
 	return true;
 }
 
-bool U_BreakPoint(void* pLineExpr, std::vector<X::AST::Value>& params,
+bool U_BreakPoint(X::AST::Module* pModule, void* pContext,
+	std::vector<X::AST::Value>& params,
+	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
 {
-	AST::Module* pModule = (AST::Module*)pLineExpr;
 	pModule->SetDbg(AST::dbg::Step);
 	retValue = X::AST::Value(true);
 	return true;
+}
+bool U_TaskRun(X::AST::Module* pModule, void* pContext,
+	std::vector<X::AST::Value>& params,
+	std::unordered_map<std::string, X::AST::Value>& kwParams,
+	X::AST::Value& retValue)
+{
+	X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
+	X::AST::Func* pFunc = pFuncObj->GetFunc();
+	bool bOK =  pFunc->Call(pModule, nullptr, params, kwParams, retValue);
+	return bOK;
 }
 bool Builtin::RegisterInternals()
 {
@@ -88,6 +138,7 @@ bool Builtin::RegisterInternals()
 	Register("sleep", (void*)U_Sleep, params);
 	Register("time", (void*)U_Time, params);
 	Register("breakpoint", (void*)U_BreakPoint, params);
+	Register("taskrun", (void*)U_TaskRun, params);
 	return true;
 }
 }

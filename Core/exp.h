@@ -11,8 +11,14 @@
 #include "glob.h"
 
 namespace X {namespace AST{
-class List;
-typedef bool (*U_FUNC) (void* pLineExpr,std::vector<Value>& params, Value& retValue);
+class Module;
+class Scope;
+class Var;
+class Func;
+typedef bool (*U_FUNC) (Module* pModule,void* pContext,
+	std::vector<Value>& params,
+	std::unordered_map<std::string, AST::Value>& kwParams,
+	Value& retValue);
 enum class ObType
 {
 	Base,
@@ -30,10 +36,6 @@ enum class ObType
 	Func,
 	Class
 };
-class Module;
-class Scope;
-class Var;
-class Func;
 class Expression
 {
 protected:
@@ -287,7 +289,7 @@ class DotOp :
 	public BinaryOp
 {
 	int m_dotNum = 1;
-	void QueryBases(void* pObj0,std::vector<Expression*>& bases);
+	void QueryBases(Module* pModule,void* pObj0,std::vector<Expression*>& bases);
 	void RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes);
 public:
 	DotOp(short opIndex,int dotNum) :
@@ -503,7 +505,6 @@ public:
 		std::string& strVarType,
 		Value& defaultValue);
 };
-class Func;
 
 struct Indent
 {
@@ -895,9 +896,19 @@ public:
 			RetType->SetParent(this);
 		}
 	}
-	virtual bool Call(Module* pModule,void* This,std::vector<Value>& params, Value& retValue);
-	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual int AddOrGet(std::string& name, bool bGetOnly)
+	{
+		int retIdx = Scope::AddOrGet(name, bGetOnly);
+		return retIdx;
+	}
+	virtual bool Call(Module* pModule,void* This,
+		std::vector<Value>& params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
+		Value& retValue);
+	virtual bool Run(Module* pModule,void* pContext, 
+		Value& v, LValue* lValue = nullptr) override;
 };
+
 #define FastMatchThis(name) (name.size() ==4 \
 	&& name[0] =='t' && name[0] =='h' && name[0] =='i' && name[0] =='s')
 class XClass
@@ -940,7 +951,10 @@ public:
 	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
-	virtual bool Call(Module* pModule, std::vector<Value>& params, Value& retValue);
+	virtual bool Call(Module* pModule,
+		std::vector<Value>& params, 
+		std::unordered_map<std::string, AST::Value>& kwParams,
+		Value& retValue);
 };
 class ExternFunc
 	:public Func
@@ -953,9 +967,13 @@ public:
 		m_funcName = funcName;
 		m_func = func;
 	}
-	virtual bool Call(Module* pModule,void* This,std::vector<Value>& params,Value& retValue) override
+	inline virtual bool Call(Module* pModule,void* pContext,
+		std::vector<Value>& params,
+		std::unordered_map<std::string, AST::Value>& kwParams,
+		Value& retValue) override
 	{
-		return m_func ? m_func(pModule,params, retValue) : false;
+		return m_func ? m_func(pModule, 
+			pContext,params, kwParams,retValue) : false;
 	}
 };
 }}

@@ -109,29 +109,32 @@ bool Func::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 	return true;
 }
 
-bool Func::Call(AST::Module* pModule,void* This, std::vector<Value>& params, Value& retValue)
+bool Func::Call(AST::Module* pModule,void* pContext, 
+	std::vector<Value>& params,
+	std::unordered_map<std::string, AST::Value>& kwParams,
+	Value& retValue)
 {
 	static std::string THIS("this");
 	StackFrame* frame = new StackFrame();
 	PushFrame(frame);
 	//Add this if This is not null
 	int pre_item = 0;
-	if (This)
+	if (pContext)
 	{
 		int thisIdx = AddOrGet(THIS, true);
-		Value v0(This);
-		Set(This,thisIdx, v0);
+		Value v0(pContext);
+		Set(pContext,thisIdx, v0);
 		pre_item++;
 	}
 	int num = m_positionParamCnt > (int)params.size() ?
 		(int)params.size() : m_positionParamCnt;
 	for (int i = 0; i < num; i++)
 	{
-		Set(This,pre_item+i, params[i]);
+		Set(pContext,pre_item+i, params[i]);
 	}
 
 	Value v0;
-	Block::Run(pModule,This,v0);
+	Block::Run(pModule, pContext,v0);
 	PopFrame();
 	retValue = frame->GetReturnValue();
 	delete frame;
@@ -277,7 +280,7 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 					Value v;
 					if (e->Run(pModule,pContext,v))
 					{
-						pDataList->Add(v);
+						pDataList->Add(pModule,v);
 					}
 					else
 					{
@@ -601,7 +604,7 @@ void DotOp::ScopeLayout()
 	if (L) L->ScopeLayout();
 	//R will be decided in run stage
 }
-void DotOp::QueryBases(void* pObj0,std::vector<Expression*>& bases)
+void DotOp::QueryBases(Module* pModule,void* pObj0,std::vector<Expression*>& bases)
 {
 	Data::Object* pObj = (Data::Object*)pObj0;
 	if (pObj->GetType() == Data::Type::List)
@@ -624,9 +627,11 @@ void DotOp::QueryBases(void* pObj0,std::vector<Expression*>& bases)
 			bases.push_back(pClassObj->GetClassObj());
 		}
 	}
-	else
-	{//TODO:
-
+	else if (pObj->GetType() == Data::Type::Function)
+	{
+		//for function, meta function like taskrun,
+		//put into top module
+		bases.push_back(pModule);
 	}
 }
 void DotOp::RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes)
@@ -665,7 +670,7 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 	void* pLeftObj0 = v_l.GetObject();
 	if (pLeftObj0)
 	{
-		QueryBases(pLeftObj0, scopes);
+		QueryBases(pModule,pLeftObj0, scopes);
 	}
 	//R can be a Var or List
 	if (R)
@@ -677,7 +682,8 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 
 	auto AddFunc = [&](
 		Value& v0, LValue& lVal,
-		Data::XClassObject* pClassObj)
+		Data::ContextType conType,
+		void* pContext)
 	{
 		if (v0.IsObject())
 		{
@@ -691,7 +697,7 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 					if (func)
 					{
 						if (pCallList == nil) pCallList = new Data::FuncCalls();
-						pCallList->Add(pClassObj, func, nil);
+						pCallList->Add(conType, pContext, func, nil);
 					}
 				}
 			}
@@ -709,7 +715,8 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 	};
 	auto RunCallPerObj = [&](
 		Expression* pExpr,
-		Data::XClassObject* pClassObj)
+		Data::ContextType conType,
+		void* pContext)
 	{
 		if (pExpr->m_type == ObType::Pair)
 		{
@@ -722,8 +729,8 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 					Var* var = dynamic_cast<Var*>(it);
 					Value v0;
 					LValue lVal = nil;
-					var->Run(pModule,pClassObj,v0,&lVal);
-					AddFunc(v0, lVal, pClassObj);
+					var->Run(pModule, pContext,v0,&lVal);
+					AddFunc(v0, lVal, conType,pContext);
 				}
 			}
 		}
@@ -732,8 +739,8 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 			Var* var = dynamic_cast<Var*>(pExpr);
 			Value v0;
 			LValue lValue =nil;
-			var->Run(pModule,pClassObj,v0,&lValue);
-			AddFunc(v0, lValue, pClassObj);
+			var->Run(pModule, pContext,v0,&lValue);
+			AddFunc(v0, lValue, conType,pContext);
 		}
 	};
 	if (pLeftObj0)
@@ -749,11 +756,14 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 				{
 					if (it.IsObject())
 					{
-						Data::XClassObject* pClassObj = 
-							dynamic_cast<Data::XClassObject*>((Data::Object*)it.GetObject());
-						if (pClassObj)
+						Data::Object* pItObj = (Data::Object*)it.GetObject();
+						if (pItObj->GetType() == Data::Type::XClassObject)
 						{
-							RunCallPerObj(R, pClassObj);
+							RunCallPerObj(R, Data::ContextType::Class, pItObj);
+						}
+						else if (pItObj->GetType() == Data::Type::Function)
+						{
+							RunCallPerObj(R, Data::ContextType::Class, pItObj);
 						}
 					}
 				}
@@ -761,14 +771,14 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 		}
 		else if (pLeftObj->GetType() == Data::Type::XClassObject)
 		{
-			Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pLeftObj);
-			if (pClassObj)
-			{
-				RunCallPerObj(R, pClassObj);
-			}
+			RunCallPerObj(R, Data::ContextType::Class, pLeftObj);
+		}
+		else if(pLeftObj->GetType() == Data::Type::Function)
+		{
+			RunCallPerObj(R, Data::ContextType::Func, pLeftObj);
 		}
 	}
-	//Funcion call first
+	//Function call first
 	if (pCallList)
 	{
 		v = Value(pCallList);
@@ -791,12 +801,15 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 	}
 	return true;
 }
-bool XClass::Call(Module* pModule, std::vector<Value>& params, Value& retValue)
+bool XClass::Call(Module* pModule,
+	std::vector<Value>& params, 
+	std::unordered_map<std::string, AST::Value>& kwParams,
+	Value& retValue)
 {
 	Data::XClassObject* obj = new Data::XClassObject(this);
 	if (m_constructor)
 	{
-		m_constructor->Call(pModule,obj,params, retValue);
+		m_constructor->Call(pModule,obj,params, kwParams,retValue);
 	}
 	retValue = Value(obj);
 	return true;
