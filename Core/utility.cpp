@@ -22,3 +22,15 @@ long long getCurMilliTimeStamp()
 	return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 #endif
 }
+unsigned long GetThreadID()
+{
+	unsigned long tid = 0;
+#if (WIN32)
+	tid = ::GetCurrentThreadId();
+#else
+#include <sys/types.h>
+#include <unistd.h>
+	tid = gettid();
+#endif
+	return tid;
+}

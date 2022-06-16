@@ -291,6 +291,9 @@ class DotOp :
 	int m_dotNum = 1;
 	void QueryBases(Module* pModule,void* pObj0,std::vector<Expression*>& bases);
 	void RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes);
+	bool DotProcess(Module* pModule, void* pContext, 
+		Value& v_l, Expression* r,
+		Value& v, LValue* lValue = nullptr);
 public:
 	DotOp(short opIndex,int dotNum) :
 		BinaryOp(opIndex)
@@ -901,7 +904,7 @@ public:
 		int retIdx = Scope::AddOrGet(name, bGetOnly);
 		return retIdx;
 	}
-	virtual bool Call(Module* pModule,void* This,
+	virtual bool Call(Module* pModule,void* pContext,bool bContextIsClass,
 		std::vector<Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		Value& retValue);
@@ -951,7 +954,9 @@ public:
 	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
-	virtual bool Call(Module* pModule,
+	virtual bool Call(Module* pModule, 
+		void* pContext,
+		bool bContextIsClass,
 		std::vector<Value>& params, 
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		Value& retValue);
@@ -968,6 +973,7 @@ public:
 		m_func = func;
 	}
 	inline virtual bool Call(Module* pModule,void* pContext,
+		bool bContextIsClass,
 		std::vector<Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		Value& retValue) override

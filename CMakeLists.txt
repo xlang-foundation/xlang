@@ -6,6 +6,8 @@ cmake_minimum_required (VERSION 3.8)
 project ("X")
 
 include_directories("Inc")
+include_directories("Ext")
+include_directories("Core")
 
 FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp")
 FILE(GLOB Ext_SRC "Ext/*.cpp")

@@ -2,26 +2,30 @@
 #include "exp.h"
 #include "object.h"
 #include <iostream>
-#include <time.h> 
-#include "utility.h"
 #ifdef _WIN32
 #include <Windows.h>
 #else
 #include <unistd.h>
-#endif
+#endif#include <time.h> 
+#include "utility.h"
+#include "task.h"
 #include <vector>
+#include "Locker.h"
 
+Locker _printLock;
 bool U_Print(X::AST::Module* pModule,void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
 {
+	_printLock.Lock();
 	for (auto& v : params)
 	{
 		std::string str = v.ToString();
 		std::cout << str;
 	}
 	std::cout << std::endl;
+	_printLock.Unlock();
 	retValue = X::AST::Value(true);
 	return true;
 }
@@ -38,6 +42,15 @@ bool U_Rand(X::AST::Module* pModule, void* pContext,
 	}
 	int r = rand();
 	retValue = X::AST::Value(r);
+	return true;
+}
+bool U_ThreadId(X::AST::Module* pModule, void* pContext,
+	std::vector<X::AST::Value>& params,
+	std::unordered_map<std::string, X::AST::Value>& kwParams,
+	X::AST::Value& retValue)
+{
+	long long id = GetThreadID();
+	retValue = X::AST::Value(id);
 	return true;
 }
 bool U_Sleep(X::AST::Module* pModule, void* pContext,
@@ -75,7 +88,7 @@ bool U_Sleep(X::AST::Module* pModule, void* pContext,
 	{//with a function, means after sleep, call this function
 		X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
 		X::AST::Func* pFunc = pFuncObj->GetFunc();
-		bOK = pFunc->Call(pModule, nullptr, params, kwParams, retValue);
+		bOK = pFunc->Call(pModule, nullptr,false, params, kwParams, retValue);
 	}
 	else
 	{
@@ -120,14 +133,33 @@ bool U_BreakPoint(X::AST::Module* pModule, void* pContext,
 	retValue = X::AST::Value(true);
 	return true;
 }
+
+
 bool U_TaskRun(X::AST::Module* pModule, void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
 {
-	X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
-	X::AST::Func* pFunc = pFuncObj->GetFunc();
-	bool bOK =  pFunc->Call(pModule, nullptr, params, kwParams, retValue);
+	bool bOK = false;
+	auto* pContextObj = (X::Data::Object*)pContext;
+	if (pContextObj->GetType() == X::Data::Type::FuncCalls)
+	{
+		X::Data::FuncCalls* pFuncCalls = (X::Data::FuncCalls*)pContextObj;
+		auto& list = pFuncCalls->GetList();
+		for (auto& i : list)
+		{
+			X::Task* tsk = new X::Task();
+			bOK = tsk->Call(i.m_func, pModule, i.m_context, params, kwParams);
+		}
+	}
+	else
+	{
+		X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
+		X::AST::Func* pFunc = pFuncObj->GetFunc();
+		//bool bOK =  pFunc->Call(pModule, nullptr, params, kwParams, retValue);
+		X::Task* tsk = new X::Task();
+		bOK = tsk->Call(pFunc, pModule, pContext, params, kwParams);
+	}
 	return bOK;
 }
 bool Builtin::RegisterInternals()
@@ -139,6 +171,7 @@ bool Builtin::RegisterInternals()
 	Register("time", (void*)U_Time, params);
 	Register("breakpoint", (void*)U_BreakPoint, params);
 	Register("taskrun", (void*)U_TaskRun, params);
+	Register("threadid", (void*)U_ThreadId, params);
 	return true;
 }
 }
