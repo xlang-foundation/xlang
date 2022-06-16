@@ -3,10 +3,17 @@ def func1(i0:int,i1:int):
 	y=i1
 	z=x+y
 	return z
+num =5
+def taskfunc(n):
+	var1 =0
+	for i in range(num):
+		var1 =var1+ func1(i,100)
+		print("tid:",threadid(),",sum:",var1)
+	return var1
 t = time()
-var1 =0
-num =10000000
-for i in range(num):
-	var1 =var1+ func1(i,100)
+print("main tid:",threadid())
+taskfunc.taskrun(num)
+taskfunc(num)
 t2 = time()
 print("timespend=",t2-t)
+sleep(10000)
