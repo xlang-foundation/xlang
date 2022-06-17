@@ -16,6 +16,7 @@ namespace Data {
 		MetaFunction,
 		XClassObject,
 		FuncCalls,
+		Future,
 		List,
 		Dict
 	};
@@ -138,7 +139,34 @@ namespace Data {
 				params, kwParams, retValue);
 		}
 	};
-
+	class Future:
+		public Object
+	{
+		void* m_pTask = nullptr;
+	public:
+		Future()
+		{
+			m_t = Type::Future;
+		}
+		Future(void* task)
+			:Future()
+		{
+			m_pTask = task;
+		}
+		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
+			std::unordered_map<std::string, AST::Value>& kwParams,
+			AST::Value& retValue) override
+		{
+			return false;
+		}
+		virtual std::string ToString()
+		{
+			char v[1000];
+			snprintf(v, sizeof(v), "Future:%llu",
+				(long long)this);
+			return v;
+		}
+	};
 	class List :
 		public Object
 	{

@@ -271,7 +271,7 @@ void Parser::NewLine()
 	{
 		auto top = m_ops.top();
 		short topIdx = top->getOp();
-		if (m_pair_cnt > 0)
+		if (m_pair_cnt > 0 && m_lambda_pair_cnt ==0)
 		{//line continue
 			if (topIdx == G::I().GetOpId(OP_ID::Slash))
 			{
@@ -308,7 +308,7 @@ void Parser::NewLine()
 			m_TabCountAtLineBegin,m_LeadingSpaceCountAtLineBegin };
 		auto curBlock = m_stackBlocks.top();
 		auto indentCnt_CurBlock = curBlock->GetIndentCount();
-		if (indentCnt_CurBlock < lineIndent)
+		if (m_lambda_pair_cnt >0 || indentCnt_CurBlock < lineIndent)
 		{
 			auto child_indent_CurBlock = 
 				curBlock->GetChildIndentCount();
@@ -362,6 +362,13 @@ void Parser::NewLine()
 }
 void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
+	if (leftOpToMeetAsEnd == OP_ID::Curlybracket_L)
+	{
+		m_stackBlocks.pop();
+		push_preceding_token(TokenID);
+		DecLambdaPairCnt();
+		return;
+	}
 	short lastToken = get_last_token();
 	short pairLeftToken = G::I().GetOpId(leftOpToMeetAsEnd);
 	bool bEmptyPair = (lastToken == pairLeftToken);
@@ -407,21 +414,35 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 }
 AST::Operator* Parser::PairLeft(short opIndex)
 {
-	IncPairCnt();
 	//case 1: x+(y+z), case 2: x+func(y,z)
 	//so use preceding token as ref to dectect which case it is 
 	short lastToken = get_last_token();
-	auto op = new AST::PairOp(opIndex, lastToken);
-#if 0
-	if (!PreTokenIsOp())
-	{//for case func(...),x[...] etc
+	if (lastToken == TokenID)
+	{
 		if (!m_operands.empty())
-		{
-			op->SetL(m_operands.top());
-			m_operands.pop();
+		{//check (...){ } pattern, but not like func(....){ }
+			auto lastOpernad = m_operands.top();
+			if (lastOpernad->m_type == AST::ObType::Pair)
+			{
+				AST::PairOp* pPair = (AST::PairOp*)lastOpernad;
+				if (pPair->getOp() == G::I().GetOpId(OP_ID::Parenthesis_L)
+					&& pPair->GetL() == nil)
+				{
+					auto op = new AST::Func();
+					m_ops.push(op);
+					push_preceding_token(opIndex);
+					NewLine();
+					IncPairCnt();
+					IncLambdaPairCnt();
+					PushBlockStack(op);
+					return nil;
+				}
+			}
 		}
 	}
-#endif
+	IncPairCnt();
+	auto op = new AST::PairOp(opIndex, lastToken);
+
 	return op;
 }
 bool Parser::Run()

@@ -51,7 +51,7 @@ void Func::ScopeLayout()
 {
 	static std::string THIS("this");
 	Scope* pMyScope = GetScope();
-	if (pMyScope)
+	if (pMyScope && m_Name.size>0)
 	{
 		std::string strName(m_Name.s, m_Name.size);
 		m_Index = pMyScope->AddOrGet(strName, false);
@@ -194,118 +194,140 @@ bool PairOp::GetParamList(Runtime* rt,Expression* e,
 	}
 	return bOK;
 }
-bool PairOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
+bool PairOp::ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = false;
-	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
-	{	
-		if (L)
-		{//Call Func
-			Value lVal;
-			bOK = L->Run(rt,pContext,lVal, lValue);
-			if (!bOK || !lVal.IsObject())
+	if (L)
+	{//Call Func
+		Value lVal;
+		bOK = L->Run(rt, pContext, lVal, lValue);
+		if (!bOK || !lVal.IsObject())
+		{
+			return bOK;
+		}
+		std::vector<Value> params;
+		std::unordered_map<std::string, Value> kwParams;
+		if (R)
+		{
+			bOK = GetParamList(rt, R, params, kwParams);
+			if (!bOK)
 			{
 				return bOK;
 			}
-			std::vector<Value> params;
-			std::unordered_map<std::string, Value> kwParams;
-			if (R)
+		}
+		Data::Object* obj = (Data::Object*)lVal.GetObject();
+		if (obj)
+		{
+			bOK = obj->Call(rt, params, kwParams, v);
+		}
+	}
+	else
+	{
+		if (R && R->m_type != ObType::List)
+		{
+			bOK = R->Run(rt, pContext, v, lValue);
+		}
+	}
+	return bOK;
+}
+bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+{
+	bool bOK = false;
+	if (L)
+	{//usage: x[1,2]
+		Value v0;
+		bOK = L->Run(rt, pContext, v0);
+		Data::List* pDataList = (Data::List*)v0.GetObject();
+		//Get Index
+		std::vector<long long> IdxAry;
+		if (R->m_type == ObType::List)
+		{
+			auto& list = ((List*)R)->GetList();
+			for (auto e : list)
 			{
-				bOK = GetParamList(rt,R, params, kwParams);
-				if (!bOK)
+				Value v1;
+				if (e->Run(rt, pContext, v1))
 				{
-					return bOK;
+					IdxAry.push_back(v1.GetLongLong());
 				}
-			}
-			Data::Object* obj = (Data::Object*)lVal.GetObject();
-			if (obj)
-			{
-				bOK = obj->Call(rt,params, kwParams, v);
+				else
+				{
+					bOK = false;
+					break;
+				}
 			}
 		}
 		else
 		{
-			if (R && R->m_type != ObType::List)
+			Value vIdx;
+			bOK = R->Run(rt, pContext, vIdx);
+			IdxAry.push_back(vIdx.GetLongLong());
+		}
+		if (bOK)
+		{
+			if (IdxAry.size() > 0)
 			{
-				bOK = R->Run(rt,pContext,v, lValue);
+				pDataList->Get(IdxAry[0], v, lValue);
 			}
 		}
 	}
-	else if (Op == G::I().GetOpId(OP_ID::Brackets_L))
-	{
-		if (L)
-		{//usage: x[1,2]
-			Value v0;
-			bOK = L->Run(rt,pContext,v0);
-			Data::List* pDataList = (Data::List*)v0.GetObject();
-			//Get Index
-			std::vector<long long> IdxAry;
-			if (R->m_type == ObType::List)
-			{
-				auto& list = ((List*)R)->GetList();
-				for (auto e : list)
-				{
-					Value v1;
-					if (e->Run(rt,pContext,v1))
-					{
-						IdxAry.push_back(v1.GetLongLong());
-					}
-					else
-					{
-						bOK = false;
-						break;
-					}
-				}
-			}
-			else
-			{
-				Value vIdx;
-				bOK = R->Run(rt,pContext,vIdx);
-				IdxAry.push_back(vIdx.GetLongLong());
-			}
-			if (bOK)
-			{
-				if (IdxAry.size() > 0)
-				{
-					pDataList->Get(IdxAry[0],v, lValue);
-				}
-			}
-		}
-		else
-		{//Create list with []
-			bOK = true;
-			Data::List* pDataList = new Data::List();
-			if (R && R->m_type == ObType::List)
-			{
-				auto& list = ((List*)R)->GetList();
-				for (auto e : list)
-				{
-					Value v;
-					if (e->Run(rt,pContext,v))
-					{
-						pDataList->Add(rt,v);
-					}
-					else
-					{
-						bOK = false;
-						break;
-					}
-				}
-			}
-			else if(R && R->m_type == ObType::Var)
+	else
+	{//Create list with []
+		bOK = true;
+		Data::List* pDataList = new Data::List();
+		if (R && R->m_type == ObType::List)
+		{
+			auto& list = ((List*)R)->GetList();
+			for (auto e : list)
 			{
 				Value v;
-				if (R->Run(rt, pContext, v))
+				if (e->Run(rt, pContext, v))
 				{
 					pDataList->Add(rt, v);
 				}
 				else
 				{
 					bOK = false;
+					break;
 				}
 			}
-			v = Value(pDataList);
 		}
+		else if (R && R->m_type == ObType::Var)
+		{
+			Value v;
+			if (R->Run(rt, pContext, v))
+			{
+				pDataList->Add(rt, v);
+			}
+			else
+			{
+				bOK = false;
+			}
+		}
+		v = Value(pDataList);
+	}
+	return bOK;
+}
+bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+{
+	bool bOK = false;
+
+	return bOK;
+}
+bool PairOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
+{
+	bool bOK = false;
+	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
+	{	
+		bOK = ParentRun(rt, pContext, v, lValue);
+	}
+	else if (Op == G::I().GetOpId(OP_ID::Brackets_L))
+	{
+		bOK = BracketRun(rt, pContext, v, lValue);
+	}
+	else if (Op == G::I().GetOpId(OP_ID::Curlybracket_L))
+	{
+		bOK = CurlyBracketRun(rt, pContext, v, lValue);
 	}
 	return bOK;
 }
@@ -1072,6 +1094,10 @@ bool Param::Parse(std::string& strVarName,
 		}
 	}
 	return true;
+}
+
+void SemicolonOp::OpWithOperands(std::stack<AST::Expression*>& operands)
+{
 }
 
 }

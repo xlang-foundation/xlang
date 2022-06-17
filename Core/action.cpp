@@ -272,6 +272,11 @@ void Register()
 			auto op = new AST::CommaOp(opIndex);
 			return (AST::Operator*)op;
 		});
+	RegOP(";").SetProcess([](Parser* p, short opIndex)
+		{
+			p->NewLine();
+			return (AST::Operator*)nil;
+		});
 	RegOP("\n").SetProcess([](Parser* p, short opIndex)
 		{
 			p->NewLine();

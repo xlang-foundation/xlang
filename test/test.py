@@ -12,8 +12,8 @@ def func2(x1):
     return x1*123
 c1 = base_class()
 c1.obj1 = base_class()
-breakpoint()
 f = [c1].[obj1].func1.taskrun(1234)
+breakpoint()
 print("Main Tid=",threadid(),",taskrun,ret=",f)
 f = [c1].[obj1].func1(12)
 x=1

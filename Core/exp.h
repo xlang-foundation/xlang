@@ -265,6 +265,17 @@ public:
 	virtual void OpWithOperands(
 		std::stack<AST::Expression*>& operands);
 };
+class SemicolonOp :
+	public Operator
+{
+public:
+	SemicolonOp(short op) :
+		Operator(op)
+	{
+	}
+	virtual void OpWithOperands(
+		std::stack<AST::Expression*>& operands);
+};
 class PairOp :
 	public BinaryOp
 {
@@ -272,6 +283,9 @@ class PairOp :
 	bool GetParamList(Runtime* rt, Expression* e,
 		std::vector<Value>& params,
 		std::unordered_map<std::string,Value>& kwParams);
+	bool ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
+	bool BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
+	bool CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
 public:
 	PairOp(short opIndex, short preceding_token) :
 		BinaryOp(opIndex)
@@ -807,7 +821,7 @@ class Func :
 	public Scope
 {
 protected:
-	String m_Name;
+	String m_Name={nil,0};
 	int m_Index = -1;//index for this Var,set by compiling
 	int m_positionParamCnt = 0;
 	Expression* Name=nil;

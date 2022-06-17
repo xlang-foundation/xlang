@@ -1,4 +1,7 @@
 #pragma once
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 namespace X {
 #define nil 0
@@ -48,7 +51,8 @@ typedef bool (*UnaryOpProc)(
 	Runtime* rt, AST::UnaryOp* op,AST::Value& R, AST::Value& out);
 typedef bool (*BinaryOpProc)(
 	Runtime* rt, AST::BinaryOp* op,AST::Value& L, AST::Value& R, AST::Value& out);
-
+typedef std::vector<X::AST::Value> ARGS;
+typedef std::unordered_map<std::string, X::AST::Value> KWARGS;
 
 #define Precedence_High1 201
 #define Precedence_High 200

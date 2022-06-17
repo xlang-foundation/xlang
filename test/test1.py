@@ -3,7 +3,7 @@ def func1(i0:int,i1:int):
 	y=i1
 	z=x+y
 	return z
-num =5
+num =10
 def taskfunc(n):
 	var1 =0
 	for i in range(num):
