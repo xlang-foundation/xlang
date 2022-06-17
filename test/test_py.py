@@ -1,3 +1,17 @@
+def f1(v):
+   x0 =v
+   if v==1:
+      f1(100)
+   
+   def f2():
+      print("x0=",x0)
+   f2()
+   
+
+f1(1)
+
+
+
 import datetime
 
 x =1

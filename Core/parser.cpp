@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "action.h"
+#include "runtime.h"
 
 namespace X {	
 
@@ -429,15 +430,19 @@ bool Parser::Run()
 	{
 		return false;//empty
 	}
-	AST::Module* pTopModule = (AST::Module* )m_stackBlocks.top();
-	AST::StackFrame* frame = new AST::StackFrame();
-	pTopModule->PushFrame(frame);
-	pTopModule->AddBuiltins();
+	Runtime* pRuntime = new Runtime();
+	AST::Module* pTopModule = (AST::Module*)m_stackBlocks.top();
+	AST::StackFrame* frame = new AST::StackFrame(pTopModule);
+	pRuntime->PushFrame(frame,pTopModule->GetVarNum());
+	pRuntime->SetM(pTopModule);
+	pTopModule->AddBuiltins(pRuntime);
+
 	AST::Value v;
-	bool bOK = pTopModule->Run(pTopModule,nullptr,v);
-	pTopModule->PopFrame();
+	bool bOK = pTopModule->Run(pRuntime,nullptr,v);
+	pTopModule->PopFrame(pRuntime);
 	delete frame;
 	delete pTopModule;
+	delete pRuntime;
 	return bOK;
 }
 }

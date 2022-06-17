@@ -13,7 +13,7 @@
 #include "Locker.h"
 
 Locker _printLock;
-bool U_Print(X::AST::Module* pModule,void* pContext,
+bool U_Print(X::Runtime* rt,void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
@@ -29,7 +29,7 @@ bool U_Print(X::AST::Module* pModule,void* pContext,
 	retValue = X::AST::Value(true);
 	return true;
 }
-bool U_Rand(X::AST::Module* pModule, void* pContext,
+bool U_Rand(X::Runtime* rt, void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
@@ -44,7 +44,7 @@ bool U_Rand(X::AST::Module* pModule, void* pContext,
 	retValue = X::AST::Value(r);
 	return true;
 }
-bool U_ThreadId(X::AST::Module* pModule, void* pContext,
+bool U_ThreadId(X::Runtime* rt, void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
@@ -53,7 +53,7 @@ bool U_ThreadId(X::AST::Module* pModule, void* pContext,
 	retValue = X::AST::Value(id);
 	return true;
 }
-bool U_Sleep(X::AST::Module* pModule, void* pContext,
+bool U_Sleep(X::Runtime* rt, void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
@@ -83,12 +83,12 @@ bool U_Sleep(X::AST::Module* pModule, void* pContext,
 			t = it->second.GetLongLong();
 		}
 	}
-	Sleep(t);
+	Sleep((int)t);
 	if (pContext)
 	{//with a function, means after sleep, call this function
 		X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
 		X::AST::Func* pFunc = pFuncObj->GetFunc();
-		bOK = pFunc->Call(pModule, nullptr,false, params, kwParams, retValue);
+		bOK = pFunc->Call(rt, nullptr,params, kwParams, retValue);
 	}
 	else
 	{
@@ -96,7 +96,7 @@ bool U_Sleep(X::AST::Module* pModule, void* pContext,
 	}
 	return bOK;
 }
-bool U_Time(X::AST::Module* pModule, void* pContext,
+bool U_Time(X::Runtime* rt, void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
@@ -124,18 +124,18 @@ bool Builtin::Register(const char* name, void* func,
 	return true;
 }
 
-bool U_BreakPoint(X::AST::Module* pModule, void* pContext,
+bool U_BreakPoint(X::Runtime* rt, void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
 {
-	pModule->SetDbg(AST::dbg::Step);
+	rt->M()->SetDbg(AST::dbg::Step);
 	retValue = X::AST::Value(true);
 	return true;
 }
 
 
-bool U_TaskRun(X::AST::Module* pModule, void* pContext,
+bool U_TaskRun(X::Runtime* rt, void* pContext,
 	std::vector<X::AST::Value>& params,
 	std::unordered_map<std::string, X::AST::Value>& kwParams,
 	X::AST::Value& retValue)
@@ -149,7 +149,7 @@ bool U_TaskRun(X::AST::Module* pModule, void* pContext,
 		for (auto& i : list)
 		{
 			X::Task* tsk = new X::Task();
-			bOK = tsk->Call(i.m_func, pModule, i.m_context, params, kwParams);
+			bOK = tsk->Call(i.m_func, rt, i.m_context, params, kwParams);
 		}
 	}
 	else
@@ -158,7 +158,7 @@ bool U_TaskRun(X::AST::Module* pModule, void* pContext,
 		X::AST::Func* pFunc = pFuncObj->GetFunc();
 		//bool bOK =  pFunc->Call(pModule, nullptr, params, kwParams, retValue);
 		X::Task* tsk = new X::Task();
-		bOK = tsk->Call(pFunc, pModule, pContext, params, kwParams);
+		bOK = tsk->Call(pFunc, rt, pContext, params, kwParams);
 	}
 	return bOK;
 }

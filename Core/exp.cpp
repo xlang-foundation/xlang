@@ -2,6 +2,7 @@
 #include "builtin.h"
 #include <iostream>
 #include "object.h"
+#include "runtime.h"
 
 namespace X {namespace AST {
 	Scope* Expression::FindScope()
@@ -36,15 +37,15 @@ Func* Expression::FindFuncByName(Var* name)
 	return pFuncRet;
 }
 
-bool UnaryOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
+bool UnaryOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	Value v_r;
-	if (!R->Run(pModule,pContext,v_r))
+	if (!R->Run(rt,pContext,v_r))
 	{
 		return false;
 	}
 	auto func = G::I().OpAct(Op).unaryop;
-	return func ? func(this, v_r, v) : false;
+	return func ? func(rt,this, v_r, v) : false;
 }
 void Func::ScopeLayout()
 {
@@ -100,50 +101,49 @@ void Func::ScopeLayout()
 		}
 	}
 }
-bool Func::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
+bool Func::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);
 	Value v0(f);
-	m_scope->Set(pContext,m_Index, v0);
+	m_scope->Set(rt,pContext,m_Index, v0);
 	v = v0;
 	return true;
 }
 
-bool Func::Call(AST::Module* pModule,
+bool Func::Call(Runtime* rt,
 	void* pContext, 
-	bool bContextIsClass,
 	std::vector<Value>& params,
 	std::unordered_map<std::string, AST::Value>& kwParams,
 	Value& retValue)
 {
 	static std::string THIS("this");
 	auto* pContextObj = (X::Data::Object*)pContext;
-	StackFrame* frame = new StackFrame();
-	PushFrame(frame);
+	StackFrame* frame = new StackFrame(this);
+	PushFrame(rt,frame);
 	//Add this if This is not null
 	int pre_item = 0;
 	if (pContextObj && pContextObj->GetType() == X::Data::Type::XClassObject)
 	{
 		int thisIdx = AddOrGet(THIS, true);
 		Value v0(pContext);
-		Set(pContext,thisIdx, v0);
+		Set(rt,pContext,thisIdx, v0);
 		pre_item++;
 	}
 	int num = m_positionParamCnt > (int)params.size() ?
 		(int)params.size() : m_positionParamCnt;
 	for (int i = 0; i < num; i++)
 	{
-		Set(pContext,pre_item+i, params[i]);
+		Set(rt,pContext,pre_item+i, params[i]);
 	}
 
 	Value v0;
-	Block::Run(pModule, pContext,v0);
-	PopFrame();
+	Block::Run(rt, pContext,v0);
+	PopFrame(rt);
 	retValue = frame->GetReturnValue();
 	delete frame;
 	return true;
 }
-bool PairOp::GetParamList(Module* pModule,Expression* e,
+bool PairOp::GetParamList(Runtime* rt,Expression* e,
 	std::vector<Value>& params,
 	std::unordered_map<std::string, Value>& kwParams)
 {
@@ -158,7 +158,7 @@ bool PairOp::GetParamList(Module* pModule,Expression* e,
 			std::string strVarName = std::string(szName.s, szName.size);
 			Expression* valExpr = assign->GetR();
 			Value v0;
-			bOK = valExpr->Run(pModule,nullptr,v0);
+			bOK = valExpr->Run(rt,nullptr,v0);
 			if (bOK)
 			{
 				kwParams.emplace(std::make_pair(strVarName, v0));
@@ -167,7 +167,7 @@ bool PairOp::GetParamList(Module* pModule,Expression* e,
 		else
 		{
 			Value v0;
-			bOK = i->Run(pModule,nullptr,v0);
+			bOK = i->Run(rt,nullptr,v0);
 			if (bOK)
 			{
 				params.push_back(v0);
@@ -194,7 +194,7 @@ bool PairOp::GetParamList(Module* pModule,Expression* e,
 	}
 	return bOK;
 }
-bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
+bool PairOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	bool bOK = false;
 	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
@@ -202,7 +202,7 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 		if (L)
 		{//Call Func
 			Value lVal;
-			bOK = L->Run(pModule,pContext,lVal, lValue);
+			bOK = L->Run(rt,pContext,lVal, lValue);
 			if (!bOK || !lVal.IsObject())
 			{
 				return bOK;
@@ -211,7 +211,7 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 			std::unordered_map<std::string, Value> kwParams;
 			if (R)
 			{
-				bOK = GetParamList(pModule,R, params, kwParams);
+				bOK = GetParamList(rt,R, params, kwParams);
 				if (!bOK)
 				{
 					return bOK;
@@ -220,14 +220,14 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 			Data::Object* obj = (Data::Object*)lVal.GetObject();
 			if (obj)
 			{
-				bOK = obj->Call(pModule,params, kwParams, v);
+				bOK = obj->Call(rt,params, kwParams, v);
 			}
 		}
 		else
 		{
 			if (R && R->m_type != ObType::List)
 			{
-				bOK = R->Run(pModule,pContext,v, lValue);
+				bOK = R->Run(rt,pContext,v, lValue);
 			}
 		}
 	}
@@ -236,7 +236,7 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 		if (L)
 		{//usage: x[1,2]
 			Value v0;
-			bOK = L->Run(pModule,pContext,v0);
+			bOK = L->Run(rt,pContext,v0);
 			Data::List* pDataList = (Data::List*)v0.GetObject();
 			//Get Index
 			std::vector<long long> IdxAry;
@@ -246,7 +246,7 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 				for (auto e : list)
 				{
 					Value v1;
-					if (e->Run(pModule,pContext,v1))
+					if (e->Run(rt,pContext,v1))
 					{
 						IdxAry.push_back(v1.GetLongLong());
 					}
@@ -260,7 +260,7 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 			else
 			{
 				Value vIdx;
-				bOK = R->Run(pModule,pContext,vIdx);
+				bOK = R->Run(rt,pContext,vIdx);
 				IdxAry.push_back(vIdx.GetLongLong());
 			}
 			if (bOK)
@@ -281,9 +281,9 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 				for (auto e : list)
 				{
 					Value v;
-					if (e->Run(pModule,pContext,v))
+					if (e->Run(rt,pContext,v))
 					{
-						pDataList->Add(pModule,v);
+						pDataList->Add(rt,v);
 					}
 					else
 					{
@@ -295,9 +295,9 @@ bool PairOp::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 			else if(R && R->m_type == ObType::Var)
 			{
 				Value v;
-				if (R->Run(pModule, pContext, v))
+				if (R->Run(rt, pContext, v))
 				{
-					pDataList->Add(pModule, v);
+					pDataList->Add(rt, v);
 				}
 				else
 				{
@@ -371,18 +371,18 @@ Func* Block::FindFuncByName(Var* name)
 	}
 	return func;
 }
-bool Block::Run(Module* pModule,void* pContext, Value& v, LValue* lValue)
+bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 {
 	bool bOk = true;
 	for (auto i : Body)
 	{
 		Value v0;
-		bOk = i->Run(pModule,pContext, v0);
+		bOk = i->Run(rt,pContext, v0);
 		if (!bOk)
 		{
 			break;
 		}
-		if (pModule->GetDbg() == dbg::Step)
+		if (rt->M()->GetDbg() == dbg::Step)
 		{
 			std::cout << v0.ToString() << std::endl;
 			int line = i->GetStartLine();
@@ -392,17 +392,17 @@ bool Block::Run(Module* pModule,void* pContext, Value& v, LValue* lValue)
 			std::cin >> yes;
 			if (yes == "c" || yes == "C")
 			{
-				pModule->SetDbg(AST::dbg::Continue);
+				rt->M()->SetDbg(AST::dbg::Continue);
 			}
 			else if (yes == "s" || yes == "S")
 			{
-				pModule->SetDbg(AST::dbg::Step);
+				rt->M()->SetDbg(AST::dbg::Step);
 			}
 		}
 	}
 	return bOk;
 }
-bool While::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
+bool While::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	if (R == nil)
 	{
@@ -412,10 +412,10 @@ bool While::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 	while (true)
 	{
 		Value v0;
-		bool bOK = R->Run(pModule,pContext,v0);
+		bool bOK = R->Run(rt,pContext,v0);
 		if (bOK && v0 == Value(true))
 		{
-			Block::Run(pModule,pContext,v);
+			Block::Run(rt,pContext,v);
 		}
 		else
 		{
@@ -424,22 +424,22 @@ bool While::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 	}
 	return true;
 }
-bool For::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
+bool For::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	Value v0;
 	while (true)
 	{
-		bool bC0 = R->Run(pModule,pContext,v0);
+		bool bC0 = R->Run(rt,pContext,v0);
 		if (!bC0)
 		{
 			break;
 		}
-		Block::Run(pModule,pContext,v);
+		Block::Run(rt,pContext,v);
 	}
 	return true;
 }
 
-bool Range::Eval(Module* pModule)
+bool Range::Eval(Runtime* rt)
 {
 	if (R && R->m_type == ObType::Pair)
 	{
@@ -454,7 +454,7 @@ bool Range::Eval(Module* pModule)
 			else
 			{//only one parameter, means stop
 				Value vStop;
-				param->Run(pModule,nullptr,vStop);
+				param->Run(rt,nullptr,vStop);
 				if (vStop.GetType() == ValueType::Int64)
 				{
 					m_stop = vStop.GetLongLong();
@@ -466,11 +466,11 @@ bool Range::Eval(Module* pModule)
 	m_evaluated = true;
 	return true;
 }
-bool Range::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
+bool Range::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	if (!m_evaluated)
 	{
-		Eval(pModule);
+		Eval(rt);
 	}
 	if (v.GetType() != ValueType::Int64)
 	{//not started
@@ -503,14 +503,14 @@ bool If::EatMe(Expression* other)
 		return false;
 	}
 }
-bool If::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
+bool If::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	bool bRet = true;
 	bool bCanRun = false;
 	if (R)
 	{
 		Value v0;
-		bool bOK = R->Run(pModule,pContext,v0);
+		bool bOK = R->Run(rt,pContext,v0);
 		if (bOK && v0 == Value(true))
 		{
 			bCanRun = true;
@@ -522,11 +522,11 @@ bool If::Run(Module* pModule,void* pContext,Value& v,LValue* lValue)
 	}
 	if (bCanRun)
 	{
-		bRet = Block::Run(pModule,pContext,v);
+		bRet = Block::Run(rt,pContext,v);
 	}
 	else if(m_next)
 	{
-		bRet = m_next->Run(pModule,pContext,v);
+		bRet = m_next->Run(rt,pContext,v);
 	}
 	return bRet;
 }
@@ -580,7 +580,7 @@ void Module::ScopeLayout()
 	}
 	Scope::ScopeLayout();
 }
-void Module::AddBuiltins()
+void Module::AddBuiltins(Runtime* rt)
 {
 	auto& funcs = Builtin::I().All();
 	for (auto it : funcs)
@@ -591,15 +591,15 @@ void Module::AddBuiltins()
 		{
 			auto* pFuncObj = new Data::Function(it.second);
 			Value v0(pFuncObj);
-			Set(nullptr,idx, v0);
+			Set(rt,nullptr,idx, v0);
 		}
 	}
 }
-bool Assign::AssignToDataObject(Module* pModule, void* pObjPtr)
+bool Assign::AssignToDataObject(Runtime* rt, void* pObjPtr)
 {
 	Data::Object* pObj = (Data::Object*)pObjPtr;
 	Value v_r;
-	if (!R->Run(pModule,nullptr,v_r))
+	if (!R->Run(rt,nullptr,v_r))
 	{
 		return false;
 	}
@@ -619,7 +619,7 @@ void DotOp::ScopeLayout()
 	if (L) L->ScopeLayout();
 	//R will be decided in run stage
 }
-void DotOp::QueryBases(Module* pModule,void* pObj0,std::vector<Expression*>& bases)
+void DotOp::QueryBases(Runtime* rt,void* pObj0,std::vector<Expression*>& bases)
 {
 	Data::Object* pObj = (Data::Object*)pObj0;
 	if (pObj->GetType() == Data::Type::List)
@@ -647,7 +647,7 @@ void DotOp::QueryBases(Module* pModule,void* pObj0,std::vector<Expression*>& bas
 	{
 		//for function, meta function like taskrun,
 		//put into top module
-		bases.push_back(pModule);
+		bases.push_back(rt->M());
 	}
 }
 void DotOp::RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes)
@@ -681,7 +681,7 @@ void DotOp::RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>
 		var->ScopeLayout(scopes);
 	}
 }
-bool DotOp::DotProcess(Module* pModule, void* pContext, 
+bool DotOp::DotProcess(Runtime* rt, void* pContext, 
 	Value& v_l, Expression* R,
 	Value& v, LValue* lValue)
 {
@@ -689,7 +689,7 @@ bool DotOp::DotProcess(Module* pModule, void* pContext,
 	void* pLeftObj0 = v_l.GetObject();
 	if (pLeftObj0)
 	{
-		QueryBases(pModule, pLeftObj0, scopes);
+		QueryBases(rt, pLeftObj0, scopes);
 	}
 	//R can be a Var or List
 	if (R)
@@ -752,7 +752,7 @@ bool DotOp::DotProcess(Module* pModule, void* pContext,
 						Var* var = dynamic_cast<Var*>(it);
 						Value v0;
 						LValue lVal = nil;
-						var->Run(pModule, pContext, v0, &lVal);
+						var->Run(rt, pContext, v0, &lVal);
 						AddFunc(v0, lVal, conType, pContext);
 					}
 				}
@@ -762,7 +762,7 @@ bool DotOp::DotProcess(Module* pModule, void* pContext,
 				Var* var = dynamic_cast<Var*>(pair_r);
 				Value v0;
 				LValue lVal = nil;
-				var->Run(pModule, pContext, v0, &lVal);
+				var->Run(rt, pContext, v0, &lVal);
 				AddFunc(v0, lVal, conType, pContext);
 			}
 		}
@@ -771,7 +771,7 @@ bool DotOp::DotProcess(Module* pModule, void* pContext,
 			Var* var = dynamic_cast<Var*>(pExpr);
 			Value v0;
 			LValue lValue = nil;
-			var->Run(pModule, pContext, v0, &lValue);
+			var->Run(rt, pContext, v0, &lValue);
 			AddFunc(v0, lValue, conType, pContext);
 		}
 	};
@@ -837,14 +837,14 @@ bool DotOp::DotProcess(Module* pModule, void* pContext,
 	}
 	return true;
 }
-bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
+bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 {
 	if (!L || !R)
 	{
 		return false;
 	}
 	Value v_l;
-	if (!L->Run(pModule, pContext, v_l) || !v_l.IsObject())
+	if (!L->Run(rt, pContext, v_l) || !v_l.IsObject())
 	{
 		return false;
 	}
@@ -854,15 +854,15 @@ bool DotOp::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 		DotOp* dotR = (DotOp*)r;
 		Value v0;
 		LValue lValue0=nil;
-		DotProcess(pModule, pContext, v_l, dotR->GetL(),v0,&lValue0);
+		DotProcess(rt, pContext, v_l, dotR->GetL(),v0,&lValue0);
 		v_l = v0;
 		r = dotR->GetR();
 	}
-	DotProcess(pModule, pContext,v_l, r,v, lValue);
+	DotProcess(rt, pContext,v_l, r,v, lValue);
 	return true;
 }
-bool XClass::Call(Module* pModule,
-	void* pContext, bool bContextIsClass,
+bool XClass::Call(Runtime* rt,
+	void* pContext,
 	std::vector<Value>& params, 
 	std::unordered_map<std::string, AST::Value>& kwParams,
 	Value& retValue)
@@ -870,8 +870,7 @@ bool XClass::Call(Module* pModule,
 	Data::XClassObject* obj = new Data::XClassObject(this);
 	if (m_constructor)
 	{
-		m_constructor->Call(pModule,obj, bContextIsClass,
-			params, kwParams,retValue);
+		m_constructor->Call(rt,obj,params, kwParams,retValue);
 	}
 	retValue = Value(obj);
 	return true;
@@ -885,7 +884,7 @@ void XClass::ScopeLayout()
 		m_Index = pMyScope->AddOrGet(strName, false);
 	}
 }
-XClass* XClass::FindBase(std::string& strName)
+XClass* XClass::FindBase(Runtime* rt, std::string& strName)
 {
 	XClass* pBase = nullptr;
 	auto* pScope = GetScope();
@@ -895,7 +894,7 @@ XClass* XClass::FindBase(std::string& strName)
 		if (idx != -1)
 		{
 			Value v0;
-			if (pScope->Get(nullptr,idx, v0))
+			if (pScope->Get(rt,nullptr,idx, v0))
 			{
 				if (v0.IsObject())
 				{
@@ -913,37 +912,36 @@ XClass* XClass::FindBase(std::string& strName)
 	}
 	return pBase;
 }
-bool XClass::Set(void* pContext, int idx, Value& v)
+bool XClass::Set(Runtime* rt, void* pContext, int idx, Value& v)
 {
 	if (pContext)
 	{
 		Data::XClassObject* pObj = (Data::XClassObject*)pContext;
 		pObj->GetStack()->Set(idx, v);
 	}
-	else if (!mStackFrames.empty())
+	else if (m_stackFrame)
 	{
-		mStackFrames.top()->Set(idx, v);
+		m_stackFrame->Set(idx, v);
 	}
 	return true;
 }
-bool XClass::Get(void* pContext, int idx, Value& v, LValue* lValue)
+bool XClass::Get(Runtime* rt,void* pContext, int idx, Value& v, LValue* lValue)
 {
 	if (pContext)
 	{
 		Data::XClassObject* pObj = (Data::XClassObject*)pContext;
 		pObj->GetStack()->Get(idx, v, lValue);
 	}
-	else if (!mStackFrames.empty())
+	else if (m_stackFrame)
 	{
-		mStackFrames.top()->Get(idx, v, lValue);
+		m_stackFrame->Get(idx, v, lValue);
 	}
 	return true;
 }
-bool XClass::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
+bool XClass::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 {
-	StackFrame* frame = new StackFrame();
-	PushFrame(frame);//to hold properties and funcs for this class
-	//not for instances
+	m_stackFrame = new StackFrame(this);
+	m_stackFrame->SetVarCount((int)m_Vars.size());
 	for (auto it : m_tempMemberList)
 	{
 		Value& v0 = it.second;
@@ -960,9 +958,9 @@ bool XClass::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 					if (pExpression)
 					{
 						Value v1;
-						if (pExpression->Run(pModule,pContext,v1))
+						if (pExpression->Run(rt,pContext,v1))
 						{
-							Set(pContext,it.first, v1);
+							Set(rt,pContext,it.first, v1);
 							bSet = true;
 						}
 					}
@@ -971,14 +969,14 @@ bool XClass::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 		}
 		if (!bSet)
 		{
-			Set(pContext,it.first, v0);
+			Set(rt,pContext,it.first, v0);
 		}
 	}
 	m_tempMemberList.clear();
 
 	Data::XClassObject* cls = new Data::XClassObject(this);
 	Value v0(cls);
-	bool bOK = m_scope->Set(pContext,m_Index, v0);
+	bool bOK = m_scope->Set(rt,pContext,m_Index, v0);
 	v = v0;
 
 	//prcoess base classes
@@ -993,7 +991,7 @@ bool XClass::Run(Module* pModule,void* pContext,Value& v, LValue* lValue)
 				Var* varName = dynamic_cast<Var*>(i);
 				String& szName = varName->GetName();
 				strVarName = std::string(szName.s, szName.size);
-				auto* pBaseClass = FindBase(strVarName);
+				auto* pBaseClass = FindBase(rt,strVarName);
 				if (pBaseClass)
 				{
 					m_bases.push_back(pBaseClass);

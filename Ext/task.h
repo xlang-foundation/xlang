@@ -6,11 +6,12 @@
 
 namespace X
 {
+	class Runtime;
 	class Task :
 		public GThread
 	{
 		AST::Func* m_pFunc = nil;
-		AST::Module* m_pModule = nil;
+		Runtime* m_rt = nil;
 		void* m_pContext = nil;
 		std::vector<AST::Value> m_params;
 		std::unordered_map<std::string, AST::Value> m_kwParams;
@@ -20,15 +21,19 @@ namespace X
 		virtual void run() override;
 	public:
 		bool Call(AST::Func* pFunc,
-			AST::Module* pModule, void* pContext,
+			Runtime* rt, void* pContext,
 			std::vector<AST::Value>& params,
 			std::unordered_map<std::string, AST::Value>& kwParams)
 		{
 			m_pFunc = pFunc;
-			m_pModule = pModule;
 			m_pContext = pContext;
 			m_params = params;
 			m_kwParams = kwParams;
+
+			//copy stacks into new thread
+			X::Runtime* pRuntime = new X::Runtime();
+			pRuntime->MirrorStacksFrom(rt);
+			m_rt = pRuntime;
 			Start();
 			//WaitToEnd();
 			return true;

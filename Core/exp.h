@@ -8,14 +8,18 @@
 #include <unordered_map>
 #include "value.h"
 #include "stackframe.h"
+#include "runtime.h"
 #include "glob.h"
 
-namespace X {namespace AST{
+namespace X {
+class Runtime;
+
+namespace AST{
 class Module;
 class Scope;
 class Var;
 class Func;
-typedef bool (*U_FUNC) (Module* pModule,void* pContext,
+typedef bool (*U_FUNC) (Runtime* rt,void* pContext,
 	std::vector<Value>& params,
 	std::unordered_map<std::string, AST::Value>& kwParams,
 	Value& retValue);
@@ -83,11 +87,8 @@ public:
 	{
 		return m_parent;
 	}
-	virtual void Set(void* pContext, Value& v)
-	{
-
-	}
-	virtual bool Run(Module* pModule,void* pContext,Value& v,LValue* lValue=nullptr)
+	virtual void Set(Runtime* rt,void* pContext, Value& v){}
+	virtual bool Run(Runtime* rt,void* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;
 	}
@@ -172,30 +173,30 @@ public:
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
 
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
 			return false;
 		}
 		Value v_l;
-		if (!L->Run(pModule,pContext,v_l))
+		if (!L->Run(rt,pContext,v_l))
 		{
 			return false;
 		}
 		Value v_r;
-		if (!R->Run(pModule,pContext, v_r))
+		if (!R->Run(rt,pContext, v_r))
 		{
 			return false;
 		}
 		auto func = G::I().OpAct(Op).binaryop;
-		return func ? func(this, v_l, v_r, v) : false;
+		return func ? func(rt,this, v_l, v_r, v) : false;
 	}
 };
 class Assign :
 	public BinaryOp
 {
-	bool AssignToDataObject(Module* pModule,void* pObjPtr);
+	bool AssignToDataObject(Runtime* rt,void* pObjPtr);
 public:
 	Assign(short op) :
 		BinaryOp(op)
@@ -210,7 +211,7 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
@@ -218,17 +219,17 @@ public:
 		}
 		Value v_l;
 		LValue lValue_L = nullptr;
-		L->Run(pModule,pContext, v_l, &lValue_L);
+		L->Run(rt,pContext, v_l, &lValue_L);
 		if (v_l.IsObject())
 		{
-			bool bOK = AssignToDataObject(pModule,v_l.GetObject());
+			bool bOK = AssignToDataObject(rt,v_l.GetObject());
 			if (bOK)
 			{
 				return true;
 			}
 		}
 		Value v_r;
-		if (R->Run(pModule,pContext, v_r))
+		if (R->Run(rt,pContext, v_r))
 		{
 			if (lValue_L)
 			{
@@ -236,7 +237,7 @@ public:
 			}
 			else
 			{
-				L->Set(pContext, v_r);
+				L->Set(rt,pContext, v_r);
 			}
 		}
 		return true;
@@ -268,7 +269,7 @@ class PairOp :
 	public BinaryOp
 {
 	short m_preceding_token = 0;
-	bool GetParamList(Module* pModule, Expression* e,
+	bool GetParamList(Runtime* rt, Expression* e,
 		std::vector<Value>& params,
 		std::unordered_map<std::string,Value>& kwParams);
 public:
@@ -282,16 +283,16 @@ public:
 	{
 		return m_preceding_token;
 	}
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class DotOp :
 	public BinaryOp
 {
 	int m_dotNum = 1;
-	void QueryBases(Module* pModule,void* pObj0,std::vector<Expression*>& bases);
+	void QueryBases(Runtime* rt,void* pObj0,std::vector<Expression*>& bases);
 	void RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes);
-	bool DotProcess(Module* pModule, void* pContext, 
+	bool DotProcess(Runtime* rt, void* pContext, 
 		Value& v_l, Expression* r,
 		Value& v, LValue* lValue = nullptr);
 public:
@@ -301,7 +302,7 @@ public:
 		m_type = ObType::Dot;
 		m_dotNum = dotNum;
 	}
-	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(Runtime* rt,void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 };
 class UnaryOp :
@@ -348,7 +349,7 @@ public:
 	}
 	Expression* GetR() { return R; }
 
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
 	public UnaryOp
@@ -358,7 +359,7 @@ class Range :
 	long long m_stop =0;
 	long long m_step = 1;
 
-	bool Eval(Module* pModule);
+	bool Eval(Runtime* rt);
 public:
 	Range(short op) :
 		UnaryOp(op)
@@ -366,7 +367,7 @@ public:
 		m_type = ObType::Range;
 	}
 
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Str :
 	public Expression
@@ -379,7 +380,7 @@ public:
 		m_s = s;
 		m_size = size;
 	}
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_s,m_size);
 		v = v0;
@@ -398,7 +399,7 @@ public:
 		m_digiNum = num;
 		m_type = ObType::Number;
 	}
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		v0.SetF(m_digiNum);
@@ -556,7 +557,7 @@ public:
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
-	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr);
+	virtual bool Run(Runtime* rt,void* pContext, Value& v, LValue* lValue = nullptr);
 };
 class InOp :
 	public BinaryOp
@@ -566,12 +567,12 @@ public:
 		BinaryOp(op)
 	{
 	}
-	inline virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
-		bool bIn = R->Run(pModule,pContext, v);
+		bool bIn = R->Run(rt,pContext, v);
 		if(bIn)
 		{
-			L->Set(pContext, v);
+			L->Set(rt,pContext, v);
 		}
 		return bIn;
 	}
@@ -592,7 +593,7 @@ public:
 		Block(op)
 	{
 	}
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class While :
 	public Block
@@ -603,7 +604,7 @@ public:
 	{
 	}
 
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class If :
@@ -621,7 +622,7 @@ public:
 		if (m_next) delete m_next;
 	}
 	virtual bool EatMe(Expression* other) override;
-	virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class Scope:
@@ -629,7 +630,6 @@ class Scope:
 {//variables scope support, for Module and Func/Class
 protected:
 	std::unordered_map < std::string, int> m_Vars;
-	std::stack<StackFrame*> mStackFrames;
 public:
 	Scope() :
 		Block()
@@ -657,36 +657,26 @@ public:
 			return -1;
 		}
 	}
-	void PushFrame(StackFrame* frame)
+	inline void PushFrame(Runtime* rt,StackFrame* frame)
 	{
-		frame->SetVarCount((int)m_Vars.size());
-		mStackFrames.push(frame);
+		rt->PushFrame(frame, (int)m_Vars.size());
 	}
-	StackFrame* PopFrame()
+	inline void PopFrame(Runtime* rt)
 	{
-		return mStackFrames.empty() ? nil : mStackFrames.top();
+		rt->PopFrame();
 	}
 
-	inline virtual bool Set(void* pContext,int idx, Value& v)
+	inline virtual bool Set(Runtime* rt,void* pContext,int idx, Value& v)
 	{
-		if (!mStackFrames.empty())
-		{
-			mStackFrames.top()->Set(idx, v);
-		}
-		return true;
+		return rt->Set(this,pContext, idx, v);
 	}
-	inline bool SetReturn(Value& v)
+	inline bool SetReturn(Runtime* rt,Value& v)
 	{
-		mStackFrames.top()->SetReturn(v);
-		return true;
+		return rt->SetReturn(v);
 	}
-	inline virtual bool Get(void* pContext, int idx, Value& v, LValue* lValue = nullptr)
+	inline virtual bool Get(Runtime* rt,void* pContext, int idx, Value& v, LValue* lValue = nullptr)
 	{
-		if (!mStackFrames.empty())
-		{
-			mStackFrames.top()->Get(idx, v,lValue);
-		}
-		return true;
+		return rt->Get(this,pContext, idx, v,lValue);
 	}
 };
 
@@ -762,17 +752,17 @@ public:
 		Index = idx;
 	}
 	String& GetName() { return Name; }
-	inline virtual void Set(void* pContext,Value& v) override
+	inline virtual void Set(Runtime* rt,void* pContext,Value& v) override
 	{
-		m_scope->Set(pContext,Index,v);
+		m_scope->Set(rt,pContext,Index,v);
 	}
-	inline virtual bool Run(Module* pModule,void* pContext, Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (Index == -1 || m_scope == nullptr)
 		{
 			return false;
 		}
-		m_scope->Get(pContext,Index, v, lValue);
+		m_scope->Get(rt,pContext,Index, v, lValue);
 		return true;
 	}
 };
@@ -796,7 +786,7 @@ public:
 		SetIndentCount({ -1,-1 });//then each line will have 0 indent
 	}
 	virtual void ScopeLayout() override;
-	void AddBuiltins();
+	void AddBuiltins(Runtime* rt);
 	inline void SetCurExpr(Expression* pExpr)
 	{
 		m_curRunningExpr = pExpr;
@@ -904,11 +894,11 @@ public:
 		int retIdx = Scope::AddOrGet(name, bGetOnly);
 		return retIdx;
 	}
-	virtual bool Call(Module* pModule,void* pContext,bool bContextIsClass,
+	virtual bool Call(Runtime* rt,void* pContext,
 		std::vector<Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		Value& retValue);
-	virtual bool Run(Module* pModule,void* pContext, 
+	virtual bool Run(Runtime* rt,void* pContext, 
 		Value& v, LValue* lValue = nullptr) override;
 };
 
@@ -918,45 +908,30 @@ class XClass
 	:public Func
 {
 	Func* m_constructor = nil;
+	AST::StackFrame* m_stackFrame = nullptr;//to hold non-instance properties
 	std::vector<XClass*> m_bases;
 	std::vector<std::pair<int, Value>> m_tempMemberList;
-	XClass* FindBase(std::string& strName);
+	XClass* FindBase(Runtime* rt,std::string& strName);
 public:
 	XClass():
 		Func()
 	{
 		m_type = ObType::Class;
-		//std::string THIS("this");
-		//Func::AddOrGet(THIS, false);
 	}
 	inline StackFrame* GetClassStack()
 	{
-		if (mStackFrames.size() > 0)
-		{
-			return mStackFrames.top();
-		}
-		else
-		{
-			return nullptr;
-		}
+		return m_stackFrame;
 	}
-	virtual int AddOrGet(std::string& name, bool bGetOnly) override
-	{//Always append,no remove, so new item's index is size of m_Vars;
-		if (FastMatchThis(name))
-		{
 
-		}
-		return Func::AddOrGet(name, bGetOnly);
-	}
-	virtual bool Set(void* pContext, int idx, Value& v) override;
-	virtual bool Get(void* pContext, int idx, Value& v, LValue* lValue = nullptr);
+	virtual bool Set(Runtime* rt,void* pContext, int idx, Value& v) override;
+	virtual bool Get(Runtime* rt,void* pContext, int idx, Value& v,
+		LValue* lValue = nullptr) override;
 	inline std::vector<XClass*>& GetBases() { return m_bases; }
-	virtual bool Run(Module* pModule,void* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(Runtime* rt,void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
-	virtual bool Call(Module* pModule, 
+	virtual bool Call(Runtime* rt, 
 		void* pContext,
-		bool bContextIsClass,
 		std::vector<Value>& params, 
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		Value& retValue);
@@ -972,13 +947,12 @@ public:
 		m_funcName = funcName;
 		m_func = func;
 	}
-	inline virtual bool Call(Module* pModule,void* pContext,
-		bool bContextIsClass,
+	inline virtual bool Call(Runtime* rt,void* pContext,
 		std::vector<Value>& params,
 		std::unordered_map<std::string, AST::Value>& kwParams,
 		Value& retValue) override
 	{
-		return m_func ? m_func(pModule, 
+		return m_func ? m_func(rt, 
 			pContext,params, kwParams,retValue) : false;
 	}
 };

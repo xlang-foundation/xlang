@@ -34,6 +34,7 @@ enum class Alias1
 };
 
 class Parser;
+class Runtime;
 namespace AST {
 	class Operator;
 	class UnaryOp;
@@ -44,9 +45,9 @@ struct OpAction;
 typedef AST::Operator* (*OpProc)(
 	Parser* p, short opIndex);
 typedef bool (*UnaryOpProc)(
-	AST::UnaryOp* op,AST::Value& R, AST::Value& out);
+	Runtime* rt, AST::UnaryOp* op,AST::Value& R, AST::Value& out);
 typedef bool (*BinaryOpProc)(
-	AST::BinaryOp* op,AST::Value& L, AST::Value& R, AST::Value& out);
+	Runtime* rt, AST::BinaryOp* op,AST::Value& L, AST::Value& R, AST::Value& out);
 
 
 #define Precedence_High1 201

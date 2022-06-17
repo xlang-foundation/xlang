@@ -2,15 +2,20 @@
 #include "value.h"
 
 namespace X {namespace AST {
+class Scope;
 class StackFrame
 {
 protected:
+	StackFrame* m_prev = nil;
+	StackFrame* m_next = nil;
+	Scope* m_pScope = nil;
 	int m_varCnt = 0;
 	Value* m_Values = nil;
 	Value m_retVal;
 public:
-	StackFrame()
+	StackFrame(Scope* s)
 	{
+		m_pScope = s;
 	}
 	~StackFrame()
 	{
@@ -19,6 +24,11 @@ public:
 			delete[] m_Values;
 		}
 	}
+	inline void SetNext(StackFrame* n) { m_next = n; if(n) n->m_prev = this; }
+	inline void SetPrev(StackFrame* p) { m_prev = p; if(p) p->m_next = this; }
+	inline StackFrame* Next() { return m_next; }
+	inline StackFrame* Prev() { return m_prev; }
+	inline bool belongTo(Scope* s) { return s == m_pScope; }
 	void Copy(StackFrame* pFrom)
 	{
 		for (int i = 0; i < m_varCnt; i++)

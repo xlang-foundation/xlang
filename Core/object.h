@@ -3,8 +3,11 @@
 #include <string>
 #include "value.h"
 #include "exp.h"
+#include "runtime.h"
 
-namespace X {namespace Data {
+namespace X {
+class Runtime;
+namespace Data {
 	enum class Type
 	{
 		Base,
@@ -26,7 +29,7 @@ namespace X {namespace Data {
 		{
 		}
 		Type GetType() { return m_t; }
-		virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
+		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
 			std::unordered_map<std::string, AST::Value>& kwParams,
 			AST::Value& retValue) = 0;
 		virtual std::string ToString()
@@ -49,7 +52,7 @@ namespace X {namespace Data {
 			m_expr = e;
 		}
 		AST::Expression* Get() { return m_expr; }
-		virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
+		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
 			std::unordered_map<std::string, AST::Value>& kwParams,
 			AST::Value& retValue)
 		{
@@ -75,11 +78,11 @@ namespace X {namespace Data {
 			m_func = p;
 		}
 		AST::Func* GetFunc() { return m_func; }
-		virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
+		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
 			std::unordered_map<std::string, AST::Value>& kwParams,
 			AST::Value& retValue)
 		{
-			return m_func->Call(pModule, nullptr,false,
+			return m_func->Call(rt, nullptr,
 				params, kwParams, retValue);
 		}
 	};
@@ -96,11 +99,11 @@ namespace X {namespace Data {
 			m_func = p;
 		}
 		AST::Func* GetFunc() { return m_func; }
-		virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
+		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
 			std::unordered_map<std::string, AST::Value>& kwParams,
 			AST::Value& retValue)
 		{
-			return m_func->Call(pModule, nullptr,false, params, kwParams, retValue);
+			return m_func->Call(rt, nullptr,params, kwParams, retValue);
 		}
 	};
 	class XClassObject :
@@ -114,7 +117,7 @@ namespace X {namespace Data {
 		{
 			m_t = Type::XClassObject;
 			m_obj = p;
-			m_stackFrame = new AST::StackFrame();
+			m_stackFrame = new AST::StackFrame((AST::Scope*)this);
 			m_stackFrame->SetVarCount(p->GetVarNum());
 			auto* pClassStack = p->GetClassStack();
 			if (pClassStack)
@@ -127,11 +130,11 @@ namespace X {namespace Data {
 			return m_stackFrame;
 		}
 		AST::XClass* GetClassObj() { return m_obj; }
-		virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
+		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
 			std::unordered_map<std::string, AST::Value>& kwParams,
 			AST::Value& retValue)
 		{
-			return m_obj->Call(pModule,this,true,
+			return m_obj->Call(rt,this,
 				params, kwParams, retValue);
 		}
 	};
@@ -170,7 +173,7 @@ namespace X {namespace Data {
 			return m_data;
 		}
 		std::vector<AST::Expression*>& GetBases() { return m_bases; }
-		virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
+		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
 			std::unordered_map<std::string, AST::Value>& kwParams,
 			AST::Value& retValue)
 		{
@@ -239,7 +242,7 @@ namespace X {namespace Data {
 				}//end while
 			}//end else
 		}
-		inline void Add(AST::Module* pModule,AST::Value& v)
+		inline void Add(Runtime* rt,AST::Value& v)
 		{
 			if (v.IsObject())
 			{
@@ -260,7 +263,7 @@ namespace X {namespace Data {
 				else if (obj->GetType() == Data::Type::Function)
 				{
 					std::vector<AST::XClass*> dummy;
-					MakeCommonBases(pModule, dummy);
+					MakeCommonBases(rt->M(), dummy);
 				}
 			}
 			m_data.push_back(v);
@@ -352,16 +355,15 @@ namespace X {namespace Data {
 			}
 			return true;
 		}
-		virtual bool Call(AST::Module* pModule, std::vector<AST::Value>& params,
+		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
 			std::unordered_map<std::string, AST::Value>& kwParams,
 			AST::Value& retValue)
 		{
 			if (m_list.size() == 1)
 			{
 				auto& fc = m_list[0];
-				return fc.m_func->Call(pModule,
+				return fc.m_func->Call(rt,
 					fc.m_context,
-					fc.m_contextType == ContextType::Class,
 				params, kwParams, retValue);
 			}
 			List* pValueList = new List();
@@ -369,13 +371,12 @@ namespace X {namespace Data {
 			for (auto& fc : m_list)
 			{
 				AST::Value v0;
-				bool bOK = fc.m_func->Call(pModule,
+				bool bOK = fc.m_func->Call(rt,
 					fc.m_context,
-					fc.m_contextType == ContextType::Class,
 					params, kwParams, v0);
 				if (bOK)
 				{
-					pValueList->Add(pModule,v0);
+					pValueList->Add(rt,v0);
 				}
 				else
 				{
