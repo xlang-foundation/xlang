@@ -29,7 +29,7 @@ class Parser
 		ops.pop();
 		top->OpWithOperands(operands);
 	}
-
+	inline bool LastIsLambda();
 //for compile
 	std::stack<AST::Expression*> m_operands;
 	std::stack<AST::Operator*> m_ops;

@@ -51,6 +51,7 @@ void Func::ScopeLayout()
 {
 	static std::string THIS("this");
 	Scope* pMyScope = GetScope();
+	//for lambda function, no Name,so skip it when m_Name.size ==0
 	if (pMyScope && m_Name.size>0)
 	{
 		std::string strName(m_Name.s, m_Name.size);
@@ -60,7 +61,7 @@ void Func::ScopeLayout()
 			AddOrGet(THIS, false);
 		}
 	}
-	//prcoess parameters' default values
+	//process parameters' default values
 	if (Params)
 	{
 		auto& list = Params->GetList();
@@ -105,7 +106,10 @@ bool Func::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);
 	Value v0(f);
-	m_scope->Set(rt,pContext,m_Index, v0);
+	if (m_Index >=0)
+	{//Lambda doesn't need to register it, which doesn't have a name
+		m_scope->Set(rt, pContext, m_Index, v0);
+	}
 	v = v0;
 	return true;
 }

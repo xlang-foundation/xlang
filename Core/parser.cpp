@@ -169,6 +169,7 @@ bool Parser::Compile(char* code, int size)
 		{
 			m_NewLine_WillStart = false;
 			AST::Str* v = new AST::Str(s.s, s.size);
+			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
 			m_operands.push(v);
 			push_preceding_token(idx);
 		}
@@ -267,6 +268,11 @@ void Parser::ResetForNewLine()
 
 void Parser::NewLine()
 {
+	short lastToken = get_last_token();
+	if (lastToken == TokenID && LastIsLambda())
+	{
+		return;
+	}
 	if (!m_ops.empty())
 	{
 		auto top = m_ops.top();
@@ -304,15 +310,17 @@ void Parser::NewLine()
 		int startLine = line->GetStartLine();
 		m_operands.pop();
 
-		AST::Indent lineIndent = {
+		int leftMostCharPos = line->GetLeftMostCharPos();
+		AST::Indent lineIndent = { leftMostCharPos,
 			m_TabCountAtLineBegin,m_LeadingSpaceCountAtLineBegin };
 		auto curBlock = m_stackBlocks.top();
 		auto indentCnt_CurBlock = curBlock->GetIndentCount();
-		if (m_lambda_pair_cnt >0 || indentCnt_CurBlock < lineIndent)
+		if (curBlock->IsNoIndentCheck() 
+			|| indentCnt_CurBlock < lineIndent)
 		{
 			auto child_indent_CurBlock = 
 				curBlock->GetChildIndentCount();
-			if (child_indent_CurBlock == AST::Indent{-1, -1})
+			if (child_indent_CurBlock == AST::Indent{0,-1, -1})
 			{
 				curBlock->SetChildIndentCount(lineIndent);
 				curBlock->Add(line);
@@ -321,9 +329,13 @@ void Parser::NewLine()
 			{
 				curBlock->Add(line);
 			}
+			else if(curBlock->IsNoIndentCheck())
+			{
+				curBlock->Add(line);
+			}
 			else
 			{
-				//todo:error
+				//error
 			}
 		}
 		else
@@ -335,7 +347,8 @@ void Parser::NewLine()
 				curBlock = m_stackBlocks.top();
 				auto indentCnt = curBlock->GetChildIndentCount();
 				//must already have child lines or block
-				if (indentCnt == lineIndent)
+				if (curBlock->IsNoIndentCheck() 
+					|| indentCnt == lineIndent)
 				{
 					break;
 				}
@@ -364,9 +377,18 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
 	if (leftOpToMeetAsEnd == OP_ID::Curlybracket_L)
 	{
-		m_stackBlocks.pop();
+		while (!m_stackBlocks.empty())
+		{
+			auto blk = m_stackBlocks.top();
+			m_stackBlocks.pop();
+			if (blk->IsNoIndentCheck())
+			{
+				break;
+			}
+		}
 		push_preceding_token(TokenID);
 		DecLambdaPairCnt();
+		DecPairCnt();
 		return;
 	}
 	short lastToken = get_last_token();
@@ -412,38 +434,46 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 	//already evaluated as an operand
 	push_preceding_token(TokenID);
 }
+bool Parser::LastIsLambda()
+{//check (...){ } pattern, but not like func(....){ }
+	if (!m_operands.empty())
+	{//check (...){ } pattern, but not like func(....){ }
+		auto lastOpernad = m_operands.top();
+		if (lastOpernad->m_type == AST::ObType::Pair)
+		{
+			AST::PairOp* pPair = (AST::PairOp*)lastOpernad;
+			if (pPair->getOp() == G::I().GetOpId(OP_ID::Parenthesis_L)
+				&& pPair->GetL() == nil)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
 AST::Operator* Parser::PairLeft(short opIndex)
 {
 	//case 1: x+(y+z), case 2: x+func(y,z)
 	//so use preceding token as ref to dectect which case it is 
 	short lastToken = get_last_token();
-	if (lastToken == TokenID)
+	if (lastToken == TokenID && LastIsLambda())
 	{
-		if (!m_operands.empty())
-		{//check (...){ } pattern, but not like func(....){ }
-			auto lastOpernad = m_operands.top();
-			if (lastOpernad->m_type == AST::ObType::Pair)
-			{
-				AST::PairOp* pPair = (AST::PairOp*)lastOpernad;
-				if (pPair->getOp() == G::I().GetOpId(OP_ID::Parenthesis_L)
-					&& pPair->GetL() == nil)
-				{
-					auto op = new AST::Func();
-					m_ops.push(op);
-					push_preceding_token(opIndex);
-					NewLine();
-					IncPairCnt();
-					IncLambdaPairCnt();
-					PushBlockStack(op);
-					return nil;
-				}
-			}
-		}
+		auto op = new AST::Func();
+		op->SetNoIndentCheck(true);
+		m_ops.push(op);
+		push_preceding_token(opIndex);
+		NewLine();
+		IncPairCnt();
+		IncLambdaPairCnt();
+		PushBlockStack(op);
+		return nil;
 	}
-	IncPairCnt();
-	auto op = new AST::PairOp(opIndex, lastToken);
-
-	return op;
+	else
+	{
+		IncPairCnt();
+		auto op = new AST::PairOp(opIndex, lastToken);
+		return op;
+	}
 }
 bool Parser::Run()
 {
@@ -459,7 +489,7 @@ bool Parser::Run()
 	pTopModule->AddBuiltins(pRuntime);
 
 	AST::Value v;
-	bool bOK = pTopModule->Run(pRuntime,nullptr,v);
+	bool bOK = pTopModule->Run(pRuntime, nullptr, v);
 	pTopModule->PopFrame(pRuntime);
 	delete frame;
 	delete pTopModule;

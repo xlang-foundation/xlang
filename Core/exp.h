@@ -97,6 +97,7 @@ public:
 		return false;
 	}
 	virtual void ScopeLayout() {}
+	virtual int GetLeftMostCharPos() { return m_charPos; }
 
 	ObType m_type = ObType::Base;
 };
@@ -137,6 +138,28 @@ public:
 	{
 		if (L) delete L;
 		if (R) delete R;
+	}
+	virtual int GetLeftMostCharPos() override
+	{
+		int pos = GetCharPos();
+		int startLine = GetStartLine();
+		if (L)
+		{
+			int posL = L->GetLeftMostCharPos();
+			if (posL < pos && L->GetStartLine() <= startLine)
+			{
+				pos = posL;
+			}
+		}
+		if (R)
+		{
+			int posR = R->GetLeftMostCharPos();
+			if (posR < pos && R->GetStartLine() <= startLine)
+			{
+				pos = posR;
+			}
+		}
+		return pos;
 	}
 	virtual void OpWithOperands(
 		std::stack<AST::Expression*>& operands)
@@ -338,6 +361,20 @@ public:
 	{
 		if (R) delete R;
 	}
+	virtual int GetLeftMostCharPos() override
+	{
+		int pos = GetCharPos();
+		int startLine = GetStartLine();
+		if (R)
+		{
+			int posR = R->GetLeftMostCharPos();
+			if (posR < pos && R->GetStartLine() <= startLine)
+			{
+				pos = posR;
+			}
+		}
+		return pos;
+	}
 	virtual void ScopeLayout() override
 	{
 		if (R) R->ScopeLayout();
@@ -451,6 +488,17 @@ public:
 			delete e;
 		}
 	}
+	virtual int GetLeftMostCharPos() override
+	{
+		if (list.size() > 0)
+		{
+			return list[0]->GetLeftMostCharPos();
+		}
+		else
+		{
+			return 9999;
+		}
+	}
 	virtual void ScopeLayout() override
 	{
 		for (auto i : list)
@@ -526,29 +574,34 @@ public:
 
 struct Indent
 {
+	int charPos = 0;
 	int tab_cnt =0;
 	int space_cnt =0;
 	bool operator>=(const Indent& other)
 	{
-		return (tab_cnt >= other.tab_cnt) 
+		return (charPos>=other.charPos)
+			&& (tab_cnt >= other.tab_cnt) 
 			&& (space_cnt >= other.space_cnt);
 	}
 	bool operator==(const Indent& other)
 	{
-		return (tab_cnt == other.tab_cnt)
+		return (charPos == other.charPos)
+			&& (tab_cnt == other.tab_cnt)
 			&& (space_cnt == other.space_cnt);
 	}
 	bool operator<(const Indent& other)
 	{
-		return (tab_cnt <= other.tab_cnt && space_cnt < other.space_cnt)
-			|| (tab_cnt < other.tab_cnt && space_cnt <= other.space_cnt);
+		return (charPos <= other.charPos) &&
+			((tab_cnt <= other.tab_cnt && space_cnt < other.space_cnt)
+				|| (tab_cnt < other.tab_cnt&& space_cnt <= other.space_cnt));
 	}
 };
 class Block:
 	public UnaryOp
 {
-	Indent IndentCount = { -1,-1 };
-	Indent ChildIndentCount = { -1,-1 };
+	bool NoIndentCheck = false;//just for lambda block
+	Indent IndentCount = { 0,-1,-1 };
+	Indent ChildIndentCount = { 0,-1,-1 };
 	std::vector<Expression*> Body;
 public:
 	Block()
@@ -557,6 +610,15 @@ public:
 	Block(short op) :
 		UnaryOp(op)
 	{
+	}
+
+	inline bool IsNoIndentCheck()
+	{
+		return NoIndentCheck;
+	}
+	inline void SetNoIndentCheck(bool b)
+	{
+		NoIndentCheck = b;
 	}
 	~Block()
 	{
@@ -797,7 +859,7 @@ public:
 	Module() :
 		Scope()
 	{
-		SetIndentCount({ -1,-1 });//then each line will have 0 indent
+		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
 	}
 	virtual void ScopeLayout() override;
 	void AddBuiltins(Runtime* rt);

@@ -1,4 +1,3 @@
-breakpoint()
 class base_class():
     prop0:str="prop0_value"
     def test():
@@ -29,14 +28,12 @@ class test_class(base_class,another_class):
 
 x0 = test_class()
 x0.prop1 =1
-breakpoint("x0=",x0)
 x0.prop2 ="calss x0"
 x0.method1(100)
 x0.prop2 ="class x0"
 x1 = test_class()
 x1.prop1 =2
 x1.prop2 ="calss x1"
-breakpoint("x1.prop2",x1.prop2)
 x2 = test_class()
 x2.prop1 =3
 x2.prop2 ="calss x2"
