@@ -3,6 +3,7 @@
 
 #include "gthread.h"
 #include "exp.h"
+#include "runtime.h"
 
 namespace X
 {

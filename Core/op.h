@@ -1,5 +1,6 @@
 #pragma once
 #include "exp.h"
+#include <stack>
 
 namespace X
 {

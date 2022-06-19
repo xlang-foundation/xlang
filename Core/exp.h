@@ -1,16 +1,9 @@
 #pragma once
-
-#include "pycore.h"
 #include "def.h"
 #include <string>
 #include <vector>
-#include <stack>
-#include <unordered_map>
 #include "value.h"
-#include "stackframe.h"
-#include "runtime.h"
 #include "glob.h"
-#include "scope.h"
 
 namespace X 
 {
