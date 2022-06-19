@@ -2,9 +2,5 @@
 
 namespace XExt
 {
-	class OS :
-		public X::Base
-	{
 
-	};
 }

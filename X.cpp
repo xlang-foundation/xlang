@@ -6,10 +6,17 @@
 #include "Core/builtin.h"
 #include <fstream>
 #include <sstream>
-
+#include "manager.h"
+#include "http.h"
 
 void RunCore(std::string& code)
 {
+	X::Manager::I().Register("http", []() {
+		X::Http* pHttp = new X::Http();
+		X::AST::Package* pPackage = nullptr;
+		pHttp->Create(&pPackage);
+		return pPackage;
+		});
 	X::PyHandle h = X::PyLoad((char*)code.c_str(), (int)code.size());
 	X::PyRun(h);
 	X::PyClose(h);

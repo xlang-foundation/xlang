@@ -8,6 +8,7 @@ project ("X")
 include_directories("Inc")
 include_directories("Ext")
 include_directories("Core")
+include_directories("Http")
 
 FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp")
 FILE(GLOB Ext_SRC "Ext/*.cpp")

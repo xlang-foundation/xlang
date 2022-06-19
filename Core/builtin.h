@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_map>
 #include "exp.h"
+#include "func.h"
 #include <vector>
 #include "singleton.h"
 

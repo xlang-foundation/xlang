@@ -2,6 +2,11 @@
 #include "parser.h"
 #include "exp.h"
 #include "runtime.h"
+#include "module.h"
+#include "func.h"
+#include "xclass.h"
+#include "package.h"
+#include "dotop.h"
 
 namespace X {
 
@@ -105,12 +110,9 @@ void RegisterOps()
 		return true;
 	});
 	RegOP("return")
-	.SetUnaryop([](Runtime* rt, AST::UnaryOp* op,AST::Value& R, AST::Value& v) {
-		AST::Scope* pScope = op->GetScope();
-		if (pScope)
-		{
-			pScope->SetReturn(rt,R);
-		}
+	.SetUnaryop([](Runtime* rt, AST::UnaryOp* op,
+		AST::Value& R, AST::Value& v) {
+		rt->SetReturn(R);
 		v = R;
 		return true;
 	});
@@ -137,6 +139,11 @@ void Register()
 			auto op = new AST::UnaryOp(opIndex);
 			return (AST::Operator*)op;
 		});
+	RegOP("from")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::UnaryOp(opIndex);
+		return (AST::Operator*)op;
+			});
 	RegOP("for")
 		.SetProcess([](Parser* p, short opIndex){
 			auto op = new AST::For(opIndex);
@@ -187,6 +194,17 @@ void Register()
 			return (AST::Operator*)op;
 	});
 
+	//for import, from nnn as its left operand
+	RegOP("import")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::Import(opIndex);
+		return (AST::Operator*)op;
+			});
+	RegOP("as")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::BinaryOp(opIndex);
+		return (AST::Operator*)op;
+			});
 	RegOP(
 		//Python Comparison Operators --index range[55,60]
 		"==", "!=", ">", "<", ">=", "<=",
@@ -302,7 +320,7 @@ void Register()
 		.SetPrecedence(Precedence_High1);
 	RegOP("*", "/", "%", "**", "//")
 		.SetPrecedence(Precedence_Reqular + 1);
-	RegOP(",")
+	RegOP(",","import")//for example from . import XYZ as xyz,AWD as awd 
 		.SetPrecedence(Precedence_LOW1);
 }
 

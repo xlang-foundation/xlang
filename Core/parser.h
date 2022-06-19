@@ -5,6 +5,7 @@
 #include <stack>
 #include <vector>
 #include "def.h"
+#include "block.h"
 
 namespace X {
 enum class ParseState

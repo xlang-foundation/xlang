@@ -4,6 +4,9 @@
 #include <vector>
 #include "action.h"
 #include "runtime.h"
+#include "module.h"
+#include "var.h"
+#include "func.h"
 
 namespace X {	
 
@@ -490,7 +493,7 @@ bool Parser::Run()
 
 	AST::Value v;
 	bool bOK = pTopModule->Run(pRuntime, nullptr, v);
-	pTopModule->PopFrame(pRuntime);
+	pRuntime->PopFrame();
 	delete frame;
 	delete pTopModule;
 	delete pRuntime;

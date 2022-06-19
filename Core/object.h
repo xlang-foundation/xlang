@@ -4,6 +4,8 @@
 #include "value.h"
 #include "exp.h"
 #include "runtime.h"
+#include "xclass.h"
+#include "module.h"
 
 namespace X {
 class Runtime;
