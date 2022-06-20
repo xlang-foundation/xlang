@@ -4,7 +4,7 @@ namespace X
 {
 namespace AST
 {
-void Var::ScopeLayout(std::vector<AST::Expression*>& candidates)
+void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 {
 	bool matched = false;
 	if (m_scope && Index != -1)

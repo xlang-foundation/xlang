@@ -19,6 +19,7 @@ void Module::ScopeLayout()
 void Module::AddBuiltins(Runtime* rt)
 {
 	auto& funcs = Builtin::I().All();
+	m_stackFrame->SetVarCount(GetVarNum());
 	for (auto it : funcs)
 	{
 		auto name = it.first;
@@ -27,7 +28,7 @@ void Module::AddBuiltins(Runtime* rt)
 		{
 			auto* pFuncObj = new Data::Function(it.second);
 			Value v0(pFuncObj);
-			Scope::Set(rt,nullptr,idx, v0);
+			Set(rt,nullptr,idx, v0);
 		}
 	}
 }

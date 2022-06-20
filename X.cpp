@@ -8,15 +8,11 @@
 #include <sstream>
 #include "manager.h"
 #include "http.h"
+#include "xlang.h"
+#include "runtime.h"
 
 void RunCore(std::string& code)
 {
-	X::Manager::I().Register("http", []() {
-		X::Http* pHttp = new X::Http();
-		X::AST::Package* pPackage = nullptr;
-		pHttp->Create(&pPackage);
-		return pPackage;
-		});
 	X::PyHandle h = X::PyLoad((char*)code.c_str(), (int)code.size());
 	X::PyRun(h);
 	X::PyClose(h);
@@ -30,11 +26,10 @@ int main(int argc, char* argv[])
 		pyFileName = argv[1];
 	}
 	std::ifstream pyFile(pyFileName);
-	std::string code((std::istreambuf_iterator<char>(pyFile)),
-		std::istreambuf_iterator<char>());
+	std::string code((std::istreambuf_iterator<char>(
+		pyFile)),std::istreambuf_iterator<char>());
 	pyFile.close();
-	std::vector<std::pair<std::string, std::string>> params;
-	//X::Builtin::I().Register("print", nullptr, params);
+	REGISTER_PACKAGE("http", X::Http)
 	X::Builtin::I().RegisterInternals();
 	RunCore(code);
 	std::cout << "End." << std::endl;

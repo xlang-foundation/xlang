@@ -7,6 +7,8 @@
 #include "module.h"
 #include "var.h"
 #include "func.h"
+#include "http.h"
+#include "manager.h"
 
 namespace X {	
 
@@ -486,15 +488,10 @@ bool Parser::Run()
 	}
 	Runtime* pRuntime = new Runtime();
 	AST::Module* pTopModule = (AST::Module*)m_stackBlocks.top();
-	AST::StackFrame* frame = new AST::StackFrame(pTopModule);
-	pRuntime->PushFrame(frame,pTopModule->GetVarNum());
 	pRuntime->SetM(pTopModule);
 	pTopModule->AddBuiltins(pRuntime);
-
 	AST::Value v;
 	bool bOK = pTopModule->Run(pRuntime, nullptr, v);
-	pRuntime->PopFrame();
-	delete frame;
 	delete pTopModule;
 	delete pRuntime;
 	return bOK;

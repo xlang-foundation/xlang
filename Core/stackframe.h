@@ -39,16 +39,35 @@ public:
 		m_retVal = pFrom->m_retVal;
 	}
 	inline bool SetVarCount(int cnt)
-	{
+	{//can be called multiple times,
+	//so need to check if m_Values is created
+	//if created, copy data into new array
+		if (cnt == m_varCnt)
+		{
+			return true;
+		}
 		if (cnt > 0)
 		{
-			m_Values = new Value[cnt];
+			Value* newList = new Value[cnt];
+			if (m_Values)
+			{
+				for (int i = 0; i < cnt && i < m_varCnt; i++)
+				{
+					newList[i] = m_Values[i];
+				}
+				delete[] m_Values;
+			}
+			m_Values = newList;
 			m_varCnt = cnt;
 		}
 		return true;
 	}
 	inline void Set(int idx, Value& v)
 	{
+		if (idx < 0 && idx >= m_varCnt)
+		{
+			idx = idx;
+		}
 		m_Values[idx] = v;
 	}
 	inline void SetReturn(Value& v)

@@ -82,6 +82,10 @@ public:
 	{
 		return x.l;
 	}
+	void* GetObj()
+	{
+		return x.p;
+	}
 	void* GetObject()
 	{
 		return x.p;

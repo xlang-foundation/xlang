@@ -16,7 +16,7 @@ bool X::AST::Import::Run(Runtime* rt, void* pContext,
 			String& name = var->GetName();
 			std::string strName(name.s, name.size);
 			Package* pPackage = nullptr;
-			Manager::I().QueryAndCreatePackage(strName, &pPackage);
+			Manager::I().QueryAndCreatePackage(rt,strName, &pPackage);
 			v = Value(pPackage);
 			rt->M()->Add(rt, strName, nullptr, v);
 		}

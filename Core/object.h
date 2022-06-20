@@ -18,6 +18,7 @@ namespace Data {
 		MetaFunction,
 		XClassObject,
 		FuncCalls,
+		Package,
 		Future,
 		List,
 		Dict
@@ -343,15 +344,8 @@ namespace Data {
 		}
 	};
 
-	enum class ContextType
-	{
-		Class,
-		Func,
-		FuncCalls
-	};
 	struct VectorCall
 	{
-		ContextType m_contextType = ContextType::Class;
 		void* m_context = nil;
 		AST::Func* m_func = nil;
 		AST::LValue m_lVal = nil;
@@ -370,9 +364,9 @@ namespace Data {
 		{
 			return m_list;
 		}
-		void Add(ContextType conType, void* pContext, AST::Func* func, AST::LValue lVal)
+		void Add(void* pContext, AST::Func* func, AST::LValue lVal)
 		{
-			m_list.push_back(VectorCall{ conType,pContext ,func,lVal });
+			m_list.push_back(VectorCall{ pContext ,func,lVal });
 		}
 		bool SetValue(AST::Value& val)
 		{

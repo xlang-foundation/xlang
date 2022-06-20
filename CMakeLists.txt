@@ -12,12 +12,14 @@ include_directories("Http")
 
 FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp")
 FILE(GLOB Ext_SRC "Ext/*.cpp")
+FILE(GLOB Http_SRC "Http/*.cpp")
 
 add_executable (X 
 	"X.cpp" 
 	"X.h"
 	${Core_SRC}
 	${Ext_SRC}
+	${Http_SRC}
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

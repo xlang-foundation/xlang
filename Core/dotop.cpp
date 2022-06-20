@@ -12,7 +12,8 @@ void DotOp::ScopeLayout()
 	if (L) L->ScopeLayout();
 	//R will be decided in run stage
 }
-void DotOp::QueryBases(Runtime* rt,void* pObj0,std::vector<Expression*>& bases)
+void DotOp::QueryBases(Runtime* rt,void* pObj0,
+	std::vector<Scope*>& bases)
 {
 	Data::Object* pObj = (Data::Object*)pObj0;
 	if (pObj->GetType() == Data::Type::List)
@@ -23,7 +24,7 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,std::vector<Expression*>& bases)
 			auto& bs = pList->GetBases();
 			for (auto it : bs)
 			{
-				bases.push_back(it);
+				bases.push_back(dynamic_cast<Scope*>(it));
 			}
 		}
 	}
@@ -35,6 +36,10 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,std::vector<Expression*>& bases)
 			bases.push_back(pClassObj->GetClassObj());
 		}
 	}
+	else if (pObj->GetType() == Data::Type::Package)
+	{
+		bases.push_back(dynamic_cast<Scope*>(pObj));
+	}
 	else if (pObj->GetType() == Data::Type::Function ||
 		pObj->GetType() == Data::Type::FuncCalls)
 	{
@@ -43,7 +48,8 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,std::vector<Expression*>& bases)
 		bases.push_back(rt->M());
 	}
 }
-void DotOp::RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes)
+void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
+	std::vector<Scope*>& scopes)
 {
 	if (pExpr->m_type == ObType::Pair)
 	{
@@ -78,7 +84,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	Value& v_l, Expression* R,
 	Value& v, LValue* lValue)
 {
-	std::vector<AST::Expression*> scopes;
+	std::vector<Scope*> scopes;
 	void* pLeftObj0 = v_l.GetObject();
 	if (pLeftObj0)
 	{
@@ -94,7 +100,6 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 
 	auto AddFunc = [&](
 		Value& v0, LValue& lVal,
-		Data::ContextType conType,
 		void* pContext)
 	{
 		if (v0.IsObject())
@@ -109,7 +114,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 					if (func)
 					{
 						if (pCallList == nil) pCallList = new Data::FuncCalls();
-						pCallList->Add(conType, pContext, func, nil);
+						pCallList->Add(pContext, func, nil);
 					}
 				}
 			}
@@ -127,7 +132,6 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	};
 	auto RunCallPerObj = [&](
 		Expression* pExpr,
-		Data::ContextType conType,
 		void* pContext)
 	{
 		if (pExpr->m_type == ObType::Pair)
@@ -146,7 +150,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 						Value v0;
 						LValue lVal = nil;
 						var->Run(rt, pContext, v0, &lVal);
-						AddFunc(v0, lVal, conType, pContext);
+						AddFunc(v0, lVal,pContext);
 					}
 				}
 			}
@@ -156,7 +160,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 				Value v0;
 				LValue lVal = nil;
 				var->Run(rt, pContext, v0, &lVal);
-				AddFunc(v0, lVal, conType, pContext);
+				AddFunc(v0, lVal,pContext);
 			}
 		}
 		else if (pExpr->m_type == ObType::Var)
@@ -165,7 +169,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 			Value v0;
 			LValue lValue = nil;
 			var->Run(rt, pContext, v0, &lValue);
-			AddFunc(v0, lValue, conType, pContext);
+			AddFunc(v0, lValue,pContext);
 		}
 	};
 	if (pLeftObj0)
@@ -184,27 +188,19 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 						Data::Object* pItObj = (Data::Object*)it.GetObject();
 						if (pItObj->GetType() == Data::Type::XClassObject)
 						{
-							RunCallPerObj(R, Data::ContextType::Class, pItObj);
+							RunCallPerObj(R,pItObj);
 						}
 						else if (pItObj->GetType() == Data::Type::Function)
 						{
-							RunCallPerObj(R, Data::ContextType::Class, pItObj);
+							RunCallPerObj(R,pItObj);
 						}
 					}
 				}
 			}
 		}
-		else if (pLeftObj->GetType() == Data::Type::XClassObject)
+		else
 		{
-			RunCallPerObj(R, Data::ContextType::Class, pLeftObj);
-		}
-		else if (pLeftObj->GetType() == Data::Type::Function)
-		{
-			RunCallPerObj(R, Data::ContextType::Func, pLeftObj);
-		}
-		else if (pLeftObj->GetType() == Data::Type::FuncCalls)
-		{
-			RunCallPerObj(R, Data::ContextType::FuncCalls, pLeftObj);
+			RunCallPerObj(R,pLeftObj);
 		}
 	}
 	//Function call first

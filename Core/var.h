@@ -16,7 +16,7 @@ public:
 		Name = n;
 		m_type = ObType::Var;
 	}
-	void ScopeLayout(std::vector<AST::Expression*>& candidates);
+	void ScopeLayout(std::vector<Scope*>& candidates);
 	virtual void ScopeLayout() override;
 	String& GetName() { return Name; }
 	inline virtual void Set(Runtime* rt, void* pContext, Value& v) override

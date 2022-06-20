@@ -10,8 +10,10 @@ class DotOp :
 	public BinaryOp
 {
 	int m_dotNum = 1;
-	void QueryBases(Runtime* rt,void* pObj0,std::vector<Expression*>& bases);
-	void RunScopeLayoutWithScopes(Expression* pExpr, std::vector<Expression*>& scopes);
+	void QueryBases(Runtime* rt,void* pObj0,
+		std::vector<Scope*>& bases);
+	void RunScopeLayoutWithScopes(Expression* pExpr, 
+		std::vector<Scope*>& scopes);
 	bool DotProcess(Runtime* rt, void* pContext, 
 		Value& v_l, Expression* r,
 		Value& v, LValue* lValue = nullptr);

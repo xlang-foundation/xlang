@@ -6,9 +6,11 @@
 #include "singleton.h"
 #include "module.h"
 #include "package.h"
+
 namespace X 
 {
-	typedef AST::Package* (*PackageCreator)();
+	class Runtime;
+	typedef AST::Package* (*PackageCreator)(Runtime* rt);
 	class Manager :
 		public Singleton<Manager>
 	{
@@ -24,7 +26,8 @@ namespace X
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,nullptr }));
 			return true;
 		}
-		bool QueryAndCreatePackage(std::string& name, AST::Package** ppPackage)
+		bool QueryAndCreatePackage(Runtime* rt,std::string& name,
+			AST::Package** ppPackage)
 		{
 			bool bCreated = false;
 			auto it = m_mapPackage.find(name);
@@ -33,7 +36,7 @@ namespace X
 				PackageInfo& info = it->second;
 				if (info.package == nullptr)
 				{
-					info.package = info.creator();
+					info.package = info.creator(rt);
 				}
 				bCreated = (info.package != nullptr);
 				*ppPackage = info.package;
