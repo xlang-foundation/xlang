@@ -16,7 +16,7 @@ public:
 	{
 		m_type = ObType::Import;
 	}
-	virtual void OpWithOperands(
+	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands)
 	{
 		auto operandR = operands.top();
@@ -29,6 +29,7 @@ public:
 			SetL(operandL);
 		}
 		operands.push(this);
+		return true;
 	}
 	virtual void ScopeLayout() override
 	{

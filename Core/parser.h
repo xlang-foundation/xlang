@@ -6,6 +6,7 @@
 #include <vector>
 #include "def.h"
 #include "block.h"
+#include "blockstate.h"
 
 namespace X {
 enum class ParseState
@@ -17,24 +18,20 @@ enum class ParseState
 	Long_Long
 };
 
+struct PairInfo
+{
+	int opid;
+	bool IsLambda = false;
+};
 class Parser
 {
 	Token* mToken = nil;
-
+	BlockState* m_curBlkState = nil;
 	ParseState ParseHexBinOctNumber(String& str);
 	ParseState ParseNumber(String& str, double& dVal, long long& llVal);
-	inline void DoOpTop(std::stack<AST::Expression*>& operands,
-		std::stack<AST::Operator*>& ops)
-	{
-		auto top = ops.top();
-		ops.pop();
-		top->OpWithOperands(operands);
-	}
+
 	inline bool LastIsLambda();
 //for compile
-	std::stack<AST::Expression*> m_operands;
-	std::stack<AST::Operator*> m_ops;
-	int m_pair_cnt = 0;//count for {} () and [],if
 	int m_lambda_pair_cnt = 0;
 	//use this stack to keep 3 preceding tokens' index
 	//and if meet slash, will pop one, because slash means line continuing
@@ -66,23 +63,18 @@ class Parser
 		}
 	}
 	std::vector<short> m_preceding_token_indexstack;
-	//below,before meet first non-tab char,it is true 
-	bool m_NewLine_WillStart = true;
-	int m_TabCountAtLineBegin = 0;
-	int m_LeadingSpaceCountAtLineBegin = 0;
-	std::stack<AST::Block*> m_stackBlocks;
+
+	AST::Block* m_lastComingBlock = nullptr;
+	std::stack<BlockState*> m_stackBlocks;
+	std::stack<PairInfo> m_stackPair;
 private:
 	void ResetForNewLine();
+	void LineOpFeedIntoBlock(AST::Expression* line,
+		AST::Indent& lineIndent);
 public:
-	void PushBlockStack(AST::Block* b)
-	{
-		m_stackBlocks.push(b);
-	}
 	void NewLine();
 	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
 	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'
-	inline void IncPairCnt() { m_pair_cnt++; }
-	inline void DecPairCnt() { m_pair_cnt--; }
 	inline void IncLambdaPairCnt() { m_lambda_pair_cnt++; }
 	inline void DecLambdaPairCnt() { m_lambda_pair_cnt--; }
 	inline bool PreTokenIsOp()
@@ -96,14 +88,7 @@ public:
 			return m_preceding_token_indexstack[m_preceding_token_indexstack.size() - 1] >= 0;
 		}
 	}
-	inline void PushExp(AST::Expression* exp)
-	{
-		m_operands.push(exp);
-	}
-	inline void PushOp(AST::Operator* op)
-	{
-		m_ops.push(op);
-	}
+
 	inline OpAction OpAct(short idx)
 	{
 		return G::I().OpAct(idx);

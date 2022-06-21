@@ -24,7 +24,11 @@ public:
 	inline short getOp(){return Op;}
 	virtual void SetL(Expression* l) {}
 	virtual void SetR(Expression* r) {}
-	virtual void OpWithOperands(std::stack<AST::Expression*>& operands) {}
+	virtual bool OpWithOperands(
+		std::stack<AST::Expression*>& operands) 
+	{
+		return true;//OP finished
+	}
 };
 
 class BinaryOp :
@@ -66,7 +70,7 @@ public:
 		}
 		return pos;
 	}
-	virtual void OpWithOperands(
+	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands)
 	{
 		auto operandR = operands.top();
@@ -76,6 +80,7 @@ public:
 		operands.pop();
 		SetL(operandL);
 		operands.push(this);
+		return true;
 	}
 	virtual void ScopeLayout() override
 	{
@@ -179,7 +184,7 @@ public:
 		Operator(op)
 	{
 	}
-	virtual void OpWithOperands(
+	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands);
 };
 class CommaOp :
@@ -190,7 +195,7 @@ public:
 		Operator(op)
 	{
 	}
-	virtual void OpWithOperands(
+	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands);
 };
 class SemicolonOp :
@@ -201,7 +206,7 @@ public:
 		Operator(op)
 	{
 	}
-	virtual void OpWithOperands(
+	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands);
 };
 class PairOp :
@@ -265,7 +270,7 @@ public:
 	{
 		if (R) R->ScopeLayout();
 	}
-	virtual void OpWithOperands(
+	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands)
 	{
 		if (NeedParam)
@@ -275,6 +280,7 @@ public:
 			SetR(operandR);
 		}
 		operands.push(this);
+		return true;
 	}
 	virtual void SetR(Expression* r) override
 	{

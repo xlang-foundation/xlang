@@ -1,4 +1,4 @@
-num =10000000
+num =1000
 print("Test Loop:",num)
 sum =0
 t1 = time()

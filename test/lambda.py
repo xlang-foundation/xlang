@@ -1,5 +1,4 @@
-f = (x:int,y:int,z:int)
-{
+f = (x:int,y:int,z:int){
     f2 =(k:int,l)
     {
        print("      inside lambda f2:",k,",l:",l);

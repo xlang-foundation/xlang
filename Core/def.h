@@ -5,6 +5,8 @@
 
 namespace X {
 #define nil 0
+#define MAX_VAL(x,y) ((x)>(y)?(x):(y))
+#define MIN_VAL(x,y) ((x)<(y)?(x):(y))
 struct String
 {
 	char* s;

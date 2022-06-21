@@ -20,6 +20,7 @@ protected:
 	String m_Name = { nil,0 };
 	int m_Index = -1;//index for this Var,set by compiling
 	int m_positionParamCnt = 0;
+	bool m_needSetHint = false;
 	Expression* Name = nil;
 	List* Params = nil;
 	Expression* RetType = nil;
@@ -40,6 +41,19 @@ protected:
 	virtual void ScopeLayout() override;
 	virtual void SetParams(List* p)
 	{
+		if (m_needSetHint)
+		{
+			if (p)
+			{
+				auto& list = p->GetList();
+				if (list.size() > 0)
+				{
+					auto exp = list[0];
+					SetHint(exp->GetStartLine(), exp->GetEndLine(),
+						exp->GetCharPos());
+				}
+			}
+		}
 		Params = p;
 		if (Params)
 		{
@@ -57,6 +71,7 @@ public:
 		if (Params) delete Params;
 		if (RetType) delete RetType;
 	}
+	void NeedSetHint(bool b) { m_needSetHint = b; }
 	Expression* GetName() { return Name; }
 	String& GetNameStr() { return m_Name; }
 	virtual Scope* GetParentScope() override

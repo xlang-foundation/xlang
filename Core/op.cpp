@@ -1,7 +1,7 @@
 #include "op.h"
 #include "var.h"
 #include "object.h"
-
+#include "def.h"
 namespace X
 {
 namespace AST
@@ -248,17 +248,25 @@ bool Range::Run(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 	}
 	return (v.GetLongLong() < m_stop);
 }
-void ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
+bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
 {
 	auto operandR = operands.top();
 	operands.pop();
 	auto operandL = operands.top();
 	operands.pop();
 	auto param = new AST::Param(operandL, operandR);
+	param->SetHint(MIN_VAL(operandL->GetStartLine(),
+		operandR->GetStartLine()),
+		MIN_VAL(operandL->GetEndLine(),
+			operandR->GetEndLine()),
+		MIN_VAL(operandL->GetCharPos(),
+			operandR->GetCharPos())
+	);
 	operands.push(param);
+	return true;
 }
 
-void CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
+bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 {
 	auto operandR = operands.top();
 	operands.pop();
@@ -285,7 +293,7 @@ void CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 		delete operandR;
 	}
 	operands.push(list);
-
+	return true;
 }
 
 bool Assign::AssignToDataObject(Runtime* rt, void* pObjPtr)
@@ -307,8 +315,9 @@ bool Assign::AssignToDataObject(Runtime* rt, void* pObjPtr)
 	}
 }
 
-void SemicolonOp::OpWithOperands(std::stack<AST::Expression*>& operands)
+bool SemicolonOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 {
+	return true;
 }
 
 }

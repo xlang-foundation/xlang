@@ -144,12 +144,13 @@ bool Parser::Compile(char* code, int size)
 {
 	mToken->SetStream(code, size);
 	//mToken->Test();
-	m_pair_cnt = 0;
 	reset_preceding_token();
 	//prepare top module for this code
 	AST::Module* pTopModule = new AST::Module();
 	pTopModule->ScopeLayout();
-	m_stackBlocks.push(pTopModule);
+	BlockState* pBlockState=  new BlockState(pTopModule);
+	m_stackBlocks.push(pBlockState);
+	m_curBlkState = pBlockState;
 	while (true)
 	{
 		String s;
@@ -158,13 +159,14 @@ bool Parser::Compile(char* code, int size)
 		short idx = mToken->Get(one);
 		s = one.id;
 		leadingSpaceCnt = one.leadingSpaceCnt;
-		if (m_NewLine_WillStart)
+		if (m_curBlkState->m_NewLine_WillStart)
 		{
-			m_LeadingSpaceCountAtLineBegin += leadingSpaceCnt;
+			m_curBlkState->m_LeadingSpaceCountAtLineBegin 
+				+= leadingSpaceCnt;
 		}
 		if (idx == TokenEOS)
 		{
-			m_NewLine_WillStart = false;
+			m_curBlkState->m_NewLine_WillStart = false;
 			break;
 		}
 		if (idx == TokenLineComment || idx == TokenComment)
@@ -172,15 +174,15 @@ bool Parser::Compile(char* code, int size)
 		}
 		else if (idx == TokenStr)
 		{
-			m_NewLine_WillStart = false;
+			m_curBlkState->m_NewLine_WillStart = false;
 			AST::Str* v = new AST::Str(s.s, s.size);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
-			m_operands.push(v);
+			m_curBlkState->PushExp(v);
 			push_preceding_token(idx);
 		}
 		else if (idx == TokenID)
 		{
-			m_NewLine_WillStart = false;
+			m_curBlkState->m_NewLine_WillStart = false;
 
 			double dVal = 0;
 			long long llVal = 0;
@@ -202,22 +204,22 @@ bool Parser::Compile(char* code, int size)
 				v = new AST::Var(s);
 			}
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
-			m_operands.push(v);
+			m_curBlkState->PushExp(v);
 			push_preceding_token(idx);
 		}
 		else
 		{//Operator
 			OpAction opAct = OpAct(idx);
-			if (m_NewLine_WillStart)
+			if (m_curBlkState->m_NewLine_WillStart)
 			{
 				if (idx == G::I().GetOpId(OP_ID::Tab))
 				{
-					m_TabCountAtLineBegin++;
+					m_curBlkState->m_TabCountAtLineBegin++;
 					continue;
 				}
 				else
 				{
-					m_NewLine_WillStart = false;
+					m_curBlkState->m_NewLine_WillStart = false;
 				}
 			}
 			AST::Operator* op = nil;
@@ -227,50 +229,102 @@ bool Parser::Compile(char* code, int size)
 			}
 			if (op)
 			{
-				op->SetHint(one.lineStart, one.lineEnd, one.charPos);
-				while (!m_ops.empty())
-				{
-					auto top = m_ops.top();
-					OpAction topAct = OpAct(top->getOp());
-					OpAction cur_opAct = OpAct(op->getOp());
-					short lastToken = get_last_token();
-					//check this case .[test1,test2](....)
-					//after . it is a ops,not var
-					if (lastToken!=top->getOp() 
-						&& top->m_type != AST::ObType::Pair 
-						&& topAct.precedence> cur_opAct.precedence)
-					{
-						DoOpTop(m_operands, m_ops);
-					}
-					else
-					{
-						break;
-					}
+				auto pBlockOp = dynamic_cast<AST::Block*>(op);
+				if (pBlockOp)
+				{//will be used in NewLine function
+					m_lastComingBlock = pBlockOp;
 				}
-				m_ops.push(op);
+				op->SetHint(one.lineStart, one.lineEnd, one.charPos);
+				//todo:
+				{
+					m_curBlkState->ProcessPrecedenceOp(
+						get_last_token(), op);
+					m_curBlkState->PushOp(op);
+				}
 				push_preceding_token(idx);
-			}
-			else
-			{//may meet ')',']','}', no OP here, already evaluated as an operand
-				//push_preceding_token(TokenID);
 			}
 		}
 	}
 	NewLine();//just call it to process the last line
 	while (m_stackBlocks.size() > 1)
 	{
+		auto top = m_stackBlocks.top();
 		m_stackBlocks.pop();//only keep top one
+		delete top;
 	}
 	return true;
 }
 
 void Parser::ResetForNewLine()
 {
-	m_NewLine_WillStart = true;
-	m_TabCountAtLineBegin = 0;
-	m_LeadingSpaceCountAtLineBegin = 0;
+	m_curBlkState->m_NewLine_WillStart = true;
+	m_curBlkState->m_TabCountAtLineBegin = 0;
+	m_curBlkState->m_LeadingSpaceCountAtLineBegin = 0;
 }
-
+void Parser::LineOpFeedIntoBlock(AST::Expression* line,
+	AST::Indent& lineIndent)
+{
+	auto* pCurBlockState = m_stackBlocks.top();
+	auto curBlock = pCurBlockState->Block();
+	auto indentCnt_CurBlock = 
+		curBlock->GetIndentCount();
+	if (curBlock->IsNoIndentCheck()
+		|| indentCnt_CurBlock < lineIndent)
+	{
+		auto child_indent_CurBlock =
+			curBlock->GetChildIndentCount();
+		if (child_indent_CurBlock == AST::Indent{ 0,-1, -1 })
+		{
+			curBlock->SetChildIndentCount(lineIndent);
+			curBlock->Add(line);
+		}
+		else if (child_indent_CurBlock == lineIndent)
+		{
+			curBlock->Add(line);
+		}
+		else if (curBlock->IsNoIndentCheck())
+		{
+			curBlock->Add(line);
+		}
+		else
+		{
+			//error
+		}
+	}
+	else
+	{//go back to parent
+		delete m_stackBlocks.top();
+		m_stackBlocks.pop();
+		curBlock = nil;
+		while (!m_stackBlocks.empty())
+		{
+			pCurBlockState = m_stackBlocks.top();
+			curBlock = pCurBlockState->Block();
+			auto indentCnt = 
+				curBlock->GetChildIndentCount();
+			//must already have child lines or block
+			if (curBlock->IsNoIndentCheck()
+				|| indentCnt == lineIndent)
+			{
+				m_curBlkState = pCurBlockState;
+				break;
+			}
+			else
+			{
+				delete pCurBlockState;
+				m_stackBlocks.pop();
+			}
+		}
+		if (curBlock != nil)
+		{
+			curBlock->Add(line);
+		}
+		else
+		{
+			//TODO:: error
+		}
+	}
+}
 void Parser::NewLine()
 {
 	short lastToken = get_last_token();
@@ -278,16 +332,17 @@ void Parser::NewLine()
 	{
 		return;
 	}
-	if (!m_ops.empty())
+	if (!m_curBlkState->IsOpStackEmpty())
 	{
-		auto top = m_ops.top();
+		auto top = m_curBlkState->OpTop();
 		short topIdx = top->getOp();
-		if (m_pair_cnt > 0 && m_lambda_pair_cnt ==0)
+		if (m_curBlkState->PairCount() > 0 
+			/* && m_lambda_pair_cnt == 0*/)
 		{//line continue
 			if (topIdx == G::I().GetOpId(OP_ID::Slash))
 			{
 				delete top;
-				m_ops.pop();
+				m_curBlkState->OpPop();
 				pop_preceding_token();//pop Slash
 			}
 			return;
@@ -295,132 +350,114 @@ void Parser::NewLine()
 		else if (topIdx == G::I().GetOpId(OP_ID::Slash))
 		{//line continue
 			delete top;
-			m_ops.pop();
+			m_curBlkState->OpPop();
 			pop_preceding_token();//pop Slash
 			return;
 		}
 		else if (topIdx == G::I().GetOpId(OP_ID::Colon))
 		{//end block head
-			delete m_ops.top();
-			m_ops.pop();
+			delete top;
+			m_curBlkState->OpPop();
 		}
-		while (!m_ops.empty())
+		while (!m_curBlkState->IsOpStackEmpty())
 		{
-			DoOpTop(m_operands, m_ops);
+			m_curBlkState->DoOpTop();
 		}
 	}
-	if (!m_operands.empty() && !m_stackBlocks.empty())
+	if (!m_curBlkState->IsOperandStackEmpty()
+		&& !m_stackBlocks.empty())
 	{
-		auto line = m_operands.top();
+		auto line = m_curBlkState->OperandTop();
 		int startLine = line->GetStartLine();
-		m_operands.pop();
+		m_curBlkState->OperandPop();
 
 		int leftMostCharPos = line->GetLeftMostCharPos();
 		AST::Indent lineIndent = { leftMostCharPos,
-			m_TabCountAtLineBegin,m_LeadingSpaceCountAtLineBegin };
-		auto curBlock = m_stackBlocks.top();
-		auto indentCnt_CurBlock = curBlock->GetIndentCount();
-		if (curBlock->IsNoIndentCheck() 
-			|| indentCnt_CurBlock < lineIndent)
+			m_curBlkState->m_TabCountAtLineBegin,
+			m_curBlkState->m_LeadingSpaceCountAtLineBegin };
+		LineOpFeedIntoBlock(line, lineIndent);
+		if(m_lastComingBlock)
 		{
-			auto child_indent_CurBlock = 
-				curBlock->GetChildIndentCount();
-			if (child_indent_CurBlock == AST::Indent{0,-1, -1})
-			{
-				curBlock->SetChildIndentCount(lineIndent);
-				curBlock->Add(line);
-			}
-			else if (child_indent_CurBlock == lineIndent)
-			{
-				curBlock->Add(line);
-			}
-			else if(curBlock->IsNoIndentCheck())
-			{
-				curBlock->Add(line);
-			}
-			else
-			{
-				//error
-			}
+			auto pOpBlock = m_lastComingBlock;
+			m_lastComingBlock = nullptr;
+			pOpBlock->SetIndentCount(lineIndent);
+			BlockState* pBlockState = new BlockState(pOpBlock);
+			m_stackBlocks.push(pBlockState);
+			m_curBlkState = pBlockState;
 		}
-		else
-		{//go back to parent
-			m_stackBlocks.pop();
-			curBlock = nil;
-			while (!m_stackBlocks.empty())
-			{
-				curBlock = m_stackBlocks.top();
-				auto indentCnt = curBlock->GetChildIndentCount();
-				//must already have child lines or block
-				if (curBlock->IsNoIndentCheck() 
-					|| indentCnt == lineIndent)
-				{
-					break;
-				}
-				m_stackBlocks.pop();
-			}
-			if (curBlock!=nil)
-			{
-				curBlock->Add(line);
-			}
-			else
-			{
-				//TODO:: error
-			}
-		}
+#if __TODO__
 		//check if this is a block
-		AST::Block* pValidBlock = dynamic_cast<AST::Block*>(line);
+		AST::Block* pValidBlock = nil;
+		if (m_lastIsLambdaBlock)
+		{
+			pValidBlock = dynamic_cast<AST::Block*>(
+				m_lastIsLambdaBlock);
+			m_lastIsLambdaBlock = nil;//reset after push into block stack
+		}
+		else 
+		{
+			pValidBlock = dynamic_cast<AST::Block*>(line);
+		}
 		if (pValidBlock)
 		{
 			pValidBlock->SetIndentCount(lineIndent);
 			PushBlockStack(pValidBlock);
 		}
+#endif
 	}
 	ResetForNewLine();
 }
 void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
+	PairInfo pairInfo = m_stackPair.top();
+	m_stackPair.pop();
 	if (leftOpToMeetAsEnd == OP_ID::Curlybracket_L)
 	{
-		while (!m_stackBlocks.empty())
+		int cbId = G::I().GetOpId(OP_ID::Curlybracket_L);
+		if (pairInfo.opid == cbId && pairInfo.IsLambda)
 		{
-			auto blk = m_stackBlocks.top();
-			m_stackBlocks.pop();
-			if (blk->IsNoIndentCheck())
+			if(!m_stackBlocks.empty())
 			{
-				break;
+				auto blk = m_stackBlocks.top();
+				m_stackBlocks.pop();
+				delete blk;
 			}
+			if (!m_stackBlocks.empty())
+			{
+				m_curBlkState = m_stackBlocks.top();
+			}
+			//push_preceding_token(TokenID);
+			DecLambdaPairCnt();
+			m_curBlkState->DecPairCnt();
+			return;
 		}
-		push_preceding_token(TokenID);
-		DecLambdaPairCnt();
-		DecPairCnt();
-		return;
 	}
 	short lastToken = get_last_token();
 	short pairLeftToken = G::I().GetOpId(leftOpToMeetAsEnd);
 	bool bEmptyPair = (lastToken == pairLeftToken);
-	DecPairCnt();
+	m_curBlkState->DecPairCnt();
 	AST::PairOp* pPair = nil;
-	while (!m_ops.empty())
+	while (!m_curBlkState->IsOpStackEmpty())
 	{
-		auto top = m_ops.top();
+		auto top = m_curBlkState->OpTop();
 		if (top->getOp() == pairLeftToken)
 		{
 			pPair = (AST::PairOp*)top;
-			m_ops.pop();
+			m_curBlkState->OpPop();
 			break;
 		}
 		else
 		{
-			DoOpTop(m_operands, m_ops);
+			m_curBlkState->DoOpTop();
 		}
 	}
 	if (!bEmptyPair)
 	{
-		if (!m_operands.empty() && pPair != nil)
+		if (!m_curBlkState->IsOperandStackEmpty() 
+			&& pPair != nil)
 		{
-			pPair->SetR(m_operands.top());
-			m_operands.pop();
+			pPair->SetR(m_curBlkState->OperandTop());
+			m_curBlkState->OperandPop();
 		}
 	}
 	if (pPair)
@@ -428,22 +465,22 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 		//for case [](x,y), [] will change ('s PrecedingToken to TokenID
 		if (pPair->GetPrecedingToken() == TokenID)
 		{
-			if (!m_operands.empty())
+			if (!m_curBlkState->IsOperandStackEmpty())
 			{
-				pPair->SetL(m_operands.top());
-				m_operands.pop();
+				pPair->SetL(m_curBlkState->OperandTop());
+				m_curBlkState->OperandPop();
 			}
 		}
-		m_operands.push(pPair);
+		m_curBlkState->PushExp(pPair);
 	}
 	//already evaluated as an operand
 	push_preceding_token(TokenID);
 }
 bool Parser::LastIsLambda()
 {//check (...){ } pattern, but not like func(....){ }
-	if (!m_operands.empty())
+	if (!m_curBlkState->IsOperandStackEmpty())
 	{//check (...){ } pattern, but not like func(....){ }
-		auto lastOpernad = m_operands.top();
+		auto lastOpernad = m_curBlkState->OperandTop();
 		if (lastOpernad->m_type == AST::ObType::Pair)
 		{
 			AST::PairOp* pPair = (AST::PairOp*)lastOpernad;
@@ -463,19 +500,32 @@ AST::Operator* Parser::PairLeft(short opIndex)
 	short lastToken = get_last_token();
 	if (lastToken == TokenID && LastIsLambda())
 	{
+		m_stackPair.push(PairInfo{ (int)opIndex,true });
 		auto op = new AST::Func();
+		op->NeedSetHint(true);
 		op->SetNoIndentCheck(true);
-		m_ops.push(op);
+		m_curBlkState->PushOp(op);
 		push_preceding_token(opIndex);
-		NewLine();
-		IncPairCnt();
+		BlockState* pBlockState = new BlockState(op);
+		m_stackBlocks.push(pBlockState);
+		m_curBlkState = pBlockState;
+		
+#if __TODO__
 		IncLambdaPairCnt();
+		//call below, push out all ops before lamdba
+		NewLine();
+		m_curBlkState->IncPairCnt();
+		//IncLambdaPairCnt();
 		PushBlockStack(op);
+		NewLine();
+		m_lastIsLambdaBlock = op;
+#endif
 		return nil;
 	}
 	else
 	{
-		IncPairCnt();
+		m_stackPair.push(PairInfo{ (int)opIndex,false });
+		m_curBlkState->IncPairCnt();
 		auto op = new AST::PairOp(opIndex, lastToken);
 		return op;
 	}
@@ -487,7 +537,8 @@ bool Parser::Run()
 		return false;//empty
 	}
 	Runtime* pRuntime = new Runtime();
-	AST::Module* pTopModule = (AST::Module*)m_stackBlocks.top();
+	BlockState* pBlockState = m_stackBlocks.top();
+	AST::Module* pTopModule = (AST::Module*)pBlockState->Block();
 	pRuntime->SetM(pTopModule);
 	pTopModule->AddBuiltins(pRuntime);
 	AST::Value v;
