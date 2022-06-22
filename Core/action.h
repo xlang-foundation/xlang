@@ -4,14 +4,8 @@
 #include "def.h"
 #include "parser.h"
 
-namespace X {
-	struct OpInfo
-	{
-		int id;
-		std::string name;
-		OpAction act;
-	};
-
+namespace X 
+{
 	class RegOP
 	{
 		std::vector<std::string> ops;
@@ -76,7 +70,4 @@ namespace X {
 		}
 	};
 	void BuildOps();
-	void MakeLexTree(std::vector<OpInfo>& opList,
-		std::vector<short>& buffer,
-		std::vector<OpAction>& opActions);
 }

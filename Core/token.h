@@ -159,8 +159,6 @@ class Token
 	std::vector<OneToken> m_tokens;
 	std::vector<TokenErrorInfo> m_errorInfos;
 	void Scan();
-	void Scan2();
-	short Scan1(String& id, int& leadingSpaceCnt);
 
 public:
 	Token(short* kwTree)

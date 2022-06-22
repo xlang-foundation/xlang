@@ -7,6 +7,7 @@
 #include "xclass.h"
 #include "package.h"
 #include "dotop.h"
+#include "lex.h"
 
 namespace X {
 
@@ -329,7 +330,9 @@ void BuildOps()
 {
 	Register();
 	RegisterOps();
-	MakeLexTree(RegOP::OPList,G::I().GetKwTree(),
+	Lex<OpInfo, OpAction>().MakeLexTree(
+		RegOP::OPList,
+		G::I().GetKwTree(),
 		G::I().GetOpActions());
 }
 RegOP& RegOP::SetId(OP_ID id)

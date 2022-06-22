@@ -70,5 +70,10 @@ struct OpAction
 	BinaryOpProc binaryop = nil;
 	int precedence = Precedence_Reqular;
 };
-
+struct OpInfo
+{
+	int id;
+	std::string name;
+	OpAction act;
+};
 }
