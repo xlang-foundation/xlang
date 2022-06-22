@@ -3,24 +3,21 @@ import http
 #from python import numpy as np,os,cv2 as cv 
 print("http Server Started")
 srv = http.Server()
-handler = (res){
+srv.get("/hi",(res){
   print("Hi from http server")
   res.set_content("Hello World!\n","text/plain");
-}
-srv.get("/hi",handler)
+})
 
-handler2 = (res){
+srv.get("/slow",(res){
   print("Slow from http server")
   sleep(1000)
   res.set_content("Slow...\n", "text/plain");
-}
-srv.get("/slow",handler2)
+})
 
-handler3 = (res){
+srv.get("/stop",(res){
   print("stop....")
   srv.stop();
-}
-srv.get("/stop",handler3)
+})
 
 srv.listen("localhost", 8080)
 print("Http Server Stopped")

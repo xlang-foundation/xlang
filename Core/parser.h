@@ -23,6 +23,10 @@ struct PairInfo
 	int opid;
 	bool IsLambda = false;
 };
+struct LineInfo
+{
+
+};
 class Parser
 {
 	Token* mToken = nil;
@@ -72,7 +76,7 @@ private:
 	void LineOpFeedIntoBlock(AST::Expression* line,
 		AST::Indent& lineIndent);
 public:
-	void NewLine();
+	void NewLine(bool checkIfIsLambda = true);
 	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
 	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'
 	inline void IncLambdaPairCnt() { m_lambda_pair_cnt++; }

@@ -6,7 +6,7 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "X.exe",
-      "args": [ "C:/Dev/X/test/test1.py" ],
+      "args": [ "C:/Dev/X/test/module.py" ],
       "name": "X.exe"
     }
   ]

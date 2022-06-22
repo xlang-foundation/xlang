@@ -1,4 +1,4 @@
-f = (x,y)
+f = (x=1,y)
 {
     print("xy=",x,y);
     return x*y+1;

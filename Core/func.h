@@ -20,6 +20,8 @@ protected:
 	String m_Name = { nil,0 };
 	int m_Index = -1;//index for this Var,set by compiling
 	int m_positionParamCnt = 0;
+	int m_paramStartIndex = 0;
+	int m_IndexOfThis = -1;//for THIS pointer
 	bool m_needSetHint = false;
 	Expression* Name = nil;
 	List* Params = nil;

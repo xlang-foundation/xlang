@@ -157,6 +157,7 @@ bool Parser::Compile(char* code, int size)
 		int leadingSpaceCnt = 0;
 		OneToken one;
 		short idx = mToken->Get(one);
+		int startLine = one.lineStart;
 		s = one.id;
 		leadingSpaceCnt = one.leadingSpaceCnt;
 		if (m_curBlkState->m_NewLine_WillStart)
@@ -188,20 +189,20 @@ bool Parser::Compile(char* code, int size)
 			long long llVal = 0;
 			ParseState st = ParseNumber(s, dVal, llVal);
 			AST::Expression* v = nil;
-			if (st == ParseState::Double)
+			switch (st)
 			{
+			case X::ParseState::Double:
 				idx = TokenNum;
 				v = new AST::Double(dVal);
-			}
-			else if (st == ParseState::Long_Long)
-			{
+				break;
+			case X::ParseState::Long_Long:
 				idx = TokenNum;
 				v = new AST::Number(llVal, s.size);
-			}
-			else
-			{
+				break;
+			default:
 				//Construct AST::Var
 				v = new AST::Var(s);
+				break;
 			}
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
 			m_curBlkState->PushExp(v);
@@ -235,12 +236,9 @@ bool Parser::Compile(char* code, int size)
 					m_lastComingBlock = pBlockOp;
 				}
 				op->SetHint(one.lineStart, one.lineEnd, one.charPos);
-				//todo:
-				{
-					m_curBlkState->ProcessPrecedenceOp(
+				m_curBlkState->ProcessPrecedenceOp(
 						get_last_token(), op);
-					m_curBlkState->PushOp(op);
-				}
+				m_curBlkState->PushOp(op);
 				push_preceding_token(idx);
 			}
 		}
@@ -325,10 +323,12 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		}
 	}
 }
-void Parser::NewLine()
+void Parser::NewLine(bool checkIfIsLambda)
 {
 	short lastToken = get_last_token();
-	if (lastToken == TokenID && LastIsLambda())
+	if (checkIfIsLambda && 
+		lastToken == TokenID 
+		&& LastIsLambda())
 	{
 		return;
 	}
@@ -385,25 +385,6 @@ void Parser::NewLine()
 			m_stackBlocks.push(pBlockState);
 			m_curBlkState = pBlockState;
 		}
-#if __TODO__
-		//check if this is a block
-		AST::Block* pValidBlock = nil;
-		if (m_lastIsLambdaBlock)
-		{
-			pValidBlock = dynamic_cast<AST::Block*>(
-				m_lastIsLambdaBlock);
-			m_lastIsLambdaBlock = nil;//reset after push into block stack
-		}
-		else 
-		{
-			pValidBlock = dynamic_cast<AST::Block*>(line);
-		}
-		if (pValidBlock)
-		{
-			pValidBlock->SetIndentCount(lineIndent);
-			PushBlockStack(pValidBlock);
-		}
-#endif
 	}
 	ResetForNewLine();
 }
@@ -426,6 +407,7 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 			{
 				m_curBlkState = m_stackBlocks.top();
 			}
+			NewLine(false);
 			//push_preceding_token(TokenID);
 			DecLambdaPairCnt();
 			m_curBlkState->DecPairCnt();
@@ -478,6 +460,7 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 }
 bool Parser::LastIsLambda()
 {//check (...){ } pattern, but not like func(....){ }
+	bool IsLambda = false;
 	if (!m_curBlkState->IsOperandStackEmpty())
 	{//check (...){ } pattern, but not like func(....){ }
 		auto lastOpernad = m_curBlkState->OperandTop();
@@ -487,11 +470,35 @@ bool Parser::LastIsLambda()
 			if (pPair->getOp() == G::I().GetOpId(OP_ID::Parenthesis_L)
 				&& pPair->GetL() == nil)
 			{
-				return true;
+				auto p_r = pPair->GetR();
+				if (p_r)
+				{
+					if (p_r->m_type == AST::ObType::List)
+					{
+						IsLambda = true;
+						auto& list = ((AST::List*)p_r)->GetList();
+						for (auto i : list)
+						{
+							if (i->m_type != AST::ObType::Var &&
+								i->m_type != AST::ObType::Param &&
+								i->m_type != AST::ObType::Assign)
+							{
+								IsLambda = false;
+								break;
+							}
+						}
+					}
+					else if (p_r->m_type == AST::ObType::Var ||
+						p_r->m_type == AST::ObType::Param ||
+						p_r->m_type == AST::ObType::Assign)
+					{
+						IsLambda = true;
+					}
+				}
 			}
 		}
 	}
-	return false;
+	return IsLambda;
 }
 AST::Operator* Parser::PairLeft(short opIndex)
 {
@@ -509,17 +516,6 @@ AST::Operator* Parser::PairLeft(short opIndex)
 		BlockState* pBlockState = new BlockState(op);
 		m_stackBlocks.push(pBlockState);
 		m_curBlkState = pBlockState;
-		
-#if __TODO__
-		IncLambdaPairCnt();
-		//call below, push out all ops before lamdba
-		NewLine();
-		m_curBlkState->IncPairCnt();
-		//IncLambdaPairCnt();
-		PushBlockStack(op);
-		NewLine();
-		m_lastIsLambdaBlock = op;
-#endif
 		return nil;
 	}
 	else

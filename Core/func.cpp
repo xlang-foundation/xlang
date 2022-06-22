@@ -17,7 +17,7 @@ void Func::ScopeLayout()
 		//TODO: debug here
 		if (m_parent->m_type == ObType::Class)
 		{//it is class's member
-			AddOrGet(THIS, false);
+			m_IndexOfThis = AddOrGet(THIS, false);
 		}
 	}
 	//process parameters' default values
@@ -25,6 +25,8 @@ void Func::ScopeLayout()
 	{
 		auto& list = Params->GetList();
 		m_positionParamCnt = (int)list.size();
+		m_paramStartIndex = Scope::GetVarNum();//if some vars already pushed
+		//this case happened in lambda function
 		for (auto i : list)
 		{
 			std::string strVarName;
@@ -79,17 +81,16 @@ bool Func::Call(Runtime* rt,
 	std::unordered_map<std::string, AST::Value>& kwParams,
 	Value& retValue)
 {
-	static std::string THIS("this");
 	auto* pContextObj = (X::Data::Object*)pContext;
 	StackFrame* frame = new StackFrame(this);
 	rt->PushFrame(frame,GetVarNum());
 	//Add this if This is not null
-	int pre_item = 0;
-	if (pContextObj && pContextObj->GetType() == X::Data::Type::XClassObject)
+	int pre_item = m_paramStartIndex;
+	if (m_IndexOfThis >=0 &&
+		pContextObj && pContextObj->GetType() == X::Data::Type::XClassObject)
 	{
-		int thisIdx = AddOrGet(THIS, true);
 		Value v0(pContext);
-		Scope::Set(rt, pContext, thisIdx, v0);
+		Scope::Set(rt, pContext, m_IndexOfThis, v0);
 		pre_item++;
 	}
 	int num = m_positionParamCnt > (int)params.size() ?
