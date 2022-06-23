@@ -3,6 +3,7 @@
 #include "scope.h"
 #include "block.h"
 #include "var.h"
+#include "pair.h"
 
 namespace X
 {

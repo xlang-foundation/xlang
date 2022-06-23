@@ -293,7 +293,7 @@ void Register()
 		});
 	RegOP(";").SetProcess([](Parser* p, short opIndex)
 		{
-			p->NewLine();
+			p->NewLine(false);
 			return (AST::Operator*)nil;
 		});
 	RegOP("\n").SetProcess([](Parser* p, short opIndex)

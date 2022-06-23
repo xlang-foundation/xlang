@@ -41,7 +41,7 @@ Value& operator op (const Value& r)\
 
 
 #define COMPARE_OP(op)\
-bool operator op (const Value& r)\
+bool operator op (const Value& r) const\
 {\
 	bool bRet = false;\
 	switch (t)\
@@ -55,6 +55,9 @@ bool operator op (const Value& r)\
 		bRet = (x.d op ToDouble(r));\
 		break;\
 	case ValueType::Object:\
+		break;\
+	case ValueType::Str:\
+		bRet =true;\
 		break;\
 	default:\
 		break;\
@@ -167,6 +170,27 @@ public:
 	{
 		t = ValueType::Object;
 		x.p = p;
+	}
+	size_t Hash()
+	{
+		size_t h = 0;
+		switch (t)
+		{
+		case ValueType::Int64:
+			h = std::hash<long long>{}(x.l);
+			break;
+		case ValueType::Double:
+			h = std::hash<double>{}(x.d);
+			break;
+		case ValueType::Str:
+			h = std::hash<std::string>{}(std::string((char*)x.p,(size_t)flags));
+			break;
+		case ValueType::Object:
+			break;
+		default:
+			break;
+		}
+		return h;
 	}
 	Value(const Value& v)
 	{

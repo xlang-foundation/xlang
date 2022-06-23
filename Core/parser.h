@@ -18,11 +18,6 @@ enum class ParseState
 	Long_Long
 };
 
-struct PairInfo
-{
-	int opid;
-	bool IsLambda = false;
-};
 struct LineInfo
 {
 
@@ -70,13 +65,12 @@ class Parser
 
 	AST::Block* m_lastComingBlock = nullptr;
 	std::stack<BlockState*> m_stackBlocks;
-	std::stack<PairInfo> m_stackPair;
 private:
 	void ResetForNewLine();
 	void LineOpFeedIntoBlock(AST::Expression* line,
 		AST::Indent& lineIndent);
 public:
-	void NewLine(bool checkIfIsLambda = true);
+	void NewLine(bool checkIfIsLambdaOrPair = true);
 	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
 	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'
 	inline void IncLambdaPairCnt() { m_lambda_pair_cnt++; }

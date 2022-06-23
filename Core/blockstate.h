@@ -6,12 +6,19 @@
 //for compile not for runtime
 namespace X {
 	namespace AST { class Block; }
+
+struct PairInfo
+{
+	int opid;
+	bool IsLambda = false;
+};
 class BlockState
 {
 	AST::Block* m_pBlock = nullptr;
 	std::stack<AST::Expression*> m_operands;
 	std::stack<AST::Operator*> m_ops;
 	int m_pair_cnt = 0;//count for {} () and [],if
+	std::stack<PairInfo> m_stackPair;
 
 	inline OpAction OpAct(short idx)
 	{
@@ -27,6 +34,7 @@ public:
 	{
 		m_pBlock = pBlock;
 	}
+	std::stack<PairInfo>& StackPair() { return m_stackPair; }
 	AST::Block* Block() { return m_pBlock; }
 	inline void PushExp(AST::Expression* exp)
 	{

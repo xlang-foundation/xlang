@@ -241,6 +241,11 @@ public:
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
+	virtual void ScopeLayout() override
+	{
+		if (Name) Name->ScopeLayout();
+		if (Type) Type->ScopeLayout();
+	}
 };
 }
 }

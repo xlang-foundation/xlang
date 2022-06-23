@@ -323,21 +323,25 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		}
 	}
 }
-void Parser::NewLine(bool checkIfIsLambda)
+void Parser::NewLine(bool checkIfIsLambdaOrPair)
 {
 	short lastToken = get_last_token();
-	if (checkIfIsLambda && 
+	if (checkIfIsLambdaOrPair &&
 		lastToken == TokenID 
 		&& LastIsLambda())
 	{
 		return;
 	}
+	bool bInsideLambda = false;
+	if (m_curBlkState->StackPair().size() > 0)
+	{
+		bInsideLambda = m_curBlkState->StackPair().top().IsLambda;
+	}
 	if (!m_curBlkState->IsOpStackEmpty())
 	{
 		auto top = m_curBlkState->OpTop();
 		short topIdx = top->getOp();
-		if (m_curBlkState->PairCount() > 0 
-			/* && m_lambda_pair_cnt == 0*/)
+		if (!bInsideLambda && m_curBlkState->StackPair().size() > 0)
 		{//line continue
 			if (topIdx == G::I().GetOpId(OP_ID::Slash))
 			{
@@ -394,8 +398,8 @@ void Parser::NewLine(bool checkIfIsLambda)
 }
 void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
-	PairInfo pairInfo = m_stackPair.top();
-	m_stackPair.pop();
+	PairInfo pairInfo = m_curBlkState->StackPair().top();
+	m_curBlkState->StackPair().pop();
 	if (leftOpToMeetAsEnd == OP_ID::Curlybracket_L)
 	{
 		int cbId = G::I().GetOpId(OP_ID::Curlybracket_L);
@@ -411,7 +415,9 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 			{
 				m_curBlkState = m_stackBlocks.top();
 			}
-			NewLine(false);
+			//Close Lambda
+			m_curBlkState->DoOpTop();
+			//NewLine(false);
 			//push_preceding_token(TokenID);
 			DecLambdaPairCnt();
 			m_curBlkState->DecPairCnt();
@@ -515,7 +521,6 @@ AST::Operator* Parser::PairLeft(short opIndex)
 	short lastToken = get_last_token();
 	if (lastToken == TokenID && LastIsLambda())
 	{
-		m_stackPair.push(PairInfo{ (int)opIndex,true });
 		auto op = new AST::Func();
 		op->NeedSetHint(true);
 		op->SetNoIndentCheck(true);
@@ -524,11 +529,12 @@ AST::Operator* Parser::PairLeft(short opIndex)
 		BlockState* pBlockState = new BlockState(op);
 		m_stackBlocks.push(pBlockState);
 		m_curBlkState = pBlockState;
+		m_curBlkState->StackPair().push(PairInfo{ (int)opIndex,true });
 		return nil;
 	}
 	else
 	{
-		m_stackPair.push(PairInfo{ (int)opIndex,false });
+		m_curBlkState->StackPair().push(PairInfo{ (int)opIndex,false });
 		m_curBlkState->IncPairCnt();
 		auto op = new AST::PairOp(opIndex, lastToken);
 		return op;
