@@ -43,6 +43,20 @@ namespace X
 				}
 				return bOK;
 			}
+			virtual std::string ToString() override
+			{
+				std::string strOut = "{\n";
+				for (auto& it: mMap)
+				{
+					AST::Value key = it.first;
+					std::string strKey = key.ToString();
+					AST::Value Val = it.second;
+					std::string strVal = Val.ToString();
+					strOut += "\t" + strKey+ ":"+ strVal +"\n";
+				}
+				strOut += "}";
+				return strOut;
+			}
 			virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
 				std::unordered_map<std::string, AST::Value>& kwParams,
 				AST::Value& retValue) override

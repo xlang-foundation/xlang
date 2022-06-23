@@ -1,6 +1,7 @@
 """File Name: test.json """ 
 x = {
 	"glossary": {
+		"GlossSeeAlso": [ "GML", "XML" ],
 		"title": "example glossary",
 		"GlossDiv": {
 			"title": "S",
@@ -13,8 +14,8 @@ x = {
 					Language",
 					"Acronym": "SGML",
 					"Abbrev": "ISO 8879:1986",
-					"GlossDef": {
-						"para": "A meta-markup language, used to create markup languages such as DocBook.",
+					"Glossdef": {
+						"para0": "A meta-markup language, used to create markup languages such as DocBook.",
 						"GlossSeeAlso": [ "GML", "XML" ]
 					},
 					"GlossSee": "markup"
@@ -22,4 +23,5 @@ x = {
 			}
 		}
 	}
-} print(x)
+} 
+print(x["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"]["Glossdef"])
