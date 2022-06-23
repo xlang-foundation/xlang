@@ -6,6 +6,14 @@ namespace X
 {
 namespace Text 
 {
+	enum class OP_ID
+	{
+		Colon,
+		SemiColon,
+		Curlybracket_L, Curlybracket_R,
+		Brackets_L, Brackets_R,
+		Count
+	};
 	std::vector<JsonOpInfo> Json::OPList =
 	{
 		{0,":"},{1,","},
@@ -43,12 +51,10 @@ namespace Text
 	{
 		while (true)
 		{
-			String s;
-			int leadingSpaceCnt = 0;
 			OneToken one;
 			short idx = mToken->Get(one);
 			int startLine = one.lineStart;
-			s = one.id;
+			String s = one.id;
 			if (idx == TokenEOS)
 			{
 				break;

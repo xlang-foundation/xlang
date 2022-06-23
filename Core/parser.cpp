@@ -359,6 +359,10 @@ void Parser::NewLine(bool checkIfIsLambda)
 			delete top;
 			m_curBlkState->OpPop();
 		}
+		else if (topIdx == G::I().GetOpId(OP_ID::Comma))
+		{
+			return;
+		}
 		while (!m_curBlkState->IsOpStackEmpty())
 		{
 			m_curBlkState->DoOpTop();
@@ -494,6 +498,10 @@ bool Parser::LastIsLambda()
 					{
 						IsLambda = true;
 					}
+				}
+				else
+				{//no parameters
+					IsLambda = true;
 				}
 			}
 		}

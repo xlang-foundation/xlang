@@ -19,7 +19,7 @@ void RunCore(std::string& code)
 	X::PyClose(h);
 }
 
-int main(int argc, char* argv[])
+int main1(int argc, char* argv[])
 {
 	std::string jsonFileName = "C:/Dev/X/test/test.json";
 	if (argc >= 2)
@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main2(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	std::string pyFileName = "C:/Dev/X/test/test2.py";
 	if (argc >= 2)

@@ -1,7 +1,9 @@
 class base_class():
     prop0:str="prop0_value"
-    def test():
-        print("from base_class's test()")
+    def test(x,y):
+        print("from base_class's test():",x,y)
+b = base_class()
+b.test(10,20)
 
 class another_class():
     prop0:str="prop0_value"
@@ -22,8 +24,8 @@ class test_class(base_class,another_class):
      print("method1->prop1:",k[0],",",k[1])
      return x+y+time()
 
- def method2(z):
-     print("method2:",z)
+ def method2(z,l):
+     print("method2:",z,",l=",l)
      return rand()
 
 x0 = test_class()

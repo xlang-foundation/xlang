@@ -73,12 +73,18 @@ public:
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands)
 	{
-		auto operandR = operands.top();
-		operands.pop();
-		SetR(operandR);
-		auto operandL = operands.top();
-		operands.pop();
-		SetL(operandL);
+		if (!operands.empty())
+		{
+			auto operandR = operands.top();
+			operands.pop();
+			SetR(operandR);
+		}
+		if (!operands.empty())
+		{
+			auto operandL = operands.top();
+			operands.pop();
+			SetL(operandL);
+		}
 		operands.push(this);
 		return true;
 	}

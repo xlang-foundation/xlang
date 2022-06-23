@@ -313,6 +313,7 @@ void Register()
 	RegOP("{").SetId(OP_ID::Curlybracket_L);
 	RegOP("\\").SetId(OP_ID::Slash);
 	RegOP(":").SetId(OP_ID::Colon);
+	RegOP(",").SetId(OP_ID::Comma);
 	RegOP("\t").SetId(OP_ID::Tab);
 
 	RegOP("[", "]", "{", "}", "(",")")

@@ -6,7 +6,7 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "X.exe",
-      "args": [ "C:/Dev/X/test/test.json" ],
+      "args": [ "C:/Dev/X/test/class.py" ],
       "name": "X.exe"
     }
   ]

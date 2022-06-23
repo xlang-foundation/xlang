@@ -19,23 +19,9 @@ enum class OP_ID
 	Curlybracket_L,
 	Slash,
 	Colon,
+	Comma,
 	Tab,
 	Count
-};
-enum class Alias1
-{
-	None,
-	Colon,
-	Comma,
-	OP_LR,//operator with Left and right parameter
-	OP_R,//right parameter only
-	OP_N,//No parameter
-	Parenthesis_L,
-	Brackets_L,
-	Curlybracket_L,
-	Tab,
-	CR,//'\r'
-	Slash
 };
 
 class Parser;

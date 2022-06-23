@@ -2,6 +2,8 @@
 #include "var.h"
 #include "object.h"
 #include "def.h"
+#include "dict.h"
+
 namespace X
 {
 namespace AST
@@ -184,7 +186,19 @@ bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 }
 bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 {
-	bool bOK = false;
+	bool bOK = true;
+	if (R->m_type == ObType::List)
+	{
+		auto& list = ((AST::List*)R)->GetList();
+		for (auto& i : list)
+		{
+
+		}
+	}
+	else
+	{
+
+	}
 
 	return bOK;
 }
@@ -268,18 +282,28 @@ bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
 
 bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 {
+	AST::List* list = nil;
+
 	auto operandR = operands.top();
 	operands.pop();
-	auto operandL = operands.top();
-	operands.pop();
-	AST::List* list = nil;
-	if (operandL->m_type != AST::ObType::List)
+
+	//L may be not there
+	if (!operands.empty())
 	{
-		list = new AST::List(operandL);
+		auto operandL = operands.top();
+		operands.pop();
+		if (operandL->m_type != AST::ObType::List)
+		{
+			list = new AST::List(operandL);
+		}
+		else
+		{
+			list = (AST::List*)operandL;
+		}
 	}
 	else
 	{
-		list = (AST::List*)operandL;
+		list = new AST::List();
 	}
 	if (operandR->m_type != AST::ObType::List)
 	{

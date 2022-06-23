@@ -76,6 +76,8 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 	bool bOk = true;
 	for (auto i : Body)
 	{
+		//int line = i->GetStartLine();
+		//std::cout << "Run Line:" << line <<std::endl;
 		Value v0;
 		bOk = i->Run(rt,pContext, v0);
 		if (!bOk)

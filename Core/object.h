@@ -13,6 +13,7 @@ namespace Data {
 	enum class Type
 	{
 		Base,
+		Str,
 		Expr,
 		Function,
 		MetaFunction,
@@ -322,24 +323,6 @@ namespace Data {
 				v = v0;
 				if (lValue) *lValue = &v0;
 			}
-			return true;
-		}
-	};
-	class Dict :
-		public Object
-	{
-	protected:
-		std::vector<Object*> m_bases;
-		std::vector<std::string> m_keys;
-	public:
-		Dict()
-		{
-			m_t = Type::Dict;
-		}
-		virtual bool Call(void* pLineExpr, std::vector<AST::Value>& params,
-			std::unordered_map<std::string, AST::Value>& kwParams,
-			AST::Value& retValue)
-		{
 			return true;
 		}
 	};

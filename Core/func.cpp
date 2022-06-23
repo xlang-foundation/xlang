@@ -85,19 +85,17 @@ bool Func::Call(Runtime* rt,
 	StackFrame* frame = new StackFrame(this);
 	rt->PushFrame(frame,GetVarNum());
 	//Add this if This is not null
-	int pre_item = m_paramStartIndex;
 	if (m_IndexOfThis >=0 &&
 		pContextObj && pContextObj->GetType() == X::Data::Type::XClassObject)
 	{
 		Value v0(pContext);
 		Scope::Set(rt, pContext, m_IndexOfThis, v0);
-		pre_item++;
 	}
 	int num = m_positionParamCnt > (int)params.size() ?
 		(int)params.size() : m_positionParamCnt;
 	for (int i = 0; i < num; i++)
 	{
-		Scope::Set(rt, pContext, pre_item + i, params[i]);
+		Scope::Set(rt, pContext, m_paramStartIndex + i, params[i]);
 	}
 
 	Value v0;
