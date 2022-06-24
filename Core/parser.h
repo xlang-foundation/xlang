@@ -7,16 +7,9 @@
 #include "def.h"
 #include "block.h"
 #include "blockstate.h"
+#include "number.h"
 
 namespace X {
-enum class ParseState
-{
-	Wrong_Fmt,
-	Null,
-	Non_Number,
-	Double,
-	Long_Long
-};
 
 struct LineInfo
 {
@@ -26,9 +19,6 @@ class Parser
 {
 	Token* mToken = nil;
 	BlockState* m_curBlkState = nil;
-	ParseState ParseHexBinOctNumber(String& str);
-	ParseState ParseNumber(String& str, double& dVal, long long& llVal);
-
 	inline bool LastIsLambda();
 //for compile
 	int m_lambda_pair_cnt = 0;

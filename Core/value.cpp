@@ -1,6 +1,12 @@
 #include "value.h"
 #include "object.h"
 namespace X {namespace AST {
+	
+	ARITH_OP_IMPL(+= )
+	ARITH_OP_IMPL(-= )
+	ARITH_OP_IMPL(*= )
+	ARITH_OP_IMPL(/= )
+
 	std::string Value::ToString()
 	{
 		std::string str;

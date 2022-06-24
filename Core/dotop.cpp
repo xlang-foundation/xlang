@@ -1,6 +1,7 @@
 #include "dotop.h"
 #include "object.h"
 #include "var.h"
+#include "number.h"
 
 namespace X
 {
@@ -231,6 +232,43 @@ bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 	if (!L || !R)
 	{
 		return false;
+	}
+	if (L->m_type == ObType::Number)
+	{	
+		Number* pLeftNum = (Number*)L;
+		double dValue = pLeftNum->GetVal();
+		double fraction = 0;
+		int digiNum = 0;
+		if (R->m_type == ObType::Number)
+		{
+			Number* pNum = (Number*)R;
+			fraction = pNum->GetVal();
+			digiNum = pNum->GetDigiNum();
+		}
+		else if(R->m_type == ObType::Var)
+		{
+			String name = ((Var*)R)->GetName();
+			double dVal =0;
+			long long llVal =0;
+			ParseState st = ParseNumber(name, dVal, llVal);
+			if (st == ParseState::Long_Long)
+			{
+				digiNum = (int)dVal;
+				fraction = llVal;
+			}
+		}
+		else
+		{//TODO: error
+			return false;
+		}
+		//TODO:optimize here
+		for (int i = 0; i < digiNum; i++)
+		{
+			fraction /= 10;
+		}
+		dValue += fraction;
+		v = Value(dValue);
+		return true;
 	}
 	Value v_l;
 	if (!L->Run(rt, pContext, v_l) || !v_l.IsObject())

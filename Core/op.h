@@ -11,6 +11,7 @@ class Operator :
 {
 protected:
 	short Op;//index of _kws
+	OP_ID opId = OP_ID::None;
 public:
 	Operator()
 	{
@@ -20,7 +21,8 @@ public:
 	{
 		Op = op;
 	}
-
+	inline void SetId(OP_ID id) { opId = id; }
+	inline OP_ID GetId() { return opId; }
 	inline short getOp(){return Op;}
 	virtual void SetL(Expression* l) {}
 	virtual void SetR(Expression* r) {}
@@ -172,11 +174,79 @@ public:
 		{
 			if (lValue_L)
 			{
-				*lValue_L = v_r;
+				switch (opId)
+				{
+				case X::OP_ID::Equ:
+					*lValue_L = v_r;
+					break;
+				case X::OP_ID::AddEqu:
+					*lValue_L += v_r;
+					break;
+				case X::OP_ID::MinusEqu:
+					break;
+				case X::OP_ID::MulEqu:
+					break;
+				case X::OP_ID::DivEqu:
+					break;
+				case X::OP_ID::ModEqu:
+					break;
+				case X::OP_ID::FloorDivEqu:
+					break;
+				case X::OP_ID::PowerEqu:
+					break;
+				case X::OP_ID::AndEqu:
+					break;
+				case X::OP_ID::OrEqu:
+					break;
+				case X::OP_ID::NotEqu:
+					break;
+				case X::OP_ID::RightShiftEqu:
+					break;
+				case X::OP_ID::LeftShitEqu:
+					break;
+				case X::OP_ID::Count:
+					break;
+				default:
+					break;
+				}
 			}
 			else
 			{
-				L->Set(rt,pContext, v_r);
+				switch (opId)
+				{
+				case X::OP_ID::Equ:
+					L->Set(rt, pContext, v_r);
+					break;
+				case X::OP_ID::AddEqu:
+					v_l += v_r;
+					break;
+				case X::OP_ID::MinusEqu:
+					break;
+				case X::OP_ID::MulEqu:
+					break;
+				case X::OP_ID::DivEqu:
+					break;
+				case X::OP_ID::ModEqu:
+					break;
+				case X::OP_ID::FloorDivEqu:
+					break;
+				case X::OP_ID::PowerEqu:
+					break;
+				case X::OP_ID::AndEqu:
+					break;
+				case X::OP_ID::OrEqu:
+					break;
+				case X::OP_ID::NotEqu:
+					break;
+				case X::OP_ID::RightShiftEqu:
+					break;
+				case X::OP_ID::LeftShitEqu:
+					break;
+				case X::OP_ID::Count:
+					break;
+				default:
+					break;
+				}
 			}
 		}
 		return true;

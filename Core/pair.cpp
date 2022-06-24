@@ -229,6 +229,7 @@ bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 		default:
 			break;
 		}
+		std::string strKey = Key.ToString();
 		pDict->Set(Key, Val);
 	};
 	if (R->m_type == ObType::List)
@@ -249,17 +250,19 @@ bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 bool PairOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	bool bOK = false;
-	if (Op == G::I().GetOpId(OP_ID::Parenthesis_L))
-	{	
+	switch (opId)
+	{
+	case X::OP_ID::Parenthesis_L:
 		bOK = ParentRun(rt, pContext, v, lValue);
-	}
-	else if (Op == G::I().GetOpId(OP_ID::Brackets_L))
-	{
+		break;
+	case X::OP_ID::Brackets_L:
 		bOK = BracketRun(rt, pContext, v, lValue);
-	}
-	else if (Op == G::I().GetOpId(OP_ID::Curlybracket_L))
-	{
+		break;
+	case X::OP_ID::Curlybracket_L:
 		bOK = CurlyBracketRun(rt, pContext, v, lValue);
+		break;
+	default:
+		break;
 	}
 	return bOK;
 }

@@ -316,6 +316,13 @@ void Register()
 	RegOP(",").SetId(OP_ID::Comma);
 	RegOP("\t").SetId(OP_ID::Tab);
 
+	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(
+		{ OP_ID::Equ,OP_ID::AddEqu,OP_ID::MinusEqu,OP_ID::MulEqu,
+		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu });
+	RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(
+		{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
+		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu });
+
 	RegOP("[", "]", "{", "}", "(",")")
 		.SetPrecedence(Precedence_High);
 	RegOP(".", "..", "...")
@@ -335,12 +342,21 @@ void BuildOps()
 		RegOP::OPList,
 		G::I().GetKwTree(),
 		G::I().GetOpActions());
+	G::I().SetActionWithOpId();
 }
 RegOP& RegOP::SetId(OP_ID id)
 {
 	if (ops.size() > 0)
 	{
 		G::I().SetOpId(id, AddOrGet(ops[0]).id);
+	}
+	return *this;
+}
+RegOP& RegOP::SetIds(std::vector<OP_ID> ids)
+{
+	for(int i=0;i<ops.size() && i<ids.size();i++)
+	{
+		G::I().SetOpId(ids[i], AddOrGet(ops[i]).id);
 	}
 	return *this;
 }

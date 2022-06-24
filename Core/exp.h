@@ -122,6 +122,8 @@ public:
 		m_digiNum = num;
 		m_type = ObType::Number;
 	}
+	inline long long GetVal() { return m_val; }
+	inline int GetDigiNum() { return m_digiNum; }
 	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);

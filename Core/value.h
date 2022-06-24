@@ -2,7 +2,8 @@
 
 #include <string>
 
-namespace X {namespace AST {
+namespace X {
+namespace AST {
 enum class ValueType
 {
 	None,
@@ -16,10 +17,14 @@ enum class ValueType
 	((v.t == ValueType::Int64) ? (double)v.x.l:((v.t == ValueType::Double)?v.x.d:0.0))
 #define ToInt64(v) \
 	((v.t == ValueType::Int64) ? v.x.l:((v.t == ValueType::Double)?(long long)v.x.d:0))
-
+#define ToStr(p,size) \
+	std::string((char*)p,(size_t)size)
 
 #define ARITH_OP(op)\
-Value& operator op (const Value& r)\
+Value& operator op (const Value& r);
+
+#define ARITH_OP_IMPL(op)\
+Value& Value::operator op (const Value& r)\
 {\
 	switch (t)\
 	{\
@@ -32,6 +37,10 @@ Value& operator op (const Value& r)\
 		x.d op ToDouble(r);\
 		break;\
 	case ValueType::Object:\
+		{\
+			Value v =r;\
+			(*((Data::Object*)x.p)) += v;\
+		}\
 		break;\
 	default:\
 		break;\
@@ -57,7 +66,7 @@ bool operator op (const Value& r) const\
 	case ValueType::Object:\
 		break;\
 	case ValueType::Str:\
-		bRet =true;\
+		bRet = (ToStr(x.p,flags) op ToStr(r.x.p,r.flags));\
 		break;\
 	default:\
 		break;\

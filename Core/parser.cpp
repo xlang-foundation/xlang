@@ -11,84 +11,6 @@
 #include "manager.h"
 
 namespace X {	
-
-ParseState Parser::ParseHexBinOctNumber(String& str)
-{
-	return ParseState::Null;
-}
-ParseState Parser::ParseNumber(String& str,
-	double& dVal,long long& llVal)
-{
-	ParseState st = ParseState::Null;
-	if (str.s == nil || str.size == 0)
-	{
-		return st;
-	}
-	if (str.size >= 2 && *str.s =='0' )
-	{
-		char c = *(str.s + 1);
-		//for hex(0x),oct(0o),bin(0b), also require first letter is 0
-		//so this is true if it is number
-		if (c == 'x' || c == 'o' || c == 'b')
-		{
-			String str2 = { str.s + 2,str.size - 2 };
-			return ParseHexBinOctNumber(str2);
-		}
-	}
-	long long primary[2]={0,0};
-	int digit_cnt[2] = { 0,0 };
-	char* end = str.s + str.size;
-	int it = 0;
-	bool meetDot = false;
-	bool correctSyntax = true;
-	char* p = str.s;
-	while(p < end)
-	{
-		char c = *p++;
-		if (c >= '0' && c <= '9')
-		{
-			primary[it] = primary[it] * 10 + c - '0';
-			digit_cnt[it]++;
-		}
-		else if (c == '.')
-		{
-			if (meetDot)
-			{//more than one
-				//error
-				correctSyntax = false;
-				break;
-			}
-			meetDot = true;
-			it++;
-		}
-		else
-		{
-			//error
-			correctSyntax = false;
-			break;
-		}
-	}
-	if (correctSyntax)
-	{
-		if (meetDot)
-		{
-			dVal = (double)primary[1];
-			for (int i = 0; i < digit_cnt[1];i++)
-			{
-				dVal /= 10;
-			}
-			dVal += primary[0];
-			st = ParseState::Double;
-		}
-		else
-		{
-			st = ParseState::Long_Long;
-			llVal = primary[0];
-			st = ParseState::Long_Long;
-		}
-	}
-	return st;
-}
 	
 Parser::Parser()
 {
@@ -159,6 +81,7 @@ bool Parser::Compile(char* code, int size)
 		short idx = mToken->Get(one);
 		int startLine = one.lineStart;
 		s = one.id;
+		//std::cout << startLine << ":" << std::string(s.s, s.size) << std::endl;
 		leadingSpaceCnt = one.leadingSpaceCnt;
 		if (m_curBlkState->m_NewLine_WillStart)
 		{
@@ -213,7 +136,7 @@ bool Parser::Compile(char* code, int size)
 			OpAction opAct = OpAct(idx);
 			if (m_curBlkState->m_NewLine_WillStart)
 			{
-				if (idx == G::I().GetOpId(OP_ID::Tab))
+				if (opAct.opId == OP_ID::Tab)
 				{
 					m_curBlkState->m_TabCountAtLineBegin++;
 					continue;
@@ -230,6 +153,7 @@ bool Parser::Compile(char* code, int size)
 			}
 			if (op)
 			{
+				op->SetId(opAct.opId);
 				auto pBlockOp = dynamic_cast<AST::Block*>(op);
 				if (pBlockOp)
 				{//will be used in NewLine function
@@ -341,9 +265,10 @@ void Parser::NewLine(bool checkIfIsLambdaOrPair)
 	{
 		auto top = m_curBlkState->OpTop();
 		short topIdx = top->getOp();
+		OP_ID topOpId = top->GetId();
 		if (!bInsideLambda && m_curBlkState->StackPair().size() > 0)
 		{//line continue
-			if (topIdx == G::I().GetOpId(OP_ID::Slash))
+			if (topOpId == OP_ID::Slash)
 			{
 				delete top;
 				m_curBlkState->OpPop();
@@ -351,21 +276,22 @@ void Parser::NewLine(bool checkIfIsLambdaOrPair)
 			}
 			return;
 		}
-		else if (topIdx == G::I().GetOpId(OP_ID::Slash))
-		{//line continue
+		switch (topOpId)
+		{
+		case OP_ID::Slash:
+			//line continue
 			delete top;
 			m_curBlkState->OpPop();
 			pop_preceding_token();//pop Slash
 			return;
-		}
-		else if (topIdx == G::I().GetOpId(OP_ID::Colon))
-		{//end block head
+		case OP_ID::Colon:
 			delete top;
 			m_curBlkState->OpPop();
-		}
-		else if (topIdx == G::I().GetOpId(OP_ID::Comma))
-		{
+			break;
+		case OP_ID::Comma:
 			return;
+		default:
+			break;
 		}
 		while (!m_curBlkState->IsOpStackEmpty())
 		{
@@ -402,8 +328,8 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 	m_curBlkState->StackPair().pop();
 	if (leftOpToMeetAsEnd == OP_ID::Curlybracket_L)
 	{
-		int cbId = G::I().GetOpId(OP_ID::Curlybracket_L);
-		if (pairInfo.opid == cbId && pairInfo.IsLambda)
+		if (pairInfo.opId == OP_ID::Curlybracket_L 
+			&& pairInfo.IsLambda)
 		{
 			if(!m_stackBlocks.empty())
 			{
@@ -477,7 +403,7 @@ bool Parser::LastIsLambda()
 		if (lastOpernad->m_type == AST::ObType::Pair)
 		{
 			AST::PairOp* pPair = (AST::PairOp*)lastOpernad;
-			if (pPair->getOp() == G::I().GetOpId(OP_ID::Parenthesis_L)
+			if (pPair->GetId() == OP_ID::Parenthesis_L
 				&& pPair->GetL() == nil)
 			{
 				auto p_r = pPair->GetR();
@@ -516,6 +442,7 @@ bool Parser::LastIsLambda()
 }
 AST::Operator* Parser::PairLeft(short opIndex)
 {
+	OpAction opAct = OpAct(opIndex);
 	//case 1: x+(y+z), case 2: x+func(y,z)
 	//so use preceding token as ref to dectect which case it is 
 	short lastToken = get_last_token();
@@ -529,12 +456,13 @@ AST::Operator* Parser::PairLeft(short opIndex)
 		BlockState* pBlockState = new BlockState(op);
 		m_stackBlocks.push(pBlockState);
 		m_curBlkState = pBlockState;
-		m_curBlkState->StackPair().push(PairInfo{ (int)opIndex,true });
+		m_curBlkState->StackPair().push(PairInfo{ opAct.opId,(int)opIndex,true });
 		return nil;
 	}
 	else
 	{
-		m_curBlkState->StackPair().push(PairInfo{ (int)opIndex,false });
+		m_curBlkState->StackPair().push(PairInfo{ 
+			opAct.opId,(int)opIndex,false });
 		m_curBlkState->IncPairCnt();
 		auto op = new AST::PairOp(opIndex, lastToken);
 		return op;

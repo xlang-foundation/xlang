@@ -21,6 +21,13 @@ namespace X {
 		{
 			opids[(int)idx] = id;
 		}
+		inline void SetActionWithOpId()
+		{
+			for (int i = 0; i < (int)OP_ID::Count; i++)
+			{
+				OpActions[opids[i]].opId = (OP_ID)i;
+			}
+		}
 		inline std::vector<short>& GetKwTree()
 		{
 			return kwTree;

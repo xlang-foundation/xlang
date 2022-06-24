@@ -35,7 +35,7 @@ namespace X
 			return OPList.back();
 		}
 		RegOP& SetId(OP_ID id);
-
+		RegOP& SetIds(std::vector<OP_ID> ids);
 		RegOP& SetPrecedence(int p)
 		{
 			for (auto& n : ops)

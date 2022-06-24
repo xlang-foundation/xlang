@@ -30,6 +30,22 @@ namespace X
 			{
 				mMap.emplace(std::make_pair(key, val));
 			}
+			virtual Dict& operator +=(AST::Value& r)
+			{
+				if (r.IsObject())
+				{
+					Object* pObj = (Object*)r.GetObject();
+					if (pObj->GetType() == Type::Dict)
+					{
+						Dict* pDictOther = (Dict*)pObj;
+						for (auto& it : pDictOther->mMap)
+						{
+							mMap.emplace(std::make_pair(it.first,it.second));
+						}
+					}
+				}
+				return *this;
+			}
 			bool Get(AST::Value& key, AST::Value& val,
 				AST::LValue* lValue = nullptr)
 			{

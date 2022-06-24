@@ -44,6 +44,11 @@ namespace Data {
 				(unsigned long long)this);
 			return v;
 		}
+		virtual Object& operator +=(AST::Value& r)
+		{
+			int x = 1;
+			return *this;
+		}
 	};
 	class Expr
 		:public Object

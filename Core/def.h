@@ -12,8 +12,10 @@ struct String
 	char* s;
 	int size;
 };
+
 enum class OP_ID
 {
+	None,
 	Parenthesis_L,
 	Brackets_L,
 	Curlybracket_L,
@@ -21,6 +23,10 @@ enum class OP_ID
 	Colon,
 	Comma,
 	Tab,
+	//	"=", "+=", "-=", "*=", "/=", "%=", "//=",
+	Equ,AddEqu,MinusEqu,MulEqu,DivEqu,ModEqu,FloorDivEqu,
+	//	"**=", "&=", "|=", "^=", ">>=", "<<="
+	PowerEqu,AndEqu,OrEqu,NotEqu,RightShiftEqu,LeftShitEqu,
 	Count
 };
 
@@ -55,6 +61,7 @@ struct OpAction
 	UnaryOpProc unaryop = nil;
 	BinaryOpProc binaryop = nil;
 	int precedence = Precedence_Reqular;
+	OP_ID opId = OP_ID::None;
 };
 struct OpInfo
 {

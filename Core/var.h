@@ -30,7 +30,10 @@ public:
 			ScopeLayout();
 			if (Index == -1 || m_scope == nullptr)
 			{
-				return false;
+				//just return the var name as string
+				//for case x["key"] or x[key]
+				v = Value(Name.s, Name.size);
+				return true;
 			}
 		}
 		m_scope->Get(rt, pContext, Index, v, lValue);

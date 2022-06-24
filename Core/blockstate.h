@@ -9,7 +9,8 @@ namespace X {
 
 struct PairInfo
 {
-	int opid;
+	OP_ID opId = OP_ID::None;
+	int opIndex;
 	bool IsLambda = false;
 };
 class BlockState
