@@ -1,6 +1,7 @@
 #include "builtin.h"
 #include "exp.h"
 #include "object.h"
+#include "funclist.h"
 #include <iostream>
 #ifdef _WIN32
 #include <Windows.h>
@@ -109,7 +110,18 @@ bool U_Time(X::Runtime* rt, void* pContext,
 
 
 namespace X {
-AST::ExternFunc* Builtin::Find(std::string& name)
+	void Builtin::Cleanup()
+	{
+		for (auto& it : m_mapFuncs)
+		{
+			if (it.second)
+			{
+				delete it.second;
+			}
+		}
+		m_mapFuncs.clear();
+	}
+	AST::ExternFunc* Builtin::Find(std::string& name)
 {
 	auto it = m_mapFuncs.find(name);
 	return (it!= m_mapFuncs.end())?it->second:nil;

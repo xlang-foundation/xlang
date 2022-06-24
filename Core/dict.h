@@ -26,6 +26,10 @@ namespace X
 			{
 				m_t = Type::Dict;
 			}
+			~Dict()
+			{
+				mMap.clear();
+			}
 			void Set(AST::Value& key, AST::Value& val)
 			{
 				mMap.emplace(std::make_pair(key, val));

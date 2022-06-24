@@ -163,7 +163,7 @@ public:
 		L->Run(rt,pContext, v_l, &lValue_L);
 		if (v_l.IsObject())
 		{
-			bool bOK = AssignToDataObject(rt,v_l.GetObject());
+			bool bOK = AssignToDataObject(rt,v_l.GetObj());
 			if (bOK)
 			{
 				return true;

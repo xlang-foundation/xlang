@@ -442,21 +442,5 @@ AST::Module* Parser::GetModule()
 	}
 	return pTopModule;
 }
-bool Parser::Run()
-{
-	if (m_stackBlocks.empty())
-	{
-		return false;//empty
-	}
-	Runtime* pRuntime = new Runtime();
-	BlockState* pBlockState = m_stackBlocks.top();
-	AST::Module* pTopModule = (AST::Module*)pBlockState->Block();
-	pRuntime->SetM(pTopModule);
-	pTopModule->AddBuiltins(pRuntime);
-	AST::Value v;
-	bool bOK = pTopModule->Run(pRuntime, nullptr, v);
-	delete pTopModule;
-	delete pRuntime;
-	return bOK;
-}
+
 }

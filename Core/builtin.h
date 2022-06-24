@@ -16,6 +16,7 @@ namespace X {
 		{
 			return m_mapFuncs;
 		}
+		void Cleanup();
 		AST::ExternFunc* Find(std::string& name);
 		bool Register(const char* name, void* func,
 			std::vector<std::pair<std::string, std::string>>& params);

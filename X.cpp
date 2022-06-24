@@ -2,7 +2,6 @@
 //
 
 #include "X.h"
-#include "Core/pycore.h"
 #include "Core/builtin.h"
 #include <fstream>
 #include <sstream>
@@ -13,13 +12,6 @@
 #include "json.h"
 #include "Hosting.h"
 #include "fs.h"
-
-void RunCore(std::string& code)
-{
-	X::PyHandle h = X::PyLoad((char*)code.c_str(), (int)code.size());
-	X::PyRun(h);
-	X::PyClose(h);
-}
 
 int main1(int argc, char* argv[])
 {
@@ -38,7 +30,7 @@ int main1(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main2(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	std::string pyFileName = "C:/Dev/X/test/test2.py";
 	if (argc >= 2)
@@ -50,12 +42,14 @@ int main2(int argc, char* argv[])
 		pyFile)), std::istreambuf_iterator<char>());
 	pyFile.close();
 	REGISTER_PACKAGE("http", X::Http)
-		X::Builtin::I().RegisterInternals();
-	RunCore(code);
+	X::Builtin::I().RegisterInternals();
+	X::Hosting::I().Run(code.c_str(), (int)code.size());
+	X::Builtin::I().Cleanup();
+	X::G::I().Check();
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main(int argc, char* argv[])
+int main_b(int argc, char* argv[])
 {
 	std::string pyFileName = "C:/Dev/X/Scripts/service.x";
 	std::ifstream pyFile(pyFileName);
@@ -66,7 +60,8 @@ int main(int argc, char* argv[])
 	REGISTER_PACKAGE("fs", X::FileSystem)
 	X::Builtin::I().RegisterInternals();
 
-	X::Hosting::I().RunAsBackend(code.c_str(), code.size());
+	X::Hosting::I().RunAsBackend(code.c_str(), (int)code.size());
+
 	std::cout << "Running in background" << std::endl;
 	std::string yes;
 	std::cin >> yes;

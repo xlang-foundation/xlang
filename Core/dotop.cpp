@@ -2,7 +2,8 @@
 #include "object.h"
 #include "var.h"
 #include "number.h"
-
+#include "list.h"
+#include "funclist.h"
 namespace X
 {
 namespace AST
@@ -86,7 +87,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	Value& v, LValue* lValue)
 {
 	std::vector<Scope*> scopes;
-	void* pLeftObj0 = v_l.GetObject();
+	void* pLeftObj0 = v_l.GetObj();
 	if (pLeftObj0)
 	{
 		QueryBases(rt, pLeftObj0, scopes);
@@ -105,7 +106,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	{
 		if (v0.IsObject())
 		{
-			Data::Object* pObj0 = (Data::Object*)v0.GetObject();
+			Data::Object* pObj0 = (Data::Object*)v0.GetObj();
 			if (pObj0 && pObj0->GetType() == Data::Type::Function)
 			{
 				Data::Function* pFuncObj = dynamic_cast<Data::Function*>(pObj0);
@@ -186,7 +187,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 				{
 					if (it.IsObject())
 					{
-						Data::Object* pItObj = (Data::Object*)it.GetObject();
+						Data::Object* pItObj = (Data::Object*)it.GetObj();
 						if (pItObj->GetType() == Data::Type::XClassObject)
 						{
 							RunCallPerObj(R,pItObj);

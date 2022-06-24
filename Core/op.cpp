@@ -4,6 +4,7 @@
 #include "def.h"
 #include "dict.h"
 #include "pair.h"
+#include "funclist.h"
 
 namespace X
 {

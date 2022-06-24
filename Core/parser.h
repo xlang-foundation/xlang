@@ -80,6 +80,5 @@ public:
 	bool Init();
 	bool Compile(char* code, int size);
 	AST::Module* GetModule();
-	bool Run();
 };
 }

@@ -7,6 +7,21 @@ namespace X {namespace AST {
 	ARITH_OP_IMPL(*= )
 	ARITH_OP_IMPL(/= )
 
+	void Value::AssignObject(Data::Object* p)
+	{
+		if (p)
+		{
+			p->AddRef();
+		}
+		x.obj = p;
+	}
+	void Value::ReleaseObject(Data::Object* p)
+	{
+		if (p)
+		{
+			p->Release();
+		}
+	}
 	std::string Value::ToString()
 	{
 		std::string str;
@@ -36,14 +51,13 @@ namespace X {namespace AST {
 		}
 		break;
 		case ValueType::Object:
-		if(x.p)
+		if(x.obj)
 		{
-			Data::Object* pObj = (Data::Object*)x.p;
-			str = pObj->ToString();
+			str = x.obj->ToString();
 		}
 			break;
 		case ValueType::Str:
-			str = std::string((char*)x.p, flags);
+			str = std::string((char*)x.str, flags);
 			break;
 		default:
 			break;

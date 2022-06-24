@@ -3,6 +3,7 @@
 #include <string>
 
 namespace X {
+	namespace Data { class Object; }
 namespace AST {
 enum class ValueType
 {
@@ -39,7 +40,7 @@ Value& Value::operator op (const Value& r)\
 	case ValueType::Object:\
 		{\
 			Value v =r;\
-			(*((Data::Object*)x.p)) += v;\
+			(*((Data::Object*)x.obj)) += v;\
 		}\
 		break;\
 	default:\
@@ -66,7 +67,7 @@ bool operator op (const Value& r) const\
 	case ValueType::Object:\
 		break;\
 	case ValueType::Str:\
-		bRet = (ToStr(x.p,flags) op ToStr(r.x.p,r.flags));\
+		bRet = (ToStr(x.str,flags) op ToStr(r.x.str,r.flags));\
 		break;\
 	default:\
 		break;\
@@ -83,26 +84,125 @@ class Value
 	{
 		long long l;
 		double d;
-		void* p;
+		char* str;
+		Data::Object* obj;
 	}x;
 public:
-	double GetDouble()
+	inline ~Value()
+	{
+		switch (t)
+		{
+		case ValueType::Str:
+			break;
+		case ValueType::Object:
+			ReleaseObject(x.obj);
+			break;
+		default:
+			break;
+		}
+
+	}
+	inline Value()
+	{
+		t = ValueType::None;
+		x.l = 0;
+	}
+	inline Value(bool b)
+	{//use 1 as true and 0 as false, set flag to -1
+		t = ValueType::Int64;
+		flags = BOOL_FLAG;
+		x.l = b ? 1 : 0;
+	}
+	inline Value(int l)
+	{
+		t = ValueType::Int64;
+		x.l = l;
+	}
+	inline Value(long l)
+	{
+		t = ValueType::Int64;
+		x.l = l;
+	}
+	inline Value(long long l)
+	{
+		t = ValueType::Int64;
+		x.l = l;
+	}
+	inline Value(double d)
+	{
+		t = ValueType::Double;
+		x.d = d;
+	}
+	inline Value(char* s, int size)
+	{
+		t = ValueType::Str;
+		flags = size;
+		x.str = s;
+	}
+	inline Value(Data::Object* p)
+	{
+		t = ValueType::Object;
+		AssignObject(p);
+	}
+	void AssignObject(Data::Object* p);
+	void ReleaseObject(Data::Object* p);
+	inline Value(const Value& v)
+	{
+		flags = v.flags;
+		t = v.t;
+		switch (t)
+		{
+		case ValueType::Int64:
+			x.l = ToInt64(v);
+			break;
+		case ValueType::Double:
+			x.d = ToDouble(v);
+			break;
+		case ValueType::Str:
+			x.str = v.x.str;
+			break;
+		case ValueType::Object:
+			AssignObject(v.x.obj);
+			break;
+		default:
+			break;
+		}
+	}
+	inline size_t Hash()
+	{
+		size_t h = 0;
+		switch (t)
+		{
+		case ValueType::Int64:
+			h = std::hash<long long>{}(x.l);
+			break;
+		case ValueType::Double:
+			h = std::hash<double>{}(x.d);
+			break;
+		case ValueType::Str:
+			h = std::hash<std::string>{}(std::string((char*)x.str, 
+				(size_t)flags));
+			break;
+		case ValueType::Object:
+			break;
+		default:
+			break;
+		}
+		return h;
+	}
+	inline double GetDouble()
 	{
 		return x.d;
 	}
-	long long GetLongLong()
+	inline long long GetLongLong()
 	{
 		return x.l;
 	}
-	void* GetObj()
+	inline Data::Object* GetObj()
 	{
-		return x.p;
+		return x.obj;
 	}
-	void* GetObject()
-	{
-		return x.p;
-	}
-	void SetF(int f)
+	inline void SetF(int f)
 	{
 		flags = f;
 	}
@@ -129,79 +229,16 @@ public:
 			bRet = (x.d == 0);
 			break;
 		case ValueType::Object:
-			bRet = (x.p == 0);
+			bRet = (x.obj == nullptr);
 			break;
 		default:
 			break;
 		}
 		return bRet;
 	}
-	ValueType GetType() { return t; }
-	int GetF() { return flags; }
-	Value()
-	{
-		t = ValueType::None;
-		x.l = 0;
-	}
-	Value(bool b)
-	{//use 1 as true and 0 as false, set flag to -1
-		t = ValueType::Int64;
-		flags = BOOL_FLAG;
-		x.l = b ? 1 : 0;
-	}
-	Value(int l)
-	{
-		t = ValueType::Int64;
-		x.l = l;
-	}
-	Value(long l)
-	{
-		t = ValueType::Int64;
-		x.l = l;
-	}
-	Value(long long l)
-	{
-		t = ValueType::Int64;
-		x.l = l;
-	}
-	Value(double d)
-	{
-		t = ValueType::Double;
-		x.d = d;
-	}
-	Value(char* s, int size)
-	{
-		t = ValueType::Str;
-		flags = size;
-		x.p = s;
-	}
-	Value(void* p)
-	{
-		t = ValueType::Object;
-		x.p = p;
-	}
-	size_t Hash()
-	{
-		size_t h = 0;
-		switch (t)
-		{
-		case ValueType::Int64:
-			h = std::hash<long long>{}(x.l);
-			break;
-		case ValueType::Double:
-			h = std::hash<double>{}(x.d);
-			break;
-		case ValueType::Str:
-			h = std::hash<std::string>{}(std::string((char*)x.p,(size_t)flags));
-			break;
-		case ValueType::Object:
-			break;
-		default:
-			break;
-		}
-		return h;
-	}
-	Value(const Value& v)
+	inline ValueType GetType() { return t; }
+	inline int GetF() { return flags; }
+	inline void operator = (const Value& v)
 	{
 		flags = v.flags;
 		t = v.t;
@@ -214,32 +251,10 @@ public:
 			x.d = ToDouble(v);
 			break;
 		case ValueType::Str:
-			x.p = v.x.p;
+			x.str = v.x.str;
 			break;
 		case ValueType::Object:
-			x.p = v.x.p;
-			break;
-		default:
-			break;
-		}
-	}
-	void operator = (const Value& v)
-	{
-		flags = v.flags;
-		t = v.t;
-		switch (t)
-		{
-		case ValueType::Int64:
-			x.l = ToInt64(v);
-			break;
-		case ValueType::Double:
-			x.d = ToDouble(v);
-			break;
-		case ValueType::Str:
-			x.p = v.x.p;
-			break;
-		case ValueType::Object:
-			x.p = v.x.p;
+			AssignObject(v.x.obj);
 			break;
 		default:
 			break;

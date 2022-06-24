@@ -14,7 +14,7 @@ PyHandle PyLoad(char* code, int size)
 bool PyRun(PyHandle h)
 {
 	Parser* p = (Parser*)h;
-	return p->Run();
+	return true;// p->Run();
 }
 
 void PyClose(PyHandle h)

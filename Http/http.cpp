@@ -12,7 +12,7 @@ bool HttpRequest::Get##name(void* rt, void* pContext,\
 {\
 	auto* pReq = (httplib::Request*)m_pRequest;\
 	std::string& strVal =  pReq->##name;\
-	retValue = AST::Value((char*)strVal.c_str(), strVal.size());\
+	retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size());\
 	return true;\
 }
 
@@ -140,8 +140,8 @@ namespace X
 		for (auto it = headers.begin(); it != headers.end(); ++it)
 		{
 			const auto& x = *it;
-			AST::Value key((char*)x.first.c_str(), x.first.size());
-			AST::Value val((char*)x.second.c_str(), x.second.size());
+			AST::Value key((char*)x.first.c_str(), (int)x.first.size());
+			AST::Value val((char*)x.second.c_str(), (int)x.second.size());
 			pDictObj->Set(key, val);
 		}
 		retValue = AST::Value(pDictObj);
@@ -157,8 +157,8 @@ namespace X
 			it != req_params.end(); ++it)
 		{
 			const auto& x = *it;
-			AST::Value key((char*)x.first.c_str(), x.first.size());
-			AST::Value val((char*)x.second.c_str(), x.second.size());
+			AST::Value key((char*)x.first.c_str(), (int)x.first.size());
+			AST::Value val((char*)x.second.c_str(), (int)x.second.size());
 			pDictObj->Set(key, val);
 		}
 		retValue = AST::Value(pDictObj);

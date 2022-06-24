@@ -2,6 +2,7 @@
 #include "var.h"
 #include "object.h"
 #include "dict.h"
+#include "list.h"
 
 namespace X
 {
@@ -79,7 +80,7 @@ bool PairOp::ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 				return bOK;
 			}
 		}
-		Data::Object* obj = (Data::Object*)lVal.GetObject();
+		Data::Object* obj = (Data::Object*)lVal.GetObj();
 		if (obj)
 		{
 			bOK = obj->Call(rt, params, kwParams, v);
@@ -153,7 +154,7 @@ bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 	{//usage: x[1,2]
 		Value v0;
 		bOK = L->Run(rt, pContext, v0);
-		auto pDataObj = (Data::Object*)v0.GetObject();
+		auto pDataObj = (Data::Object*)v0.GetObj();
 		switch (pDataObj->GetType())
 		{
 		case Data::Type::List:

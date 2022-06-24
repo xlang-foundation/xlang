@@ -41,7 +41,7 @@ XClass* XClass::FindBase(Runtime* rt, std::string& strName)
 			{
 				if (v0.IsObject())
 				{
-					Data::Object* pBaseObj = (Data::Object*)v0.GetObject();
+					Data::Object* pBaseObj = (Data::Object*)v0.GetObj();
 					auto* pXBaseObj = dynamic_cast<Data::XClassObject*>(pBaseObj);
 					if (pXBaseObj)
 					{
@@ -91,7 +91,7 @@ bool XClass::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 		bool bSet = false;
 		if (v0.IsObject())
 		{
-			Data::Object* pObj = (Data::Object*)v0.GetObject();
+			Data::Object* pObj = (Data::Object*)v0.GetObj();
 			if (pObj->GetType() == Data::Type::Expr)
 			{
 				Data::Expr* pExpr = dynamic_cast<Data::Expr*>(pObj);
