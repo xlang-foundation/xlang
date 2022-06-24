@@ -236,13 +236,13 @@ bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 	if (L->m_type == ObType::Number)
 	{	
 		Number* pLeftNum = (Number*)L;
-		double dValue = pLeftNum->GetVal();
+		double dValue = (double)pLeftNum->GetVal();
 		double fraction = 0;
 		int digiNum = 0;
 		if (R->m_type == ObType::Number)
 		{
 			Number* pNum = (Number*)R;
-			fraction = pNum->GetVal();
+			fraction = (double)pNum->GetVal();
 			digiNum = pNum->GetDigiNum();
 		}
 		else if(R->m_type == ObType::Var)
@@ -254,7 +254,7 @@ bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 			if (st == ParseState::Long_Long)
 			{
 				digiNum = (int)dVal;
-				fraction = llVal;
+				fraction = (double)llVal;
 			}
 		}
 		else

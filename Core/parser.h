@@ -11,17 +11,11 @@
 
 namespace X {
 
-struct LineInfo
-{
-
-};
 class Parser
 {
 	Token* mToken = nil;
 	BlockState* m_curBlkState = nil;
 	inline bool LastIsLambda();
-//for compile
-	int m_lambda_pair_cnt = 0;
 	//use this stack to keep 3 preceding tokens' index
 	//and if meet slash, will pop one, because slash means line continuing
 	inline void reset_preceding_token()
@@ -63,8 +57,6 @@ public:
 	void NewLine(bool checkIfIsLambdaOrPair = true);
 	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
 	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'
-	inline void IncLambdaPairCnt() { m_lambda_pair_cnt++; }
-	inline void DecLambdaPairCnt() { m_lambda_pair_cnt--; }
 	inline bool PreTokenIsOp()
 	{ 
 		if (m_preceding_token_indexstack.size() == 0)

@@ -18,7 +18,6 @@ class BlockState
 	AST::Block* m_pBlock = nullptr;
 	std::stack<AST::Expression*> m_operands;
 	std::stack<AST::Operator*> m_ops;
-	int m_pair_cnt = 0;//count for {} () and [],if
 	std::stack<PairInfo> m_stackPair;
 
 	inline OpAction OpAct(short idx)
@@ -69,9 +68,6 @@ public:
 	{
 		m_ops.pop();
 	}
-	inline int PairCount() { return m_pair_cnt; }
-	inline void IncPairCnt() { m_pair_cnt++; }
-	inline void DecPairCnt() { m_pair_cnt--; }
 	inline void ProcessPrecedenceOp(short lastToken,
 		AST::Operator* curOp)
 	{

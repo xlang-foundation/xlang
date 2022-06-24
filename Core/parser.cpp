@@ -343,17 +343,12 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 			}
 			//Close Lambda
 			m_curBlkState->DoOpTop();
-			//NewLine(false);
-			//push_preceding_token(TokenID);
-			DecLambdaPairCnt();
-			m_curBlkState->DecPairCnt();
 			return;
 		}
 	}
 	short lastToken = get_last_token();
 	short pairLeftToken = G::I().GetOpId(leftOpToMeetAsEnd);
 	bool bEmptyPair = (lastToken == pairLeftToken);
-	m_curBlkState->DecPairCnt();
 	AST::PairOp* pPair = nil;
 	while (!m_curBlkState->IsOpStackEmpty())
 	{
@@ -463,7 +458,6 @@ AST::Operator* Parser::PairLeft(short opIndex)
 	{
 		m_curBlkState->StackPair().push(PairInfo{ 
 			opAct.opId,(int)opIndex,false });
-		m_curBlkState->IncPairCnt();
 		auto op = new AST::PairOp(opIndex, lastToken);
 		return op;
 	}
