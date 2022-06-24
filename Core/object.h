@@ -155,6 +155,13 @@ namespace Data {
 				m_stackFrame->Copy(pClassStack);
 			}
 		}
+		~XClassObject()
+		{
+			if (m_stackFrame)
+			{
+				delete m_stackFrame;
+			}
+		}
 		inline AST::StackFrame* GetStack()
 		{
 			return m_stackFrame;

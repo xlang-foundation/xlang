@@ -88,7 +88,7 @@ bool Func::Call(Runtime* rt,
 	if (m_IndexOfThis >=0 &&
 		pContextObj && pContextObj->GetType() == X::Data::Type::XClassObject)
 	{
-		Value v0(pContext);
+		Value v0((Data::Object*)pContext);
 		Scope::Set(rt, pContext, m_IndexOfThis, v0);
 	}
 	int num = m_positionParamCnt > (int)params.size() ?

@@ -11,11 +11,13 @@ bool XClass::Call(Runtime* rt,
 	Value& retValue)
 {
 	Data::XClassObject* obj = new Data::XClassObject(this);
+	obj->AddRef();
 	if (m_constructor)
 	{
 		m_constructor->Call(rt,obj,params, kwParams,retValue);
 	}
 	retValue = Value(obj);
+	obj->Release();
 	return true;
 }
 void XClass::ScopeLayout()

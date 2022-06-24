@@ -23,6 +23,13 @@ public:
 	{
 		m_type = ObType::Class;
 	}
+	~XClass()
+	{
+		if (m_stackFrame)
+		{
+			delete m_stackFrame;
+		}
+	}
 	inline StackFrame* GetClassStack()
 	{
 		return m_stackFrame;

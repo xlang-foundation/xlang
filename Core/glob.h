@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include "def.h"
+#include <iostream>
 
 namespace X {
 	namespace Data { class Object; }
@@ -18,6 +19,7 @@ namespace X {
 		void Check()
 		{
 			auto size = Objects.size();
+			std::cout << "Left Objects:" << size << std::endl;
 		}
 		inline void AddObj(Data::Object* obj)
 		{

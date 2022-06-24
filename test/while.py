@@ -1,5 +1,5 @@
 x =0
-num = 1000000
+num = 100000000
 sum =0
 t1 = time()
 while x<num:
