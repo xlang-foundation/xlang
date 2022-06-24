@@ -45,7 +45,14 @@ public:
 		UnaryOp(op)
 	{
 	}
-
+	~Block()
+	{
+		for (auto it : Body)
+		{
+			delete it;
+		}
+		Body.clear();
+	}
 	inline bool IsNoIndentCheck()
 	{
 		return NoIndentCheck;
@@ -53,13 +60,6 @@ public:
 	inline void SetNoIndentCheck(bool b)
 	{
 		NoIndentCheck = b;
-	}
-	~Block()
-	{
-		for (auto b : Body)
-		{
-			delete b;
-		}
 	}
 	virtual void Add(Expression* item);
 	virtual Func* FindFuncByName(Var* name);
