@@ -34,7 +34,7 @@ namespace X
 			{
 				if (r.IsObject())
 				{
-					Object* pObj = (Object*)r.GetObject();
+					Object* pObj = (Object*)r.GetObj();
 					if (pObj->GetType() == Type::Dict)
 					{
 						Dict* pDictOther = (Dict*)pObj;

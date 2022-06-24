@@ -336,6 +336,12 @@ void Register()
 std::vector<OpInfo> RegOP::OPList;
 void BuildOps()
 {
+	//only need to run once
+	static bool Inited = false;
+	if (Inited)
+	{
+		return;
+	}
 	Register();
 	RegisterOps();
 	Lex<OpInfo, OpAction>().MakeLexTree(
@@ -343,6 +349,7 @@ void BuildOps()
 		G::I().GetKwTree(),
 		G::I().GetOpActions());
 	G::I().SetActionWithOpId();
+	Inited = true;
 }
 RegOP& RegOP::SetId(OP_ID id)
 {

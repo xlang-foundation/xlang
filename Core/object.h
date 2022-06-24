@@ -14,6 +14,7 @@ namespace Data {
 	{
 		Base,
 		Str,
+		Binary,
 		Expr,
 		Function,
 		MetaFunction,

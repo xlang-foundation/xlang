@@ -10,8 +10,8 @@
 #include "http.h"
 #include "manager.h"
 
-namespace X {	
-	
+namespace X
+{		
 Parser::Parser()
 {
 }
@@ -28,152 +28,6 @@ bool Parser::Init()
 {
 	BuildOps();
 	mToken = new Token(&G::I().GetKwTree()[0]);
-	return true;
-}
-
-/* from https://www.geeksforgeeks.org/expression-evaluation/
-1. While there are still tokens to be read in,
-   1.1 Get the next token.
-   1.2 If the token is:
-	   1.2.1 A number: push it onto the value stack.
-	   1.2.2 A variable: get its value, and push onto the value stack.
-	   1.2.3 A left parenthesis: push it onto the operator stack.
-	   1.2.4 A right parenthesis:
-		 1 While the thing on top of the operator stack is not a
-		   left parenthesis,
-			 1 Pop the operator from the operator stack.
-			 2 Pop the value stack twice, getting two operands.
-			 3 Apply the operator to the operands, in the correct order.
-			 4 Push the result onto the value stack.
-		 2 Pop the left parenthesis from the operator stack, and discard it.
-	   1.2.5 An operator (call it thisOp):
-		 1 While the operator stack is not empty, and the top thing on the
-		   operator stack has the same or greater precedence as thisOp,
-		   1 Pop the operator from the operator stack.
-		   2 Pop the value stack twice, getting two operands.
-		   3 Apply the operator to the operands, in the correct order.
-		   4 Push the result onto the value stack.
-		 2 Push thisOp onto the operator stack.
-2. While the operator stack is not empty,
-	1 Pop the operator from the operator stack.
-	2 Pop the value stack twice, getting two operands.
-	3 Apply the operator to the operands, in the correct order.
-	4 Push the result onto the value stack.
-3. At this point the operator stack should be empty, and the value
-   stack should have only one value in it, which is the final result.
-*/
-bool Parser::Compile(char* code, int size)
-{
-	mToken->SetStream(code, size);
-	//mToken->Test();
-	reset_preceding_token();
-	//prepare top module for this code
-	AST::Module* pTopModule = new AST::Module();
-	pTopModule->ScopeLayout();
-	BlockState* pBlockState=  new BlockState(pTopModule);
-	m_stackBlocks.push(pBlockState);
-	m_curBlkState = pBlockState;
-	while (true)
-	{
-		String s;
-		int leadingSpaceCnt = 0;
-		OneToken one;
-		short idx = mToken->Get(one);
-		int startLine = one.lineStart;
-		s = one.id;
-		//std::cout << startLine << ":" << std::string(s.s, s.size) << std::endl;
-		leadingSpaceCnt = one.leadingSpaceCnt;
-		if (m_curBlkState->m_NewLine_WillStart)
-		{
-			m_curBlkState->m_LeadingSpaceCountAtLineBegin 
-				+= leadingSpaceCnt;
-		}
-		if (idx == TokenEOS)
-		{
-			m_curBlkState->m_NewLine_WillStart = false;
-			break;
-		}
-		if (idx == TokenLineComment || idx == TokenComment)
-		{
-		}
-		else if (idx == TokenStr)
-		{
-			m_curBlkState->m_NewLine_WillStart = false;
-			AST::Str* v = new AST::Str(s.s, s.size);
-			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
-			m_curBlkState->PushExp(v);
-			push_preceding_token(idx);
-		}
-		else if (idx == TokenID)
-		{
-			m_curBlkState->m_NewLine_WillStart = false;
-
-			double dVal = 0;
-			long long llVal = 0;
-			ParseState st = ParseNumber(s, dVal, llVal);
-			AST::Expression* v = nil;
-			switch (st)
-			{
-			case X::ParseState::Double:
-				idx = TokenNum;
-				v = new AST::Double(dVal);
-				break;
-			case X::ParseState::Long_Long:
-				idx = TokenNum;
-				v = new AST::Number(llVal, s.size);
-				break;
-			default:
-				//Construct AST::Var
-				v = new AST::Var(s);
-				break;
-			}
-			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
-			m_curBlkState->PushExp(v);
-			push_preceding_token(idx);
-		}
-		else
-		{//Operator
-			OpAction opAct = OpAct(idx);
-			if (m_curBlkState->m_NewLine_WillStart)
-			{
-				if (opAct.opId == OP_ID::Tab)
-				{
-					m_curBlkState->m_TabCountAtLineBegin++;
-					continue;
-				}
-				else
-				{
-					m_curBlkState->m_NewLine_WillStart = false;
-				}
-			}
-			AST::Operator* op = nil;
-			if (opAct.process)
-			{
-				op = opAct.process(this, idx);
-			}
-			if (op)
-			{
-				op->SetId(opAct.opId);
-				auto pBlockOp = dynamic_cast<AST::Block*>(op);
-				if (pBlockOp)
-				{//will be used in NewLine function
-					m_lastComingBlock = pBlockOp;
-				}
-				op->SetHint(one.lineStart, one.lineEnd, one.charPos);
-				m_curBlkState->ProcessPrecedenceOp(
-						get_last_token(), op);
-				m_curBlkState->PushOp(op);
-				push_preceding_token(idx);
-			}
-		}
-	}
-	NewLine();//just call it to process the last line
-	while (m_stackBlocks.size() > 1)
-	{
-		auto top = m_stackBlocks.top();
-		m_stackBlocks.pop();//only keep top one
-		delete top;
-	}
 	return true;
 }
 
@@ -461,6 +315,132 @@ AST::Operator* Parser::PairLeft(short opIndex)
 		auto op = new AST::PairOp(opIndex, lastToken);
 		return op;
 	}
+}
+
+bool Parser::Compile(char* code, int size)
+{
+	mToken->SetStream(code, size);
+	//mToken->Test();
+	reset_preceding_token();
+	//prepare top module for this code
+	AST::Module* pTopModule = new AST::Module();
+	pTopModule->SetCode(code, size);
+	pTopModule->ScopeLayout();
+	BlockState* pBlockState = new BlockState(pTopModule);
+	m_stackBlocks.push(pBlockState);
+	m_curBlkState = pBlockState;
+	while (true)
+	{
+		String s;
+		int leadingSpaceCnt = 0;
+		OneToken one;
+		short idx = mToken->Get(one);
+		int startLine = one.lineStart;
+		s = one.id;
+		//std::cout << startLine << ":" << std::string(s.s, s.size) << std::endl;
+		leadingSpaceCnt = one.leadingSpaceCnt;
+		if (m_curBlkState->m_NewLine_WillStart)
+		{
+			m_curBlkState->m_LeadingSpaceCountAtLineBegin
+				+= leadingSpaceCnt;
+		}
+		if (idx == TokenEOS)
+		{
+			m_curBlkState->m_NewLine_WillStart = false;
+			break;
+		}
+		if (idx == TokenLineComment || idx == TokenComment)
+		{
+		}
+		else if (idx == TokenStr)
+		{
+			m_curBlkState->m_NewLine_WillStart = false;
+			AST::Str* v = new AST::Str(s.s, s.size);
+			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
+			m_curBlkState->PushExp(v);
+			push_preceding_token(idx);
+		}
+		else if (idx == TokenID)
+		{
+			m_curBlkState->m_NewLine_WillStart = false;
+
+			double dVal = 0;
+			long long llVal = 0;
+			ParseState st = ParseNumber(s, dVal, llVal);
+			AST::Expression* v = nil;
+			switch (st)
+			{
+			case X::ParseState::Double:
+				idx = TokenNum;
+				v = new AST::Double(dVal);
+				break;
+			case X::ParseState::Long_Long:
+				idx = TokenNum;
+				v = new AST::Number(llVal, s.size);
+				break;
+			default:
+				//Construct AST::Var
+				v = new AST::Var(s);
+				break;
+			}
+			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
+			m_curBlkState->PushExp(v);
+			push_preceding_token(idx);
+		}
+		else
+		{//Operator
+			OpAction opAct = OpAct(idx);
+			if (m_curBlkState->m_NewLine_WillStart)
+			{
+				if (opAct.opId == OP_ID::Tab)
+				{
+					m_curBlkState->m_TabCountAtLineBegin++;
+					continue;
+				}
+				else
+				{
+					m_curBlkState->m_NewLine_WillStart = false;
+				}
+			}
+			AST::Operator* op = nil;
+			if (opAct.process)
+			{
+				op = opAct.process(this, idx);
+			}
+			if (op)
+			{
+				op->SetId(opAct.opId);
+				auto pBlockOp = dynamic_cast<AST::Block*>(op);
+				if (pBlockOp)
+				{//will be used in NewLine function
+					m_lastComingBlock = pBlockOp;
+				}
+				op->SetHint(one.lineStart, one.lineEnd, one.charPos);
+				m_curBlkState->ProcessPrecedenceOp(
+					get_last_token(), op);
+				m_curBlkState->PushOp(op);
+				push_preceding_token(idx);
+			}
+		}
+	}
+	NewLine();//just call it to process the last line
+	while (m_stackBlocks.size() > 1)
+	{
+		auto top = m_stackBlocks.top();
+		m_stackBlocks.pop();//only keep top one
+		delete top;
+	}
+	return true;
+}
+AST::Module* Parser::GetModule()
+{
+	AST::Module* pTopModule = nullptr;
+	if (!m_stackBlocks.empty())
+	{
+		BlockState* pBlockState = m_stackBlocks.top();
+		pTopModule = (AST::Module*)pBlockState->Block();
+	}
+	return pTopModule;
 }
 bool Parser::Run()
 {

@@ -26,6 +26,44 @@ namespace X
 			KWARGS& kwParams,
 			AST::Value& retValue);
 	};
+#define GET_FUNC(name) \
+	bool Get##name(void* rt, void* pContext,\
+		ARGS& params,\
+		KWARGS& kwParams,\
+		AST::Value& retValue);
+
+	class HttpRequest
+	{
+		void* m_pRequest = nullptr;
+	public:
+		BEGIN_PACKAGE(HttpRequest)
+			ADD_FUNC("get_params", GetParams)
+			ADD_FUNC("get_all_headers", GetAllHeaders)
+			ADD_FUNC("get_body", Getbody)
+			ADD_FUNC("get_method", Getmethod)
+			ADD_FUNC("get_path", Getpath)
+			ADD_FUNC("get_remote_addr", Getremote_addr)
+		END_PACKAGE
+		HttpRequest(void* pReq)
+		{
+			m_pRequest = pReq;
+		}
+		HttpRequest(ARGS& params, KWARGS& kwParams)
+		{
+
+		}
+		GET_FUNC(method)
+		GET_FUNC(body)
+		GET_FUNC(path)
+		GET_FUNC(remote_addr)
+
+		bool GetAllHeaders(void* rt, void* pContext,
+			ARGS& params,
+			KWARGS& kwParams,
+			AST::Value& retValue);
+		bool GetParams(void* rt, void* pContext, ARGS& params,
+			KWARGS& kwParams, AST::Value& retValue);
+	};
 	class HttpResponse
 	{
 		void* m_pResponse = nullptr;
@@ -53,7 +91,8 @@ namespace X
 		BEGIN_PACKAGE(Http)
 			ADD_CLASS("Server", HttpServer)
 			ADD_CLASS("Response", HttpResponse)
-		END_PACKAGE
+			ADD_CLASS("Request", HttpRequest)
+			END_PACKAGE
 		Http()
 		{
 

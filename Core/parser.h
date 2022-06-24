@@ -8,13 +8,17 @@
 #include "block.h"
 #include "blockstate.h"
 #include "number.h"
+#include "module.h"
 
 namespace X {
-
 class Parser
 {
 	Token* mToken = nil;
+	AST::Block* m_lastComingBlock = nullptr;
+	std::stack<BlockState*> m_stackBlocks;
 	BlockState* m_curBlkState = nil;
+	std::vector<short> m_preceding_token_indexstack;
+
 	inline bool LastIsLambda();
 	//use this stack to keep 3 preceding tokens' index
 	//and if meet slash, will pop one, because slash means line continuing
@@ -45,10 +49,7 @@ class Parser
 			m_preceding_token_indexstack.pop_back();
 		}
 	}
-	std::vector<short> m_preceding_token_indexstack;
 
-	AST::Block* m_lastComingBlock = nullptr;
-	std::stack<BlockState*> m_stackBlocks;
 private:
 	void ResetForNewLine();
 	void LineOpFeedIntoBlock(AST::Expression* line,
@@ -78,6 +79,7 @@ public:
 	~Parser();
 	bool Init();
 	bool Compile(char* code, int size);
+	AST::Module* GetModule();
 	bool Run();
 };
 }

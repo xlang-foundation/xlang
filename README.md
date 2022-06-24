@@ -1,21 +1,35 @@
 # Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+base on expression eval
+##from https://www.geeksforgeeks.org/expression-evaluation/
+1. While there are still tokens to be read in,
+   1.1 Get the next token.
+   1.2 If the token is:
+	   1.2.1 A number: push it onto the value stack.
+	   1.2.2 A variable: get its value, and push onto the value stack.
+	   1.2.3 A left parenthesis: push it onto the operator stack.
+	   1.2.4 A right parenthesis:
+		 1 While the thing on top of the operator stack is not a
+		   left parenthesis,
+			 1 Pop the operator from the operator stack.
+			 2 Pop the value stack twice, getting two operands.
+			 3 Apply the operator to the operands, in the correct order.
+			 4 Push the result onto the value stack.
+		 2 Pop the left parenthesis from the operator stack, and discard it.
+	   1.2.5 An operator (call it thisOp):
+		 1 While the operator stack is not empty, and the top thing on the
+		   operator stack has the same or greater precedence as thisOp,
+		   1 Pop the operator from the operator stack.
+		   2 Pop the value stack twice, getting two operands.
+		   3 Apply the operator to the operands, in the correct order.
+		   4 Push the result onto the value stack.
+		 2 Push thisOp onto the operator stack.
+2. While the operator stack is not empty,
+	1 Pop the operator from the operator stack.
+	2 Pop the value stack twice, getting two operands.
+	3 Apply the operator to the operands, in the correct order.
+	4 Push the result onto the value stack.
+3. At this point the operator stack should be empty, and the value
+   stack should have only one value in it, which is the final result.
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
-
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
-
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
 

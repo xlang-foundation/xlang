@@ -17,6 +17,8 @@ class Module :
 	public Block,
 	public Scope
 {
+	char* m_code = nullptr;
+	int m_codeSize =0;
 	StackFrame* m_stackFrame = nullptr;
 	//for debug
 	dbg m_dbg = dbg::Continue;
@@ -28,6 +30,11 @@ public:
 	{
 		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	inline void SetCode(char* code, int size)
+	{
+		m_code = code;
+		m_codeSize = size;
 	}
 	~Module()
 	{
