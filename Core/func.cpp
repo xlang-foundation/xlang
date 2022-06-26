@@ -78,7 +78,7 @@ bool Func::Run(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 bool Func::Call(Runtime* rt,
 	void* pContext,
 	std::vector<Value>& params,
-	std::unordered_map<std::string, AST::Value>& kwParams,
+	KWARGS& kwParams,
 	Value& retValue)
 {
 	auto* pContextObj = (X::Data::Object*)pContext;

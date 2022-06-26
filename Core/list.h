@@ -40,13 +40,13 @@ public:
 		return strList;
 	}
 	inline size_t Size() { return m_useLValue ? m_ptrs.size() : m_data.size(); }
-	std::vector<AST::Value>& Data()
+	ARGS& Data()
 	{
 		return m_data;
 	}
 	std::vector<AST::Expression*>& GetBases() { return m_bases; }
-	virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-		std::unordered_map<std::string, AST::Value>& kwParams,
+	virtual bool Call(Runtime* rt, ARGS& params,
+		KWARGS& kwParams,
 		AST::Value& retValue)
 	{
 		//do twice, first to do size or other call with

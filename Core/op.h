@@ -21,6 +21,7 @@ public:
 	{
 		Op = op;
 	}
+	bool GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
 	inline void SetId(OP_ID id) { opId = id; }
 	inline OP_ID GetId() { return opId; }
 	inline short getOp(){return Op;}
@@ -185,6 +186,7 @@ public:
 				case X::OP_ID::MinusEqu:
 					break;
 				case X::OP_ID::MulEqu:
+					*lValue_L *= v_r;
 					break;
 				case X::OP_ID::DivEqu:
 					break;

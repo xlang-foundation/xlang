@@ -37,10 +37,12 @@ Value& Value::operator op (const Value& r)\
 	case ValueType::Double:\
 		x.d op ToDouble(r);\
 		break;\
+	case ValueType::Str:\
+		ChangeToStrObject();\
 	case ValueType::Object:\
 		{\
 			Value v =r;\
-			(*((Data::Object*)x.obj)) += v;\
+			(*((Data::Object*)x.obj)) op v;\
 		}\
 		break;\
 	default:\
@@ -144,6 +146,7 @@ public:
 		t = ValueType::Object;
 		AssignObject(p);
 	}
+	bool ChangeToStrObject();
 	void AssignObject(Data::Object* p);
 	void ReleaseObject(Data::Object* p);
 	inline Value(const Value& v)
@@ -252,6 +255,7 @@ public:
 			break;
 		case ValueType::Str:
 			x.str = v.x.str;
+			ChangeToStrObject();
 			break;
 		case ValueType::Object:
 			AssignObject(v.x.obj);

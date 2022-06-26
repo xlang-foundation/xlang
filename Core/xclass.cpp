@@ -7,7 +7,7 @@ namespace AST
 bool XClass::Call(Runtime* rt,
 	void* pContext,
 	std::vector<Value>& params, 
-	std::unordered_map<std::string, AST::Value>& kwParams,
+	KWARGS& kwParams,
 	Value& retValue)
 {
 	Data::XClassObject* obj = new Data::XClassObject(this);

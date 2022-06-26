@@ -9,6 +9,7 @@
 #include "glob.h"
 
 namespace X {
+	namespace AST { class Scope; }
 class Runtime;
 namespace Data {
 	enum class Type
@@ -53,9 +54,13 @@ namespace Data {
 			}
 			return ref;
 		}
+		virtual AST::Scope* GetScope()
+		{
+			return nullptr;
+		}
 		Type GetType() { return m_t; }
-		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-			std::unordered_map<std::string, AST::Value>& kwParams,
+		virtual bool Call(Runtime* rt, ARGS& params,
+			KWARGS& kwParams,
 			AST::Value& retValue) = 0;
 		virtual std::string ToString()
 		{
@@ -66,7 +71,18 @@ namespace Data {
 		}
 		virtual Object& operator +=(AST::Value& r)
 		{
-			int x = 1;
+			return *this;
+		}
+		virtual Object& operator -=(AST::Value& r)
+		{
+			return *this;
+		}
+		virtual Object& operator *=(AST::Value& r)
+		{
+			return *this;
+		}
+		virtual Object& operator /=(AST::Value& r)
+		{
 			return *this;
 		}
 	};
@@ -82,8 +98,8 @@ namespace Data {
 			m_expr = e;
 		}
 		AST::Expression* Get() { return m_expr; }
-		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-			std::unordered_map<std::string, AST::Value>& kwParams,
+		virtual bool Call(Runtime* rt, ARGS& params,
+			KWARGS& kwParams,
 			AST::Value& retValue)
 		{
 			return true;
@@ -108,8 +124,8 @@ namespace Data {
 			m_func = p;
 		}
 		AST::Func* GetFunc() { return m_func; }
-		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-			std::unordered_map<std::string, AST::Value>& kwParams,
+		virtual bool Call(Runtime* rt, ARGS& params,
+			KWARGS& kwParams,
 			AST::Value& retValue)
 		{
 			return m_func->Call(rt, nullptr,
@@ -129,8 +145,8 @@ namespace Data {
 			m_func = p;
 		}
 		AST::Func* GetFunc() { return m_func; }
-		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-			std::unordered_map<std::string, AST::Value>& kwParams,
+		virtual bool Call(Runtime* rt, ARGS& params,
+			KWARGS& kwParams,
 			AST::Value& retValue)
 		{
 			return m_func->Call(rt, nullptr,params, kwParams, retValue);
@@ -167,8 +183,8 @@ namespace Data {
 			return m_stackFrame;
 		}
 		AST::XClass* GetClassObj() { return m_obj; }
-		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-			std::unordered_map<std::string, AST::Value>& kwParams,
+		virtual bool Call(Runtime* rt, ARGS& params,
+			KWARGS& kwParams,
 			AST::Value& retValue)
 		{
 			return m_obj->Call(rt,this,
@@ -189,8 +205,8 @@ namespace Data {
 		{
 			m_pTask = task;
 		}
-		virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-			std::unordered_map<std::string, AST::Value>& kwParams,
+		virtual bool Call(Runtime* rt, ARGS& params,
+			KWARGS& kwParams,
 			AST::Value& retValue) override
 		{
 			return false;

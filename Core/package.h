@@ -51,6 +51,10 @@ public:
 		m_pObject = pObj;
 		m_t = Data::Type::Package;
 	}
+	inline virtual AST::Scope* GetScope()
+	{
+		return dynamic_cast<Scope*>(this);
+	}
 	void* GetObject() { return m_pObject; }
 	bool Init(int varNum)
 	{
@@ -58,8 +62,8 @@ public:
 		m_stackFrame->SetVarCount(varNum);
 		return true;
 	}
-	virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-		std::unordered_map<std::string, AST::Value>& kwParams,
+	virtual bool Call(Runtime* rt, ARGS& params,
+		KWARGS& kwParams,
 		AST::Value& retValue)
 	{
 		return true;

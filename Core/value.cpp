@@ -1,5 +1,6 @@
 #include "value.h"
 #include "object.h"
+#include "str.h"
 namespace X {namespace AST {
 	
 	ARITH_OP_IMPL(+= )
@@ -14,6 +15,25 @@ namespace X {namespace AST {
 			p->AddRef();
 		}
 		x.obj = p;
+	}
+	bool Value::ChangeToStrObject()
+	{
+		if (t == ValueType::Object)
+		{
+			return true;
+		}
+		else if (t == ValueType::Str)
+		{
+			Data::Str* pStrObj = new Data::Str((const char*)x.str,(int)flags);
+			pStrObj->AddRef();//for this Value
+			x.obj = pStrObj;
+		}
+		else
+		{
+			x.obj = nullptr;
+		}
+		t = ValueType::Object;
+		return true;
 	}
 	void Value::ReleaseObject(Data::Object* p)
 	{

@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include "value.h"
 #include "runtime.h"
+#include <assert.h>
 
 namespace X 
 { 
@@ -43,6 +44,7 @@ public:
 	inline virtual bool Set(Runtime* rt, void* pContext,
 		int idx, AST::Value& v)
 	{
+		assert(idx != -1);
 		return rt->Set(this, pContext, idx, v);
 	}
 

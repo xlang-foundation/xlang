@@ -42,8 +42,8 @@ public:
 		}
 		return true;
 	}
-	virtual bool Call(Runtime* rt, std::vector<AST::Value>& params,
-		std::unordered_map<std::string, AST::Value>& kwParams,
+	virtual bool Call(Runtime* rt, ARGS& params,
+		KWARGS& kwParams,
 		AST::Value& retValue)
 	{
 		if (m_list.size() == 1)

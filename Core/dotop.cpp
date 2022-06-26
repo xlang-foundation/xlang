@@ -18,6 +18,11 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,
 	std::vector<Scope*>& bases)
 {
 	Data::Object* pObj = (Data::Object*)pObj0;
+	Scope* objScope = pObj->GetScope();
+	if (objScope)
+	{
+		bases.push_back(objScope);
+	}
 	if (pObj->GetType() == Data::Type::List)
 	{
 		Data::List* pList = dynamic_cast<Data::List*>(pObj);
@@ -37,10 +42,6 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,
 		{
 			bases.push_back(pClassObj->GetClassObj());
 		}
-	}
-	else if (pObj->GetType() == Data::Type::Package)
-	{
-		bases.push_back(dynamic_cast<Scope*>(pObj));
 	}
 	else if (pObj->GetType() == Data::Type::Function ||
 		pObj->GetType() == Data::Type::FuncCalls)

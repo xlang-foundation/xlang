@@ -4,13 +4,14 @@
 #include <fstream>
 #include <sys/stat.h>
 #include "bin.h"
-
+#include "str.h"
 namespace X
 {
 	class File
 	{
 		std::ifstream m_stream;
 		std::string m_fileName;
+		bool m_IsBinary = true;
 	public:
 		BEGIN_PACKAGE(File)
 			ADD_FUNC("read", read)
@@ -22,9 +23,15 @@ namespace X
 		File(ARGS& params,KWARGS& kwParams)
 		{
 			m_fileName = params[0].ToString();
-			std::string mode = params[1].ToString();
+			std::string mode;
+			if (params.size() > 1)
+			{
+				mode = params[1].ToString();
+			}
+			m_IsBinary = (std::string::npos != mode.find_first_of('b'));
 			m_stream.open(m_fileName.c_str(),
-				std::ios_base::in|std::ios_base::binary);
+				std::ios_base::in|
+				m_IsBinary?std::ios_base::binary:0);
 		}
 		bool read(void* rt, void* pContext,
 			ARGS& params,
@@ -32,10 +39,20 @@ namespace X
 			AST::Value& retValue)
 		{
 			auto size = params[0].GetLongLong();
-			char* data = new char[size];
-			Data::Binary* pBinObj = new Data::Binary(data,size);
-			m_stream.read(data, size);
-			retValue = AST::Value(pBinObj);
+			if (m_IsBinary)
+			{
+				char* data = new char[size];
+				Data::Binary* pBinObj = new Data::Binary(data, size);
+				m_stream.read(data, size);
+				retValue = AST::Value(pBinObj);
+			}
+			else
+			{
+				Data::Str* pStrObj = new Data::Str((size_t)size);
+				char* data = pStrObj->Buffer();
+				m_stream.read(data, size);
+				retValue = AST::Value(pStrObj);
+			}
 			return true;
 		}
 		bool write(void* rt, void* pContext,

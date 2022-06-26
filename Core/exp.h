@@ -16,6 +16,7 @@ enum class ObType
 	Assign,
 	BinaryOp,
 	UnaryOp,
+	PipeOp,
 	Range,
 	Var,
 	Number,

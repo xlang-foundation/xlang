@@ -14,8 +14,8 @@ namespace X
 		AST::Func* m_pFunc = nil;
 		Runtime* m_rt = nil;
 		void* m_pContext = nil;
-		std::vector<AST::Value> m_params;
-		std::unordered_map<std::string, AST::Value> m_kwParams;
+		ARGS m_params;
+		KWARGS m_kwParams;
 		AST::Value m_retValue;
 
 		// Inherited via GThread
@@ -23,8 +23,8 @@ namespace X
 	public:
 		bool Call(AST::Func* pFunc,
 			Runtime* rt, void* pContext,
-			std::vector<AST::Value>& params,
-			std::unordered_map<std::string, AST::Value>& kwParams)
+			ARGS& params,
+			KWARGS& kwParams)
 		{
 			m_pFunc = pFunc;
 			m_pContext = pContext;

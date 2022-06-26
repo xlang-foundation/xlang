@@ -7,6 +7,7 @@
 #include "xclass.h"
 #include "package.h"
 #include "dotop.h"
+#include "pipeop.h"
 #include "lex.h"
 
 namespace X {
@@ -231,7 +232,18 @@ void Register()
 			return op;
 		});
 	//Python Bitwise Operators --index range[61,66]
-	RegOP("&", "|", "^", "~", "<<", ">>");
+	RegOP("&", "|", "^", "~", "<<", ">>")
+		.SetProcess([](Parser* p, short opIndex) 
+	{
+		auto op = new AST::BinaryOp(opIndex);
+		return (AST::Operator*)op;
+	});
+	RegOP("|")
+		.SetProcess([](Parser* p, short opIndex)
+			{
+				auto op = new AST::PipeOp(opIndex);
+				return (AST::Operator*)op;
+			});
 	RegOP("~", "not")
 		.SetProcess([](Parser* p, short opIndex){
 			AST::Operator* op = nil;

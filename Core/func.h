@@ -11,7 +11,7 @@ namespace AST
 {
 typedef bool (*U_FUNC) (Runtime* rt,void* pContext,
 	std::vector<Value>& params,
-	std::unordered_map<std::string, AST::Value>& kwParams,
+	KWARGS& kwParams,
 	Value& retValue);
 class Func :
 	public Block,
@@ -127,7 +127,7 @@ public:
 	}
 	virtual bool Call(Runtime* rt, void* pContext,
 		std::vector<Value>& params,
-		std::unordered_map<std::string, AST::Value>& kwParams,
+		KWARGS& kwParams,
 		Value& retValue);
 	virtual bool Run(Runtime* rt, void* pContext,
 		Value& v, LValue* lValue = nullptr) override;
@@ -145,7 +145,7 @@ public:
 	}
 	inline virtual bool Call(Runtime* rt, void* pContext,
 		std::vector<Value>& params,
-		std::unordered_map<std::string, AST::Value>& kwParams,
+		KWARGS& kwParams,
 		Value& retValue) override
 	{
 		return m_func ? m_func(rt,

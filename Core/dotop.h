@@ -10,6 +10,7 @@ class DotOp :
 	public BinaryOp
 {
 	int m_dotNum = 1;
+protected:
 	void QueryBases(Runtime* rt,void* pObj0,
 		std::vector<Scope*>& bases);
 	void RunScopeLayoutWithScopes(Expression* pExpr, 

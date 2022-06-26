@@ -8,57 +8,6 @@ namespace X
 {
 namespace AST
 {
-bool PairOp::GetParamList(Runtime* rt,Expression* e,
-	std::vector<Value>& params,
-	std::unordered_map<std::string, Value>& kwParams)
-{
-	auto proc = [&](Expression* i)
-	{
-		bool bOK = true;
-		if (i->m_type == ObType::Assign)
-		{
-			Assign* assign = dynamic_cast<Assign*>(i);
-			Var* varName = dynamic_cast<Var*>(assign->GetL());
-			String& szName = varName->GetName();
-			std::string strVarName = std::string(szName.s, szName.size);
-			Expression* valExpr = assign->GetR();
-			Value v0;
-			bOK = valExpr->Run(rt,nullptr,v0);
-			if (bOK)
-			{
-				kwParams.emplace(std::make_pair(strVarName, v0));
-			}
-		}
-		else
-		{
-			Value v0;
-			bOK = i->Run(rt,nullptr,v0);
-			if (bOK)
-			{
-				params.push_back(v0);
-			}
-		}
-		return bOK;
-	};
-	bool bOK = true;
-	if (e->m_type != ObType::List)
-	{
-		bOK = proc(e);
-	}
-	else
-	{
-		auto& list = ((List*)e)->GetList();
-		for (auto i : list)
-		{
-			bOK = proc(i);
-			if (!bOK)
-			{
-				break;
-			}
-		}
-	}
-	return bOK;
-}
 bool PairOp::ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = false;
@@ -70,8 +19,8 @@ bool PairOp::ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 		{
 			return bOK;
 		}
-		std::vector<Value> params;
-		std::unordered_map<std::string, Value> kwParams;
+		ARGS params;
+		KWARGS kwParams;
 		if (R)
 		{
 			bOK = GetParamList(rt, R, params, kwParams);

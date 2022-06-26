@@ -11,9 +11,6 @@ namespace AST
 		public BinaryOp
 	{
 		short m_preceding_token = 0;
-		bool GetParamList(Runtime* rt, Expression* e,
-			std::vector<Value>& params,
-			std::unordered_map<std::string, Value>& kwParams);
 		bool ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
 		bool BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
 		bool CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);

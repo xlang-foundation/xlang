@@ -10,6 +10,56 @@ namespace X
 {
 namespace AST
 {
+	bool Operator::GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
+	{
+		auto proc = [&](Expression* i)
+		{
+			bool bOK = true;
+			if (i->m_type == ObType::Assign)
+			{
+				Assign* assign = dynamic_cast<Assign*>(i);
+				Var* varName = dynamic_cast<Var*>(assign->GetL());
+				String& szName = varName->GetName();
+				std::string strVarName = std::string(szName.s, szName.size);
+				Expression* valExpr = assign->GetR();
+				Value v0;
+				bOK = valExpr->Run(rt, nullptr, v0);
+				if (bOK)
+				{
+					kwParams.emplace(std::make_pair(strVarName, v0));
+				}
+			}
+			else
+			{
+				Value v0;
+				bOK = i->Run(rt, nullptr, v0);
+				if (bOK)
+				{
+					params.push_back(v0);
+				}
+			}
+			return bOK;
+		};
+		bool bOK = true;
+		if (e->m_type != ObType::List)
+		{
+			bOK = proc(e);
+		}
+		else
+		{
+			auto& list = ((List*)e)->GetList();
+			for (auto i : list)
+			{
+				bOK = proc(i);
+				if (!bOK)
+				{
+					break;
+				}
+			}
+		}
+		return bOK;
+	}
+
 bool UnaryOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	Value v_r;

@@ -42,6 +42,8 @@ int main(int argc, char* argv[])
 		pyFile)), std::istreambuf_iterator<char>());
 	pyFile.close();
 	REGISTER_PACKAGE("http", X::Http)
+	REGISTER_PACKAGE("fs", X::FileSystem)
+		
 	X::Builtin::I().RegisterInternals();
 	X::Hosting::I().Run(code.c_str(), (int)code.size());
 	X::Builtin::I().Cleanup();

@@ -1,6 +1,7 @@
 #pragma once
 #include "exp.h"
 #include "scope.h"
+#include <assert.h> 
 namespace X
 {
 namespace AST
@@ -21,6 +22,11 @@ public:
 	String& GetName() { return Name; }
 	inline virtual void Set(Runtime* rt, void* pContext, Value& v) override
 	{
+		if (Index == -1)
+		{
+			ScopeLayout();
+			assert(Index != -1 && m_scope != nullptr);
+		}
 		m_scope->Set(rt, pContext, Index, v);
 	}
 	inline virtual bool Run(Runtime* rt, void* pContext, Value& v, LValue* lValue = nullptr) override
@@ -30,10 +36,7 @@ public:
 			ScopeLayout();
 			if (Index == -1 || m_scope == nullptr)
 			{
-				//just return the var name as string
-				//for case x["key"] or x[key]
-				v = Value(Name.s, Name.size);
-				return true;
+				return false;
 			}
 		}
 		m_scope->Get(rt, pContext, Index, v, lValue);
