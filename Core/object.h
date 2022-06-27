@@ -25,7 +25,8 @@ namespace Data {
 		Package,
 		Future,
 		List,
-		Dict
+		Dict,
+		Table
 	};
 	class Object
 	{

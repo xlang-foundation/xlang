@@ -3,6 +3,12 @@
 #include <vector>
 #include <unordered_map>
 
+#if (WIN32)
+#define SPRINTF sprintf_s
+#else
+#define SPRINTF snprintf
+#endif
+
 namespace X {
 #define nil 0
 #define MAX_VAL(x,y) ((x)>(y)?(x):(y))
@@ -19,6 +25,7 @@ enum class OP_ID
 	Parenthesis_L,
 	Brackets_L,
 	Curlybracket_L,
+	TableBracket_L,
 	Slash,
 	Colon,
 	Comma,

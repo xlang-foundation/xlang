@@ -258,7 +258,7 @@ void Register()
 			return op;
 		});
 
-	RegOP("(", "[", "{")
+	RegOP("(", "[", "{","<|")
 		.SetProcess([](Parser* p, short opIndex){
 			return p->PairLeft(opIndex);
 		});
@@ -273,6 +273,12 @@ void Register()
 			p->PairRight(OP_ID::Brackets_L);
 			return op;
 		});
+	RegOP("|>")
+		.SetProcess([](Parser* p, short opIndex) {
+		AST::Operator* op = nil;
+		p->PairRight(OP_ID::TableBracket_L);
+		return op;
+			});
 	RegOP("}").SetProcess([](Parser* p, short opIndex)
 		{
 			p->PairRight(OP_ID::Curlybracket_L);
@@ -321,6 +327,7 @@ void Register()
 		});
 	
 	RegOP("(").SetId(OP_ID::Parenthesis_L);
+	RegOP("<|").SetId(OP_ID::TableBracket_L);
 	RegOP("[").SetId(OP_ID::Brackets_L);
 	RegOP("{").SetId(OP_ID::Curlybracket_L);
 	RegOP("\\").SetId(OP_ID::Slash);

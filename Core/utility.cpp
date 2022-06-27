@@ -9,6 +9,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #endif
+#include <random>
+#include <cmath>
 
 
 long long getCurMilliTimeStamp()
@@ -33,4 +35,12 @@ unsigned long GetThreadID()
 	tid = gettid();
 #endif
 	return tid;
+}
+
+long long rand64()
+{
+	static std::random_device rd;
+	static std::mt19937_64 e2(rd());
+	static std::uniform_int_distribution<long long int> dist(std::llround(std::pow(2, 61)), std::llround(std::pow(2, 62)));
+	return dist(e2);
 }

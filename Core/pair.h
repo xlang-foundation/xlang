@@ -14,6 +14,7 @@ namespace AST
 		bool ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
 		bool BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
 		bool CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
+		bool TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
 		bool GetItemFromList(Runtime* rt, void* pContext,
 			Data::List* pDataList, Expression* r,
 			Value& v, LValue* lValue);

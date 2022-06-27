@@ -30,8 +30,12 @@ int main1(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
+//#include "table.h"
 int main(int argc, char* argv[])
 {
+	//X::Data::Table t;
+	//t.Test();
+	//return 0;
 	std::string pyFileName = "C:/Dev/X/test/test2.py";
 	if (argc >= 2)
 	{

@@ -3,6 +3,7 @@
 #include "object.h"
 #include "dict.h"
 #include "list.h"
+#include "table.h"
 
 namespace X
 {
@@ -197,6 +198,87 @@ bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 	v = Value(pDict);
 	return bOK;
 }
+bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+{
+	Data::Table* pDataTable = new Data::Table();
+	auto parsParam = [rt, pContext, pDataTable](Param* p) {
+		auto name = p->GetName();
+		std::string strName;
+		std::vector<std::string> props;
+		Value valDefaultValue;
+		if (name && name->m_type == ObType::Var)
+		{
+			String& szName = ((Var*)name)->GetName();
+			strName = std::string(szName.s, szName.size);
+		}
+		auto type0 = p->GetType();
+		if (type0)
+		{
+			while (type0->m_type == ObType::Param)
+			{
+				auto p0 = (Param*)type0;
+				auto name0 = p0->GetName();
+				if (name0 && name0->m_type == ObType::Var)
+				{
+					String& sz0 = ((Var*)name0)->GetName();
+					std::string str0 = std::string(sz0.s, sz0.size);
+					props.push_back(str0);
+				}
+				type0 = p0->GetType();
+			}
+			if (type0->m_type == ObType::Assign)
+			{
+				auto assign0 = (Assign*)type0;
+				auto name0 = assign0->GetL();
+				if (name0 && name0->m_type == ObType::Var)
+				{
+					String& sz0 = ((Var*)name0)->GetName();
+					std::string str0 = std::string(sz0.s, sz0.size);
+					props.push_back(str0);
+				}
+				auto type1 = assign0->GetL();
+				auto r = assign0->GetR();
+				r->Run(rt, pContext, valDefaultValue);
+			}
+			else if (type0->m_type == ObType::Var)
+			{
+				String& sz0 = ((Var*)type0)->GetName();
+				std::string str0 = std::string(sz0.s, sz0.size);
+				props.push_back(str0);
+			}
+		}
+		pDataTable->AddCol(strName, props, valDefaultValue);
+	};
+	if (R)
+	{
+		if (R->m_type == ObType::List)
+		{
+			auto& list = ((List*)R)->GetList();
+			for (auto e : list)
+			{
+				if (e->m_type == ObType::Param)
+				{
+					parsParam((Param*)e);
+				}
+				else
+				{//todo: error
+
+				}
+			}
+		}
+		else if (R->m_type == ObType::Param)
+		{
+			parsParam((Param*)R);
+		}
+		else
+		{
+			//todo:error
+		}
+
+	}
+	v = Value(pDataTable);
+	return true;
+}
 bool PairOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 {
 	bool bOK = false;
@@ -210,6 +292,9 @@ bool PairOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 		break;
 	case X::OP_ID::Curlybracket_L:
 		bOK = CurlyBracketRun(rt, pContext, v, lValue);
+		break;
+	case X::OP_ID::TableBracket_L:
+		bOK = TableBracketRun(rt, pContext, v, lValue);
 		break;
 	default:
 		break;

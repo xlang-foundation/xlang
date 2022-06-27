@@ -55,6 +55,7 @@ namespace Data
 			}
 				break;
 			default:
+				m_s += r.ToString();
 				break;
 			}
 			return *this;

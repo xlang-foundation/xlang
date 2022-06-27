@@ -12,6 +12,7 @@ enum class ValueType
 	Double,
 	Object,
 	Str,
+	Value,
 };
 
 #define ToDouble(v) \
@@ -134,6 +135,12 @@ public:
 	{
 		t = ValueType::Double;
 		x.d = d;
+	}
+	inline Value(const char* s)
+	{
+		t = ValueType::Str;
+		flags = (int)strlen(s);
+		x.str = (char*)s;
 	}
 	inline Value(char* s, int size)
 	{
