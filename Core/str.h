@@ -1,7 +1,7 @@
 #pragma once
 
 #include "object.h"
-
+#include "utility.h"
 #include <string>
 namespace X 
 {
@@ -96,6 +96,18 @@ namespace Data
 				len = end - start;
 			}
 			retVal = m_s.substr(start, len);
+			return true;
+		}
+		inline bool Split(std::string& delims, std::vector<std::string>& retList)
+		{
+			if (delims.size() == 1)
+			{
+				retList = split(m_s, delims[0]);
+			}
+			else
+			{
+				retList = split(m_s, delims.c_str());
+			}
 			return true;
 		}
 		virtual bool Call(Runtime* rt, ARGS& params,

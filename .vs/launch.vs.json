@@ -6,7 +6,7 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "X.exe",
-      "args": [ "C:/Dev/X/test/table.py" ],
+      "args": [ "C:/Dev/X/test/str.py" ],
       "name": "X.exe"
     }
   ]

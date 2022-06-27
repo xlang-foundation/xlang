@@ -1,5 +1,6 @@
 #include "str.h"
 #include "scope.h"
+#include "list.h"
 #include <string>
 namespace X
 {
@@ -17,6 +18,7 @@ namespace X
 					{"find",0},
 					{"slice",1},
 					{"size",2},
+					{"split",3}
 				};
 				{
 					std::string name("find");
@@ -79,6 +81,29 @@ namespace X
 								auto* pObj = (Str*)pContext;
 								size_t  size = pObj->GetSize();
 								retValue = AST::Value((long long)size);
+								return true;
+							}));
+					auto* pFuncObj = new Data::Function(extFunc);
+					m_funcs.push_back(AST::Value(pFuncObj));
+				}
+				{
+					std::string name("split");
+					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
+							ARGS& params,
+							KWARGS& kwParams,
+							X::AST::Value& retValue)
+							{
+								std::string delim("\n");
+								if (params.size() >= 1)
+								{
+									delim = params[0].ToString();
+								}
+								auto* pObj = (Str*)pContext;
+								std::vector<std::string> li;
+								pObj->Split(delim, li);
+								auto* pList = new List(li);
+								retValue = AST::Value(pList);
 								return true;
 							}));
 					auto* pFuncObj = new Data::Function(extFunc);

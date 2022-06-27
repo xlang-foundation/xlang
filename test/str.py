@@ -1,5 +1,16 @@
-x ="abcdef"
-x|(y){print(y);}|(){print(x);}
+import fs
+filename = "C:/Dev/Data/loghub/Windows/Windows_2k.log"
+filename2 = "C:/Dev/english-words/words.txt"
+f = fs.File(filename,"r")
+##C:\Dev\Data\loghub\Windows\Windows_2k.log
+data = f.read(f.size())
+l = data.split()
+print(l[10])
+print(l[100])
+print("end")
+
+#x ="abcdef"
+#x|(y){print(y);}|(){print(x);}
 #x.find("cd")|y|y-1|x.slice(y,4)|z|k|l|m
 #print("k=",k,",z=",z,",y=",y,",l=",l,",m=",m)
 

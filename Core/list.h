@@ -1,5 +1,7 @@
 #pragma once
 #include "object.h"
+#include "str.h"
+
 namespace X
 {
 namespace Data
@@ -19,6 +21,14 @@ public:
 	{
 		m_t = Type::List;
 
+	}
+	List(std::vector<std::string>& strs) :
+		List()
+	{
+		for (auto& s : strs)
+		{
+			m_data.push_back(AST::Value(new Str(s.c_str(), s.size())));
+		}
 	}
 	~List()
 	{
