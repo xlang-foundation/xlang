@@ -18,9 +18,18 @@ public:
 	Scope()
 	{
 	}
-	int GetVarNum()
+	inline int GetVarNum()
 	{
 		return (int)m_Vars.size();
+	}
+	inline std::vector<std::string> GetVarNames()
+	{
+		std::vector<std::string> names;
+		for (auto& it : m_Vars)
+		{
+			names.push_back(it.first);
+		}
+		return names;
 	}
 	virtual Scope* GetParentScope()= 0;
 	virtual int AddOrGet(std::string& name, bool bGetOnly)
@@ -40,6 +49,12 @@ public:
 		{
 			return -1;
 		}
+	}
+	inline virtual bool Get(Runtime* rt, void* pContext,
+		std::string& name, AST::Value& v, LValue* lValue = nullptr)
+	{
+		int idx = AddOrGet(name, true);
+		return (idx>=0)?rt->Get(this, pContext, idx, v, lValue):false;
 	}
 	inline virtual bool Set(Runtime* rt, void* pContext,
 		int idx, AST::Value& v)

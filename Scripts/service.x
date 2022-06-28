@@ -5,7 +5,7 @@ srv = http.Server()
 root = "C:/Dev/Cantor/factory"
 srv.get(".*",(req,res){
   path = req.get_path();
-  print(path);
+  print("path=${path}");
   pos = path.rfind(".");
   mime = "text/html";
   openMode ="r"
@@ -19,20 +19,17 @@ srv.get(".*",(req,res){
 	  openMode ="rb"
 
   params = req.get_params();
-  pa = "C:/Dev/Cantor/factory";
-  pa +=path;
-  f = fs.File(pa,openMode)
-  data = f.read(f.size())
-  f.close()
+  pa = root;
+  pa += path;
+  print("pa=${pa}")
+  f = fs.File(pa,openMode);
+  f_size = f.size();
+  if f_size >=0:
+	data = f.read(f_size)
+  else:
+    data=""
+  f.close();
   res.set_content(data, mime);
-})
-
-srv.get("/test",(req,res){
-  params = req.get_params();
-  f = fs.File(params["file"],"rb")
-  data = f.read(f.size())
-  f.close()
-  res.set_content(data, "image/png");
 })
 
 srv.get("/stop",(req,res){

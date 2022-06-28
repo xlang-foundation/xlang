@@ -3,6 +3,7 @@
 #include "var.h"
 #include "number.h"
 #include "list.h"
+#include "function.h"
 #include "funclist.h"
 namespace X
 {

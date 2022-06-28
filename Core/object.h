@@ -7,6 +7,7 @@
 #include "xclass.h"
 #include "module.h"
 #include "glob.h"
+#include "utility.h"
 
 namespace X {
 	namespace AST { class Scope; }
@@ -142,32 +143,6 @@ namespace Data {
 		}
 	};
 
-	class Function :
-		public Object
-	{
-	protected:
-		AST::Func* m_func = nullptr;
-	public:
-		Function(AST::Func* p)
-		{
-			m_t = Type::Function;
-			m_func = p;
-		}
-		virtual std::string ToString()
-		{
-			char v[1000];
-			snprintf(v, sizeof(v), "Function:%s@0x%llx",
-				m_func->GetNameString().c_str(), (unsigned long long)this);
-			return v;
-		}
-		AST::Func* GetFunc() { return m_func; }
-		virtual bool Call(Runtime* rt, ARGS& params,
-			KWARGS& kwParams,
-			AST::Value& retValue)
-		{
-			return m_func->Call(rt, nullptr,params, kwParams, retValue);
-		}
-	};
 	class XClassObject :
 		public Object
 	{

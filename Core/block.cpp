@@ -4,6 +4,8 @@
 #include "builtin.h"
 #include "module.h"
 #include <iostream>
+#include "utility.h"
+#include "dbg.h"
 
 namespace X
 {
@@ -84,23 +86,7 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 		{//TODO: error process here
 			break;
 		}
-		if (rt->M()->GetDbg() == dbg::Step)
-		{
-			std::cout << v0.ToString() << std::endl;
-			int line = i->GetStartLine();
-			std::cout << "(" << line << ",(c)ontinue,(s)tep)>>";
-			X::AST::Value v0;
-			std::string yes;
-			std::cin >> yes;
-			if (yes == "c" || yes == "C")
-			{
-				rt->M()->SetDbg(AST::dbg::Continue);
-			}
-			else if (yes == "s" || yes == "S")
-			{
-				rt->M()->SetDbg(AST::dbg::Step);
-			}
-		}
+		Dbg(rt).Check(v0,i, pContext);
 	}
 	return bOk;
 }

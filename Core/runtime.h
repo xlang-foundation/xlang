@@ -1,5 +1,6 @@
 #pragma once
 #include "stackframe.h"
+#include "utility.h"
 
 namespace X {
 namespace AST
@@ -9,12 +10,15 @@ namespace AST
 }
 class Runtime
 {
+	long long m_threadId = 0;
 	AST::Module* m_pModule = nullptr;
 	AST::StackFrame* m_stackBottom = nullptr;
 public:
 	Runtime()
 	{
+		m_threadId = GetThreadID();
 	}
+	inline long long GetThreadId() { return m_threadId; }
 	inline void MirrorStacksFrom(Runtime* rt)
 	{
 		m_pModule = rt->m_pModule;

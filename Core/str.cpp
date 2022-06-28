@@ -1,6 +1,7 @@
 #include "str.h"
 #include "scope.h"
 #include "list.h"
+#include "function.h"
 #include <string>
 namespace X
 {

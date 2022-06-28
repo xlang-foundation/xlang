@@ -2,6 +2,7 @@
 #include "exp.h"
 #include "object.h"
 #include "funclist.h"
+#include "function.h"
 #include <iostream>
 #ifdef _WIN32
 #include <Windows.h>

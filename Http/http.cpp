@@ -99,9 +99,20 @@ namespace X
 
 					KWARGS kwParams0;
 					AST::Value retValue0;
-					pHandler->Call((X::Runtime*)rt,
-						params0, kwParams0,
-						retValue0);
+					try 
+					{
+						pHandler->Call((X::Runtime*)rt,
+							params0, kwParams0,
+							retValue0);
+					}
+					catch (int e)
+					{
+						std::cout << "An exception occurred. Exception Nr. " << e << '\n';
+					}
+					catch (...)
+					{
+						std::cout << "An exception occurred."<< '\n';
+					}
 				}
 			});
 		return true;

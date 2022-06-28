@@ -4,6 +4,7 @@
 #include "object.h"
 #include "dotop.h"
 #include "pair.h"
+#include "function.h"
 
 namespace X
 {

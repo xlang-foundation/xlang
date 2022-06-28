@@ -1,5 +1,7 @@
 #include "xclass.h"
 #include "object.h"
+#include "function.h"
+
 namespace X
 {
 namespace AST

@@ -1,5 +1,6 @@
 #pragma once
 #include "xlang.h"
+#include "function.h"
 #include <vector>
 namespace X
 {

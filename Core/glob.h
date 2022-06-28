@@ -15,23 +15,34 @@ namespace X {
 		std::vector<short> kwTree;
 		std::vector<OpAction> OpActions;
 		int opids[(int)OP_ID::Count]={0};
+		void* m_lock = nullptr;
 	public:
+		G();
+		~G();
+		void Lock();
+		void UnLock();
 		void Check()
 		{
+			Lock();
 			auto size = Objects.size();
+			UnLock();
 			std::cout << "Left Objects:" << size << std::endl;
 		}
 		inline void AddObj(Data::Object* obj)
 		{
+			Lock();
 			Objects.emplace(std::make_pair(obj,1));
+			UnLock();
 		}
 		inline void RemoveObj(Data::Object* obj)
 		{
+			Lock();
 			auto it = Objects.find(obj);
 			if (it != Objects.end())
 			{
 				Objects.erase(it);
 			}
+			UnLock();
 		}
 		inline int GetOpId(OP_ID idx)
 		{

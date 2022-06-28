@@ -16,7 +16,6 @@ namespace X {namespace AST {
 
 	bool Value::Clone()
 	{
-		return true;
 		if (t == ValueType::Object)
 		{
 			if (x.obj && x.obj->GetType() == Data::Type::Str)

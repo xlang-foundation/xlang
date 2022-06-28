@@ -1,5 +1,7 @@
 #include "func.h"
 #include "object.h"
+#include "function.h"
+#include <string>
 
 namespace X
 {

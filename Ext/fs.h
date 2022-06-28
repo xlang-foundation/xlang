@@ -46,6 +46,11 @@ namespace X
 			AST::Value& retValue)
 		{
 			auto size = params[0].GetLongLong();
+			if (size <= 0)
+			{
+				retValue = AST::Value();
+				return true;
+			}
 			if (m_IsBinary)
 			{
 				char* data = new char[size];
@@ -85,7 +90,15 @@ namespace X
 		{
 			struct stat stat_buf;
 			int rc = stat(m_fileName.c_str(), &stat_buf);
-			size_t size = (rc == 0 ? stat_buf.st_size : -1);
+			size_t size = -1;
+			if (rc == 0)
+			{
+				size = stat_buf.st_size;
+			}
+			else
+			{
+				rc = rc;
+			}
 			retValue = AST::Value((long long)size);
 			return true;
 		}

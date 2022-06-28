@@ -1,6 +1,7 @@
 #include "module.h"
 #include "builtin.h"
 #include "object.h"
+#include "function.h"
 
 namespace X 
 {
