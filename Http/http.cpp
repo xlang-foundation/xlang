@@ -3,6 +3,7 @@
 #include "object.h"
 #include "dict.h"
 #include "bin.h"
+#include "str.h"
 
 #define GET_FUNC_IMPL(name) \
 bool HttpRequest::Get##name(void* rt, void* pContext,\
@@ -27,6 +28,15 @@ namespace X
 			printf("server has an error...\n");
 		}
 		m_pSrv = (void*)pSrv;
+	}
+	HttpServer::~HttpServer()
+	{
+		for (auto p : m_handlers)
+		{
+			Data::Function* pFuncObj = (Data::Function*)p;
+			pFuncObj->Release();
+		}
+		m_handlers.clear();
 	}
 	bool HttpServer::Listen(void* rt, void* pContext,
 		ARGS& params,
@@ -62,10 +72,12 @@ namespace X
 			if (pFuncObj->GetType() == X::Data::Type::Function)
 			{
 				pHandler = dynamic_cast<Data::Function*>(pFuncObj);
+				pHandler->AddRef();//keep for lambda
+				m_handlers.push_back((void*)pHandler);
 			}
 		}
 		((httplib::Server*)m_pSrv)->Get(pattern,
-			[=](const httplib::Request& req, 
+			[pHandler,rt](const httplib::Request& req,
 				httplib::Response& res)
 			{
 				if (pHandler)
@@ -105,7 +117,7 @@ namespace X
 			if (pObjContent->GetType() == Data::Type::Binary)
 			{
 				auto* pBinContent = dynamic_cast<Data::Binary*>(pObjContent);
-				
+				pBinContent->AddRef();
 				pResp->set_content_provider(
 					pBinContent->Size(), // Content length
 					params[1].ToString().c_str(), // Content type
@@ -116,8 +128,16 @@ namespace X
 						sink.write(data+offset,length);
 						return true;
 					},
-					[pBinContent](bool success) { }
+					[pBinContent](bool success) 
+					{ 
+						pBinContent->Release();
+					}
 					);
+			}
+			else
+			{
+				pResp->set_content(valContent.ToString().c_str(),
+					params[1].ToString().c_str());
 			}
 		}
 		else
@@ -140,8 +160,8 @@ namespace X
 		for (auto it = headers.begin(); it != headers.end(); ++it)
 		{
 			const auto& x = *it;
-			AST::Value key((char*)x.first.c_str(), (int)x.first.size());
-			AST::Value val((char*)x.second.c_str(), (int)x.second.size());
+			AST::Value key(new Data::Str(x.first));
+			AST::Value val(new Data::Str(x.second));
 			pDictObj->Set(key, val);
 		}
 		retValue = AST::Value(pDictObj);
@@ -157,8 +177,8 @@ namespace X
 			it != req_params.end(); ++it)
 		{
 			const auto& x = *it;
-			AST::Value key((char*)x.first.c_str(), (int)x.first.size());
-			AST::Value val((char*)x.second.c_str(), (int)x.second.size());
+			AST::Value key(new Data::Str(x.first));
+			AST::Value val(new Data::Str(x.second));
 			pDictObj->Set(key, val);
 		}
 		retValue = AST::Value(pDictObj);

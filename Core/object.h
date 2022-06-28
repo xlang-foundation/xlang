@@ -63,6 +63,10 @@ namespace Data {
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
 			AST::Value& retValue) = 0;
+		virtual size_t Hash()
+		{
+			return 0;
+		}
 		virtual std::string ToString()
 		{
 			char v[1000];
@@ -85,6 +89,10 @@ namespace Data {
 		virtual Object& operator /=(AST::Value& r)
 		{
 			return *this;
+		}
+		virtual int cmp(AST::Value* r)
+		{
+			return 0;
 		}
 	};
 	class Expr

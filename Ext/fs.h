@@ -33,6 +33,13 @@ namespace X
 				std::ios_base::in|
 				m_IsBinary?std::ios_base::binary:0);
 		}
+		~File()
+		{
+			if (m_stream.is_open())
+			{
+				m_stream.close();
+			}
+		}
 		bool read(void* rt, void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,

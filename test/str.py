@@ -1,10 +1,27 @@
+x = "123"
+y = (x=="123")
+print(y)
+
+"""
 k ="111"
 k1 ="+&&****11"
 this_is_var ="--this_is_var--"
+#if false
 def f(d):
     print(f)
+#endif
 x ="1234+${k=       ?@#$!,\\n,\t,k,\,,k1=,k1}+this_is_var=${this_is_var}||"+"<<<10"
-print(x)
+#print(x)
+div ="<div>"
+div_end ="</div>"
+
+"${div}
+   ${x}
+${div_end}"\
+|y
+print(y)
+"""
+
 """
 import fs
 filename = "C:/Dev/Data/loghub/Windows/Windows_2k.log"

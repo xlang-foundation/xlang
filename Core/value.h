@@ -52,9 +52,11 @@ Value& Value::operator op (const Value& r)\
 	return *this;\
 }
 
-
 #define COMPARE_OP(op)\
-bool operator op (const Value& r) const\
+bool operator op (const Value& r) const;
+
+#define COMPARE_OP_IMPL(op)\
+bool Value::operator op (const Value& r) const\
 {\
 	bool bRet = false;\
 	switch (t)\
@@ -68,9 +70,17 @@ bool operator op (const Value& r) const\
 		bRet = (x.d op ToDouble(r));\
 		break;\
 	case ValueType::Object:\
+		bRet = (x.obj->cmp((Value*)&r) op 0);\
 		break;\
 	case ValueType::Str:\
-		bRet = (ToStr(x.str,flags) op ToStr(r.x.str,r.flags));\
+		if(r.t == ValueType::Object)\
+		{\
+			bRet = (0 op r.x.obj->cmp((Value*)this));\
+		}\
+		else if(r.t == ValueType::Str)\
+		{\
+			bRet = (ToStr(x.str,flags) op ToStr(r.x.str,r.flags));\
+		}\
 		break;\
 	default:\
 		break;\
@@ -151,14 +161,17 @@ public:
 	inline Value(Data::Object* p)
 	{
 		t = ValueType::Object;
+		x.obj = nullptr;
 		AssignObject(p);
 	}
+	bool Clone();
 	bool ChangeToStrObject();
 	void AssignObject(Data::Object* p);
 	void ReleaseObject(Data::Object* p);
 	inline Value(const Value& v)
 	{
 		flags = v.flags;
+		x.l = 0;
 		t = v.t;
 		switch (t)
 		{
@@ -178,28 +191,7 @@ public:
 			break;
 		}
 	}
-	inline size_t Hash()
-	{
-		size_t h = 0;
-		switch (t)
-		{
-		case ValueType::Int64:
-			h = std::hash<long long>{}(x.l);
-			break;
-		case ValueType::Double:
-			h = std::hash<double>{}(x.d);
-			break;
-		case ValueType::Str:
-			h = std::hash<std::string>{}(std::string((char*)x.str, 
-				(size_t)flags));
-			break;
-		case ValueType::Object:
-			break;
-		default:
-			break;
-		}
-		return h;
-	}
+	size_t Hash();
 	inline double GetDouble()
 	{
 		return x.d;

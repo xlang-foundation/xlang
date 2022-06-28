@@ -1,10 +1,12 @@
 #pragma once
 #include "xlang.h"
+#include <vector>
 namespace X
 {
 	class HttpServer
 	{
 		void* m_pSrv = nullptr;
+		std::vector<void*> m_handlers;
 	public:
 		BEGIN_PACKAGE(HttpServer)
 			ADD_FUNC("listen", Listen)
@@ -14,6 +16,7 @@ namespace X
 
 		HttpServer(ARGS& params,
 			KWARGS& kwParams);
+		~HttpServer();
 		bool Listen(void* rt,void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,

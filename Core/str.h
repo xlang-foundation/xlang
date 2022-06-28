@@ -23,6 +23,11 @@ namespace Data
 			m_t = Type::Str;
 			m_s = str;
 		}
+		Str(const std::string& str)
+		{
+			m_t = Type::Str;
+			m_s = str;
+		}
 		Str(const char* s,int size)//from constant
 		{//new copy
 			m_t = Type::Str;
@@ -33,6 +38,14 @@ namespace Data
 		inline virtual std::string ToString() override
 		{
 			return m_s;
+		}
+		virtual int cmp(AST::Value* r)
+		{
+			return m_s.compare(r->ToString());;
+		}
+		virtual size_t Hash() override
+		{
+			return std::hash<std::string>{}(m_s);
 		}
 		virtual Str& operator +=(AST::Value& r)
 		{
@@ -87,6 +100,10 @@ namespace Data
 		inline size_t Find(std::string& x, size_t offset = 0)
 		{
 			return m_s.find(x, offset);
+		}
+		inline size_t RFind(std::string& x, size_t offset = 0)
+		{
+			return m_s.rfind(x, offset);
 		}
 		inline size_t GetSize() { return m_s.size(); }
 		inline bool Slice(size_t start,size_t end,std::string& retVal)

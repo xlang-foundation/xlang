@@ -181,6 +181,7 @@ public:
 					*lValue_L = v_r;
 					break;
 				case X::OP_ID::AddEqu:
+					lValue_L->Clone();
 					*lValue_L += v_r;
 					break;
 				case X::OP_ID::MinusEqu:
@@ -220,6 +221,7 @@ public:
 					L->Set(rt, pContext, v_r);
 					break;
 				case X::OP_ID::AddEqu:
+					v_l.Clone();
 					v_l += v_r;
 					break;
 				case X::OP_ID::MinusEqu:

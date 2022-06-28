@@ -78,14 +78,17 @@ void Token::Scan()
 			token_out(TokenEOS);
 			break;
 		}
-		switch (c)
+		//process case ${vars} inside string
+		if (c == '{')
 		{
-		case '{':
-			if (InQuote && PrevChar() =='$')
+			if (InQuote && PrevChar() == '$')
 			{
 				meetDollar = true;
+				continue;
 			}
-			break;
+		}
+		switch (c)
+		{
 		case ' ':
 			if (!InQuote && !InLineComment)
 			{

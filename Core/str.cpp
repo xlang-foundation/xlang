@@ -16,9 +16,10 @@ namespace X
 				m_Vars = 
 				{ 
 					{"find",0},
-					{"slice",1},
-					{"size",2},
-					{"split",3}
+					{"rfind",1},
+					{"slice",2},
+					{"size",3},
+					{"split",4}
 				};
 				{
 					std::string name("find");
@@ -39,6 +40,28 @@ namespace X
 						retValue = AST::Value((long long)pos);
 						return true;
 					}));
+					auto* pFuncObj = new Data::Function(extFunc);
+					m_funcs.push_back(AST::Value(pFuncObj));
+				}
+				{
+					std::string name("rfind");
+					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
+							ARGS& params,
+							KWARGS& kwParams,
+							X::AST::Value& retValue)
+							{
+								auto* pObj = (Str*)pContext;
+								std::string x = params[0].ToString();
+								size_t offset = std::string::npos;
+								if (params.size() > 1)
+								{
+									offset = params[1].GetLongLong();
+								}
+								auto pos = pObj->RFind(x, offset);
+								retValue = AST::Value((long long)pos);
+								return true;
+							}));
 					auto* pFuncObj = new Data::Function(extFunc);
 					m_funcs.push_back(AST::Value(pFuncObj));
 				}

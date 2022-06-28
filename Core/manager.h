@@ -21,6 +21,14 @@ namespace X
 		};
 		std::unordered_map<std::string, PackageInfo> m_mapPackage;
 	public:
+		void Cleanup()
+		{
+			for (auto& it : m_mapPackage)
+			{
+				it.second.package->Release();
+			}
+			m_mapPackage.clear();
+		}
 		bool Register(const char* name, PackageCreator creator)
 		{
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,nullptr }));

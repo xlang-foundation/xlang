@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
 	X::Builtin::I().RegisterInternals();
 	X::Hosting::I().Run(code.c_str(), (int)code.size());
 	X::Builtin::I().Cleanup();
+	X::Manager::I().Cleanup();
 	X::G::I().Check();
 	std::cout << "End." << std::endl;
 	return 0;
