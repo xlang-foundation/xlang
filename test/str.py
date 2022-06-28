@@ -1,3 +1,11 @@
+k ="111"
+k1 ="+&&****11"
+this_is_var ="--this_is_var--"
+def f(d):
+    print(f)
+x ="1234+${k=       ?@#$!,\\n,\t,k,\,,k1=,k1}+this_is_var=${this_is_var}||"+"<<<10"
+print(x)
+"""
 import fs
 filename = "C:/Dev/Data/loghub/Windows/Windows_2k.log"
 filename2 = "C:/Dev/english-words/words.txt"
@@ -8,7 +16,7 @@ l = data.split()
 print(l[10])
 print(l[100])
 print("end")
-
+"""
 #x ="abcdef"
 #x|(y){print(y);}|(){print(x);}
 #x.find("cd")|y|y-1|x.slice(y,4)|z|k|l|m

@@ -33,3 +33,6 @@ base on expression eval
    stack should have only one value in it, which is the final result.
 
 
+   #Misc
+   map find less or greator
+   https://stackoverflow.com/questions/529831/returning-the-greatest-key-strictly-less-than-the-given-key-in-a-c-map

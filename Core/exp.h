@@ -96,19 +96,28 @@ public:
 class Str :
 	public Expression
 {
+	bool m_haveFormat = false;
 	char* m_s = nil;
 	int m_size = 0;
 public:
-	Str(char* s, int size)
+	Str(char* s, int size,bool haveFormat)
 	{
+		m_haveFormat = haveFormat;
 		m_s = s;
 		m_size = size;
 	}
+	bool RunWithFormat(Runtime* rt, void* pContext, Value& v, LValue* lValue);
 	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
-		Value v0(m_s,m_size);
-		v = v0;
-		return true;
+		if (m_haveFormat)
+		{
+			return RunWithFormat(rt, pContext, v, lValue);
+		}
+		else
+		{
+			v = Value(m_s, m_size);
+			return true;
+		}
 	}
 };
 class Number :

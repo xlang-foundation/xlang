@@ -348,7 +348,9 @@ void Register()
 		.SetPrecedence(Precedence_High1);
 	RegOP("*", "/", "%", "**", "//")
 		.SetPrecedence(Precedence_Reqular + 1);
-	RegOP(",","import")//for example from . import XYZ as xyz,AWD as awd 
+	RegOP(",", "import")//for example from . import XYZ as xyz,AWD as awd 
+		.SetPrecedence(Precedence_LOW2);
+	RegOP("and", "or")
 		.SetPrecedence(Precedence_LOW1);
 }
 

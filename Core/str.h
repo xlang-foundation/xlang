@@ -18,6 +18,11 @@ namespace Data
 			m_t = Type::Str;
 			m_s.resize(size);
 		}
+		Str(std::string& str)
+		{
+			m_t = Type::Str;
+			m_s = str;
+		}
 		Str(const char* s,int size)//from constant
 		{//new copy
 			m_t = Type::Str;

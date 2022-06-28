@@ -145,6 +145,13 @@ namespace Data {
 			m_t = Type::Function;
 			m_func = p;
 		}
+		virtual std::string ToString()
+		{
+			char v[1000];
+			snprintf(v, sizeof(v), "Function:%s@0x%llx",
+				m_func->GetNameString().c_str(), (unsigned long long)this);
+			return v;
+		}
 		AST::Func* GetFunc() { return m_func; }
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
@@ -178,6 +185,13 @@ namespace Data {
 			{
 				delete m_stackFrame;
 			}
+		}
+		virtual std::string ToString()
+		{
+			char v[1000];
+			snprintf(v, sizeof(v), "Class:%s@0x%llx",
+				m_obj->GetNameString().c_str(), (unsigned long long)this);
+			return v;
 		}
 		inline AST::StackFrame* GetStack()
 		{

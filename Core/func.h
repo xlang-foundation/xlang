@@ -77,6 +77,10 @@ public:
 	void NeedSetHint(bool b) { m_needSetHint = b; }
 	Expression* GetName() { return Name; }
 	String& GetNameStr() { return m_Name; }
+	std::string GetNameString()
+	{
+		return std::string(m_Name.s, m_Name.size);
+	}
 	virtual Scope* GetParentScope() override
 	{
 		return GetScope();

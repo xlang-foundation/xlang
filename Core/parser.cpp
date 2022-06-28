@@ -352,10 +352,10 @@ bool Parser::Compile(char* code, int size)
 		if (idx == TokenLineComment || idx == TokenComment)
 		{
 		}
-		else if (idx == TokenStr)
+		else if (idx == TokenStr || idx == TokenStrWithFormat)
 		{
 			m_curBlkState->m_NewLine_WillStart = false;
-			AST::Str* v = new AST::Str(s.s, s.size);
+			AST::Str* v = new AST::Str(s.s, s.size, idx == TokenStrWithFormat);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
 			m_curBlkState->PushExp(v);
 			push_preceding_token(idx);

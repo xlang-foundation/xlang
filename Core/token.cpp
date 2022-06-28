@@ -24,53 +24,6 @@ bool Token::MatchInTree(char c)
 	return bMatched;
 }
 
-void Token::ScanStringOrComments(char& c)
-{
-	char begin_c = c;
-	//do ''' ''' or """ """as comment
-	int begin_quoteCnt = 1;
-	int end_quoteCnt = 0;
-	do
-	{
-		c = GetChar();
-		if (begin_quoteCnt == 3)
-		{//count end quote to 3
-			if (c == begin_c)
-			{
-				end_quoteCnt++;
-				if (end_quoteCnt == 3)
-				{
-					break;
-				}
-				else
-				{
-					c = 1;//not break the while
-					continue;
-				}
-			}
-			else
-			{
-				end_quoteCnt = 0;
-			}
-		}
-		else
-		{
-			if (begin_quoteCnt > 0 && c == begin_c)
-			{
-				begin_quoteCnt++;
-				c = 1;//not break the while
-				continue;
-			}
-			else
-			{//break, don't count again
-				begin_quoteCnt = 0;
-			}
-		}
-	} while (c != begin_c && c != 0);
-	bool isComment = (begin_quoteCnt == 3)
-		&& (end_quoteCnt == 3);
-	token_out(isComment ? TokenComment : TokenStr);
-}
 void Token::token_out(short idx,int offset,bool callReset)
 {
 	if (_context.token_start == nil)
@@ -108,21 +61,13 @@ void Token::ScanLineComment(char& c)
 	} while (c != '\n' && c != 0);
 	token_out(TokenLineComment);
 }
-void Token::ScanSpaces(char& c)
-{
-	int space = 0;
-	do
-	{
-		space++;
-		c = GetChar();
-	} while (c == ' ' && c != 0);
-	_context.leadingSpaceCount = space;
-	new_token_start();
-}
 void Token::Scan()
 {
 	static const char* ops = "~`!@#$%^&*()-+={}[]|:;<>,.?/\t\r\n \\'\"#";
 
+	//also flag if inside Quote, find \x or ${ for var inside string case
+	bool meetDollar = false;
+	bool meetSlash = false;
 	while (m_tokens.size() == 0)
 	{
 		char c = GetChar();
@@ -135,6 +80,12 @@ void Token::Scan()
 		}
 		switch (c)
 		{
+		case '{':
+			if (InQuote && PrevChar() =='$')
+			{
+				meetDollar = true;
+			}
+			break;
 		case ' ':
 			if (!InQuote && !InLineComment)
 			{
@@ -154,6 +105,10 @@ void Token::Scan()
 				InSpace = false;
 				ClearToken();
 			}
+			if (InQuote)
+			{
+				meetSlash = true;
+			}
 			//just eat it
 			break;
 		case '\n':
@@ -166,8 +121,12 @@ void Token::Scan()
 			{//meet other, break the 3-quotes rules like """ or '''
 				if (begin_quoteCnt == 2)//empty string with ""  or ''
 				{
-					token_out(TokenStr);
+					token_out((meetDollar || meetSlash)
+						? TokenStrWithFormat : TokenStr, 0);
 					InQuote = false;
+					//also reset lines below for string
+					meetDollar = false;
+					meetSlash = false;
 				}
 				else if (begin_quoteCnt != 3)
 				{
@@ -225,6 +184,9 @@ void Token::Scan()
 						{
 							token_out(TokenComment,0);
 							InQuote = false;
+							//also reset lines below for string
+							meetDollar = false;
+							meetSlash = false;
 						}
 					}
 					else
@@ -242,8 +204,12 @@ void Token::Scan()
 					{//break, don't count again
 						if (c == quoteBeginChar)
 						{//meet end char
-							token_out(TokenStr,0);
+							token_out((meetDollar|| meetSlash)
+								?TokenStrWithFormat:TokenStr,0);
 							InQuote = false;
+							//also reset lines below for string
+							meetDollar = false;
+							meetSlash = false;
 						}
 						else
 						{
@@ -291,8 +257,12 @@ void Token::Scan()
 			{//meet other, break the 3-quotes rules like """ or '''
 				if (begin_quoteCnt == 2)//empty string with ""  or ''
 				{
-					token_out(TokenStr);
+					token_out((meetDollar || meetSlash)
+						? TokenStrWithFormat : TokenStr, 0);
 					InQuote = false;
+					//also reset lines below for string
+					meetDollar = false;
+					meetSlash = false;
 				}
 				else if(begin_quoteCnt!=3)
 				{

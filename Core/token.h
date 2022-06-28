@@ -39,6 +39,7 @@ enum TokenIndex
 	TokenID = -10,
 	TokenNum = -11,
 	TokenStr = -12,
+	TokenStrWithFormat = -102,
 	TokenEOS = -13,
 	TokenLineComment = -20,
 	TokenComment = -21
@@ -116,8 +117,6 @@ class Token
 		return idx;
 	}
 	bool MatchInTree(char c);
-	void ScanStringOrComments(char& c);
-	void ScanSpaces(char& c);
 	void ScanLineComment(char& c);
 	void token_out(short idx,int offset =-1,bool callReset=true);
 	inline void ifnotstart_token_start()
@@ -184,7 +183,7 @@ public:
 		{
 			one = m_tokens[0];
 			short retIdx =  one.index;
-			if (retIdx == TokenStr)
+			if (retIdx == TokenStr || retIdx == TokenStrWithFormat)
 			{
 				one.id.s += 1;//skip " or '
 				one.id.size -= 2; //last " or '
