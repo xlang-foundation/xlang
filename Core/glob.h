@@ -4,13 +4,19 @@
 #include <unordered_map>
 #include <vector>
 #include "def.h"
+#include "utility.h"
+#include "runtime.h"
 #include <iostream>
 
 namespace X {
 	namespace Data { class Object; }
+	class Runtime;
 	class G:
 		public Singleton<G>
 	{
+		std::unordered_map<long long, Runtime*> m_rtMap;//for multiple threads
+		void* m_lockRTMap = nullptr;
+		Runtime* MakeThreadRuntime(long long curTId, Runtime* rt);
 		std::unordered_map<Data::Object*, int> Objects;
 		std::vector<short> kwTree;
 		std::vector<OpAction> OpActions;
@@ -19,6 +25,15 @@ namespace X {
 	public:
 		G();
 		~G();
+		inline Runtime* Threading(Runtime* fromRt)
+		{
+			long long curTId = GetThreadID();
+			if (fromRt->GetThreadId() != curTId)
+			{
+				fromRt = MakeThreadRuntime(curTId, fromRt);
+			}
+			return fromRt;
+		}
 		void Lock();
 		void UnLock();
 		void Check()

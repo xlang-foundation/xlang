@@ -12,6 +12,18 @@
 #include "json.h"
 #include "Hosting.h"
 #include "fs.h"
+#include <signal.h>
+#include "utility.h"
+
+void signal_callback_handler(int signum) 
+{
+	X::AppEventCode code = X::Hosting::I().HandleAppEvent(signum);
+	if (code == X::AppEventCode::Exit)
+	{
+		exit(signum);
+	}
+	signal(SIGINT, signal_callback_handler);
+}
 
 int main1(int argc, char* argv[])
 {
@@ -30,12 +42,10 @@ int main1(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-//#include "table.h"
+
 int main(int argc, char* argv[])
 {
-	//X::Data::Table t;
-	//t.Test();
-	//return 0;
+	signal(SIGINT, signal_callback_handler);
 	std::string pyFileName = "C:/Dev/X/test/test2.py";
 	if (argc >= 2)
 	{
@@ -49,7 +59,7 @@ int main(int argc, char* argv[])
 	REGISTER_PACKAGE("fs", X::FileSystem)
 		
 	X::Builtin::I().RegisterInternals();
-	X::Hosting::I().Run(code.c_str(), (int)code.size());
+	X::Hosting::I().Run(pyFileName,code.c_str(), (int)code.size());
 	X::Builtin::I().Cleanup();
 	X::Manager::I().Cleanup();
 	X::G::I().Check();
@@ -67,7 +77,7 @@ int main_b(int argc, char* argv[])
 	REGISTER_PACKAGE("fs", X::FileSystem)
 	X::Builtin::I().RegisterInternals();
 
-	X::Hosting::I().RunAsBackend(code.c_str(), (int)code.size());
+	X::Hosting::I().RunAsBackend(pyFileName,code.c_str(), (int)code.size());
 
 	std::cout << "Running in background" << std::endl;
 	std::string yes;

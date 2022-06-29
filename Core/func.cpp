@@ -2,6 +2,7 @@
 #include "object.h"
 #include "function.h"
 #include <string>
+#include "glob.h"
 
 namespace X
 {
@@ -83,6 +84,7 @@ bool Func::Call(Runtime* rt,
 	KWARGS& kwParams,
 	Value& retValue)
 {
+	rt = G::I().Threading(rt);
 	auto* pContextObj = (X::Data::Object*)pContext;
 	StackFrame* frame = new StackFrame(this);
 	rt->PushFrame(frame,GetVarNum());

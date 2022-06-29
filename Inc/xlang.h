@@ -29,7 +29,7 @@
 				X::AST::Value& retValue)\
 				{\
 					auto* pPackage = (AST::Package*)pContext;\
-					auto* pThis = (THIS_CLASS_NAME*)pPackage->GetObject();\
+					auto* pThis = (THIS_CLASS_NAME*)pPackage->GetObj();\
 					return pThis->function_name(rt,pContext,params, kwParams, retValue);\
 				}));\
 	auto* pFuncObj = new Data::Function(extFunc);\

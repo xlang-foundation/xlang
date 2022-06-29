@@ -13,6 +13,58 @@
 #include <cmath>
 #include <sstream>
 
+bool RunProcess(std::string cmd,
+	std::string initPath, bool newConsole, unsigned long& processId)
+{
+#if (WIN32)
+	STARTUPINFO StartupInfo;
+	memset(&StartupInfo, 0, sizeof(STARTUPINFO));
+	StartupInfo.cb = sizeof(STARTUPINFO);
+	StartupInfo.wShowWindow = SW_SHOW;
+	//StartupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+	//StartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+	//StartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+
+	PROCESS_INFORMATION ProcessInformation;
+	memset(&ProcessInformation, 0, sizeof(PROCESS_INFORMATION));
+	ProcessInformation.hThread = INVALID_HANDLE_VALUE;
+	ProcessInformation.hProcess = INVALID_HANDLE_VALUE;
+
+	BOOL bOK = CreateProcess(NULL, (LPSTR)cmd.c_str(), NULL, NULL, TRUE,
+		newConsole?CREATE_NEW_CONSOLE: 0,//if use CREATE_NEW_CONSOLE will show new cmd window
+		NULL, NULL,
+		&StartupInfo, &ProcessInformation);
+	if (bOK)
+	{
+		processId = ProcessInformation.dwProcessId;
+		//::WaitForSingleObject(ProcessInformation.hProcess, -1);
+	}
+	if (ProcessInformation.hProcess != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(ProcessInformation.hProcess);
+	}
+	if (ProcessInformation.hThread != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(ProcessInformation.hThread);
+	}
+#else
+	pid_t child_pid;
+	child_pid = fork();
+	if (child_pid >= 0)
+	{
+		if (child_pid == 0)
+		{//inside child process,run the executable 
+			execlp(cmd.c_str(), initPath.c_str(), (char*)nullptr);
+		}
+		else
+		{//inside parent process, child_pid is the id for child process
+			processId = child_pid;
+		}
+	}
+#endif
+	return true;
+}
+
 long long getCurMilliTimeStamp()
 {
 #if (WIN32)

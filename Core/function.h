@@ -1,7 +1,6 @@
 #pragma once
 
 #include "object.h"
-#include "utility.h"
 #include <string>
 namespace X
 {
@@ -12,10 +11,6 @@ namespace X
 		{
 		protected:
 			AST::Func* m_func = nullptr;
-			std::unordered_map<long long, Runtime*> m_rtMap;//for multiple threads
-			void* m_lock = nullptr;
-
-			Runtime* MakeThreadRuntime(long long curTId,Runtime* rt);
 		public:
 			Function(AST::Func* p);
 			~Function();

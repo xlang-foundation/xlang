@@ -55,7 +55,7 @@ public:
 	{
 		return dynamic_cast<Scope*>(this);
 	}
-	void* GetObject() { return m_pObject; }
+	void* GetObj() { return m_pObject; }
 	bool Init(int varNum)
 	{
 		m_stackFrame = new StackFrame(this);

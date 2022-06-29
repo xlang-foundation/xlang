@@ -36,3 +36,7 @@ base on expression eval
    #Misc
    map find less or greator
    https://stackoverflow.com/questions/529831/returning-the-greatest-key-strictly-less-than-the-given-key-in-a-c-map
+   #Flask template syntax
+   https://flask.palletsprojects.com/en/2.1.x/tutorial/templates/
+   #jinja :Template Designer Documentation
+   https://jinja.palletsprojects.com/en/3.1.x/templates/

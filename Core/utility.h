@@ -2,6 +2,11 @@
 #include <vector>
 #include <string>
 
+bool RunProcess(std::string cmd,
+	std::string initPath,
+	bool newConsole,
+	unsigned long& processId);
+
 long long getCurMilliTimeStamp();
 unsigned long GetThreadID();
 long long rand64();

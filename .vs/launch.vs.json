@@ -6,7 +6,7 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "X.exe",
-      "args": [ "C:\\Dev\\X\\Scripts\\service.x" ],
+      "args": [ "C:\\Dev\\X\\Scripts\\service.x -background" ],
       "name": "X.exe"
     }
   ]

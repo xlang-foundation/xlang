@@ -17,6 +17,7 @@ class Module :
 	public Block,
 	public Scope
 {
+	std::string m_moduleName;
 	char* m_code = nullptr;
 	int m_codeSize =0;
 	StackFrame* m_stackFrame = nullptr;
@@ -30,6 +31,14 @@ public:
 	{
 		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	void SetModuleName(std::string& name)
+	{
+		m_moduleName = name;
+	}
+	std::string& GetModuleName()
+	{
+		return m_moduleName;
 	}
 	inline void SetCode(char* code, int size)
 	{
