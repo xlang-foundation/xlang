@@ -1,0 +1,275 @@
+{
+  "name": "xlang",
+  "displayName": "xlang",
+  "version": "0.50.0",
+  "publisher": "Galaxy3DVision",
+  "description": "Starter extension for developing debug adapters for VS Code.",
+  "author": {
+    "name": "Galaxy 3D Vision Inc."
+  },
+  "license": "MIT",
+  "keywords": [
+    "multi-root ready"
+  ],
+  "engines": {
+    "vscode": "^1.66.0"
+  },
+  "icon": "images/xlang-icon.png",
+  "categories": [
+    "Programming Languages",
+    "Debuggers"
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-xlang.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Microsoft/vscode-xlang/issues"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "lint": "eslint src --ext ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=node --outfile=dist/extension.js",
+    "watch": "npm run -S esbuild-base -- --sourcemap --sources-content=false --watch",
+    "esbuild-web": "esbuild ./src/web-extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=browser --outfile=dist/web-extension.js",
+    "watch-web": "npm run -S esbuild-web -- --sourcemap --sources-content=false --watch",
+    "build": "npm run -S esbuild-base -- --sourcemap --sources-content=false && npm run -S esbuild-web -- --sourcemap --sources-content=false",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "publish-pre-release": "vsce publish --pre-release",
+    "vscode:prepublish": "rimraf dist && npm run -S esbuild-base -- --minify && npm run -S esbuild-web -- --minify",
+    "test": "npm run typecheck"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "^14.14.37",
+    "@types/vscode": "^1.66.0",
+    "@typescript-eslint/eslint-plugin": "^5.17.0",
+    "@typescript-eslint/parser": "^5.17.0",
+    "@vscode/debugadapter": "^1.55.1",
+    "@vscode/debugadapter-testsupport": "^1.55.1",
+    "await-notify": "^1.0.1",
+    "base64-js": "^1.5.1",
+    "esbuild": "^0.14.29",
+    "eslint": "^8.12.0",
+    "events": "^3.3.0",
+    "glob": "^7.2.0",
+    "mocha": "^9.2.2",
+    "path-browserify": "^1.0.1",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.6.3",
+    "url": "^0.11.0",
+    "vsce": "^2.7.0"
+  },
+  "main": "./dist/extension.js",
+  "browser": "./dist/web-extension.js",
+  "activationEvents": [
+    "onDebugResolve:xlang",
+    "onDebugDynamicConfigurations:xlang",
+    "onCommand:extension.xlang.getProgramName",
+    "onCommand:extension.xlang.runEditorContents",
+    "onCommand:extension.xlang.debugEditorContents"
+  ],
+  "workspaceTrust": {
+    "request": "never"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "xlang",
+        "extensions": [
+          ".x",".xlang"
+        ],
+        "aliases": [
+          "xlang",
+          "X","x"
+        ],
+        "filenames": [
+          "Snakefile",
+          "SConstruct",
+          "SConscript"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "xlang",
+        "scopeName": "source.x",
+        "path": "./syntaxes/MagicPython.tmLanguage.json"
+      },
+      {
+        "scopeName": "source.regexp.x",
+        "path": "./syntaxes/MagicRegExp.tmLanguage.json"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "extension.xlang.runEditorContents",
+          "when": "resourceLangId == xlang",
+          "group": "navigation@1"
+        },
+        {
+          "command": "extension.xlang.debugEditorContents",
+          "when": "resourceLangId == xlang",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "extension.xlang.debugEditorContents",
+          "when": "resourceLangId == xlang"
+        },
+        {
+          "command": "extension.xlang.runEditorContents",
+          "when": "resourceLangId == xlang"
+        }
+      ],
+      "debug/variables/context": [
+        {
+          "command": "extension.xlang.toggleFormatting",
+          "when": "debugType == 'xlang' && debugProtocolVariableMenuContext == 'simple'"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "extension.xlang.debugEditorContents",
+        "title": "Debug File",
+        "category": "xlang Debug",
+        "enablement": "!inDebugMode",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "extension.xlang.runEditorContents",
+        "title": "Run File",
+        "category": "xlang Debug",
+        "enablement": "!inDebugMode",
+        "icon": "$(play)"
+      },
+      {
+        "command": "extension.xlang.toggleFormatting",
+        "title": "Toggle between decimal and hex formatting"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "xlang"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "xlang",
+        "languages": [
+          "xlang"
+        ],
+        "label": "xlang Debug",
+        "program": "./out/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to a text file.",
+                "default": "${workspaceFolder}/${command:AskForProgramName}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": true
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol.",
+                "default": true
+              },
+              "compileError": {
+                "type": "string",
+                "description": "Simulates a compile error in 'launch' request.",
+                "enum": [
+                  "default",
+                  "show",
+                  "hide"
+                ],
+                "enumDescriptions": [
+                  "default: show fake compile error to user",
+                  "show fake compile error to user",
+                  "do not show fake compile error to user"
+                ]
+              }
+            }
+          },
+          "attach": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to a text file.",
+                "default": "${workspaceFolder}/${command:AskForProgramName}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after attach.",
+                "default": true
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol.",
+                "default": true
+              },
+              "compileError": {
+                "type": "string",
+                "description": "Simulates a compile error in 'attach' request.",
+                "enum": [
+                  "default",
+                  "show",
+                  "hide"
+                ],
+                "enumDescriptions": [
+                  "default: show fake compile error to user",
+                  "show fake compile error to user",
+                  "do not show fake compile error to user"
+                ]
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "xlang",
+            "request": "launch",
+            "name": "Ask for file name",
+            "program": "${workspaceFolder}/${command:AskForProgramName}",
+            "stopOnEntry": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "xlang Debug: Launch",
+            "description": "A new configuration for 'debugging' a user selected .x file.",
+            "body": {
+              "type": "xlang",
+              "request": "launch",
+              "name": "Ask for file name",
+              "program": "^\"\\${workspaceFolder}/\\${command:AskForProgramName}\"",
+              "stopOnEntry": true
+            }
+          }
+        ],
+        "variables": {
+          "AskForProgramName": "extension.xlang.getProgramName"
+        }
+      }
+    ]
+  }
+}

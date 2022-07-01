@@ -37,5 +37,5 @@ srv.get("/stop",(req,res){
   srv.stop();
 })
 
-srv.listen("localhost", 8080)
+srv.listen("::1", 8088)
 print("Http Server Stopped")

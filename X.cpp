@@ -14,6 +14,9 @@
 #include "fs.h"
 #include <signal.h>
 #include "utility.h"
+#include "devops.h"
+
+
 
 void signal_callback_handler(int signum) 
 {
@@ -42,9 +45,11 @@ int main1(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-
 int main(int argc, char* argv[])
 {
+	X::DevOps::Debugger dbg;
+	dbg.Start();
+
 	signal(SIGINT, signal_callback_handler);
 	std::string pyFileName = "C:/Dev/X/test/test2.py";
 	if (argc >= 2)
@@ -57,11 +62,14 @@ int main(int argc, char* argv[])
 	pyFile.close();
 	REGISTER_PACKAGE("http", X::Http)
 	REGISTER_PACKAGE("fs", X::FileSystem)
-		
 	X::Builtin::I().RegisterInternals();
-	X::Hosting::I().Run(pyFileName,code.c_str(), (int)code.size());
+	X::AST::Value retVal;
+	X::Hosting::I().Run(pyFileName,code.c_str(),
+		(int)code.size(),retVal);
+	dbg.Stop();
 	X::Builtin::I().Cleanup();
 	X::Manager::I().Cleanup();
+
 	X::G::I().Check();
 	std::cout << "End." << std::endl;
 	return 0;

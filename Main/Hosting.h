@@ -43,7 +43,8 @@ namespace X
 		}
 	public:
 		AppEventCode HandleAppEvent(int signum);
-		bool Run(std::string& moduleName,const char* code, int size);
+		bool Run(std::string& moduleName,
+			const char* code, int size,AST::Value& retVal);
 		bool RunAsBackend(std::string& moduleName,const char* code, int size);
 	};
 }

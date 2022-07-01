@@ -13,7 +13,8 @@ namespace X
 		// Inherited via GThread
 		virtual void run() override
 		{
-			Hosting::I().Run(m_moduleName,m_code, m_codeSize);
+			AST::Value retVal;
+			Hosting::I().Run(m_moduleName,m_code, m_codeSize,retVal);
 		}
 	public:
 		Backend(std::string& moduleName,const char* code, int size)
@@ -81,7 +82,8 @@ namespace X
 		}
 		return AppEventCode::Continue;
 	}
-	bool Hosting::Run(std::string& moduleName, const char* code, int size)
+	bool Hosting::Run(std::string& moduleName, 
+		const char* code, int size, AST::Value& retVal)
 	{
 		Parser parser;
 		if (!parser.Init())
@@ -98,9 +100,15 @@ namespace X
 		AddModule(pTopModule);
 		Runtime* pRuntime = new Runtime();
 		pRuntime->SetM(pTopModule);
+		AST::StackFrame* pModuleFrame = new AST::StackFrame(pTopModule);
 		pTopModule->AddBuiltins(pRuntime);
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
 		AST::Value v;
 		bool bOK = pTopModule->Run(pRuntime, nullptr, v);
+		pRuntime->PopFrame();
+		retVal = pModuleFrame->GetReturnValue();
+		delete pModuleFrame;
+
 		RemoveModule(pTopModule);
 		delete pTopModule;
 		delete pRuntime;
