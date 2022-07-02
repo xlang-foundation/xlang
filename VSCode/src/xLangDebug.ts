@@ -73,14 +73,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 	 * Creates a new debug adapter that is used for one debug session.
 	 * We configure the default implementation of a debug adapter here.
 	 */
-	public constructor(fileAccessor: FileAccessor) {
+	public constructor() {
 		super("xLang.txt");
 
 		// this debugger uses zero-based lines and columns
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
 
-		this._runtime = new XLangRuntime(fileAccessor);
+		this._runtime = new XLangRuntime();
 
 		// setup event handlers
 		this._runtime.on('stopOnEntry', () => {

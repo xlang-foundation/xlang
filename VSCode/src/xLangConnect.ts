@@ -1,6 +1,5 @@
 'use strict';
-import * as Net from 'net';
-
+import * as Net from 'net'
 var L = console.log;
 
 export class XlangDevOps{

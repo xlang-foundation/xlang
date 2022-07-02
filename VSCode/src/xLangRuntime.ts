@@ -1,15 +1,24 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
-
 import { EventEmitter } from 'events';
-import { Test } from 'mocha';
+import { XlangDevOps } from './xLangConnect';
 
-export interface FileAccessor {
-	readFile(path: string): Promise<Uint8Array>;
-	writeFile(path: string, contents: Uint8Array): Promise<void>;
+async function xTest()
+{
+	var L = console.log;
+    var x = new XlangDevOps();
+    var isStarted = false;
+    try {
+        isStarted = await x.Start();
+    }
+    catch (e) {
+        L(e);
+    }
+    var code ="print('from nodejs')\nreturn '{x:1,y:1,z:1}'";
+    var ret = await x.Call(code);
+    L(ret);	
 }
-
 export interface IRuntimeBreakpoint {
 	id: number;
 	line: number;
@@ -88,24 +97,9 @@ export function timeout(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * A XLang runtime with minimal debugger functionality.
- * XLangRuntime is a hypothetical (aka "XLang") "execution engine with debugging support":
- * it takes a Markdown (*.md) file and "executes" it by "running" through the text lines
- * and searching for "command" patterns that trigger some debugger related functionality (e.g. exceptions).
- * When it finds a command it typically emits an event.
- * The runtime can not only run through the whole file but also executes one line at a time
- * and stops on lines for which a breakpoint has been registered. This functionality is the
- * core of the "debugging support".
- * Since the XLangRuntime is completely independent from VS Code or the Debug Adapter Protocol,
- * it can be viewed as a simplified representation of a real "execution engine" (e.g. node.js)
- * or debugger (e.g. gdb).
- * When implementing your own debugger extension for VS Code, you probably don't need this
- * class because you can rely on some existing debugger or runtime.
- */
 export class XLangRuntime extends EventEmitter {
 
-	// the initial (and one and only) file we are 'debugging'
+	private _xlangDevOps?:XlangDevOps;
 	private _sourceFile: string = '';
 	public get sourceFile() {
 		return this._sourceFile;
@@ -149,15 +143,23 @@ export class XLangRuntime extends EventEmitter {
 	private otherExceptions = false;
 
 
-	constructor(private fileAccessor: FileAccessor) {
+	constructor() {
 		super();
+	}
+	async checkConnection()
+	{
+		if(this._xlangDevOps == undefined)
+		{
+			this._xlangDevOps = new XlangDevOps();
+			await this._xlangDevOps.Start();
+		}
 	}
 	/**
 	 * Start executing the given program.
 	 */
-	public async start(program: string, stopOnEntry: boolean, debug: boolean): Promise<void> {		
+	public async start(program: string, stopOnEntry: boolean, debug: boolean): Promise<void> {
+		await this.checkConnection();
 		await this.loadSource(this.normalizePathAndCasing(program));
-
 		if (debug) {
 			await this.verifyBreakpoints(this._sourceFile);
 
@@ -467,9 +469,12 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	private async loadSource(file: string): Promise<void> {
+		await this.checkConnection();
 		if (this._sourceFile !== file) {
 			this._sourceFile = this.normalizePathAndCasing(file);
-			this.initializeContents(await this.fileAccessor.readFile(file));
+			let code ="print('"+this._sourceFile+"')\nreturn {x:1,y:1,z:1}";
+			var ret = await this._xlangDevOps.Call(code);
+			console.log(ret);				
 		}
 	}
 
