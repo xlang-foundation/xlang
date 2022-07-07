@@ -24,6 +24,13 @@ public:
 		m_pModule = rt->m_pModule;
 		m_stackBottom = rt->m_stackBottom;
 	}
+	inline void SetCurrentExpr(AST::Expression* expr)
+	{
+		if (m_stackBottom)
+		{
+			m_stackBottom->SetCurrentExpr(expr);
+		}
+	}
 	inline void SetM(AST::Module* m) { m_pModule = m; }
 	inline AST::Module* M() { return m_pModule; }
 	inline void PushFrame(AST::StackFrame* frame,int varNum)

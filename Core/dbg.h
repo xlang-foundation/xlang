@@ -84,19 +84,31 @@ public:
 		while (mLoop)
 		{
 			pModule->PopCommand(cmdInfo);
-			if (cmdInfo.dbgType == AST::dbg::Continue)
+			switch (cmdInfo.dbgType)
 			{
+			case AST::dbg::StackTrace:
+				//just get back the current exp, then
+				//will calcluate out stack frames
+				//by AddCommand
+				break;
+			case AST::dbg::Continue:
 				m_rt->M()->SetDbg(AST::dbg::Continue);
 				mLoop = false;
-			}
-			else if (cmdInfo.dbgType == AST::dbg::Step)
-			{
+				break;
+			case AST::dbg::Step:
 				m_rt->M()->SetDbg(AST::dbg::Step);
 				mLoop = false;
+				break;
+			default:
+				break;
 			}
 			if (cmdInfo.m_valPlaceholder)
 			{
 				*cmdInfo.m_valPlaceholder = (void*)exp;
+			}
+			if (cmdInfo.m_valPlaceholder2)
+			{
+				*cmdInfo.m_valPlaceholder2 = (void*)rt;
 			}
 			if (cmdInfo.m_wait)
 			{

@@ -36,6 +36,7 @@ class Block:
 	bool NoIndentCheck = false;//just for lambda block
 	Indent IndentCount = { 0,-1,-1 };
 	Indent ChildIndentCount = { 0,-1,-1 };
+	bool m_bRunning = false;
 	std::vector<Expression*> Body;
 public:
 	Block()

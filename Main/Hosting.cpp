@@ -153,5 +153,6 @@ namespace X
 		}
 		bool bOK = Run(pTopModule, retVal);
 		Unload(pTopModule);
+		return bOK;
 	}
 }

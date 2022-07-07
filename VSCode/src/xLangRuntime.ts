@@ -209,23 +209,7 @@ export class XLangRuntime extends EventEmitter {
 		}
 		this.StepCall(cb);
 	}
-	public step_bak(instruction: boolean, reverse: boolean) {
 
-		if (instruction) {
-			if (reverse) {
-				this.instruction--;
-			} else {
-				this.instruction++;
-			}
-			this.sendEvent('stopOnStep');
-		} else {
-			if (!this.executeLine(this.currentLine, reverse)) {
-				if (!this.updateCurrentLine(reverse)) {
-					this.findNextStatement(reverse, 'stopOnStep');
-				}
-			}
-		}
-	}
 	private updateCurrentLine(reverse: boolean): boolean {
 		if (reverse) {
 			if (this.currentLine > 0) {
@@ -302,12 +286,45 @@ export class XLangRuntime extends EventEmitter {
 			};
 		});
 	}
+	private async StackCall(cb: Function) {
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Stack')";
+		var retVal = await this.Call(code);
+		console.log(retVal);
+		var retObj = JSON.parse(retVal);
+		console.log(retObj);
+		const frames: IRuntimeStackFrame[] = [];
+		// every word of the current line becomes a stack frame.
+		for (let i in retObj) {
+			let frm = retObj[i];
+			let name = frm["name"];
+			if(name =="")
+			{
+				name ="main";
+			}
+			const stackFrame: IRuntimeStackFrame = {
+				index: frm["index"],
+				name: name,
+				file: this._sourceFile,
+				line: this.currentLine,// frm["line"]-1,
+				column: frm["column"]
+			};
+			frames.push(stackFrame);
+		}
 
-	/**
-	 * Returns a fake 'stacktrace' where every 'stackframe' is a word from the current line.
-	 */
-	public stack(startFrame: number, endFrame: number): IRuntimeStack {
-
+		let stk= {
+			frames: frames,
+			count: retObj.length
+		};
+		cb(stk);
+	}
+	public stack(startFrame: number, endFrame: number, cb: Function) {
+		if(!this._CanCall)
+		{
+			return false;
+		}
+		this.StackCall(cb);
+	}
+	public stack0(startFrame: number, endFrame: number, cb: Function): IRuntimeStack {
 		const line = this.getLine();
 		const words = this.getWords(this.currentLine, line);
 		words.push({ name: 'BOTTOM', line: -1, index: -1 });	// add a sentinel so that the stack is never empty...

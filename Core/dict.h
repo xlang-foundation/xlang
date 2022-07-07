@@ -34,6 +34,10 @@ namespace X
 			{
 				mMap.emplace(std::make_pair(key, val));
 			}
+			void Set(const char* key, AST::Value val)
+			{
+				mMap.emplace(std::make_pair(AST::Value(key), val));
+			}
 			virtual Dict& operator +=(AST::Value& r)
 			{
 				if (r.IsObject())
@@ -66,13 +70,41 @@ namespace X
 			virtual std::string ToString() override
 			{
 				std::string strOut = "{\n";
+				int cnt = mMap.size();
+				int i = 0;
 				for (auto& it: mMap)
 				{
 					AST::Value key = it.first;
 					std::string strKey = key.ToString();
 					AST::Value Val = it.second;
 					std::string strVal = Val.ToString();
-					strOut += "\t" + strKey+ ":"+ strVal +"\n";
+					bool valNeedQuote = false;
+					if (Val.GetType() == AST::ValueType::Str)
+					{
+						valNeedQuote = true;
+					}
+					if (Val.IsObject())
+					{
+						Object* pObj = Val.GetObj();
+						if (pObj->GetType() == Data::Type::Str)
+						{
+							valNeedQuote = true;
+						}
+					}
+					if (valNeedQuote)
+					{
+						strVal = "\"" + strVal + "\"";
+					}
+					strOut += "\t\"" + strKey+ "\":"+ strVal;
+					if (i < (cnt - 1))
+					{
+						strOut += ",\n";
+					}
+					else
+					{
+						strOut += "\n";
+					}
+					i++;
 				}
 				strOut += "}";
 				return strOut;

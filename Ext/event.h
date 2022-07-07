@@ -85,7 +85,15 @@ namespace X
 		inline void Set(std::string& name, AST::Value& val)
 		{
 			m_lockProps.Lock();
-			m_props.emplace(std::make_pair(name, val));
+			auto it = m_props.find(name);
+			if (it != m_props.end())
+			{
+				it->second = val;
+			}
+			else
+			{
+				m_props.emplace(std::make_pair(name, val));
+			}
 			m_lockProps.Unlock();
 		}
 		inline void Add(EventHandler handler, void* pContext)

@@ -368,29 +368,28 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const maxLevels = typeof args.levels === 'number' ? args.levels : 1000;
 		const endFrame = startFrame + maxLevels;
 
-		const stk = this._runtime.stack(startFrame, endFrame);
-
-		response.body = {
-			stackFrames: stk.frames.map((f, ix) => {
-				const sf: DebugProtocol.StackFrame = new StackFrame(f.index, f.name, this.createSource(f.file), this.convertDebuggerLineToClient(f.line));
-				if (typeof f.column === 'number') {
-					sf.column = this.convertDebuggerColumnToClient(f.column);
-				}
-				if (typeof f.instruction === 'number') {
-					const address = this.formatAddress(f.instruction);
-					sf.name = `${f.name} ${address}`;
-					sf.instructionPointerReference = address;
-				}
-
-				return sf;
-			}),
-			// 4 options for 'totalFrames':
-			//omit totalFrames property: 	// VS Code has to probe/guess. Should result in a max. of two requests
-			totalFrames: stk.count			// stk.count is the correct size, should result in a max. of two requests
-			//totalFrames: 1000000 			// not the correct size, should result in a max. of two requests
-			//totalFrames: endFrame + 20 	// dynamically increases the size with every requested chunk, results in paging
-		};
-		this.sendResponse(response);
+		this._runtime.stack(startFrame, endFrame, (stk) => {
+			response.body = {
+				stackFrames: stk.frames.map((f, ix) => {
+					const sf: DebugProtocol.StackFrame = new StackFrame(f.index, f.name, this.createSource(f.file), this.convertDebuggerLineToClient(f.line));
+					if (typeof f.column === 'number') {
+						sf.column = this.convertDebuggerColumnToClient(f.column);
+					}
+					if (typeof f.instruction === 'number') {
+						const address = this.formatAddress(f.instruction);
+						sf.name = `${f.name} ${address}`;
+						sf.instructionPointerReference = address;
+					}
+					return sf;
+				}),
+				// 4 options for 'totalFrames':
+				//omit totalFrames property: 	// VS Code has to probe/guess. Should result in a max. of two requests
+				totalFrames: stk.count			// stk.count is the correct size, should result in a max. of two requests
+				//totalFrames: 1000000 			// not the correct size, should result in a max. of two requests
+				//totalFrames: endFrame + 20 	// dynamically increases the size with every requested chunk, results in paging
+			};
+			this.sendResponse(response);
+        });
 	}
 
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {

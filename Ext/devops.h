@@ -1,6 +1,7 @@
 #pragma once
 #include "xlang.h"
 #include "function.h"
+#include "runtime.h"
 #include <vector>
 #include <iostream>
 namespace X
@@ -32,6 +33,8 @@ namespace X
 		};
 		class DebugService
 		{
+			bool BuildStackInfo(Runtime* rt,AST::Expression* pCurExp,
+				AST::Value& valStackInfo);
 		public:
 			BEGIN_PACKAGE(DebugService)
 				ADD_FUNC("get_startline", GetModuleStartLine)

@@ -3,6 +3,8 @@
 #include "ipc.h"
 #include "Hosting.h"
 #include "manager.h"
+#include "dict.h"
+#include "list.h"
 
 namespace X
 {
@@ -82,6 +84,42 @@ namespace X
 			}
 			std::cout << "After Impl of DebuggerImpl" << std::endl;
 		}
+		bool DebugService::BuildStackInfo(Runtime* rt,AST::Expression* pCurExp,
+			AST::Value& valStackInfo)
+		{
+			int index = 0;
+			Data::List* pList = new Data::List();
+			AST::Expression* pa = pCurExp->GetParent();
+			while (pa != nil)
+			{
+				AST::Scope* pMyScope = dynamic_cast<AST::Scope*>(pa);
+				if (pMyScope)
+				{
+					Data::Dict* dict = new Data::Dict();
+					dict->Set("index", AST::Value(index));
+					std::string name;
+					if (pa->m_type == AST::ObType::Func)
+					{
+						AST::Func* pFunc = dynamic_cast<AST::Func*>(pa);
+						if (pFunc)
+						{
+							name = pFunc->GetNameString();
+						}
+					}
+					dict->Set("name",AST::Value((char*)name.c_str(),(int)name.size()));
+					int line = pa->GetStartLine();
+					dict->Set("line",AST::Value(line));
+					int column = pa->GetCharPos();
+					dict->Set("column",AST::Value(column));
+					AST::Value valDict(dict);
+					pList->Add(rt, valDict);
+					index++;
+				}
+				pa = pa->GetParent();
+			}
+			valStackInfo = AST::Value(pList);
+			return true;
+		}
 		bool DebugService::GetModuleStartLine(void* rt, void* pContext,
 			ARGS& params, KWARGS& kwParams, AST::Value& retValue)
 		{
@@ -134,6 +172,23 @@ namespace X
 					lineToRun = pExpToRun->GetStartLine();
 				}
 				retValue = AST::Value(lineToRun);
+			}
+			else if (strCmd == "Stack")
+			{
+				cmdInfo.dbgType = AST::dbg::StackTrace;
+				AST::Expression* pExpToRun = nullptr;
+				Runtime* pCurrentRt = nullptr;
+				cmdInfo.m_valPlaceholder = (void**)&pExpToRun;
+				cmdInfo.m_valPlaceholder2 = (void**)&pCurrentRt;
+				pModule->AddCommand(cmdInfo, true);
+				if (pExpToRun)
+				{
+					BuildStackInfo(pCurrentRt,pExpToRun, retValue);
+				}
+				else
+				{
+					retValue = AST::Value();
+				}
 			}
 			else if (strCmd == "Continue")
 			{

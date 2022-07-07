@@ -14,13 +14,15 @@ enum class dbg
 	Continue,
 	Step,
 	StepIn,
-	StepOut
+	StepOut,
+	StackTrace,
 };
 
 struct CommandInfo
 {
 	dbg dbgType;
-	void** m_valPlaceholder=nullptr;
+	void** m_valPlaceholder = nullptr;
+	void** m_valPlaceholder2=nullptr;
 	XWait* m_wait = nullptr;
 };
 class Module :

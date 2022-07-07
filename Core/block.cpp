@@ -76,8 +76,10 @@ Func* Block::FindFuncByName(Var* name)
 bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 {
 	bool bOk = true;
+	m_bRunning = true;
 	for (auto i : Body)
 	{
+		rt->SetCurrentExpr(i);
 		Dbg(rt).Check(rt,i, pContext);
 		//int line = i->GetStartLine();
 		//std::cout << "Run Line:" << line <<std::endl;
@@ -88,6 +90,8 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 			break;
 		}
 	}
+	m_bRunning = false;
+
 	return bOk;
 }
 bool While::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)

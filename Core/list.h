@@ -44,7 +44,15 @@ public:
 		{
 			AST::Value v0;
 			Get(i, v0);
-			strList += '\t' + v0.ToString() + ",\n";
+			strList += '\t' + v0.ToString();
+			if (i < (size - 1))
+			{
+				strList+=",\n";
+			}
+			else
+			{
+				strList += "\n";
+			}
 		}
 		strList += "]";
 		return strList;
