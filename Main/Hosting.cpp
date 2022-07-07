@@ -82,22 +82,28 @@ namespace X
 		}
 		return AppEventCode::Continue;
 	}
-	bool Hosting::Run(std::string& moduleName, 
-		const char* code, int size, AST::Value& retVal)
+	AST::Module* Hosting::Load(std::string& moduleName,
+		const char* code, int size, unsigned long long& moduleKey)
 	{
 		Parser parser;
 		if (!parser.Init())
 		{
-			return false;
+			return nullptr;
 		}
 		parser.Compile((char*)code, size);
 		AST::Module* pTopModule = parser.GetModule();
-		if (pTopModule == nullptr)
-		{
-			return false;
-		}
 		pTopModule->SetModuleName(moduleName);
-		AddModule(pTopModule);
+		moduleKey = AddModule(pTopModule);
+		return pTopModule;
+	}
+	bool Hosting::Unload(AST::Module* pTopModule)
+	{
+		RemoveModule(pTopModule);
+		delete pTopModule;
+		return true;
+	}
+	bool Hosting::Run(AST::Module* pTopModule, AST::Value& retVal)
+	{
 		Runtime* pRuntime = new Runtime();
 		pRuntime->SetM(pTopModule);
 		AST::StackFrame* pModuleFrame = new AST::StackFrame(pTopModule);
@@ -108,11 +114,44 @@ namespace X
 		pRuntime->PopFrame();
 		retVal = pModuleFrame->GetReturnValue();
 		delete pModuleFrame;
-
-		RemoveModule(pTopModule);
-		delete pTopModule;
 		delete pRuntime;
-
 		return bOK;
+	}
+	bool Hosting::Run(std::string& moduleName,
+		const char* code, int size, AST::Value& retVal)
+	{
+		unsigned long long moduleKey = 0;
+		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
+		if (pTopModule == nullptr)
+		{
+			return false;
+		}
+		bool bOK =  Run(pTopModule, retVal);
+		Unload(pTopModule);
+		return bOK;
+	}
+	bool Hosting::Run(unsigned long long moduleKey, X::KWARGS& kwParams,
+		AST::Value& retVal)
+	{
+		//check debug command
+		bool stopOnEntry = false;
+		auto it = kwParams.find("stopOnEntry");
+		if (it != kwParams.end())
+		{
+			stopOnEntry = it->second.GetBool();
+		}
+
+		AST::Module* pTopModule = QueryModule(moduleKey);
+		if (pTopModule == nullptr)
+		{
+			retVal = X::AST::Value(false);
+			return false;
+		}
+		if (stopOnEntry)
+		{
+			pTopModule->SetDbg(X::AST::dbg::Step);
+		}
+		bool bOK = Run(pTopModule, retVal);
+		Unload(pTopModule);
 	}
 }

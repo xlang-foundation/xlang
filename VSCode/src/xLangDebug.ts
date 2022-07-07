@@ -1,14 +1,3 @@
-/*---------------------------------------------------------
- * Copyright (C) Microsoft Corporation. All rights reserved.
- *--------------------------------------------------------*/
-/*
- * xLangDebug.ts implements the Debug Adapter that "adapts" or translates the Debug Adapter Protocol (DAP) used by the client (e.g. VS Code)
- * into requests and events of the real "execution engine" or "debugger" (here: class XLangRuntime).
- * When implementing your own debugger extension for VS Code, most of the work will go into the Debug Adapter.
- * Since the Debug Adapter is independent from VS Code, it can be used in any client (IDE) supporting the Debug Adapter Protocol.
- *
- * The most important class of the Debug Adapter is the XLangDebugSession which implements many DAP requests by talking to the XLangRuntime.
- */
 
 import {
 	Logger, logger,
@@ -19,7 +8,7 @@ import {
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { basename } from 'path-browserify';
-import { XLangRuntime, IRuntimeBreakpoint, FileAccessor, RuntimeVariable, timeout, IRuntimeVariableType } from './xLangRuntime';
+import { XLangRuntime, IRuntimeBreakpoint,RuntimeVariable, timeout, IRuntimeVariableType } from './xLangRuntime';
 import { Subject } from 'await-notify';
 import * as base64 from 'base64-js';
 
@@ -252,6 +241,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		// wait 1 second until configuration has finished (and configurationDoneRequest has been called)
 		await this._configurationDone.wait(1000);
 
+		args.stopOnEntry = true;
 		// start the program in the runtime
 		await this._runtime.start(args.program, !!args.stopOnEntry, !args.noDebug);
 
@@ -508,8 +498,10 @@ export class XLangDebugSession extends LoggingDebugSession {
  	}
 
 	protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
-		this._runtime.step(args.granularity === 'instruction', false);
-		this.sendResponse(response);
+		this._runtime.step(args.granularity === 'instruction', false,
+			() => {
+				this.sendResponse(response);
+			});
 	}
 
 	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {

@@ -78,6 +78,7 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 	bool bOk = true;
 	for (auto i : Body)
 	{
+		Dbg(rt).Check(rt,i, pContext);
 		//int line = i->GetStartLine();
 		//std::cout << "Run Line:" << line <<std::endl;
 		Value v0;
@@ -86,7 +87,6 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 		{//TODO: error process here
 			break;
 		}
-		Dbg(rt).Check(v0,i, pContext);
 	}
 	return bOk;
 }

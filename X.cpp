@@ -15,7 +15,7 @@
 #include <signal.h>
 #include "utility.h"
 #include "devops.h"
-
+#include "event.h"
 
 
 void signal_callback_handler(int signum) 
@@ -45,11 +45,8 @@ int main1(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main(int argc, char* argv[])
+int main_runfile(int argc, char* argv[])
 {
-	X::DevOps::Debugger dbg;
-	dbg.Start();
-
 	signal(SIGINT, signal_callback_handler);
 	std::string pyFileName = "C:/Dev/X/test/test2.py";
 	if (argc >= 2)
@@ -66,6 +63,23 @@ int main(int argc, char* argv[])
 	X::AST::Value retVal;
 	X::Hosting::I().Run(pyFileName,code.c_str(),
 		(int)code.size(),retVal);
+	X::Builtin::I().Cleanup();
+	X::Manager::I().Cleanup();
+
+	X::G::I().Check();
+	std::cout << "End." << std::endl;
+	return 0;
+}
+int main(int argc, char* argv[])
+{
+	X::DevOps::Debugger dbg;
+	dbg.Start();
+
+	signal(SIGINT, signal_callback_handler);
+	REGISTER_PACKAGE("http", X::Http)
+		REGISTER_PACKAGE("fs", X::FileSystem)
+		X::Builtin::I().RegisterInternals();
+	X::EventSystem::I().Loop();
 	dbg.Stop();
 	X::Builtin::I().Cleanup();
 	X::Manager::I().Cleanup();
@@ -74,7 +88,7 @@ int main(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main_b(int argc, char* argv[])
+int main_backend(int argc, char* argv[])
 {
 	std::string pyFileName = "C:/Dev/X/Scripts/service.x";
 	std::ifstream pyFile(pyFileName);

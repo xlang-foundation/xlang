@@ -126,6 +126,11 @@ public:
 		flags = BOOL_FLAG;
 		x.l = b ? 1 : 0;
 	}
+	inline void AsBool()
+	{
+		flags = BOOL_FLAG;
+		x.l = x.l>0?1 : 0;
+	}
 	inline Value(int l)
 	{
 		t = ValueType::Int64;
@@ -140,6 +145,11 @@ public:
 	{
 		t = ValueType::Int64;
 		x.l = l;
+	}
+	inline Value(unsigned long long l)
+	{
+		t = ValueType::Int64;
+		x.l = (long long)l;
 	}
 	inline Value(double d)
 	{
@@ -199,6 +209,10 @@ public:
 	inline long long GetLongLong()
 	{
 		return x.l;
+	}
+	inline bool GetBool()
+	{
+		return (x.l!=0);
 	}
 	inline Data::Object* GetObj()
 	{

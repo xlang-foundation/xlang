@@ -44,7 +44,9 @@ namespace X
 				PackageInfo& info = it->second;
 				if (info.package == nullptr)
 				{
-					info.package = info.creator(rt);
+					auto* pPack = info.creator(rt);
+					pPack->AddRef();
+					info.package = pPack;
 				}
 				bCreated = (info.package != nullptr);
 				*ppPackage = info.package;

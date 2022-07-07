@@ -51,6 +51,10 @@ public:
 		m_pObject = pObj;
 		m_t = Data::Type::Package;
 	}
+	~Package()
+	{
+		std::cout << "~Package()"<<std::endl;
+	}
 	inline virtual AST::Scope* GetScope()
 	{
 		return dynamic_cast<Scope*>(this);

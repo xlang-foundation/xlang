@@ -10,7 +10,7 @@ namespace AST
 {
 void Func::ScopeLayout()
 {
-	static std::string THIS("this");
+	std::string thisKey("this");
 	Scope* pMyScope = GetScope();
 	//for lambda function, no Name,so skip it when m_Name.size ==0
 	if (pMyScope && m_Name.size > 0)
@@ -20,7 +20,7 @@ void Func::ScopeLayout()
 		//TODO: debug here
 		if (m_parent->m_type == ObType::Class)
 		{//it is class's member
-			m_IndexOfThis = AddOrGet(THIS, false);
+			m_IndexOfThis = AddOrGet(thisKey, false);
 		}
 	}
 	//process parameters' default values

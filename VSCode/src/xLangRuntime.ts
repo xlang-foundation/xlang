@@ -2,7 +2,8 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 import { EventEmitter } from 'events';
-import { XlangDevOps } from './xLangConnect';
+import { XlangDevOps } from './extension';
+
 
 async function xTest()
 {
@@ -100,7 +101,9 @@ export function timeout(ms: number) {
 export class XLangRuntime extends EventEmitter {
 
 	private _xlangDevOps?:XlangDevOps;
+	private _CanCall:boolean = true;
 	private _sourceFile: string = '';
+	private _moduleKey: number = 0;
 	public get sourceFile() {
 		return this._sourceFile;
 	}
@@ -161,10 +164,11 @@ export class XLangRuntime extends EventEmitter {
 		await this.checkConnection();
 		await this.loadSource(this.normalizePathAndCasing(program));
 		if (debug) {
-			await this.verifyBreakpoints(this._sourceFile);
-
+			//await this.verifyBreakpoints(this._sourceFile);
+			var startLine = await this.GetStartLine();
 			if (stopOnEntry) {
-				this.findNextStatement(false, 'stopOnEntry');
+				this.currentLine = startLine-1;
+				this.sendEvent('stopOnEntry');
 			} else {
 				// we just start to run until we hit a breakpoint, an exception, or the end of the program
 				this.continue(false);
@@ -179,20 +183,33 @@ export class XLangRuntime extends EventEmitter {
 	 */
 	public continue(reverse: boolean) {
 
-		while (!this.executeLine(this.currentLine, reverse)) {
-			if (this.updateCurrentLine(reverse)) {
-				break;
-			}
-			if (this.findNextStatement(reverse)) {
-				break;
-			}
-		}
 	}
-
+	private async Call(code)
+	{
+		this._CanCall = false;
+		var retVal = await this._xlangDevOps.Call(code);
+		this._CanCall  = true;
+		return retVal;
+	}
+	private async StepCall(cb:Function) {
+		let code = "import xdb\nreturn xdb.command("+this._moduleKey.toString()+",cmd='Step')";
+		var retVal = await this.Call(code);
+		var nextLine = parseInt(retVal);		  
+		this.currentLine = nextLine-1;
+		this.sendEvent('stopOnStep');
+		cb();
+	}
 	/**
 	 * Step to the next/previous non empty line.
 	 */
-	public step(instruction: boolean, reverse: boolean) {
+	public step(instruction: boolean, reverse: boolean,cb:Function) {
+		if(!this._CanCall)
+		{
+			return false;
+		}
+		this.StepCall(cb);
+	}
+	public step_bak(instruction: boolean, reverse: boolean) {
 
 		if (instruction) {
 			if (reverse) {
@@ -209,7 +226,6 @@ export class XLangRuntime extends EventEmitter {
 			}
 		}
 	}
-
 	private updateCurrentLine(reverse: boolean): boolean {
 		if (reverse) {
 			if (this.currentLine > 0) {
@@ -222,7 +238,7 @@ export class XLangRuntime extends EventEmitter {
 				return true;
 			}
 		} else {
-			if (this.currentLine < this.sourceLines.length-1) {
+			if (this.currentLine < /*this.sourceLines.length-1*/10000) {
 				this.currentLine++;
 			} else {
 				// no more lines: run to end
@@ -454,7 +470,8 @@ export class XLangRuntime extends EventEmitter {
 	// private methods
 
 	private getLine(line?: number): string {
-		return this.sourceLines[line === undefined ? this.currentLine : line].trim();
+		//return this.sourceLines[line === undefined ? this.currentLine : line].trim();
+		return "print('sss')";
 	}
 
 	private getWords(l: number, line: string): Word[] {
@@ -467,14 +484,21 @@ export class XLangRuntime extends EventEmitter {
 		}
 		return words;
 	}
-
+	private async GetStartLine(){
+		let code = "import xdb\nreturn xdb.get_startline("+this._moduleKey.toString()+")";
+		var retVal = await this.Call(code);
+		var lineNum = parseInt(retVal);
+		return lineNum;
+	}
 	private async loadSource(file: string): Promise<void> {
 		await this.checkConnection();
 		if (this._sourceFile !== file) {
 			this._sourceFile = this.normalizePathAndCasing(file);
-			let code ="print('"+this._sourceFile+"')\nreturn {x:1,y:1,z:1}";
-			var ret = await this._xlangDevOps.Call(code);
-			console.log(ret);				
+			var srcFile = this._sourceFile.replaceAll('\\', '/');
+			let code = "m = load('" + srcFile +"')\nmainrun(m,stopOnEntry=True)\nreturn m";
+			var ret = await this.Call(code);
+			console.log(ret);
+			this._moduleKey = ret;
 		}
 	}
 
@@ -501,36 +525,7 @@ export class XLangRuntime extends EventEmitter {
 	 * return true on stop
 	 */
 	 private findNextStatement(reverse: boolean, stepEvent?: string): boolean {
-
-		for (let ln = this.currentLine; reverse ? ln >= 0 : ln < this.sourceLines.length; reverse ? ln-- : ln++) {
-
-			// is there a source breakpoint?
-			const breakpoints = this.breakPoints.get(this._sourceFile);
-			if (breakpoints) {
-				const bps = breakpoints.filter(bp => bp.line === ln);
-				if (bps.length > 0) {
-
-					// send 'stopped' event
-					this.sendEvent('stopOnBreakpoint');
-
-					// the following shows the use of 'breakpoint' events to update properties of a breakpoint in the UI
-					// if breakpoint is not yet verified, verify it now and send a 'breakpoint' update event
-					if (!bps[0].verified) {
-						bps[0].verified = true;
-						this.sendEvent('breakpointValidated', bps[0]);
-					}
-
-					this.currentLine = ln;
-					return true;
-				}
-			}
-
-			const line = this.getLine(ln);
-			if (line.length > 0) {
-				this.currentLine = ln;
-				break;
-			}
-		}
+		 this.currentLine = this.currentLine+3;
 		if (stepEvent) {
 			this.sendEvent(stepEvent);
 			return true;
@@ -543,103 +538,10 @@ export class XLangRuntime extends EventEmitter {
 	 * Returns true if execution sent out a stopped event and needs to stop.
 	 */
 	private executeLine(ln: number, reverse: boolean): boolean {
-
-		// first "execute" the instructions associated with this line and potentially hit instruction breakpoints
-		while (reverse ? this.instruction >= this.starts[ln] : this.instruction < this.ends[ln]) {
-			reverse ? this.instruction-- : this.instruction++;
-			if (this.instructionBreakpoints.has(this.instruction)) {
-				this.sendEvent('stopOnInstructionBreakpoint');
-				return true;
-			}
-		}
-
-		const line = this.getLine(ln);
-
-		// find variable accesses
-		let reg0 = /\$([a-z][a-z0-9]*)(=(false|true|[0-9]+(\.[0-9]+)?|\".*\"|\{.*\}))?/ig;
-		let matches0: RegExpExecArray | null;
-		while (matches0 = reg0.exec(line)) {
-			if (matches0.length === 5) {
-
-				let access: string | undefined;
-
-				const name = matches0[1];
-				const value = matches0[3];
-
-				let v = new RuntimeVariable(name, value);
-
-				if (value && value.length > 0) {
-
-					if (value === 'true') {
-						v.value = true;
-					} else if (value === 'false') {
-						v.value = false;
-					} else if (value[0] === '"') {
-						v.value = value.slice(1, -1);
-					} else if (value[0] === '{') {
-						v.value = [
-							new RuntimeVariable('fBool', true),
-							new RuntimeVariable('fInteger', 123),
-							new RuntimeVariable('fString', 'hello'),
-							new RuntimeVariable('flazyInteger', 321)
-						];
-					} else {
-						v.value = parseFloat(value);
-					}
-
-					if (this.variables.has(name)) {
-						// the first write access to a variable is the "declaration" and not a "write access"
-						access = 'write';
-					}
-					this.variables.set(name, v);
-				} else {
-					if (this.variables.has(name)) {
-						// variable must exist in order to trigger a read access
-						access = 'read';
-					}
-				}
-
-				const accessType = this.breakAddresses.get(name);
-				if (access && accessType && accessType.indexOf(access) >= 0) {
-					this.sendEvent('stopOnDataBreakpoint', access);
-					return true;
-				}
-			}
-		}
-
-		// if 'log(...)' found in source -> send argument to debug console
-		const reg1 = /(log|prio|out|err)\(([^\)]*)\)/g;
-		let matches1: RegExpExecArray | null;
-		while (matches1 = reg1.exec(line)) {
-			if (matches1.length === 3) {
-				this.sendEvent('output', matches1[1], matches1[2], this._sourceFile, ln, matches1.index);
-			}
-		}
-
-		// if pattern 'exception(...)' found in source -> throw named exception
-		const matches2 = /exception\((.*)\)/.exec(line);
-		if (matches2 && matches2.length === 2) {
-			const exception = matches2[1].trim();
-			if (this.namedException === exception) {
-				this.sendEvent('stopOnException', exception);
-				return true;
-			} else {
-				if (this.otherExceptions) {
-					this.sendEvent('stopOnException', undefined);
-					return true;
-				}
-			}
-		} else {
-			// if word 'exception' found in source -> throw exception
-			if (line.indexOf('exception') >= 0) {
-				if (this.otherExceptions) {
-					this.sendEvent('stopOnException', undefined);
-					return true;
-				}
-			}
-		}
-
-		// nothing interesting found -> continue
+		let code = "import devops\nxdb.command(10)";
+		(async () => { 
+			await this.Call(code);
+		  })();
 		return false;
 	}
 

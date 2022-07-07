@@ -3,6 +3,7 @@
 #include "module.h"
 #include <vector>
 #include "Locker.h"
+#include <unordered_map>
 namespace X
 {
 	enum class AppEventCode
@@ -14,13 +15,17 @@ namespace X
 		public Singleton<Hosting>
 	{
 		std::vector<AST::Module*> m_Modules;
+		std::unordered_map<unsigned long long, AST::Module*> m_ModuleMap;
 		Locker m_lock;
 
-		void AddModule(AST::Module* p)
+		unsigned long long AddModule(AST::Module* p)
 		{
+			auto key = (unsigned long long)p;
 			m_lock.Lock();
 			m_Modules.push_back(p);
+			m_ModuleMap.emplace(std::make_pair(key,p));
 			m_lock.Unlock();
+			return key;
 		}
 		void RemoveModule(AST::Module* p)
 		{
@@ -39,10 +44,32 @@ namespace X
 					++it;
 				}
 			}
+			auto mapIt = m_ModuleMap.find((unsigned long long)p);
+			if (mapIt != m_ModuleMap.end())
+			{
+				m_ModuleMap.erase(mapIt);
+			}
 			m_lock.Unlock();
 		}
 	public:
+		AST::Module* QueryModule(unsigned long long key)
+		{
+			AST::Module* pModule = nullptr;
+			m_lock.Lock();
+			auto mapIt = m_ModuleMap.find(key);
+			if (mapIt != m_ModuleMap.end())
+			{
+				pModule = mapIt->second;
+			}
+			m_lock.Unlock();
+			return pModule;
+		}
 		AppEventCode HandleAppEvent(int signum);
+		AST::Module* Load(std::string& moduleName,
+			const char* code, int size,unsigned long long& moduleKey);
+		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,AST::Value& retVal);
+		bool Unload(AST::Module* pTopModule);
+		bool Run(AST::Module* pTopModule,AST::Value& retVal);
 		bool Run(std::string& moduleName,
 			const char* code, int size,AST::Value& retVal);
 		bool RunAsBackend(std::string& moduleName,const char* code, int size);

@@ -2,6 +2,8 @@
 #include "exp.h"
 #include "scope.h"
 #include "block.h"
+#include "Locker.h"
+#include "wait.h"
 
 namespace X
 {
@@ -10,20 +12,32 @@ namespace AST
 enum class dbg
 {
 	Continue,
-	Step
+	Step,
+	StepIn,
+	StepOut
 };
 
+struct CommandInfo
+{
+	dbg dbgType;
+	void** m_valPlaceholder=nullptr;
+	XWait* m_wait = nullptr;
+};
 class Module :
 	public Block,
 	public Scope
 {
 	std::string m_moduleName;
-	char* m_code = nullptr;
-	int m_codeSize =0;
+	std::string m_code;
 	StackFrame* m_stackFrame = nullptr;
 	//for debug
 	dbg m_dbg = dbg::Continue;
 	Expression* m_curRunningExpr = nil;
+
+	XWait m_commandWait;
+	Locker m_lockCommands;
+	std::vector<CommandInfo> m_commands;
+
 public:
 	Module() :
 		Scope(),
@@ -40,13 +54,58 @@ public:
 	{
 		return m_moduleName;
 	}
+	inline void AddCommand(CommandInfo& cmdInfo,bool bWaitFinish)
+	{
+		if (bWaitFinish)
+		{
+			cmdInfo.m_wait = new XWait();
+		}
+		m_lockCommands.Lock();
+		m_commands.push_back(cmdInfo);
+		m_lockCommands.Unlock();
+		m_commandWait.Release();
+		if (bWaitFinish)
+		{
+			cmdInfo.m_wait->Wait(-1);
+			delete cmdInfo.m_wait;
+		}
+	}
+	inline bool PopCommand(CommandInfo& cmdInfo)
+	{
+		bool bRet = true;
+		m_lockCommands.Lock();
+		if (m_commands.size() == 0)
+		{
+			bRet = false;
+			m_lockCommands.Unlock();
+			bRet = m_commandWait.Wait(-1);
+			m_lockCommands.Lock();
+		}
+		if (bRet && m_commands.size()>0)
+		{
+			cmdInfo = m_commands[0];
+			m_commands.erase(m_commands.begin());
+		}
+		m_lockCommands.Unlock();
+		return bRet;
+	}
 	inline void SetCode(char* code, int size)
 	{
 		m_code = code;
-		m_codeSize = size;
 	}
+	std::string& GetCode() { return m_code; }
 	~Module()
 	{
+		m_lockCommands.Lock();
+		for (auto& it : m_commands)
+		{
+			if (it.m_wait)
+			{
+				it.m_wait->Release();
+			}
+		}
+		m_lockCommands.Unlock();
+		m_commandWait.Release();
 		delete m_stackFrame;
 	}
 	virtual Scope* GetParentScope() override

@@ -14,6 +14,10 @@
 #include <vector>
 #include "Locker.h"
 #include "def.h"
+#include "Hosting.h"
+#include <fstream>
+#include <sstream>
+#include "event.h"
 
 Locker _printLock;
 bool U_Print(X::Runtime* rt,void* pContext,
@@ -32,6 +36,89 @@ bool U_Print(X::Runtime* rt,void* pContext,
 	retValue = X::AST::Value(true);
 	return true;
 }
+bool U_Load(X::Runtime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::AST::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::AST::Value(false);
+		return false;
+	}
+	std::string fileName = params[0].ToString();
+	std::ifstream moduleFile(fileName);
+	std::string code((std::istreambuf_iterator<char>(
+		moduleFile)), std::istreambuf_iterator<char>());
+	moduleFile.close();
+	unsigned long long moduleKey = 0;
+	X::Hosting::I().Load(fileName, code.c_str(), code.size(), moduleKey);
+	retValue = X::AST::Value(moduleKey);
+	return true;
+}
+bool U_Run(X::Runtime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::AST::Value& retValue)
+{
+	unsigned long long key = 0;
+	if (params.size() > 0)
+	{
+		key = params[0].GetLongLong();
+	}
+	else
+	{
+		auto it = kwParams.find("ModuleKey");
+		if (it != kwParams.end())
+		{
+			key = it->second.GetLongLong();
+		}
+	}
+	return X::Hosting::I().Run(key, kwParams, retValue);
+}
+bool U_RunInMain(X::Runtime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::AST::Value& retValue)
+{
+	X::Event* pEvt = X::EventSystem::I().Query("RunModule");
+	if (pEvt == nullptr)
+	{
+		pEvt = X::EventSystem::I().Register("RunModule");
+		pEvt->Add([](void* pContext, X::Event* pEvt) 
+			{
+				unsigned long long mKey = 0;
+				auto valKey = pEvt->Get("ModuleKey");
+				mKey = valKey.GetLongLong();
+				X::KWARGS kwParams0;
+				pEvt->CovertPropsToArgs(kwParams0);
+				X::AST::Value retValue0;
+				X::Hosting::I().Run(mKey, kwParams0, retValue0);
+			}, rt);
+	}
+	unsigned long long key = 0;
+	if (params.size() > 0)
+	{
+		key = params[0].GetLongLong();
+	}
+	else
+	{
+		auto it = kwParams.find("ModuleKey");
+		if (it != kwParams.end())
+		{
+			key = it->second.GetLongLong();
+		}
+	}
+	X::AST::Value valKey(key);
+	pEvt->Set("ModuleKey", valKey);
+	for (auto& it : kwParams)
+	{
+		pEvt->Set(it.first.c_str(), it.second);
+	}
+	pEvt->FireInMain();
+	return true;
+}
+
 bool U_Rand(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -209,12 +296,15 @@ bool Builtin::RegisterInternals()
 {
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (void*)U_Print, params);
+	Register("load", (void*)U_Load, params);
+	Register("run", (void*)U_Run, params);
 	Register("rand", (void*)U_Rand, params);
 	Register("sleep", (void*)U_Sleep, params);
 	Register("time", (void*)U_Time, params);
 	Register("breakpoint", (void*)U_BreakPoint, params);
 	Register("taskrun", (void*)U_TaskRun, params);
 	Register("threadid", (void*)U_ThreadId, params);
+	Register("mainrun", (void*)U_RunInMain, params);
 	return true;
 }
 }

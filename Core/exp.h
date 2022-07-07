@@ -125,6 +125,7 @@ class Number :
 {
 	long long m_val;
 	int m_digiNum = 0;
+	bool m_isBool = false;
 public:
 	Number(long long val, int num=0)
 	{
@@ -132,12 +133,25 @@ public:
 		m_digiNum = num;
 		m_type = ObType::Number;
 	}
+	Number(bool val)
+	{
+		m_val = val?1:0;
+		m_type = ObType::Number;
+		m_isBool = true;
+	}
 	inline long long GetVal() { return m_val; }
 	inline int GetDigiNum() { return m_digiNum; }
 	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
-		v0.SetF(m_digiNum);
+		if (m_isBool)
+		{
+			v0.AsBool();
+		}
+		else
+		{
+			v0.SetF(m_digiNum);
+		}
 		v = v0;
 		return true;
 	}

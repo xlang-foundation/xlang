@@ -121,8 +121,9 @@ void RegisterOps()
 }
 void Register()
 {
-	RegOP("False", "None", "True", "and", /*0-3*/
-		"as", "assert", "async", "await", /*4-7*/
+	/*treat as Token 0-2*/
+	RegOP("False", "True","None");
+	RegOP("and","as", "assert", "async", "await", /*4-7*/
 		"break", "class", "continue", /*8-10*/
 		"def", "del", "elif", "else", /*11-14*/
 		"except", "finally", "for", /*15-17*/

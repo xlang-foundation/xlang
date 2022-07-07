@@ -53,6 +53,17 @@ public:
 		}
 		Body.clear();
 	}
+	inline int GetStartLine()
+	{
+		if (Body.size() > 0)
+		{
+			return Body[0]->GetStartLine();
+		}
+		else
+		{
+			return -1;
+		}
+	}
 	inline bool IsNoIndentCheck()
 	{
 		return NoIndentCheck;

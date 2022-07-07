@@ -35,6 +35,10 @@ struct CoreContext
 };
 enum TokenIndex
 {
+	Token_False = 0,
+	Token_True=1,
+	Token_None=2,
+
 	TokenInvalid = -1,
 	TokenID = -10,
 	TokenNum = -11,

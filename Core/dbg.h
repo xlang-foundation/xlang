@@ -17,8 +17,11 @@ public:
 	{
 		m_rt = rt;
 	}
-	void Loop(AST::Expression* exp, void* pContext)
+	void Loop(AST::Value& lineRet,AST::Expression* exp, void* pContext)
 	{
+		std::cout << lineRet.ToString() << std::endl;
+		int line = exp->GetStartLine();
+		std::cout << "(" << line << ",(c)ontinue,(s)tep)>>";
 		while (true)
 		{
 			std::string input;
@@ -72,14 +75,40 @@ public:
 			std::cout << ">>";
 		}
 	}
-	inline bool Check(AST::Value& lineRet,AST::Expression* exp, void* pContext)
+	void WaitForCommnd(Runtime* rt,
+		AST::Expression* exp, void* pContext)
+	{
+		auto* pModule = rt->M();
+		AST::CommandInfo cmdInfo;
+		bool mLoop = true;
+		while (mLoop)
+		{
+			pModule->PopCommand(cmdInfo);
+			if (cmdInfo.dbgType == AST::dbg::Continue)
+			{
+				m_rt->M()->SetDbg(AST::dbg::Continue);
+				mLoop = false;
+			}
+			else if (cmdInfo.dbgType == AST::dbg::Step)
+			{
+				m_rt->M()->SetDbg(AST::dbg::Step);
+				mLoop = false;
+			}
+			if (cmdInfo.m_valPlaceholder)
+			{
+				*cmdInfo.m_valPlaceholder = (void*)exp;
+			}
+			if (cmdInfo.m_wait)
+			{
+				cmdInfo.m_wait->Release();
+			}
+		}
+	}
+	inline bool Check(Runtime* rt,AST::Expression* exp, void* pContext)
 	{
 		if (m_rt->M()->GetDbg() == AST::dbg::Step)
 		{
-			std::cout << lineRet.ToString() << std::endl;
-			int line = exp->GetStartLine();
-			std::cout << "(" << line << ",(c)ontinue,(s)tep)>>";
-			Loop(exp,pContext);
+			WaitForCommnd(rt,exp,pContext);
 		}
 		return true;
 	}
