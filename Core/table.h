@@ -231,7 +231,7 @@ public:
 		}
 		return *this;
 	}
-	virtual std::string ToString() override
+	virtual std::string ToString(bool WithFormat = false) override
 	{
 		const int online_len = 1000;
 		char convertBuf[online_len];

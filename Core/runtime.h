@@ -50,7 +50,10 @@ public:
 			if(m_stackBottom) m_stackBottom->SetNext(nullptr);
 		}
 	}
-	
+	inline AST::StackFrame* GetCurrentStack()
+	{
+		return m_stackBottom;
+	}
 	inline virtual bool Set(AST::Scope* s,void* pContext, int idx, AST::Value& v)
 	{
 		bool bOK = false;

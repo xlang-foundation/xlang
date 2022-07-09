@@ -22,6 +22,7 @@ public:
 	{
 		return (int)m_Vars.size();
 	}
+	inline std::unordered_map <std::string, int>& GetVarMap() { return m_Vars; }
 	inline std::vector<std::string> GetVarNames()
 	{
 		std::vector<std::string> names;

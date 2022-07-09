@@ -7,6 +7,7 @@ namespace X {
 namespace AST {
 enum class ValueType
 {
+	Invalid,
 	None,
 	Int64,
 	Double,
@@ -92,7 +93,7 @@ bool Value::operator op (const Value& r) const\
 class Value
 {
 	int flags = 0;
-	ValueType t;
+	ValueType t= ValueType::Invalid;
 	union
 	{
 		long long l;
@@ -101,6 +102,10 @@ class Value
 		Data::Object* obj;
 	}x;
 public:
+	inline bool IsInvalid()
+	{
+		return (t == ValueType::Invalid);
+	}
 	inline ~Value()
 	{
 		switch (t)
@@ -117,7 +122,7 @@ public:
 	}
 	inline Value()
 	{
-		t = ValueType::None;
+		t = ValueType::Invalid;
 		x.l = 0;
 	}
 	inline Value(bool b)
@@ -224,7 +229,7 @@ public:
 	}
 	inline bool IsObject()
 	{
-		return (t == ValueType::Object);
+		return (t == ValueType::Object) && (x.obj != nullptr);
 	}
 	inline bool IsTrue()
 	{
@@ -288,7 +293,7 @@ public:
 	COMPARE_OP(>=);
 	COMPARE_OP(<=);
 
-	std::string ToString();
+	std::string ToString(bool WithFormat = false);
 };
 typedef Value* LValue;
 }

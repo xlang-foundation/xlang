@@ -14,12 +14,21 @@ namespace X
 		public:
 			Function(AST::Func* p);
 			~Function();
-			virtual std::string ToString()
+			virtual std::string ToString(bool WithFormat = false)
 			{
-				char v[1000];
-				snprintf(v, sizeof(v), "Function:%s@0x%llx",
-					m_func->GetNameString().c_str(), (unsigned long long)this);
-				return v;
+				std::string strRet= m_func->GetNameString();
+				if (strRet.empty())
+				{
+					char v[1000];
+					snprintf(v, sizeof(v), "f[%llx]",
+						(unsigned long long)this);
+					strRet = v;
+				}
+				if (WithFormat)
+				{
+					strRet = "\"" + strRet + "\"";
+				}
+				return strRet;
 			}
 			AST::Func* GetFunc() { return m_func; }
 			virtual bool Call(Runtime* rt, ARGS& params,

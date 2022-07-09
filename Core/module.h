@@ -16,6 +16,7 @@ enum class dbg
 	StepIn,
 	StepOut,
 	StackTrace,
+	GetRuntime,
 };
 
 struct CommandInfo
@@ -23,6 +24,7 @@ struct CommandInfo
 	dbg dbgType;
 	void** m_valPlaceholder = nullptr;
 	void** m_valPlaceholder2=nullptr;
+	void** m_valPlaceholder3 = nullptr;
 	XWait* m_wait = nullptr;
 };
 class Module :

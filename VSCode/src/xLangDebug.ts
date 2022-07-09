@@ -396,8 +396,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 		response.body = {
 			scopes: [
-				new Scope("Locals", this._variableHandles.create('locals'), false),
-				new Scope("Globals", this._variableHandles.create('globals'), true)
+				new Scope("Locals", this._runtime.createScopeRef('locals',args.frameId), false),
+				new Scope("Globals", this._runtime.createScopeRef('globals', args.frameId), true)
 			]
 		};
 		this.sendResponse(response);
@@ -443,12 +443,21 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.Request): Promise<void> {
 
+		let cb = (vs: RuntimeVariable[]) => {
+			response.body = {
+				variables: vs.map(v => this.convertFromRuntime(v))
+			};
+			this.sendResponse(response);
+		};
+
 		let vs: RuntimeVariable[] = [];
 
-		const v = this._variableHandles.get(args.variablesReference);
-		if (v === 'locals') {
-			vs = this._runtime.getLocalVariables();
-		} else if (v === 'globals') {
+		const v = this._runtime.getScopeRef(args.variablesReference);
+		const varType = v[0];
+		const frameId = v[1];
+		if (varType === 'locals') {
+			this._runtime.getLocalVariables(frameId,cb);
+		} else if (varType === 'globals') {
 			if (request) {
 				this._cancellationTokens.set(request.seq, false);
 				vs = await this._runtime.getGlobalVariables(() => !!this._cancellationTokens.get(request.seq));
@@ -456,14 +465,21 @@ export class XLangDebugSession extends LoggingDebugSession {
 			} else {
 				vs = await this._runtime.getGlobalVariables();
 			}
-		} else if (v && Array.isArray(v.value)) {
-			vs = v.value;
+		} else {
+			vs = Array.from(v[2].slice(args.start,args.start+args.count), (v0,idx) => {
+				let dapVariable: DebugProtocol.Variable ={
+					name:(args.start+idx).toString(),
+					value: v0.toString(),
+					variablesReference: 0,
+					type: typeof v0
+				};
+				return dapVariable;
+			});
+			response.body = {
+				variables: vs
+			};
+			this.sendResponse(response);
 		}
-
-		response.body = {
-			variables: vs.map(v => this.convertFromRuntime(v))
-		};
-		this.sendResponse(response);
 	}
 
 	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
@@ -828,59 +844,47 @@ export class XLangDebugSession extends LoggingDebugSession {
 		}
 		return value;
 	}
-
+	
 	private convertFromRuntime(v: RuntimeVariable): DebugProtocol.Variable {
 
 		let dapVariable: DebugProtocol.Variable = {
-			name: v.name,
-			value: '???',
-			type: typeof v.value,
+			name: v.Name,
+			value: v.Val,
+			type: v.Type,
 			variablesReference: 0,
-			evaluateName: '$' + v.name
+			evaluateName: '$' + v.Name
 		};
-
-		if (v.name.indexOf('lazy') >= 0) {
-			// a "lazy" variable needs an additional click to retrieve its value
-
-			dapVariable.value = 'lazy var';		// placeholder value
-			v.reference ??= this._variableHandles.create(new RuntimeVariable('', [ new RuntimeVariable('', v.value) ]));
-			dapVariable.variablesReference = v.reference;
-			dapVariable.presentationHint = { lazy: true };
-		} else {
-
-			if (Array.isArray(v.value)) {
-				dapVariable.value = 'Object';
-				v.reference ??= this._variableHandles.create(v);
+		switch (v.Type) {
+			case 'Int64':
+				dapVariable.value = v.Val.toString();
+				dapVariable.type = 'integer';
+				break;
+			case 'Double':
+				dapVariable.value = v.Val.toString();
+				dapVariable.type = 'float';
+				break;
+			case 'Str':
+				dapVariable.value = `"${v.Val}"`;
+				break;
+			case 'boolean':
+				dapVariable.value = v.Val ? 'true' : 'false';
+				break;
+			case 'Function':
+				dapVariable.type = 'Function';
+				break;
+			case 'Dict':
+				break;
+			case 'List':
+				v.reference = this._runtime.createScopeRef(
+					v.Name,v.FrameId,v.Val);
+				dapVariable.value = 'List';
+				dapVariable.type = typeof v.Val;
 				dapVariable.variablesReference = v.reference;
-			} else {
-
-				switch (typeof v.value) {
-					case 'number':
-						if (Math.round(v.value) === v.value) {
-							dapVariable.value = this.formatNumber(v.value);
-							(<any>dapVariable).__vscodeVariableMenuContext = 'simple';	// enable context menu contribution
-							dapVariable.type = 'integer';
-						} else {
-							dapVariable.value = v.value.toString();
-							dapVariable.type = 'float';
-						}
-						break;
-					case 'string':
-						dapVariable.value = `"${v.value}"`;
-						break;
-					case 'boolean':
-						dapVariable.value = v.value ? 'true' : 'false';
-						break;
-					default:
-						dapVariable.value = typeof v.value;
-						break;
-				}
-			}
-		}
-
-		if (v.memory) {
-			v.reference ??= this._variableHandles.create(v);
-			dapVariable.memoryReference = String(v.reference);
+				//dapVariable.presentationHint = { lazy: true };
+				dapVariable.indexedVariables = v.Val.length;
+				break;
+			default:
+				break;
 		}
 
 		return dapVariable;

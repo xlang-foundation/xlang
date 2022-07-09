@@ -86,18 +86,20 @@ namespace X {namespace AST {
 		}
 		return h;
 	}
-	std::string Value::ToString()
+	std::string Value::ToString(bool WithFormat)
 	{
 		std::string str;
 		switch (t)
 		{
 		case ValueType::None:
+			if (WithFormat) str = "\"\"";
 			break;
 		case ValueType::Int64:
 		{
 			if (flags == BOOL_FLAG)
 			{
-				str = (x.l == 1) ? "True" : "False";
+				if(WithFormat) str = (x.l == 1) ? "true" : "false";//Json likes it
+				else str = (x.l == 1) ? "True" : "False";
 			}
 			else
 			{
@@ -117,11 +119,16 @@ namespace X {namespace AST {
 		case ValueType::Object:
 		if(x.obj)
 		{
-			str = x.obj->ToString();
+			str = x.obj->ToString(WithFormat);
+			if (WithFormat && x.obj->GetType() == Data::Type::Str)
+			{
+				str = "\"" + str + "\"";
+			}
 		}
 			break;
 		case ValueType::Str:
 			str = std::string((char*)x.str, flags);
+			if (WithFormat) str = "\"" + str + "\"";
 			break;
 		default:
 			break;

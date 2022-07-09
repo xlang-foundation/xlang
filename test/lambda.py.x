@@ -1,3 +1,6 @@
+x=10
+y=100
+z =x+y
 f = (x:int,y:int,z:int){
     f2 =(k:int,l)
     {

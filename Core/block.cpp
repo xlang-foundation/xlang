@@ -28,51 +28,6 @@ void Block::Add(Expression* item)
 	item->ScopeLayout();
 
 }
-Func* Block::FindFuncByName(Var* name)
-{
-	Func* func = nil;
-	String& target_name = name->GetName();
-	//internl first
-	std::string strName(target_name.s, target_name.size);
-	ExternFunc* extFunc = Builtin::I().Find(strName);
-	if (extFunc)
-	{
-		return extFunc;
-	}
-	for (auto i : Body)
-	{
-		if (i->m_type != ObType::Func)
-		{
-			continue;
-		}
-		auto iFunc = (Func*)i;
-		Var* ivarName = dynamic_cast<Var*>(iFunc->GetName());
-		if (ivarName == nil)
-		{
-			continue;
-		}
-		String& i_name = ivarName->GetName();
-		bool bMatched = false;
-		if (i_name.size == target_name.size && i_name.size>0)
-		{
-			bMatched = true;
-			for (int j = 0; j < i_name.size; j++)
-			{
-				if (i_name.s[j] != target_name.s[j])
-				{
-					bMatched = false;
-					break;
-				}
-			}
-		}
-		if (bMatched)
-		{
-			func = iFunc;
-			break;
-		}
-	}
-	return func;
-}
 bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 {
 	bool bOk = true;

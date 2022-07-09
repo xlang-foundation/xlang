@@ -1,25 +1,10 @@
 /*---------------------------------------------------------
- * Copyright (C) Microsoft Corporation. All rights reserved.
+ * https://microsoft.github.io/debug-adapter-protocol/overview
  *--------------------------------------------------------*/
 import { EventEmitter } from 'events';
 import { XlangDevOps } from './extension';
 
 
-async function xTest()
-{
-	var L = console.log;
-    var x = new XlangDevOps();
-    var isStarted = false;
-    try {
-        isStarted = await x.Start();
-    }
-    catch (e) {
-        L(e);
-    }
-    var code ="print('from nodejs')\nreturn '{x:1,y:1,z:1}'";
-    var ret = await x.Call(code);
-    L(ret);	
-}
 export interface IRuntimeBreakpoint {
 	id: number;
 	line: number;
@@ -50,42 +35,46 @@ interface RuntimeDisassembledInstruction {
 	instruction: string;
 	line?: number;
 }
-
-export type IRuntimeVariableType = number | boolean | string | RuntimeVariable[];
-
 export class RuntimeVariable {
-	private _memory?: Uint8Array;
-
-	public reference?: number;
-
-	public get value() {
+	private _name: string = "";
+	private _value: any = null;
+	private _type: string = "";
+	private _frameId: number = 0;
+	private _reference: number = 0;
+	constructor(name: string, value, type: string,frmId:number) {
+		this._name = name;
+		this._type = type;
+		this._value = value;
+		this._frameId = frmId;
+	}
+	public get FrameId() {
+		return this._frameId;
+	}
+	public get Name() {
+		return this._name;
+	}
+	public set Name(nm) {
+		this._name =nm;
+	}
+	public get reference() {
+		return this._reference;
+	}
+	public set reference(r) {
+		this._reference = r;
+	}
+	public get Type() {
+		return this._type;
+	}
+	public set Type(t) {
+		this._type = t;
+	}
+	public get Val() {
 		return this._value;
 	}
-
-	public set value(value: IRuntimeVariableType) {
-		this._value = value;
-		this._memory = undefined;
+	public set Val(v) {
+		this._value = v;
 	}
 
-	public get memory() {
-		if (this._memory === undefined && typeof this._value === 'string') {
-			this._memory = new TextEncoder().encode(this._value);
-		}
-		return this._memory;
-	}
-
-	constructor(public readonly name: string, private _value: IRuntimeVariableType) {}
-
-	public setMemory(data: Uint8Array, offset = 0) {
-		const memory = this.memory;
-		if (!memory) {
-			return;
-		}
-
-		memory.set(data, offset);
-		this._memory = memory;
-		this._value = new TextDecoder().decode(memory);
-	}
 }
 
 interface Word {
@@ -149,6 +138,16 @@ export class XLangRuntime extends EventEmitter {
 	constructor() {
 		super();
 	}
+	private nextVarRef = 1;
+	private varRefMap = new Map<number,[]>();
+	public createScopeRef(varType, frameId,val) {
+		let refId = this.nextVarRef++;
+		this.varRefMap[refId] = [varType, frameId,val];
+		return refId;
+	}
+	public getScopeRef(refId) {
+		return this.varRefMap[refId];
+    }
 	async checkConnection()
 	{
 		if(this._xlangDevOps == undefined)
@@ -305,7 +304,7 @@ export class XLangRuntime extends EventEmitter {
 				index: frm["index"],
 				name: name,
 				file: this._sourceFile,
-				line: this.currentLine,// frm["line"]-1,
+				line: frm["line"]-1,
 				column: frm["column"]
 			};
 			frames.push(stackFrame);
@@ -441,7 +440,7 @@ export class XLangRuntime extends EventEmitter {
 		let a: RuntimeVariable[] = [];
 
 		for (let i = 0; i < 10; i++) {
-			a.push(new RuntimeVariable(`global_${i}`, i));
+			//todo:a.push(new RuntimeVariable(`global_${i}`, i));
 			if (cancellationToken && cancellationToken()) {
 				break;
 			}
@@ -451,8 +450,19 @@ export class XLangRuntime extends EventEmitter {
 		return a;
 	}
 
-	public getLocalVariables(): RuntimeVariable[] {
-		return Array.from(this.variables, ([name, value]) => value);
+	public async getLocalVariables(frameId,cb){
+		if (!this._CanCall) {
+			return;
+		}
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() +
+			",frameId=" + frameId.toString()+",cmd='Locals')";
+		var retVal = await this.Call(code);
+		console.log(retVal);
+		var retObj = JSON.parse(retVal);
+		console.log(retObj);
+		let vars= Array.from(retObj, (x:Map<string,any>) =>
+			new RuntimeVariable(x["Name"], x["Value"], x["Type"],frameId));
+		cb(vars);
 	}
 
 	public getLocalVariable(name: string): RuntimeVariable | undefined {

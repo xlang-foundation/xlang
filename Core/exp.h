@@ -26,6 +26,7 @@ enum class ObType
 	Pair,
 	Dot,
 	Func,
+	BuiltinFunc,
 	Class,
 	Import
 };
@@ -70,7 +71,6 @@ public:
 		return m_scope;
 	}
 	Scope* FindScope();
-	Func* FindFuncByName(Var* name);
 	void SetParent(Expression* p)
 	{
 		m_parent = p;

@@ -74,7 +74,6 @@ public:
 		NoIndentCheck = b;
 	}
 	virtual void Add(Expression* item);
-	virtual Func* FindFuncByName(Var* name);
 	inline Indent GetIndentCount() { return IndentCount; }
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }

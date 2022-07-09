@@ -27,6 +27,7 @@ public:
 			delete[] m_Values;
 		}
 	}
+	inline Scope* GetScope() { return m_pScope; }
 	inline void SetCurrentExpr(AST::Expression* expr)
 	{
 		m_curExprRun = expr;

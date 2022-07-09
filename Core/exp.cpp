@@ -26,26 +26,6 @@ Scope* Expression::FindScope()
 	return pMyScope;
 }
 
-Func* Expression::FindFuncByName(Var* name)
-{
-	Func* pFuncRet = nil;
-	Expression* pa = m_parent;
-	while (pa != nil)
-	{
-		Block* pMyBlock = dynamic_cast<AST::Block*>(pa);
-		if (pMyBlock)
-		{
-			pFuncRet = pMyBlock->FindFuncByName(name);
-			if (pFuncRet)
-			{
-				break;
-			}
-		}
-		pa = pa->GetParent();
-	}
-	return pFuncRet;
-}
-
 bool Param::Parse(std::string& strVarName, 
 	std::string& strVarType, Value& defaultValue)
 {

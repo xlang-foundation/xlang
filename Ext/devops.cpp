@@ -45,7 +45,7 @@ namespace X
 				std::string ack("OK");
 				if (Hosting::I().Run(moduleName, data, size, retVal))
 				{
-					ack = retVal.ToString();
+					ack = retVal.ToString(true);
 				}
 				else
 				{
@@ -84,29 +84,123 @@ namespace X
 			}
 			std::cout << "After Impl of DebuggerImpl" << std::endl;
 		}
+		std::string DebugService::GetValueType(AST::Value& val)
+		{
+			std::string strType;
+			AST::ValueType t = val.GetType();
+			switch (t)
+			{
+			case AST::ValueType::None:
+				strType = "None";
+				break;
+			case AST::ValueType::Int64:
+				strType = "Int64";
+				break;
+			case AST::ValueType::Double:
+				strType = "Double";
+				break;
+			case AST::ValueType::Object:
+			{
+				auto* pObj = val.GetObj();
+				if (pObj)
+				{
+					strType = pObj->GetTypeString();
+				}
+				else
+				{
+					strType = "Null";
+				}
+			}
+				break;
+			case AST::ValueType::Str:
+				strType = "Str";
+				break;
+			case AST::ValueType::Value:
+				strType = "Value";
+				break;
+			default:
+				break;
+			}
+			return strType;
+		}
+		bool DebugService::BuildLocals(Runtime* rt,
+			void* pContextCurrent,int frameId,
+			AST::Value& valLocals)
+		{
+			int index = 0;
+			AST::StackFrame* pCurStack = rt->GetCurrentStack();
+			while (pCurStack != nil)
+			{
+				if (index == frameId)
+				{
+					break;
+				}
+				pCurStack = pCurStack->Prev();
+				index++;
+			}
+			Data::List* pList = new Data::List();
+			if (pCurStack)
+			{
+				AST::Scope* pCurScope = pCurStack->GetScope();
+				auto nameMap = pCurScope->GetVarMap();
+				for (auto& it : nameMap)
+				{
+					int idx = it.second;
+					AST::Value val;
+					pCurScope->Get(rt, pContextCurrent, idx, val);
+					if (val.IsInvalid())
+					{//not set
+						continue;
+					}
+					if (val.IsObject() && val.GetObj()->IsFunc())
+					{
+						continue;
+					}
+					Data::Dict* dict = new Data::Dict();
+					Data::Str* pStrName = new Data::Str(it.first);
+					dict->Set("Name", AST::Value(pStrName));
+
+					auto valType = GetValueType(val);
+					Data::Str* pStrType = new Data::Str(valType);
+					dict->Set("Type", AST::Value(pStrType));
+					dict->Set("Value", val);
+					AST::Value valDict(dict);
+					pList->Add(rt, valDict);
+				}
+			}
+			valLocals = AST::Value(pList);
+			return true;
+		}
 		bool DebugService::BuildStackInfo(Runtime* rt,AST::Expression* pCurExp,
 			AST::Value& valStackInfo)
 		{
 			int index = 0;
+			AST::StackFrame* pCurStack = rt->GetCurrentStack();
 			Data::List* pList = new Data::List();
-			AST::Expression* pa = pCurExp->GetParent();
-			while (pa != nil)
+			while (pCurStack != nil)
 			{
-				AST::Scope* pMyScope = dynamic_cast<AST::Scope*>(pa);
+				AST::Expression* pa = pCurStack->GetCurrentExpr();
+				AST::Scope* pMyScope = pa->GetScope();
 				if (pMyScope)
 				{
 					Data::Dict* dict = new Data::Dict();
 					dict->Set("index", AST::Value(index));
 					std::string name;
-					if (pa->m_type == AST::ObType::Func)
+					AST::Func* pFunc = dynamic_cast<AST::Func*>(pMyScope);
+					if (pFunc)
 					{
-						AST::Func* pFunc = dynamic_cast<AST::Func*>(pa);
-						if (pFunc)
+						name = pFunc->GetNameString();
+						if (name.empty())
 						{
-							name = pFunc->GetNameString();
+							char v[1000];
+							snprintf(v, sizeof(v), "lambda:(%d,%d)0x%llx",
+								pFunc->GetStartLine(),pFunc->GetCharPos(),
+								(unsigned long long)pFunc);
+							name = v;
 						}
 					}
-					dict->Set("name",AST::Value((char*)name.c_str(),(int)name.size()));
+					Data::Str* pStrName = new Data::Str(name);
+					dict->Set("name",AST::Value(pStrName));
 					int line = pa->GetStartLine();
 					dict->Set("line",AST::Value(line));
 					int column = pa->GetCharPos();
@@ -115,7 +209,7 @@ namespace X
 					pList->Add(rt, valDict);
 					index++;
 				}
-				pa = pa->GetParent();
+				pCurStack = pCurStack->Prev();
 			}
 			valStackInfo = AST::Value(pList);
 			return true;
@@ -184,6 +278,30 @@ namespace X
 				if (pExpToRun)
 				{
 					BuildStackInfo(pCurrentRt,pExpToRun, retValue);
+				}
+				else
+				{
+					retValue = AST::Value();
+				}
+			}
+			else if (strCmd == "Locals")
+			{
+				int frameId = 0;
+				auto it2 = kwParams.find("frameId");
+				if (it2 != kwParams.end())
+				{
+					frameId = (int)it2->second.GetLongLong();
+				}
+				cmdInfo.dbgType = AST::dbg::GetRuntime;
+				Runtime* pCurrentRt = nullptr;
+				void* pContextCurrent = nullptr;
+				cmdInfo.m_valPlaceholder = nullptr;
+				cmdInfo.m_valPlaceholder2 = (void**)&pCurrentRt;
+				cmdInfo.m_valPlaceholder3 = (void**)&pContextCurrent;
+				pModule->AddCommand(cmdInfo, true);
+				if (pCurrentRt)
+				{
+					BuildLocals(pCurrentRt, pContextCurrent,frameId,retValue);
 				}
 				else
 				{

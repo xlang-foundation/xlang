@@ -35,7 +35,7 @@ namespace Data
 		}
 		char* Buffer() { return (char*)m_s.c_str(); }
 		virtual AST::Scope* GetScope();
-		inline virtual std::string ToString() override
+		inline virtual std::string ToString(bool WithFormat = false) override
 		{
 			return m_s;
 		}

@@ -67,7 +67,7 @@ namespace X
 				}
 				return bOK;
 			}
-			virtual std::string ToString() override
+			virtual std::string ToString(bool WithFormat = false) override
 			{
 				std::string strOut = "{\n";
 				int cnt = mMap.size();
@@ -75,27 +75,10 @@ namespace X
 				for (auto& it: mMap)
 				{
 					AST::Value key = it.first;
-					std::string strKey = key.ToString();
+					std::string strKey = key.ToString(WithFormat);
 					AST::Value Val = it.second;
-					std::string strVal = Val.ToString();
-					bool valNeedQuote = false;
-					if (Val.GetType() == AST::ValueType::Str)
-					{
-						valNeedQuote = true;
-					}
-					if (Val.IsObject())
-					{
-						Object* pObj = Val.GetObj();
-						if (pObj->GetType() == Data::Type::Str)
-						{
-							valNeedQuote = true;
-						}
-					}
-					if (valNeedQuote)
-					{
-						strVal = "\"" + strVal + "\"";
-					}
-					strOut += "\t\"" + strKey+ "\":"+ strVal;
+					std::string strVal = Val.ToString(WithFormat);
+					strOut += "\t" + strKey+ ":"+ strVal;
 					if (i < (cnt - 1))
 					{
 						strOut += ",\n";

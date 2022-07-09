@@ -146,6 +146,7 @@ public:
 	{
 		m_funcName = funcName;
 		m_func = func;
+		m_type = ObType::BuiltinFunc;
 	}
 	inline virtual bool Call(Runtime* rt, void* pContext,
 		std::vector<Value>& params,

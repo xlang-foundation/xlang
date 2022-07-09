@@ -35,6 +35,10 @@ namespace X
 		{
 			bool BuildStackInfo(Runtime* rt,AST::Expression* pCurExp,
 				AST::Value& valStackInfo);
+			bool BuildLocals(Runtime* rt,
+				void* pContextCurrent,int frameId,
+				AST::Value& valLocals);
+			std::string GetValueType(AST::Value& val);
 		public:
 			BEGIN_PACKAGE(DebugService)
 				ADD_FUNC("get_startline", GetModuleStartLine)

@@ -86,6 +86,7 @@ public:
 			pModule->PopCommand(cmdInfo);
 			switch (cmdInfo.dbgType)
 			{
+			case AST::dbg::GetRuntime:
 			case AST::dbg::StackTrace:
 				//just get back the current exp, then
 				//will calcluate out stack frames
@@ -109,6 +110,10 @@ public:
 			if (cmdInfo.m_valPlaceholder2)
 			{
 				*cmdInfo.m_valPlaceholder2 = (void*)rt;
+			}
+			if (cmdInfo.m_valPlaceholder3)
+			{
+				*cmdInfo.m_valPlaceholder3 = (void*)pContext;
 			}
 			if (cmdInfo.m_wait)
 			{

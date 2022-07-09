@@ -25,7 +25,10 @@ namespace X
 		{
 			for (auto& it : m_mapPackage)
 			{
-				it.second.package->Release();
+				if (it.second.package)
+				{
+					it.second.package->Release();
+				}
 			}
 			m_mapPackage.clear();
 		}

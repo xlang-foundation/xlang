@@ -4,7 +4,7 @@ class base_class():
     def func1(x1):
         this.prop0 = x1
         print("Tid=",threadid(),",inside func1,x1=",x1,",prop0=",this.prop0)
-        sleep(10000)
+        #sleep(10000)
         print("Tid=",threadid(),",after sleep")
         return x1+1000
 def func2(x1):

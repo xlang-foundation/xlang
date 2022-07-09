@@ -168,7 +168,7 @@
           "xlang"
         ],
         "label": "xlang Debug",
-        "program": "./out/debugAdapter.js",
+        "program1": "./out/debugAdapter.js",
         "runtime": "node",
         "configurationAttributes": {
           "launch": {

@@ -36,7 +36,32 @@ public:
 		m_ptrs.clear();
 		m_data.clear();
 	}
-	virtual std::string ToString() override
+	virtual List& operator +=(AST::Value& r) override
+	{
+		if (r.IsObject())
+		{
+			Object* pObj = (Object*)r.GetObj();
+			if (pObj->GetType() == Type::List)
+			{
+				List* pOther = (List*)pObj;
+				for (auto& it : pOther->m_data)
+				{
+					Add(nullptr,it);
+				}
+			}
+			else
+			{
+				Add(nullptr,r);
+			}
+		}
+		else
+		{
+			Add(nullptr, r);
+		}
+
+		return *this;
+	}
+	virtual std::string ToString(bool WithFormat = false) override
 	{
 		std::string strList = "[\n";
 		size_t size = Size();
@@ -44,7 +69,7 @@ public:
 		{
 			AST::Value v0;
 			Get(i, v0);
-			strList += '\t' + v0.ToString();
+			strList += '\t' + v0.ToString(WithFormat);
 			if (i < (size - 1))
 			{
 				strList+=",\n";
@@ -64,31 +89,7 @@ public:
 	}
 	std::vector<AST::Expression*>& GetBases() { return m_bases; }
 	virtual bool Call(Runtime* rt, ARGS& params,
-		KWARGS& kwParams,
-		AST::Value& retValue)
-	{
-		//do twice, first to do size or other call with
-		//memory allocation
-		for (auto it : kwParams)
-		{
-			if (it.first == "size")
-			{
-				long long size = it.second.GetLongLong();
-				m_data.resize(size);
-			}
-		}
-		for (auto it : kwParams)
-		{
-			if (it.first == "init")
-			{
-				for (auto& v : m_data)
-				{
-					v = it.second;
-				}
-			}
-		}
-		return true;
-	}
+		KWARGS& kwParams,AST::Value& retValue) override;
 	inline void Add(AST::LValue p)
 	{
 		m_useLValue = true;

@@ -43,6 +43,45 @@ namespace Data {
 		{
 			G::I().RemoveObj(this);
 		}
+		inline bool IsFunc()
+		{
+			return (m_t == Type::Function);
+		}
+		std::string GetTypeString()
+		{
+			switch (m_t)
+			{
+			case X::Data::Type::Base:
+				return "Base";
+			case X::Data::Type::Str:
+				return "Str";
+			case X::Data::Type::Binary:
+				return "Binary";
+			case X::Data::Type::Expr:
+				return "Expr";
+			case X::Data::Type::Function:
+				return "Function";
+			case X::Data::Type::MetaFunction:
+				return "MetaFunction";
+			case X::Data::Type::XClassObject:
+				return "Class";
+			case X::Data::Type::FuncCalls:
+				return "FuncCalls";
+			case X::Data::Type::Package:
+				return "Package";
+			case X::Data::Type::Future:
+				return "Future";
+			case X::Data::Type::List:
+				return "List";
+			case X::Data::Type::Dict:
+				return "Dict";
+			case X::Data::Type::Table:
+				return "Table";
+			default:
+				break;
+			}
+			return "None";
+		}
 		inline int AddRef() 
 		{ 
 			return ++m_ref; 
@@ -68,7 +107,7 @@ namespace Data {
 		{
 			return 0;
 		}
-		virtual std::string ToString()
+		virtual std::string ToString(bool WithFormat = false)
 		{
 			char v[1000];
 			snprintf(v, sizeof(v), "Object:0x%llx",
@@ -169,7 +208,7 @@ namespace Data {
 				delete m_stackFrame;
 			}
 		}
-		virtual std::string ToString()
+		virtual std::string ToString(bool WithFormat = false)
 		{
 			char v[1000];
 			snprintf(v, sizeof(v), "Class:%s@0x%llx",
@@ -209,7 +248,7 @@ namespace Data {
 		{
 			return false;
 		}
-		virtual std::string ToString()
+		virtual std::string ToString(bool WithFormat = false)
 		{
 			char v[1000];
 			snprintf(v, sizeof(v), "Future:%llu",
