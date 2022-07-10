@@ -209,30 +209,6 @@ export class XLangRuntime extends EventEmitter {
 		this.StepCall(cb);
 	}
 
-	private updateCurrentLine(reverse: boolean): boolean {
-		if (reverse) {
-			if (this.currentLine > 0) {
-				this.currentLine--;
-			} else {
-				// no more lines: stop at first line
-				this.currentLine = 0;
-				this.currentColumn = undefined;
-				this.sendEvent('stopOnEntry');
-				return true;
-			}
-		} else {
-			if (this.currentLine < /*this.sourceLines.length-1*/10000) {
-				this.currentLine++;
-			} else {
-				// no more lines: run to end
-				this.currentColumn = undefined;
-				this.sendEvent('end');
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/**
 	 * "Step into" for XLang debug means: go to next character
 	 */

@@ -12,6 +12,7 @@
 #include <random>
 #include <cmath>
 #include <sstream>
+#include <limits>
 
 bool RunProcess(std::string cmd,
 	std::string initPath, bool newConsole, unsigned long& processId)
@@ -94,6 +95,13 @@ long long rand64()
 	static std::random_device rd;
 	static std::mt19937_64 e2(rd());
 	static std::uniform_int_distribution<long long int> dist(std::llround(std::pow(2, 61)), std::llround(std::pow(2, 62)));
+	return dist(e2);
+}
+double randDouble(double m0,double mx)
+{
+	static std::random_device rd;
+	static std::mt19937_64 e2(rd());
+	static std::uniform_real_distribution<double> dist(m0,mx);
 	return dist(e2);
 }
 std::vector<std::string> split(const std::string& str, char delim)

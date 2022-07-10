@@ -27,11 +27,16 @@ namespace X
 					auto v0 = it.second;
 					if (v0.IsObject() 
 						&& v0.GetObj()->GetType() ==Data::Type::Str
-						&& v0.ToString() == "rand")
+						&& v0.ToString().find("rand")==0)
 					{
+						auto strV = v0.ToString();
+						double d1 = 0;
+						double d2 = 1;
+						sscanf_s(strV.c_str(),"rand(%lf,%lf)",&d1,&d2);
+
 						for (auto& v : m_data)
 						{
-							v = rand64();
+							v = randDouble(d1,d2);
 						}
 					}
 					else

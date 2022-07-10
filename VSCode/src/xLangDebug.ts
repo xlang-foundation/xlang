@@ -877,8 +877,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'List':
 				v.reference = this._runtime.createScopeRef(
 					v.Name,v.FrameId,v.Val);
-				dapVariable.value = 'List';
-				dapVariable.type = typeof v.Val;
+				dapVariable.value = 'List(Size:'+v.Val.length.toString()+")";
+				dapVariable.type = "List";//typeof v.Val;
 				dapVariable.variablesReference = v.reference;
 				//dapVariable.presentationHint = { lazy: true };
 				dapVariable.indexedVariables = v.Val.length;
