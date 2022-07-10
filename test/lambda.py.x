@@ -16,7 +16,7 @@ f = (x:int,y:int,z:int){
 f1 =f
 def Test(f0):
     print("call lambda")
-    f0(10,2,3)
+    f0(100,2,3)
     print("end call")
 
 Test(f1)

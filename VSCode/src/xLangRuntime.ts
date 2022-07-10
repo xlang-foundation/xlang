@@ -90,7 +90,6 @@ export function timeout(ms: number) {
 export class XLangRuntime extends EventEmitter {
 
 	private _xlangDevOps?:XlangDevOps;
-	private _CanCall:boolean = true;
 	private _sourceFile: string = '';
 	private _moduleKey: number = 0;
 	public get sourceFile() {
@@ -148,32 +147,47 @@ export class XLangRuntime extends EventEmitter {
 	public getScopeRef(refId) {
 		return this.varRefMap[refId];
     }
-	async checkConnection()
+	checkConnection()
 	{
 		if(this._xlangDevOps == undefined)
 		{
 			this._xlangDevOps = new XlangDevOps();
-			await this._xlangDevOps.Start();
+			this._xlangDevOps.Start();
 		}
 	}
+	public close() {
+		if (this._xlangDevOps) {
+			this._xlangDevOps.Close();
+			this._xlangDevOps = undefined;
+        }
+    }
 	/**
 	 * Start executing the given program.
 	 */
 	public async start(program: string, stopOnEntry: boolean, debug: boolean): Promise<void> {
-		await this.checkConnection();
-		await this.loadSource(this.normalizePathAndCasing(program));
-		if (debug) {
-			//await this.verifyBreakpoints(this._sourceFile);
-			var startLine = await this.GetStartLine();
-			if (stopOnEntry) {
-				this.currentLine = startLine-1;
-				this.sendEvent('stopOnEntry');
-			} else {
-				// we just start to run until we hit a breakpoint, an exception, or the end of the program
-				this.continue(false);
-			}
-		} else {
-			this.continue(false);
+		this.checkConnection();
+		if (this._sourceFile !== program) {
+			this._sourceFile = this.normalizePathAndCasing(program);
+			var srcFile = this._sourceFile.replaceAll('\\', '/');
+			let code = "m = load('" + srcFile + "')\nmainrun(m,stopOnEntry=True)\nreturn m";
+			this.Call(code, (ret) => {
+				console.log(ret);
+				this._moduleKey = ret;
+				if (debug) {
+					//await this.verifyBreakpoints(this._sourceFile);
+					this.GetStartLine((startLine) => {
+						if (stopOnEntry) {
+							this.currentLine = startLine - 1;
+							this.sendEvent('stopOnEntry');
+						} else {
+							// we just start to run until we hit a breakpoint, an exception, or the end of the program
+							this.continue(false);
+						}
+					});
+				} else {
+					this.continue(false);
+				}
+			});
 		}
 	}
 
@@ -183,30 +197,19 @@ export class XLangRuntime extends EventEmitter {
 	public continue(reverse: boolean) {
 
 	}
-	private async Call(code)
+	private Call(code,cb)
 	{
-		this._CanCall = false;
-		var retVal = await this._xlangDevOps.Call(code);
-		this._CanCall  = true;
-		return retVal;
+		this._xlangDevOps.Call(code, cb);
 	}
-	private async StepCall(cb:Function) {
-		let code = "import xdb\nreturn xdb.command("+this._moduleKey.toString()+",cmd='Step')";
-		var retVal = await this.Call(code);
-		var nextLine = parseInt(retVal);		  
-		this.currentLine = nextLine-1;
-		this.sendEvent('stopOnStep');
-		cb();
-	}
-	/**
-	 * Step to the next/previous non empty line.
-	 */
+
 	public step(instruction: boolean, reverse: boolean,cb:Function) {
-		if(!this._CanCall)
-		{
-			return false;
-		}
-		this.StepCall(cb);
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Step')";
+		this.Call(code, (retData) => {
+			var nextLine = parseInt(retData);
+			this.currentLine = nextLine - 1;
+			this.sendEvent('stopOnStep');
+			cb();
+        });
 	}
 
 	/**
@@ -261,74 +264,36 @@ export class XLangRuntime extends EventEmitter {
 			};
 		});
 	}
-	private async StackCall(cb: Function) {
-		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Stack')";
-		var retVal = await this.Call(code);
-		console.log(retVal);
-		var retObj = JSON.parse(retVal);
-		console.log(retObj);
-		const frames: IRuntimeStackFrame[] = [];
-		// every word of the current line becomes a stack frame.
-		for (let i in retObj) {
-			let frm = retObj[i];
-			let name = frm["name"];
-			if(name =="")
-			{
-				name ="main";
-			}
-			const stackFrame: IRuntimeStackFrame = {
-				index: frm["index"],
-				name: name,
-				file: this._sourceFile,
-				line: frm["line"]-1,
-				column: frm["column"]
-			};
-			frames.push(stackFrame);
-		}
-
-		let stk= {
-			frames: frames,
-			count: retObj.length
-		};
-		cb(stk);
-	}
 	public stack(startFrame: number, endFrame: number, cb: Function) {
-		if(!this._CanCall)
-		{
-			return false;
-		}
-		this.StackCall(cb);
-	}
-	public stack0(startFrame: number, endFrame: number, cb: Function): IRuntimeStack {
-		const line = this.getLine();
-		const words = this.getWords(this.currentLine, line);
-		words.push({ name: 'BOTTOM', line: -1, index: -1 });	// add a sentinel so that the stack is never empty...
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Stack')";
+		this.Call(code, (retVal) => {
+			console.log(retVal);
+			var retObj = JSON.parse(retVal);
+			console.log(retObj);
+			const frames: IRuntimeStackFrame[] = [];
+			// every word of the current line becomes a stack frame.
+			for (let i in retObj) {
+				let frm = retObj[i];
+				let name = frm["name"];
+				if (name == "") {
+					name = "main";
+				}
+				const stackFrame: IRuntimeStackFrame = {
+					index: frm["index"],
+					name: name,
+					file: this._sourceFile,
+					line: frm["line"] - 1,
+					column: frm["column"]
+				};
+				frames.push(stackFrame);
+			}
 
-		// if the line contains the word 'disassembly' we support to "disassemble" the line by adding an 'instruction' property to the stackframe
-		const instruction = line.indexOf('disassembly') >= 0 ? this.instruction : undefined;
-
-		const column = typeof this.currentColumn === 'number' ? this.currentColumn : undefined;
-
-		const frames: IRuntimeStackFrame[] = [];
-		// every word of the current line becomes a stack frame.
-		for (let i = startFrame; i < Math.min(endFrame, words.length); i++) {
-
-			const stackFrame: IRuntimeStackFrame = {
-				index: i,
-				name: `${words[i].name}(${i})`,	// use a word of the line as the stackframe name
-				file: this._sourceFile,
-				line: this.currentLine,
-				column: column, // words[i].index
-				instruction: instruction
+			let stk = {
+				frames: frames,
+				count: retObj.length
 			};
-
-			frames.push(stackFrame);
-		}
-
-		return {
-			frames: frames,
-			count: words.length
-		};
+			cb(stk);
+        });
 	}
 
 	/*
@@ -353,7 +318,7 @@ export class XLangRuntime extends EventEmitter {
 		}
 		bps.push(bp);
 
-		await this.verifyBreakpoints(path);
+		//await this.verifyBreakpoints(path);
 
 		return bp;
 	}
@@ -426,19 +391,17 @@ export class XLangRuntime extends EventEmitter {
 		return a;
 	}
 
-	public async getLocalVariables(frameId,cb){
-		if (!this._CanCall) {
-			return;
-		}
+	public getLocalVariables(frameId,cb){
 		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() +
 			",frameId=" + frameId.toString()+",cmd='Locals')";
-		var retVal = await this.Call(code);
-		console.log(retVal);
-		var retObj = JSON.parse(retVal);
-		console.log(retObj);
-		let vars= Array.from(retObj, (x:Map<string,any>) =>
-			new RuntimeVariable(x["Name"], x["Value"], x["Type"],frameId));
-		cb(vars);
+		this.Call(code, (retVal) => {
+			console.log(retVal);
+			var retObj = JSON.parse(retVal);
+			console.log(retObj);
+			let vars = Array.from(retObj, (x: Map<string, any>) =>
+				new RuntimeVariable(x["Name"], x["Value"], x["Type"], frameId));
+			cb(vars);
+        });
 	}
 
 	public getLocalVariable(name: string): RuntimeVariable | undefined {
@@ -487,93 +450,12 @@ export class XLangRuntime extends EventEmitter {
 		}
 		return words;
 	}
-	private async GetStartLine(){
+	private async GetStartLine(cb){
 		let code = "import xdb\nreturn xdb.get_startline("+this._moduleKey.toString()+")";
-		var retVal = await this.Call(code);
-		var lineNum = parseInt(retVal);
-		return lineNum;
-	}
-	private async loadSource(file: string): Promise<void> {
-		await this.checkConnection();
-		if (this._sourceFile !== file) {
-			this._sourceFile = this.normalizePathAndCasing(file);
-			var srcFile = this._sourceFile.replaceAll('\\', '/');
-			let code = "m = load('" + srcFile +"')\nmainrun(m,stopOnEntry=True)\nreturn m";
-			var ret = await this.Call(code);
-			console.log(ret);
-			this._moduleKey = ret;
-		}
-	}
-
-	private initializeContents(memory: Uint8Array) {
-		this.sourceLines = new TextDecoder().decode(memory).split(/\r?\n/);
-
-		this.instructions = [];
-
-		this.starts = [];
-		this.instructions = [];
-		this.ends = [];
-
-		for (let l = 0; l < this.sourceLines.length; l++) {
-			this.starts.push(this.instructions.length);
-			const words = this.getWords(l, this.sourceLines[l]);
-			for (let word of words) {
-				this.instructions.push(word);
-			}
-			this.ends.push(this.instructions.length);
-		}
-	}
-
-	/**
-	 * return true on stop
-	 */
-	 private findNextStatement(reverse: boolean, stepEvent?: string): boolean {
-		 this.currentLine = this.currentLine+3;
-		if (stepEvent) {
-			this.sendEvent(stepEvent);
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * "execute a line" of the readme markdown.
-	 * Returns true if execution sent out a stopped event and needs to stop.
-	 */
-	private executeLine(ln: number, reverse: boolean): boolean {
-		let code = "import devops\nxdb.command(10)";
-		(async () => { 
-			await this.Call(code);
-		  })();
-		return false;
-	}
-
-	private async verifyBreakpoints(path: string): Promise<void> {
-
-		const bps = this.breakPoints.get(path);
-		if (bps) {
-			await this.loadSource(path);
-			bps.forEach(bp => {
-				if (!bp.verified && bp.line < this.sourceLines.length) {
-					const srcLine = this.getLine(bp.line);
-
-					// if a line is empty or starts with '+' we don't allow to set a breakpoint but move the breakpoint down
-					if (srcLine.length === 0 || srcLine.indexOf('+') === 0) {
-						bp.line++;
-					}
-					// if a line starts with '-' we don't allow to set a breakpoint but move the breakpoint up
-					if (srcLine.indexOf('-') === 0) {
-						bp.line--;
-					}
-					// don't set 'verified' to true if the line contains the word 'lazy'
-					// in this case the breakpoint will be verified 'lazy' after hitting it once.
-					if (srcLine.indexOf('lazy') < 0) {
-						bp.verified = true;
-						this.sendEvent('breakpointValidated', bp);
-					}
-				}
-			});
-		}
+		this.Call(code, (retVal) => {
+			let lineNum = parseInt(retVal);
+			cb(lineNum);
+        });
 	}
 
 	private sendEvent(event: string, ... args: any[]): void {
