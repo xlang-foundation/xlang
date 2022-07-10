@@ -29,6 +29,7 @@ namespace Data {
 		Dict,
 		Table
 	};
+	class List;
 	class Object
 	{
 	protected:
@@ -46,6 +47,14 @@ namespace Data {
 		inline bool IsFunc()
 		{
 			return (m_t == Type::Function);
+		}
+		inline bool IsStr()
+		{
+			return (m_t == Type::Str);
+		}
+		virtual List* FlatPack(Runtime* rt,long long startIndex,long long count)
+		{ 
+			return nullptr; 
 		}
 		std::string GetTypeString()
 		{

@@ -98,6 +98,9 @@ namespace X
 			{
 				return true;
 			}
+			virtual List* FlatPack(Runtime* rt, 
+				long long startIndex, long long count) override;
+
 		};
 	}
 }

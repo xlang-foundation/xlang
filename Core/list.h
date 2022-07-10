@@ -159,6 +159,7 @@ public:
 		}
 		m_data.push_back(v);
 	}
+	virtual List* FlatPack(Runtime* rt,long long startIndex, long long count) override;
 	inline bool Get(long long idx, AST::Value& v,
 		AST::LValue* lValue = nullptr)
 	{

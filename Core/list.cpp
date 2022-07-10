@@ -1,5 +1,6 @@
 #include "list.h"
 #include "utility.h"
+#include "dict.h"
 
 namespace X
 {
@@ -52,6 +53,45 @@ namespace X
 			retValue = AST::Value(this);
 			return true;
 		}
-
+		List* List::FlatPack(Runtime* rt,long long startIndex, long long count)
+		{
+			if (startIndex < 0 || startIndex >= Size())
+			{
+				return nullptr;
+			}
+			if (count == -1)
+			{
+				count = Size()- startIndex;
+			}
+			if ((startIndex + count) >= Size())
+			{
+				return nullptr;
+			}
+			List* pOutList = new List();
+			for (long long i = 0; i < count; i++)
+			{
+				long long idx = startIndex + i;
+				AST::Value val;
+				Get(idx, val);
+				Dict* dict = new Dict();
+				//Data::Str* pStrName = new Data::Str(it.first);
+				//dict->Set("Name", AST::Value(pStrName));
+				auto valType = val.GetValueType();
+				Data::Str* pStrType = new Data::Str(valType);
+				dict->Set("Type", AST::Value(pStrType));
+				if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+				{
+					dict->Set("Value", val);
+				}
+				else if (val.IsObject())
+				{
+					AST::Value objId((unsigned long long)val.GetObj());
+					dict->Set("Value", objId);
+				}
+				AST::Value valDict(dict);
+				pOutList->Add(rt, valDict);
+			}
+			return pOutList;
+		}
 	}
 }

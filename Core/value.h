@@ -257,6 +257,7 @@ public:
 		}
 		return bRet;
 	}
+	std::string GetValueType();
 	inline ValueType GetType() { return t; }
 	inline int GetF() { return flags; }
 	inline void operator = (const Value& v)

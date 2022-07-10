@@ -84,45 +84,6 @@ namespace X
 			}
 			std::cout << "After Impl of DebuggerImpl" << std::endl;
 		}
-		std::string DebugService::GetValueType(AST::Value& val)
-		{
-			std::string strType;
-			AST::ValueType t = val.GetType();
-			switch (t)
-			{
-			case AST::ValueType::None:
-				strType = "None";
-				break;
-			case AST::ValueType::Int64:
-				strType = "Int64";
-				break;
-			case AST::ValueType::Double:
-				strType = "Double";
-				break;
-			case AST::ValueType::Object:
-			{
-				auto* pObj = val.GetObj();
-				if (pObj)
-				{
-					strType = pObj->GetTypeString();
-				}
-				else
-				{
-					strType = "Null";
-				}
-			}
-				break;
-			case AST::ValueType::Str:
-				strType = "Str";
-				break;
-			case AST::ValueType::Value:
-				strType = "Value";
-				break;
-			default:
-				break;
-			}
-			return strType;
-		}
 		bool DebugService::BuildLocals(Runtime* rt,
 			void* pContextCurrent,int frameId,
 			AST::Value& valLocals)
@@ -160,15 +121,59 @@ namespace X
 					Data::Str* pStrName = new Data::Str(it.first);
 					dict->Set("Name", AST::Value(pStrName));
 
-					auto valType = GetValueType(val);
+					auto valType = val.GetValueType();
 					Data::Str* pStrType = new Data::Str(valType);
 					dict->Set("Type", AST::Value(pStrType));
-					dict->Set("Value", val);
+					if (!val.IsObject() 
+						|| (val.IsObject() && val.GetObj()->IsStr()))
+					{
+						dict->Set("Value", val);
+					}
+					else if (val.IsObject())
+					{
+						AST::Value objId((unsigned long long)val.GetObj());
+						dict->Set("Value", objId);
+					}
 					AST::Value valDict(dict);
 					pList->Add(rt, valDict);
 				}
 			}
 			valLocals = AST::Value(pList);
+			return true;
+		}
+		bool DebugService::BuildObjectContent(Runtime* rt,
+			void* pContextCurrent, int frameId,AST::Value& valParam,
+			AST::Value& valObject)
+		{
+			if (!valParam.IsObject())
+			{
+				return false;
+			}
+			//[objid,start Index,count]
+			Data::List* pParamObj = dynamic_cast<Data::List*>(valParam.GetObj());
+			if (pParamObj == nullptr || pParamObj->Size()==0)
+			{
+				return false;
+			}
+			AST::Value valObjReq;
+			pParamObj->Get(0, valObjReq);
+			Data::Object* pObjReq = (Data::Object*)valObjReq.GetLongLong();
+			long long startIdx = 0;
+			if (pParamObj->Size() >= 1)
+			{
+				AST::Value valStart;
+				pParamObj->Get(1, valStart);
+				startIdx = valStart.GetLongLong();
+			}
+			long long reqCount = -1;
+			if (pParamObj->Size() >= 2)
+			{
+				AST::Value valCount;
+				pParamObj->Get(2, valCount);
+				reqCount = valCount.GetLongLong();
+			}
+			Data::List* pList = pObjReq->FlatPack(rt,startIdx, reqCount);
+			valObject = AST::Value(pList);
 			return true;
 		}
 		bool DebugService::BuildStackInfo(Runtime* rt,AST::Expression* pCurExp,
@@ -253,6 +258,13 @@ namespace X
 			{
 				strCmd = it->second.ToString();
 			}
+			AST::Value valParam;
+			it = kwParams.find("param");
+			if (it != kwParams.end())
+			{
+				valParam = it->second;
+			}
+
 			AST::CommandInfo cmdInfo;
 			if (strCmd == "Step")
 			{
@@ -284,7 +296,7 @@ namespace X
 					retValue = AST::Value();
 				}
 			}
-			else if (strCmd == "Locals")
+			else if (strCmd == "Locals" || strCmd=="Object")
 			{
 				int frameId = 0;
 				auto it2 = kwParams.find("frameId");
@@ -301,7 +313,16 @@ namespace X
 				pModule->AddCommand(cmdInfo, true);
 				if (pCurrentRt)
 				{
-					BuildLocals(pCurrentRt, pContextCurrent,frameId,retValue);
+					if (strCmd == "Locals")
+					{
+						BuildLocals(pCurrentRt, pContextCurrent,
+							frameId, retValue);
+					}
+					else if (strCmd == "Object")
+					{
+						BuildObjectContent(pCurrentRt, pContextCurrent,
+							frameId, valParam, retValue);
+					}
 				}
 				else
 				{

@@ -38,7 +38,9 @@ namespace X
 			bool BuildLocals(Runtime* rt,
 				void* pContextCurrent,int frameId,
 				AST::Value& valLocals);
-			std::string GetValueType(AST::Value& val);
+			bool BuildObjectContent(Runtime* rt,
+				void* pContextCurrent, int frameId, AST::Value& valParam,
+				AST::Value& valObject);
 		public:
 			BEGIN_PACKAGE(DebugService)
 				ADD_FUNC("get_startline", GetModuleStartLine)

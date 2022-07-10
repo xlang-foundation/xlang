@@ -135,5 +135,43 @@ namespace X {namespace AST {
 		}
 		return str;
 	}
+	std::string Value::GetValueType()
+	{
+		std::string strType;
+		switch (t)
+		{
+		case AST::ValueType::None:
+			strType = "None";
+			break;
+		case AST::ValueType::Int64:
+			strType = "Int64";
+			break;
+		case AST::ValueType::Double:
+			strType = "Double";
+			break;
+		case AST::ValueType::Object:
+		{
+			auto* pObj = GetObj();
+			if (pObj)
+			{
+				strType = pObj->GetTypeString();
+			}
+			else
+			{
+				strType = "Null";
+			}
+		}
+		break;
+		case AST::ValueType::Str:
+			strType = "Str";
+			break;
+		case AST::ValueType::Value:
+			strType = "Value";
+			break;
+		default:
+			break;
+		}
+		return strType;
+	}
 }
 }
