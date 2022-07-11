@@ -451,14 +451,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this.sendResponse(response);
 		};
 
-		let vs: RuntimeVariable[] = [];
-
 		const v = this._runtime.getScopeRef(args.variablesReference);
 		const varType = v[0];
 		const frameId = v[1];
 		if (varType === 'locals') {
 			this._runtime.getLocalVariables(frameId,cb);
 		} else if (varType === 'globals') {
+			let vs: RuntimeVariable[] = [];
 			if (request) {
 				this._cancellationTokens.set(request.seq, false);
 				vs = await this._runtime.getGlobalVariables(() => !!this._cancellationTokens.get(request.seq));
@@ -467,19 +466,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 				vs = await this._runtime.getGlobalVariables();
 			}
 		} else {
-			vs = Array.from(v[2].slice(args.start,args.start+args.count), (v0,idx) => {
-				let dapVariable: DebugProtocol.Variable ={
-					name:(args.start+idx).toString(),
-					value: v0.toString(),
-					variablesReference: 0,
-					type: typeof v0
-				};
-				return dapVariable;
-			});
-			response.body = {
-				variables: vs
-			};
-			this.sendResponse(response);
+			this._runtime.getObject(frameId,v[2],
+				args.start==undefined?0:args.start,
+				args.count==undefined?-1:args.count,
+				cb);
 		}
 	}
 
@@ -504,14 +494,16 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
-		this._runtime.continue(false);
-		this.sendResponse(response);
+		this._runtime.continue(false, () => {
+			this.sendResponse(response);
+		});
 	}
 
 	protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): void {
-		this._runtime.continue(true);
-		this.sendResponse(response);
- 	}
+		this._runtime.continue(false, () => {
+			this.sendResponse(response);
+		});
+	}
 
 	protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
 		this._runtime.step(args.granularity === 'instruction', false,
@@ -874,15 +866,20 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.type = 'Function';
 				break;
 			case 'Dict':
+				v.reference = this._runtime.createScopeRef(
+					v.Type, v.FrameId, v.Val);
+				dapVariable.value = 'Dict(Size:' + v.Size.toString() + ")";
+				dapVariable.type = "Dict";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.namedVariables = v.Size;
 				break;
 			case 'List':
 				v.reference = this._runtime.createScopeRef(
-					v.Name,v.FrameId,v.Val);
-				dapVariable.value = 'List(Size:'+v.Val.length.toString()+")";
-				dapVariable.type = "List";//typeof v.Val;
+					v.Type,v.FrameId,v.Val);
+				dapVariable.value = 'List(Size:'+v.Size.toString()+")";
+				dapVariable.type = "List";
 				dapVariable.variablesReference = v.reference;
-				//dapVariable.presentationHint = { lazy: true };
-				dapVariable.indexedVariables = v.Val.length;
+				dapVariable.indexedVariables = v.Size;
 				break;
 			default:
 				break;

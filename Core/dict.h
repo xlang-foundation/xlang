@@ -30,6 +30,10 @@ namespace X
 			{
 				mMap.clear();
 			}
+			inline virtual long long Size() override
+			{
+				return mMap.size();
+			}
 			void Set(AST::Value& key, AST::Value& val)
 			{
 				mMap.emplace(std::make_pair(key, val));

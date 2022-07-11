@@ -82,7 +82,10 @@ public:
 		strList += "]";
 		return strList;
 	}
-	inline size_t Size() { return m_useLValue ? m_ptrs.size() : m_data.size(); }
+	inline virtual long long Size() override 
+	{
+		return m_useLValue ? m_ptrs.size() : m_data.size(); 
+	}
 	ARGS& Data()
 	{
 		return m_data;

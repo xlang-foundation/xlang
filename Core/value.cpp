@@ -1,6 +1,7 @@
 #include "value.h"
 #include "object.h"
 #include "str.h"
+#include "utility.h"
 namespace X {namespace AST {
 	
 	ARITH_OP_IMPL(+= )
@@ -122,13 +123,13 @@ namespace X {namespace AST {
 			str = x.obj->ToString(WithFormat);
 			if (WithFormat && x.obj->GetType() == Data::Type::Str)
 			{
-				str = "\"" + str + "\"";
+				str= StringifyString(str);
 			}
 		}
 			break;
 		case ValueType::Str:
 			str = std::string((char*)x.str, flags);
-			if (WithFormat) str = "\"" + str + "\"";
+			if (WithFormat) str = StringifyString(str);
 			break;
 		default:
 			break;

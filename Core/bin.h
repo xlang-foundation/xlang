@@ -18,7 +18,7 @@ namespace X
 				m_size = size;
 			}
 			char* Data() { return m_data; }
-			size_t Size() { return m_size; }
+			inline virtual long long  Size()  override { return m_size; }
 			~Binary()
 			{
 				if (m_data)

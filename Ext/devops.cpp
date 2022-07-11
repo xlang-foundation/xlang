@@ -52,6 +52,7 @@ namespace X
 					ack = "Failed";
 				}
 				pSession->Send((char*)ack.c_str(), ack.size());
+				std::cout << "back:" << ack<< std::endl;
 			}
 		public:
 			DebuggerImpl() :Debugger(0),
@@ -133,6 +134,8 @@ namespace X
 					{
 						AST::Value objId((unsigned long long)val.GetObj());
 						dict->Set("Value", objId);
+						AST::Value valSize(val.GetObj()->Size());
+						dict->Set("Size", valSize);
 					}
 					AST::Value valDict(dict);
 					pList->Add(rt, valDict);
@@ -266,20 +269,7 @@ namespace X
 			}
 
 			AST::CommandInfo cmdInfo;
-			if (strCmd == "Step")
-			{
-				cmdInfo.dbgType = AST::dbg::Step;
-				AST::Expression* pExpToRun = nullptr;
-				cmdInfo.m_valPlaceholder = (void**)& pExpToRun;
-				pModule->AddCommand(cmdInfo,true);
-				int lineToRun = -1;
-				if (pExpToRun)
-				{
-					lineToRun = pExpToRun->GetStartLine();
-				}
-				retValue = AST::Value(lineToRun);
-			}
-			else if (strCmd == "Stack")
+			if (strCmd == "Stack")
 			{
 				cmdInfo.dbgType = AST::dbg::StackTrace;
 				AST::Expression* pExpToRun = nullptr;
@@ -329,9 +319,17 @@ namespace X
 					retValue = AST::Value();
 				}
 			}
+			if (strCmd == "Step")
+			{
+				cmdInfo.dbgType = AST::dbg::Step;
+				pModule->AddCommand(cmdInfo, false);
+				retValue = AST::Value(true);
+			}
 			else if (strCmd == "Continue")
 			{
-
+				cmdInfo.dbgType = AST::dbg::Continue;
+				pModule->AddCommand(cmdInfo, false);
+				retValue = AST::Value(true);
 			}
 			else if (strCmd == "StepIn")
 			{

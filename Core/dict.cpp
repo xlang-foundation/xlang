@@ -33,6 +33,8 @@ namespace X
 				{
 					AST::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
+					AST::Value valSize(val.GetObj()->Size());
+					dict->Set("Size", valSize);
 				}
 				AST::Value valDict(dict);
 				pOutList->Add(rt, valDict);

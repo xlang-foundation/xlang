@@ -38,13 +38,15 @@ interface RuntimeDisassembledInstruction {
 export class RuntimeVariable {
 	private _name: string = "";
 	private _value: any = null;
+	private _size: number = 0;
 	private _type: string = "";
 	private _frameId: number = 0;
 	private _reference: number = 0;
-	constructor(name: string, value, type: string,frmId:number) {
+	constructor(name: string, value, type: string,size:number,frmId:number) {
 		this._name = name;
 		this._type = type;
 		this._value = value;
+		this._size = size;
 		this._frameId = frmId;
 	}
 	public get FrameId() {
@@ -56,6 +58,7 @@ export class RuntimeVariable {
 	public set Name(nm) {
 		this._name =nm;
 	}
+	public get Size() { return this._size; }
 	public get reference() {
 		return this._reference;
 	}
@@ -194,19 +197,21 @@ export class XLangRuntime extends EventEmitter {
 	/**
 	 * Continue execution to the end/beginning.
 	 */
-	public continue(reverse: boolean) {
 
-	}
 	private Call(code,cb)
 	{
 		this._xlangDevOps.Call(code, cb);
 	}
-
+	public continue(reverse: boolean,cb) {
+		let code = "import xdb\nreturn xdb.command("
+			+ this._moduleKey.toString() + ",cmd='Continue')";
+		this.Call(code, (retData) => {
+			cb();
+		});
+	}
 	public step(instruction: boolean, reverse: boolean,cb:Function) {
 		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Step')";
 		this.Call(code, (retData) => {
-			var nextLine = parseInt(retData);
-			this.currentLine = nextLine - 1;
 			this.sendEvent('stopOnStep');
 			cb();
         });
@@ -399,11 +404,45 @@ export class XLangRuntime extends EventEmitter {
 			var retObj = JSON.parse(retVal);
 			console.log(retObj);
 			let vars = Array.from(retObj, (x: Map<string, any>) =>
-				new RuntimeVariable(x["Name"], x["Value"], x["Type"], frameId));
+				new RuntimeVariable(
+					x["Name"],
+					x["Value"],
+					x["Type"],
+					x["Size"],
+					frameId));
 			cb(vars);
         });
 	}
-
+	public getObject(frameId,objId,start,count, cb) {
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() +
+			",frameId=" + frameId.toString()
+			+ ",cmd='Object'"
+			+ ",param=[" + objId.toString()
+			+ "," + start.toString()
+			+ "," + count.toString()+ "]"
+			+ ")";
+		this.Call(code, (retVal) => {
+			console.log(retVal);
+			try {
+				var retObj = JSON.parse(retVal);
+			}
+			catch (err) {
+				console.log("Json Parse Error:", err);
+				return;
+			}
+			console.log(retObj);
+			let vars = Array.from(retObj, (x: Map<string, any>,idx) =>
+				new RuntimeVariable(
+					x["Name"] ==
+						undefined ? (start + idx).toString()
+						: x["Name"].toString(),
+					x["Value"],
+					x["Type"],
+					x["Size"],
+					frameId));
+			cb(vars);
+		});
+	}
 	public getLocalVariable(name: string): RuntimeVariable | undefined {
 		return this.variables.get(name);
 	}

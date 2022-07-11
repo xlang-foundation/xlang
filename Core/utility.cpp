@@ -159,3 +159,61 @@ std::string& trim(std::string& s)
 {
 	return ltrim(rtrim(s));
 }
+std::string StringifyString(const std::string& str)
+{
+	std::string str_out = "\"";
+
+	std::string::const_iterator iter = str.begin();
+	while (iter != str.end())
+	{
+		wchar_t chr = *iter;
+
+		if (chr == '"' || chr == '\\' || chr == '/')
+		{
+			str_out += '\\';
+			str_out += chr;
+		}
+		else if (chr == '\b')
+		{
+			str_out += "\\b";
+		}
+		else if (chr == '\f')
+		{
+			str_out += "\\f";
+		}
+		else if (chr == '\n')
+		{
+			str_out += "\\n";
+		}
+		else if (chr == '\r')
+		{
+			str_out += "\\r";
+		}
+		else if (chr == '\t')
+		{
+			str_out += "\\t";
+		}
+		else if (chr < ' ' || chr > 126)
+		{
+			str_out += "\\u";
+			for (int i = 0; i < 4; i++)
+			{
+				int value = (chr >> 12) & 0xf;
+				if (value >= 0 && value <= 9)
+					str_out += (char)('0' + value);
+				else if (value >= 10 && value <= 15)
+					str_out += (char)('A' + (value - 10));
+				chr <<= 4;
+			}
+		}
+		else
+		{
+			str_out += chr;
+		}
+
+		iter++;
+	}
+
+	str_out += "\"";
+	return str_out;
+}

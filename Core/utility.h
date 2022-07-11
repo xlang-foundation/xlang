@@ -16,3 +16,4 @@ std::vector<std::string> split(const std::string& str, const char* delim);
 std::string& rtrim(std::string& s);
 std::string& ltrim(std::string& s);
 std::string& trim(std::string& s);
+std::string StringifyString(const std::string& str);

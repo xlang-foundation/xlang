@@ -112,6 +112,7 @@ namespace Data {
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
 			AST::Value& retValue) = 0;
+		virtual long long Size() { return 0; }
 		virtual size_t Hash()
 		{
 			return 0;
