@@ -8,15 +8,15 @@ namespace AST
 {
 bool Var::CalcCallables(Runtime* rt, void* pContext,
 		std::vector<Expression*>& callables)
+{
+	Value val;
+	bool bOK = Run(rt, pContext, val);
+	if (bOK && val.IsObject())
 	{
-		Value val;
-		bool bOK = Run(rt, pContext, val);
-		if (bOK && val.IsObject())
-		{
-			bOK = val.GetObj()->CalcCallables(rt, pContext, callables);
-		}
-		return bOK;
+		bOK = val.GetObj()->CalcCallables(rt, pContext, callables);
 	}
+	return bOK;
+}
 void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 {
 	bool matched = false;

@@ -47,6 +47,16 @@ public:
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue);
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<Expression*>& callables) override
+	{
+		bool bHave = false;
+		if (m_constructor)
+		{
+			bHave = m_constructor->CalcCallables(rt, pContext, callables);
+		}
+		return bHave;
+	}
 };
 }
 }

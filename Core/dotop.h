@@ -27,6 +27,8 @@ public:
 	}
 	virtual bool Run(Runtime* rt,void* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<Expression*>& callables) override;
 };
 }
 }

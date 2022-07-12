@@ -291,6 +291,16 @@ bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 	DotProcess(rt, pContext,v_l, r,v, lValue);
 	return true;
 }
-
+bool DotOp::CalcCallables(Runtime* rt, void* pContext,
+	std::vector<Expression*>& callables)
+{
+	Value val;
+	bool bOK = Run(rt, pContext, val);
+	if (bOK && val.IsObject())
+	{
+		bOK = val.GetObj()->CalcCallables(rt, pContext, callables);
+	}
+	return bOK;
+}
 }
 }

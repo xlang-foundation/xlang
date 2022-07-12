@@ -223,6 +223,11 @@ namespace Data {
 				delete m_stackFrame;
 			}
 		}
+		virtual bool CalcCallables(Runtime* rt, void* pContext,
+			std::vector<AST::Expression*>& callables) override
+		{
+			return m_obj ? m_obj->CalcCallables(rt, pContext, callables) : false;
+		}
 		virtual std::string ToString(bool WithFormat = false)
 		{
 			char v[1000];

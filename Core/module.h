@@ -168,6 +168,12 @@ public:
 	inline dbg GetDbgType() { return m_dbg; }
 	inline bool InDbgScope(Expression* s)
 	{ 
+		Scope* pCheckScope = dynamic_cast<Scope*>(s);
+		if (pCheckScope == nullptr)
+		{
+			pCheckScope = s->GetScope();
+			s = dynamic_cast<Expression*>(pCheckScope);
+		}
 		if (s == this)
 		{
 			return true;
@@ -181,6 +187,7 @@ public:
 				break;
 			}
 		}
+		
 		return bIn;
 	}
 	inline void AddDbgScope(Expression* s)
