@@ -27,6 +27,18 @@ public:
 	{
 		return m_list;
 	}
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<AST::Expression*>& callables) override
+	{
+		bool bHave = false;
+		for (auto& it : m_list)
+		{
+			bHave |= it.m_func?
+				it.m_func->CalcCallables(rt, it.m_context, callables)
+				: false;
+		}
+		return bHave;
+	}
 	void Add(void* pContext, AST::Func* func, AST::LValue lVal)
 	{
 		m_list.push_back(VectorCall{ pContext ,func,lVal });

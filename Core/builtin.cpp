@@ -231,7 +231,7 @@ bool U_BreakPoint(X::Runtime* rt, void* pContext,
 	KWARGS& kwParams,
 	X::AST::Value& retValue)
 {
-	rt->M()->SetDbg(AST::dbg::Step);
+	rt->M()->SetDbgType(AST::dbg::Step);
 	retValue = X::AST::Value(true);
 	return true;
 }

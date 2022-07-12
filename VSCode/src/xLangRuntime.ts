@@ -225,33 +225,23 @@ export class XLangRuntime extends EventEmitter {
 	/**
 	 * "Step into" for XLang debug means: go to next character
 	 */
-	public stepIn(targetId: number | undefined) {
-		if (typeof targetId === 'number') {
-			this.currentColumn = targetId;
+	public stepIn(targetId: number | undefined, cb: Function) {
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='StepIn')";
+		this.Call(code, (retData) => {
 			this.sendEvent('stopOnStep');
-		} else {
-			if (typeof this.currentColumn === 'number') {
-				if (this.currentColumn <= this.sourceLines[this.currentLine].length) {
-					this.currentColumn += 1;
-				}
-			} else {
-				this.currentColumn = 1;
-			}
-			this.sendEvent('stopOnStep');
-		}
+			cb();
+		});
 	}
 
 	/**
 	 * "Step out" for XLang debug means: go to previous character
 	 */
-	public stepOut() {
-		if (typeof this.currentColumn === 'number') {
-			this.currentColumn -= 1;
-			if (this.currentColumn === 0) {
-				this.currentColumn = undefined;
-			}
-		}
-		this.sendEvent('stopOnStep');
+	public stepOut(cb: Function) {
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='StepOut')";
+		this.Call(code, (retData) => {
+			this.sendEvent('stopOnStep');
+			cb();
+		});
 	}
 
 	public getStepInTargets(frameId: number): IRuntimeStepInTargets[] {

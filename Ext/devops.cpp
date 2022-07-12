@@ -333,11 +333,15 @@ namespace X
 			}
 			else if (strCmd == "StepIn")
 			{
-
+				cmdInfo.dbgType = AST::dbg::StepIn;
+				pModule->AddCommand(cmdInfo, false);
+				retValue = AST::Value(true);
 			}
 			else if (strCmd == "StepOut")
 			{
-
+				cmdInfo.dbgType = AST::dbg::StepOut;
+				pModule->AddCommand(cmdInfo, false);
+				retValue = AST::Value(true);
 			}
 			return true;
 		}

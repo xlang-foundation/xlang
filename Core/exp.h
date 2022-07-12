@@ -27,6 +27,7 @@ enum class ObType
 	Dot,
 	Func,
 	BuiltinFunc,
+	Module,
 	Class,
 	Import
 };
@@ -78,6 +79,11 @@ public:
 	Expression* GetParent()
 	{
 		return m_parent;
+	}
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<Expression*>& callables)
+	{
+		return false;
 	}
 	virtual void Set(Runtime* rt,void* pContext, Value& v){}
 	virtual bool Run(Runtime* rt,void* pContext,Value& v,LValue* lValue=nullptr)
@@ -185,6 +191,16 @@ public:
 			delete e;
 		}
 	}
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<Expression*>& callables) override
+	{
+		bool bHave = false;
+		for (auto it : list)
+		{
+			bHave |= it->CalcCallables(rt, pContext, callables);
+		}
+		return bHave;
+	}
 	virtual int GetLeftMostCharPos() override
 	{
 		if (list.size() > 0)
@@ -267,6 +283,13 @@ public:
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<Expression*>& callables) override
+	{
+		bool bHave = Name ? Name->CalcCallables(rt, pContext, callables) : false;
+		bHave |= Type ? Type->CalcCallables(rt, pContext, callables) : false;
+		return bHave;
+	}
 	virtual void ScopeLayout() override
 	{
 		if (Name) Name->ScopeLayout();

@@ -4,6 +4,8 @@
 #include "block.h"
 #include "var.h"
 #include "pair.h"
+#include "op.h"
+#include <vector>
 
 namespace X
 {
@@ -80,6 +82,16 @@ public:
 	std::string GetNameString()
 	{
 		return std::string(m_Name.s, m_Name.size);
+	}
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<Expression*>& callables) override
+	{
+		if (Params)
+		{
+			Params->CalcCallables(rt,pContext,callables);
+		}
+		callables.push_back(this);
+		return true;
 	}
 	virtual Scope* GetParentScope() override
 	{

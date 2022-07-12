@@ -51,6 +51,20 @@ public:
 		if (L) delete L;
 		if (R) delete R;
 	}
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<Expression*>& callables) override
+	{
+		bool bHave = false;
+		if (L)
+		{
+			bHave = L->CalcCallables(rt, pContext,callables);
+		}
+		if (R)
+		{
+			bHave |= R->CalcCallables(rt, pContext,callables);
+		}
+		return bHave;
+	}
 	virtual int GetLeftMostCharPos() override
 	{
 		int pos = GetCharPos();

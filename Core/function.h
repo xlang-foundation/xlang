@@ -14,6 +14,11 @@ namespace X
 		public:
 			Function(AST::Func* p);
 			~Function();
+			virtual bool CalcCallables(Runtime* rt, void* pContext,
+				std::vector<AST::Expression*>& callables) override
+			{
+				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
+			}
 			virtual std::string ToString(bool WithFormat = false)
 			{
 				std::string strRet= m_func->GetNameString();

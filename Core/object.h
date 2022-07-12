@@ -56,6 +56,11 @@ namespace Data {
 		{ 
 			return nullptr; 
 		}
+		virtual bool CalcCallables(Runtime* rt, void* pContext,
+			std::vector<AST::Expression*>& callables) 
+		{
+			return false;
+		}
 		std::string GetTypeString()
 		{
 			switch (m_t)

@@ -272,6 +272,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		// clear all breakpoints for this file
 		this._runtime.clearBreakpoints(path);
 
+
 		// set and verify breakpoint locations
 		const actualBreakpoints0 = clientLines.map(async l => {
 			const { verified, line, id } = await this._runtime.setBreakPoint(path, this.convertClientLineToDebugger(l));
@@ -528,13 +529,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): void {
-		this._runtime.stepIn(args.targetId);
-		this.sendResponse(response);
+		this._runtime.stepIn(args.targetId, () => {
+			this.sendResponse(response);
+		});
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): void {
-		this._runtime.stepOut();
-		this.sendResponse(response);
+		this._runtime.stepOut(() => {
+			this.sendResponse(response);
+		});
 	}
 
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {

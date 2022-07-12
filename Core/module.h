@@ -34,10 +34,12 @@ class Module :
 	std::string m_moduleName;
 	std::string m_code;
 	StackFrame* m_stackFrame = nullptr;
-	//for debug
-	dbg m_dbg = dbg::Continue;
-	Expression* m_curRunningExpr = nil;
 
+	//for debug
+	bool m_inDebug = false;
+	dbg m_dbg = dbg::Continue;
+	std::vector<Expression*> m_dbgScopes;
+	Expression* m_curRunningExpr = nil;
 	XWait m_commandWait;
 	Locker m_lockCommands;
 	std::vector<CommandInfo> m_commands;
@@ -47,6 +49,7 @@ public:
 		Scope(),
 		Block()
 	{
+		m_type = ObType::Module;
 		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
 	}
@@ -145,16 +148,61 @@ public:
 		m_stackFrame->Get(idx, v, lValue);
 		return true;
 	}
+
+	inline void SetDebug(bool b)
+	{
+		m_inDebug = b;
+	}
+	inline bool IsInDebug()
+	{
+		return m_inDebug;
+	}
 	inline Expression* GetCurExpr()
 	{
 		return m_curRunningExpr;
 	}
-	inline void SetDbg(dbg d)
+	inline void SetDbgType(dbg d)
 	{
 		m_dbg = d;
 	}
-	inline dbg GetDbg() { return m_dbg; }
-
+	inline dbg GetDbgType() { return m_dbg; }
+	inline bool InDbgScope(Expression* s)
+	{ 
+		if (s == this)
+		{
+			return true;
+		}
+		bool bIn = false;
+		for (auto it : m_dbgScopes)
+		{
+			if (it == s)
+			{
+				bIn = true;
+				break;
+			}
+		}
+		return bIn;
+	}
+	inline void AddDbgScope(Expression* s)
+	{
+		m_dbgScopes.push_back(s);
+	}
+	inline void RemoveDbgScope(Expression* s)
+	{
+		auto it = m_dbgScopes.begin();
+		while (it != m_dbgScopes.end())
+		{
+			if (*it == s)
+			{
+				m_dbgScopes.erase(it);
+				break;
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
 };
 }
 }

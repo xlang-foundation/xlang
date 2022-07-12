@@ -1,3 +1,9 @@
+def dbg_test():
+  print("in dbg_test 01")
+  print("in dbg_test 01")
+
+dbg_test()
+
 x=10
 y=100
 z =x+y

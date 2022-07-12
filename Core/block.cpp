@@ -35,7 +35,7 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 	for (auto i : Body)
 	{
 		rt->SetCurrentExpr(i);
-		Dbg(rt).Check(rt,i, pContext);
+		Dbg(rt).Check(rt,this,i, pContext);
 		//int line = i->GetStartLine();
 		//std::cout << "Run Line:" << line <<std::endl;
 		Value v0;
@@ -46,6 +46,7 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 		}
 	}
 	m_bRunning = false;
+	Dbg(rt).ExitBlockRun(rt,pContext,this);
 
 	return bOk;
 }

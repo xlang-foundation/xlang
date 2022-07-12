@@ -72,7 +72,7 @@ namespace X
 			if (idx >= 1 && idx <= m_Modules.size())
 			{
 				auto m = m_Modules[idx - 1];
-				m->SetDbg(AST::dbg::Step);
+				m->SetDbgType(AST::dbg::Step);
 				break;
 			}
 			else
@@ -155,7 +155,8 @@ namespace X
 		}
 		if (stopOnEntry)
 		{
-			pTopModule->SetDbg(X::AST::dbg::Step);
+			pTopModule->SetDebug(true);
+			pTopModule->SetDbgType(X::AST::dbg::Step);
 		}
 		bool bOK = Run(pTopModule, retVal);
 		Unload(pTopModule);

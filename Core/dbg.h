@@ -4,6 +4,7 @@
 #include "manager.h"
 #include "module.h"
 #include "scope.h"
+#include "function.h"
 #include <vector>
 #include <iostream>
 
@@ -28,12 +29,12 @@ public:
 			std::getline(std::cin, input);
 			if (input == "c" || input == "C")
 			{
-				m_rt->M()->SetDbg(AST::dbg::Continue);
+				m_rt->M()->SetDbgType(AST::dbg::Continue);
 				break;
 			}
 			else if (input == "s" || input == "S")
 			{
-				m_rt->M()->SetDbg(AST::dbg::Step);
+				m_rt->M()->SetDbgType(AST::dbg::Step);
 				break;
 			}
 			else if(input == "l" || input == "L")
@@ -75,7 +76,7 @@ public:
 			std::cout << ">>";
 		}
 	}
-	void WaitForCommnd(Runtime* rt,
+	void WaitForCommnd(Runtime* rt, AST::Block* pThisBlock,
 		AST::Expression* exp, void* pContext)
 	{
 		auto* pModule = rt->M();
@@ -90,14 +91,33 @@ public:
 			case AST::dbg::StackTrace:
 				//just get back the current exp, then
 				//will calcluate out stack frames
-				//by AddCommand
+				//by call AddCommand
 				break;
 			case AST::dbg::Continue:
-				m_rt->M()->SetDbg(AST::dbg::Continue);
+				m_rt->M()->SetDbgType(AST::dbg::Continue);
 				mLoop = false;
 				break;
 			case AST::dbg::Step:
-				m_rt->M()->SetDbg(AST::dbg::Step);
+				m_rt->M()->SetDbgType(AST::dbg::Step);
+				mLoop = false;
+				break;
+			case AST::dbg::StepIn:
+				{
+					std::vector<AST::Expression*> callables;
+					if (exp->CalcCallables(rt,pContext,callables))
+					{
+						for (auto& ca : callables)
+						{
+							m_rt->M()->AddDbgScope(ca);
+						}
+					}
+				}
+				m_rt->M()->SetDbgType(AST::dbg::Step);
+				mLoop = false;
+				break;
+			case AST::dbg::StepOut:
+				m_rt->M()->RemoveDbgScope(pThisBlock);
+				m_rt->M()->SetDbgType(AST::dbg::Step);
 				mLoop = false;
 				break;
 			default:
@@ -121,11 +141,35 @@ public:
 			}
 		}
 	}
-	inline bool Check(Runtime* rt,AST::Expression* exp, void* pContext)
+	inline void ExitBlockRun(Runtime* rt,void* pContext,AST::Block* pThisBlock)
 	{
-		if (m_rt->M()->GetDbg() == AST::dbg::Step)
+		if (m_rt->M()->IsInDebug())
 		{
-			WaitForCommnd(rt,exp,pContext);
+			m_rt->M()->RemoveDbgScope(pThisBlock);
+		}
+	}
+	inline bool Check(Runtime* rt,AST::Block* pThisBlock,
+		AST::Expression* exp, void* pContext)
+	{
+		if (!m_rt->M()->IsInDebug())
+		{
+			return false;
+		}
+		auto st = m_rt->M()->GetDbgType();
+		switch (st)
+		{
+		case X::AST::dbg::Continue:
+			break;
+		case X::AST::dbg::Step:
+		{
+			if (m_rt->M()->InDbgScope(pThisBlock))
+			{
+				WaitForCommnd(rt, pThisBlock, exp, pContext);
+			}
+		}
+		break;
+		default:
+			break;
 		}
 		return true;
 	}
