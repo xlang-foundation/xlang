@@ -116,6 +116,7 @@ bool U_RunInMain(X::Runtime* rt, void* pContext,
 		pEvt->Set(it.first.c_str(), it.second);
 	}
 	pEvt->FireInMain();
+	pEvt->Release();
 	return true;
 }
 
@@ -292,6 +293,25 @@ bool U_TaskRun(X::Runtime* rt, void* pContext,
 	}
 	return bOK;
 }
+bool U_FireEvent(X::Runtime* rt, void* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::AST::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = AST::Value(false);
+		return false;
+	}
+	std::string name = params[0].ToString();
+	if (kwParams.find("tid") == kwParams.end())
+	{
+		int tid = (int)GetThreadID();
+		kwParams.emplace(std::make_pair("tid", tid));
+	}
+	X::EventSystem::I().Fire(name, kwParams);
+	retValue = AST::Value(true);
+	return true;
+}
 bool Builtin::RegisterInternals()
 {
 	std::vector<std::pair<std::string, std::string>> params;
@@ -305,6 +325,7 @@ bool Builtin::RegisterInternals()
 	Register("taskrun", (void*)U_TaskRun, params);
 	Register("threadid", (void*)U_ThreadId, params);
 	Register("mainrun", (void*)U_RunInMain, params);
+	Register("fire", (void*)U_FireEvent, params);
 	return true;
 }
 }

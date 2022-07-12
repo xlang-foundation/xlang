@@ -33,7 +33,6 @@ namespace X
 			auto it = m_Modules.begin();
 			while (it != m_Modules.end())
 			{
-				// remove odd numbers
 				if (*it  == p)
 				{
 					m_Modules.erase(it);

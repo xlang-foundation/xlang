@@ -149,12 +149,15 @@ export class XLangRuntime extends EventEmitter {
 	}
 	public getScopeRef(refId) {
 		return this.varRefMap[refId];
-    }
+	}
 	checkConnection()
 	{
+		let This = this;
 		if(this._xlangDevOps == undefined)
 		{
-			this._xlangDevOps = new XlangDevOps();
+			this._xlangDevOps = new XlangDevOps(() => {
+				This.sendEvent('end');
+            });
 			this._xlangDevOps.Start();
 		}
 	}
@@ -172,7 +175,9 @@ export class XLangRuntime extends EventEmitter {
 		if (this._sourceFile !== program) {
 			this._sourceFile = this.normalizePathAndCasing(program);
 			var srcFile = this._sourceFile.replaceAll('\\', '/');
-			let code = "m = load('" + srcFile + "')\nmainrun(m,stopOnEntry=True)\nreturn m";
+			let code = "tid=threadid()\nm = load('" + srcFile
+				+ "')\nmainrun(m,onFinish='fire(\"IPC.Session\",action=\"end\",tid=${tid})'"
+				+ ",stopOnEntry=True)\nreturn m";
 			this.Call(code, (ret) => {
 				console.log(ret);
 				this._moduleKey = ret;

@@ -1,5 +1,6 @@
 'use strict';
 
+import { Func } from 'mocha';
 import * as Net from 'net'
 import * as vscode from 'vscode';
 import { activateXLangDebug} from './activateXLangDebug';
@@ -23,8 +24,10 @@ export class XlangDevOps {
     private connected: boolean = false;
     private client?: any;
     private canSent: boolean = false;
-    private callQ: CallInfo[]=[];
-    constructor() {
+    private callQ: CallInfo[] = [];
+    private onEnd: Function = null;
+    constructor(cbEnd) {
+        this.onEnd = cbEnd;
     }
     Close() {
         if (this.client) {
@@ -54,8 +57,14 @@ export class XlangDevOps {
                 This.callQ = [];
                 This.canSent = false;
                 This.connected = false;
+                if (This.onEnd) {
+                    This.onEnd();
+                }
             }).on('error', function (error) {
                 console.log(error);
+                if (This.onEnd) {
+                    This.onEnd();
+                }
             });
         } catch (e: any) {
             console.log(e.message);

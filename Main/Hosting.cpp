@@ -135,10 +135,16 @@ namespace X
 	{
 		//check debug command
 		bool stopOnEntry = false;
+		std::string onFinishExpr;
 		auto it = kwParams.find("stopOnEntry");
 		if (it != kwParams.end())
 		{
 			stopOnEntry = it->second.GetBool();
+		}
+		it = kwParams.find("onFinish");
+		if (it != kwParams.end())
+		{
+			onFinishExpr = it->second.ToString();
 		}
 
 		AST::Module* pTopModule = QueryModule(moduleKey);
@@ -153,6 +159,12 @@ namespace X
 		}
 		bool bOK = Run(pTopModule, retVal);
 		Unload(pTopModule);
+		if (!onFinishExpr.empty())
+		{
+			std::string moduleName("Cleanup.x");
+			AST::Value valRet0;
+			Run(moduleName, onFinishExpr.c_str(), onFinishExpr.size(), valRet0);
+		}
 		return bOK;
 	}
 }

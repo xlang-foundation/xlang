@@ -42,22 +42,25 @@ namespace X
 	class IpcSession :
 		public GThread
 	{
+		void* m_Overlap = nullptr;
+		void* m_waitHandle = nullptr;
 		IpcServer* m_srv = nullptr;
 		IPC_HANDLE m_pipe = nullptr;
 		void* m_HandlerContext = nullptr;
 		On_Data  m_dataHandler = nullptr;
+		bool m_run = false;
 	public:
-		IpcSession(IPC_HANDLE hPipe, IpcServer* srv)
-		{
-			m_pipe = hPipe;
-			m_srv = srv;
-		}
+		IpcSession(IPC_HANDLE hPipe, IpcServer* srv, void* waitHandle);
 		void SetDataHandler(void* pContext,On_Data dataHandler)
 		{
 			m_HandlerContext = pContext;
 			m_dataHandler = dataHandler;
 		}
+		void* GetOverlaped() { return m_Overlap; }
+		void Close();
 		bool Send(char* data, int size);
+		bool Write(char* data, int size, int& writeSize);
+		bool Read(char* buf, int bufSize,int& readSize);
 		// Inherited via GThread
 		virtual void run() override;
 	};
