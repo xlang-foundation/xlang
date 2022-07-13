@@ -206,6 +206,19 @@ public:
 			break;
 		}
 	}
+	operator double() const
+	{
+		return x.d;
+	}
+	operator long long() const
+	{
+		return x.l;
+	}
+	operator int() const
+	{
+		return (int)x.l;
+	}
+
 	size_t Hash();
 	inline double GetDouble()
 	{

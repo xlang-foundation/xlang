@@ -44,12 +44,17 @@ namespace X
 		public:
 			BEGIN_PACKAGE(DebugService)
 				ADD_FUNC("get_startline", GetModuleStartLine)
+				ADD_FUNC("set_breakpoints", SetBreakpoints)
 				ADD_FUNC("command", Command)
 			END_PACKAGE
 			bool GetModuleStartLine(void* rt, void* pContext,
 					ARGS& params,
 					KWARGS& kwParams,
 					AST::Value& retValue);
+			bool SetBreakpoints(void* rt, void* pContext,
+				ARGS& params,
+				KWARGS& kwParams,
+				AST::Value& retValue);
 			bool Command(void* rt, void* pContext,
 				ARGS& params,
 				KWARGS& kwParams,

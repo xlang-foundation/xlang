@@ -6,7 +6,6 @@ namespace X
 {
 namespace Data
 {
-
 class List :
 	public Object
 {
@@ -35,6 +34,45 @@ public:
 		m_bases.clear();
 		m_ptrs.clear();
 		m_data.clear();
+	}
+	template<typename T>
+	std::vector<T> Map(EnumProc proc)
+	{
+		std::vector<T> outs;
+		if (m_useLValue)
+		{
+			for (size_t i = 0; i < m_ptrs.size(); i++)
+			{
+				AST::Value v = proc(*m_ptrs[i], i);
+				outs.push_back((T)v);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < m_data.size(); i++)
+			{
+				AST::Value v = proc(m_data[i], i);
+				outs.push_back((T)v);
+			}
+		}
+		return outs;
+	}
+	void Each(EnumProc proc)
+	{
+		if (m_useLValue)
+		{
+			for (size_t i = 0; i < m_ptrs.size(); i++)
+			{
+				proc(*m_ptrs[i], i);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < m_data.size(); i++)
+			{
+				proc(m_data[i], i);
+			}
+		}
 	}
 	virtual List& operator +=(AST::Value& r) override
 	{

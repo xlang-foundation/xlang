@@ -25,9 +25,9 @@ export class XlangDevOps {
     private client?: any;
     private canSent: boolean = false;
     private callQ: CallInfo[] = [];
-    private onEnd: Function = null;
-    constructor(cbEnd) {
-        this.onEnd = cbEnd;
+    private onNotify: Function = null;
+    constructor(cbNotify) {
+        this.onNotify = cbNotify;
     }
     Close() {
         if (this.client) {
@@ -48,8 +48,17 @@ export class XlangDevOps {
             }).on('data', function (data) {
                 //skip the first 4 bytes as length
                 let outData = data.toString('utf8', 4);
-                let callData = This.callQ.shift();
-                callData?.cb(outData);
+                let tagNoti = "$notify$";
+                if (outData.startsWith(tagNoti)){
+                    if (This.onNotify) {
+                        This.onNotify("notify", outData.substr(tagNoti.length));
+                    }
+                }
+                else
+                {
+                    let callData = This.callQ.shift();
+                    callData?.cb(outData);
+                }
                 //send next one if have
                 This.canSent = true;
                 This.Send();
@@ -57,13 +66,13 @@ export class XlangDevOps {
                 This.callQ = [];
                 This.canSent = false;
                 This.connected = false;
-                if (This.onEnd) {
-                    This.onEnd();
+                if (This.onNotify) {
+                    This.onNotify("end","");
                 }
             }).on('error', function (error) {
                 console.log(error);
-                if (This.onEnd) {
-                    This.onEnd();
+                if (This.onNotify) {
+                    This.onNotify("error",error);
                 }
             });
         } catch (e: any) {

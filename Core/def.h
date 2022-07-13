@@ -76,4 +76,6 @@ struct OpInfo
 	std::string name;
 	OpAction act;
 };
+
+typedef AST::Value (*EnumProc)(AST::Value& elm,unsigned long long idx);
 }

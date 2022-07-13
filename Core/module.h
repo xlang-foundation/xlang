@@ -18,7 +18,11 @@ enum class dbg
 	StackTrace,
 	GetRuntime,
 };
-
+struct BreakPointInfo
+{
+	int line;
+	int sessionTid;
+};
 struct CommandInfo
 {
 	dbg dbgType;
@@ -43,6 +47,8 @@ class Module :
 	XWait m_commandWait;
 	Locker m_lockCommands;
 	std::vector<CommandInfo> m_commands;
+	Locker m_lockBreakpoints;
+	std::vector<BreakPointInfo> m_breakpoints;
 
 public:
 	Module() :
@@ -57,6 +63,8 @@ public:
 	{
 		m_moduleName = name;
 	}
+	int SetBreakpoint(int line,int sessionTid);
+	bool HitBreakpoint(int line);
 	std::string& GetModuleName()
 	{
 		return m_moduleName;

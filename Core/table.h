@@ -57,7 +57,7 @@ public:
 	template<typename T>
 	T Get(size_t r)
 	{
-		return (r < m_count)? *(T*)Item(r):0;
+		return (r < m_count)? *(T*)Item(r):T(0);
 	}
 	template<typename T>
 	T* GetRef(size_t r)

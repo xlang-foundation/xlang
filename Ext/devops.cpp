@@ -240,6 +240,46 @@ namespace X
 			retValue = AST::Value(nStartLine);
 			return true;
 		}
+		bool DebugService::SetBreakpoints(void* rt, void* pContext,
+			ARGS& params, KWARGS& kwParams, AST::Value& retValue)
+		{
+			if (params.size() != 2)
+			{
+				retValue = AST::Value(false);
+				return false;
+			}
+			unsigned long long moduleKey = params[0].GetLongLong();
+			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
+			if (pModule == nullptr)
+			{
+				retValue = AST::Value(false);
+				return true;
+			}
+			AST::Value varLines = params[1];
+			if (!varLines.IsObject()
+				|| varLines.GetObj()->GetType() != X::Data::Type::List)
+			{
+				retValue = AST::Value(false);
+				return true;
+			}
+			auto* pLineList = dynamic_cast<X::Data::List*>(varLines.GetObj());
+			auto lines = pLineList->Map<int>(
+				[](AST::Value& elm, unsigned long long idx) {
+				return elm;}
+			);
+			Data::List* pList = new Data::List();
+			for (auto l : lines)
+			{
+				l = pModule->SetBreakpoint(l,(int)GetThreadID());
+				if (l >= 0)
+				{
+					AST::Value varL(l);
+					pList->Add((Runtime*)rt,varL);
+				}
+			}
+			retValue = AST::Value(pList);
+			return true;
+		}
 		bool DebugService::Command(void* rt, void* pContext,
 			ARGS& params, KWARGS& kwParams, AST::Value& retValue)
 		{

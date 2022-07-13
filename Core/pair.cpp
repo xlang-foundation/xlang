@@ -141,7 +141,7 @@ bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 				}
 			}
 		}
-		else if (R && R->m_type == ObType::Var)
+		else if (R)
 		{
 			Value v;
 			if (R->Run(rt, pContext, v))

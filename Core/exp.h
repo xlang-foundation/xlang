@@ -293,7 +293,10 @@ public:
 	virtual void ScopeLayout() override
 	{
 		if (Name) Name->ScopeLayout();
-		if (Type) Type->ScopeLayout();
+		if (m_parent->m_type != ObType::Class)
+		{
+			if (Type) Type->ScopeLayout();
+		}
 	}
 };
 }

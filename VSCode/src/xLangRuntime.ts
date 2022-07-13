@@ -1,6 +1,7 @@
 /*---------------------------------------------------------
  * https://microsoft.github.io/debug-adapter-protocol/overview
  *--------------------------------------------------------*/
+import { resolve } from 'dns';
 import { EventEmitter } from 'events';
 import { XlangDevOps } from './extension';
 
@@ -23,11 +24,6 @@ interface IRuntimeStackFrame {
 	line: number;
 	column?: number;
 	instruction?: number;
-}
-
-interface IRuntimeStack {
-	count: number;
-	frames: IRuntimeStackFrame[];
 }
 
 interface RuntimeDisassembledInstruction {
@@ -99,13 +95,10 @@ export class XLangRuntime extends EventEmitter {
 		return this._sourceFile;
 	}
 
-	private variables = new Map<string, RuntimeVariable>();
+	private sourceModuleKeyMap = new Map<string, number>();
 
-	// the contents (= lines) of the one and only file
-	private sourceLines: string[] = [];
 	private instructions: Word[] = [];
 	private starts: number[] = [];
-	private ends: number[] = [];
 
 	// This is the next line that will be 'executed'
 	private _currentLine = 0;
@@ -116,20 +109,13 @@ export class XLangRuntime extends EventEmitter {
 		this._currentLine = x;
 		this.instruction = this.starts[x];
 	}
-	private currentColumn: number | undefined;
 
 	// This is the next instruction that will be 'executed'
 	public instruction= 0;
 
-	// maps from sourceFile to array of IRuntimeBreakpoint
-	private breakPoints = new Map<string, IRuntimeBreakpoint[]>();
-
 	// all instruction breakpoint addresses
 	private instructionBreakpoints = new Set<number>();
 
-	// since we want to send breakpoint events, we will assign an id to every event
-	// so that the frontend can match events with breakpoints.
-	private breakpointId = 1;
 
 	private breakAddresses = new Map<string, string>();
 
@@ -155,8 +141,22 @@ export class XLangRuntime extends EventEmitter {
 		let This = this;
 		if(this._xlangDevOps == undefined)
 		{
-			this._xlangDevOps = new XlangDevOps(() => {
-				This.sendEvent('end');
+			this._xlangDevOps = new XlangDevOps((act, param) => {
+				if (act == "end" || act == "error") {
+					This.sendEvent('end');
+				}
+				else if (act == "notify") {
+					var notis = JSON.parse(param);
+					if (notis) {
+						for (let n in notis) {
+							let kv = notis[n];
+							let v = kv["HitBreakpoint"];
+							if(v!=undefined){
+								This.sendEvent('stopOnBreakpoint');
+							}
+                        }
+                    }
+                }
             });
 			this._xlangDevOps.Start();
 		}
@@ -166,43 +166,53 @@ export class XLangRuntime extends EventEmitter {
 			this._xlangDevOps.Close();
 			this._xlangDevOps = undefined;
         }
-    }
+	}
+	private async loadSource(file: string): Promise<number> {
+		let srcFile = this.normalizePathAndCasing(file);
+		let key = this.sourceModuleKeyMap.get(srcFile);
+		if (key != undefined) {
+			return key;
+        }
+		let srcFile_x = srcFile.replaceAll('\\', '/');
+		let code = "m = load('" + srcFile_x
+			+ "')\nreturn m";
+		let promise = new Promise((resolve, reject) => {
+			this.Call(code, resolve);
+		});
+		let retVal= await promise as number;
+		this.sourceModuleKeyMap.set(srcFile, retVal);
+		return retVal;
+	}
 	/**
 	 * Start executing the given program.
 	 */
 	public async start(program: string, stopOnEntry: boolean, debug: boolean): Promise<void> {
 		this.checkConnection();
-		if (this._sourceFile !== program) {
-			this._sourceFile = this.normalizePathAndCasing(program);
-			var srcFile = this._sourceFile.replaceAll('\\', '/');
-			let code = "tid=threadid()\nm = load('" + srcFile
-				+ "')\nmainrun(m,onFinish='fire(\"IPC.Session\",action=\"end\",tid=${tid})'"
-				+ ",stopOnEntry=True)\nreturn m";
+		this._sourceFile = this.normalizePathAndCasing(program);
+		this._moduleKey = await this.loadSource(this._sourceFile);
+		if (this._moduleKey!=0) {
+			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
+				+ ", onFinish = 'fire(\"IPC.Session\",action=\"end\",tid=${tid})'"
+				+ ",stopOnEntry=True)\nreturn True";
 			this.Call(code, (ret) => {
 				console.log(ret);
-				this._moduleKey = ret;
 				if (debug) {
-					//await this.verifyBreakpoints(this._sourceFile);
+					//this.verifyBreakpoints(this._sourceFile);
 					this.GetStartLine((startLine) => {
 						if (stopOnEntry) {
 							this.currentLine = startLine - 1;
 							this.sendEvent('stopOnEntry');
 						} else {
 							// we just start to run until we hit a breakpoint, an exception, or the end of the program
-							this.continue(false);
+							this.continue(false,()=>{ });
 						}
 					});
 				} else {
-					this.continue(false);
+					this.continue(false, () => { });
 				}
 			});
 		}
 	}
-
-	/**
-	 * Continue execution to the end/beginning.
-	 */
-
 	private Call(code,cb)
 	{
 		this._xlangDevOps.Call(code, cb);
@@ -210,9 +220,7 @@ export class XLangRuntime extends EventEmitter {
 	public continue(reverse: boolean,cb) {
 		let code = "import xdb\nreturn xdb.command("
 			+ this._moduleKey.toString() + ",cmd='Continue')";
-		this.Call(code, (retData) => {
-			cb();
-		});
+		this.Call(code, (retData) => cb());
 	}
 	public step(instruction: boolean, reverse: boolean,cb:Function) {
 		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Step')";
@@ -221,7 +229,18 @@ export class XLangRuntime extends EventEmitter {
 			cb();
         });
 	}
-
+	public async setBreakPoints(path: string, lines: number[], cb: Function) {
+		this.checkConnection();
+		let mKey = await this.loadSource(this.normalizePathAndCasing(path));
+		let code = "import xdb\nreturn xdb.set_breakpoints(" + mKey.toString()
+			+ ",[" + lines.join() + "]"
+			+ ",path=\"" + path+"\""
+			+")";
+		this.Call(code, (retData) => {
+			var retLines = JSON.parse(retData);
+			cb(retLines);
+		});
+	}
 	/**
 	 * "Step into" for XLang debug means: go to next character
 	 */
@@ -302,45 +321,6 @@ export class XLangRuntime extends EventEmitter {
 	 */
 	public getBreakpoints(path: string, line: number): number[] {
 		return this.getWords(line, this.getLine(line)).filter(w => w.name.length > 8).map(w => w.index);
-	}
-
-	/*
-	 * Set breakpoint in file with given line.
-	 */
-	public async setBreakPoint(path: string, line: number): Promise<IRuntimeBreakpoint> {
-		path = this.normalizePathAndCasing(path);
-
-		const bp: IRuntimeBreakpoint = { verified: false, line, id: this.breakpointId++ };
-		let bps = this.breakPoints.get(path);
-		if (!bps) {
-			bps = new Array<IRuntimeBreakpoint>();
-			this.breakPoints.set(path, bps);
-		}
-		bps.push(bp);
-
-		//await this.verifyBreakpoints(path);
-
-		return bp;
-	}
-
-	/*
-	 * Clear breakpoint in file with given line.
-	 */
-	public clearBreakPoint(path: string, line: number): IRuntimeBreakpoint | undefined {
-		const bps = this.breakPoints.get(this.normalizePathAndCasing(path));
-		if (bps) {
-			const index = bps.findIndex(bp => bp.line === line);
-			if (index >= 0) {
-				const bp = bps[index];
-				bps.splice(index, 1);
-				return bp;
-			}
-		}
-		return undefined;
-	}
-
-	public clearBreakpoints(path: string): void {
-		this.breakPoints.delete(this.normalizePathAndCasing(path));
 	}
 
 	public setDataBreakpoint(address: string, accessType: 'read' | 'write' | 'readWrite'): boolean {

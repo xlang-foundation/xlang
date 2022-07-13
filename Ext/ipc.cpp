@@ -160,9 +160,17 @@ namespace X
         void* h = pEvt->Add([](void* pContext, X::Event* pEvt) {
             IpcSession* pThis = (IpcSession*)pContext;
             auto valAction = pEvt->Get("action");
-            if (valAction.ToString() == "end")
+            auto strAction = valAction.ToString();
+            if (strAction == "end")
             {
                 pThis->Close();
+            }
+            else if (strAction == "notify")
+            {
+                auto valParam = pEvt->Get("param");
+                auto strParam = valParam.ToString();
+                std::string notifyInfo = "$notify$" + strParam;
+                pThis->Send((char*)notifyInfo.c_str(), notifyInfo.size());
             }
          },this);
         int bufSize = m_srv->GetBufferSize();

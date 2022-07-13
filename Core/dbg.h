@@ -155,6 +155,13 @@ public:
 		{
 			return false;
 		}
+		//check breakpoints
+		int line = exp->GetStartLine();
+		if (m_rt->M()->HitBreakpoint(line))
+		{
+			WaitForCommnd(rt, pThisBlock, exp, pContext);
+			return true;
+		}
 		auto st = m_rt->M()->GetDbgType();
 		switch (st)
 		{

@@ -92,6 +92,9 @@ namespace X {namespace AST {
 		std::string str;
 		switch (t)
 		{
+		case ValueType::Invalid:
+			if (WithFormat) str = "\"Invalid\"";
+			break;
 		case ValueType::None:
 			if (WithFormat) str = "\"\"";
 			break;
@@ -141,6 +144,9 @@ namespace X {namespace AST {
 		std::string strType;
 		switch (t)
 		{
+		case AST::ValueType::Invalid:
+			strType = "Invalid";
+			break;
 		case AST::ValueType::None:
 			strType = "None";
 			break;

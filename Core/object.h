@@ -223,6 +223,12 @@ namespace Data {
 				delete m_stackFrame;
 			}
 		}
+		virtual long long Size() override
+		{ 
+			return m_obj?m_obj->GetVarNum():0;
+		}
+		virtual List* FlatPack(Runtime* rt,
+			long long startIndex, long long count) override;
 		virtual bool CalcCallables(Runtime* rt, void* pContext,
 			std::vector<AST::Expression*>& callables) override
 		{

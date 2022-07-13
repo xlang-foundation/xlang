@@ -269,24 +269,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const path = args.source.path as string;
 		const clientLines = args.lines || [];
 
-		// clear all breakpoints for this file
-		this._runtime.clearBreakpoints(path);
-
-
-		// set and verify breakpoint locations
-		const actualBreakpoints0 = clientLines.map(async l => {
-			const { verified, line, id } = await this._runtime.setBreakPoint(path, this.convertClientLineToDebugger(l));
-			const bp = new Breakpoint(verified, this.convertDebuggerLineToClient(line)) as DebugProtocol.Breakpoint;
-			bp.id = id;
-			return bp;
+		this._runtime.setBreakPoints(path, clientLines, (lines) => {
+			let actualBreakpoints = lines.map(l => {
+				return new Breakpoint(true, l);
+			});
+			response.body = {
+				breakpoints: actualBreakpoints
+			};
+			this.sendResponse(response);
 		});
-		const actualBreakpoints = await Promise.all<DebugProtocol.Breakpoint>(actualBreakpoints0);
-
-		// send back the actual breakpoint positions
-		response.body = {
-			breakpoints: actualBreakpoints
-		};
-		this.sendResponse(response);
 	}
 
 	protected breakpointLocationsRequest(response: DebugProtocol.BreakpointLocationsResponse, args: DebugProtocol.BreakpointLocationsArguments, request?: DebugProtocol.Request): void {
@@ -867,6 +858,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'Function':
 				dapVariable.type = 'Function';
+				dapVariable.value = `"func:${v.Val}"`;
+				break;
+			case 'Class':
+				v.reference = this._runtime.createScopeRef(
+					v.Type, v.FrameId, v.Val);
+				dapVariable.value = 'Class(Size:' + v.Size.toString() + ")";
+				dapVariable.type = "Class";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.namedVariables = v.Size;
 				break;
 			case 'Dict':
 				v.reference = this._runtime.createScopeRef(

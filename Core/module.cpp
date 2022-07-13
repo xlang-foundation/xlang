@@ -2,6 +2,7 @@
 #include "builtin.h"
 #include "object.h"
 #include "function.h"
+#include "event.h"
 
 namespace X 
 {
@@ -32,6 +33,45 @@ void Module::AddBuiltins(Runtime* rt)
 			Set(rt,nullptr,idx, v0);
 		}
 	}
+}
+//return the actual line
+//-1 means no actual line matched with input line
+int Module::SetBreakpoint(int line, int sessionTid)
+{
+	m_lockBreakpoints.Lock();
+	m_breakpoints.push_back({ line,sessionTid });
+	m_lockBreakpoints.Unlock();
+	return line;
+}
+bool Module::HitBreakpoint(int line)
+{
+	bool bHit = false;
+	int hitSessionTid = 0;
+	m_lockBreakpoints.Lock();
+	for (auto it : m_breakpoints)
+	{
+		if (it.line == line)
+		{
+			bHit = true;
+			hitSessionTid = it.sessionTid;
+			break;
+		}
+	}
+	m_lockBreakpoints.Unlock();
+	if (bHit)
+	{
+		KWARGS kwParams;
+		kwParams.emplace(std::make_pair("tid", hitSessionTid));
+		kwParams.emplace(std::make_pair("action","notify"));
+		const int online_len = 1000;
+		char strBuf[online_len];
+		SPRINTF(strBuf, online_len, "[{\"HitBreakpoint\":%d}]", line);
+		kwParams.emplace(std::make_pair("param", strBuf));
+
+		std::string evtName("IPC.Session");
+		X::EventSystem::I().Fire(evtName, kwParams);
+	}
+	return bHit;
 }
 }
 }
