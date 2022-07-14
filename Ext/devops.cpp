@@ -45,6 +45,10 @@ namespace X
 				std::string ack("OK");
 				if (Hosting::I().Run(moduleName, data, size, retVal))
 				{
+					if (retVal.IsInvalid())
+					{
+						retVal = retVal;
+					}
 					ack = retVal.ToString(true);
 				}
 				else
@@ -267,6 +271,7 @@ namespace X
 				[](AST::Value& elm, unsigned long long idx) {
 				return elm;}
 			);
+			pModule->ClearBreakpoints();
 			Data::List* pList = new Data::List();
 			for (auto l : lines)
 			{
@@ -323,7 +328,7 @@ namespace X
 				}
 				else
 				{
-					retValue = AST::Value();
+					retValue = AST::Value(AST::ValueType::None);
 				}
 			}
 			else if (strCmd == "Locals" || strCmd=="Object")

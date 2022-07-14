@@ -185,21 +185,52 @@ struct ColInfo
 	std::string name;
 	DynVariantAry* ary;
 };
+class Table;
+class TableRow :
+	public Object
+{
+	friend class Table;
+	long long m_r = 0;
+	long long m_rowId = 0;
+	Table* m_table = nullptr;
+public:
+	TableRow(Table* table,long long id, long long r)
+	{
+		m_table = table;
+		m_r = r;
+		m_rowId = id;
+	}
+	long long r() { return m_r; }
+	virtual bool Call(Runtime* rt, ARGS& params,
+		KWARGS& kwParams,
+		AST::Value& retValue) override
+	{
+		return true;
+	}
+	virtual long long Size() override;
+	virtual List* FlatPack(Runtime* rt, long long startIndex, long long count) override;
+};
 class Table
 	:public Object
 {
+	friend class TableRow;
+
 	int m_colNum = 0;
 	int m_rowNum = 0;
 	long long m_lastRowId = 0;
 	ColInfo m_rowIDcol;
 	std::vector<ColInfo> m_cols;
 	std::unordered_map<std::string, int> m_colMap;
-	std::map<long long, long long> m_rowMap;
+	std::map<long long, TableRow*> m_rowMap;
 public:
 	Table()
 	{
 		m_t = Type::Table;
 		m_rowIDcol.ary = new DynVariantAry(1, sizeof(long long),AST::ValueType::Int64);
+	}
+	long long GetColNum()
+	{
+		return m_cols.size();
 	}
 	~Table()
 	{
@@ -216,8 +247,17 @@ public:
 		}
 		m_cols.clear();
 		m_colMap.clear();
+		for (auto& it : m_rowMap)
+		{
+			it.second->Release();
+		}
 		m_rowMap.clear();
 	}
+	inline virtual long long Size() override
+	{
+		return m_rowMap.size();
+	}
+	virtual List* FlatPack(Runtime* rt, long long startIndex, long long count) override;
 	virtual Table& operator +=(AST::Value& r)
 	{
 		if (r.IsObject())
@@ -246,11 +286,11 @@ public:
 		{
 			SPRINTF(convertBuf,online_len,"%llu",it.first);
 			strOut += convertBuf;
-			auto r = it.second;
+			auto rObj = it.second;
 			for (auto c : m_cols)
 			{
 				AST::Value v0;
-				c.ary->Get(r, v0);
+				c.ary->Get(rObj->r(), v0);
 				strOut += "\t" + v0.ToString();
 			}
 			strOut += "\n";
@@ -279,7 +319,9 @@ public:
 					m_cols[j].ary->Add(params[idx]);
 				}
 			}
-			m_rowMap.emplace(std::make_pair(rowID, r));
+			TableRow* rObj = new TableRow(this,rowID,r);
+			rObj->AddRef();
+			m_rowMap.emplace(std::make_pair(rowID, rObj));
 		}
 		return true;
 	}
@@ -337,13 +379,14 @@ public:
 		{
 			return false;
 		}
-		size_t r = find->first;
-		m_rowIDcol.ary->Remove(r);
+		auto* rObj = find->second;
+		m_rowIDcol.ary->Remove(rObj->r());
 		for (auto it : m_cols)
 		{
-			it.ary->Remove(r);
+			it.ary->Remove(rObj->r());
 		}
 		m_rowMap.erase(find);
+		rObj->Release();
 		return true;
 	}
 	bool GetRow(long long rowId, KWARGS& kwargs)
@@ -353,11 +396,11 @@ public:
 		{
 			return false;
 		}
-		size_t r = find->second;
+		auto rObj = find->second;
 		for (auto it : m_cols)
 		{
 			AST::Value v;
-			it.ary->Get(r, v);
+			it.ary->Get(rObj->r(), v);
 			kwargs.emplace(std::make_pair(it.name, v));
 		}
 		return true;
@@ -378,7 +421,9 @@ public:
 		{
 			return -1;
 		}
-		m_rowMap.emplace(std::make_pair(rowID,r));
+		TableRow* rObj = new TableRow(this, rowID, r);
+		rObj->AddRef();
+		m_rowMap.emplace(std::make_pair(rowID, rObj));
 		return rowID;
 	}
 	void Test()

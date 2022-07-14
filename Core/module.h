@@ -63,6 +63,7 @@ public:
 	{
 		m_moduleName = name;
 	}
+	void ClearBreakpoints();
 	int SetBreakpoint(int line,int sessionTid);
 	bool HitBreakpoint(int line);
 	std::string& GetModuleName()

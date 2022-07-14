@@ -265,7 +265,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
-
 		const path = args.source.path as string;
 		const clientLines = args.lines || [];
 
@@ -881,6 +880,22 @@ export class XLangDebugSession extends LoggingDebugSession {
 					v.Type,v.FrameId,v.Val);
 				dapVariable.value = 'List(Size:'+v.Size.toString()+")";
 				dapVariable.type = "List";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = v.Size;
+				break;
+			case 'TableRow':
+				v.reference = this._runtime.createScopeRef(
+					v.Type, v.FrameId, v.Val);
+				dapVariable.value = 'TableRow(ColNum:' + v.Size.toString() + ")";
+				dapVariable.type = "TableRow";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = v.Size;
+				break;
+			case 'Table':
+				v.reference = this._runtime.createScopeRef(
+					v.Type, v.FrameId, v.Val);
+				dapVariable.value = 'Table(RowNum:' + v.Size.toString() + ")";
+				dapVariable.type = "Table";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;

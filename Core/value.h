@@ -125,6 +125,10 @@ public:
 		t = ValueType::Invalid;
 		x.l = 0;
 	}
+	inline Value(ValueType t0)
+	{
+		t = t0;
+	}
 	inline Value(bool b)
 	{//use 1 as true and 0 as false, set flag to -1
 		t = ValueType::Int64;

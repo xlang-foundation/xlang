@@ -27,6 +27,7 @@ namespace Data {
 		Future,
 		List,
 		Dict,
+		TableRow,
 		Table
 	};
 	class List;
@@ -89,6 +90,8 @@ namespace Data {
 				return "List";
 			case X::Data::Type::Dict:
 				return "Dict";
+			case X::Data::Type::TableRow:
+				return "TableRow";
 			case X::Data::Type::Table:
 				return "Table";
 			default:

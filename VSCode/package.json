@@ -81,7 +81,7 @@
       {
         "id": "xlang",
         "extensions": [
-          ".x",".xlang"
+          ".x",".xlang",".py"
         ],
         "aliases": [
           "xlang",

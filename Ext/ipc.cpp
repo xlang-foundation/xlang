@@ -171,6 +171,7 @@ namespace X
                 auto strParam = valParam.ToString();
                 std::string notifyInfo = "$notify$" + strParam;
                 pThis->Send((char*)notifyInfo.c_str(), notifyInfo.size());
+                std::cout << "IPC,Sent out Notify:" << notifyInfo << std::endl;
             }
          },this);
         int bufSize = m_srv->GetBufferSize();

@@ -3,7 +3,7 @@
 #include "object.h"
 #include "function.h"
 #include "event.h"
-
+#include <iostream>
 namespace X 
 {
 namespace AST 
@@ -33,6 +33,12 @@ void Module::AddBuiltins(Runtime* rt)
 			Set(rt,nullptr,idx, v0);
 		}
 	}
+}
+void Module::ClearBreakpoints()
+{
+	m_lockBreakpoints.Lock();
+	m_breakpoints.clear();
+	m_lockBreakpoints.Unlock();
 }
 //return the actual line
 //-1 means no actual line matched with input line
@@ -67,7 +73,7 @@ bool Module::HitBreakpoint(int line)
 		char strBuf[online_len];
 		SPRINTF(strBuf, online_len, "[{\"HitBreakpoint\":%d}]", line);
 		kwParams.emplace(std::make_pair("param", strBuf));
-
+		std::cout << "HitBreakpoint in line:" << line << std::endl;
 		std::string evtName("IPC.Session");
 		X::EventSystem::I().Fire(evtName, kwParams);
 	}
