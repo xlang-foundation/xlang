@@ -16,7 +16,7 @@
 #include "utility.h"
 #include "devops.h"
 #include "event.h"
-
+#include "port.h"
 
 void signal_callback_handler(int signum) 
 {
@@ -28,6 +28,32 @@ void signal_callback_handler(int signum)
 	signal(SIGINT, signal_callback_handler);
 }
 
+#include "PyEngObject.h"
+PyEngHost* g_pHost = nullptr;
+void LoadTest()
+{
+	typedef void (*LOAD)(void** ppHost);
+	typedef void (*UNLOAD)();
+	void* libHandle = LOADLIB("C:/Dev/X/out/build/x64-Debug/PyEng/pyeng.dll");
+	if (libHandle)
+	{
+		LOAD load = (LOAD)GetProc(libHandle,"Load");
+		UNLOAD unload = (UNLOAD)GetProc(libHandle, "Unload");
+		if (load)
+		{
+			load((void**) &g_pHost);
+			auto sys = PyEng::Object::Import("sys");
+			sys["path.insert"](0, "C:/Dev/X/test/");
+			PyEng::Object m = PyEng::Object::Import("simple");
+			m["func1"](100);
+		}
+		if (unload)
+		{
+			unload();
+		}
+		UNLOADLIB(libHandle);
+	}
+}
 int main1(int argc, char* argv[])
 {
 	std::string jsonFileName = "C:/Dev/X/test/test.json";
@@ -75,6 +101,7 @@ int main(int argc, char* argv[])
 	X::DevOps::Debugger dbg;
 	dbg.Start();
 
+	LoadTest();
 	signal(SIGINT, signal_callback_handler);
 	REGISTER_PACKAGE("http", X::Http)
 		REGISTER_PACKAGE("fs", X::FileSystem)
