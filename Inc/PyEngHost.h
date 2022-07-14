@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-//all funcation,if return PyEngObjectPtr will hold a new reference
+//all function,if return PyEngObjectPtr will hold a new reference
 typedef void* PyEngObjectPtr;
 
 class PyEngHost
