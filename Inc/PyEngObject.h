@@ -6,6 +6,7 @@
 #include <map>
 #include <unordered_map>
 #include "PyEngHost.h"
+#include "value.h"
 
 namespace PyEng{
 
@@ -152,6 +153,27 @@ public:
 	Object(const char* buf, long long size)
 	{
 		m_p = g_pHost->CreateByteArray(buf, size);
+	}
+	Object(X::AST::Value& v)
+	{
+		switch (v.GetType())
+		{
+		case X::AST::ValueType::None:
+			break;
+		case X::AST::ValueType::Int64:
+			m_p = g_pHost->from_longlong(v);
+			break;
+		case X::AST::ValueType::Double:
+			m_p = g_pHost->from_double(v);
+			break;
+		case X::AST::ValueType::Object:
+			break;
+		case X::AST::ValueType::Str:
+			m_p = g_pHost->from_str(v.ToString().c_str());
+			break;
+		default:
+			break;
+		}
 	}
 	template <typename VALUE>
 	Object(std::vector<VALUE> li)

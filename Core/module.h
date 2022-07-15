@@ -36,6 +36,7 @@ class Module :
 	public Scope
 {
 	std::string m_moduleName;
+	std::string m_path;
 	std::string m_code;
 	StackFrame* m_stackFrame = nullptr;
 
@@ -61,11 +62,24 @@ public:
 	}
 	void SetModuleName(std::string& name)
 	{
+		auto pos = name.rfind("/");
+		if (pos == name.npos)
+		{
+			pos = name.rfind("\\");
+		}
+		if (pos != name.npos)
+		{
+			m_path = name.substr(0, pos);
+		}
 		m_moduleName = name;
 	}
 	void ClearBreakpoints();
 	int SetBreakpoint(int line,int sessionTid);
 	bool HitBreakpoint(int line);
+	std::string& GetModulePath()
+	{
+		return m_path;
+	}
 	std::string& GetModuleName()
 	{
 		return m_moduleName;

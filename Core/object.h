@@ -28,7 +28,8 @@ namespace Data {
 		List,
 		Dict,
 		TableRow,
-		Table
+		Table,
+		PyProxyObject
 	};
 	class List;
 	class Object

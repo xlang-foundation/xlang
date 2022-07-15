@@ -1,5 +1,6 @@
 #include "package.h"
 #include "manager.h"
+#include "pyproxyobject.h"
 
 bool X::AST::Import::Run(Runtime* rt, void* pContext, 
 	Value& v, LValue* lValue)
@@ -16,8 +17,17 @@ bool X::AST::Import::Run(Runtime* rt, void* pContext,
 			String& name = var->GetName();
 			std::string strName(name.s, name.size);
 			Package* pPackage = nullptr;
-			Manager::I().QueryAndCreatePackage(rt,strName, &pPackage);
-			v = Value(pPackage);
+			bool bOK = Manager::I().QueryAndCreatePackage(rt,strName, &pPackage);
+			if (bOK)
+			{
+				v = Value(pPackage);
+			}
+			else
+			{
+				std::string path = rt->M()->GetModulePath();
+				auto* pProxyObj = new Data::PyProxyObject(strName, path);
+				v = Value(pProxyObj);
+			}
 			rt->M()->Add(rt, strName, nullptr, v);
 		}
 	}

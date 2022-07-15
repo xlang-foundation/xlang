@@ -42,16 +42,32 @@ void LoadTest()
 		if (load)
 		{
 			load((void**) &g_pHost);
+#if 0
 			auto sys = PyEng::Object::Import("sys");
 			sys["path.insert"](0, "C:/Dev/X/test/");
-			PyEng::Object m = PyEng::Object::Import("simple");
-			m["func1"](100);
+			PyEng::Object m = PyEng::Object::Import("pymodule");
+			X::AST::Value p(100);
+			X::ARGS params;
+			X::KWARGS kwParams;
+			params.push_back(p);
+			PyEng::Tuple objParams(params);
+			PyEng::Dict objKwParams(kwParams);
+			auto func = (PyEng::Object)m["test"];
+			PyEng::Object pp(100);
+			PyEngObjectPtr p0 = (PyEngObjectPtr)pp;
+			auto obj = (PyEng::Object)func.Call(1, &p0);
+			auto obj2 =(PyEng::Object)func.Call(objParams, objKwParams);
+			std::string ret = (std::string)obj;
+			std::cout << ret;
+#endif
 		}
+#if 0
 		if (unload)
 		{
 			unload();
 		}
 		UNLOADLIB(libHandle);
+#endif
 	}
 }
 int main1(int argc, char* argv[])
@@ -71,8 +87,9 @@ int main1(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main_runfile(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
+	LoadTest();
 	signal(SIGINT, signal_callback_handler);
 	std::string pyFileName = "C:/Dev/X/test/test2.py";
 	if (argc >= 2)
@@ -96,7 +113,7 @@ int main_runfile(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main(int argc, char* argv[])
+int main_dbg(int argc, char* argv[])
 {
 	X::DevOps::Debugger dbg;
 	dbg.Start();
