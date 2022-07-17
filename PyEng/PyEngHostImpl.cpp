@@ -1,6 +1,7 @@
 #include "PyEngHostImpl.h"
 #include "utility.h"
 #include "PyEngObject.h"
+#include <iostream>
 
 //each cpp file has to call this line
 extern "C"
@@ -210,7 +211,7 @@ PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, const char* key)
 		{
 			if (pOb == nullptr)
 			{
-				pRetOb = PyImport_ImportModule(key);//New reference
+				pRetOb = (PyObject*)Import(key);//New reference
 			}
 			else
 			{
@@ -228,7 +229,7 @@ PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, const char* key)
 			}
 			else
 			{
-				pOb = PyImport_ImportModule(keys[0].c_str());
+				pOb = (PyObject*)Import(keys[0].c_str());
 				if (pOb == nullptr)
 				{
 					PyErr_PrintEx(0);
@@ -361,7 +362,11 @@ PyEngObjectPtr GrusPyEngHost::NewArray(int nd, unsigned long long* dims, int ite
 		itemDataType);
 	return (PyEngObjectPtr)aryData;
 }
-
+void GrusPyEngHost::SetTrace(Python_TraceFunc func,
+	PyEngObjectPtr args)
+{
+	PyEval_SetTrace((Py_tracefunc)func, (PyObject*)args);
+}
 PyEngObjectPtr GrusPyEngHost::Import(const char* key)
 {
 	return (PyEngObjectPtr)PyImport_ImportModule(key);

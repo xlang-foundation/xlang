@@ -52,7 +52,7 @@ public:
 		if (R) delete R;
 	}
 	virtual bool CalcCallables(Runtime* rt, void* pContext,
-		std::vector<Expression*>& callables) override
+		std::vector<Scope*>& callables) override
 	{
 		bool bHave = false;
 		if (L)

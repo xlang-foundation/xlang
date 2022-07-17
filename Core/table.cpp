@@ -32,7 +32,7 @@ namespace X
 				col.ary->Get(m_r, val);
 
 				Dict* dict = new Dict();
-				AST::Value colName((char*)col.name.c_str(),col.name.size());
+				AST::Value colName((char*)col.name.c_str(),(int)col.name.size());
 				dict->Set("Name", colName);
 
 				auto valType = val.GetValueType();

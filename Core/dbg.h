@@ -7,6 +7,7 @@
 #include "function.h"
 #include <vector>
 #include <iostream>
+#include "pyproxyobject.h"
 
 namespace X
 {
@@ -18,6 +19,19 @@ public:
 	{
 		m_rt = rt;
 	}
+	static bool xTraceFunc(
+		Runtime* rt,
+		void* pContext,
+		AST::StackFrame* frame,
+		TraceEvent traceEvent,
+		AST::Scope* pThisBlock,
+		AST::Expression* pCurrentObj);
+
+	static int PythonTraceFunc(
+		PyEngObjectPtr self,
+		PyEngObjectPtr frame,
+		int event,
+		PyEngObjectPtr args);
 	void Loop(AST::Value& lineRet,AST::Expression* exp, void* pContext)
 	{
 		std::cout << lineRet.ToString() << std::endl;
@@ -29,12 +43,14 @@ public:
 			std::getline(std::cin, input);
 			if (input == "c" || input == "C")
 			{
-				m_rt->M()->SetDbgType(AST::dbg::Continue);
+				m_rt->M()->SetDbgType(AST::dbg::Continue,
+					AST::dbg::Continue);
 				break;
 			}
 			else if (input == "s" || input == "S")
 			{
-				m_rt->M()->SetDbgType(AST::dbg::Step);
+				m_rt->M()->SetDbgType(AST::dbg::Step,
+					AST::dbg::Step);
 				break;
 			}
 			else if(input == "l" || input == "L")
@@ -76,7 +92,9 @@ public:
 			std::cout << ">>";
 		}
 	}
-	void WaitForCommnd(Runtime* rt, AST::Block* pThisBlock,
+	void PyWaitForCommnd(Runtime* rt);
+	void WaitForCommnd(TraceEvent evt,Runtime* rt, 
+		AST::Scope* pThisBlock,
 		AST::Expression* exp, void* pContext)
 	{
 		auto* pModule = rt->M();
@@ -94,17 +112,19 @@ public:
 				//by call AddCommand
 				break;
 			case AST::dbg::Continue:
-				m_rt->M()->SetDbgType(AST::dbg::Continue);
+				m_rt->M()->SetDbgType(AST::dbg::Continue,
+					AST::dbg::Continue);
 				mLoop = false;
 				break;
 			case AST::dbg::Step:
-				m_rt->M()->SetDbgType(AST::dbg::Step);
+				m_rt->M()->SetDbgType(AST::dbg::Step,
+					AST::dbg::Step);
 				mLoop = false;
 				break;
 			case AST::dbg::StepIn:
 				{
-					std::vector<AST::Expression*> callables;
-					if (exp->CalcCallables(rt,pContext,callables))
+					std::vector<AST::Scope*> callables;
+					if (((AST::Expression*)exp)->CalcCallables(rt,pContext,callables))
 					{
 						for (auto& ca : callables)
 						{
@@ -112,12 +132,14 @@ public:
 						}
 					}
 				}
-				m_rt->M()->SetDbgType(AST::dbg::Step);
+				m_rt->M()->SetDbgType(AST::dbg::Step,
+					AST::dbg::StepIn);
 				mLoop = false;
 				break;
 			case AST::dbg::StepOut:
 				m_rt->M()->RemoveDbgScope(pThisBlock);
-				m_rt->M()->SetDbgType(AST::dbg::Step);
+				m_rt->M()->SetDbgType(AST::dbg::Step,
+					AST::dbg::StepOut);
 				mLoop = false;
 				break;
 			default:
@@ -135,20 +157,27 @@ public:
 			{
 				*cmdInfo.m_valPlaceholder3 = (void*)pContext;
 			}
+			if (cmdInfo.m_traceEventPtr)
+			{
+				*cmdInfo.m_traceEventPtr = evt;
+			}
 			if (cmdInfo.m_wait)
 			{
 				cmdInfo.m_wait->Release();
 			}
 		}
 	}
-	inline void ExitBlockRun(Runtime* rt,void* pContext,AST::Block* pThisBlock)
+	inline bool ExitBlockRun(Runtime* rt,void* pContext,
+		AST::Scope* pThisBlock)
 	{
 		if (m_rt->M()->IsInDebug())
 		{
 			m_rt->M()->RemoveDbgScope(pThisBlock);
 		}
+		return true;
 	}
-	inline bool Check(Runtime* rt,AST::Block* pThisBlock,
+	inline bool Check(TraceEvent evt,Runtime* rt,
+		AST::Scope* pThisBlock,
 		AST::Expression* exp, void* pContext)
 	{
 		if (!m_rt->M()->IsInDebug())
@@ -159,7 +188,8 @@ public:
 		int line = exp->GetStartLine();
 		if (m_rt->M()->HitBreakpoint(line))
 		{
-			WaitForCommnd(rt, pThisBlock, exp, pContext);
+			WaitForCommnd(evt,
+				rt, pThisBlock, exp, pContext);
 			return true;
 		}
 		auto st = m_rt->M()->GetDbgType();
@@ -171,7 +201,8 @@ public:
 		{
 			if (m_rt->M()->InDbgScope(pThisBlock))
 			{
-				WaitForCommnd(rt, pThisBlock, exp, pContext);
+				WaitForCommnd(evt,
+					rt, pThisBlock, exp, pContext);
 			}
 		}
 		break;

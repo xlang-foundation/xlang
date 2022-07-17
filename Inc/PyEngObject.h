@@ -144,7 +144,14 @@ class Object
 public:
 	Object()
 	{
-
+	}
+	static void SetTrace(Python_TraceFunc func,
+		PyEngObjectPtr args)
+	{
+		if (g_pHost)
+		{
+			g_pHost->SetTrace(func, args);
+		}
 	}
 	static Object Import(const char* moduleName)
 	{
@@ -253,11 +260,11 @@ public:
 	}
 	Object(long long v)
 	{
-		m_p = g_pHost->from_longlong(v);
+		m_p = g_pHost?g_pHost->from_longlong(v):nullptr;
 	}
 	Object(unsigned long long v)
 	{
-		m_p = g_pHost->from_longlong((long long)v);
+		m_p = g_pHost?g_pHost->from_longlong((long long)v):nullptr;
 	}
 	Object(float v)
 	{

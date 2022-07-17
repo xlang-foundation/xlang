@@ -30,7 +30,7 @@ public:
 		m_scope->Set(rt, pContext, Index, v);
 	}
 	virtual bool CalcCallables(Runtime* rt, void* pContext,
-		std::vector<Expression*>& callables) override;
+		std::vector<Scope*>& callables) override;
 	inline virtual bool Run(Runtime* rt, void* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (Index == -1 || m_scope == nullptr)

@@ -28,7 +28,7 @@ public:
 		return m_list;
 	}
 	virtual bool CalcCallables(Runtime* rt, void* pContext,
-		std::vector<AST::Expression*>& callables) override
+		std::vector<AST::Scope*>& callables) override
 	{
 		bool bHave = false;
 		for (auto& it : m_list)

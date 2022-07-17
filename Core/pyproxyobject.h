@@ -13,10 +13,13 @@ namespace X
 		//wrap for Python PyObject through PyEng::Object
 		class PyProxyObject :
 			public Object,
-			public AST::Scope
+			public AST::Scope,
+			public AST::Expression
 		{
 			AST::StackFrame* m_stackFrame = nullptr;
 			PyEng::Object m_obj;
+			std::string m_name;
+			std::string m_path;
 		public:
 			PyProxyObject()
 			{
@@ -28,11 +31,16 @@ namespace X
 			{
 				m_obj = obj;
 			}
-			PyProxyObject(std::string name, std::string path);
-			inline virtual AST::Scope* GetScope()
+			virtual Scope* GetScope() override
 			{
-				return dynamic_cast<Scope*>(this);
+				return this;
 			}
+			std::string GetModuleFileName()
+			{
+				return m_path + "/" + m_name + ".py";
+			}
+			PyProxyObject(Runtime* rt, void* pContext,
+				std::string name, std::string path);
 			// Inherited via Scope
 			virtual int AddOrGet(std::string& name, bool bGetOnly) override;
 			virtual bool Set(Runtime* rt, void* pContext, 

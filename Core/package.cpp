@@ -25,7 +25,8 @@ bool X::AST::Import::Run(Runtime* rt, void* pContext,
 			else
 			{
 				std::string path = rt->M()->GetModulePath();
-				auto* pProxyObj = new Data::PyProxyObject(strName, path);
+				auto* pProxyObj = 
+					new Data::PyProxyObject(rt,pContext,strName, path);
 				v = Value(pProxyObj);
 			}
 			rt->M()->Add(rt, strName, nullptr, v);

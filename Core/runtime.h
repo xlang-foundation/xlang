@@ -8,28 +8,52 @@ namespace AST
 	class Module;
 	class Scope;
 }
+class Runtime;
+enum class TraceEvent
+{
+	None=-1,
+	Call = 0,
+	Exception = 1,
+	Line = 2,
+	Return = 3,
+	C_Call = 4,
+	C_Exception = 5,
+	C_Return = 6,
+	OPCode = 7,
+	Import =8,
+	Import_Return =9,
+	HitBreakpoint =10,
+};
+typedef bool (*XTraceFunc)(
+	Runtime* rt,
+	void* pContext,
+	AST::StackFrame* frame,
+	TraceEvent traceEvent,
+	AST::Scope* pThisBlock,
+	AST::Expression* pCurrentObj);
+
 class Runtime
 {
 	long long m_threadId = 0;
 	AST::Module* m_pModule = nullptr;
 	AST::StackFrame* m_stackBottom = nullptr;
+	XTraceFunc m_tracefunc = nullptr;
 public:
 	Runtime()
 	{
 		m_threadId = GetThreadID();
 	}
+	inline void SetTrace(XTraceFunc f)
+	{
+		m_tracefunc = f;
+	}
+
+	inline XTraceFunc GetTrace() { return m_tracefunc; }
 	inline long long GetThreadId() { return m_threadId; }
 	inline void MirrorStacksFrom(Runtime* rt)
 	{
 		m_pModule = rt->m_pModule;
 		m_stackBottom = rt->m_stackBottom;
-	}
-	inline void SetCurrentExpr(AST::Expression* expr)
-	{
-		if (m_stackBottom)
-		{
-			m_stackBottom->SetCurrentExpr(expr);
-		}
 	}
 	inline void SetM(AST::Module* m) { m_pModule = m; }
 	inline AST::Module* M() { return m_pModule; }

@@ -84,7 +84,7 @@ public:
 		return std::string(m_Name.s, m_Name.size);
 	}
 	virtual bool CalcCallables(Runtime* rt, void* pContext,
-		std::vector<Expression*>& callables) override
+		std::vector<Scope*>& callables) override
 	{
 		if (Params)
 		{

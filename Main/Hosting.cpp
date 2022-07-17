@@ -72,7 +72,7 @@ namespace X
 			if (idx >= 1 && idx <= m_Modules.size())
 			{
 				auto m = m_Modules[idx - 1];
-				m->SetDbgType(AST::dbg::Step);
+				m->SetDbgType(AST::dbg::Step, AST::dbg::Step);
 				break;
 			}
 			else
@@ -102,10 +102,18 @@ namespace X
 		delete pTopModule;
 		return true;
 	}
-	bool Hosting::Run(AST::Module* pTopModule, AST::Value& retVal)
+	bool Hosting::Run(AST::Module* pTopModule, AST::Value& retVal,
+			bool stopOnEntry)
 	{
 		Runtime* pRuntime = new Runtime();
 		pRuntime->SetM(pTopModule);
+		if (stopOnEntry)
+		{
+			pTopModule->SetDebug(true,pRuntime);
+			pTopModule->SetDbgType(X::AST::dbg::Step,
+				AST::dbg::Step);
+		}
+
 		AST::StackFrame* pModuleFrame = new AST::StackFrame(pTopModule);
 		pTopModule->AddBuiltins(pRuntime);
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
@@ -153,18 +161,13 @@ namespace X
 			retVal = X::AST::Value(false);
 			return false;
 		}
-		if (stopOnEntry)
-		{
-			pTopModule->SetDebug(true);
-			pTopModule->SetDbgType(X::AST::dbg::Step);
-		}
-		bool bOK = Run(pTopModule, retVal);
+		bool bOK = Run(pTopModule, retVal,stopOnEntry);
 		Unload(pTopModule);
 		if (!onFinishExpr.empty())
 		{
 			std::string moduleName("Cleanup.x");
 			AST::Value valRet0;
-			Run(moduleName, onFinishExpr.c_str(), onFinishExpr.size(), valRet0);
+			Run(moduleName, onFinishExpr.c_str(), (int)onFinishExpr.size(), valRet0);
 		}
 		return bOK;
 	}

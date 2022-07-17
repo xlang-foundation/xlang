@@ -26,9 +26,9 @@ class GrusPyEngHost :
 public:
 	GrusPyEngHost();
 	~GrusPyEngHost();
-
-
 	// Inherited via PyEngHost
+	virtual void SetTrace(Python_TraceFunc func,PyEngObjectPtr args) override;
+
 	virtual int to_int(PyEngObjectPtr pVar) override;
 
 	virtual PyEngObjectPtr from_int(int val) override;

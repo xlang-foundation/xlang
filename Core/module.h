@@ -29,6 +29,7 @@ struct CommandInfo
 	void** m_valPlaceholder = nullptr;
 	void** m_valPlaceholder2=nullptr;
 	void** m_valPlaceholder3 = nullptr;
+	TraceEvent* m_traceEventPtr = nullptr;
 	XWait* m_wait = nullptr;
 };
 class Module :
@@ -42,8 +43,9 @@ class Module :
 
 	//for debug
 	bool m_inDebug = false;
+	dbg m_dbgLastRequest = dbg::Continue;
 	dbg m_dbg = dbg::Continue;
-	std::vector<Expression*> m_dbgScopes;
+	std::vector<Scope*> m_dbgScopes;
 	Expression* m_curRunningExpr = nil;
 	XWait m_commandWait;
 	Locker m_lockCommands;
@@ -172,31 +174,20 @@ public:
 		return true;
 	}
 
-	inline void SetDebug(bool b)
-	{
-		m_inDebug = b;
-	}
+	void SetDebug(bool b,Runtime* runtime);
 	inline bool IsInDebug()
 	{
 		return m_inDebug;
 	}
-	inline Expression* GetCurExpr()
-	{
-		return m_curRunningExpr;
-	}
-	inline void SetDbgType(dbg d)
+	inline void SetDbgType(dbg d,dbg lastRequest)
 	{
 		m_dbg = d;
+		m_dbgLastRequest = lastRequest;
 	}
 	inline dbg GetDbgType() { return m_dbg; }
-	inline bool InDbgScope(Expression* s)
+	inline dbg GetLastRequestDgbType() { return m_dbgLastRequest; }
+	inline bool InDbgScope(Scope* s)
 	{ 
-		Scope* pCheckScope = dynamic_cast<Scope*>(s);
-		if (pCheckScope == nullptr)
-		{
-			pCheckScope = s->GetScope();
-			s = dynamic_cast<Expression*>(pCheckScope);
-		}
 		if (s == this)
 		{
 			return true;
@@ -213,11 +204,11 @@ public:
 		
 		return bIn;
 	}
-	inline void AddDbgScope(Expression* s)
+	inline void AddDbgScope(Scope* s)
 	{
 		m_dbgScopes.push_back(s);
 	}
-	inline void RemoveDbgScope(Expression* s)
+	inline void RemoveDbgScope(Scope* s)
 	{
 		auto it = m_dbgScopes.begin();
 		while (it != m_dbgScopes.end())

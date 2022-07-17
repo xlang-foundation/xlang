@@ -170,7 +170,7 @@ namespace X
                 auto valParam = pEvt->Get("param");
                 auto strParam = valParam.ToString();
                 std::string notifyInfo = "$notify$" + strParam;
-                pThis->Send((char*)notifyInfo.c_str(), notifyInfo.size());
+                pThis->Send((char*)notifyInfo.c_str(), (int)notifyInfo.size());
                 std::cout << "IPC,Sent out Notify:" << notifyInfo << std::endl;
             }
          },this);

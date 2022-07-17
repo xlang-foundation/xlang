@@ -4,10 +4,28 @@
 #include "function.h"
 #include "event.h"
 #include <iostream>
+#include "PyEngObject.h"
+#include "dbg.h"
+
 namespace X 
 {
 namespace AST 
 {
+void Module::SetDebug(bool b,Runtime* runtime)
+{
+	m_inDebug = b;
+	if (b)
+	{
+		runtime->SetTrace(Dbg::xTraceFunc);
+		PyEng::Object objRT((unsigned long long)runtime);
+		PyEng::Object::SetTrace(Dbg::PythonTraceFunc,objRT);
+	}
+	else
+	{
+		runtime->SetTrace(nullptr);
+		PyEng::Object::SetTrace(nullptr, nullptr);
+	}
+}
 void Module::ScopeLayout()
 {
 	auto& funcs = Builtin::I().All();

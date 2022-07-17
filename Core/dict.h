@@ -74,7 +74,7 @@ namespace X
 			virtual std::string ToString(bool WithFormat = false) override
 			{
 				std::string strOut = "{\n";
-				int cnt = mMap.size();
+				int cnt = (int)mMap.size();
 				int i = 0;
 				for (auto& it: mMap)
 				{

@@ -6,10 +6,16 @@
 
 //all function,if return PyEngObjectPtr will hold a new reference
 typedef void* PyEngObjectPtr;
+typedef int (*Python_TraceFunc)(
+	PyEngObjectPtr self,
+	PyEngObjectPtr frame,
+	int event,
+	PyEngObjectPtr args);
 
 class PyEngHost
 {
 public:
+	virtual void SetTrace(Python_TraceFunc func,PyEngObjectPtr args) = 0;
 	virtual int to_int(PyEngObjectPtr pVar) = 0;
 	virtual PyEngObjectPtr from_int(int val) = 0;
 	virtual long long to_longlong(PyEngObjectPtr pVar) = 0;

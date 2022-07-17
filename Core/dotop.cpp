@@ -292,7 +292,7 @@ bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 	return true;
 }
 bool DotOp::CalcCallables(Runtime* rt, void* pContext,
-	std::vector<Expression*>& callables)
+	std::vector<Scope*>& callables)
 {
 	Value val;
 	bool bOK = Run(rt, pContext, val);

@@ -14,7 +14,6 @@ protected:
 	int m_varCnt = 0;
 	Value* m_Values = nil;
 	Value m_retVal;
-	Expression* m_curExprRun = nil;
 public:
 	StackFrame(Scope* s)
 	{
@@ -28,14 +27,6 @@ public:
 		}
 	}
 	inline Scope* GetScope() { return m_pScope; }
-	inline void SetCurrentExpr(AST::Expression* expr)
-	{
-		m_curExprRun = expr;
-	}
-	inline AST::Expression* GetCurrentExpr()
-	{
-		return m_curExprRun;
-	}
 	inline void SetNext(StackFrame* n) { m_next = n; if(n) n->m_prev = this; }
 	inline void SetPrev(StackFrame* p) { m_prev = p; if(p) p->m_next = this; }
 	inline StackFrame* Next() { return m_next; }

@@ -26,7 +26,7 @@ public:
 	{
 		for (auto& s : strs)
 		{
-			m_data.push_back(AST::Value(new Str(s.c_str(), s.size())));
+			m_data.push_back(AST::Value(new Str(s.c_str(), (int)s.size())));
 		}
 	}
 	~List()

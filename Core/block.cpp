@@ -5,7 +5,6 @@
 #include "module.h"
 #include <iostream>
 #include "utility.h"
-#include "dbg.h"
 
 namespace X
 {
@@ -32,10 +31,31 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 {
 	bool bOk = true;
 	m_bRunning = true;
+	if (rt->GetTrace() 
+		&& (m_type == ObType::Func
+		|| m_type == ObType::Module))
+	{
+		rt->GetTrace()(rt, pContext,rt->GetCurrentStack(),
+			TraceEvent::Call,
+			dynamic_cast<Scope*>(this),nullptr);
+	}
 	for (auto i : Body)
 	{
-		rt->SetCurrentExpr(i);
-		Dbg(rt).Check(rt,this,i, pContext);
+		if (rt->GetTrace())
+		{
+			Scope* pMyScope = nullptr;
+			if (m_type == ObType::Func
+				|| m_type == ObType::Module)
+			{
+				pMyScope = dynamic_cast<Scope*>(this);
+			}
+			else
+			{
+				pMyScope = GetScope();
+			}
+			rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
+				TraceEvent::Line, pMyScope, i);
+		}
 		//int line = i->GetStartLine();
 		//std::cout << "Run Line:" << line <<std::endl;
 		Value v0;
@@ -46,8 +66,14 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 		}
 	}
 	m_bRunning = false;
-	Dbg(rt).ExitBlockRun(rt,pContext,this);
-
+	if (rt->GetTrace() 
+		&& (m_type == ObType::Func
+		|| m_type == ObType::Module))
+	{
+		rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
+			TraceEvent::Return,
+			dynamic_cast<Scope*>(this),nullptr);
+	}
 	return bOk;
 }
 bool While::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)

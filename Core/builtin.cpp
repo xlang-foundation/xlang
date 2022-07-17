@@ -52,7 +52,7 @@ bool U_Load(X::Runtime* rt, void* pContext,
 		moduleFile)), std::istreambuf_iterator<char>());
 	moduleFile.close();
 	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load(fileName, code.c_str(), code.size(), moduleKey);
+	X::Hosting::I().Load(fileName, code.c_str(), (int)code.size(), moduleKey);
 	retValue = X::AST::Value(moduleKey);
 	return true;
 }
@@ -231,7 +231,8 @@ bool U_BreakPoint(X::Runtime* rt, void* pContext,
 	KWARGS& kwParams,
 	X::AST::Value& retValue)
 {
-	rt->M()->SetDbgType(AST::dbg::Step);
+	rt->M()->SetDbgType(AST::dbg::Step,
+		AST::dbg::Step);
 	retValue = X::AST::Value(true);
 	return true;
 }

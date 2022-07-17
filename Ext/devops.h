@@ -33,7 +33,10 @@ namespace X
 		};
 		class DebugService
 		{
-			bool BuildStackInfo(Runtime* rt,AST::Expression* pCurExp,
+			bool BuildStackInfo(
+				TraceEvent traceEvent,
+				Runtime* rt,
+				void* pCurExp,
 				AST::Value& valStackInfo);
 			bool BuildLocals(Runtime* rt,
 				void* pContextCurrent,int frameId,

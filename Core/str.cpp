@@ -87,7 +87,7 @@ namespace X
 								}
 								std::string retStr;
 								pObj->Slice(start, end, retStr);
-								Str* pNewStr = new Str((const char*)retStr.c_str(), retStr.size());
+								Str* pNewStr = new Str((const char*)retStr.c_str(), (int)retStr.size());
 								retValue = AST::Value(pNewStr);
 								return true;
 							}));

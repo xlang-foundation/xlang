@@ -300,7 +300,7 @@ export class XLangRuntime extends EventEmitter {
 				const stackFrame: IRuntimeStackFrame = {
 					index: frm["index"],
 					name: name,
-					file: this._sourceFile,
+					file: frm["file"],//this._sourceFile,
 					line: frm["line"] - 1,
 					column: frm["column"]
 				};

@@ -4,12 +4,23 @@ namespace X
 {
 	namespace Data
 	{
-		PyProxyObject::PyProxyObject(std::string name, std::string path)
+		PyProxyObject::PyProxyObject(
+			Runtime* rt, void* pContext,
+			std::string name,
+			std::string path)
 			:PyProxyObject()
 		{
+			m_name = name;
+			m_path = path;
 			auto sys = PyEng::Object::Import("sys");
 			sys["path.insert"](0, path);
+			if (rt->GetTrace())
+			{
+				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
+					TraceEvent::Import, this, this);
+			}
 			m_obj = g_pHost->Import(name.c_str());
+			sys["path.remove"](path);
 		}
 		int PyProxyObject::AddOrGet(std::string& name, bool bGetOnly)
 		{

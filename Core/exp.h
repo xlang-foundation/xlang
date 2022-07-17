@@ -63,7 +63,7 @@ public:
 	}
 	inline bool IsLeftValue() { return m_isLeftValue; }
 	virtual ~Expression(){}
-	inline Scope* GetScope()
+	inline virtual Scope* GetScope()
 	{
 		if (m_scope == nil)
 		{
@@ -81,7 +81,7 @@ public:
 		return m_parent;
 	}
 	virtual bool CalcCallables(Runtime* rt, void* pContext,
-		std::vector<Expression*>& callables)
+		std::vector<Scope*>& callables)
 	{
 		return false;
 	}
@@ -192,7 +192,7 @@ public:
 		}
 	}
 	virtual bool CalcCallables(Runtime* rt, void* pContext,
-		std::vector<Expression*>& callables) override
+		std::vector<Scope*>& callables) override
 	{
 		bool bHave = false;
 		for (auto it : list)
@@ -284,7 +284,7 @@ public:
 		std::string& strVarType,
 		Value& defaultValue);
 	virtual bool CalcCallables(Runtime* rt, void* pContext,
-		std::vector<Expression*>& callables) override
+		std::vector<Scope*>& callables) override
 	{
 		bool bHave = Name ? Name->CalcCallables(rt, pContext, callables) : false;
 		bHave |= Type ? Type->CalcCallables(rt, pContext, callables) : false;

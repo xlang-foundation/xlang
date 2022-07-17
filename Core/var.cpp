@@ -7,7 +7,7 @@ namespace X
 namespace AST
 {
 bool Var::CalcCallables(Runtime* rt, void* pContext,
-		std::vector<Expression*>& callables)
+		std::vector<Scope*>& callables)
 {
 	Value val;
 	bool bOK = Run(rt, pContext, val);

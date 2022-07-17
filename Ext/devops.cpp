@@ -5,6 +5,7 @@
 #include "manager.h"
 #include "dict.h"
 #include "list.h"
+#include "pyproxyobject.h"
 
 namespace X
 {
@@ -39,7 +40,7 @@ namespace X
 			}
 			void OnData(IpcSession* pSession, char* data, int size)
 			{
-				std::cout << data << std::endl;
+				//std::cout << data << std::endl;
 				std::string moduleName("debugger.x");
 				AST::Value retVal;
 				std::string ack("OK");
@@ -55,8 +56,8 @@ namespace X
 				{
 					ack = "Failed";
 				}
-				pSession->Send((char*)ack.c_str(), ack.size());
-				std::cout << "back:" << ack<< std::endl;
+				pSession->Send((char*)ack.c_str(), (int)ack.size());
+				//std::cout << "back:" << ack<< std::endl;
 			}
 		public:
 			DebuggerImpl() :Debugger(0),
@@ -183,16 +184,37 @@ namespace X
 			valObject = AST::Value(pList);
 			return true;
 		}
-		bool DebugService::BuildStackInfo(Runtime* rt,AST::Expression* pCurExp,
+		bool DebugService::BuildStackInfo(
+			TraceEvent traceEvent,
+			Runtime* rt,
+			void* pCurExp0,
 			AST::Value& valStackInfo)
 		{
+			std::string moduleFileName;
+			auto* pCurExp = (AST::Expression*)pCurExp0;
+			AST::Scope* pMyScope = nullptr;
+			int line = 1;
+			int column = 0;
+			if (traceEvent == TraceEvent::Import
+				&& rt->M()->GetLastRequestDgbType() == 
+				AST::dbg::StepIn)
+			{
+				auto* pProxy = (Data::PyProxyObject*)pCurExp0;
+				pMyScope = dynamic_cast<AST::Scope*>(pProxy);
+				moduleFileName = pProxy->GetModuleFileName();
+			}
+			else
+			{
+				pMyScope = pCurExp->GetScope();
+				moduleFileName = rt->M()->GetModuleName();
+				line = pCurExp->GetStartLine();
+				column = pCurExp->GetCharPos();
+			}
 			int index = 0;
 			AST::StackFrame* pCurStack = rt->GetCurrentStack();
 			Data::List* pList = new Data::List();
 			while (pCurStack != nil)
 			{
-				AST::Expression* pa = pCurStack->GetCurrentExpr();
-				AST::Scope* pMyScope = pa->GetScope();
 				if (pMyScope)
 				{
 					Data::Dict* dict = new Data::Dict();
@@ -213,9 +235,9 @@ namespace X
 					}
 					Data::Str* pStrName = new Data::Str(name);
 					dict->Set("name",AST::Value(pStrName));
-					int line = pa->GetStartLine();
+					Data::Str* pStrFileName = new Data::Str(moduleFileName);
+					dict->Set("file", AST::Value(pStrFileName));
 					dict->Set("line",AST::Value(line));
-					int column = pa->GetCharPos();
 					dict->Set("column",AST::Value(column));
 					AST::Value valDict(dict);
 					pList->Add(rt, valDict);
@@ -312,8 +334,9 @@ namespace X
 			{
 				valParam = it->second;
 			}
-
+			TraceEvent traceEvent = TraceEvent::None;
 			AST::CommandInfo cmdInfo;
+			cmdInfo.m_traceEventPtr = &traceEvent;
 			if (strCmd == "Stack")
 			{
 				cmdInfo.dbgType = AST::dbg::StackTrace;
@@ -324,7 +347,7 @@ namespace X
 				pModule->AddCommand(cmdInfo, true);
 				if (pExpToRun)
 				{
-					BuildStackInfo(pCurrentRt,pExpToRun, retValue);
+					BuildStackInfo(traceEvent,pCurrentRt,pExpToRun, retValue);
 				}
 				else
 				{

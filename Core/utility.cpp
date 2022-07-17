@@ -166,7 +166,7 @@ std::string StringifyString(const std::string& str)
 	std::string::const_iterator iter = str.begin();
 	while (iter != str.end())
 	{
-		wchar_t chr = *iter;
+		char chr = *iter;
 
 		if (chr == '"' || chr == '\\' || chr == '/')
 		{

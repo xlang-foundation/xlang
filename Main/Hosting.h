@@ -68,7 +68,8 @@ namespace X
 			const char* code, int size,unsigned long long& moduleKey);
 		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,AST::Value& retVal);
 		bool Unload(AST::Module* pTopModule);
-		bool Run(AST::Module* pTopModule,AST::Value& retVal);
+		bool Run(AST::Module* pTopModule,AST::Value& retVal,
+			bool stopOnEntry = false);
 		bool Run(std::string& moduleName,
 			const char* code, int size,AST::Value& retVal);
 		bool RunAsBackend(std::string& moduleName,const char* code, int size);
