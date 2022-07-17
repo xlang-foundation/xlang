@@ -5,17 +5,60 @@
 #include "value.h"
 #include "runtime.h"
 #include "stackframe.h"
+#include "singleton.h"
 
 namespace X
 {
 	namespace Data
 	{
+		class PyStackFrame :
+			public AST::StackFrame
+		{
+			PyEng::Object m_frame;
+		public:
+			PyStackFrame()
+			{
+			}
+			PyStackFrame(PyEngObjectPtr frm)
+			{
+				m_frame = PyEng::Object(frm, true);
+			}
+		};
+		enum PyProxyType
+		{
+			None,
+			Module,
+			Func,
+			Line
+		};
+		class PyProxyObject;
+		class PyObjectCache:
+			public Singleton<PyObjectCache>
+		{
+			std::unordered_map<std::string, PyProxyObject*> m_mapModules;
+		public:
+			void AddModule(std::string& fileName, PyProxyObject* obj)
+			{
+				m_mapModules.emplace(std::make_pair(fileName,obj));
+			}
+			void RemoveModule(std::string& fileName)
+			{
+				auto it = m_mapModules.find(fileName);
+				if (it != m_mapModules.end())
+				{
+					m_mapModules.erase(it);
+				}
+			}
+			PyProxyObject* QueryModule(std::string& fileName);
+		};
 		//wrap for Python PyObject through PyEng::Object
 		class PyProxyObject :
 			public Object,
 			public AST::Scope,
 			public AST::Expression
 		{
+			PyProxyObject* m_PyModule = nullptr;
+			PyProxyType m_proxyType = PyProxyType::None;
 			AST::StackFrame* m_stackFrame = nullptr;
 			PyEng::Object m_obj;
 			std::string m_name;
@@ -31,11 +74,26 @@ namespace X
 			{
 				m_obj = obj;
 			}
+			PyProxyObject(std::string ScopeName)
+			{
+				m_name = ScopeName;
+				m_proxyType = PyProxyType::Func;
+			}
+			PyProxyObject(int line)
+			{
+				m_lineStart = line;
+				m_proxyType = PyProxyType::Line;
+			}
 			PyProxyObject(Runtime* rt, void* pContext,
 				std::string name, std::string path);
 			virtual Scope* GetScope() override
 			{
 				return this;
+			}
+			~PyProxyObject();
+			void SetModule(PyProxyObject* pModule)
+			{
+				m_PyModule = pModule;
 			}
 			std::string GetModuleFileName()
 			{

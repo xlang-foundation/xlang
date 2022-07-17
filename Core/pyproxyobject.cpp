@@ -4,23 +4,45 @@ namespace X
 {
 	namespace Data
 	{
+		PyProxyObject* PyObjectCache::QueryModule(std::string& fileName)
+		{
+			PyProxyObject* pRetObj = nullptr;
+			auto it = m_mapModules.find(fileName);
+			if (it != m_mapModules.end())
+			{
+				pRetObj = it->second;
+				pRetObj->AddRef();
+			}
+			return pRetObj;
+		}
 		PyProxyObject::PyProxyObject(
 			Runtime* rt, void* pContext,
 			std::string name,
 			std::string path)
 			:PyProxyObject()
 		{
+			m_proxyType = PyProxyType::Module;
 			m_name = name;
 			m_path = path;
+			std::string strFileName = GetModuleFileName();
+			PyObjectCache::I().AddModule(strFileName, this);
 			auto sys = PyEng::Object::Import("sys");
 			sys["path.insert"](0, path);
 			if (rt->GetTrace())
 			{
 				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
-					TraceEvent::Import, this, this);
+					TraceEvent::Call, this, this);
 			}
 			m_obj = g_pHost->Import(name.c_str());
 			sys["path.remove"](path);
+		}
+		PyProxyObject::~PyProxyObject()
+		{
+			if (m_proxyType == PyProxyType::Module)
+			{
+				std::string strFileName = GetModuleFileName();
+				PyObjectCache::I().RemoveModule(strFileName);
+			}
 		}
 		int PyProxyObject::AddOrGet(std::string& name, bool bGetOnly)
 		{

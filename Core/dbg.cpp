@@ -44,27 +44,6 @@ namespace X
 		}
 		return bOK;
 	}
-	void Dbg::PyWaitForCommnd(Runtime* rt)
-	{
-		auto* pModule = rt->M();
-		AST::CommandInfo cmdInfo;
-		bool inLoop = true;
-		while (inLoop)
-		{
-			pModule->PopCommand(cmdInfo);
-			switch (cmdInfo.dbgType)
-			{
-			case AST::dbg::Continue:
-				inLoop = false;
-				break;
-			case AST::dbg::Step:
-				inLoop = false;
-				break;
-			default:
-				break;
-			}
-		}
-	}
 	int Dbg::PythonTraceFunc(
 		PyEngObjectPtr self,
 		PyEngObjectPtr frame,
@@ -75,8 +54,24 @@ namespace X
 		Runtime* rt = (Runtime*)(unsigned long long)objRuntimeHandle;
 		PyEng::Object objFrame(frame, true);
 		auto fileName = (std::string)objFrame["f_code.co_filename"];
+		auto coName = (std::string)objFrame["f_code.co_name"];
 		int line = (int)objFrame["f_lineno"];
+		std::cout << "PyTrace:" << coName << ",ln:" << line << "," << fileName << std::endl;
+		auto* pProxyModule = Data::PyObjectCache::I().QueryModule(fileName);
+		Data::PyProxyObject block(coName);
+		block.SetModule(pProxyModule);
+		Data::PyProxyObject Line(line);
+		Data::PyStackFrame frameProxy(frame);
 		TraceEvent te = (TraceEvent)event;
+		xTraceFunc(rt, nullptr, &frameProxy,
+			te, dynamic_cast<AST::Scope*>(&block), 
+			dynamic_cast<AST::Expression*>(&Line));
+		return 0;
+#if __todo_remove_
+		PyEng::Object objFrame(frame, true);
+		auto fileName = (std::string)objFrame["f_code.co_filename"];
+		int line = (int)objFrame["f_lineno"];
+
 		switch (te)
 		{
 		case TraceEvent::Call:
@@ -109,5 +104,28 @@ namespace X
 			break;
 		}
 		return 0;
+#endif
 	}
+	void Dbg::PyWaitForCommnd(Runtime* rt)
+	{
+		auto* pModule = rt->M();
+		AST::CommandInfo cmdInfo;
+		bool inLoop = true;
+		while (inLoop)
+		{
+			pModule->PopCommand(cmdInfo);
+			switch (cmdInfo.dbgType)
+			{
+			case AST::dbg::Continue:
+				inLoop = false;
+				break;
+			case AST::dbg::Step:
+				inLoop = false;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
 }

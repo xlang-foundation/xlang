@@ -15,6 +15,9 @@ protected:
 	Value* m_Values = nil;
 	Value m_retVal;
 public:
+	StackFrame()
+	{
+	}
 	StackFrame(Scope* s)
 	{
 		m_pScope = s;
