@@ -31,6 +31,8 @@ namespace X
 			{
 				m_obj = obj;
 			}
+			PyProxyObject(Runtime* rt, void* pContext,
+				std::string name, std::string path);
 			virtual Scope* GetScope() override
 			{
 				return this;
@@ -39,8 +41,6 @@ namespace X
 			{
 				return m_path + "/" + m_name + ".py";
 			}
-			PyProxyObject(Runtime* rt, void* pContext,
-				std::string name, std::string path);
 			// Inherited via Scope
 			virtual int AddOrGet(std::string& name, bool bGetOnly) override;
 			virtual bool Set(Runtime* rt, void* pContext, 
