@@ -206,7 +206,7 @@ namespace X
 			else
 			{
 				pMyScope = pCurExp->GetScope();
-				moduleFileName = rt->M()->GetModuleName();
+				moduleFileName = pMyScope->GetModuleName(rt);
 				line = pCurExp->GetStartLine();
 				column = pCurExp->GetCharPos();
 			}

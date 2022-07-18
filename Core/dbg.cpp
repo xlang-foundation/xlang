@@ -56,16 +56,30 @@ namespace X
 		auto fileName = (std::string)objFrame["f_code.co_filename"];
 		auto coName = (std::string)objFrame["f_code.co_name"];
 		int line = (int)objFrame["f_lineno"];
-		std::cout << "PyTrace:" << coName << ",ln:" << line << "," << fileName << std::endl;
+		//std::cout << "PyTrace:" << coName << ",ln:" << line << "," << fileName << std::endl;
 		auto* pProxyModule = Data::PyObjectCache::I().QueryModule(fileName);
+		AST::Scope* pThisBlock = nullptr;
 		Data::PyProxyObject block(coName);
+		if ("<module>" == coName)
+		{
+			pThisBlock = dynamic_cast<AST::Scope*>(pProxyModule);
+		}
+		else
+		{
+			pThisBlock = dynamic_cast<AST::Scope*>(&block);
+		}
 		block.SetModule(pProxyModule);
-		Data::PyProxyObject Line(line);
+		Data::PyProxyObject Line(line-1);//X start line from 0 not 1
+		Line.SetScope(pThisBlock);
 		Data::PyStackFrame frameProxy(frame);
 		TraceEvent te = (TraceEvent)event;
 		xTraceFunc(rt, nullptr, &frameProxy,
-			te, dynamic_cast<AST::Scope*>(&block), 
+			te, pThisBlock,
 			dynamic_cast<AST::Expression*>(&Line));
+		if (pProxyModule)
+		{
+			pProxyModule->Release();
+		}
 		return 0;
 #if __todo_remove_
 		PyEng::Object objFrame(frame, true);

@@ -63,15 +63,23 @@ namespace X
 			PyEng::Object m_obj;
 			std::string m_name;
 			std::string m_path;
+			AST::Scope* m_myScope = nullptr;
 		public:
 			PyProxyObject()
 			{
 				m_t = Type::PyProxyObject;
 				m_stackFrame = new AST::StackFrame(this);
 			}
-			PyProxyObject(PyEng::Object& obj):
+			PyProxyObject(PyEng::Object& obj) :
 				PyProxyObject()
 			{
+				m_obj = obj;
+			}
+			PyProxyObject(PyEng::Object& obj,std::string& name):
+				PyProxyObject()
+			{
+				m_name = name;
+				m_proxyType = PyProxyType::Func;
 				m_obj = obj;
 			}
 			PyProxyObject(std::string ScopeName)
@@ -86,20 +94,42 @@ namespace X
 			}
 			PyProxyObject(Runtime* rt, void* pContext,
 				std::string name, std::string path);
+			void SetScope(AST::Scope* s)
+			{
+				m_myScope = s;
+			}
+			virtual std::string GetModuleName(Runtime* rt) override
+			{
+				if (m_proxyType == PyProxyType::Func)
+				{
+					return m_PyModule->GetModuleFileName();
+				}
+				else
+				{
+					return GetModuleFileName();
+				}
+			}
 			virtual Scope* GetScope() override
 			{
-				return this;
+				return m_myScope == nullptr?this: m_myScope;
 			}
+			virtual bool isEqual(Scope* s) override;
 			~PyProxyObject();
 			void SetModule(PyProxyObject* pModule)
 			{
 				m_PyModule = pModule;
+			}
+			std::string GetName()
+			{
+				return m_name;
 			}
 			std::string GetModuleFileName()
 			{
 				return m_path + "/" + m_name + ".py";
 			}
 			// Inherited via Scope
+			virtual bool CalcCallables(Runtime* rt, void* pContext,
+				std::vector<AST::Scope*>& callables) override;
 			virtual int AddOrGet(std::string& name, bool bGetOnly) override;
 			virtual bool Set(Runtime* rt, void* pContext, 
 				int idx, AST::Value& v) override

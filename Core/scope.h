@@ -32,6 +32,8 @@ public:
 		}
 		return names;
 	}
+	virtual std::string GetModuleName(Runtime* rt);
+	virtual bool isEqual(Scope* s) { return (this == s); };
 	virtual Scope* GetParentScope()= 0;
 	virtual int AddOrGet(std::string& name, bool bGetOnly)
 	{//Always append,no remove, so new item's index is size of m_Vars;

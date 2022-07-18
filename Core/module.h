@@ -195,7 +195,7 @@ public:
 		bool bIn = false;
 		for (auto it : m_dbgScopes)
 		{
-			if (it == s)
+			if (it->isEqual(s))
 			{
 				bIn = true;
 				break;

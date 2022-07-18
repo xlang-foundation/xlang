@@ -7,6 +7,21 @@ namespace X
 {
 namespace AST
 {
+class ScopeProxy:
+	public Scope
+{
+	std::string m_name;
+	virtual bool isEqual(Scope* s) override;
+
+	// Inherited via Scope
+	virtual Scope* GetParentScope() override;
+public:
+	ScopeProxy(std::string name):
+		Scope()
+	{
+		m_name = name;
+	}
+};
 class Import :
 	public BinaryOp
 {
@@ -37,6 +52,8 @@ public:
 	}
 	virtual bool Run(Runtime* rt, void* pContext,
 		Value& v, LValue* lValue = nullptr) override;
+	virtual bool CalcCallables(Runtime* rt, void* pContext,
+		std::vector<Scope*>& callables) override;
 };
 class Package :
 	public Data::Object,
