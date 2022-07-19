@@ -115,6 +115,7 @@ namespace X
 		}
 
 		AST::StackFrame* pModuleFrame = new AST::StackFrame(pTopModule);
+		pModuleFrame->SetLine(pTopModule->GetStartLine());
 		pTopModule->AddBuiltins(pRuntime);
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
 		AST::Value v;

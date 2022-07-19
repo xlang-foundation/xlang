@@ -59,6 +59,8 @@ public:
 	virtual bool DictContain(PyEngObjectPtr dict,std::string& strKey) = 0;
 	virtual PyEngObjectPtr GetPyNone() = 0;
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) = 0;
+	virtual PyEngObjectPtr GetGlobals() = 0;
+	virtual PyEngObjectPtr GetLocals() = 0;
 };
 
 extern PyEngHost* g_pHost;

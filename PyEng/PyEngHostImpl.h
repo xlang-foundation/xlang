@@ -84,6 +84,8 @@ public:
 	virtual const char* GetObjectType(PyEngObjectPtr obj) override;
 	virtual PyEngObjectPtr GetDictItems(PyEngObjectPtr dict) override;
 	virtual PyEngObjectPtr GetPyNone() override;
+	virtual PyEngObjectPtr GetGlobals() override;
+	virtual PyEngObjectPtr GetLocals() override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 };

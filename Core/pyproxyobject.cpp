@@ -62,8 +62,10 @@ namespace X
 		bool PyProxyObject::CalcCallables(Runtime* rt, void* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
-			if (m_proxyType == PyProxyType::Module ||
-				m_proxyType == PyProxyType::Func)
+			/*if (m_proxyType == PyProxyType::Module ||
+				m_proxyType == PyProxyType::Func)*/
+			//for Line type, will be replaced by Trace 'Call' event
+			//with the Scope which is Func type
 			{
 				callables.push_back(dynamic_cast<AST::Scope*>(this));
 			}

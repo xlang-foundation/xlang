@@ -20,8 +20,6 @@ enum class TraceEvent
 	C_Exception = 5,
 	C_Return = 6,
 	OPCode = 7,
-	Import =8,
-	Import_Return =9,
 	HitBreakpoint =10,
 };
 typedef bool (*XTraceFunc)(

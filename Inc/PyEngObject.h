@@ -153,9 +153,17 @@ public:
 			g_pHost->SetTrace(func, args);
 		}
 	}
-	static Object Import(const char* moduleName)
+	inline static Object Import(const char* moduleName)
 	{
 		return g_pHost->Import(moduleName);
+	}
+	inline static Object FromGlobals()
+	{
+		return Object(g_pHost->GetGlobals(),true);
+	}
+	inline static Object FromLocals()
+	{
+		return Object(g_pHost->GetLocals(),true);
 	}
 	Object(const char* buf, long long size)
 	{
@@ -529,7 +537,6 @@ public:
 		return (Object)g_pHost->GetDictItems(m_p);
 	}
 };
-
 
 template<typename ItemData_Type>
 class Array:

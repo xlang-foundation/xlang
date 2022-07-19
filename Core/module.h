@@ -46,7 +46,6 @@ class Module :
 	dbg m_dbgLastRequest = dbg::Continue;
 	dbg m_dbg = dbg::Continue;
 	std::vector<Scope*> m_dbgScopes;
-	Expression* m_curRunningExpr = nil;
 	XWait m_commandWait;
 	Locker m_lockCommands;
 	std::vector<CommandInfo> m_commands;
@@ -146,10 +145,6 @@ public:
 	}
 	virtual void ScopeLayout() override;
 	void AddBuiltins(Runtime* rt);
-	inline void SetCurExpr(Expression* pExpr)
-	{
-		m_curRunningExpr = pExpr;
-	}
 	inline void Add(Runtime* rt, std::string& name,
 		void* pContext, Value& v)
 	{
@@ -193,6 +188,15 @@ public:
 			return true;
 		}
 		bool bIn = false;
+		if (m_dbgScopes.size() > 0)
+		{
+			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
+			if (last->isEqual(s))
+			{
+				bIn = true;
+			}
+		}
+#if __TODO__
 		for (auto it : m_dbgScopes)
 		{
 			if (it->isEqual(s))
@@ -201,8 +205,21 @@ public:
 				break;
 			}
 		}
-		
+#endif		
 		return bIn;
+	}
+	inline bool ReplaceLastDbgScope(Scope* s)
+	{
+		if (m_dbgScopes.size() > 0)
+		{
+			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
+			if (last->isProxyOf(s))
+			{
+				m_dbgScopes[m_dbgScopes.size() - 1] = s;
+				//TODO: delete last??
+			}
+		}
+		return true;
 	}
 	inline void AddDbgScope(Scope* s)
 	{
@@ -213,7 +230,7 @@ public:
 		auto it = m_dbgScopes.begin();
 		while (it != m_dbgScopes.end())
 		{
-			if (*it == s)
+			if ((*it)->isEqual(s))
 			{
 				m_dbgScopes.erase(it);
 				break;

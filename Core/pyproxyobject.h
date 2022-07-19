@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "stackframe.h"
 #include "singleton.h"
-
+#include <iostream>
 namespace X
 {
 	namespace Data
@@ -19,9 +19,10 @@ namespace X
 			PyStackFrame()
 			{
 			}
-			PyStackFrame(PyEngObjectPtr frm)
+			PyStackFrame(PyEngObjectPtr frm,AST::Scope* s)
 			{
 				m_frame = PyEng::Object(frm, true);
+				m_pScope = s;
 			}
 		};
 		enum PyProxyType
@@ -63,7 +64,10 @@ namespace X
 			PyEng::Object m_obj;
 			std::string m_name;
 			std::string m_path;
+			std::string m_moduleFileName;//for func case,m_PyModule is null
 			AST::Scope* m_myScope = nullptr;
+			PyEng::Dict m_locals;
+			PyEng::Dict m_globals;
 		public:
 			PyProxyObject()
 			{
@@ -92,19 +96,45 @@ namespace X
 				m_lineStart = line;
 				m_proxyType = PyProxyType::Line;
 			}
+			PyProxyObject(std::string name, std::string path)
+			{
+				m_proxyType = PyProxyType::Module;
+				m_name = name;
+				m_path = path;
+				std::string strFileName = GetModuleFileName();
+				AddRef();
+				PyObjectCache::I().AddModule(strFileName, this);
+			}
 			PyProxyObject(Runtime* rt, void* pContext,
 				std::string name, std::string path);
+			void SetLocGlob(PyEngObjectPtr lObj, PyEngObjectPtr gObj)
+			{
+				m_locals = PyEng::Object(lObj);
+				/*
+				auto keys = m_locals.Keys();
+				for (int i = 0; i < keys.GetCount(); i++)
+				{
+					std::string name = (std::string)keys[i];
+					AST::Scope::AddOrGet(name, false);
+				}*/
+				m_globals = PyEng::Object(gObj);
+			}
 			void SetScope(AST::Scope* s)
 			{
 				m_myScope = s;
+			}
+			virtual std::string GetNameString() override
+			{
+				return m_name;
 			}
 			virtual std::string GetModuleName(Runtime* rt) override
 			{
 				if (m_proxyType == PyProxyType::Func)
 				{
-					return m_PyModule->GetModuleFileName();
+					return m_PyModule?m_PyModule->GetModuleFileName():
+						m_moduleFileName;
 				}
-				else
+				else 
 				{
 					return GetModuleFileName();
 				}
@@ -114,10 +144,27 @@ namespace X
 				return m_myScope == nullptr?this: m_myScope;
 			}
 			virtual bool isEqual(Scope* s) override;
+			virtual bool isProxyOf(Scope* s)
+			{
+				PyProxyObject* proxy_s = dynamic_cast<PyProxyObject*>(s);
+				if (proxy_s)
+				{
+					if (m_proxyType == PyProxyType::Line &&
+						proxy_s->m_proxyType == PyProxyType::Func)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
 			~PyProxyObject();
 			void SetModule(PyProxyObject* pModule)
 			{
 				m_PyModule = pModule;
+			}
+			void SetModuleFileName(std::string& fileName)
+			{
+				m_moduleFileName = fileName;
 			}
 			std::string GetName()
 			{

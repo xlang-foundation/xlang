@@ -22,7 +22,14 @@ public:
 	{
 		return (int)m_Vars.size();
 	}
-	inline std::unordered_map <std::string, int>& GetVarMap() { return m_Vars; }
+	virtual std::string GetNameString()
+	{
+		return "";
+	}
+	inline std::unordered_map <std::string, int>& GetVarMap() 
+	{ 
+		return m_Vars; 
+	}
 	inline std::vector<std::string> GetVarNames()
 	{
 		std::vector<std::string> names;
@@ -34,6 +41,7 @@ public:
 	}
 	virtual std::string GetModuleName(Runtime* rt);
 	virtual bool isEqual(Scope* s) { return (this == s); };
+	virtual bool isProxyOf(Scope* s) { return false; };
 	virtual Scope* GetParentScope()= 0;
 	virtual int AddOrGet(std::string& name, bool bGetOnly)
 	{//Always append,no remove, so new item's index is size of m_Vars;

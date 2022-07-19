@@ -36,7 +36,7 @@ namespace X
 			bool BuildStackInfo(
 				TraceEvent traceEvent,
 				Runtime* rt,
-				void* pCurExp,
+				AST::Expression* pCurExp,
 				AST::Value& valStackInfo);
 			bool BuildLocals(Runtime* rt,
 				void* pContextCurrent,int frameId,

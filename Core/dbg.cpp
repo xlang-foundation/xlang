@@ -1,4 +1,6 @@
 #include "dbg.h"
+#include "utility.h"
+
 namespace X
 {
 	bool Dbg::xTraceFunc(
@@ -32,13 +34,6 @@ namespace X
 			break;
 		case X::TraceEvent::OPCode:
 			break;
-		case X::TraceEvent::Import:
-			if (rt->M()->GetLastRequestDgbType() == X::AST::dbg::StepIn)
-			{
-				Dbg(rt).WaitForCommnd(
-					traceEvent, rt, pThisBlock, pCurrentObj, pContext);
-			}
-			break;
 		default:
 			break;
 		}
@@ -56,29 +51,57 @@ namespace X
 		auto fileName = (std::string)objFrame["f_code.co_filename"];
 		auto coName = (std::string)objFrame["f_code.co_name"];
 		int line = (int)objFrame["f_lineno"];
-		//std::cout << "PyTrace:" << coName << ",ln:" << line << "," << fileName << std::endl;
+		TraceEvent te = (TraceEvent)event;
 		auto* pProxyModule = Data::PyObjectCache::I().QueryModule(fileName);
 		AST::Scope* pThisBlock = nullptr;
-		Data::PyProxyObject block(coName);
+		Data::PyProxyObject* blockObj = nullptr;
 		if ("<module>" == coName)
 		{
 			pThisBlock = dynamic_cast<AST::Scope*>(pProxyModule);
 		}
 		else
 		{
-			pThisBlock = dynamic_cast<AST::Scope*>(&block);
+			blockObj = new Data::PyProxyObject(coName);
+			blockObj->AddRef();
+			blockObj->SetModule(pProxyModule);
+			blockObj->SetModuleFileName(fileName);
+			blockObj->AddRef();//for pThisBlock
+			pThisBlock = dynamic_cast<AST::Scope*>(blockObj);
 		}
-		block.SetModule(pProxyModule);
 		Data::PyProxyObject Line(line-1);//X start line from 0 not 1
 		Line.SetScope(pThisBlock);
-		Data::PyStackFrame frameProxy(frame);
-		TraceEvent te = (TraceEvent)event;
-		xTraceFunc(rt, nullptr, &frameProxy,
+		Data::PyStackFrame* frameProxy = nullptr;
+		if (te == TraceEvent::Call)
+		{
+			frameProxy = new Data::PyStackFrame(frame, pThisBlock);
+			rt->PushFrame(frameProxy,0);
+			rt->M()->ReplaceLastDbgScope(pThisBlock);
+		}
+		else
+		{
+			frameProxy = (Data::PyStackFrame*)rt->GetCurrentStack();
+		}
+		if (blockObj)
+		{
+			blockObj->SetLocGlob(PyEng::Object::FromLocals(),
+				PyEng::Object::FromGlobals());
+		}
+		frameProxy->SetLine(line);
+		xTraceFunc(rt, nullptr, frameProxy,
 			te, pThisBlock,
 			dynamic_cast<AST::Expression*>(&Line));
 		if (pProxyModule)
 		{
 			pProxyModule->Release();
+		}
+		if (blockObj)
+		{
+			blockObj->Release();
+		}
+		if (te == TraceEvent::Return)
+		{
+			rt->PopFrame();
+			delete frameProxy;
 		}
 		return 0;
 #if __todo_remove_

@@ -41,6 +41,13 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 	}
 	for (auto i : Body)
 	{
+		//Update Stack Frame
+		int line = i->GetStartLine();
+		int pos = i->GetCharPos();
+		rt->GetCurrentStack()->SetLine(line);
+		rt->GetCurrentStack()->SetCharPos(pos);
+		//std::cout << "Run Line:" << line <<std::endl;
+
 		if (rt->GetTrace())
 		{
 			Scope* pMyScope = nullptr;
@@ -56,8 +63,6 @@ bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
 			rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
 				TraceEvent::Line, pMyScope, i);
 		}
-		//int line = i->GetStartLine();
-		//std::cout << "Run Line:" << line <<std::endl;
 		Value v0;
 		bOk = i->Run(rt,pContext, v0);
 		if (!bOk)

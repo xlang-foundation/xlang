@@ -469,6 +469,16 @@ PyEngObjectPtr GrusPyEngHost::GetPyNone()
 	return pOb;
 }
 
+PyEngObjectPtr GrusPyEngHost::GetGlobals()
+{
+	return (PyEngObjectPtr)PyEval_GetLocals();
+}
+
+PyEngObjectPtr GrusPyEngHost::GetLocals()
+{
+	return (PyEngObjectPtr)PyEval_GetGlobals();
+}
+
 PyEngObjectPtr GrusPyEngHost::CreateByteArray(const char* buf, long long size)
 {
 	return (PyEngObjectPtr)PyByteArray_FromStringAndSize(buf,size);

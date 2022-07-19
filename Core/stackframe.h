@@ -14,6 +14,8 @@ protected:
 	int m_varCnt = 0;
 	Value* m_Values = nil;
 	Value m_retVal;
+	int m_lineStart = -1;
+	int m_charPos = 0;
 public:
 	StackFrame()
 	{
@@ -29,6 +31,10 @@ public:
 			delete[] m_Values;
 		}
 	}
+	inline virtual int GetStartLine() { return m_lineStart; }
+	inline void SetLine(int l) { m_lineStart = l; }
+	inline void SetCharPos(int c) { m_charPos = c; }
+	inline virtual int GetCharPos() { return m_charPos; }
 	inline Scope* GetScope() { return m_pScope; }
 	inline void SetNext(StackFrame* n) { m_next = n; if(n) n->m_prev = this; }
 	inline void SetPrev(StackFrame* p) { m_prev = p; if(p) p->m_next = this; }

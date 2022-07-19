@@ -187,48 +187,32 @@ namespace X
 		bool DebugService::BuildStackInfo(
 			TraceEvent traceEvent,
 			Runtime* rt,
-			void* pCurExp0,
+			AST::Expression* pCurExp,
 			AST::Value& valStackInfo)
 		{
-			std::string moduleFileName;
-			auto* pCurExp = (AST::Expression*)pCurExp0;
-			AST::Scope* pMyScope = nullptr;
-			int line = 1;
-			int column = 0;
-			if (traceEvent == TraceEvent::Import
-				&& rt->M()->GetLastRequestDgbType() == 
-				AST::dbg::StepIn)
-			{
-				auto* pProxy = (Data::PyProxyObject*)pCurExp0;
-				pMyScope = dynamic_cast<AST::Scope*>(pProxy);
-				moduleFileName = pProxy->GetModuleFileName();
-			}
-			else
-			{
-				pMyScope = pCurExp->GetScope();
-				moduleFileName = pMyScope->GetModuleName(rt);
-				line = pCurExp->GetStartLine();
-				column = pCurExp->GetCharPos();
-			}
 			int index = 0;
 			AST::StackFrame* pCurStack = rt->GetCurrentStack();
 			Data::List* pList = new Data::List();
 			while (pCurStack != nil)
 			{
+				int line = pCurStack->GetStartLine();
+				int column = pCurStack->GetCharPos();
+
+				AST::Scope* pMyScope = pCurStack->GetScope();
+				std::string moduleFileName = pMyScope->GetModuleName(rt);
 				if (pMyScope)
 				{
 					Data::Dict* dict = new Data::Dict();
 					dict->Set("index", AST::Value(index));
-					std::string name;
-					AST::Func* pFunc = dynamic_cast<AST::Func*>(pMyScope);
-					if (pFunc)
+					std::string name = pMyScope->GetNameString();
+					if (name.empty())
 					{
-						name = pFunc->GetNameString();
-						if (name.empty())
+						AST::Func* pFunc = dynamic_cast<AST::Func*>(pMyScope);
+						if (pFunc)
 						{
 							char v[1000];
 							snprintf(v, sizeof(v), "lambda:(%d,%d)0x%llx",
-								pFunc->GetStartLine(),pFunc->GetCharPos(),
+								pFunc->GetStartLine(), pFunc->GetCharPos(),
 								(unsigned long long)pFunc);
 							name = v;
 						}
@@ -347,7 +331,9 @@ namespace X
 				pModule->AddCommand(cmdInfo, true);
 				if (pExpToRun)
 				{
-					BuildStackInfo(traceEvent,pCurrentRt,pExpToRun, retValue);
+					BuildStackInfo(traceEvent,pCurrentRt,
+						(AST::Expression*)pExpToRun,
+						retValue);
 				}
 				else
 				{
