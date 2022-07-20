@@ -393,6 +393,22 @@ public:
 	{
 		return (m_p == nullptr)?true: g_pHost->IsNone(m_p);
 	}
+	inline bool IsBool()
+	{
+		return m_p == nullptr ? false : g_pHost->IsBool(m_p);
+	}
+	inline bool IsLong()
+	{
+		return m_p == nullptr ? false : g_pHost->IsLong(m_p);
+	}
+	inline bool IsDouble()
+	{
+		return m_p == nullptr ? false : g_pHost->IsDouble(m_p);
+	}
+	inline bool IsString()
+	{
+		return m_p == nullptr ? false : g_pHost->IsString(m_p);
+	}
 	inline bool IsDict()
 	{
 		return m_p == nullptr ? false : g_pHost->IsDict(m_p);
@@ -527,6 +543,18 @@ public:
 	{
 		std::string strKey(key);
 		return g_pHost->DictContain(m_p, strKey);
+	}
+	bool Enum(long long& pos, Object& key, Object& val)
+	{
+		PyEngObjectPtr ptrKey = nullptr;
+		PyEngObjectPtr ptrVal = nullptr;
+		bool bOK = g_pHost->EnumDictItem(m_p, pos, ptrKey, ptrVal);
+		if (bOK)
+		{
+			key = Object(ptrKey);
+			val = Object(ptrVal);
+		}
+		return bOK;
 	}
 	Object Keys()
 	{

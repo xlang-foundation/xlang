@@ -110,23 +110,19 @@ namespace X
 			void SetLocGlob(PyEngObjectPtr lObj, PyEngObjectPtr gObj)
 			{
 				m_locals = PyEng::Object(lObj);
-				/*
-				auto keys = m_locals.Keys();
-				for (int i = 0; i < keys.GetCount(); i++)
-				{
-					std::string name = (std::string)keys[i];
-					AST::Scope::AddOrGet(name, false);
-				}*/
 				m_globals = PyEng::Object(gObj);
 			}
 			void SetScope(AST::Scope* s)
 			{
 				m_myScope = s;
 			}
+			bool PyObjectToValue(PyEng::Object& pyObj, AST::Value& val);
 			virtual std::string GetNameString() override
 			{
 				return m_name;
 			}
+			virtual void EachVar(Runtime* rt, void* pContext,
+				std::function<void(std::string, AST::Value&)> const& f) override;
 			virtual std::string GetModuleName(Runtime* rt) override
 			{
 				if (m_proxyType == PyProxyType::Func)
@@ -201,6 +197,9 @@ namespace X
 			{
 				return (std::string)m_obj;
 			}
+			virtual long long Size() override;
+			virtual List* FlatPack(Runtime* rt,
+				long long startIndex, long long count) override;
 		};
 	}
 }

@@ -5,6 +5,7 @@
 #include "value.h"
 #include "runtime.h"
 #include <assert.h>
+#include <functional>
 
 namespace X 
 { 
@@ -38,6 +39,16 @@ public:
 			names.push_back(it.first);
 		}
 		return names;
+	}
+	virtual void EachVar(Runtime* rt,void* pContext,
+		std::function<void(std::string,AST::Value&)> const& f)
+	{
+		for (auto it : m_Vars)
+		{
+			AST::Value val;
+			Get(rt, pContext,it.second, val);
+			f(it.first, val);
+		}
 	}
 	virtual std::string GetModuleName(Runtime* rt);
 	virtual bool isEqual(Scope* s) { return (this == s); };

@@ -899,6 +899,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;
+			case 'PyObject':
+				v.reference = this._runtime.createScopeRef(
+					v.Type,v.FrameId,v.Val);
+				dapVariable.value = 'Python Object(Size:'+v.Size.toString()+")";
+				dapVariable.type = "PyObject";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = v.Size;
+				break;			
 			default:
 				break;
 		}

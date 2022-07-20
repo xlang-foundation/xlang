@@ -109,28 +109,22 @@ namespace X
 			if (pCurStack)
 			{
 				AST::Scope* pCurScope = pCurStack->GetScope();
-				auto nameMap = pCurScope->GetVarMap();
-				for (auto& it : nameMap)
+				pCurScope->EachVar(rt, pContextCurrent,[rt,pList](
+					std::string name, 
+					AST::Value& val)
 				{
-					int idx = it.second;
-					AST::Value val;
-					pCurScope->Get(rt, pContextCurrent, idx, val);
-					if (val.IsInvalid())
-					{//not set
-						continue;
-					}
 					if (val.IsObject() && val.GetObj()->IsFunc())
 					{
-						continue;
+						return;
 					}
 					Data::Dict* dict = new Data::Dict();
-					Data::Str* pStrName = new Data::Str(it.first);
+					Data::Str* pStrName = new Data::Str(name);
 					dict->Set("Name", AST::Value(pStrName));
 
 					auto valType = val.GetValueType();
 					Data::Str* pStrType = new Data::Str(valType);
 					dict->Set("Type", AST::Value(pStrType));
-					if (!val.IsObject() 
+					if (!val.IsObject()
 						|| (val.IsObject() && val.GetObj()->IsStr()))
 					{
 						dict->Set("Value", val);
@@ -144,7 +138,7 @@ namespace X
 					}
 					AST::Value valDict(dict);
 					pList->Add(rt, valDict);
-				}
+				});
 			}
 			valLocals = AST::Value(pList);
 			return true;

@@ -469,12 +469,12 @@ PyEngObjectPtr GrusPyEngHost::GetPyNone()
 	return pOb;
 }
 
-PyEngObjectPtr GrusPyEngHost::GetGlobals()
+PyEngObjectPtr GrusPyEngHost::GetLocals()
 {
 	return (PyEngObjectPtr)PyEval_GetLocals();
 }
 
-PyEngObjectPtr GrusPyEngHost::GetLocals()
+PyEngObjectPtr GrusPyEngHost::GetGlobals()
 {
 	return (PyEngObjectPtr)PyEval_GetGlobals();
 }
@@ -482,4 +482,47 @@ PyEngObjectPtr GrusPyEngHost::GetLocals()
 PyEngObjectPtr GrusPyEngHost::CreateByteArray(const char* buf, long long size)
 {
 	return (PyEngObjectPtr)PyByteArray_FromStringAndSize(buf,size);
+}
+
+bool GrusPyEngHost::IsBool(PyEngObjectPtr obj)
+{
+	return PyBool_Check((PyObject*)obj);
+}
+
+bool GrusPyEngHost::IsLong(PyEngObjectPtr obj)
+{
+	return PyLong_Check((PyObject*)obj);
+}
+
+bool GrusPyEngHost::IsDouble(PyEngObjectPtr obj)
+{
+	return PyFloat_Check((PyObject*)obj);
+}
+
+bool GrusPyEngHost::IsString(PyEngObjectPtr obj)
+{
+	return PyUnicode_Check((PyObject*)obj);
+}
+
+bool GrusPyEngHost::IsTuple(PyEngObjectPtr obj)
+{
+	return PyTuple_Check((PyObject*)obj);
+}
+
+bool GrusPyEngHost::IsSet(PyEngObjectPtr obj)
+{
+	return PySet_Check((PyObject*)obj);
+}
+
+bool GrusPyEngHost::EnumDictItem(PyEngObjectPtr dict, long long& pos,
+	PyEngObjectPtr& key, PyEngObjectPtr& val)
+{
+	Py_ssize_t pyPos = pos;
+	PyObject* pyKey = nullptr;
+	PyObject* pyVal = nullptr;
+	bool bOK = PyDict_Next((PyObject*)dict, &pyPos, &pyKey, &pyVal);
+	key = (PyEngObjectPtr)pyKey;
+	val = (PyEngObjectPtr)pyVal;
+	pos = pyPos;
+	return bOK;
 }

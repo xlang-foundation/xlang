@@ -88,4 +88,18 @@ public:
 	virtual PyEngObjectPtr GetLocals() override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
+
+	// Inherited via PyEngHost
+	virtual bool IsBool(PyEngObjectPtr obj) override;
+	virtual bool IsLong(PyEngObjectPtr obj) override;
+	virtual bool IsDouble(PyEngObjectPtr obj) override;
+	virtual bool IsString(PyEngObjectPtr obj) override;
+
+	// Inherited via PyEngHost
+	virtual bool IsTuple(PyEngObjectPtr obj) override;
+	virtual bool IsSet(PyEngObjectPtr obj) override;
+
+	// Inherited via PyEngHost
+	virtual bool EnumDictItem(PyEngObjectPtr dict, long long& pos, 
+		PyEngObjectPtr& key, PyEngObjectPtr& val) override;
 };

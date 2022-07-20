@@ -1,5 +1,8 @@
 #include "pyproxyobject.h"
 #include "utility.h"
+#include "str.h"
+#include "list.h"
+#include "dict.h"
 
 namespace X
 {
@@ -49,6 +52,48 @@ namespace X
 				PyObjectCache::I().RemoveModule(strFileName);
 			}
 		}
+		bool PyProxyObject::PyObjectToValue(PyEng::Object& pyObj, AST::Value& val)
+		{
+			if (pyObj.IsBool())
+			{
+				val = AST::Value((bool)pyObj);
+			}
+			else if (pyObj.IsLong())
+			{
+				val = AST::Value((long long)pyObj);
+			}
+			else if (pyObj.IsDouble())
+			{
+				val = AST::Value((double)pyObj);
+			}
+			else if (pyObj.IsString())
+			{
+				std::string strVal = (std::string)pyObj;
+				Data::Str* pStrName = new Data::Str(strVal);
+				val = AST::Value(pStrName);
+			}
+			else
+			{
+				PyProxyObject* pProxyObj = new PyProxyObject(pyObj);
+				//todo: when to call release
+				pProxyObj->AddRef();
+				val = AST::Value(pProxyObj);
+			}
+			return true;
+		}
+		void PyProxyObject::EachVar(Runtime* rt, void* pContext,
+			std::function<void(std::string, AST::Value&)> const& f)
+		{
+			auto keys = m_locals.Keys();
+			for (int i = 0; i < keys.GetCount(); i++)
+			{
+				std::string name = (std::string)keys[i];
+				PyEng::Object objVal = (PyEng::Object)m_locals[name.c_str()];
+				AST::Value val;
+				PyObjectToValue(objVal, val);
+				f(name, val);
+			}
+		}
 		bool PyProxyObject::isEqual(Scope* s)
 		{
 			PyProxyObject* pS_Proxy = dynamic_cast<PyProxyObject*>(s);
@@ -93,6 +138,102 @@ namespace X
 			PyProxyObject* pProxyObj = new PyProxyObject(obj0);
 			retValue = AST::Value(pProxyObj);
 			return true;
+		}
+		long long PyProxyObject::Size()
+		{
+			if (m_obj.IsBool() || m_obj.IsLong() ||
+				m_obj.IsDouble() || m_obj.IsString())
+			{
+				return 0;
+			}
+			return m_obj.GetCount();
+		}
+		List* PyProxyObject::FlatPack(Runtime* rt, long long startIndex,
+			long long count)
+		{
+			List* pOutList = nullptr;
+			if (m_obj.IsDict())
+			{
+				long long pos = 0;
+				PyEng::Object objKey, objVal;
+				PyEng::Dict pyDict(m_obj);
+				pOutList = new List();
+				while (pyDict.Enum(pos, objKey, objVal))
+				{
+					Dict* dict = new Dict();
+					AST::Value key, val;
+					PyObjectToValue(objKey, key);
+					if (!key.IsObject() 
+						|| (key.IsObject() && key.GetObj()->IsStr()))
+					{
+						dict->Set("Name", key);
+					}
+					else if (key.IsObject())
+					{
+						AST::Value objId((unsigned long long)key.GetObj());
+						dict->Set("Name", objId);
+					}
+					PyObjectToValue(objVal, val);
+					auto valType = val.GetValueType();
+					Data::Str* pStrType = new Data::Str(valType);
+					dict->Set("Type", AST::Value(pStrType));
+					if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+					{
+						dict->Set("Value", val);
+					}
+					else if (val.IsObject())
+					{
+						AST::Value objId((unsigned long long)val.GetObj());
+						dict->Set("Value", objId);
+						AST::Value valSize(val.GetObj()->Size());
+						dict->Set("Size", valSize);
+					}
+					AST::Value valDict(dict);
+					pOutList->Add(rt, valDict);
+				}
+			}
+			else
+			{
+				auto itemCnt = m_obj.GetCount();
+				if (startIndex < 0 || startIndex >= itemCnt)
+				{
+					return nullptr;
+				}
+				if (count == -1)
+				{
+					count = itemCnt - startIndex;
+				}
+				if ((startIndex + count) > Size())
+				{
+					return nullptr;
+				}
+				pOutList = new List();
+				for (long long i = 0; i < count; i++)
+				{
+					long long idx = startIndex + i;
+					PyEng::Object objVal = m_obj[i];
+					AST::Value val;
+					PyObjectToValue(objVal, val);
+					Dict* dict = new Dict();
+					auto valType = val.GetValueType();
+					Data::Str* pStrType = new Data::Str(valType);
+					dict->Set("Type", AST::Value(pStrType));
+					if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+					{
+						dict->Set("Value", val);
+					}
+					else if (val.IsObject())
+					{
+						AST::Value objId((unsigned long long)val.GetObj());
+						dict->Set("Value", objId);
+						AST::Value valSize(val.GetObj()->Size());
+						dict->Set("Size", valSize);
+					}
+					AST::Value valDict(dict);
+					pOutList->Add(rt, valDict);
+				}
+			}
+			return pOutList;
 		}
 	}
 }

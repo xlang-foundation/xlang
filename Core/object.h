@@ -95,6 +95,8 @@ namespace Data {
 				return "TableRow";
 			case X::Data::Type::Table:
 				return "Table";
+			case X::Data::Type::PyProxyObject:
+				return "PyObject";
 			default:
 				break;
 			}

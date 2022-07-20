@@ -1,10 +1,7 @@
 import datetime
-import opencv_test as ov
 def Func2(r):
-    ov.simple()
     for i in range(r):
         print("in Func2,i=",i)
-    ov.test()
 
 def innerFunc(x,y,z):
     print("xyz=",x,y,z)
