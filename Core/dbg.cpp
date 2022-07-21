@@ -68,8 +68,9 @@ namespace X
 			blockObj->AddRef();//for pThisBlock
 			pThisBlock = dynamic_cast<AST::Scope*>(blockObj);
 		}
-		Data::PyProxyObject Line(line-1);//X start line from 0 not 1
-		Line.SetScope(pThisBlock);
+		auto* pLine = new Data::PyProxyObject(line-1);//X start line from 0 not 1
+		pLine->AddRef();
+		pLine->SetScope(pThisBlock);
 		Data::PyStackFrame* frameProxy = nullptr;
 		if (te == TraceEvent::Call)
 		{
@@ -89,7 +90,7 @@ namespace X
 		frameProxy->SetLine(line);
 		xTraceFunc(rt, nullptr, frameProxy,
 			te, pThisBlock,
-			dynamic_cast<AST::Expression*>(&Line));
+			dynamic_cast<AST::Expression*>(pLine));
 		if (pProxyModule)
 		{
 			pProxyModule->Release();
@@ -97,6 +98,10 @@ namespace X
 		if (blockObj)
 		{
 			blockObj->Release();
+		}
+		if (pLine)
+		{
+			pLine->Release();
 		}
 		if (te == TraceEvent::Return)
 		{

@@ -47,6 +47,12 @@ bool U_Load(X::Runtime* rt, void* pContext,
 		return false;
 	}
 	std::string fileName = params[0].ToString();
+	std::string ext = ExtName(fileName);
+	if (ext != "X" && ext != "x")
+	{
+		retValue = X::AST::Value(0);
+		return true;
+	}
 	std::ifstream moduleFile(fileName);
 	std::string code((std::istreambuf_iterator<char>(
 		moduleFile)), std::istreambuf_iterator<char>());

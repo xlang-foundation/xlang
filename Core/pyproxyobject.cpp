@@ -192,6 +192,10 @@ namespace X
 					pOutList->Add(rt, valDict);
 				}
 			}
+			else if (m_obj.IsArray())
+			{
+
+			}
 			else
 			{
 				auto itemCnt = m_obj.GetCount();

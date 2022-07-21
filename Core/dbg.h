@@ -124,7 +124,7 @@ public:
 			case AST::dbg::StepIn:
 				{
 					std::vector<AST::Scope*> callables;
-					if (((AST::Expression*)exp)->CalcCallables(rt,pContext,callables))
+					if (exp->CalcCallables(rt,pContext,callables))
 					{
 						for (auto& ca : callables)
 						{

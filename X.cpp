@@ -113,6 +113,7 @@ int main_runfile(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
+
 int main(int argc, char* argv[])
 {
 	LoadTest();

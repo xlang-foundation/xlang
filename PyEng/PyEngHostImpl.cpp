@@ -134,6 +134,10 @@ long long GrusPyEngHost::GetCount(PyEngObjectPtr objs)
 	{
 		cnt = PyByteArray_Size(pOb);
 	}
+	else if (IsArray(pOb))
+	{
+		
+	}
 	return cnt;
 }
 

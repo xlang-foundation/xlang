@@ -230,3 +230,15 @@ void ReplaceAll(std::string& data, std::string toSearch, std::string replaceStr)
 		pos = data.find(toSearch, pos + replaceStr.size());
 	}
 }
+std::string ExtName(std::string filePath)
+{
+	auto pos = filePath.rfind('.');
+	if (pos != filePath.npos)
+	{
+		return filePath.substr(pos + 1);
+	}
+	else
+	{
+		return "";
+	}
+}

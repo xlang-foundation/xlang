@@ -8,6 +8,7 @@
 #include "module.h"
 #include "glob.h"
 #include "utility.h"
+#include "objref.h"
 
 namespace X {
 	namespace AST { class Scope; }
@@ -32,10 +33,10 @@ namespace Data {
 		PyProxyObject
 	};
 	class List;
-	class Object
+	class Object:
+		virtual public ObjRef
 	{
 	protected:
-		int m_ref = 0;
 		Type m_t = Type::Base;
 	public:
 		Object()
@@ -101,19 +102,6 @@ namespace Data {
 				break;
 			}
 			return "None";
-		}
-		inline int AddRef() 
-		{ 
-			return ++m_ref; 
-		}
-		inline int Release() 
-		{ 
-			int ref = --m_ref;
-			if (ref == 0)
-			{
-				delete this;
-			}
-			return ref;
 		}
 		virtual AST::Scope* GetScope()
 		{

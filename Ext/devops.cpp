@@ -253,13 +253,13 @@ namespace X
 				return false;
 			}
 			unsigned long long moduleKey = params[0].GetLongLong();
+			AST::Value varLines = params[1];
 			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
 			if (pModule == nullptr)
 			{
-				retValue = AST::Value(false);
+				retValue = varLines;
 				return true;
 			}
-			AST::Value varLines = params[1];
 			if (!varLines.IsObject()
 				|| varLines.GetObj()->GetType() != X::Data::Type::List)
 			{

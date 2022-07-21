@@ -215,14 +215,16 @@ public:
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
 			if (last->isProxyOf(s))
 			{
+				last->Release();
+				s->AddRef();
 				m_dbgScopes[m_dbgScopes.size() - 1] = s;
-				//TODO: delete last??
 			}
 		}
 		return true;
 	}
 	inline void AddDbgScope(Scope* s)
 	{
+		s->AddRef();
 		m_dbgScopes.push_back(s);
 	}
 	inline void RemoveDbgScope(Scope* s)
@@ -230,8 +232,10 @@ public:
 		auto it = m_dbgScopes.begin();
 		while (it != m_dbgScopes.end())
 		{
-			if ((*it)->isEqual(s))
+			Scope* s0 = (*it);
+			if (s0->isEqual(s))
 			{
+				s0->Release();
 				m_dbgScopes.erase(it);
 				break;
 			}

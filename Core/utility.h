@@ -18,3 +18,4 @@ std::string& ltrim(std::string& s);
 std::string& trim(std::string& s);
 std::string StringifyString(const std::string& str);
 void ReplaceAll(std::string& data, std::string toSearch, std::string replaceStr);
+std::string ExtName(std::string filePath);

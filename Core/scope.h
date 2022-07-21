@@ -6,12 +6,14 @@
 #include "runtime.h"
 #include <assert.h>
 #include <functional>
+#include "objref.h"
 
 namespace X 
 { 
 namespace AST 
 {
-class Scope
+class Scope:
+	virtual public ObjRef
 {//variables scope support, for Module and Func/Class
 protected:
 	std::unordered_map <std::string, int> m_Vars;
