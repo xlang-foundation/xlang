@@ -14,6 +14,15 @@ class ScopeProxy:
 	virtual bool isEqual(Scope* s) override;
 
 	// Inherited via Scope
+	virtual AST::ScopeWaitingStatus IsWaitForCall() override
+	{
+		return AST::ScopeWaitingStatus::NeedFurtherCallWithName;
+	}
+	virtual AST::ScopeWaitingStatus IsWaitForCall(std::string& name) override
+	{
+		return name == m_name? AST::ScopeWaitingStatus::HasWaiting:
+			AST::ScopeWaitingStatus::NoWaiting;
+	};
 	virtual Scope* GetParentScope() override;
 public:
 	ScopeProxy(std::string name):

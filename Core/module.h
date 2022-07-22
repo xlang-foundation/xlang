@@ -32,6 +32,7 @@ struct CommandInfo
 	TraceEvent* m_traceEventPtr = nullptr;
 	XWait* m_wait = nullptr;
 };
+
 class Module :
 	public Block,
 	public Scope
@@ -195,32 +196,35 @@ public:
 			{
 				bIn = true;
 			}
-		}
-#if __TODO__
-		for (auto it : m_dbgScopes)
-		{
-			if (it->isEqual(s))
-			{
-				bIn = true;
-				break;
-			}
-		}
-#endif		
+		}	
 		return bIn;
 	}
-	inline bool ReplaceLastDbgScope(Scope* s)
+	inline Scope* LastScope()
+	{
+		return m_dbgScopes.size() > 0 ? 
+			m_dbgScopes[m_dbgScopes.size() - 1] : nullptr;
+	}
+	inline ScopeWaitingStatus HaveWaitForScope()
+	{
+		return m_dbgScopes.size() > 0?
+			m_dbgScopes[m_dbgScopes.size() - 1]->IsWaitForCall():
+			ScopeWaitingStatus::NoWaiting;
+	}
+	inline ScopeWaitingStatus HaveWaitForScope(std::string& name)
+	{
+		return m_dbgScopes.size() > 0 ?
+			m_dbgScopes[m_dbgScopes.size() - 1]->IsWaitForCall(name) :
+			ScopeWaitingStatus::NoWaiting;
+	}
+	inline void ReplaceLastDbgScope(Scope* s)
 	{
 		if (m_dbgScopes.size() > 0)
 		{
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
-			if (last->isProxyOf(s))
-			{
-				last->Release();
-				s->AddRef();
-				m_dbgScopes[m_dbgScopes.size() - 1] = s;
-			}
+			last->Release();
+			s->AddRef();
+			m_dbgScopes[m_dbgScopes.size() - 1] = s;
 		}
-		return true;
 	}
 	inline void AddDbgScope(Scope* s)
 	{

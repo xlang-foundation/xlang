@@ -56,5 +56,10 @@ namespace X
 			}
 			return bCreated;
 		}
+		bool HasPackage(std::string& name)
+		{
+			auto it = m_mapPackage.find(name);
+			return (it != m_mapPackage.end());
+		}
 	};
 }

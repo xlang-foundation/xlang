@@ -47,31 +47,67 @@ namespace X
 	{
 		PyEng::Object objRuntimeHandle(self, true);
 		Runtime* rt = (Runtime*)(unsigned long long)objRuntimeHandle;
+		TraceEvent te = (TraceEvent)event;
+		if (te == TraceEvent::Call)
+		{//check if there is a scope which was from Command StepIn
+			auto st = rt->M()->HaveWaitForScope();
+			if(st == AST::ScopeWaitingStatus::NoWaiting)
+			{
+				return 0;
+			}
+			else if (st == AST::ScopeWaitingStatus::NeedFurtherCallWithName)
+			{
+				PyEng::Object objFrame(frame, true);
+				auto fileName = (std::string)objFrame["f_code.co_filename"];
+				auto coName = (std::string)objFrame["f_code.co_name"];
+				if (fileName.find("demo")!= fileName.npos 
+					|| coName == "demo")
+				{
+					coName = coName;
+				}
+				ReplaceAll(fileName, "\\", "/");
+				st = rt->M()->HaveWaitForScope(fileName);
+				if (st == AST::ScopeWaitingStatus::NoWaiting)
+				{
+					return 0;
+				}
+			}
+		}
+		else
+		{//check if there is a scope match with this frame
+			PyEng::Object objRuntimeHandle(self, true);
+			AST::Scope* lastScope = rt->M()->LastScope();
+			if (lastScope == nullptr)
+			{
+				return 0;
+			}
+			auto* pProxyScope = dynamic_cast<Data::PyProxyObject*>(lastScope);
+			if (pProxyScope == nullptr)
+			{
+				return 0;
+			}
+			if (!pProxyScope->MatchPyFrame(frame))
+			{
+				return 0;
+			}
+		}
+		Data::PyStackFrame* frameProxy = nullptr;
 		PyEng::Object objFrame(frame, true);
 		auto fileName = (std::string)objFrame["f_code.co_filename"];
 		auto coName = (std::string)objFrame["f_code.co_name"];
 		int line = (int)objFrame["f_lineno"];
-		TraceEvent te = (TraceEvent)event;
 		auto* pProxyModule = Data::PyObjectCache::I().QueryModule(fileName);
 		AST::Scope* pThisBlock = nullptr;
-		Data::PyProxyObject* blockObj = nullptr;
-		if ("<module>" == coName)
-		{
-			pThisBlock = dynamic_cast<AST::Scope*>(pProxyModule);
-		}
-		else
-		{
-			blockObj = new Data::PyProxyObject(coName);
-			blockObj->AddRef();
-			blockObj->SetModule(pProxyModule);
-			blockObj->SetModuleFileName(fileName);
-			blockObj->AddRef();//for pThisBlock
-			pThisBlock = dynamic_cast<AST::Scope*>(blockObj);
-		}
+		auto* blockObj = new Data::PyProxyObject(coName);
+		blockObj->AddRef();
+		blockObj->SetPyFrame(objFrame);
+		blockObj->SetModule(pProxyModule);
+		blockObj->SetModuleFileName(fileName);
+		blockObj->AddRef();//for pThisBlock
+		pThisBlock = dynamic_cast<AST::Scope*>(blockObj);
 		auto* pLine = new Data::PyProxyObject(line-1);//X start line from 0 not 1
 		pLine->AddRef();
 		pLine->SetScope(pThisBlock);
-		Data::PyStackFrame* frameProxy = nullptr;
 		if (te == TraceEvent::Call)
 		{
 			frameProxy = new Data::PyStackFrame(frame, pThisBlock);
@@ -82,11 +118,8 @@ namespace X
 		{
 			frameProxy = (Data::PyStackFrame*)rt->GetCurrentStack();
 		}
-		if (blockObj)
-		{
-			blockObj->SetLocGlob(PyEng::Object::FromLocals(),
-				PyEng::Object::FromGlobals());
-		}
+		blockObj->SetLocGlob(PyEng::Object::FromLocals(),
+			PyEng::Object::FromGlobals());
 		frameProxy->SetLine(line);
 		xTraceFunc(rt, nullptr, frameProxy,
 			te, pThisBlock,
@@ -109,44 +142,6 @@ namespace X
 			delete frameProxy;
 		}
 		return 0;
-#if __todo_remove_
-		PyEng::Object objFrame(frame, true);
-		auto fileName = (std::string)objFrame["f_code.co_filename"];
-		int line = (int)objFrame["f_lineno"];
-
-		switch (te)
-		{
-		case TraceEvent::Call:
-			std::cout << "---Call----" << std::endl;
-			break;
-		case TraceEvent::Exception:
-			std::cout << "---Exception----" << std::endl;
-			break;
-		case TraceEvent::Line:
-			//Dbg(rt).PyWaitForCommnd(rt);
-			std::cout << "---Line----" << line << "," << fileName << std::endl;
-			break;
-		case TraceEvent::Return:
-			std::cout << "---Return----" << std::endl;
-			break;
-		case TraceEvent::C_Call:
-			std::cout << "---C_Call----" << std::endl;
-			break;
-		case TraceEvent::C_Exception:
-			std::cout << "---C_Exception----" << std::endl;
-			break;
-		case TraceEvent::C_Return:
-			std::cout << "---C_Return----" << std::endl;
-			break;
-		case TraceEvent::OPCode:
-			std::cout << "---OPCode----" << std::endl;
-			break;
-		default:
-			std::cout << "---Other----" << std::endl;
-			break;
-		}
-		return 0;
-#endif
 	}
 	void Dbg::PyWaitForCommnd(Runtime* rt)
 	{

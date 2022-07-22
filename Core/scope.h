@@ -12,6 +12,12 @@ namespace X
 { 
 namespace AST 
 {
+enum class ScopeWaitingStatus
+{
+	NoWaiting,
+	HasWaiting,
+	NeedFurtherCallWithName
+};
 class Scope:
 	virtual public ObjRef
 {//variables scope support, for Module and Func/Class
@@ -54,7 +60,14 @@ public:
 	}
 	virtual std::string GetModuleName(Runtime* rt);
 	virtual bool isEqual(Scope* s) { return (this == s); };
-	virtual bool isProxyOf(Scope* s) { return false; };
+	virtual ScopeWaitingStatus IsWaitForCall() 
+	{ 
+		return ScopeWaitingStatus::NoWaiting;
+	};
+	virtual ScopeWaitingStatus IsWaitForCall(std::string& name)
+	{
+		return ScopeWaitingStatus::NoWaiting;
+	};
 	virtual Scope* GetParentScope()= 0;
 	virtual int AddOrGet(std::string& name, bool bGetOnly)
 	{//Always append,no remove, so new item's index is size of m_Vars;

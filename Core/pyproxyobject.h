@@ -62,6 +62,7 @@ namespace X
 			PyProxyType m_proxyType = PyProxyType::None;
 			AST::StackFrame* m_stackFrame = nullptr;
 			PyEng::Object m_obj;
+			PyEng::Object m_pyFrameObject;
 			std::string m_name;
 			std::string m_path;
 			std::string m_moduleFileName;//for func case,m_PyModule is null
@@ -107,6 +108,14 @@ namespace X
 			}
 			PyProxyObject(Runtime* rt, void* pContext,
 				std::string name, std::string path);
+			void SetPyFrame(PyEng::Object objFrame)
+			{
+				m_pyFrameObject = objFrame;
+			}
+			inline bool MatchPyFrame(PyEngObjectPtr pyFrame)
+			{
+				return (m_pyFrameObject.ref() == pyFrame);
+			}
 			void SetLocGlob(PyEngObjectPtr lObj, PyEngObjectPtr gObj)
 			{
 				m_locals = PyEng::Object(lObj);
@@ -140,19 +149,18 @@ namespace X
 				return m_myScope == nullptr?this: m_myScope;
 			}
 			virtual bool isEqual(Scope* s) override;
-			virtual bool isProxyOf(Scope* s)
+			virtual AST::ScopeWaitingStatus IsWaitForCall() override
 			{
-				PyProxyObject* proxy_s = dynamic_cast<PyProxyObject*>(s);
-				if (proxy_s)
-				{
-					if (m_proxyType == PyProxyType::Line &&
-						proxy_s->m_proxyType == PyProxyType::Func)
-					{
-						return true;
-					}
-				}
-				return false;
+				return (m_proxyType == PyProxyType::Func 
+					&& m_pyFrameObject.IsNull()) ||
+					(m_proxyType == PyProxyType::Line)?
+					AST::ScopeWaitingStatus::HasWaiting:
+					AST::ScopeWaitingStatus::NoWaiting;
 			}
+			virtual AST::ScopeWaitingStatus IsWaitForCall(std::string& name) override
+			{
+				return AST::ScopeWaitingStatus::NoWaiting;
+			};
 			~PyProxyObject();
 			void SetModule(PyProxyObject* pModule)
 			{

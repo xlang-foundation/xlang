@@ -28,7 +28,17 @@ bool X::AST::Import::CalcCallables(Runtime* rt, void* pContext,
 		String& name = var->GetName();
 		strName = std::string(name.s, name.size);
 	}
-	ScopeProxy* pProxy = new ScopeProxy(strName);
+	std::string strFullName;
+	if (Manager::I().HasPackage(strName))
+	{
+		strFullName = strName;
+	}
+	else
+	{
+		std::string path = rt->M()->GetModulePath();
+		strFullName = path + "/" + strName + ".py";
+	}
+	ScopeProxy* pProxy = new ScopeProxy(strFullName);
 	callables.push_back(pProxy);
 	return true;
 }
