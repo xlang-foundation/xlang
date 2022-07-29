@@ -342,13 +342,48 @@ namespace X
 				{
 					frameId = (int)it2->second.GetLongLong();
 				}
+				cmdInfo.frameId = frameId;
 				cmdInfo.dbgType = AST::dbg::GetRuntime;
+				auto localPack = [](Runtime* rt,
+					void* pContextCurrent,
+					AST::CommandInfo* pCommandInfo,
+					AST::Value& retVal)
+				{
+					DebugService* pDebugService = (DebugService*)
+						pCommandInfo->callContext;
+					pDebugService->BuildLocals(rt, pContextCurrent,
+						pCommandInfo->frameId, retVal);
+				};
+				auto objPack = [](Runtime* rt,
+					void* pContextCurrent,
+					AST::CommandInfo* pCommandInfo,
+					AST::Value& retVal)
+				{
+					DebugService* pDebugService = (DebugService*)
+						pCommandInfo->callContext;
+					pDebugService->BuildObjectContent(rt, pContextCurrent,
+						pCommandInfo->frameId,
+						pCommandInfo->varParam,
+						retVal);
+				};
+				if (strCmd == "Locals")
+				{
+					cmdInfo.process = localPack;
+				}
+				else if (strCmd == "Object")
+				{
+					cmdInfo.process = objPack;
+				}
+				cmdInfo.varParam = valParam;
+				cmdInfo.callContext = this;
 				Runtime* pCurrentRt = nullptr;
 				void* pContextCurrent = nullptr;
-				cmdInfo.m_valPlaceholder = nullptr;
-				cmdInfo.m_valPlaceholder2 = (void**)&pCurrentRt;
-				cmdInfo.m_valPlaceholder3 = (void**)&pContextCurrent;
+				cmdInfo.m_retValueHolder = &retValue;
+				//cmdInfo.m_valPlaceholder2 = (void**)&pCurrentRt;
+				//cmdInfo.m_valPlaceholder3 = (void**)&pContextCurrent;
 				pModule->AddCommand(cmdInfo, true);
+				retValue = retValue;
+				/*
 				if (pCurrentRt)
 				{
 					if (strCmd == "Locals")
@@ -365,7 +400,7 @@ namespace X
 				else
 				{
 					retValue = AST::Value();
-				}
+				}*/
 			}
 			if (strCmd == "Step")
 			{

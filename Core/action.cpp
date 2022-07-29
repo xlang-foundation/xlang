@@ -144,7 +144,7 @@ void Register()
 		});
 	RegOP("from")
 		.SetProcess([](Parser* p, short opIndex) {
-		auto op = new AST::UnaryOp(opIndex);
+		auto op = new AST::From(opIndex);
 		return (AST::Operator*)op;
 			});
 	RegOP("for")
@@ -205,7 +205,7 @@ void Register()
 			});
 	RegOP("as")
 		.SetProcess([](Parser* p, short opIndex) {
-		auto op = new AST::BinaryOp(opIndex);
+		auto op = new AST::AsOp(opIndex);
 		return (AST::Operator*)op;
 			});
 	RegOP(

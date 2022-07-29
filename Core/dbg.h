@@ -106,6 +106,18 @@ public:
 			switch (cmdInfo.dbgType)
 			{
 			case AST::dbg::GetRuntime:
+			{
+				if (cmdInfo.process)
+				{
+					AST::Value retVal;
+					cmdInfo.process(rt, pContext, &cmdInfo, retVal);
+					if (cmdInfo.m_retValueHolder)
+					{
+						*cmdInfo.m_retValueHolder = retVal;
+					}
+				}
+			}
+			break;
 			case AST::dbg::StackTrace:
 				//just get back the current exp, then
 				//will calcluate out stack frames

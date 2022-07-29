@@ -42,24 +42,6 @@ void LoadTest()
 		if (load)
 		{
 			load((void**) &g_pHost);
-#if 0
-			auto sys = PyEng::Object::Import("sys");
-			sys["path.insert"](0, "C:/Dev/X/test/");
-			PyEng::Object m = PyEng::Object::Import("pymodule");
-			X::AST::Value p(100);
-			X::ARGS params;
-			X::KWARGS kwParams;
-			params.push_back(p);
-			PyEng::Tuple objParams(params);
-			PyEng::Dict objKwParams(kwParams);
-			auto func = (PyEng::Object)m["test"];
-			PyEng::Object pp(100);
-			PyEngObjectPtr p0 = (PyEngObjectPtr)pp;
-			auto obj = (PyEng::Object)func.Call(1, &p0);
-			auto obj2 =(PyEng::Object)func.Call(objParams, objKwParams);
-			std::string ret = (std::string)obj;
-			std::cout << ret;
-#endif
 		}
 #if 0
 		if (unload)

@@ -45,6 +45,16 @@ namespace X
 		int event,
 		PyEngObjectPtr args)
 	{
+		{
+			PyEng::Object objFrame(frame, true);
+			auto fileName = (std::string)objFrame["f_code.co_filename"];
+			if (fileName[0] == '<' && fileName[fileName.size() - 1] == '>')
+			{
+				return 0;
+			}
+			//auto coName = (std::string)objFrame["f_code.co_name"];
+			//std::cout <<"M:"<< coName<< ",File:" << fileName << std::endl;
+		}
 		PyEng::Object objRuntimeHandle(self, true);
 		Runtime* rt = (Runtime*)(unsigned long long)objRuntimeHandle;
 		TraceEvent te = (TraceEvent)event;

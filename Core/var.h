@@ -20,6 +20,7 @@ public:
 	void ScopeLayout(std::vector<Scope*>& candidates);
 	virtual void ScopeLayout() override;
 	String& GetName() { return Name; }
+	std::string GetNameString() { return std::string(Name.s, Name.size); }
 	inline virtual void Set(Runtime* rt, void* pContext, Value& v) override
 	{
 		if (Index == -1)

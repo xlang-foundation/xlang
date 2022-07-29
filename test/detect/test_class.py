@@ -4,3 +4,5 @@ class test_class():
         print("__init__")
     def test(self,x,y):
         print("from base_class's test():",x,y)
+def func1(x,y):
+    print(x,y)

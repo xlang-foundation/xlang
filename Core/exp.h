@@ -29,6 +29,8 @@ enum class ObType
 	BuiltinFunc,
 	Module,
 	Class,
+	From,
+	As,
 	Import
 };
 class Func;

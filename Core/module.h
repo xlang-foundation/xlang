@@ -23,9 +23,22 @@ struct BreakPointInfo
 	int line;
 	int sessionTid;
 };
+
+struct CommandInfo;
+typedef void (*CommandProcessProc)(Runtime* rt,
+	void* pContextCurrent,
+	CommandInfo* pCommandInfo,
+	AST::Value& retVal);
 struct CommandInfo
 {
 	dbg dbgType;
+
+	void* callContext = nullptr;
+	//vars below used in BuildLocals and BuildObjectContent
+	int frameId;
+	AST::Value varParam;
+	CommandProcessProc process = nullptr;
+	AST::Value* m_retValueHolder = nullptr;
 	void** m_valPlaceholder = nullptr;
 	void** m_valPlaceholder2=nullptr;
 	void** m_valPlaceholder3 = nullptr;

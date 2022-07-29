@@ -23,26 +23,26 @@ namespace X
 		}
 		PyProxyObject::PyProxyObject(
 			Runtime* rt, void* pContext,
-			std::string name,
-			std::string path)
+			std::string name, std::string fromPath,
+			std::string curPath)
 			:PyProxyObject()
 		{
 			m_proxyType = PyProxyType::Module;
 			m_name = name;
-			m_path = path;
+			m_path = curPath;
 			std::string strFileName = GetModuleFileName();
 			//need to addRef()??
 			AddRef();
 			PyObjectCache::I().AddModule(strFileName, this);
 			auto sys = PyEng::Object::Import("sys");
-			sys["path.insert"](0, path);
+			sys["path.insert"](0, m_path);
 			if (rt->GetTrace())
 			{
 				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
 					TraceEvent::Call, this, this);
 			}
 			m_obj = g_pHost->Import(name.c_str());
-			sys["path.remove"](path);
+			sys["path.remove"](m_path);
 		}
 		PyProxyObject::~PyProxyObject()
 		{

@@ -107,7 +107,8 @@ namespace X
 				PyObjectCache::I().AddModule(strFileName, this);
 			}
 			PyProxyObject(Runtime* rt, void* pContext,
-				std::string name, std::string path);
+				std::string name,std::string fromPath,
+				std::string curPath);
 			void SetPyFrame(PyEng::Object objFrame)
 			{
 				m_pyFrameObject = objFrame;
