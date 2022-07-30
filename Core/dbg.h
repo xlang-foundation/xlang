@@ -92,7 +92,6 @@ public:
 			std::cout << ">>";
 		}
 	}
-	void PyWaitForCommnd(Runtime* rt);
 	void WaitForCommnd(TraceEvent evt,Runtime* rt, 
 		AST::Scope* pThisBlock,
 		AST::Expression* exp, void* pContext)

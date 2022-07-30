@@ -153,26 +153,5 @@ namespace X
 		}
 		return 0;
 	}
-	void Dbg::PyWaitForCommnd(Runtime* rt)
-	{
-		auto* pModule = rt->M();
-		AST::CommandInfo cmdInfo;
-		bool inLoop = true;
-		while (inLoop)
-		{
-			pModule->PopCommand(cmdInfo);
-			switch (cmdInfo.dbgType)
-			{
-			case AST::dbg::Continue:
-				inLoop = false;
-				break;
-			case AST::dbg::Step:
-				inLoop = false;
-				break;
-			default:
-				break;
-			}
-		}
-	}
 
 }
