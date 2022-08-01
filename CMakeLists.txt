@@ -1,4 +1,4 @@
-﻿# CMakeList.txt : CMake project for LitePy, include source and define
+﻿# CMakeList.txt : CMake project for X-Lang, include source and define
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 3.8)
@@ -27,6 +27,11 @@ add_executable (X
 	${Text_SRC}
 	${Main_SRC}
 )
+
+if (WIN32)
+else()
+    target_link_libraries(${PROJECT_NAME} pthread dl)
+endif()
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET X PROPERTY CXX_STANDARD 20)

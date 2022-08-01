@@ -1,6 +1,7 @@
 #include "list.h"
 #include "utility.h"
 #include "dict.h"
+#include "port.h"
 
 namespace X
 {
@@ -33,7 +34,7 @@ namespace X
 						auto strV = v0.ToString();
 						double d1 = 0;
 						double d2 = 1;
-						sscanf_s(strV.c_str(),"rand(%lf,%lf)",&d1,&d2);
+						SCANF(strV.c_str(),"rand(%lf,%lf)",&d1,&d2);
 
 						for (auto& v : m_data)
 						{

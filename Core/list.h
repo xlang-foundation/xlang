@@ -211,7 +211,10 @@ public:
 				return false;
 			}
 			AST::LValue l = m_ptrs[idx];
-			v = *l;
+			if (l)
+			{
+				v = *l;
+			}
 			if (lValue) *lValue = l;
 		}
 		else

@@ -69,11 +69,12 @@ int main1(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main_runfile(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
-	LoadTest();
+	//LoadTest();
 	signal(SIGINT, signal_callback_handler);
-	std::string pyFileName = "C:/Dev/X/test/test2.py";
+	std::string pyFileName = "/mnt/c/Dev/X/Scripts/service.x";
+	//std::string pyFileName = "c:/Dev/X/Scripts/service.x";
 	if (argc >= 2)
 	{
 		pyFileName = argv[1];
@@ -96,7 +97,7 @@ int main_runfile(int argc, char* argv[])
 	return 0;
 }
 
-int main(int argc, char* argv[])
+int main_dbg(int argc, char* argv[])
 {
 	LoadTest();
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string.h>
 
 namespace X {
 	namespace Data { class Object; }

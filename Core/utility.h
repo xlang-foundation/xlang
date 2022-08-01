@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <float.h>
 
 bool RunProcess(std::string cmd,
 	std::string initPath,

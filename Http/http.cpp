@@ -5,17 +5,6 @@
 #include "str.h"
 #include "httplib.h"
 
-#define GET_FUNC_IMPL(name) \
-bool HttpRequest::Get##name(void* rt, void* pContext,\
-	ARGS& params,\
-	KWARGS& kwParams,\
-	AST::Value& retValue)\
-{\
-	auto* pReq = (httplib::Request*)m_pRequest;\
-	std::string& strVal =  pReq->##name;\
-	retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size());\
-	return true;\
-}
 
 namespace X
 {
@@ -158,10 +147,46 @@ namespace X
 		}
 		return true;
 	}
-	GET_FUNC_IMPL(method)
-	GET_FUNC_IMPL(body)
-	GET_FUNC_IMPL(path)
-	GET_FUNC_IMPL(remote_addr)
+	bool HttpRequest::Getmethod(void* rt, void* pContext,
+		ARGS& params, 
+		KWARGS& kwParams, 
+		AST::Value& retValue)
+	{
+		auto* pReq = (httplib::Request*)m_pRequest; 
+		std::string strVal = pReq->method;
+		retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size()); 
+		return true; 
+	}
+	bool HttpRequest::Getbody(void* rt, void* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		AST::Value& retValue)
+	{
+		auto* pReq = (httplib::Request*)m_pRequest;
+		std::string strVal = pReq->body;
+		retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size());
+		return true;
+	}
+	bool HttpRequest::Getpath(void* rt, void* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		AST::Value& retValue)
+	{
+		auto* pReq = (httplib::Request*)m_pRequest;
+		std::string strVal = pReq->path;
+		retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size());
+		return true;
+	}
+	bool HttpRequest::Getremote_addr(void* rt, void* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		AST::Value& retValue)
+	{
+		auto* pReq = (httplib::Request*)m_pRequest;
+		std::string strVal = pReq->remote_addr;
+		retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size());
+		return true;
+	}
 	bool HttpRequest::GetAllHeaders(void* rt, void* pContext, ARGS& params,
 		KWARGS& kwParams, AST::Value& retValue)
 	{

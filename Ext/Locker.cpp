@@ -30,18 +30,18 @@ Locker::~Locker(void)
 }
 void Locker::Lock()
 {
-#ifndef WIN32
-	m_cs->lock();
-#else
+#if (WIN32)
 	::EnterCriticalSection((CRITICAL_SECTION*)m_cs);
+#else
+	((std::mutex*)m_cs)->lock();
 #endif
 }
 
 void Locker::Unlock()
 {
-#ifndef WIN32
-	m_cs->unlock();
-#else
+#if (WIN32)
 	::LeaveCriticalSection((CRITICAL_SECTION*)m_cs);
+#else
+	((std::mutex*)m_cs)->unlock();
 #endif
 }

@@ -2,7 +2,7 @@ import http
 import fs
 print("http Server Started")
 srv = http.Server()
-root = "C:/Dev/Cantor/factory"
+root = "c:/Dev/Cantor/factory"
 srv.get(".*",(req,res){
   path = req.get_path();
   print("path=${path}");

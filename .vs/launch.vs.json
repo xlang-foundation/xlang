@@ -6,7 +6,7 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "X.exe",
-      "args": [ "C:\\Dev\\X\\test\\import_test\\test.x" ],
+      "args": [ "c:/Dev/X/Scripts/service.x" ],
       "name": "X.exe"
     }
   ]

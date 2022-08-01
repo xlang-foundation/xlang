@@ -30,8 +30,8 @@ namespace X
 			}
 			m_IsBinary = (std::string::npos != mode.find_first_of('b'));
 			m_stream.open(m_fileName.c_str(),
-				std::ios_base::in|
-				m_IsBinary?std::ios_base::binary:0);
+				m_IsBinary? (std::ios_base::in
+				| std::ios_base::binary): std::ios_base::in);
 		}
 		~File()
 		{

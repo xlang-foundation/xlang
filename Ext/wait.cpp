@@ -3,11 +3,12 @@
 #include <Windows.h>
 #else
 #include <semaphore.h>
+#include <sys/time.h>
 #endif
 XWait::XWait(bool autoReset)
 {
 	m_autoReset = autoReset;
-	XWaitHandle handle = NULL;
+	XWaitHandle handle = nullptr;
 #if (WIN32)
 	HANDLE hEvt = CreateEvent(NULL, autoReset?FALSE:TRUE, FALSE, NULL);
 	handle = hEvt;
@@ -51,7 +52,7 @@ bool XWait::Wait(int timeoutMS)
 #else
 	struct timeval now;
 	struct timespec ts;
-	gettimeofday(&now, NULL);
+	gettimeofday(&now, nullptr);
 	if (timeoutMS == -1)
 	{
 		now.tv_sec += 3600 * 24;

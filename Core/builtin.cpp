@@ -4,11 +4,13 @@
 #include "funclist.h"
 #include "function.h"
 #include <iostream>
+#include "port.h"
 #ifdef _WIN32
 #include <Windows.h>
 #else
 #include <unistd.h>
-#endif#include <time.h> 
+#endif
+#include <time.h> 
 #include "utility.h"
 #include "task.h"
 #include <vector>
@@ -180,7 +182,7 @@ bool U_Sleep(X::Runtime* rt, void* pContext,
 			t = it->second.GetLongLong();
 		}
 	}
-	Sleep((int)t);
+	MS_SLEEP((int)t);
 	if (pContext)
 	{//with a function, means after sleep, call this function
 		X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
