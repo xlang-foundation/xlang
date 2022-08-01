@@ -158,10 +158,6 @@ namespace X
 					AST::ScopeWaitingStatus::HasWaiting:
 					AST::ScopeWaitingStatus::NoWaiting;
 			}
-			virtual AST::ScopeWaitingStatus IsWaitForCall(std::string& name) override
-			{
-				return AST::ScopeWaitingStatus::NoWaiting;
-			};
 			~PyProxyObject();
 			void SetModule(PyProxyObject* pModule)
 			{

@@ -45,16 +45,14 @@ namespace X
 		int event,
 		PyEngObjectPtr args)
 	{
+		//first, quickly return as possible
+		PyEng::Object objFrame(frame, true);
+		auto fileName = (std::string)objFrame["f_code.co_filename"];
+		if (fileName[0] == '<' && fileName[fileName.size() - 1] == '>')
 		{
-			PyEng::Object objFrame(frame, true);
-			auto fileName = (std::string)objFrame["f_code.co_filename"];
-			if (fileName[0] == '<' && fileName[fileName.size() - 1] == '>')
-			{
-				return 0;
-			}
-			//auto coName = (std::string)objFrame["f_code.co_name"];
-			//std::cout <<"M:"<< coName<< ",File:" << fileName << std::endl;
+			return 0;
 		}
+
 		PyEng::Object objRuntimeHandle(self, true);
 		Runtime* rt = (Runtime*)(unsigned long long)objRuntimeHandle;
 		TraceEvent te = (TraceEvent)event;
@@ -64,23 +62,6 @@ namespace X
 			if(st == AST::ScopeWaitingStatus::NoWaiting)
 			{
 				return 0;
-			}
-			else if (st == AST::ScopeWaitingStatus::NeedFurtherCallWithName)
-			{
-				PyEng::Object objFrame(frame, true);
-				auto fileName = (std::string)objFrame["f_code.co_filename"];
-				auto coName = (std::string)objFrame["f_code.co_name"];
-				if (fileName.find("demo")!= fileName.npos 
-					|| coName == "demo")
-				{
-					coName = coName;
-				}
-				ReplaceAll(fileName, "\\", "/");
-				st = rt->M()->HaveWaitForScope(fileName);
-				if (st == AST::ScopeWaitingStatus::NoWaiting)
-				{
-					return 0;
-				}
 			}
 		}
 		else
@@ -101,9 +82,8 @@ namespace X
 				return 0;
 			}
 		}
+
 		Data::PyStackFrame* frameProxy = nullptr;
-		PyEng::Object objFrame(frame, true);
-		auto fileName = (std::string)objFrame["f_code.co_filename"];
 		auto coName = (std::string)objFrame["f_code.co_name"];
 		int line = (int)objFrame["f_lineno"];
 		auto* pProxyModule = Data::PyObjectCache::I().QueryModule(fileName);
@@ -117,6 +97,7 @@ namespace X
 		pThisBlock = dynamic_cast<AST::Scope*>(blockObj);
 		auto* pLine = new Data::PyProxyObject(line-1);//X start line from 0 not 1
 		pLine->AddRef();
+		pLine->SetModuleFileName(fileName);
 		pLine->SetScope(pThisBlock);
 		if (te == TraceEvent::Call)
 		{

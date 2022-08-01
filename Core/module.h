@@ -33,16 +33,15 @@ struct CommandInfo
 {
 	dbg dbgType;
 
-	void* callContext = nullptr;
+	void* m_callContext = nullptr;
 	//vars below used in BuildLocals and BuildObjectContent
-	int frameId;
-	AST::Value varParam;
-	CommandProcessProc process = nullptr;
-	AST::Value* m_retValueHolder = nullptr;
-	void** m_valPlaceholder = nullptr;
-	void** m_valPlaceholder2=nullptr;
-	void** m_valPlaceholder3 = nullptr;
-	TraceEvent* m_traceEventPtr = nullptr;
+	TraceEvent m_traceEvent= TraceEvent::None;
+	int m_frameId;
+	AST::Expression* m_pExpToRun = nullptr;
+	AST::Value m_varParam;//for input when add command
+	AST::Value* m_retValueHolder = nullptr;//for command output
+
+	CommandProcessProc m_process = nullptr;
 	XWait* m_wait = nullptr;
 };
 
@@ -221,12 +220,6 @@ public:
 	{
 		return m_dbgScopes.size() > 0?
 			m_dbgScopes[m_dbgScopes.size() - 1]->IsWaitForCall():
-			ScopeWaitingStatus::NoWaiting;
-	}
-	inline ScopeWaitingStatus HaveWaitForScope(std::string& name)
-	{
-		return m_dbgScopes.size() > 0 ?
-			m_dbgScopes[m_dbgScopes.size() - 1]->IsWaitForCall(name) :
 			ScopeWaitingStatus::NoWaiting;
 	}
 	inline void ReplaceLastDbgScope(Scope* s)

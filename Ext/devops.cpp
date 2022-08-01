@@ -179,11 +179,11 @@ namespace X
 			return true;
 		}
 		bool DebugService::BuildStackInfo(
-			TraceEvent traceEvent,
-			Runtime* rt,
-			AST::Expression* pCurExp,
+			Runtime* rt, void* pContextCurrent,
+			AST::CommandInfo* pCommandInfo,
 			AST::Value& valStackInfo)
 		{
+			TraceEvent traceEvent = pCommandInfo->m_traceEvent;
 			int index = 0;
 			AST::StackFrame* pCurStack = rt->GetCurrentStack();
 			Data::List* pList = new Data::List();
@@ -312,27 +312,24 @@ namespace X
 			{
 				valParam = it->second;
 			}
-			TraceEvent traceEvent = TraceEvent::None;
 			AST::CommandInfo cmdInfo;
-			cmdInfo.m_traceEventPtr = &traceEvent;
 			if (strCmd == "Stack")
 			{
+				auto stackTracePack = [](Runtime* rt,
+					void* pContextCurrent,
+					AST::CommandInfo* pCommandInfo,
+					AST::Value& retVal)
+				{
+					DebugService* pDebugService = (DebugService*)
+						pCommandInfo->m_callContext;
+					pDebugService->BuildStackInfo(rt, pContextCurrent,
+						pCommandInfo, retVal);
+				};
+				cmdInfo.m_callContext = this;
+				cmdInfo.m_process = stackTracePack;
+				cmdInfo.m_retValueHolder = &retValue;
 				cmdInfo.dbgType = AST::dbg::StackTrace;
-				AST::Expression* pExpToRun = nullptr;
-				Runtime* pCurrentRt = nullptr;
-				cmdInfo.m_valPlaceholder = (void**)&pExpToRun;
-				cmdInfo.m_valPlaceholder2 = (void**)&pCurrentRt;
 				pModule->AddCommand(cmdInfo, true);
-				if (pExpToRun)
-				{
-					BuildStackInfo(traceEvent,pCurrentRt,
-						(AST::Expression*)pExpToRun,
-						retValue);
-				}
-				else
-				{
-					retValue = AST::Value(AST::ValueType::None);
-				}
 			}
 			else if (strCmd == "Locals" || strCmd=="Object")
 			{
@@ -342,7 +339,7 @@ namespace X
 				{
 					frameId = (int)it2->second.GetLongLong();
 				}
-				cmdInfo.frameId = frameId;
+				cmdInfo.m_frameId = frameId;
 				cmdInfo.dbgType = AST::dbg::GetRuntime;
 				auto localPack = [](Runtime* rt,
 					void* pContextCurrent,
@@ -350,9 +347,9 @@ namespace X
 					AST::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
-						pCommandInfo->callContext;
+						pCommandInfo->m_callContext;
 					pDebugService->BuildLocals(rt, pContextCurrent,
-						pCommandInfo->frameId, retVal);
+						pCommandInfo->m_frameId, retVal);
 				};
 				auto objPack = [](Runtime* rt,
 					void* pContextCurrent,
@@ -360,47 +357,24 @@ namespace X
 					AST::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
-						pCommandInfo->callContext;
+						pCommandInfo->m_callContext;
 					pDebugService->BuildObjectContent(rt, pContextCurrent,
-						pCommandInfo->frameId,
-						pCommandInfo->varParam,
+						pCommandInfo->m_frameId,
+						pCommandInfo->m_varParam,
 						retVal);
 				};
 				if (strCmd == "Locals")
 				{
-					cmdInfo.process = localPack;
+					cmdInfo.m_process = localPack;
 				}
 				else if (strCmd == "Object")
 				{
-					cmdInfo.process = objPack;
+					cmdInfo.m_process = objPack;
 				}
-				cmdInfo.varParam = valParam;
-				cmdInfo.callContext = this;
-				Runtime* pCurrentRt = nullptr;
-				void* pContextCurrent = nullptr;
+				cmdInfo.m_varParam = valParam;
+				cmdInfo.m_callContext = this;
 				cmdInfo.m_retValueHolder = &retValue;
-				//cmdInfo.m_valPlaceholder2 = (void**)&pCurrentRt;
-				//cmdInfo.m_valPlaceholder3 = (void**)&pContextCurrent;
 				pModule->AddCommand(cmdInfo, true);
-				retValue = retValue;
-				/*
-				if (pCurrentRt)
-				{
-					if (strCmd == "Locals")
-					{
-						BuildLocals(pCurrentRt, pContextCurrent,
-							frameId, retValue);
-					}
-					else if (strCmd == "Object")
-					{
-						BuildObjectContent(pCurrentRt, pContextCurrent,
-							frameId, valParam, retValue);
-					}
-				}
-				else
-				{
-					retValue = AST::Value();
-				}*/
 			}
 			if (strCmd == "Step")
 			{

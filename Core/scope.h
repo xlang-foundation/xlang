@@ -64,10 +64,6 @@ public:
 	{ 
 		return ScopeWaitingStatus::NoWaiting;
 	};
-	virtual ScopeWaitingStatus IsWaitForCall(std::string& name)
-	{
-		return ScopeWaitingStatus::NoWaiting;
-	};
 	virtual Scope* GetParentScope()= 0;
 	virtual int AddOrGet(std::string& name, bool bGetOnly)
 	{//Always append,no remove, so new item's index is size of m_Vars;

@@ -10,25 +10,16 @@ namespace AST
 class ScopeProxy:
 	public Scope
 {
-	std::string m_name;
-	virtual bool isEqual(Scope* s) override;
-
 	// Inherited via Scope
 	virtual AST::ScopeWaitingStatus IsWaitForCall() override
 	{
-		return AST::ScopeWaitingStatus::NeedFurtherCallWithName;
-	}
-	virtual AST::ScopeWaitingStatus IsWaitForCall(std::string& name) override
-	{
-		m_name = name;
 		return AST::ScopeWaitingStatus::HasWaiting;
-	};
+	}
 	virtual Scope* GetParentScope() override;
 public:
-	ScopeProxy(std::string name):
+	ScopeProxy():
 		Scope()
 	{
-		m_name = name;
 	}
 };
 class AsOp :

@@ -2,19 +2,6 @@
 #include "manager.h"
 #include "pyproxyobject.h"
 #include "dotop.h"
-
-bool X::AST::ScopeProxy::isEqual(Scope* s)
-{
-	auto* proxyObj = dynamic_cast<Data::PyProxyObject*>(s);
-	if (proxyObj)
-	{
-		if (m_name == proxyObj->GetName())
-		{
-			return true;
-		}
-	}
-	return false;
-}
 X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
 {
 	return nullptr;
@@ -22,24 +9,7 @@ X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
 bool X::AST::Import::CalcCallables(Runtime* rt, void* pContext,
 	std::vector<Scope*>& callables)
 {
-	std::string strName;
-	if (R->m_type == ObType::Var)
-	{
-		Var* var = (Var*)R;
-		String& name = var->GetName();
-		strName = std::string(name.s, name.size);
-	}
-	std::string strFullName;
-	if (Manager::I().HasPackage(strName))
-	{
-		strFullName = strName;
-	}
-	else
-	{
-		std::string path = rt->M()->GetModulePath();
-		strFullName = path + "/" + strName + ".py";
-	}
-	ScopeProxy* pProxy = new ScopeProxy(strFullName);
+	ScopeProxy* pProxy = new ScopeProxy();
 	callables.push_back(pProxy);
 	return true;
 }

@@ -105,22 +105,19 @@ public:
 			switch (cmdInfo.dbgType)
 			{
 			case AST::dbg::GetRuntime:
-			{
-				if (cmdInfo.process)
+			case AST::dbg::StackTrace:
+				//just get back the current exp, then
+				//will calcluate out stack frames
+				//by call AddCommand
+				if (cmdInfo.m_process)
 				{
 					AST::Value retVal;
-					cmdInfo.process(rt, pContext, &cmdInfo, retVal);
+					cmdInfo.m_process(rt, pContext, &cmdInfo, retVal);
 					if (cmdInfo.m_retValueHolder)
 					{
 						*cmdInfo.m_retValueHolder = retVal;
 					}
 				}
-			}
-			break;
-			case AST::dbg::StackTrace:
-				//just get back the current exp, then
-				//will calcluate out stack frames
-				//by call AddCommand
 				break;
 			case AST::dbg::Continue:
 				m_rt->M()->SetDbgType(AST::dbg::Continue,
@@ -155,22 +152,6 @@ public:
 				break;
 			default:
 				break;
-			}
-			if (cmdInfo.m_valPlaceholder)
-			{
-				*cmdInfo.m_valPlaceholder = (void*)exp;
-			}
-			if (cmdInfo.m_valPlaceholder2)
-			{
-				*cmdInfo.m_valPlaceholder2 = (void*)rt;
-			}
-			if (cmdInfo.m_valPlaceholder3)
-			{
-				*cmdInfo.m_valPlaceholder3 = (void*)pContext;
-			}
-			if (cmdInfo.m_traceEventPtr)
-			{
-				*cmdInfo.m_traceEventPtr = evt;
 			}
 			if (cmdInfo.m_wait)
 			{

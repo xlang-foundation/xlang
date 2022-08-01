@@ -107,13 +107,7 @@ namespace X
 		bool PyProxyObject::CalcCallables(Runtime* rt, void* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
-			/*if (m_proxyType == PyProxyType::Module ||
-				m_proxyType == PyProxyType::Func)*/
-			//for Line type, will be replaced by Trace 'Call' event
-			//with the Scope which is Func type
-			{
-				callables.push_back(dynamic_cast<AST::Scope*>(this));
-			}
+			callables.push_back(dynamic_cast<AST::Scope*>(this));
 			return true;
 		}
 		int PyProxyObject::AddOrGet(std::string& name, bool bGetOnly)
@@ -215,7 +209,7 @@ namespace X
 				for (long long i = 0; i < count; i++)
 				{
 					long long idx = startIndex + i;
-					PyEng::Object objVal = m_obj[i];
+					PyEng::Object objVal = m_obj[(int)i];
 					AST::Value val;
 					PyObjectToValue(objVal, val);
 					Dict* dict = new Dict();
