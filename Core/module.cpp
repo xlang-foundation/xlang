@@ -92,7 +92,7 @@ bool Module::HitBreakpoint(int line)
 		SPRINTF(strBuf, online_len, "[{\"HitBreakpoint\":%d}]", line);
 		kwParams.emplace(std::make_pair("param", strBuf));
 		std::cout << "HitBreakpoint in line:" << line << std::endl;
-		std::string evtName("IPC.Session");
+		std::string evtName("Devops.Dbg");
 		X::EventSystem::I().Fire(evtName, kwParams);
 	}
 	return bHit;

@@ -69,7 +69,7 @@ int main1(int argc, char* argv[])
 	std::cout << "End." << std::endl;
 	return 0;
 }
-int main(int argc, char* argv[])
+int main_runfile(int argc, char* argv[])
 {
 	//LoadTest();
 	signal(SIGINT, signal_callback_handler);
@@ -97,18 +97,18 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-int main_dbg(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	LoadTest();
 
 	X::DevOps::Debugger dbg;
-	dbg.Start();
+	dbg.Init();
 	signal(SIGINT, signal_callback_handler);
 	REGISTER_PACKAGE("http", X::Http)
 		REGISTER_PACKAGE("fs", X::FileSystem)
 		X::Builtin::I().RegisterInternals();
 	X::EventSystem::I().Loop();
-	dbg.Stop();
+	dbg.Uninit();
 	X::Builtin::I().Cleanup();
 	X::Manager::I().Cleanup();
 

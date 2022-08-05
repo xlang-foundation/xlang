@@ -49,6 +49,7 @@ namespace X
 		void* m_HandlerContext = nullptr;
 		On_Data  m_dataHandler = nullptr;
 		bool m_run = false;
+		std::string m_id;
 	public:
 		IpcSession(IPC_HANDLE hPipe, IpcServer* srv, void* waitHandle);
 		void SetDataHandler(void* pContext,On_Data dataHandler)
@@ -56,6 +57,8 @@ namespace X
 			m_HandlerContext = pContext;
 			m_dataHandler = dataHandler;
 		}
+		inline void SetId(std::string& id) { m_id = id; }
+		inline std::string& GetId() { return m_id; }
 		void* GetOverlaped() { return m_Overlap; }
 		void Close();
 		bool Send(char* data, int size);

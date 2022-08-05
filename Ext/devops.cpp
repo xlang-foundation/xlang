@@ -1,44 +1,146 @@
 #include "devops.h"
 #include <iostream>
-#include "ipc.h"
 #include "Hosting.h"
 #include "manager.h"
 #include "dict.h"
 #include "list.h"
 #include "pyproxyobject.h"
+#include "gthread.h"
+#include "httplib.h"
+#include <chrono>
+#include "port.h"
+#include "event.h"
 
 namespace X
 {
 	namespace DevOps
 	{
-#define DevOps_Pipe_Name "\\\\.\\pipe\\x.devops"
+		#define	dbg_evt_name "Devops.Dbg"
 		class DebuggerImpl :
-			public Debugger
+			public Debugger,
+			public GThread
 		{
-			IpcServer m_ipcSrv;
-			inline virtual bool Start() override
+			bool m_bRun = false;
+			bool m_bRegistered = false;
+			httplib::Client* m_pClient = nullptr;
+			std::string m_sessionId;
+			inline virtual bool Init() override
 			{
 				REGISTER_PACKAGE("xdb", DebugService);
-				m_ipcSrv.SetBufferSize(1024 * 32);
+				X::Event* pEvt = X::EventSystem::I().Register(dbg_evt_name);
+				if (pEvt)
+				{
+					pEvt->Release();
+				}
 				std::cout << "DebuggerImpl::Start()" << std::endl;
-				m_ipcSrv.Start();
-				return true;
+				m_bRun = true;
+				return GThread::Start();
 			}
-			inline virtual bool Stop() override
+			inline virtual bool Uninit() override
 			{
+				GThread::Stop();
+				X::EventSystem::I().Unregister(dbg_evt_name);
 				std::cout << "DebuggerImpl::Stop()" << std::endl;
-				m_ipcSrv.Stop();
 				return true;
 			}
-			void OnNewSession(IpcSession* newSession)
+
+			int64_t getCurrentMSinceEpoch()
 			{
-				newSession->SetDataHandler(this,
-					[](void* pContext, IpcSession* pSession,
-						char* data, int size) {
-							((DebuggerImpl*)pContext)->OnData(pSession, data, size);
-					});
+				return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 			}
-			void OnData(IpcSession* pSession, char* data, int size)
+			void CheckAndRegister(httplib::Client& cli)
+			{
+				if (m_bRegistered)
+				{
+					return;
+				}
+				//char szHostName[255];
+				//gethostname(szHostName, 255);
+				if (auto res = cli.Get("/register")) 
+				{
+					if (res->status == 200) 
+					{
+						m_sessionId = res->body;
+						m_bRegistered = true;
+						std::cout <<"Registered:"<<m_sessionId << std::endl;
+					}
+				}
+				else 
+				{
+					auto err = res.error();
+					std::cout << "HTTP error: " << httplib::to_string(err) << std::endl;
+				}
+			}
+			// Inherited via GThread
+			virtual void run() override
+			{
+				//if use localhost, will take long time to solve the name in DNS
+				httplib::Client cli("http://127.0.0.1:3141");
+				cli.set_keep_alive(true);
+				m_pClient = &cli;
+				X::Event* pEvt = X::EventSystem::I().Query(dbg_evt_name);
+				void* h = pEvt->Add([](void* pContext, X::Event* pEvt) 
+				{
+					DebuggerImpl* pThis = (DebuggerImpl*)pContext;
+					std::string sessionId = pThis->GetSessionId();
+					httplib::Client* pCli = pThis->GetHttpClient();
+					auto valAction = pEvt->Get("action");
+					auto strAction = valAction.ToString();
+					std::string notifyInfo;
+					if (strAction == "end")
+					{
+						notifyInfo = "end";
+					}
+					else if (strAction == "notify")
+					{
+						auto valParam = pEvt->Get("param");
+						auto strParam = valParam.ToString();
+						notifyInfo = "$notify$" + strParam;
+					}
+					httplib::Headers headBack;
+					headBack.emplace(std::make_pair("sessionId", sessionId));
+					auto res = pCli->Post("/send_ack",
+						headBack,
+						notifyInfo.c_str(), notifyInfo.size(),
+						"text/plain");
+					std::cout << "Sent out Notify:" << notifyInfo << std::endl;
+				}, &cli);
+				while (m_bRun)
+				{
+					CheckAndRegister(cli);
+					httplib::Headers headGet;
+					headGet.emplace(std::make_pair("sessionId", m_sessionId));
+					int64_t t1 = getCurrentMSinceEpoch();
+					auto res = cli.Get("/get_cmd", headGet);
+					int64_t t2 = getCurrentMSinceEpoch();
+					//std::cout << "diff:" <<t2-t1	<< std::endl;
+					auto err = res.error();
+					if (err != httplib::Error::Success)
+					{
+						continue;
+					}
+					if (res->status != 200)
+					{
+						continue;
+					}
+					std::string cmdId = res->get_header_value("cmd_id");
+					if (res->body == "None")
+					{
+						MS_SLEEP(10);
+						continue;
+					}
+					//std::cout << res->body << std::endl;
+					std::string ack = ProcessData(
+						(char*)res->body.c_str(), (int)res->body.size());
+					httplib::Headers headBack;
+					headBack.emplace(std::make_pair("sessionId", m_sessionId));
+					headBack.emplace(std::make_pair("cmd_id", cmdId));
+					res = cli.Post("/send_ack", headBack,
+						ack.c_str(), ack.size(),
+						"text/plain");
+				}
+			}
+			std::string ProcessData(char* data, int size)
 			{
 				//std::cout << data << std::endl;
 				std::string moduleName("debugger.x");
@@ -56,22 +158,25 @@ namespace X
 				{
 					ack = "Failed";
 				}
-				pSession->Send((char*)ack.c_str(), (int)ack.size());
 				//std::cout << "back:" << ack<< std::endl;
+				return ack;
 			}
 		public:
-			DebuggerImpl() :Debugger(0),
-				m_ipcSrv(DevOps_Pipe_Name, this,
-					[](void* pContext, IpcSession* newSession) 
-					{
-						((DebuggerImpl*)pContext)->OnNewSession(newSession);
-					})
+			DebuggerImpl() :Debugger(0)
 			{
 				std::cout << "DebuggerImpl()" << std::endl;
 			}
 			~DebuggerImpl()
 			{
 				std::cout << "~DebuggerImpl()" << std::endl;
+			}
+			httplib::Client* GetHttpClient()
+			{
+				return m_pClient;
+			}
+			std::string& GetSessionId()
+			{
+				return m_sessionId;
 			}
 		};
 

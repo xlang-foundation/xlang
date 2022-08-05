@@ -3,7 +3,7 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-project ("X")
+project ("xlang")
 
 include_directories("Inc")
 include_directories("Ext")
@@ -18,7 +18,7 @@ FILE(GLOB Http_SRC "Http/*.cpp")
 FILE(GLOB Text_SRC "Text/*.cpp")
 FILE(GLOB Main_SRC "Main/*.cpp")
 
-add_executable (X 
+add_executable (${PROJECT_NAME}
 	"X.cpp" 
 	"X.h"
 	${Core_SRC}
@@ -34,7 +34,8 @@ else()
 endif()
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET X PROPERTY CXX_STANDARD 20)
+  set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 endif()
 
 add_subdirectory("PyEng")
+add_subdirectory("DevSrv")

@@ -21,14 +21,14 @@ namespace X
 			inline Debugger(int) {}//avoid recursive constructor calls
 			~Debugger();
 			//must be virtual
-			inline virtual bool Start()
+			inline virtual bool Init()
 			{
-				return mImpl->Start();
+				return mImpl->Init();
 			}
 			//must be virtual
-			inline virtual bool Stop()
+			inline virtual bool Uninit()
 			{
-				return mImpl->Stop();
+				return mImpl->Uninit();
 			}
 		};
 		class DebugService
