@@ -19,7 +19,8 @@ if (WIN32)
 	add_executable (${PROJECT_NAME} WIN32 
 		${Main_SRC} ${Dev_SRC})
 else()
-	add_executable (${PROJECT_NAME} ${Main_SRC})
+	add_executable (${PROJECT_NAME} ${Main_SRC}
+		${Dev_SRC})
     target_link_libraries(${PROJECT_NAME} pthread dl)
 endif()
 

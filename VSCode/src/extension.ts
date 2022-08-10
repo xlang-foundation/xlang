@@ -1,6 +1,4 @@
 'use strict';
-
-import { Func } from 'mocha';
 import * as Net from 'net'
 import * as vscode from 'vscode';
 import { activateXLangDebug} from './activateXLangDebug';
@@ -117,7 +115,25 @@ export class XlangDevOps {
     
 }
 
-export function activate(context: vscode.ExtensionContext) {
+let devSrvStatusBarItem: vscode.StatusBarItem;
+export function activate( context: vscode.ExtensionContext) {
+    	// register a command that is invoked when the status bar
+	// item is selected
+	const devSrvCmdId = 'xlang.DevServer.Commands';
+    const subscriptions = context.subscriptions;
+	subscriptions.push(vscode.commands.registerCommand(devSrvCmdId, () => {
+		//const n = getNumberOfSelectedLines(vscode.window.activeTextEditor);
+		vscode.window.showQuickPick(["Local","Remote"]);
+		//vscode.window.showInformationMessage(`Yeah, ${n} line(s) selected... Keep going!`);
+	}));
+
+	// create a new status bar item that we can now manage
+	devSrvStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+	devSrvStatusBarItem.command = devSrvCmdId;
+	subscriptions.push(devSrvStatusBarItem);
+    
+    devSrvStatusBarItem.text = `X-DevServer`;
+	devSrvStatusBarItem.show();
     activateXLangDebug(context);
 }
 

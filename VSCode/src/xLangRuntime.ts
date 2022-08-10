@@ -192,7 +192,7 @@ export class XLangRuntime extends EventEmitter {
 		this._moduleKey = await this.loadSource(this._sourceFile);
 		if (this._moduleKey!=0) {
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
-				+ ", onFinish = 'fire(\"IPC.Session\",action=\"end\",tid=${tid})'"
+				+ ", onFinish = 'fire(\"Devops.Dbg\",action=\"end\",tid=${tid})'"
 				+ ",stopOnEntry=True)\nreturn True";
 			this.Call(code, (ret) => {
 				console.log(ret);
