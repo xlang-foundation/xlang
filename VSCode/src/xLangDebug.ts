@@ -58,6 +58,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private _addressesInHex = true;
 
+	public getRuntime(){
+		return this._runtime;
+	}
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
 	 * We configure the default implementation of a debug adapter here.

@@ -67,6 +67,7 @@
   "main": "./dist/extension.js",
   "browser": "./dist/web-extension.js",
   "activationEvents": [
+    "onLanguage:xlang",
     "onDebugResolve:xlang",
     "onDebugDynamicConfigurations:xlang",
     "onCommand:extension.xlang.getProgramName",

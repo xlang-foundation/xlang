@@ -75,7 +75,7 @@ namespace X
 			virtual void run() override
 			{
 				//if use localhost, will take long time to solve the name in DNS
-				httplib::Client cli("http://192.168.1.171:3141");
+				httplib::Client cli("http://192.168.1.246:3141");
 				cli.set_keep_alive(true);
 				m_pClient = &cli;
 				X::Event* pEvt = X::EventSystem::I().Query(dbg_evt_name);

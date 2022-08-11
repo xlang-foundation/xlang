@@ -40,3 +40,6 @@ base on expression eval
    https://flask.palletsprojects.com/en/2.1.x/tutorial/templates/
    #jinja :Template Designer Documentation
    https://jinja.palletsprojects.com/en/3.1.x/templates/
+
+   #for WSL, to compile PyEng, run:
+   sudo apt-get install python3.10-dev

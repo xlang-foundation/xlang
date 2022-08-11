@@ -52,11 +52,29 @@ public:
         std::string id = FindIdleToolSession(newSession);
         newSession->SetId(id);
     }
+    void RunCmd(IpcSession* pSession, std::string cmd)
+    {
+        std::string ack;
+        if (cmd.starts_with("enumNodes"))
+        {
+            ack = "[\"New Local\",\
+                \"Attach Local:101\",\
+                \"Attach Local:102\",\
+                \"Attach Local:103\"\
+                ]";
+        }
+        pSession->Send((char*)ack.c_str(), (int)ack.size());
+    }
     void OnData(IpcSession* pSession, char* data, int size)
     {
         std::string id = pSession->GetId();
         std::cout << data << std::endl;
         std::string cmdData(data, size);
+        if (cmdData.starts_with("$cmd:"))
+        {
+            RunCmd(pSession,cmdData.substr(5));
+            return;
+        }
         cmd_info* cmd = new cmd_info();
         cmd->data = cmdData;
         cmd->wait = new XWait();

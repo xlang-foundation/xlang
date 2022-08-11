@@ -142,6 +142,7 @@ export function activateXLangDebug(context: vscode.ExtensionContext, factory?: v
 			return allValues;
 		}
 	}));
+	return factory;
 }
 
 class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
@@ -175,8 +176,11 @@ class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 }
 
 class InlineDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
-
+	private _xLangDebugSession:XLangDebugSession = new XLangDebugSession();
+	public getDbgSession(){
+		return this._xLangDebugSession;
+	}
 	createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
-		return new vscode.DebugAdapterInlineImplementation(new XLangDebugSession());
+		return new vscode.DebugAdapterInlineImplementation(this._xLangDebugSession);
 	}
 }

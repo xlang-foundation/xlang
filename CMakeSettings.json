@@ -45,15 +45,14 @@
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "linux_x64" ],
-      "remoteMachineName": "1433414768;192.168.1.99 (username=shawn, port=22, authentication=Password)",
+      "remoteMachineName": "-1671837371;192.168.1.99 (username=shawn, port=22, authentication=Password)",
       "remoteCMakeListsRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/src",
       "remoteBuildRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/build/${name}",
       "remoteInstallRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/install/${name}",
       "remoteCopySources": true,
       "rsyncCommandArgs": "-t --delete",
       "remoteCopyBuildOutput": false,
-      "remoteCopySourcesMethod": "rsync",
-      "variables": []
+      "remoteCopySourcesMethod": "rsync"
     }
   ]
 }

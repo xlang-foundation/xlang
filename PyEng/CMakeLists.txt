@@ -61,7 +61,7 @@ target_include_directories(${PROJECT_NAME}
 	"${Python3_NumPy_INCLUDE_DIRS}"
 	)
 target_link_directories(${PROJECT_NAME} PUBLIC 
-	"${Python3_LIBRARY_DIRS}"
+	"\"${Python3_LIBRARY_DIRS}\""
 	)
 
 if (WIN32)

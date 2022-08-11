@@ -136,6 +136,9 @@ export class XLangRuntime extends EventEmitter {
 	public getScopeRef(refId) {
 		return this.varRefMap[refId];
 	}
+	public getDevOpsConnection() {
+		return this._xlangDevOps;
+	}
 	checkConnection()
 	{
 		let This = this;
@@ -215,6 +218,7 @@ export class XLangRuntime extends EventEmitter {
 	}
 	private Call(code,cb)
 	{
+		this.checkConnection();		
 		this._xlangDevOps.Call(code, cb);
 	}
 	public continue(reverse: boolean,cb) {

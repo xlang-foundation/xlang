@@ -1,5 +1,5 @@
 'use strict';
-import * as Net from 'net'
+import * as Net from 'net';
 import * as vscode from 'vscode';
 import { activateXLangDebug} from './activateXLangDebug';
 
@@ -115,16 +115,30 @@ export class XlangDevOps {
     
 }
 
+
 let devSrvStatusBarItem: vscode.StatusBarItem;
+let xlangRuntime:XLangRuntime;
+
+function QueryDevOpsNodes(cb){
+    if(xlangRuntime) {
+        xlangRuntime.Call("$cmd:enumNodes",cb);
+    }
+}
 export function activate( context: vscode.ExtensionContext) {
     	// register a command that is invoked when the status bar
 	// item is selected
 	const devSrvCmdId = 'xlang.DevServer.Commands';
     const subscriptions = context.subscriptions;
 	subscriptions.push(vscode.commands.registerCommand(devSrvCmdId, () => {
-		//const n = getNumberOfSelectedLines(vscode.window.activeTextEditor);
-		vscode.window.showQuickPick(["Local","Remote"]);
-		//vscode.window.showInformationMessage(`Yeah, ${n} line(s) selected... Keep going!`);
+        QueryDevOpsNodes((retVals)=>{
+            var nodeList = JSON.parse(retVals);
+            vscode.window.showQuickPick(nodeList).then(
+                option => {
+                    vscode.window.showInformationMessage('Selected:'+option);
+                }
+            );
+            //vscode.window.showInformationMessage(`Yeah, ${n} line(s) selected... Keep going!`);
+        });
 	}));
 
 	// create a new status bar item that we can now manage
@@ -134,7 +148,13 @@ export function activate( context: vscode.ExtensionContext) {
     
     devSrvStatusBarItem.text = `X-DevServer`;
 	devSrvStatusBarItem.show();
-    activateXLangDebug(context);
+    const factory = activateXLangDebug(context);
+    if(factory){
+        const dbgSession  = factory.getDbgSession();
+        if(dbgSession){
+            xlangRuntime = dbgSession.getRuntime();
+        }
+    }
 }
 
 export function deactivate() {
