@@ -35,6 +35,19 @@ else()
     message(STATUS ${infoMsg})
 endif()
 
+set(REL_TAG "optimized")
+set(DBG_TAG "debug")
+
+string(FIND "${Python3_LIBRARIES}" "${REL_TAG}" pos_1)
+
+string(LENGTH "${REL_TAG}" len_1)
+string(FIND "${Python3_LIBRARIES}" "${DBG_TAG}" pos_2)
+MATH(EXPR len ${pos_2}-${len_1}) 
+IF(${pos_1} GREATER_EQUAL 0)
+    string(SUBSTRING "${Python3_LIBRARIES}" ${len_1} ${len} Python3_LIBRARIES)
+    message(STATUS ${pos_1} " " ${pos_2} " " ${Python3_LIBRARIES})
+ENDIF()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION")
