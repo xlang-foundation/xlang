@@ -54,9 +54,13 @@ namespace X
 				{
 					return;
 				}
+				auto pid = GetPID();
 				//char szHostName[255];
 				//gethostname(szHostName, 255);
-				if (auto res = cli.Get("/register")) 
+				const int online_len = 1000;
+				char regUrl[online_len];
+				SPRINTF(regUrl, online_len, "/register?pid=%lu", pid);
+				if (auto res = cli.Get(regUrl))
 				{
 					if (res->status == 200) 
 					{

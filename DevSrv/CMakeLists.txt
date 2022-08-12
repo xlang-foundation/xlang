@@ -16,8 +16,13 @@ FILE(GLOB Dev_SRC "../Ext/gthread.cpp"
 		"../Core/utility.cpp")
 
 if (WIN32)
-	add_executable (${PROJECT_NAME} WIN32 
-		${Main_SRC} ${Dev_SRC})
+	if (USING_UI)
+		add_executable (${PROJECT_NAME} WIN32 
+			${Main_SRC} ${Dev_SRC})
+	else()
+		add_executable (${PROJECT_NAME} 
+			${Main_SRC} ${Dev_SRC})
+	endif()
 else()
 	add_executable (${PROJECT_NAME} ${Main_SRC}
 		${Dev_SRC})

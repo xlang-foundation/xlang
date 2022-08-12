@@ -78,6 +78,16 @@ long long getCurMilliTimeStamp()
 	return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 #endif
 }
+unsigned long GetPID()
+{
+	unsigned long processId = 0;
+#if (WIN32)
+	processId = GetCurrentProcessId();
+#else
+	processId = getpid();
+#endif
+	return processId;
+}
 unsigned long GetThreadID()
 {
 	unsigned long tid = 0;

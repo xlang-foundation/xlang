@@ -6,6 +6,7 @@
 #include "def.h"
 #include "port.h"
 #include "utility.h"
+#include "router.h"
 
 namespace X { namespace Dev {
 #define DevOps_Pipe_Name "\\\\.\\pipe\\x.devops"
@@ -57,11 +58,21 @@ public:
         std::string ack;
         if (cmd.starts_with("enumNodes"))
         {
-            ack = "[\"New Local\",\
-                \"Attach Local:101\",\
-                \"Attach Local:102\",\
-                \"Attach Local:103\"\
-                ]";
+            ack = "[";
+            m_sessionLock.Lock();
+            for (auto it : m_SessionMap)
+            {
+                if (it.second->ToolSide == nullptr && it.second->xNodeInfo !=nullptr)
+                {
+                    auto pNode = it.second->xNodeInfo;
+                    ack += "\"Attach to " + pNode->Name+"\",";
+                }
+            }
+            ack += "\"New Local\"";
+            ack += "]";
+
+            m_sessionLock.Unlock();
+
         }
         pSession->Send((char*)ack.c_str(), (int)ack.size());
     }
@@ -246,7 +257,8 @@ void MainLoop()
     srv->Get("/register", [inProcSrv, srv](const httplib::Request& req,
         httplib::Response& res)
         {
-            std::string nameInfo;
+            std::string nameInfo = req.remote_addr;
+            nameInfo += ",pid:"+req.get_param_value("pid");
             std::string id = inProcSrv->ClientRegister(nameInfo);
             res.set_content(id, "text/plain");
         });

@@ -9,6 +9,7 @@ bool RunProcess(std::string cmd,
 	unsigned long& processId);
 
 long long getCurMilliTimeStamp();
+unsigned long GetPID();
 unsigned long GetThreadID();
 long long rand64();
 double randDouble(double m0 = LDBL_MIN, double mx = LDBL_MAX);

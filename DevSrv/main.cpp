@@ -2,7 +2,7 @@
 
 extern void MainLoop();
 
-#if (WIN32)
+#if (WIN32 && USING_UI)
 #include <windows.h>
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
