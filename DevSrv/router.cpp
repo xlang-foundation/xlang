@@ -2,4 +2,9 @@
 
 void X::Dev::DevRouter::run()
 {
+	while (m_run)
+	{
+
+
+	}
 }

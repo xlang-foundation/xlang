@@ -6,6 +6,7 @@ namespace X {
 		class DevRouter:
 			public GThread
 		{
+			bool m_run;
 			// Inherited via GThread
 			virtual void run() override;
 		};
