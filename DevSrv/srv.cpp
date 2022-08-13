@@ -53,25 +53,43 @@ public:
         std::string id = FindIdleToolSession(newSession);
         newSession->SetId(id);
     }
+    bool EnumNodes(IpcSession* pSession,std::string& ack)
+    {
+        ack = "[";
+        m_sessionLock.Lock();
+        for (auto it : m_SessionMap)
+        {
+            if (it.second->xNodeInfo != nullptr)
+            {
+                auto pNode = it.second->xNodeInfo;
+                if (it.second->ToolSide == nullptr)
+                {
+                    ack += "\"Attach to " + pNode->Name + "\",";
+                }
+                else if (it.second->ToolSide == pSession)
+                {
+                    ack += "\"" + pNode->Name + " Attached[This Session]\",";
+                }
+                else
+                {
+                    ack += "\"" + pNode->Name + " Attached[Other Sessions]\",";
+                }
+            }
+        }
+        m_sessionLock.Unlock();
+        ack += "\"New Local\"";
+        ack += "]";
+        return true;
+    }
     void RunCmd(IpcSession* pSession, std::string cmd)
     {
         std::string ack;
         if (cmd.starts_with("enumNodes"))
         {
-            ack = "[";
-            m_sessionLock.Lock();
-            for (auto it : m_SessionMap)
-            {
-                if (it.second->ToolSide == nullptr && it.second->xNodeInfo !=nullptr)
-                {
-                    auto pNode = it.second->xNodeInfo;
-                    ack += "\"Attach to " + pNode->Name+"\",";
-                }
-            }
-            ack += "\"New Local\"";
-            ack += "]";
-
-            m_sessionLock.Unlock();
+            EnumNodes(pSession, ack);
+        }
+        else if (cmd.starts_with("passBlob"))
+        {
 
         }
         pSession->Send((char*)ack.c_str(), (int)ack.size());
