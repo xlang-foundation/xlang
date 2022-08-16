@@ -72,7 +72,7 @@ namespace X
 				else 
 				{
 					auto err = res.error();
-					std::cout << "HTTP error: " << httplib::to_string(err) << std::endl;
+					//std::cout << "HTTP error: " << httplib::to_string(err) << std::endl;
 				}
 			}
 			// Inherited via GThread
@@ -168,11 +168,11 @@ namespace X
 		public:
 			DebuggerImpl() :Debugger(0)
 			{
-				std::cout << "DebuggerImpl()" << std::endl;
+				//std::cout << "DebuggerImpl()" << std::endl;
 			}
 			~DebuggerImpl()
 			{
-				std::cout << "~DebuggerImpl()" << std::endl;
+				//std::cout << "~DebuggerImpl()" << std::endl;
 			}
 			httplib::Client* GetHttpClient()
 			{
@@ -186,18 +186,18 @@ namespace X
 
 		Debugger::Debugger()
 		{
-			std::cout << "Debugger" << std::endl;
+			//std::cout << "Debugger" << std::endl;
 			mImpl = new DebuggerImpl();
-			std::cout << "After Impl of Debugger" << std::endl;
+			//std::cout << "After Impl of Debugger" << std::endl;
 		}
 		Debugger::~Debugger()
 		{
-			std::cout << "~Debugger()" << std::endl;
+			//std::cout << "~Debugger()" << std::endl;
 			if (mImpl)
 			{
 				delete mImpl;
 			}
-			std::cout << "After Impl of DebuggerImpl" << std::endl;
+			//std::cout << "After Impl of DebuggerImpl" << std::endl;
 		}
 		bool DebugService::BuildLocals(Runtime* rt,
 			void* pContextCurrent,int frameId,

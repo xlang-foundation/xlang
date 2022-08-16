@@ -5,9 +5,10 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "X.exe",
-      "args": [ "c:/Dev/X/Scripts/service.x" ],
-      "name": "X.exe"
+      "projectTarget": "xlang.exe",
+      "args.bak": [ "-dbg", "-enable_python", "\"-c 'import fs\n'\"", "c:/Dev/X/Scripts/service.x", "--x", "--y=10" ],
+      "args": [ "-dbg", "-enable_python"],
+      "name": "xlang.exe"
     }
   ]
 }

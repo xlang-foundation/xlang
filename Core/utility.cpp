@@ -253,3 +253,8 @@ std::string ExtName(std::string filePath)
 		return "";
 	}
 }
+bool exists(const std::string& name)
+{
+	struct stat buffer;
+	return (stat(name.c_str(), &buffer) == 0);
+}
