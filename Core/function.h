@@ -1,5 +1,5 @@
 #pragma once
-
+#include "xlang.h"
 #include "object.h"
 #include <string>
 namespace X
@@ -7,7 +7,8 @@ namespace X
 	namespace Data
 	{
 		class Function :
-			public Object
+			virtual public XFunc,
+			virtual public Object
 		{
 		protected:
 			AST::Func* m_func = nullptr;
@@ -19,7 +20,7 @@ namespace X
 			{
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
 			}
-			virtual std::string ToString(bool WithFormat = false)
+			virtual std::string ToString(bool WithFormat = false) override
 			{
 				std::string strRet= m_func->GetNameString();
 				if (strRet.empty())
@@ -38,7 +39,7 @@ namespace X
 			AST::Func* GetFunc() { return m_func; }
 			virtual bool Call(Runtime* rt, ARGS& params,
 				KWARGS& kwParams,
-				AST::Value& retValue);
+				AST::Value& retValue) override;
 		};
 
 	}

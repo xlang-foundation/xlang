@@ -9,6 +9,7 @@
 #include "glob.h"
 #include "utility.h"
 #include "objref.h"
+#include "xlang.h"
 
 namespace X {
 	namespace AST { class Scope; }
@@ -33,7 +34,8 @@ namespace Data {
 		PyProxyObject
 	};
 	class List;
-	class Object:
+	class Object :
+		virtual public XObj,
 		virtual public ObjRef
 	{
 	protected:
@@ -47,6 +49,15 @@ namespace Data {
 		{
 			G::I().RemoveObj(this);
 		}
+		inline virtual int IncRef()
+		{
+			return ObjRef::AddRef();
+		}
+		inline virtual int DecRef()
+		{
+			return ObjRef::Release();
+		}
+
 		inline bool IsFunc()
 		{
 			return (m_t == Type::Function);
@@ -60,11 +71,11 @@ namespace Data {
 			return nullptr; 
 		}
 		virtual bool CalcCallables(Runtime* rt, void* pContext,
-			std::vector<AST::Scope*>& callables) 
+			std::vector<AST::Scope*>& callables)
 		{
 			return false;
 		}
-		std::string GetTypeString()
+		virtual std::string GetTypeString()
 		{
 			switch (m_t)
 			{

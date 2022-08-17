@@ -66,7 +66,7 @@ namespace X
 						auto* pObj = (Data::Object*)v_r.GetObj();
 						if (pObj->GetType() == Data::Type::Function)
 						{
-							auto* pFuncObj = (Data::Function*)pObj;
+							auto* pFuncObj = dynamic_cast<Data::Function*>(pObj);
 							ARGS params;
 							KWARGS kwparams;
 							params.push_back(v_l);

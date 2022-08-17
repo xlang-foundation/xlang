@@ -22,7 +22,8 @@ namespace X {namespace AST {
 			if (x.obj && x.obj->GetType() == Data::Type::Str)
 			{
 				Data::Str* pOldObj = (Data::Str*)x.obj;
-				Data::Str* pStrObj = new Data::Str(pOldObj->ToString());
+				Data::Str* pStrObj = new Data::Str(
+					pOldObj->ToString());
 				pStrObj->AddRef();//for this Value
 				x.obj->Release();
 				x.obj = pStrObj;

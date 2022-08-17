@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 3.8)
 
 project ("xlang")
 
+include_directories("Api")
 include_directories("Inc")
 include_directories("Ext")
 include_directories("Core")
@@ -29,6 +30,8 @@ add_executable (${PROJECT_NAME}
 )
 
 if (WIN32)
+	#Inheritance via dominance warning
+	target_compile_options(${PROJECT_NAME} PRIVATE "/wd4250;")
 else()
     target_link_libraries(${PROJECT_NAME} pthread dl)
 endif()
