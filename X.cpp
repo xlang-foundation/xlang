@@ -94,29 +94,14 @@ bool LoadPythonEngine()
 		return false;
 	}
 }
-/*
-struct ParamConfig
-{
-	bool print_usage = false;//-help |-? |-h
-	bool dbg = false;//-dbg
-	bool enablePython = false;//-enable_python | -python
-	bool runAsBackend = false;//-run_as_backend |-backend
-	bool enterEventLoop = false;//-event_loop
-	std::string inlineCode;//-c "code"
-	std::string fileName;
-	std::vector<std::string> passInParams;
 
-
-	//context
-	void* pythonLibHandle = nullptr;
-};
-*/
 void PrintUsage()
 {
 	std::cout << 
 "xlang [-dbg] [-enable_python|-python] \n\
-      [-run_as_backend|-backend] [-event_loop] [-c \"code\"]\n\
-      [file params]" << std::endl;
+      [-run_as_backend|-backend] [-event_loop]\n\
+      [-c \"code,use \\n as line separator\"]\n\
+      [file parameters]" << std::endl;
 	std::cout << "xlang -help | -? | -h for help" << std::endl;
 }
 bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
@@ -127,6 +112,11 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 	if (pos != progName.npos)
 	{
 		g_ExePath = progName.substr(0, pos);
+	}
+	if (params.size() == 1)
+	{
+		paramCfg.print_usage = true;
+		return true;
 	}
 	int i = 1;
 	bool starFile = false;
@@ -241,6 +231,7 @@ int main(int argc, char* argv[])
 		HasCode = true;
 		code = g_ParamConfig.inlineCode;
 		ReplaceAll(code, "\\n", "\n");
+		ReplaceAll(code, "\\t", "\t");
 		X::Hosting::I().Run(fileName, g_ParamConfig.inlineCode.c_str(),
 			(int)g_ParamConfig.inlineCode.size(), retVal);
 	}
@@ -271,7 +262,10 @@ int main(int argc, char* argv[])
 		{
 			X::AST::Value retVal;
 			X::Hosting::I().Run(fileName, code.c_str(), (int)code.size(), retVal);
-			std::cout << retVal.ToString() << std::endl;
+			if (!retVal.IsInvalid())
+			{
+				std::cout << retVal.ToString() << std::endl;
+			}
 		}
 	}
 	if(enterEventLoop)//enter event loop if no file or no code
