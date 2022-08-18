@@ -25,7 +25,7 @@ namespace X
 				{
 					std::string name("find");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-							(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
+							(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
 								ARGS& params,
 								KWARGS& kwParams,
 					X::Value& retValue)
@@ -47,7 +47,7 @@ namespace X
 				{
 					std::string name("rfind");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
+						(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)
@@ -69,7 +69,7 @@ namespace X
 				{
 					std::string name("slice");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
+						(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)
@@ -97,7 +97,7 @@ namespace X
 				{
 					std::string name("size");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
+						(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)
@@ -113,7 +113,7 @@ namespace X
 				{
 					std::string name("split");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
+						(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)

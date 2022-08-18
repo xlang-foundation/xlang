@@ -78,13 +78,13 @@ bool Func::Run(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 	return true;
 }
 
-bool Func::Call(Runtime* rt,
+bool Func::Call(XRuntime* rt0,
 	void* pContext,
 	std::vector<Value>& params,
 	KWARGS& kwParams,
 	Value& retValue)
 {
-	rt = G::I().Threading(rt);
+	Runtime* rt = G::I().Threading((Runtime*)rt0);
 	auto* pContextObj = (X::Data::Object*)pContext;
 	StackFrame* frame = new StackFrame(this);
 	rt->PushFrame(frame,GetVarNum());

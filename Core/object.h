@@ -100,14 +100,10 @@ namespace Data {
 		{
 			return nullptr;
 		}
-		virtual ObjType GetObjType() override
+		virtual ObjType GetType() override
 		{
-			return (ObjType)m_t;
+			return m_t;
 		}
-		ObjType GetType() { return m_t; }
-		virtual bool Call(Runtime* rt, ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue) = 0;
 		virtual long long Size() { return 0; }
 		virtual size_t Hash()
 		{
@@ -153,7 +149,7 @@ namespace Data {
 			m_expr = e;
 		}
 		AST::Expression* Get() { return m_expr; }
-		virtual bool Call(Runtime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
@@ -179,7 +175,7 @@ namespace Data {
 			m_func = p;
 		}
 		AST::Func* GetFunc() { return m_func; }
-		virtual bool Call(Runtime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
@@ -237,11 +233,11 @@ namespace Data {
 			return m_stackFrame;
 		}
 		AST::XClass* GetClassObj() { return m_obj; }
-		virtual bool Call(Runtime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return m_obj->Call(rt,this,
+			return m_obj->Call((Runtime*)rt,this,
 				params, kwParams, retValue);
 		}
 	};
@@ -259,7 +255,7 @@ namespace Data {
 		{
 			m_pTask = task;
 		}
-		virtual bool Call(Runtime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{

@@ -12,7 +12,7 @@ namespace X
 		Function::~Function()
 		{
 		}
-		bool Function::Call(Runtime* rt, ARGS& params,
+		bool Function::Call(XRuntime* rt, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{

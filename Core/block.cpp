@@ -27,8 +27,9 @@ void Block::Add(Expression* item)
 	item->ScopeLayout();
 
 }
-bool Block::Run(Runtime* rt,void* pContext, Value& v, LValue* lValue)
+bool Block::Run(XRuntime* rt0,void* pContext, Value& v, LValue* lValue)
 {
+	Runtime* rt = (Runtime*)rt0;
 	bool bOk = true;
 	m_bRunning = true;
 	if (rt->GetTrace() 

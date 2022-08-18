@@ -201,7 +201,7 @@ public:
 		m_rowId = id;
 	}
 	long long r() { return m_r; }
-	virtual bool Call(Runtime* rt, ARGS& params,
+	virtual bool Call(XRuntime* rt, ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue) override
 	{
@@ -325,7 +325,7 @@ public:
 		}
 		return true;
 	}
-	virtual bool Call(Runtime* rt, ARGS& params,
+	virtual bool Call(XRuntime* rt, ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue) override
 	{

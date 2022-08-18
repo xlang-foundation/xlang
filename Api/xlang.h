@@ -2,7 +2,10 @@
 #define _X_LANG_H_
 
 #include <string>
+#include <vector>
+#include <unordered_map>
 #include "value.h"
+#include "xhost.h"
 
 namespace X
 {
@@ -29,11 +32,14 @@ namespace X
 	public:
 		virtual int IncRef() = 0;
 		virtual int DecRef() = 0;
-		virtual ObjType GetObjType() = 0;
+		virtual ObjType GetType() = 0;
 		virtual std::string GetTypeString() = 0;
 		virtual long long Size() = 0;
 		virtual size_t Hash() = 0;
 		virtual std::string ToString(bool WithFormat = false)=0;
+		virtual bool Call(XRuntime* rt, ARGS& params,
+			KWARGS& kwParams,
+			X::Value& retValue) = 0;
 
 		virtual XObj& operator +=(Value& r)
 		{
@@ -62,6 +68,16 @@ namespace X
 	{
 
 	};
+	class XPackage:
+		virtual public XObj
+	{
+	public:
+		virtual int AddMethod(const char* name) = 0;
+		virtual void* GetEmbedObj() = 0;
+		virtual bool Init(int varNum) = 0;
+		virtual bool SetIndexValue(XRuntime* rt, void* pContext, int idx, Value& v) = 0;
+	};
+
 }
 
 #endif

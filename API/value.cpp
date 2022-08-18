@@ -3,6 +3,8 @@
 //#include "str.h"
 #include "xlang.h"
 #include "utility.h"
+#include "xhost.h"
+
 namespace X 
 {
 	ARITH_OP_IMPL(+= )
@@ -20,10 +22,10 @@ namespace X
 	{
 		if (t == ValueType::Object)
 		{
-			if (x.obj && x.obj->GetObjType() == ObjType::Str)
+			if (x.obj && x.obj->GetType() == ObjType::Str)
 			{
 				std::string oldStr = x.obj->ToString();
-				auto newObj = g_pXHost->CreateStrObj(oldStr.c_str(), x.obj->Size());
+				auto newObj = g_pXHost->CreateStrObj(oldStr.c_str(), (int)x.obj->Size());
 				x.obj->DecRef();
 				x.obj = newObj;
 			}
@@ -122,7 +124,7 @@ namespace X
 		if(x.obj)
 		{
 			str = x.obj->ToString(WithFormat);
-			if (WithFormat && x.obj->GetObjType() == ObjType::Str)
+			if (WithFormat && x.obj->GetType() == ObjType::Str)
 			{
 				str= StringifyString(str);
 			}

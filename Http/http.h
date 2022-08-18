@@ -1,6 +1,5 @@
 #pragma once
 #include "xpackage.h"
-#include "function.h"
 #include <vector>
 namespace X
 {

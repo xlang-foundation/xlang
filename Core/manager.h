@@ -6,11 +6,11 @@
 #include "singleton.h"
 #include "module.h"
 #include "package.h"
+#include "xlang.h"
 
 namespace X 
 {
 	class Runtime;
-	typedef AST::Package* (*PackageCreator)(Runtime* rt);
 	class Manager :
 		public Singleton<Manager>
 	{
@@ -48,8 +48,8 @@ namespace X
 				if (info.package == nullptr)
 				{
 					auto* pPack = info.creator(rt);
-					pPack->AddRef();
-					info.package = pPack;
+					pPack->IncRef();
+					info.package = dynamic_cast<AST::Package*>(pPack);
 				}
 				bCreated = (info.package != nullptr);
 				*ppPackage = info.package;

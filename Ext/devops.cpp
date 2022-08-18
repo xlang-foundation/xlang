@@ -372,7 +372,7 @@ namespace X
 				return true;
 			}
 			if (!varLines.IsObject()
-				|| varLines.GetObj()->GetObjType() != X::ObjType::List)
+				|| varLines.GetObj()->GetType() != X::ObjType::List)
 			{
 				retValue = X::Value(false);
 				return true;

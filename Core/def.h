@@ -52,8 +52,6 @@ typedef bool (*UnaryOpProc)(
 	Runtime* rt, AST::UnaryOp* op,X::Value& R, X::Value& out);
 typedef bool (*BinaryOpProc)(
 	Runtime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& out);
-typedef std::vector<X::Value> ARGS;
-typedef std::unordered_map<std::string, X::Value> KWARGS;
 
 #define Precedence_High1 201
 #define Precedence_High 200

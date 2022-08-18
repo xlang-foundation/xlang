@@ -4,6 +4,7 @@
 #include "gthread.h"
 #include "exp.h"
 #include "runtime.h"
+#include "xlang.h"
 
 namespace X
 {

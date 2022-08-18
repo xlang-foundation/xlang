@@ -229,7 +229,7 @@ bool Builtin::Register(const char* name, void* func,
 	std::string strName(name);
 	AST::ExternFunc* extFunc = new AST::ExternFunc(
 		strName,
-		(AST::U_FUNC)func);
+		(X::U_FUNC)func);
 	m_mapFuncs.emplace(std::make_pair(name,extFunc));
 	return true;
 }

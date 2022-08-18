@@ -149,8 +149,9 @@ public:
 		std::vector<Scope*>& callables) override;
 };
 class Package :
-	public Data::Object,
-	public Scope
+	virtual public XPackage,
+	virtual public Data::Object,
+	virtual public Scope
 {
 	void* m_pObject = nullptr;
 	StackFrame* m_stackFrame = nullptr;
@@ -165,29 +166,40 @@ public:
 	{
 		std::cout << "~Package()"<<std::endl;
 	}
+	virtual int AddMethod(const char* name) override
+	{
+		std::string strName(name);
+		return Scope::AddOrGet(strName, false);
+	}
 	inline virtual AST::Scope* GetScope()
 	{
 		return dynamic_cast<Scope*>(this);
 	}
-	void* GetObj() { return m_pObject; }
-	bool Init(int varNum)
+	virtual void* GetEmbedObj() override 
+	{ 
+		return m_pObject; 
+	}
+	virtual bool Init(int varNum) override
 	{
 		m_stackFrame = new StackFrame(this);
 		m_stackFrame->SetVarCount(varNum);
 		return true;
 	}
-	virtual bool Call(Runtime* rt, ARGS& params,
+	virtual bool Call(XRuntime* rt, ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
 	{
 		return true;
 	}
-
 	// Inherited via Scope
 	virtual bool Set(Runtime* rt, void* pContext, int idx, Value& v) override
 	{
 		m_stackFrame->Set(idx, v);
 		return true;
+	}
+	virtual bool SetIndexValue(XRuntime* rt, void* pContext, int idx, Value& v) override
+	{
+		return Set((Runtime*)rt, pContext, idx, v);
 	}
 	virtual bool Get(Runtime* rt, void* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override

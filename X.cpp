@@ -18,6 +18,7 @@
 #include "event.h"
 #include "port.h"
 #include "PyEngObject.h"
+#include "xhost.h"
 #include "xhost_impl.h"
 
 struct ParamConfig

@@ -64,7 +64,7 @@ namespace X
 					if (v_r.IsObject())
 					{
 						auto* pObj = dynamic_cast<Data::Object*>(v_r.GetObj());
-						if (pObj->GetObjType() == ObjType::Function)
+						if (pObj->GetType() == ObjType::Function)
 						{
 							auto* pFuncObj = dynamic_cast<Data::Function*>(pObj);
 							ARGS params;

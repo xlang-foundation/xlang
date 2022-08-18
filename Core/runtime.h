@@ -1,6 +1,7 @@
 #pragma once
 #include "stackframe.h"
 #include "utility.h"
+#include "xlang.h"
 
 namespace X {
 namespace AST
@@ -30,7 +31,8 @@ typedef bool (*XTraceFunc)(
 	AST::Scope* pThisBlock,
 	AST::Expression* pCurrentObj);
 
-class Runtime
+class Runtime:
+	public XRuntime
 {
 	long long m_threadId = 0;
 	AST::Module* m_pModule = nullptr;

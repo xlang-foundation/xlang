@@ -7,7 +7,7 @@ namespace X
 {
 	namespace Data
 	{
-		bool List::Call(Runtime* rt, ARGS& params,
+		bool List::Call(XRuntime* rt, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
@@ -28,7 +28,7 @@ namespace X
 				{
 					auto v0 = it.second;
 					if (v0.IsObject() 
-						&& v0.GetObj()->GetObjType() ==ObjType::Str
+						&& v0.GetObj()->GetType() ==ObjType::Str
 						&& v0.ToString().find("rand")==0)
 					{
 						auto strV = v0.ToString();

@@ -78,7 +78,7 @@ public:
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
-	virtual bool Run(Runtime* rt,void* pContext, Value& v, LValue* lValue = nullptr);
+	virtual bool Run(XRuntime* rt,void* pContext, Value& v, LValue* lValue = nullptr);
 };
 class For :
 	public Block

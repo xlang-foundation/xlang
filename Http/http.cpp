@@ -22,8 +22,8 @@ namespace X
 	{
 		for (auto p : m_handlers)
 		{
-			Data::Function* pFuncObj = (Data::Function*)p;
-			pFuncObj->Release();
+			XFunc* pFuncObj = (XFunc*)p;
+			pFuncObj->DecRef();
 		}
 		m_handlers.clear();
 	}
@@ -53,15 +53,15 @@ namespace X
 		X::Value& retValue)
 	{
 		std::string pattern = params[0].ToString();
-		Data::Function* pHandler = nullptr;
+		XFunc* pHandler = nullptr;
 		if (params[1].IsObject())
 		{
 			Data::Object* pFuncObj
 				= dynamic_cast<Data::Object*>(params[1].GetObj());
 			if (pFuncObj->GetType() == X::ObjType::Function)
 			{
-				pHandler = dynamic_cast<Data::Function*>(pFuncObj);
-				pHandler->AddRef();//keep for lambda
+				pHandler = dynamic_cast<XFunc*>(pFuncObj);
+				pHandler->IncRef();//keep for lambda
 				m_handlers.push_back((void*)pHandler);
 			}
 		}
@@ -74,14 +74,14 @@ namespace X
 					ARGS params0;
 					HttpRequest* pHttpReq
 						= new HttpRequest((void*)&req);
-					X::AST::Package* pPackageReq = nullptr;
+					X::XPackage* pPackageReq = nullptr;
 					pHttpReq->Create((X::Runtime*)rt,
 						&pPackageReq);
 					params0.push_back(X::Value(pPackageReq));
 
 					HttpResponse* pHttpResp 
 						= new HttpResponse(&res);
-					X::AST::Package* pPackageResp = nullptr;
+					X::XPackage* pPackageResp = nullptr;
 					pHttpResp->Create((X::Runtime*)rt,
 						&pPackageResp);
 					params0.push_back(X::Value(pPackageResp));

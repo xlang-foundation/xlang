@@ -129,7 +129,7 @@ public:
 		return m_data;
 	}
 	std::vector<AST::Expression*>& GetBases() { return m_bases; }
-	virtual bool Call(Runtime* rt, ARGS& params,
+	virtual bool Call(XRuntime* rt, ARGS& params,
 		KWARGS& kwParams,X::Value& retValue) override;
 	inline void Add(X::LValue p)
 	{

@@ -2,7 +2,6 @@
 
 #include <string>
 #include <string.h>
-#include "xhost.h"
 
 namespace X 
 {

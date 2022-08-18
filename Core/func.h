@@ -11,10 +11,6 @@ namespace X
 {
 namespace AST
 {
-typedef bool (*U_FUNC) (Runtime* rt,void* pContext,
-	std::vector<Value>& params,
-	KWARGS& kwParams,
-	Value& retValue);
 class Func :
 	public Block,
 	public Scope
@@ -141,7 +137,7 @@ public:
 		int retIdx = Scope::AddOrGet(name, bGetOnly);
 		return retIdx;
 	}
-	virtual bool Call(Runtime* rt, void* pContext,
+	virtual bool Call(XRuntime* rt, void* pContext,
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue);
@@ -160,7 +156,7 @@ public:
 		m_func = func;
 		m_type = ObType::BuiltinFunc;
 	}
-	inline virtual bool Call(Runtime* rt, void* pContext,
+	inline virtual bool Call(XRuntime* rt, void* pContext,
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue) override

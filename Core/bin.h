@@ -26,7 +26,7 @@ namespace X
 					delete m_data;
 				}
 			}
-			virtual bool Call(Runtime* rt, ARGS& params,
+			virtual bool Call(XRuntime* rt, ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue) override
 			{

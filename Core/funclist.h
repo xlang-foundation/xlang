@@ -54,7 +54,7 @@ public:
 		}
 		return true;
 	}
-	virtual bool Call(Runtime* rt, ARGS& params,
+	virtual bool Call(XRuntime* rt, ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
 	{
@@ -75,7 +75,7 @@ public:
 				params, kwParams, v0);
 			if (bOK)
 			{
-				pValueList->Add(rt, v0);
+				pValueList->Add((Runtime*)rt, v0);
 			}
 			else
 			{

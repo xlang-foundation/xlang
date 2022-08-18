@@ -8,6 +8,7 @@
 #include "def.h"
 #include "wait.h"
 #include "utility.h"
+#include "xlang.h"
 
 namespace X
 {
