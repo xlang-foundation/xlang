@@ -1,8 +1,5 @@
 #include "value.h"
-//#include "object.h"
-//#include "str.h"
 #include "xlang.h"
-#include "utility.h"
 #include "xhost.h"
 
 namespace X 
@@ -126,13 +123,13 @@ namespace X
 			str = x.obj->ToString(WithFormat);
 			if (WithFormat && x.obj->GetType() == ObjType::Str)
 			{
-				str= StringifyString(str);
+				str= g_pXHost->StringifyString(str);
 			}
 		}
 			break;
 		case ValueType::Str:
 			str = std::string((char*)x.str, flags);
-			if (WithFormat) str = StringifyString(str);
+			if (WithFormat) str = g_pXHost->StringifyString(str);
 			break;
 		default:
 			break;

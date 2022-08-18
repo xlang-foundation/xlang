@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <string.h>
 
 namespace X 
 {
@@ -169,7 +168,7 @@ public:
 	inline Value(const char* s)
 	{
 		t = ValueType::Str;
-		flags = (int)strlen(s);
+		flags = (int)std::string(s).length();//avoid to use strlen, need to include <string.h> in Linux
 		x.str = (char*)s;
 	}
 	inline Value(char* s, int size)

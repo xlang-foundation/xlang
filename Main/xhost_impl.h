@@ -13,6 +13,7 @@ namespace X
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) override;
 		virtual XDict* CreateDict() override;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) override;
+		virtual std::string StringifyString(const std::string& str) override;
 	};
 	void CreatXHost();
 	void DestoryXHost();

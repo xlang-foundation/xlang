@@ -7,6 +7,8 @@
 #include <map>
 #include <unordered_map>
 #include <iostream>
+#include <string.h>
+
 namespace X
 {
 namespace Data

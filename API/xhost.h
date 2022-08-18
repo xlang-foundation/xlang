@@ -30,6 +30,7 @@ namespace X
 		virtual XDict* CreateDict() = 0;
 		virtual XPackage* CreatePackage(void* pRealObj) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) = 0;
+		virtual std::string StringifyString(const std::string& str) = 0;
 	};
 	extern XHost* g_pXHost;
 }

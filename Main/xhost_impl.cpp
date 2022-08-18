@@ -57,4 +57,8 @@ namespace X
 	{
 		return (XDict*) new X::Data::Dict();
 	}
+	std::string XHost_Impl::StringifyString(const std::string& str)
+	{
+		return ::StringifyString(str);
+	}
 }
