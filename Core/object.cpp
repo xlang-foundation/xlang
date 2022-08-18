@@ -15,26 +15,27 @@ namespace X
 			auto vars = pMyScope->GetVarMap();
 			for (auto& it : vars)
 			{
-				AST::Value val;
+				X::Value val;
 				pMyScope->Get(rt, this, it.second, val);
 				Dict* dict = new Dict();
 				Data::Str* pStrName = new Data::Str(it.first);
-				dict->Set("Name", AST::Value(pStrName));
+				dict->Set("Name", X::Value(pStrName));
 				auto valType = val.GetValueType();
 				Data::Str* pStrType = new Data::Str(valType);
-				dict->Set("Type", AST::Value(pStrType));
-				if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+				dict->Set("Type", X::Value(pStrType));
+				if (!val.IsObject() || (val.IsObject() 
+					&& dynamic_cast<Object*>(val.GetObj())->IsStr()))
 				{
 					dict->Set("Value", val);
 				}
 				else if (val.IsObject())
 				{
-					AST::Value objId((unsigned long long)val.GetObj());
+					X::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
-					AST::Value valSize(val.GetObj()->Size());
+					X::Value valSize(val.GetObj()->Size());
 					dict->Set("Size", valSize);
 				}
-				AST::Value valDict(dict);
+				X::Value valDict(dict);
 				pOutList->Add(rt, valDict);
 			}
 			return pOutList;

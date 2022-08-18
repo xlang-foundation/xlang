@@ -28,28 +28,29 @@ namespace X
 			{
 				long long idx = startIndex + i;
 				auto& col = m_table->m_cols[idx];
-				AST::Value val;
+				X::Value val;
 				col.ary->Get(m_r, val);
 
 				Dict* dict = new Dict();
-				AST::Value colName((char*)col.name.c_str(),(int)col.name.size());
+				X::Value colName((char*)col.name.c_str(),(int)col.name.size());
 				dict->Set("Name", colName);
 
 				auto valType = val.GetValueType();
 				Data::Str* pStrType = new Data::Str(valType);
-				dict->Set("Type", AST::Value(pStrType));
-				if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+				dict->Set("Type", X::Value(pStrType));
+				if (!val.IsObject() || (val.IsObject() && 
+					dynamic_cast<Object*>(val.GetObj())->IsStr()))
 				{
 					dict->Set("Value", val);
 				}
 				else if (val.IsObject())
 				{
-					AST::Value objId((unsigned long long)val.GetObj());
+					X::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
-					AST::Value valSize(val.GetObj()->Size());
+					X::Value valSize(val.GetObj()->Size());
 					dict->Set("Size", valSize);
 				}
-				AST::Value valDict(dict);
+				X::Value valDict(dict);
 				pOutList->Add(rt, valDict);
 			}
 			return pOutList;
@@ -76,17 +77,17 @@ namespace X
 			for (long long i = 0; i < count; i++)
 			{
 				TableRow* row = row_it->second;
-				AST::Value val(row);
+				X::Value val(row);
 				Dict* dict = new Dict();
 				auto valType = val.GetValueType();
 				Data::Str* pStrType = new Data::Str(valType);
-				dict->Set("Type", AST::Value("TableRow"));
-				AST::Value objId((unsigned long long)row);
+				dict->Set("Type", X::Value("TableRow"));
+				X::Value objId((unsigned long long)row);
 				dict->Set("Value", objId);
-				AST::Value valSize(row->Size());
+				X::Value valSize(row->Size());
 				dict->Set("Size", valSize);
 
-				AST::Value valDict(dict);
+				X::Value valDict(dict);
 				pOutList->Add(rt, valDict);
 
 				std::advance(row_it,1);

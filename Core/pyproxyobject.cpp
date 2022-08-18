@@ -52,44 +52,44 @@ namespace X
 				PyObjectCache::I().RemoveModule(strFileName);
 			}
 		}
-		bool PyProxyObject::PyObjectToValue(PyEng::Object& pyObj, AST::Value& val)
+		bool PyProxyObject::PyObjectToValue(PyEng::Object& pyObj, X::Value& val)
 		{
 			if (pyObj.IsBool())
 			{
-				val = AST::Value((bool)pyObj);
+				val = X::Value((bool)pyObj);
 			}
 			else if (pyObj.IsLong())
 			{
-				val = AST::Value((long long)pyObj);
+				val = X::Value((long long)pyObj);
 			}
 			else if (pyObj.IsDouble())
 			{
-				val = AST::Value((double)pyObj);
+				val = X::Value((double)pyObj);
 			}
 			else if (pyObj.IsString())
 			{
 				std::string strVal = (std::string)pyObj;
 				Data::Str* pStrName = new Data::Str(strVal);
-				val = AST::Value(pStrName);
+				val = X::Value(pStrName);
 			}
 			else
 			{
 				PyProxyObject* pProxyObj = new PyProxyObject(pyObj);
 				//todo: when to call release
 				pProxyObj->AddRef();
-				val = AST::Value(pProxyObj);
+				val = X::Value(pProxyObj);
 			}
 			return true;
 		}
 		void PyProxyObject::EachVar(Runtime* rt, void* pContext,
-			std::function<void(std::string, AST::Value&)> const& f)
+			std::function<void(std::string, X::Value&)> const& f)
 		{
 			auto keys = m_locals.Keys();
 			for (int i = 0; i < keys.GetCount(); i++)
 			{
 				std::string name = (std::string)keys[i];
 				PyEng::Object objVal = (PyEng::Object)m_locals[name.c_str()];
-				AST::Value val;
+				X::Value val;
 				PyObjectToValue(objVal, val);
 				f(name, val);
 			}
@@ -118,19 +118,19 @@ namespace X
 			//check obj0 is a function or not
 
 			PyProxyObject* pProxyObj = new PyProxyObject(obj0,name);
-			AST::Value v(pProxyObj);
+			X::Value v(pProxyObj);
 			m_stackFrame->Set(idx, v);
 			return idx;
 		}
 		bool PyProxyObject::Call(Runtime* rt, 
 			ARGS& params, KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			PyEng::Tuple objParams(params);
 			PyEng::Object objKwParams(kwParams);
 			auto obj0 = (PyEng::Object)m_obj.Call(objParams, objKwParams);
 			PyProxyObject* pProxyObj = new PyProxyObject(obj0);
-			retValue = AST::Value(pProxyObj);
+			retValue = X::Value(pProxyObj);
 			return true;
 		}
 		long long PyProxyObject::Size()
@@ -155,34 +155,36 @@ namespace X
 				while (pyDict.Enum(pos, objKey, objVal))
 				{
 					Dict* dict = new Dict();
-					AST::Value key, val;
+					X::Value key, val;
 					PyObjectToValue(objKey, key);
 					if (!key.IsObject() 
-						|| (key.IsObject() && key.GetObj()->IsStr()))
+						|| (key.IsObject() && 
+							dynamic_cast<Object*>(key.GetObj())->IsStr()))
 					{
 						dict->Set("Name", key);
 					}
 					else if (key.IsObject())
 					{
-						AST::Value objId((unsigned long long)key.GetObj());
+						X::Value objId((unsigned long long)key.GetObj());
 						dict->Set("Name", objId);
 					}
 					PyObjectToValue(objVal, val);
 					auto valType = val.GetValueType();
 					Data::Str* pStrType = new Data::Str(valType);
-					dict->Set("Type", AST::Value(pStrType));
-					if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+					dict->Set("Type", X::Value(pStrType));
+					if (!val.IsObject() || (val.IsObject() && 
+						dynamic_cast<Object*>(val.GetObj())->IsStr()))
 					{
 						dict->Set("Value", val);
 					}
 					else if (val.IsObject())
 					{
-						AST::Value objId((unsigned long long)val.GetObj());
+						X::Value objId((unsigned long long)val.GetObj());
 						dict->Set("Value", objId);
-						AST::Value valSize(val.GetObj()->Size());
+						X::Value valSize(val.GetObj()->Size());
 						dict->Set("Size", valSize);
 					}
-					AST::Value valDict(dict);
+					X::Value valDict(dict);
 					pOutList->Add(rt, valDict);
 				}
 			}
@@ -210,24 +212,25 @@ namespace X
 				{
 					long long idx = startIndex + i;
 					PyEng::Object objVal = m_obj[(int)i];
-					AST::Value val;
+					X::Value val;
 					PyObjectToValue(objVal, val);
 					Dict* dict = new Dict();
 					auto valType = val.GetValueType();
 					Data::Str* pStrType = new Data::Str(valType);
-					dict->Set("Type", AST::Value(pStrType));
-					if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+					dict->Set("Type", X::Value(pStrType));
+					if (!val.IsObject() || (val.IsObject() && 
+						dynamic_cast<Object*>(val.GetObj())->IsStr()))
 					{
 						dict->Set("Value", val);
 					}
 					else if (val.IsObject())
 					{
-						AST::Value objId((unsigned long long)val.GetObj());
+						X::Value objId((unsigned long long)val.GetObj());
 						dict->Set("Value", objId);
-						AST::Value valSize(val.GetObj()->Size());
+						X::Value valSize(val.GetObj()->Size());
 						dict->Set("Size", valSize);
 					}
-					AST::Value valDict(dict);
+					X::Value valDict(dict);
 					pOutList->Add(rt, valDict);
 				}
 			}

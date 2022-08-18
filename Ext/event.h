@@ -28,7 +28,7 @@ namespace X
 		Locker m_lockHandlers;
 		std::vector<HandlerInfo> m_handlers;
 		Locker m_lockProps;
-		std::unordered_map<std::string, AST::Value> m_props;
+		std::unordered_map<std::string, X::Value> m_props;
 	public:
 		int AddRef()
 		{
@@ -102,14 +102,14 @@ namespace X
 			}
 			m_lockHandlers.Unlock();
 		}
-		inline AST::Value Get(const char* name)
+		inline X::Value Get(const char* name)
 		{
 			std::string strName(name);
 			return Get(strName);
 		}
-		inline AST::Value Get(std::string& name)
+		inline X::Value Get(std::string& name)
 		{
-			AST::Value ret;
+			X::Value ret;
 			m_lockProps.Lock();
 			auto it = m_props.find(name);
 			if (it != m_props.end())
@@ -119,12 +119,12 @@ namespace X
 			m_lockProps.Unlock();
 			return ret;
 		}
-		inline void Set(const char* name, AST::Value& val)
+		inline void Set(const char* name, X::Value& val)
 		{
 			std::string strName(name);
 			Set(strName, val);
 		}
-		inline void Set(std::string& name, AST::Value& val)
+		inline void Set(std::string& name, X::Value& val)
 		{
 			m_lockProps.Lock();
 			auto it = m_props.find(name);

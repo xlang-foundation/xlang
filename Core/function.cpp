@@ -6,7 +6,7 @@ namespace X
 	{
 		Function::Function(AST::Func* p)
 		{
-			m_t = Type::Function;
+			m_t = ObjType::Function;
 			m_func = p;
 		}
 		Function::~Function()
@@ -14,7 +14,7 @@ namespace X
 		}
 		bool Function::Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			return m_func->Call(rt, nullptr, params, kwParams, retValue);
 		}

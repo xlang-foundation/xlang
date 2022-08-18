@@ -28,7 +28,7 @@ struct CommandInfo;
 typedef void (*CommandProcessProc)(Runtime* rt,
 	void* pContextCurrent,
 	CommandInfo* pCommandInfo,
-	AST::Value& retVal);
+	X::Value& retVal);
 struct CommandInfo
 {
 	dbg dbgType;
@@ -38,8 +38,8 @@ struct CommandInfo
 	TraceEvent m_traceEvent= TraceEvent::None;
 	int m_frameId;
 	AST::Expression* m_pExpToRun = nullptr;
-	AST::Value m_varParam;//for input when add command
-	AST::Value* m_retValueHolder = nullptr;//for command output
+	X::Value m_varParam;//for input when add command
+	X::Value* m_retValueHolder = nullptr;//for command output
 
 	CommandProcessProc m_process = nullptr;
 	XWait* m_wait = nullptr;

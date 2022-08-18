@@ -10,7 +10,7 @@ namespace X
 		class StrOp :
 			public AST::Scope
 		{
-			std::vector<AST::Value> m_funcs;
+			std::vector<X::Value> m_funcs;
 		public:
 			StrOp()
 			{
@@ -28,7 +28,7 @@ namespace X
 							(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
 								ARGS& params,
 								KWARGS& kwParams,
-					X::AST::Value& retValue)
+					X::Value& retValue)
 					{
 						auto* pObj = (Str*)pContext;
 						std::string x = params[0].ToString();
@@ -38,11 +38,11 @@ namespace X
 							offset = params[1].GetLongLong();
 						}
 						auto pos = pObj->Find(x, offset);
-						retValue = AST::Value((long long)pos);
+						retValue = X::Value((long long)pos);
 						return true;
 					}));
 					auto* pFuncObj = new Data::Function(extFunc);
-					m_funcs.push_back(AST::Value(pFuncObj));
+					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				{
 					std::string name("rfind");
@@ -50,7 +50,7 @@ namespace X
 						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
-							X::AST::Value& retValue)
+							X::Value& retValue)
 							{
 								auto* pObj = (Str*)pContext;
 								std::string x = params[0].ToString();
@@ -60,11 +60,11 @@ namespace X
 									offset = params[1].GetLongLong();
 								}
 								auto pos = pObj->RFind(x, offset);
-								retValue = AST::Value((long long)pos);
+								retValue = X::Value((long long)pos);
 								return true;
 							}));
 					auto* pFuncObj = new Data::Function(extFunc);
-					m_funcs.push_back(AST::Value(pFuncObj));
+					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				{
 					std::string name("slice");
@@ -72,7 +72,7 @@ namespace X
 						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
-							X::AST::Value& retValue)
+							X::Value& retValue)
 							{
 								auto* pObj = (Str*)pContext;
 								size_t start = 0;
@@ -88,11 +88,11 @@ namespace X
 								std::string retStr;
 								pObj->Slice(start, end, retStr);
 								Str* pNewStr = new Str((const char*)retStr.c_str(), (int)retStr.size());
-								retValue = AST::Value(pNewStr);
+								retValue = X::Value(pNewStr);
 								return true;
 							}));
 					auto* pFuncObj = new Data::Function(extFunc);
-					m_funcs.push_back(AST::Value(pFuncObj));
+					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				{
 					std::string name("size");
@@ -100,15 +100,15 @@ namespace X
 						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
-							X::AST::Value& retValue)
+							X::Value& retValue)
 							{
 								auto* pObj = (Str*)pContext;
 								size_t  size = pObj->GetSize();
-								retValue = AST::Value((long long)size);
+								retValue = X::Value((long long)size);
 								return true;
 							}));
 					auto* pFuncObj = new Data::Function(extFunc);
-					m_funcs.push_back(AST::Value(pFuncObj));
+					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				{
 					std::string name("split");
@@ -116,7 +116,7 @@ namespace X
 						(AST::U_FUNC)([](X::Runtime* rt, void* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
-							X::AST::Value& retValue)
+							X::Value& retValue)
 							{
 								std::string delim("\n");
 								if (params.size() >= 1)
@@ -127,11 +127,11 @@ namespace X
 								std::vector<std::string> li;
 								pObj->Split(delim, li);
 								auto* pList = new List(li);
-								retValue = AST::Value(pList);
+								retValue = X::Value(pList);
 								return true;
 							}));
 					auto* pFuncObj = new Data::Function(extFunc);
-					m_funcs.push_back(AST::Value(pFuncObj));
+					m_funcs.push_back(X::Value(pFuncObj));
 				}
 			}
 			~StrOp()
@@ -143,13 +143,13 @@ namespace X
 				return nullptr;
 			}
 			inline virtual bool Set(Runtime* rt, void* pContext,
-				int idx, AST::Value& v)
+				int idx, X::Value& v)
 			{
 				return false;
 			}
 
 			inline virtual bool Get(Runtime* rt, void* pContext,
-				int idx, AST::Value& v, AST::LValue* lValue = nullptr)
+				int idx, X::Value& v, X::LValue* lValue = nullptr)
 			{
 				Str* pStrObj = (Str*)pContext;
 				v = m_funcs[idx];

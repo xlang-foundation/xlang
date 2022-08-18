@@ -32,7 +32,7 @@ public:
 		PyEngObjectPtr frame,
 		int event,
 		PyEngObjectPtr args);
-	void Loop(AST::Value& lineRet,AST::Expression* exp, void* pContext)
+	void Loop(X::Value& lineRet,AST::Expression* exp, void* pContext)
 	{
 		std::cout << lineRet.ToString() << std::endl;
 		int line = exp->GetStartLine();
@@ -59,7 +59,7 @@ public:
 				auto l_names = pMyScope->GetVarNames();
 				for (auto& l_name : l_names)
 				{
-					AST::Value vDbg;
+					X::Value vDbg;
 					pMyScope->Get(m_rt, pContext, l_name, vDbg);
 					std::cout << l_name << ":" << vDbg.ToString() << std::endl;
 				}
@@ -79,7 +79,7 @@ public:
 					}
 					for (auto& param : params)
 					{
-						AST::Value vDbg;
+						X::Value vDbg;
 						if (pMyScope)
 						{
 							pMyScope->Get(m_rt, pContext, param, vDbg);
@@ -111,7 +111,7 @@ public:
 				//by call AddCommand
 				if (cmdInfo.m_process)
 				{
-					AST::Value retVal;
+					X::Value retVal;
 					cmdInfo.m_process(rt, pContext, &cmdInfo, retVal);
 					if (cmdInfo.m_retValueHolder)
 					{

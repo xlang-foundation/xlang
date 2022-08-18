@@ -39,7 +39,7 @@ namespace X
 			AST::Func* GetFunc() { return m_func; }
 			virtual bool Call(Runtime* rt, ARGS& params,
 				KWARGS& kwParams,
-				AST::Value& retValue) override;
+				X::Value& retValue) override;
 		};
 
 	}

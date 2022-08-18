@@ -12,8 +12,8 @@ protected:
 	StackFrame* m_next = nil;
 	Scope* m_pScope = nil;
 	int m_varCnt = 0;
-	Value* m_Values = nil;
-	Value m_retVal;
+	X::Value* m_Values = nil;
+	X::Value m_retVal;
 	int m_lineStart = -1;
 	int m_charPos = 0;
 public:
@@ -59,7 +59,7 @@ public:
 		}
 		if (cnt > 0)
 		{
-			Value* newList = new Value[cnt];
+			X::Value* newList = new X::Value[cnt];
 			if (m_Values)
 			{
 				for (int i = 0; i < cnt && i < m_varCnt; i++)
@@ -73,7 +73,7 @@ public:
 		}
 		return true;
 	}
-	inline void Set(int idx, Value& v)
+	inline void Set(int idx, X::Value& v)
 	{
 		if (idx < 0 && idx >= m_varCnt)
 		{
@@ -81,17 +81,17 @@ public:
 		}
 		m_Values[idx] = v;
 	}
-	inline void SetReturn(Value& v)
+	inline void SetReturn(X::Value& v)
 	{
 		m_retVal = v;
 	}
-	inline void Get(int idx, Value& v, LValue* lValue = nullptr)
+	inline void Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
 	{
-		Value& v0 = m_Values[idx];
+		X::Value& v0 = m_Values[idx];
 		v = v0;
 		if (lValue) *lValue = &v0;
 	}
-	inline Value& GetReturnValue()
+	inline X::Value& GetReturnValue()
 	{
 		return m_retVal;
 	}

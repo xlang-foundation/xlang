@@ -9,9 +9,9 @@ namespace X
 		class ObjectHashFunction
 		{
 		public:
-			size_t operator()(const AST::Value& key) const
+			size_t operator()(const X::Value& key) const
 			{
-				AST::Value v =key;
+				X::Value v =key;
 				return v.Hash();
 			}
 		};
@@ -19,12 +19,12 @@ namespace X
 			public Object
 		{
 		protected:
-			std::unordered_map<AST::Value,
-				AST::Value, ObjectHashFunction> mMap;
+			std::unordered_map<X::Value,
+				X::Value, ObjectHashFunction> mMap;
 		public:
 			Dict()
 			{
-				m_t = Type::Dict;
+				m_t = ObjType::Dict;
 			}
 			~Dict()
 			{
@@ -34,20 +34,20 @@ namespace X
 			{
 				return mMap.size();
 			}
-			void Set(AST::Value& key, AST::Value& val)
+			void Set(X::Value& key, X::Value& val)
 			{
 				mMap.emplace(std::make_pair(key, val));
 			}
-			void Set(const char* key, AST::Value val)
+			void Set(const char* key, X::Value val)
 			{
-				mMap.emplace(std::make_pair(AST::Value(key), val));
+				mMap.emplace(std::make_pair(X::Value(key), val));
 			}
-			virtual Dict& operator +=(AST::Value& r)
+			virtual Dict& operator +=(X::Value& r)
 			{
 				if (r.IsObject())
 				{
-					Object* pObj = (Object*)r.GetObj();
-					if (pObj->GetType() == Type::Dict)
+					Object* pObj = dynamic_cast<Object*>(r.GetObj());
+					if (pObj->GetType() == ObjType::Dict)
 					{
 						Dict* pDictOther = (Dict*)pObj;
 						for (auto& it : pDictOther->mMap)
@@ -58,8 +58,8 @@ namespace X
 				}
 				return *this;
 			}
-			bool Get(AST::Value& key, AST::Value& val,
-				AST::LValue* lValue = nullptr)
+			bool Get(X::Value& key, X::Value& val,
+				X::LValue* lValue = nullptr)
 			{
 				bool bOK = false;
 				auto it = mMap.find(key);
@@ -78,9 +78,9 @@ namespace X
 				int i = 0;
 				for (auto& it: mMap)
 				{
-					AST::Value key = it.first;
+					X::Value key = it.first;
 					std::string strKey = key.ToString(WithFormat);
-					AST::Value Val = it.second;
+					X::Value Val = it.second;
 					std::string strVal = Val.ToString(WithFormat);
 					strOut += "\t" + strKey+ ":"+ strVal;
 					if (i < (cnt - 1))
@@ -98,7 +98,7 @@ namespace X
 			}
 			virtual bool Call(Runtime* rt, ARGS& params,
 				KWARGS& kwParams,
-				AST::Value& retValue) override
+				X::Value& retValue) override
 			{
 				return true;
 			}

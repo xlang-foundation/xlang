@@ -39,21 +39,21 @@ enum class OP_ID
 
 class Parser;
 class Runtime;
+class Value;
 namespace AST {
 	class Operator;
 	class UnaryOp;
 	class BinaryOp;
-	class Value;
 }
 struct OpAction;
 typedef AST::Operator* (*OpProc)(
 	Parser* p, short opIndex);
 typedef bool (*UnaryOpProc)(
-	Runtime* rt, AST::UnaryOp* op,AST::Value& R, AST::Value& out);
+	Runtime* rt, AST::UnaryOp* op,X::Value& R, X::Value& out);
 typedef bool (*BinaryOpProc)(
-	Runtime* rt, AST::BinaryOp* op,AST::Value& L, AST::Value& R, AST::Value& out);
-typedef std::vector<X::AST::Value> ARGS;
-typedef std::unordered_map<std::string, X::AST::Value> KWARGS;
+	Runtime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& out);
+typedef std::vector<X::Value> ARGS;
+typedef std::unordered_map<std::string, X::Value> KWARGS;
 
 #define Precedence_High1 201
 #define Precedence_High 200
@@ -77,5 +77,5 @@ struct OpInfo
 	OpAction act;
 };
 
-typedef AST::Value (*EnumProc)(AST::Value& elm,unsigned long long idx);
+typedef X::Value (*EnumProc)(X::Value& elm,unsigned long long idx);
 }

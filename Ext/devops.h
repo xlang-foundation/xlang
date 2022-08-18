@@ -37,13 +37,13 @@ namespace X
 				Runtime* rt,
 				void* pContextCurrent,
 				AST::CommandInfo* pCommandInfo,
-				AST::Value& valStackInfo);
+				X::Value& valStackInfo);
 			bool BuildLocals(Runtime* rt,
 				void* pContextCurrent,int frameId,
-				AST::Value& valLocals);
+				X::Value& valLocals);
 			bool BuildObjectContent(Runtime* rt,
-				void* pContextCurrent, int frameId, AST::Value& valParam,
-				AST::Value& valObject);
+				void* pContextCurrent, int frameId, X::Value& valParam,
+				X::Value& valObject);
 		public:
 			BEGIN_PACKAGE(DebugService)
 				ADD_FUNC("get_startline", GetModuleStartLine)
@@ -53,15 +53,15 @@ namespace X
 			bool GetModuleStartLine(void* rt, void* pContext,
 					ARGS& params,
 					KWARGS& kwParams,
-					AST::Value& retValue);
+					X::Value& retValue);
 			bool SetBreakpoints(void* rt, void* pContext,
 				ARGS& params,
 				KWARGS& kwParams,
-				AST::Value& retValue);
+				X::Value& retValue);
 			bool Command(void* rt, void* pContext,
 				ARGS& params,
 				KWARGS& kwParams,
-				AST::Value& retValue);
+				X::Value& retValue);
 		};
 	}
 }

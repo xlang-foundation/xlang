@@ -159,7 +159,7 @@ public:
 		Data::Object(), Scope()
 	{
 		m_pObject = pObj;
-		m_t = Data::Type::Package;
+		m_t = X::ObjType::Package;
 	}
 	~Package()
 	{
@@ -178,7 +178,7 @@ public:
 	}
 	virtual bool Call(Runtime* rt, ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		return true;
 	}

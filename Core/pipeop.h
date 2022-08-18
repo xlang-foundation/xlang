@@ -63,8 +63,8 @@ namespace X
 				{
 					if (v_r.IsObject())
 					{
-						auto* pObj = (Data::Object*)v_r.GetObj();
-						if (pObj->GetType() == Data::Type::Function)
+						auto* pObj = dynamic_cast<Data::Object*>(v_r.GetObj());
+						if (pObj->GetObjType() == ObjType::Function)
 						{
 							auto* pFuncObj = dynamic_cast<Data::Function*>(pObj);
 							ARGS params;
@@ -111,7 +111,7 @@ namespace X
 							return bOK;
 						}
 					}
-					Data::Object* obj = (Data::Object*)callList.GetObj();
+					Data::Object* obj = dynamic_cast<Data::Object*>(callList.GetObj());
 					if (obj)
 					{
 						bOK = obj->Call(rt, params, kwParams, v);

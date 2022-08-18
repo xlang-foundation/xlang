@@ -90,7 +90,7 @@ bool Func::Call(Runtime* rt,
 	rt->PushFrame(frame,GetVarNum());
 	//Add this if This is not null
 	if (m_IndexOfThis >=0 &&
-		pContextObj && pContextObj->GetType() == X::Data::Type::XClassObject)
+		pContextObj && pContextObj->GetType() == X::ObjType::XClassObject)
 	{
 		Value v0((Data::Object*)pContext);
 		Scope::Set(rt, pContext, m_IndexOfThis, v0);

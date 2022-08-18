@@ -15,31 +15,13 @@ namespace X {
 	namespace AST { class Scope; }
 class Runtime;
 namespace Data {
-	enum class Type
-	{
-		Base,
-		Str,
-		Binary,
-		Expr,
-		Function,
-		MetaFunction,
-		XClassObject,
-		FuncCalls,
-		Package,
-		Future,
-		List,
-		Dict,
-		TableRow,
-		Table,
-		PyProxyObject
-	};
 	class List;
 	class Object :
 		virtual public XObj,
 		virtual public ObjRef
 	{
 	protected:
-		Type m_t = Type::Base;
+		ObjType m_t = ObjType::Base;
 	public:
 		Object()
 		{
@@ -60,11 +42,11 @@ namespace Data {
 
 		inline bool IsFunc()
 		{
-			return (m_t == Type::Function);
+			return (m_t == ObjType::Function);
 		}
 		inline bool IsStr()
 		{
-			return (m_t == Type::Str);
+			return (m_t == ObjType::Str);
 		}
 		virtual List* FlatPack(Runtime* rt,long long startIndex,long long count)
 		{ 
@@ -79,35 +61,35 @@ namespace Data {
 		{
 			switch (m_t)
 			{
-			case X::Data::Type::Base:
+			case X::ObjType::Base:
 				return "Base";
-			case X::Data::Type::Str:
+			case X::ObjType::Str:
 				return "Str";
-			case X::Data::Type::Binary:
+			case X::ObjType::Binary:
 				return "Binary";
-			case X::Data::Type::Expr:
+			case X::ObjType::Expr:
 				return "Expr";
-			case X::Data::Type::Function:
+			case X::ObjType::Function:
 				return "Function";
-			case X::Data::Type::MetaFunction:
+			case X::ObjType::MetaFunction:
 				return "MetaFunction";
-			case X::Data::Type::XClassObject:
+			case X::ObjType::XClassObject:
 				return "Class";
-			case X::Data::Type::FuncCalls:
+			case X::ObjType::FuncCalls:
 				return "FuncCalls";
-			case X::Data::Type::Package:
+			case X::ObjType::Package:
 				return "Package";
-			case X::Data::Type::Future:
+			case X::ObjType::Future:
 				return "Future";
-			case X::Data::Type::List:
+			case X::ObjType::List:
 				return "List";
-			case X::Data::Type::Dict:
+			case X::ObjType::Dict:
 				return "Dict";
-			case X::Data::Type::TableRow:
+			case X::ObjType::TableRow:
 				return "TableRow";
-			case X::Data::Type::Table:
+			case X::ObjType::Table:
 				return "Table";
-			case X::Data::Type::PyProxyObject:
+			case X::ObjType::PyProxyObject:
 				return "PyObject";
 			default:
 				break;
@@ -118,10 +100,14 @@ namespace Data {
 		{
 			return nullptr;
 		}
-		Type GetType() { return m_t; }
+		virtual ObjType GetObjType() override
+		{
+			return (ObjType)m_t;
+		}
+		ObjType GetType() { return m_t; }
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue) = 0;
+			X::Value& retValue) = 0;
 		virtual long long Size() { return 0; }
 		virtual size_t Hash()
 		{
@@ -134,23 +120,23 @@ namespace Data {
 				(unsigned long long)this);
 			return v;
 		}
-		virtual Object& operator +=(AST::Value& r)
+		virtual Object& operator +=(X::Value& r)
 		{
 			return *this;
 		}
-		virtual Object& operator -=(AST::Value& r)
+		virtual Object& operator -=(X::Value& r)
 		{
 			return *this;
 		}
-		virtual Object& operator *=(AST::Value& r)
+		virtual Object& operator *=(X::Value& r)
 		{
 			return *this;
 		}
-		virtual Object& operator /=(AST::Value& r)
+		virtual Object& operator /=(X::Value& r)
 		{
 			return *this;
 		}
-		virtual int cmp(AST::Value* r)
+		virtual int cmp(X::Value* r)
 		{
 			return 0;
 		}
@@ -163,13 +149,13 @@ namespace Data {
 	public:
 		Expr(AST::Expression* e)
 		{
-			m_t = Type::Expr;
+			m_t = ObjType::Expr;
 			m_expr = e;
 		}
 		AST::Expression* Get() { return m_expr; }
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			return true;
 		}
@@ -188,14 +174,14 @@ namespace Data {
 	public:
 		MetaFunction(AST::Func* p, MetaFuncType metaType)
 		{
-			m_t = Type::MetaFunction;
+			m_t = ObjType::MetaFunction;
 			m_metaType = metaType;
 			m_func = p;
 		}
 		AST::Func* GetFunc() { return m_func; }
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			return m_func->Call(rt, nullptr,
 				params, kwParams, retValue);
@@ -211,7 +197,7 @@ namespace Data {
 	public:
 		XClassObject(AST::XClass* p)
 		{
-			m_t = Type::XClassObject;
+			m_t = ObjType::XClassObject;
 			m_obj = p;
 			m_stackFrame = new AST::StackFrame((AST::Scope*)this);
 			m_stackFrame->SetVarCount(p->GetVarNum());
@@ -253,7 +239,7 @@ namespace Data {
 		AST::XClass* GetClassObj() { return m_obj; }
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			return m_obj->Call(rt,this,
 				params, kwParams, retValue);
@@ -266,7 +252,7 @@ namespace Data {
 	public:
 		Future()
 		{
-			m_t = Type::Future;
+			m_t = ObjType::Future;
 		}
 		Future(void* task)
 			:Future()
@@ -275,7 +261,7 @@ namespace Data {
 		}
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue) override
+			X::Value& retValue) override
 		{
 			return false;
 		}

@@ -16,7 +16,7 @@ namespace X
 		void* m_pContext = nil;
 		ARGS m_params;
 		KWARGS m_kwParams;
-		AST::Value m_retValue;
+		X::Value m_retValue;
 
 		// Inherited via GThread
 		virtual void run() override;

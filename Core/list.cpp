@@ -9,7 +9,7 @@ namespace X
 	{
 		bool List::Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			//do twice, first to do size or other call with
 			//memory allocation
@@ -28,7 +28,7 @@ namespace X
 				{
 					auto v0 = it.second;
 					if (v0.IsObject() 
-						&& v0.GetObj()->GetType() ==Data::Type::Str
+						&& v0.GetObj()->GetObjType() ==ObjType::Str
 						&& v0.ToString().find("rand")==0)
 					{
 						auto strV = v0.ToString();
@@ -51,7 +51,7 @@ namespace X
 					break;
 				}
 			}
-			retValue = AST::Value(this);
+			retValue = X::Value(this);
 			return true;
 		}
 		List* List::FlatPack(Runtime* rt,long long startIndex, long long count)
@@ -72,26 +72,27 @@ namespace X
 			for (long long i = 0; i < count; i++)
 			{
 				long long idx = startIndex + i;
-				AST::Value val;
+				X::Value val;
 				Get(idx, val);
 				Dict* dict = new Dict();
 				//Data::Str* pStrName = new Data::Str(it.first);
-				//dict->Set("Name", AST::Value(pStrName));
+				//dict->Set("Name", X::Value(pStrName));
 				auto valType = val.GetValueType();
 				Data::Str* pStrType = new Data::Str(valType);
-				dict->Set("Type", AST::Value(pStrType));
-				if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+				dict->Set("Type", X::Value(pStrType));
+				if (!val.IsObject() || (val.IsObject() && 
+					dynamic_cast<Object*>(val.GetObj())->IsStr()))
 				{
 					dict->Set("Value", val);
 				}
 				else if (val.IsObject())
 				{
-					AST::Value objId((unsigned long long)val.GetObj());
+					X::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
-					AST::Value valSize(val.GetObj()->Size());
+					X::Value valSize(val.GetObj()->Size());
 					dict->Set("Size", valSize);
 				}
-				AST::Value valDict(dict);
+				X::Value valDict(dict);
 				pOutList->Add(rt, valDict);
 			}
 			return pOutList;

@@ -72,7 +72,7 @@ namespace X
 		public:
 			PyProxyObject()
 			{
-				m_t = Type::PyProxyObject;
+				m_t = ObjType::PyProxyObject;
 				m_stackFrame = new AST::StackFrame(this);
 			}
 			PyProxyObject(PyEng::Object& obj) :
@@ -126,13 +126,13 @@ namespace X
 			{
 				m_myScope = s;
 			}
-			bool PyObjectToValue(PyEng::Object& pyObj, AST::Value& val);
+			bool PyObjectToValue(PyEng::Object& pyObj, X::Value& val);
 			virtual std::string GetNameString() override
 			{
 				return m_name;
 			}
 			virtual void EachVar(Runtime* rt, void* pContext,
-				std::function<void(std::string, AST::Value&)> const& f) override;
+				std::function<void(std::string, X::Value&)> const& f) override;
 			virtual std::string GetModuleName(Runtime* rt) override
 			{
 				if (m_proxyType == PyProxyType::Func)
@@ -180,14 +180,14 @@ namespace X
 				std::vector<AST::Scope*>& callables) override;
 			virtual int AddOrGet(std::string& name, bool bGetOnly) override;
 			virtual bool Set(Runtime* rt, void* pContext, 
-				int idx, AST::Value& v) override
+				int idx, X::Value& v) override
 			{
 				m_stackFrame->Set(idx, v);
 				return true;
 			}
 			virtual bool Get(Runtime* rt, void* pContext, 
-				int idx, AST::Value& v,
-				AST::LValue* lValue = nullptr) override
+				int idx, X::Value& v,
+				X::LValue* lValue = nullptr) override
 			{
 				m_stackFrame->Get(idx, v, lValue);
 				return true;
@@ -197,7 +197,7 @@ namespace X
 				return nullptr;
 			}
 			virtual bool Call(Runtime* rt, ARGS& params,
-				KWARGS& kwParams, AST::Value& retValue) override;
+				KWARGS& kwParams, X::Value& retValue) override;
 			virtual std::string ToString(bool WithFormat = false) override
 			{
 				return (std::string)m_obj;

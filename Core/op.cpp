@@ -180,7 +180,7 @@ bool Assign::AssignToDataObject(Runtime* rt, void* pObjPtr)
 	{
 		return false;
 	}
-	if (pObj->GetType() == Data::Type::FuncCalls)
+	if (pObj->GetType() == X::ObjType::FuncCalls)
 	{
 		Data::FuncCalls* pCalls = dynamic_cast<Data::FuncCalls*>(pObj);
 		return pCalls->SetValue(v_r);

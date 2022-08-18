@@ -13,7 +13,7 @@ namespace X
 		// Inherited via GThread
 		virtual void run() override
 		{
-			AST::Value retVal;
+			X::Value retVal;
 			Hosting::I().Run(m_moduleName,m_code, m_codeSize,retVal);
 		}
 	public:
@@ -102,7 +102,7 @@ namespace X
 		delete pTopModule;
 		return true;
 	}
-	bool Hosting::Run(AST::Module* pTopModule, AST::Value& retVal,
+	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
 			bool stopOnEntry)
 	{
 		Runtime* pRuntime = new Runtime();
@@ -118,7 +118,7 @@ namespace X
 		pModuleFrame->SetLine(pTopModule->GetStartLine());
 		pTopModule->AddBuiltins(pRuntime);
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
-		AST::Value v;
+		X::Value v;
 		bool bOK = pTopModule->Run(pRuntime, nullptr, v);
 		pRuntime->PopFrame();
 		retVal = pModuleFrame->GetReturnValue();
@@ -127,7 +127,7 @@ namespace X
 		return bOK;
 	}
 	bool Hosting::Run(std::string& moduleName,
-		const char* code, int size, AST::Value& retVal)
+		const char* code, int size, X::Value& retVal)
 	{
 		unsigned long long moduleKey = 0;
 		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
@@ -140,7 +140,7 @@ namespace X
 		return bOK;
 	}
 	bool Hosting::Run(unsigned long long moduleKey, X::KWARGS& kwParams,
-		AST::Value& retVal)
+		X::Value& retVal)
 	{
 		//check debug command
 		bool stopOnEntry = false;
@@ -159,7 +159,7 @@ namespace X
 		AST::Module* pTopModule = QueryModule(moduleKey);
 		if (pTopModule == nullptr)
 		{
-			retVal = X::AST::Value(false);
+			retVal = X::Value(false);
 			return false;
 		}
 		bool bOK = Run(pTopModule, retVal,stopOnEntry);
@@ -167,7 +167,7 @@ namespace X
 		if (!onFinishExpr.empty())
 		{
 			std::string moduleName("Cleanup.x");
-			AST::Value valRet0;
+			X::Value valRet0;
 			Run(moduleName, onFinishExpr.c_str(), (int)onFinishExpr.size(), valRet0);
 		}
 		return bOK;

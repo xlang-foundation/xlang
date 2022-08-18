@@ -2,10 +2,11 @@
 
 #include <string>
 #include <string.h>
+#include "xhost.h"
 
-namespace X {
-	namespace Data { class Object; }
-namespace AST {
+namespace X 
+{
+	class XObj;
 enum class ValueType
 {
 	Invalid,
@@ -45,7 +46,7 @@ Value& Value::operator op (const Value& r)\
 	case ValueType::Object:\
 		{\
 			Value v =r;\
-			(*((Data::Object*)x.obj)) op v;\
+			(*((XObj*)x.obj)) op v;\
 		}\
 		break;\
 	default:\
@@ -100,7 +101,7 @@ class Value
 		long long l;
 		double d;
 		char* str;
-		Data::Object* obj;
+		XObj* obj;
 	}x;
 public:
 	inline bool IsInvalid()
@@ -178,7 +179,7 @@ public:
 		flags = size;
 		x.str = s;
 	}
-	inline Value(Data::Object* p)
+	inline Value(XObj* p)
 	{
 		t = ValueType::Object;
 		x.obj = nullptr;
@@ -186,8 +187,8 @@ public:
 	}
 	bool Clone();
 	bool ChangeToStrObject();
-	void AssignObject(Data::Object* p);
-	void ReleaseObject(Data::Object* p);
+	void AssignObject(XObj* p);
+	void ReleaseObject(XObj* p);
 	inline Value(const Value& v)
 	{
 		flags = v.flags;
@@ -237,7 +238,7 @@ public:
 	{
 		return (x.l!=0);
 	}
-	inline Data::Object* GetObj()
+	inline XObj* GetObj()
 	{
 		return x.obj;
 	}
@@ -315,5 +316,5 @@ public:
 	std::string ToString(bool WithFormat = false);
 };
 typedef Value* LValue;
-}
-}
+};
+

@@ -66,12 +66,12 @@ namespace X
 		AppEventCode HandleAppEvent(int signum);
 		AST::Module* Load(std::string& moduleName,
 			const char* code, int size,unsigned long long& moduleKey);
-		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,AST::Value& retVal);
+		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,X::Value& retVal);
 		bool Unload(AST::Module* pTopModule);
-		bool Run(AST::Module* pTopModule,AST::Value& retVal,
+		bool Run(AST::Module* pTopModule,X::Value& retVal,
 			bool stopOnEntry = false);
 		bool Run(std::string& moduleName,
-			const char* code, int size,AST::Value& retVal);
+			const char* code, int size,X::Value& retVal);
 		bool RunAsBackend(std::string& moduleName,const char* code, int size);
 	};
 }

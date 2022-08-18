@@ -30,19 +30,19 @@ namespace X
 	bool HttpServer::Listen(void* rt, void* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		std::string srvName = params[0].ToString();
 		int port = (int)params[1].GetLongLong();
 		bool bOK = ((httplib::Server*)m_pSrv)->listen(
 			srvName.c_str(), port);
-		retValue = AST::Value(bOK);
+		retValue = X::Value(bOK);
 		return bOK;
 	}
 	bool HttpServer::Stop(void* rt, void* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		((httplib::Server*)m_pSrv)->stop();
 		return true;
@@ -50,15 +50,15 @@ namespace X
 	bool HttpServer::Get(void* rt, void* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		std::string pattern = params[0].ToString();
 		Data::Function* pHandler = nullptr;
 		if (params[1].IsObject())
 		{
 			Data::Object* pFuncObj
-				= (Data::Object*)params[1].GetObj();
-			if (pFuncObj->GetType() == X::Data::Type::Function)
+				= dynamic_cast<Data::Object*>(params[1].GetObj());
+			if (pFuncObj->GetType() == X::ObjType::Function)
 			{
 				pHandler = dynamic_cast<Data::Function*>(pFuncObj);
 				pHandler->AddRef();//keep for lambda
@@ -77,17 +77,17 @@ namespace X
 					X::AST::Package* pPackageReq = nullptr;
 					pHttpReq->Create((X::Runtime*)rt,
 						&pPackageReq);
-					params0.push_back(AST::Value(pPackageReq));
+					params0.push_back(X::Value(pPackageReq));
 
 					HttpResponse* pHttpResp 
 						= new HttpResponse(&res);
 					X::AST::Package* pPackageResp = nullptr;
 					pHttpResp->Create((X::Runtime*)rt,
 						&pPackageResp);
-					params0.push_back(AST::Value(pPackageResp));
+					params0.push_back(X::Value(pPackageResp));
 
 					KWARGS kwParams0;
-					AST::Value retValue0;
+					X::Value retValue0;
 					try 
 					{
 						pHandler->Call((X::Runtime*)rt,
@@ -107,14 +107,14 @@ namespace X
 		return true;
 	}
 	bool HttpResponse::SetContent(void* rt, void* pContext,
-		ARGS& params, KWARGS& kwParams, AST::Value& retValue)
+		ARGS& params, KWARGS& kwParams, X::Value& retValue)
 	{
 		auto* pResp = (httplib::Response*)m_pResponse;
-		AST::Value& valContent = params[0];
+		X::Value& valContent = params[0];
 		if (valContent.IsObject())
 		{
-			Data::Object* pObjContent = (Data::Object*)valContent.GetObj();
-			if (pObjContent->GetType() == Data::Type::Binary)
+			Data::Object* pObjContent = dynamic_cast<Data::Object*>(valContent.GetObj());
+			if (pObjContent->GetType() == X::ObjType::Binary)
 			{
 				auto* pBinContent = dynamic_cast<Data::Binary*>(pObjContent);
 				pBinContent->AddRef();
@@ -150,45 +150,45 @@ namespace X
 	bool HttpRequest::Getmethod(void* rt, void* pContext,
 		ARGS& params, 
 		KWARGS& kwParams, 
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		auto* pReq = (httplib::Request*)m_pRequest; 
 		std::string strVal = pReq->method;
-		retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size()); 
+		retValue = X::Value((char*)strVal.c_str(), (int)strVal.size()); 
 		return true; 
 	}
 	bool HttpRequest::Getbody(void* rt, void* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		std::string strVal = pReq->body;
-		retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size());
+		retValue = X::Value((char*)strVal.c_str(), (int)strVal.size());
 		return true;
 	}
 	bool HttpRequest::Getpath(void* rt, void* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		std::string strVal = pReq->path;
-		retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size());
+		retValue = X::Value((char*)strVal.c_str(), (int)strVal.size());
 		return true;
 	}
 	bool HttpRequest::Getremote_addr(void* rt, void* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		std::string strVal = pReq->remote_addr;
-		retValue = AST::Value((char*)strVal.c_str(), (int)strVal.size());
+		retValue = X::Value((char*)strVal.c_str(), (int)strVal.size());
 		return true;
 	}
 	bool HttpRequest::GetAllHeaders(void* rt, void* pContext, ARGS& params,
-		KWARGS& kwParams, AST::Value& retValue)
+		KWARGS& kwParams, X::Value& retValue)
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		auto& headers = pReq->headers;
@@ -196,15 +196,15 @@ namespace X
 		for (auto it = headers.begin(); it != headers.end(); ++it)
 		{
 			const auto& x = *it;
-			AST::Value key(new Data::Str(x.first));
-			AST::Value val(new Data::Str(x.second));
+			X::Value key(new Data::Str(x.first));
+			X::Value val(new Data::Str(x.second));
 			pDictObj->Set(key, val);
 		}
-		retValue = AST::Value(pDictObj);
+		retValue = X::Value(pDictObj);
 		return true;
 	}
 	bool HttpRequest::GetParams(void* rt, void* pContext, ARGS& params,
-		KWARGS& kwParams, AST::Value& retValue)
+		KWARGS& kwParams, X::Value& retValue)
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		auto& req_params = pReq->params;
@@ -213,11 +213,11 @@ namespace X
 			it != req_params.end(); ++it)
 		{
 			const auto& x = *it;
-			AST::Value key(new Data::Str(x.first));
-			AST::Value val(new Data::Str(x.second));
+			X::Value key(new Data::Str(x.first));
+			X::Value val(new Data::Str(x.second));
 			pDictObj->Set(key, val);
 		}
-		retValue = AST::Value(pDictObj);
+		retValue = X::Value(pDictObj);
 		return true;
 	}
 }

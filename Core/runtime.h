@@ -76,7 +76,7 @@ public:
 	{
 		return m_stackBottom;
 	}
-	inline virtual bool Set(AST::Scope* s,void* pContext, int idx, AST::Value& v)
+	inline virtual bool Set(AST::Scope* s,void* pContext, int idx, X::Value& v)
 	{
 		bool bOK = false;
 		auto it = m_stackBottom;
@@ -92,13 +92,13 @@ public:
 		}
 		return bOK;
 	}
-	inline bool SetReturn(AST::Value& v)
+	inline bool SetReturn(X::Value& v)
 	{
 		m_stackBottom->SetReturn(v);
 		return true;
 	}
 	inline virtual bool Get(AST::Scope* s,void* pContext, int idx, 
-		AST::Value& v,AST::LValue* lValue = nullptr)
+		X::Value& v,X::LValue* lValue = nullptr)
 	{
 		bool bOK = false;
 		auto it = m_stackBottom;

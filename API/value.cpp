@@ -1,9 +1,10 @@
 #include "value.h"
-#include "object.h"
-#include "str.h"
+//#include "object.h"
+//#include "str.h"
+#include "xlang.h"
 #include "utility.h"
-namespace X {namespace AST {
-	
+namespace X 
+{
 	ARITH_OP_IMPL(+= )
 	ARITH_OP_IMPL(-= )
 	ARITH_OP_IMPL(*= )
@@ -19,23 +20,21 @@ namespace X {namespace AST {
 	{
 		if (t == ValueType::Object)
 		{
-			if (x.obj && x.obj->GetType() == Data::Type::Str)
+			if (x.obj && x.obj->GetObjType() == ObjType::Str)
 			{
-				Data::Str* pOldObj = (Data::Str*)x.obj;
-				Data::Str* pStrObj = new Data::Str(
-					pOldObj->ToString());
-				pStrObj->AddRef();//for this Value
-				x.obj->Release();
-				x.obj = pStrObj;
+				std::string oldStr = x.obj->ToString();
+				auto newObj = g_pXHost->CreateStrObj(oldStr.c_str(), x.obj->Size());
+				x.obj->DecRef();
+				x.obj = newObj;
 			}
 		}
 		return true;
 	}
-	void Value::AssignObject(Data::Object* p)
+	void Value::AssignObject(XObj* p)
 	{
 		if (p)
 		{
-			p->AddRef();
+			p->IncRef();
 		}
 		x.obj = p;
 	}
@@ -47,9 +46,7 @@ namespace X {namespace AST {
 		}
 		else if (t == ValueType::Str)
 		{
-			Data::Str* pStrObj = new Data::Str((const char*)x.str,(int)flags);
-			pStrObj->AddRef();//for this Value
-			x.obj = pStrObj;
+			x.obj = g_pXHost->CreateStrObj((const char*)x.str, (int)flags);;
 		}
 		else
 		{
@@ -58,11 +55,11 @@ namespace X {namespace AST {
 		t = ValueType::Object;
 		return true;
 	}
-	void Value::ReleaseObject(Data::Object* p)
+	void Value::ReleaseObject(XObj* p)
 	{
 		if (p)
 		{
-			p->Release();
+			p->DecRef();
 		}
 	}
 	size_t Value::Hash()
@@ -81,7 +78,7 @@ namespace X {namespace AST {
 				(size_t)flags));
 			break;
 		case ValueType::Object:
-			h = ((Data::Object*)x.obj)->Hash();
+			h = ((XObj*)x.obj)->Hash();
 			break;
 		default:
 			break;
@@ -125,7 +122,7 @@ namespace X {namespace AST {
 		if(x.obj)
 		{
 			str = x.obj->ToString(WithFormat);
-			if (WithFormat && x.obj->GetType() == Data::Type::Str)
+			if (WithFormat && x.obj->GetObjType() == ObjType::Str)
 			{
 				str= StringifyString(str);
 			}
@@ -145,19 +142,19 @@ namespace X {namespace AST {
 		std::string strType;
 		switch (t)
 		{
-		case AST::ValueType::Invalid:
+		case ValueType::Invalid:
 			strType = "Invalid";
 			break;
-		case AST::ValueType::None:
+		case ValueType::None:
 			strType = "None";
 			break;
-		case AST::ValueType::Int64:
+		case ValueType::Int64:
 			strType = "Int64";
 			break;
-		case AST::ValueType::Double:
+		case ValueType::Double:
 			strType = "Double";
 			break;
-		case AST::ValueType::Object:
+		case ValueType::Object:
 		{
 			auto* pObj = GetObj();
 			if (pObj)
@@ -170,10 +167,10 @@ namespace X {namespace AST {
 			}
 		}
 		break;
-		case AST::ValueType::Str:
+		case ValueType::Str:
 			strType = "Str";
 			break;
-		case AST::ValueType::Value:
+		case ValueType::Value:
 			strType = "Value";
 			break;
 		default:
@@ -181,5 +178,4 @@ namespace X {namespace AST {
 		}
 		return strType;
 	}
-}
 }

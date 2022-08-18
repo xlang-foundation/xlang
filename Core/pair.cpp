@@ -30,7 +30,7 @@ bool PairOp::ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 				return bOK;
 			}
 		}
-		Data::Object* obj = (Data::Object*)lVal.GetObj();
+		Data::Object* obj = dynamic_cast<Data::Object*>(lVal.GetObj());
 		if (obj)
 		{
 			bOK = obj->Call(rt, params, kwParams, v);
@@ -104,17 +104,17 @@ bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 	{//usage: x[1,2]
 		Value v0;
 		bOK = L->Run(rt, pContext, v0);
-		auto pDataObj = (Data::Object*)v0.GetObj();
+		auto pDataObj = dynamic_cast<Data::Object*>(v0.GetObj());
 		switch (pDataObj->GetType())
 		{
-		case Data::Type::List:
+		case X::ObjType::List:
 			bOK = GetItemFromList(rt, pContext, 
 				(Data::List*)pDataObj,R,v, lValue);
 			break;
-		case Data::Type::Dict:
+		case X::ObjType::Dict:
 			bOK = GetItemFromDict(rt, pContext, (Data::Dict*)pDataObj, R, v, lValue);
 			break;
-		case Data::Type::Table:
+		case X::ObjType::Table:
 			break;
 		default:
 			break;

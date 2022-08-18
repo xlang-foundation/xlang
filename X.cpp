@@ -18,6 +18,7 @@
 #include "event.h"
 #include "port.h"
 #include "PyEngObject.h"
+#include "xhost_impl.h"
 
 struct ParamConfig
 {
@@ -38,8 +39,6 @@ struct ParamConfig
 PyEngHost* g_pHost = nullptr;
 std::string g_ExePath;
 ParamConfig g_ParamConfig;
-
-
 
 void signal_callback_handler(int signum) 
 {
@@ -207,6 +206,8 @@ int main(int argc, char* argv[])
 	}
 	signal(SIGINT, signal_callback_handler);
 
+	X::CreatXHost();
+
 	if (g_ParamConfig.enablePython)
 	{
 		LoadPythonEngine();
@@ -226,7 +227,7 @@ int main(int argc, char* argv[])
 	std::string fileName;
 	if (!g_ParamConfig.inlineCode.empty())
 	{
-		X::AST::Value retVal;
+		X::Value retVal;
 		fileName = "inline_code";
 		HasCode = true;
 		code = g_ParamConfig.inlineCode;
@@ -260,7 +261,7 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			X::AST::Value retVal;
+			X::Value retVal;
 			X::Hosting::I().Run(fileName, code.c_str(), (int)code.size(), retVal);
 			if (!retVal.IsInvalid())
 			{
@@ -284,5 +285,6 @@ int main(int argc, char* argv[])
 		UnloadPythonEngine();
 	}
 	X::G::I().Check();
+	X::DestoryXHost();
 	return 0;
 }

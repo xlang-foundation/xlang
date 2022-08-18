@@ -25,7 +25,7 @@ Locker _printLock;
 bool U_Print(X::Runtime* rt,void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	_printLock.Lock();
 	for (auto& v : params)
@@ -35,24 +35,24 @@ bool U_Print(X::Runtime* rt,void* pContext,
 	}
 	std::cout << std::endl;
 	_printLock.Unlock();
-	retValue = X::AST::Value(true);
+	retValue = X::Value(true);
 	return true;
 }
 bool U_Load(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	if (params.size() == 0)
 	{
-		retValue = X::AST::Value(false);
+		retValue = X::Value(false);
 		return false;
 	}
 	std::string fileName = params[0].ToString();
 	std::string ext = ExtName(fileName);
 	if (ext != "X" && ext != "x")
 	{
-		retValue = X::AST::Value(0);
+		retValue = X::Value(0);
 		return true;
 	}
 	std::ifstream moduleFile(fileName);
@@ -61,13 +61,13 @@ bool U_Load(X::Runtime* rt, void* pContext,
 	moduleFile.close();
 	unsigned long long moduleKey = 0;
 	X::Hosting::I().Load(fileName, code.c_str(), (int)code.size(), moduleKey);
-	retValue = X::AST::Value(moduleKey);
+	retValue = X::Value(moduleKey);
 	return true;
 }
 bool U_Run(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	unsigned long long key = 0;
 	if (params.size() > 0)
@@ -87,7 +87,7 @@ bool U_Run(X::Runtime* rt, void* pContext,
 bool U_RunInMain(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	X::Event* pEvt = X::EventSystem::I().Query("RunModule");
 	if (pEvt == nullptr)
@@ -100,7 +100,7 @@ bool U_RunInMain(X::Runtime* rt, void* pContext,
 				mKey = valKey.GetLongLong();
 				X::KWARGS kwParams0;
 				pEvt->CovertPropsToArgs(kwParams0);
-				X::AST::Value retValue0;
+				X::Value retValue0;
 				X::Hosting::I().Run(mKey, kwParams0, retValue0);
 			}, rt);
 	}
@@ -117,7 +117,7 @@ bool U_RunInMain(X::Runtime* rt, void* pContext,
 			key = it->second.GetLongLong();
 		}
 	}
-	X::AST::Value valKey(key);
+	X::Value valKey(key);
 	pEvt->Set("ModuleKey", valKey);
 	for (auto& it : kwParams)
 	{
@@ -131,7 +131,7 @@ bool U_RunInMain(X::Runtime* rt, void* pContext,
 bool U_Rand(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	static bool init = false;
 	if (!init)
@@ -140,22 +140,22 @@ bool U_Rand(X::Runtime* rt, void* pContext,
 		init = true;
 	}
 	int r = rand();
-	retValue = X::AST::Value(r);
+	retValue = X::Value(r);
 	return true;
 }
 bool U_ThreadId(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	long long id = GetThreadID();
-	retValue = X::AST::Value(id);
+	retValue = X::Value(id);
 	return true;
 }
 bool U_Sleep(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	bool bOK = true;
 	long long t = 0;
@@ -191,17 +191,17 @@ bool U_Sleep(X::Runtime* rt, void* pContext,
 	}
 	else
 	{
-		retValue = X::AST::Value(bOK);
+		retValue = X::Value(bOK);
 	}
 	return bOK;
 }
 bool U_Time(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	long long t = getCurMilliTimeStamp();
-	retValue = X::AST::Value(t);
+	retValue = X::Value(t);
 	return true;
 }
 
@@ -237,18 +237,18 @@ bool Builtin::Register(const char* name, void* func,
 bool U_BreakPoint(X::Runtime* rt, void* pContext,
 	X::ARGS& params,
 	KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	rt->M()->SetDbgType(AST::dbg::Step,
 		AST::dbg::Step);
-	retValue = X::AST::Value(true);
+	retValue = X::Value(true);
 	return true;
 }
 
 
 bool U_TaskRun(X::Runtime* rt, void* pContext,
 	ARGS& params,KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	Data::List* pFutureList = nil;
 	Data::Future* pFuture = nil;
@@ -261,11 +261,11 @@ bool U_TaskRun(X::Runtime* rt, void* pContext,
 			if (pFutureList == nil)
 			{
 				pFutureList = new Data::List();
-				X::AST::Value vTask(pFuture);
+				X::Value vTask(pFuture);
 				pFutureList->Add(rt, vTask);
 				pFuture = nil;
 			}
-			X::AST::Value vTask(f);
+			X::Value vTask(f);
 			pFutureList->Add(rt, vTask);
 		}
 		else
@@ -277,7 +277,7 @@ bool U_TaskRun(X::Runtime* rt, void* pContext,
 	};
 	bool bOK = true;
 	auto* pContextObj = (X::Data::Object*)pContext;
-	if (pContextObj->GetType() == X::Data::Type::FuncCalls)
+	if (pContextObj->GetType() == X::ObjType::FuncCalls)
 	{
 		X::Data::FuncCalls* pFuncCalls = (X::Data::FuncCalls*)pContextObj;
 		auto& list = pFuncCalls->GetList();
@@ -294,21 +294,21 @@ bool U_TaskRun(X::Runtime* rt, void* pContext,
 	}
 	if (pFutureList)
 	{
-		retValue = X::AST::Value(pFutureList);
+		retValue = X::Value(pFutureList);
 	}
 	else if(pFuture)
 	{
-		retValue = X::AST::Value(pFuture);
+		retValue = X::Value(pFuture);
 	}
 	return bOK;
 }
 bool U_FireEvent(X::Runtime* rt, void* pContext,
 	ARGS& params, KWARGS& kwParams,
-	X::AST::Value& retValue)
+	X::Value& retValue)
 {
 	if (params.size() == 0)
 	{
-		retValue = AST::Value(false);
+		retValue = X::Value(false);
 		return false;
 	}
 	std::string name = params[0].ToString();
@@ -318,7 +318,7 @@ bool U_FireEvent(X::Runtime* rt, void* pContext,
 		kwParams.emplace(std::make_pair("tid", tid));
 	}
 	X::EventSystem::I().Fire(name, kwParams);
-	retValue = AST::Value(true);
+	retValue = X::Value(true);
 	return true;
 }
 bool Builtin::RegisterInternals()

@@ -13,7 +13,8 @@ bool Var::CalcCallables(Runtime* rt, void* pContext,
 	bool bOK = Run(rt, pContext, val);
 	if (bOK && val.IsObject())
 	{
-		bOK = val.GetObj()->CalcCallables(rt, pContext, callables);
+		Data::Object* pObj = dynamic_cast<Data::Object*>(val.GetObj());
+		bOK = pObj->CalcCallables(rt, pContext, callables);
 	}
 	return bOK;
 }

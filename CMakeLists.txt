@@ -13,7 +13,7 @@ include_directories("Http")
 include_directories("Text")
 include_directories("Main")
 
-FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp")
+FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp" "Api/*.cpp")
 FILE(GLOB Ext_SRC "Ext/*.cpp")
 FILE(GLOB Http_SRC "Http/*.cpp")
 FILE(GLOB Text_SRC "Text/*.cpp")

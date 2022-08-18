@@ -21,20 +21,20 @@ namespace X
 		bool Listen(void* rt,void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue);
+			X::Value& retValue);
 		bool Stop(void* rt, void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue);
+			X::Value& retValue);
 		bool Get(void* rt, void* pContext,ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue);
+			X::Value& retValue);
 	};
 #define GET_FUNC(name) \
 	bool Get##name(void* rt, void* pContext,\
 		ARGS& params,\
 		KWARGS& kwParams,\
-		AST::Value& retValue);
+		X::Value& retValue);
 
 	class HttpRequest
 	{
@@ -64,9 +64,9 @@ namespace X
 		bool GetAllHeaders(void* rt, void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue);
+			X::Value& retValue);
 		bool GetParams(void* rt, void* pContext, ARGS& params,
-			KWARGS& kwParams, AST::Value& retValue);
+			KWARGS& kwParams, X::Value& retValue);
 	};
 	class HttpResponse
 	{
@@ -86,7 +86,7 @@ namespace X
 		bool SetContent(void* rt, void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue);
+			X::Value& retValue);
 	};
 
 	class Http

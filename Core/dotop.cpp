@@ -24,7 +24,7 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,
 	{
 		bases.push_back(objScope);
 	}
-	if (pObj->GetType() == Data::Type::List)
+	if (pObj->GetType() == ObjType::List)
 	{
 		Data::List* pList = dynamic_cast<Data::List*>(pObj);
 		if (pList)
@@ -36,7 +36,7 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,
 			}
 		}
 	}
-	else if (pObj->GetType() == Data::Type::XClassObject)
+	else if (pObj->GetType() == X::ObjType::XClassObject)
 	{
 		Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pObj);
 		if (pClassObj)
@@ -44,8 +44,8 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,
 			bases.push_back(pClassObj->GetClassObj());
 		}
 	}
-	else if (pObj->GetType() == Data::Type::Function ||
-		pObj->GetType() == Data::Type::FuncCalls)
+	else if (pObj->GetType() == X::ObjType::Function ||
+		pObj->GetType() == X::ObjType::FuncCalls)
 	{
 		//for function, meta function like taskrun,
 		//put into top module
@@ -89,7 +89,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	Value& v, LValue* lValue)
 {
 	std::vector<Scope*> scopes;
-	void* pLeftObj0 = v_l.GetObj();
+	void* pLeftObj0 = dynamic_cast<Data::Object*>(v_l.GetObj());
 	if (pLeftObj0)
 	{
 		QueryBases(rt, pLeftObj0, scopes);
@@ -108,8 +108,8 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	{
 		if (v0.IsObject())
 		{
-			Data::Object* pObj0 = (Data::Object*)v0.GetObj();
-			if (pObj0 && pObj0->GetType() == Data::Type::Function)
+			Data::Object* pObj0 = dynamic_cast<Data::Object*>(v0.GetObj());
+			if (pObj0 && pObj0->GetType() == X::ObjType::Function)
 			{
 				Data::Function* pFuncObj = dynamic_cast<Data::Function*>(pObj0);
 				if (pFuncObj)
@@ -179,7 +179,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	if (pLeftObj0)
 	{
 		Data::Object* pLeftObj = (Data::Object*)pLeftObj0;
-		if (pLeftObj->GetType() == Data::Type::List)
+		if (pLeftObj->GetType() == X::ObjType::List)
 		{
 			Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
 			if (pList)
@@ -189,12 +189,12 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 				{
 					if (it.IsObject())
 					{
-						Data::Object* pItObj = (Data::Object*)it.GetObj();
-						if (pItObj->GetType() == Data::Type::XClassObject)
+						Data::Object* pItObj = dynamic_cast<Data::Object*>(it.GetObj());
+						if (pItObj->GetType() == X::ObjType::XClassObject)
 						{
 							RunCallPerObj(R,pItObj);
 						}
-						else if (pItObj->GetType() == Data::Type::Function)
+						else if (pItObj->GetType() == X::ObjType::Function)
 						{
 							RunCallPerObj(R,pItObj);
 						}
@@ -298,7 +298,7 @@ bool DotOp::CalcCallables(Runtime* rt, void* pContext,
 	bool bOK = Run(rt, pContext, val);
 	if (bOK && val.IsObject())
 	{
-		bOK = val.GetObj()->CalcCallables(rt, pContext, callables);
+		bOK = dynamic_cast<Data::Object*>(val.GetObj())->CalcCallables(rt, pContext, callables);
 	}
 	return bOK;
 }

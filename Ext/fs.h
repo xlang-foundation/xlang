@@ -43,12 +43,12 @@ namespace X
 		bool read(void* rt, void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			auto size = params[0].GetLongLong();
 			if (size <= 0)
 			{
-				retValue = AST::Value();
+				retValue = X::Value();
 				return true;
 			}
 			if (m_IsBinary)
@@ -56,37 +56,37 @@ namespace X
 				char* data = new char[size];
 				Data::Binary* pBinObj = new Data::Binary(data, size);
 				m_stream.read(data, size);
-				retValue = AST::Value(pBinObj);
+				retValue = X::Value(pBinObj);
 			}
 			else
 			{
 				Data::Str* pStrObj = new Data::Str((size_t)size);
 				char* data = pStrObj->Buffer();
 				m_stream.read(data, size);
-				retValue = AST::Value(pStrObj);
+				retValue = X::Value(pStrObj);
 			}
 			return true;
 		}
 		bool write(void* rt, void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			return true;
 		}
 		bool close(void* rt, void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			m_stream.close();
-			retValue = AST::Value(true);
+			retValue = X::Value(true);
 			return true;
 		}
 		bool get_size(void* rt, void* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue)
+			X::Value& retValue)
 		{
 			struct stat stat_buf;
 			int rc = stat(m_fileName.c_str(), &stat_buf);
@@ -99,7 +99,7 @@ namespace X
 			{
 				rc = rc;
 			}
-			retValue = AST::Value((long long)size);
+			retValue = X::Value((long long)size);
 			return true;
 		}
 	};

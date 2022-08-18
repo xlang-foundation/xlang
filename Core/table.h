@@ -20,10 +20,10 @@ class DynVariantAry
 	size_t m_maxcount = 0;//max item number,include deleted
 	size_t m_itemSize = 1;
 	size_t m_grownCount = 64;
-	AST::ValueType m_valueType = AST::ValueType::None;
+	ValueType m_valueType = ValueType::None;
 	std::vector<size_t> m_deleted;//row records for deleted
 public:
-	DynVariantAry(size_t cnt,size_t itemSize, AST::ValueType type)
+	DynVariantAry(size_t cnt,size_t itemSize, ValueType type)
 	{
 		m_valueType = type;
 		m_data = (char*)malloc(cnt* itemSize);
@@ -35,15 +35,15 @@ public:
 	}
 	~DynVariantAry()
 	{
-		if (m_valueType == AST::ValueType::Object)
+		if (m_valueType == ValueType::Object)
 		{
-			AST::Value* pVals = (AST::Value*)m_data;
+			X::Value* pVals = (X::Value*)m_data;
 			for (int i = 0; i < m_lastTouchedCount; i++)
 			{
-				AST::Value& v = pVals[i];
+				X::Value& v = pVals[i];
 				if (v.IsObject())
 				{
-					v.GetObj()->Release();
+					v.GetObj()->DecRef();
 				}
 			}
 		}
@@ -65,76 +65,76 @@ public:
 		return (T*)Item(r);
 	}
 
-	bool Get(size_t r, AST::Value& v)
+	bool Get(size_t r, X::Value& v)
 	{
 		switch (m_valueType)
 		{
-		case X::AST::ValueType::None:
+		case X::ValueType::None:
 			break;
-		case X::AST::ValueType::Int64:
-			v = AST::Value(Get<long long>(r));
+		case X::ValueType::Int64:
+			v = X::Value(Get<long long>(r));
 			break;
-		case X::AST::ValueType::Double:
-			v = AST::Value(Get<double>(r));
+		case X::ValueType::Double:
+			v = X::Value(Get<double>(r));
 			break;
-		case X::AST::ValueType::Object:
-			v = AST::Value(Get<AST::Value>(r));
+		case X::ValueType::Object:
+			v = X::Value(Get<X::Value>(r));
 			break;
-		case X::AST::ValueType::Str:
-			v = AST::Value(Get<AST::Value>(r));
+		case X::ValueType::Str:
+			v = X::Value(Get<X::Value>(r));
 			break;
-		case X::AST::ValueType::Value:
-			v = AST::Value(Get<AST::Value>(r));
+		case X::ValueType::Value:
+			v = X::Value(Get<X::Value>(r));
 			break;
 		default:
 			break;
 		}
 		return true;
 	}
-	bool Set(size_t r, AST::Value& v)
+	bool Set(size_t r, X::Value& v)
 	{
 		switch (m_valueType)
 		{
-		case X::AST::ValueType::None:
+		case X::ValueType::None:
 			break;
-		case X::AST::ValueType::Int64:
+		case X::ValueType::Int64:
 			*GetRef<long long>(r) = v.GetLongLong();
 			break;
-		case X::AST::ValueType::Double:
+		case X::ValueType::Double:
 			*GetRef<double>(r) = v.GetDouble();
 			break;
-		case X::AST::ValueType::Object:
-		case X::AST::ValueType::Str:
-		case X::AST::ValueType::Value:
-			*GetRef<AST::Value>(r) = v;
+		case X::ValueType::Object:
+		case X::ValueType::Str:
+		case X::ValueType::Value:
+			*GetRef<X::Value>(r) = v;
 		default:
 			break;
 		}
 		return true;
 	}
-	size_t Add(AST::Value& v)
+	size_t Add(X::Value& v)
 	{
 		size_t r = -1;
 		auto t = v.GetType();
 		switch (t)
 		{
-		case X::AST::ValueType::None:
-			r = Add<AST::Value>(v);
+		case X::ValueType::None:
+			r = Add<X::Value>(v);
 			break;
-		case X::AST::ValueType::Int64:
+		case X::ValueType::Int64:
 			r = Add<long long>(v.GetLongLong());
 			break;
-		case X::AST::ValueType::Double:
+		case X::ValueType::Double:
 			r = Add<double>(v.GetDouble());
 			break;
-		case X::AST::ValueType::Object:
-			r = Add<AST::Value>(v);
+		case X::ValueType::Object:
+			r = Add<X::Value>(v);
 			break;
-		case X::AST::ValueType::Str:
-			r = Add<AST::Value>(v);
+		case X::ValueType::Str:
+			r = Add<X::Value>(v);
 			break;
 		default:
-			r = Add<AST::Value>(v);
+			r = Add<X::Value>(v);
 			break;
 		}
 		return r;
@@ -171,9 +171,9 @@ public:
 	void Remove(size_t r)
 	{
 		//clear
-		if (m_valueType == AST::ValueType::Object)
+		if (m_valueType == ValueType::Object)
 		{//for late delete this col, no object referenced
-			AST::Value emptyV;
+			X::Value emptyV;
 			Set(r, emptyV);
 		}
 		m_deleted.push_back(r);
@@ -203,7 +203,7 @@ public:
 	long long r() { return m_r; }
 	virtual bool Call(Runtime* rt, ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue) override
+		X::Value& retValue) override
 	{
 		return true;
 	}
@@ -225,8 +225,8 @@ class Table
 public:
 	Table()
 	{
-		m_t = Type::Table;
-		m_rowIDcol.ary = new DynVariantAry(1, sizeof(long long),AST::ValueType::Int64);
+		m_t = ObjType::Table;
+		m_rowIDcol.ary = new DynVariantAry(1, sizeof(long long),ValueType::Int64);
 	}
 	long long GetColNum()
 	{
@@ -258,12 +258,12 @@ public:
 		return m_rowMap.size();
 	}
 	virtual List* FlatPack(Runtime* rt, long long startIndex, long long count) override;
-	virtual Table& operator +=(AST::Value& r)
+	virtual Table& operator +=(X::Value& r)
 	{
 		if (r.IsObject())
 		{
-			Data::Object* pObjVal = (Data::Object*)r.GetObj();
-			if (pObjVal->GetType() == Data::Type::List)
+			Data::Object* pObjVal = dynamic_cast<Data::Object*>(r.GetObj());
+			if (pObjVal->GetType() == X::ObjType::List)
 			{
 				List* pList = (List*)pObjVal;
 				FillWithList(pList->Data());
@@ -289,7 +289,7 @@ public:
 			auto rObj = it.second;
 			for (auto c : m_cols)
 			{
-				AST::Value v0;
+				X::Value v0;
 				c.ary->Get(rObj->r(), v0);
 				strOut += "\t" + v0.ToString();
 			}
@@ -327,40 +327,40 @@ public:
 	}
 	virtual bool Call(Runtime* rt, ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue) override
+		X::Value& retValue) override
 	{
 		FillWithList(params);
-		retValue = AST::Value(this);
+		retValue = X::Value(this);
 		return true;
 	}
 	bool AddCol(std::string& strName,
 		std::vector<std::string>& props,
-		AST::Value& valDefaultValue)
+		X::Value& valDefaultValue)
 	{
 		std::string type;
 		if (props.size() > 0)
 		{
 			type = props[0];
 		}
-		AST::ValueType t = AST::ValueType::Object;
-		int colSize = sizeof(AST::Value);
+		ValueType t = ValueType::Object;
+		int colSize = sizeof(X::Value);
 		if (type == "int64")
 		{
-			t = AST::ValueType::Int64;
+			t = ValueType::Int64;
 			colSize = sizeof(long long);
 		}
 		else if (type == "double")
 		{
-			t = AST::ValueType::Double;
+			t = ValueType::Double;
 			colSize = sizeof(double);
 		}
 		else if (type == "str")
 		{
-			t = AST::ValueType::Object;
+			t = ValueType::Object;
 		}
 		return AddCol(strName,colSize,t);
 	}
-	bool AddCol(std::string name,int colSize, AST::ValueType type)
+	bool AddCol(std::string name,int colSize, ValueType type)
 	{
 		DynVariantAry* ary = new DynVariantAry(1, colSize, type);
 		m_cols.push_back(ColInfo{ name,ary });
@@ -399,7 +399,7 @@ public:
 		auto rObj = find->second;
 		for (auto it : m_cols)
 		{
-			AST::Value v;
+			X::Value v;
 			it.ary->Get(rObj->r(), v);
 			kwargs.emplace(std::make_pair(it.name, v));
 		}
@@ -428,9 +428,9 @@ public:
 	}
 	void Test()
 	{
-		AddCol("Name", sizeof(AST::Value),AST::ValueType::Str);
-		AddCol("Age", sizeof(long long), AST::ValueType::Int64);
-		AddCol("Weight", sizeof(double), AST::ValueType::Double);
+		AddCol("Name", sizeof(X::Value),ValueType::Str);
+		AddCol("Age", sizeof(long long), ValueType::Int64);
+		AddCol("Weight", sizeof(double), ValueType::Double);
 
 		for (int i = 0; i < 1000; i++)
 		{

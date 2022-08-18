@@ -26,7 +26,7 @@
 			(AST::U_FUNC)([](X::Runtime* rt, void* pContext,\
 				ARGS& params,\
 				KWARGS& kwParams,\
-				X::AST::Value& retValue)\
+				X::Value& retValue)\
 				{\
 					auto* pPackage = (AST::Package*)pContext;\
 					auto* pThis = (THIS_CLASS_NAME*)pPackage->GetObj();\
@@ -45,13 +45,13 @@
 		(AST::U_FUNC)([](X::Runtime* rt, void* pContext,\
 			ARGS& params,\
 			KWARGS& kwParams,\
-			AST::Value& retValue)\
+			X::Value& retValue)\
 			{\
 				class_impl_name* cls = \
 					new class_impl_name(params,kwParams);\
 				AST::Package* pPackage_Srv = nullptr;\
 				cls->Create(rt, &pPackage_Srv);\
-				retValue = AST::Value(pPackage_Srv);\
+				retValue = X::Value(pPackage_Srv);\
 				return true;\
 			}));\
 	auto* pFuncObj =new Data::Function(extFunc);\
@@ -62,7 +62,7 @@
 	pPackage->Init((int)name_funcs.size());\
 	for(auto& it:name_funcs)\
 	{\
-		AST::Value v0(it.second);\
+		X::Value v0(it.second);\
 		pPackage->Set(rt, nullptr, it.first, v0);\
 	}\
 	*ppackage = pPackage;\

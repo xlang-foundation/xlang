@@ -148,7 +148,7 @@ namespace X
 			{
 				//std::cout << data << std::endl;
 				std::string moduleName("debugger.x");
-				AST::Value retVal;
+				X::Value retVal;
 				std::string ack("OK");
 				if (Hosting::I().Run(moduleName, data, size, retVal))
 				{
@@ -201,7 +201,7 @@ namespace X
 		}
 		bool DebugService::BuildLocals(Runtime* rt,
 			void* pContextCurrent,int frameId,
-			AST::Value& valLocals)
+			X::Value& valLocals)
 		{
 			int index = 0;
 			AST::StackFrame* pCurStack = rt->GetCurrentStack();
@@ -220,41 +220,43 @@ namespace X
 				AST::Scope* pCurScope = pCurStack->GetScope();
 				pCurScope->EachVar(rt, pContextCurrent,[rt,pList](
 					std::string name, 
-					AST::Value& val)
+					X::Value& val)
 				{
-					if (val.IsObject() && val.GetObj()->IsFunc())
+					if (val.IsObject() && 
+						dynamic_cast<Data::Object*>(val.GetObj())->IsFunc())
 					{
 						return;
 					}
 					Data::Dict* dict = new Data::Dict();
 					Data::Str* pStrName = new Data::Str(name);
-					dict->Set("Name", AST::Value(pStrName));
+					dict->Set("Name", X::Value(pStrName));
 
 					auto valType = val.GetValueType();
 					Data::Str* pStrType = new Data::Str(valType);
-					dict->Set("Type", AST::Value(pStrType));
+					dict->Set("Type", X::Value(pStrType));
 					if (!val.IsObject()
-						|| (val.IsObject() && val.GetObj()->IsStr()))
+						|| (val.IsObject() && 
+							dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
 					{
 						dict->Set("Value", val);
 					}
 					else if (val.IsObject())
 					{
-						AST::Value objId((unsigned long long)val.GetObj());
+						X::Value objId((unsigned long long)val.GetObj());
 						dict->Set("Value", objId);
-						AST::Value valSize(val.GetObj()->Size());
+						X::Value valSize(val.GetObj()->Size());
 						dict->Set("Size", valSize);
 					}
-					AST::Value valDict(dict);
+					X::Value valDict(dict);
 					pList->Add(rt, valDict);
 				});
 			}
-			valLocals = AST::Value(pList);
+			valLocals = X::Value(pList);
 			return true;
 		}
 		bool DebugService::BuildObjectContent(Runtime* rt,
-			void* pContextCurrent, int frameId,AST::Value& valParam,
-			AST::Value& valObject)
+			void* pContextCurrent, int frameId,X::Value& valParam,
+			X::Value& valObject)
 		{
 			if (!valParam.IsObject())
 			{
@@ -266,31 +268,31 @@ namespace X
 			{
 				return false;
 			}
-			AST::Value valObjReq;
+			X::Value valObjReq;
 			pParamObj->Get(0, valObjReq);
 			Data::Object* pObjReq = (Data::Object*)valObjReq.GetLongLong();
 			long long startIdx = 0;
 			if (pParamObj->Size() >= 1)
 			{
-				AST::Value valStart;
+				X::Value valStart;
 				pParamObj->Get(1, valStart);
 				startIdx = valStart.GetLongLong();
 			}
 			long long reqCount = -1;
 			if (pParamObj->Size() >= 2)
 			{
-				AST::Value valCount;
+				X::Value valCount;
 				pParamObj->Get(2, valCount);
 				reqCount = valCount.GetLongLong();
 			}
 			Data::List* pList = pObjReq->FlatPack(rt,startIdx, reqCount);
-			valObject = AST::Value(pList);
+			valObject = X::Value(pList);
 			return true;
 		}
 		bool DebugService::BuildStackInfo(
 			Runtime* rt, void* pContextCurrent,
 			AST::CommandInfo* pCommandInfo,
-			AST::Value& valStackInfo)
+			X::Value& valStackInfo)
 		{
 			TraceEvent traceEvent = pCommandInfo->m_traceEvent;
 			int index = 0;
@@ -306,7 +308,7 @@ namespace X
 				if (pMyScope)
 				{
 					Data::Dict* dict = new Data::Dict();
-					dict->Set("index", AST::Value(index));
+					dict->Set("index", X::Value(index));
 					std::string name = pMyScope->GetNameString();
 					if (name.empty())
 					{
@@ -321,26 +323,26 @@ namespace X
 						}
 					}
 					Data::Str* pStrName = new Data::Str(name);
-					dict->Set("name",AST::Value(pStrName));
+					dict->Set("name",X::Value(pStrName));
 					Data::Str* pStrFileName = new Data::Str(moduleFileName);
-					dict->Set("file", AST::Value(pStrFileName));
-					dict->Set("line",AST::Value(line));
-					dict->Set("column",AST::Value(column));
-					AST::Value valDict(dict);
+					dict->Set("file", X::Value(pStrFileName));
+					dict->Set("line",X::Value(line));
+					dict->Set("column",X::Value(column));
+					X::Value valDict(dict);
 					pList->Add(rt, valDict);
 					index++;
 				}
 				pCurStack = pCurStack->Prev();
 			}
-			valStackInfo = AST::Value(pList);
+			valStackInfo = X::Value(pList);
 			return true;
 		}
 		bool DebugService::GetModuleStartLine(void* rt, void* pContext,
-			ARGS& params, KWARGS& kwParams, AST::Value& retValue)
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
 			if (params.size() == 0)
 			{
-				retValue = AST::Value(false);
+				retValue = X::Value(false);
 				return true;
 			}
 			unsigned long long moduleKey = params[0].GetLongLong();
@@ -350,19 +352,19 @@ namespace X
 			{
 				nStartLine = pModule->GetStartLine();
 			}
-			retValue = AST::Value(nStartLine);
+			retValue = X::Value(nStartLine);
 			return true;
 		}
 		bool DebugService::SetBreakpoints(void* rt, void* pContext,
-			ARGS& params, KWARGS& kwParams, AST::Value& retValue)
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
 			if (params.size() != 2)
 			{
-				retValue = AST::Value(false);
+				retValue = X::Value(false);
 				return false;
 			}
 			unsigned long long moduleKey = params[0].GetLongLong();
-			AST::Value varLines = params[1];
+			X::Value varLines = params[1];
 			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
 			if (pModule == nullptr)
 			{
@@ -370,14 +372,14 @@ namespace X
 				return true;
 			}
 			if (!varLines.IsObject()
-				|| varLines.GetObj()->GetType() != X::Data::Type::List)
+				|| varLines.GetObj()->GetObjType() != X::ObjType::List)
 			{
-				retValue = AST::Value(false);
+				retValue = X::Value(false);
 				return true;
 			}
 			auto* pLineList = dynamic_cast<X::Data::List*>(varLines.GetObj());
 			auto lines = pLineList->Map<int>(
-				[](AST::Value& elm, unsigned long long idx) {
+				[](X::Value& elm, unsigned long long idx) {
 				return elm;}
 			);
 			pModule->ClearBreakpoints();
@@ -387,26 +389,26 @@ namespace X
 				l = pModule->SetBreakpoint(l,(int)GetThreadID());
 				if (l >= 0)
 				{
-					AST::Value varL(l);
+					X::Value varL(l);
 					pList->Add((Runtime*)rt,varL);
 				}
 			}
-			retValue = AST::Value(pList);
+			retValue = X::Value(pList);
 			return true;
 		}
 		bool DebugService::Command(void* rt, void* pContext,
-			ARGS& params, KWARGS& kwParams, AST::Value& retValue)
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
 			if (params.size() == 0)
 			{
-				retValue = AST::Value(false);
+				retValue = X::Value(false);
 				return true;
 			}
 			unsigned long long moduleKey = params[0].GetLongLong();
 			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
 			if (pModule == nullptr)
 			{
-				retValue = AST::Value(false);
+				retValue = X::Value(false);
 				return true;
 			}
 			std::string strCmd;
@@ -415,7 +417,7 @@ namespace X
 			{
 				strCmd = it->second.ToString();
 			}
-			AST::Value valParam;
+			X::Value valParam;
 			it = kwParams.find("param");
 			if (it != kwParams.end())
 			{
@@ -427,7 +429,7 @@ namespace X
 				auto stackTracePack = [](Runtime* rt,
 					void* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
-					AST::Value& retVal)
+					X::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
 						pCommandInfo->m_callContext;
@@ -453,7 +455,7 @@ namespace X
 				auto localPack = [](Runtime* rt,
 					void* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
-					AST::Value& retVal)
+					X::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
 						pCommandInfo->m_callContext;
@@ -463,7 +465,7 @@ namespace X
 				auto objPack = [](Runtime* rt,
 					void* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
-					AST::Value& retVal)
+					X::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
 						pCommandInfo->m_callContext;
@@ -489,25 +491,25 @@ namespace X
 			{
 				cmdInfo.dbgType = AST::dbg::Step;
 				pModule->AddCommand(cmdInfo, false);
-				retValue = AST::Value(true);
+				retValue = X::Value(true);
 			}
 			else if (strCmd == "Continue")
 			{
 				cmdInfo.dbgType = AST::dbg::Continue;
 				pModule->AddCommand(cmdInfo, false);
-				retValue = AST::Value(true);
+				retValue = X::Value(true);
 			}
 			else if (strCmd == "StepIn")
 			{
 				cmdInfo.dbgType = AST::dbg::StepIn;
 				pModule->AddCommand(cmdInfo, false);
-				retValue = AST::Value(true);
+				retValue = X::Value(true);
 			}
 			else if (strCmd == "StepOut")
 			{
 				cmdInfo.dbgType = AST::dbg::StepOut;
 				pModule->AddCommand(cmdInfo, false);
-				retValue = AST::Value(true);
+				retValue = X::Value(true);
 			}
 			return true;
 		}

@@ -49,11 +49,11 @@ public:
 		return names;
 	}
 	virtual void EachVar(Runtime* rt,void* pContext,
-		std::function<void(std::string,AST::Value&)> const& f)
+		std::function<void(std::string,X::Value&)> const& f)
 	{
 		for (auto it : m_Vars)
 		{
-			AST::Value val;
+			X::Value val;
 			Get(rt, pContext,it.second, val);
 			f(it.first, val);
 		}
@@ -84,20 +84,20 @@ public:
 		}
 	}
 	inline virtual bool Get(Runtime* rt, void* pContext,
-		std::string& name, AST::Value& v, LValue* lValue = nullptr)
+		std::string& name, X::Value& v, LValue* lValue = nullptr)
 	{
 		int idx = AddOrGet(name, true);
 		return (idx>=0)?rt->Get(this, pContext, idx, v, lValue):false;
 	}
 	inline virtual bool Set(Runtime* rt, void* pContext,
-		int idx, AST::Value& v)
+		int idx, X::Value& v)
 	{
 		assert(idx != -1);
 		return rt->Set(this, pContext, idx, v);
 	}
 
 	inline virtual bool Get(Runtime* rt, void* pContext,
-		int idx, AST::Value& v, LValue* lValue = nullptr)
+		int idx, X::Value& v, LValue* lValue = nullptr)
 	{
 		return rt->Get(this, pContext, idx, v, lValue);
 	}

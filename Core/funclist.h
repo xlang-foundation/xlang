@@ -11,7 +11,7 @@ struct VectorCall
 {
 	void* m_context = nil;
 	AST::Func* m_func = nil;
-	AST::LValue m_lVal = nil;
+	X::LValue m_lVal = nil;
 };
 class FuncCalls :
 	public Object
@@ -21,7 +21,7 @@ protected:
 public:
 	FuncCalls()
 	{
-		m_t = Type::FuncCalls;
+		m_t = ObjType::FuncCalls;
 	}
 	inline std::vector<VectorCall>& GetList()
 	{
@@ -39,11 +39,11 @@ public:
 		}
 		return bHave;
 	}
-	void Add(void* pContext, AST::Func* func, AST::LValue lVal)
+	void Add(void* pContext, AST::Func* func, X::LValue lVal)
 	{
 		m_list.push_back(VectorCall{ pContext ,func,lVal });
 	}
-	bool SetValue(AST::Value& val)
+	bool SetValue(X::Value& val)
 	{
 		for (auto& i : m_list)
 		{
@@ -56,7 +56,7 @@ public:
 	}
 	virtual bool Call(Runtime* rt, ARGS& params,
 		KWARGS& kwParams,
-		AST::Value& retValue)
+		X::Value& retValue)
 	{
 		if (m_list.size() == 1)
 		{
@@ -69,7 +69,7 @@ public:
 		bool bOK = true;
 		for (auto& fc : m_list)
 		{
-			AST::Value v0;
+			X::Value v0;
 			bool bOK = fc.m_func->Call(rt,
 				fc.m_context,
 				params, kwParams, v0);
@@ -84,7 +84,7 @@ public:
 		}
 		if (bOK)
 		{
-			retValue = AST::Value(pValueList);
+			retValue = X::Value(pValueList);
 		}
 		else
 		{

@@ -13,7 +13,7 @@ namespace X
 		public:
 			Binary(char* data, size_t size)
 			{//new copy
-				m_t = Type::Binary;
+				m_t = ObjType::Binary;
 				m_data = data;
 				m_size = size;
 			}
@@ -28,7 +28,7 @@ namespace X
 			}
 			virtual bool Call(Runtime* rt, ARGS& params,
 				KWARGS& kwParams,
-				AST::Value& retValue) override
+				X::Value& retValue) override
 			{
 				return true;
 			}

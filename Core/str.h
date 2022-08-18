@@ -15,22 +15,22 @@ namespace Data
 	public:
 		Str(size_t size)
 		{
-			m_t = Type::Str;
+			m_t = ObjType::Str;
 			m_s.resize(size);
 		}
 		Str(std::string& str)
 		{
-			m_t = Type::Str;
+			m_t = ObjType::Str;
 			m_s = str;
 		}
 		Str(const std::string& str)
 		{
-			m_t = Type::Str;
+			m_t = ObjType::Str;
 			m_s = str;
 		}
 		Str(const char* s,int size)//from constant
 		{//new copy
-			m_t = Type::Str;
+			m_t = ObjType::Str;
 			m_s = std::string(s, size);
 		}
 		char* Buffer() { return (char*)m_s.c_str(); }
@@ -39,7 +39,7 @@ namespace Data
 		{
 			return m_s;
 		}
-		virtual int cmp(AST::Value* r)
+		virtual int cmp(X::Value* r)
 		{
 			return m_s.compare(r->ToString());;
 		}
@@ -47,21 +47,21 @@ namespace Data
 		{
 			return std::hash<std::string>{}(m_s);
 		}
-		virtual Str& operator +=(AST::Value& r)
+		virtual Str& operator +=(X::Value& r)
 		{
 			switch (r.GetType())
 			{
-			case AST::ValueType::Str:
+			case ValueType::Str:
 			{
 				m_s += r.ToString();
 			}
 				break;
-			case AST::ValueType::Object:
+			case ValueType::Object:
 			{
-				Object* pObj = r.GetObj();
+				Object* pObj = dynamic_cast<Object*>(r.GetObj());
 				if (pObj)
 				{
-					if (pObj->GetType() == Data::Type::Str)
+					if (pObj->GetType() == ObjType::Str)
 					{
 						m_s += ((Str*)pObj)->m_s;
 					}
@@ -78,11 +78,11 @@ namespace Data
 			}
 			return *this;
 		}
-		virtual Object& operator *=(AST::Value& r)
+		virtual Object& operator *=(X::Value& r)
 		{
 			switch (r.GetType())
 			{
-			case AST::ValueType::Int64:
+			case ValueType::Int64:
 			{
 				long long cnt = r.GetLongLong();
 				std::string s = m_s;
@@ -134,7 +134,7 @@ namespace Data
 		}
 		virtual bool Call(Runtime* rt, ARGS& params,
 			KWARGS& kwParams,
-			AST::Value& retValue) override
+			X::Value& retValue) override
 		{
 			return true;
 		}

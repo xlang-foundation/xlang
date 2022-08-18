@@ -169,21 +169,21 @@ public:
 	{
 		m_p = g_pHost->CreateByteArray(buf, size);
 	}
-	Object(X::AST::Value& v)
+	Object(X::Value& v)
 	{
 		switch (v.GetType())
 		{
-		case X::AST::ValueType::None:
+		case X::ValueType::None:
 			break;
-		case X::AST::ValueType::Int64:
+		case X::ValueType::Int64:
 			m_p = g_pHost->from_longlong(v);
 			break;
-		case X::AST::ValueType::Double:
+		case X::ValueType::Double:
 			m_p = g_pHost->from_double(v);
 			break;
-		case X::AST::ValueType::Object:
+		case X::ValueType::Object:
 			break;
-		case X::AST::ValueType::Str:
+		case X::ValueType::Str:
 			m_p = g_pHost->from_str(v.ToString().c_str());
 			break;
 		default:

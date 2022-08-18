@@ -11,14 +11,14 @@ class List :
 {
 protected:
 	bool m_useLValue = false;
-	std::vector<AST::Value> m_data;
-	std::vector<AST::LValue> m_ptrs;
+	std::vector<X::Value> m_data;
+	std::vector<X::LValue> m_ptrs;
 	std::vector<AST::Expression*> m_bases;
 public:
 	List() :
 		Object()
 	{
-		m_t = Type::List;
+		m_t = ObjType::List;
 
 	}
 	List(std::vector<std::string>& strs) :
@@ -26,7 +26,7 @@ public:
 	{
 		for (auto& s : strs)
 		{
-			m_data.push_back(AST::Value(new Str(s.c_str(), (int)s.size())));
+			m_data.push_back(X::Value(new Str(s.c_str(), (int)s.size())));
 		}
 	}
 	~List()
@@ -43,7 +43,7 @@ public:
 		{
 			for (size_t i = 0; i < m_ptrs.size(); i++)
 			{
-				AST::Value v = proc(*m_ptrs[i], i);
+				X::Value v = proc(*m_ptrs[i], i);
 				outs.push_back((T)v);
 			}
 		}
@@ -51,7 +51,7 @@ public:
 		{
 			for (size_t i = 0; i < m_data.size(); i++)
 			{
-				AST::Value v = proc(m_data[i], i);
+				X::Value v = proc(m_data[i], i);
 				outs.push_back((T)v);
 			}
 		}
@@ -74,12 +74,12 @@ public:
 			}
 		}
 	}
-	virtual List& operator +=(AST::Value& r) override
+	virtual List& operator +=(X::Value& r) override
 	{
 		if (r.IsObject())
 		{
-			Object* pObj = (Object*)r.GetObj();
-			if (pObj->GetType() == Type::List)
+			Object* pObj = dynamic_cast<Object*>(r.GetObj());
+			if (pObj->GetType() == ObjType::List)
 			{
 				List* pOther = (List*)pObj;
 				for (auto& it : pOther->m_data)
@@ -105,7 +105,7 @@ public:
 		size_t size = Size();
 		for (size_t i = 0; i < size; i++)
 		{
-			AST::Value v0;
+			X::Value v0;
 			Get(i, v0);
 			strList += '\t' + v0.ToString(WithFormat);
 			if (i < (size - 1))
@@ -130,8 +130,8 @@ public:
 	}
 	std::vector<AST::Expression*>& GetBases() { return m_bases; }
 	virtual bool Call(Runtime* rt, ARGS& params,
-		KWARGS& kwParams,AST::Value& retValue) override;
-	inline void Add(AST::LValue p)
+		KWARGS& kwParams,X::Value& retValue) override;
+	inline void Add(X::LValue p)
 	{
 		m_useLValue = true;
 		m_ptrs.push_back(p);
@@ -174,12 +174,12 @@ public:
 			}//end while
 		}//end else
 	}
-	inline void Add(Runtime* rt, AST::Value& v)
+	inline void Add(Runtime* rt, X::Value& v)
 	{
 		if (v.IsObject())
 		{
-			Object* obj = (Object*)v.GetObj();
-			if (obj->GetType() == Data::Type::XClassObject)
+			Object* obj = dynamic_cast<Object*>(v.GetObj());
+			if (obj->GetType() == ObjType::XClassObject)
 			{
 				XClassObject* pClassObj = dynamic_cast<XClassObject*>(obj);
 				if (pClassObj)
@@ -192,7 +192,7 @@ public:
 					}
 				}
 			}
-			else if (obj->GetType() == Data::Type::Function)
+			else if (obj->GetType() == ObjType::Function)
 			{
 				std::vector<AST::XClass*> dummy;
 				MakeCommonBases(rt->M(), dummy);
@@ -201,8 +201,8 @@ public:
 		m_data.push_back(v);
 	}
 	virtual List* FlatPack(Runtime* rt,long long startIndex, long long count) override;
-	inline bool Get(long long idx, AST::Value& v,
-		AST::LValue* lValue = nullptr)
+	inline bool Get(long long idx, X::Value& v,
+		X::LValue* lValue = nullptr)
 	{
 		if (m_useLValue)
 		{
@@ -210,7 +210,7 @@ public:
 			{
 				return false;
 			}
-			AST::LValue l = m_ptrs[idx];
+			X::LValue l = m_ptrs[idx];
 			if (l)
 			{
 				v = *l;
@@ -223,7 +223,7 @@ public:
 			{
 				m_data.resize(idx + 1);
 			}
-			AST::Value& v0 = m_data[idx];
+			X::Value& v0 = m_data[idx];
 			v = v0;
 			if (lValue) *lValue = &v0;
 		}

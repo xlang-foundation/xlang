@@ -11,32 +11,34 @@ namespace X
 			for (auto& it: mMap)
 			{
 				Dict* dict = new Dict();
-				AST::Value key = it.first;
-				if (!key.IsObject() || (key.IsObject() && key.GetObj()->IsStr()))
+				X::Value key = it.first;
+				if (!key.IsObject() || (key.IsObject() && 
+					dynamic_cast<Object*>(key.GetObj())->IsStr()))
 				{
 					dict->Set("Name", key);
 				}
 				else if(key.IsObject())
 				{//TODO: add ObjectId as New Value Type
-					AST::Value objId((unsigned long long)key.GetObj());
+					X::Value objId((unsigned long long)key.GetObj());
 					dict->Set("Name", objId);
 				}
-				AST::Value val = it.second;
+				X::Value val = it.second;
 				auto valType = val.GetValueType();
 				Data::Str* pStrType = new Data::Str(valType);
-				dict->Set("Type", AST::Value(pStrType));
-				if (!val.IsObject() || (val.IsObject() && val.GetObj()->IsStr()))
+				dict->Set("Type", X::Value(pStrType));
+				if (!val.IsObject() || (val.IsObject() && 
+					dynamic_cast<Object*>(val.GetObj())->IsStr()))
 				{
 					dict->Set("Value", val);
 				}
 				else if (val.IsObject())
 				{
-					AST::Value objId((unsigned long long)val.GetObj());
+					X::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
-					AST::Value valSize(val.GetObj()->Size());
+					X::Value valSize(val.GetObj()->Size());
 					dict->Set("Size", valSize);
 				}
-				AST::Value valDict(dict);
+				X::Value valDict(dict);
 				pOutList->Add(rt, valDict);
 			}
 			return pOutList;
