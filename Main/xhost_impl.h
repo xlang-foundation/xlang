@@ -11,6 +11,7 @@ namespace X
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) override;
 		virtual XPackage* CreatePackage(void* pRealObj) override;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) override;
+		virtual XDict* CreateDict() override;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) override;
 	};
 	void CreatXHost();

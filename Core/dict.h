@@ -16,7 +16,8 @@ namespace X
 			}
 		};
 		class Dict :
-			public Object
+			virtual public XDict,
+			virtual public Object
 		{
 		protected:
 			std::unordered_map<X::Value,
@@ -34,7 +35,7 @@ namespace X
 			{
 				return mMap.size();
 			}
-			void Set(X::Value& key, X::Value& val)
+			virtual void Set(X::Value& key, X::Value& val) override
 			{
 				mMap.emplace(std::make_pair(key, val));
 			}
@@ -49,7 +50,7 @@ namespace X
 					Object* pObj = dynamic_cast<Object*>(r.GetObj());
 					if (pObj->GetType() == ObjType::Dict)
 					{
-						Dict* pDictOther = (Dict*)pObj;
+						Dict* pDictOther = dynamic_cast<Dict*>(pObj);
 						for (auto& it : pDictOther->mMap)
 						{
 							mMap.emplace(std::make_pair(it.first,it.second));

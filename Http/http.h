@@ -1,6 +1,8 @@
 #pragma once
 #include "xpackage.h"
+#include "xlang.h"
 #include <vector>
+
 namespace X
 {
 	class HttpServer

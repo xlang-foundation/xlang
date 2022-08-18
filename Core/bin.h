@@ -4,8 +4,9 @@ namespace X
 {
 	namespace Data
 	{
-		class Binary
-			:public Object
+		class Binary:
+			virtual public XBin,
+			virtual public Object
 		{
 		protected:
 			char* m_data = nullptr;
@@ -17,7 +18,7 @@ namespace X
 				m_data = data;
 				m_size = size;
 			}
-			char* Data() { return m_data; }
+			virtual char* Data() override { return m_data; }
 			inline virtual long long  Size()  override { return m_size; }
 			~Binary()
 			{

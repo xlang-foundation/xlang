@@ -4,6 +4,7 @@
 #include "manager.h"
 #include "function.h"
 #include "package.h"
+#include "dict.h"
 
 namespace X 
 {
@@ -51,5 +52,9 @@ namespace X
 	XObj* XHost_Impl::ConvertObjFromPointer(void* pObjectPtr)
 	{
 		return (XObj*)(X::Data::Object*)(pObjectPtr);
+	}
+	XDict* XHost_Impl::CreateDict()
+	{
+		return (XDict*) new X::Data::Dict();
 	}
 }

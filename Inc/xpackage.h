@@ -1,6 +1,4 @@
 #pragma once
-#include "xlang.h"
-#include "xhost.h"
 
 #define REGISTER_PACKAGE(pack_name,impl_pack_name)\
 	X::g_pXHost->RegisterPackage(pack_name, [](X::XRuntime* rt)\

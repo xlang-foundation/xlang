@@ -1,8 +1,4 @@
 #include "http.h"
-#include "object.h"
-#include "dict.h"
-#include "bin.h"
-#include "str.h"
 #include "httplib.h"
 
 
@@ -56,8 +52,7 @@ namespace X
 		XFunc* pHandler = nullptr;
 		if (params[1].IsObject())
 		{
-			Data::Object* pFuncObj
-				= dynamic_cast<Data::Object*>(params[1].GetObj());
+			auto* pFuncObj = params[1].GetObj();
 			if (pFuncObj->GetType() == X::ObjType::Function)
 			{
 				pHandler = dynamic_cast<XFunc*>(pFuncObj);
@@ -75,14 +70,14 @@ namespace X
 					HttpRequest* pHttpReq
 						= new HttpRequest((void*)&req);
 					X::XPackage* pPackageReq = nullptr;
-					pHttpReq->Create((X::Runtime*)rt,
+					pHttpReq->Create((X::XRuntime*)rt,
 						&pPackageReq);
 					params0.push_back(X::Value(pPackageReq));
 
 					HttpResponse* pHttpResp 
 						= new HttpResponse(&res);
 					X::XPackage* pPackageResp = nullptr;
-					pHttpResp->Create((X::Runtime*)rt,
+					pHttpResp->Create((X::XRuntime*)rt,
 						&pPackageResp);
 					params0.push_back(X::Value(pPackageResp));
 
@@ -90,7 +85,7 @@ namespace X
 					X::Value retValue0;
 					try 
 					{
-						pHandler->Call((X::Runtime*)rt,
+						pHandler->Call((X::XRuntime*)rt,
 							params0, kwParams0,
 							retValue0);
 					}
@@ -113,11 +108,11 @@ namespace X
 		X::Value& valContent = params[0];
 		if (valContent.IsObject())
 		{
-			Data::Object* pObjContent = dynamic_cast<Data::Object*>(valContent.GetObj());
+			auto* pObjContent = valContent.GetObj();
 			if (pObjContent->GetType() == X::ObjType::Binary)
 			{
-				auto* pBinContent = dynamic_cast<Data::Binary*>(pObjContent);
-				pBinContent->AddRef();
+				auto* pBinContent = dynamic_cast<XBin*>(pObjContent);
+				pBinContent->IncRef();
 				pResp->set_content_provider(
 					pBinContent->Size(), // Content length
 					params[1].ToString().c_str(), // Content type
@@ -130,7 +125,7 @@ namespace X
 					},
 					[pBinContent](bool success) 
 					{ 
-						pBinContent->Release();
+						pBinContent->DecRef();
 					}
 					);
 			}
@@ -192,12 +187,12 @@ namespace X
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		auto& headers = pReq->headers;
-		Data::Dict* pDictObj = new Data::Dict();
+		auto* pDictObj = g_pXHost->CreateDict();
 		for (auto it = headers.begin(); it != headers.end(); ++it)
 		{
 			const auto& x = *it;
-			X::Value key(new Data::Str(x.first));
-			X::Value val(new Data::Str(x.second));
+			X::Value key(g_pXHost->CreateStrObj(x.first.c_str(), (int)x.first.size()));
+			X::Value val(g_pXHost->CreateStrObj(x.second.c_str(),(int)x.second.size()));
 			pDictObj->Set(key, val);
 		}
 		retValue = X::Value(pDictObj);
@@ -208,13 +203,13 @@ namespace X
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		auto& req_params = pReq->params;
-		Data::Dict* pDictObj = new Data::Dict();
+		auto* pDictObj = g_pXHost->CreateDict();
 		for (auto it = req_params.begin();
 			it != req_params.end(); ++it)
 		{
 			const auto& x = *it;
-			X::Value key(new Data::Str(x.first));
-			X::Value val(new Data::Str(x.second));
+			X::Value key(g_pXHost->CreateStrObj(x.first.c_str(), (int)x.first.size()));
+			X::Value val(g_pXHost->CreateStrObj(x.second.c_str(), (int)x.second.size()));
 			pDictObj->Set(key, val);
 		}
 		retValue = X::Value(pDictObj);

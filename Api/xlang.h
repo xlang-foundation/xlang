@@ -63,6 +63,18 @@ namespace X
 		}
 
 	};
+	class XDict :
+		virtual public XObj
+	{
+	public:
+		virtual void Set(X::Value& key, X::Value& val) = 0;
+	};
+	class XBin :
+		virtual public XObj
+	{
+	public:
+		virtual char* Data() = 0;
+	};
 	class XFunc:
 		virtual public XObj
 	{

@@ -9,6 +9,7 @@ namespace X
 	class XObj;
 	class XPackage;
 	class XFunc;
+	class XDict;
 	class XRuntime
 	{
 	public:
@@ -24,10 +25,11 @@ namespace X
 	{
 	public:
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) = 0;
+		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XObj* CreateStrObj(const char* data, int size) = 0;
+		virtual XDict* CreateDict() = 0;
 		virtual XPackage* CreatePackage(void* pRealObj) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) = 0;
-		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 	};
 	extern XHost* g_pXHost;
 }

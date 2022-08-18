@@ -112,7 +112,7 @@ bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 				(Data::List*)pDataObj,R,v, lValue);
 			break;
 		case X::ObjType::Dict:
-			bOK = GetItemFromDict(rt, pContext, (Data::Dict*)pDataObj, R, v, lValue);
+			bOK = GetItemFromDict(rt, pContext, dynamic_cast<Data::Dict*>(pDataObj), R, v, lValue);
 			break;
 		case X::ObjType::Table:
 			break;
