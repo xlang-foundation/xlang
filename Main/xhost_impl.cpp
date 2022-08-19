@@ -5,6 +5,7 @@
 #include "function.h"
 #include "package.h"
 #include "dict.h"
+#include "bin.h"
 
 namespace X 
 {
@@ -20,11 +21,11 @@ namespace X
 			delete g_pXHost;
 		}
 	}
-	XObj* XHost_Impl::CreateStrObj(const char* data, int size)
+	XStr* XHost_Impl::CreateStr(const char* data, int size)
 	{
-		Data::Str* pStrObj = new Data::Str(data, size);
+		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
 		pStrObj->AddRef();
-		return dynamic_cast<XObj*>(pStrObj);
+		return pStrObj;
 	}
 	bool XHost_Impl::RegisterPackage(const char* name, PackageCreator creator)
 	{
@@ -55,10 +56,18 @@ namespace X
 	}
 	XDict* XHost_Impl::CreateDict()
 	{
-		return (XDict*) new X::Data::Dict();
+		auto* pDict =  new X::Data::Dict();
+		pDict->AddRef();
+		return pDict;
 	}
 	std::string XHost_Impl::StringifyString(const std::string& str)
 	{
 		return ::StringifyString(str);
+	}
+	XBin* XHost_Impl::CreateBin(char* data, size_t size)
+	{
+		auto* pObjBin = new Data::Binary(data, size);
+		pObjBin->AddRef();
+		return pObjBin;
 	}
 }

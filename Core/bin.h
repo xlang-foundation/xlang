@@ -12,7 +12,8 @@ namespace X
 			char* m_data = nullptr;
 			size_t m_size;
 		public:
-			Binary(char* data, size_t size)
+			Binary(char* data, size_t size):
+				XBin(0)
 			{//new copy
 				m_t = ObjType::Binary;
 				m_data = data;

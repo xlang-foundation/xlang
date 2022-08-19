@@ -187,15 +187,15 @@ namespace X
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		auto& headers = pReq->headers;
-		auto* pDictObj = g_pXHost->CreateDict();
+		XDict dict;
 		for (auto it = headers.begin(); it != headers.end(); ++it)
 		{
 			const auto& x = *it;
-			X::Value key(g_pXHost->CreateStrObj(x.first.c_str(), (int)x.first.size()));
-			X::Value val(g_pXHost->CreateStrObj(x.second.c_str(),(int)x.second.size()));
-			pDictObj->Set(key, val);
+			X::Value key(XStr(x.first.c_str(), (int)x.first.size()));
+			X::Value val(XStr(x.second.c_str(), (int)x.second.size()));
+			dict.Set(key, val);
 		}
-		retValue = X::Value(pDictObj);
+		retValue = X::Value(dict);
 		return true;
 	}
 	bool HttpRequest::GetParams(void* rt, void* pContext, ARGS& params,
@@ -203,16 +203,16 @@ namespace X
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		auto& req_params = pReq->params;
-		auto* pDictObj = g_pXHost->CreateDict();
+		XDict dict;
 		for (auto it = req_params.begin();
 			it != req_params.end(); ++it)
 		{
 			const auto& x = *it;
-			X::Value key(g_pXHost->CreateStrObj(x.first.c_str(), (int)x.first.size()));
-			X::Value val(g_pXHost->CreateStrObj(x.second.c_str(), (int)x.second.size()));
-			pDictObj->Set(key, val);
+			X::Value key(XStr(x.first.c_str(), (int)x.first.size()));
+			X::Value val(XStr(x.second.c_str(), (int)x.second.size()));
+			dict.Set(key, val);
 		}
-		retValue = X::Value(pDictObj);
+		retValue = X::Value(dict);
 		return true;
 	}
 }

@@ -1,10 +1,9 @@
 #pragma once
 #include "xpackage.h"
+#include "xlang.h"
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
-#include "bin.h"
-#include "str.h"
 namespace X
 {
 	class File
@@ -54,16 +53,15 @@ namespace X
 			if (m_IsBinary)
 			{
 				char* data = new char[size];
-				Data::Binary* pBinObj = new Data::Binary(data, size);
 				m_stream.read(data, size);
-				retValue = X::Value(pBinObj);
+				retValue = X::Value(XBin(data, size));
 			}
 			else
 			{
-				Data::Str* pStrObj = new Data::Str((size_t)size);
-				char* data = pStrObj->Buffer();
+				XStr str(nullptr, size);
+				char* data = str.Buffer();
 				m_stream.read(data, size);
-				retValue = X::Value(pStrObj);
+				retValue = X::Value(str);
 			}
 			return true;
 		}

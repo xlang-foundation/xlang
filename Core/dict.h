@@ -23,7 +23,7 @@ namespace X
 			std::unordered_map<X::Value,
 				X::Value, ObjectHashFunction> mMap;
 		public:
-			Dict()
+			Dict():XDict(0)
 			{
 				m_t = ObjType::Dict;
 			}

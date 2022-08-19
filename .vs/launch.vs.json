@@ -7,8 +7,8 @@
       "project": "CMakeLists.txt",
       "projectTarget": "xlang.exe",
       "args.bak": [ "-dbg", "-enable_python", "\"-c 'import fs\n'\"", "c:/Dev/X/Scripts/service.x", "--x", "--y=10" ],
-      "args": [ "c:/Dev/X/test/module.x" ],
-      "args.bak2": [ "-dbg", "-enable_python" ],
+      "args": [ "C:\\Dev\\X\\Scripts\\service.x" ],
+      "args.dbg": [ "-dbg", "-enable_python" ],
       "name": "xlang.exe"
     }
   ]

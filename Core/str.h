@@ -7,33 +7,34 @@ namespace X
 {
 namespace Data 
 {
-	class Str
-		:public Object
+	class Str:
+		virtual public XStr,
+		virtual public Object
 	{
 	protected:
 		std::string m_s;
 	public:
-		Str(size_t size)
+		Str(size_t size):XStr(0)
 		{
 			m_t = ObjType::Str;
 			m_s.resize(size);
 		}
-		Str(std::string& str)
+		Str(std::string& str) :XStr(0)
 		{
 			m_t = ObjType::Str;
 			m_s = str;
 		}
-		Str(const std::string& str)
+		Str(const std::string& str) :XStr(0)
 		{
 			m_t = ObjType::Str;
 			m_s = str;
 		}
-		Str(const char* s,int size)//from constant
+		Str(const char* s,int size) :XStr(0)//from constant
 		{//new copy
 			m_t = ObjType::Str;
 			m_s = std::string(s, size);
 		}
-		char* Buffer() { return (char*)m_s.c_str(); }
+		virtual char* Buffer() override { return (char*)m_s.c_str(); }
 		virtual AST::Scope* GetScope();
 		inline virtual std::string ToString(bool WithFormat = false) override
 		{
@@ -63,7 +64,7 @@ namespace Data
 				{
 					if (pObj->GetType() == ObjType::Str)
 					{
-						m_s += ((Str*)pObj)->m_s;
+						m_s += dynamic_cast<Str*>(pObj)->m_s;
 					}
 					else
 					{

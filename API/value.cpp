@@ -22,7 +22,7 @@ namespace X
 			if (x.obj && x.obj->GetType() == ObjType::Str)
 			{
 				std::string oldStr = x.obj->ToString();
-				auto newObj = g_pXHost->CreateStrObj(oldStr.c_str(), (int)x.obj->Size());
+				auto newObj = g_pXHost->CreateStr(oldStr.c_str(), (int)oldStr.size());
 				x.obj->DecRef();
 				x.obj = newObj;
 			}
@@ -45,7 +45,7 @@ namespace X
 		}
 		else if (t == ValueType::Str)
 		{
-			x.obj = g_pXHost->CreateStrObj((const char*)x.str, (int)flags);;
+			x.obj = g_pXHost->CreateStr((const char*)x.str, (int)flags);;
 		}
 		else
 		{

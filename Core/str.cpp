@@ -30,14 +30,15 @@ namespace X
 								KWARGS& kwParams,
 					X::Value& retValue)
 					{
-						auto* pObj = (Str*)pContext;
+						auto* pObj = (Object*)pContext;
+						auto* pStrObj = dynamic_cast<Str*>(pObj);
 						std::string x = params[0].ToString();
 						size_t offset = 0;
 						if (params.size() > 1)
 						{
 							offset = params[1].GetLongLong();
 						}
-						auto pos = pObj->Find(x, offset);
+						auto pos = pStrObj->Find(x, offset);
 						retValue = X::Value((long long)pos);
 						return true;
 					}));
@@ -52,14 +53,15 @@ namespace X
 							KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								auto* pObj = (Str*)pContext;
+								auto* pObj = (Object*)pContext;
+								auto* pStrObj = dynamic_cast<Str*>(pObj);
 								std::string x = params[0].ToString();
 								size_t offset = std::string::npos;
 								if (params.size() > 1)
 								{
 									offset = params[1].GetLongLong();
 								}
-								auto pos = pObj->RFind(x, offset);
+								auto pos = pStrObj->RFind(x, offset);
 								retValue = X::Value((long long)pos);
 								return true;
 							}));
@@ -74,7 +76,8 @@ namespace X
 							KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								auto* pObj = (Str*)pContext;
+								auto* pObj = (Object*)pContext;
+								auto* pStrObj = dynamic_cast<Str*>(pObj);
 								size_t start = 0;
 								size_t end = -1;
 								if (params.size() >= 1)
@@ -86,7 +89,7 @@ namespace X
 									end = params[1].GetLongLong();
 								}
 								std::string retStr;
-								pObj->Slice(start, end, retStr);
+								pStrObj->Slice(start, end, retStr);
 								Str* pNewStr = new Str((const char*)retStr.c_str(), (int)retStr.size());
 								retValue = X::Value(pNewStr);
 								return true;
@@ -102,8 +105,9 @@ namespace X
 							KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								auto* pObj = (Str*)pContext;
-								size_t  size = pObj->GetSize();
+								auto* pObj = (Object*)pContext;
+								auto* pStrObj = dynamic_cast<Str*>(pObj);
+								size_t  size = pStrObj->GetSize();
 								retValue = X::Value((long long)size);
 								return true;
 							}));
@@ -123,9 +127,10 @@ namespace X
 								{
 									delim = params[0].ToString();
 								}
-								auto* pObj = (Str*)pContext;
+								auto* pObj = (Object*)pContext;
+								auto* pStrObj = dynamic_cast<Str*>(pObj);
 								std::vector<std::string> li;
-								pObj->Split(delim, li);
+								pStrObj->Split(delim, li);
 								auto* pList = new List(li);
 								retValue = X::Value(pList);
 								return true;

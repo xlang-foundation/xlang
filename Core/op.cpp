@@ -174,7 +174,7 @@ bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 
 bool Assign::AssignToDataObject(Runtime* rt, void* pObjPtr)
 {
-	Data::Object* pObj = (Data::Object*)pObjPtr;
+	XObj* pObj = (XObj*)pObjPtr;
 	Value v_r;
 	if (!R->Run(rt, nullptr, v_r))
 	{

@@ -4,6 +4,8 @@ import http
 print("http Server Started")
 srv = http.Server()
 srv.get("/hi",(req,res){
+  path = req.get_path();
+  print("path=${path}");
   print("Hi from http server")
   res.set_content("Hello World!\n","text/plain");
 })
