@@ -6,6 +6,7 @@ cmake_minimum_required (VERSION 3.8)
 project ("xlang")
 
 include_directories("Api")
+include_directories("os")
 include_directories("Inc")
 include_directories("Ext")
 include_directories("Core")
