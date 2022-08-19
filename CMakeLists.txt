@@ -6,7 +6,6 @@ cmake_minimum_required (VERSION 3.8)
 project ("xlang")
 
 include_directories("Api")
-include_directories("os")
 include_directories("Inc")
 include_directories("Ext")
 include_directories("Core")
@@ -16,16 +15,12 @@ include_directories("Main")
 
 FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp" "Api/*.cpp")
 FILE(GLOB Ext_SRC "Ext/*.cpp")
-FILE(GLOB Http_SRC "Http/*.cpp")
 FILE(GLOB Text_SRC "Text/*.cpp")
-FILE(GLOB Main_SRC "Main/*.cpp")
+FILE(GLOB Main_SRC "X.cpp" "Main/*.cpp")
 
 add_executable (${PROJECT_NAME}
-	"X.cpp" 
-	"X.h"
 	${Core_SRC}
 	${Ext_SRC}
-	${Http_SRC}
 	${Text_SRC}
 	${Main_SRC}
 )
@@ -41,5 +36,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 endif()
 
+add_subdirectory("os")
+add_subdirectory("http")
 add_subdirectory("PyEng")
 add_subdirectory("DevSrv")

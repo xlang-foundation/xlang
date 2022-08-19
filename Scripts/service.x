@@ -1,5 +1,5 @@
-import http
-import fs
+from xlang_http import http
+from xlang_os import fs
 print("http Server Started")
 srv = http.Server()
 root = "c:/Dev/Cantor/factory"

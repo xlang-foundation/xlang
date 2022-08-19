@@ -6,12 +6,10 @@
 #include <fstream>
 #include <sstream>
 #include "manager.h"
-#include "http.h"
 #include "xpackage.h"
 #include "runtime.h"
 #include "json.h"
 #include "Hosting.h"
-#include "fs.h"
 #include <signal.h>
 #include "utility.h"
 #include "devops.h"
@@ -219,8 +217,6 @@ int main(int argc, char* argv[])
 		dbg = new X::DevOps::Debugger();
 		dbg->Init();
 	}
-	REGISTER_PACKAGE("http", X::Http)
-	REGISTER_PACKAGE("fs", X::FileSystem)
 	X::Builtin::I().RegisterInternals();
 
 	bool HasCode = false;

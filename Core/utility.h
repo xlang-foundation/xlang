@@ -22,3 +22,9 @@ std::string StringifyString(const std::string& str);
 void ReplaceAll(std::string& data, std::string toSearch, std::string replaceStr);
 std::string ExtName(std::string filePath);
 bool exists(const std::string& name);
+bool dir(std::string search_pat,
+	std::vector<std::string>& subfolders,
+	std::vector<std::string>& files);
+bool file_search(std::string folder,
+	std::string fileName,
+	std::vector<std::string>& outFiles,bool findAll=false);

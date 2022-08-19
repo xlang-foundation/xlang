@@ -58,7 +58,7 @@ namespace X
 			}
 			else
 			{
-				XStr str(nullptr, size);
+				XStr str(nullptr, (int)size);
 				char* data = str.Buffer();
 				m_stream.read(data, size);
 				retValue = X::Value(str);

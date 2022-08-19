@@ -1,4 +1,5 @@
 #include "utility.h"
+#include "port.h"
 
 #if (WIN32)
 #include <Windows.h>
@@ -257,4 +258,101 @@ bool exists(const std::string& name)
 {
 	struct stat buffer;
 	return (stat(name.c_str(), &buffer) == 0);
+}
+bool file_search(std::string folder,
+	std::string fileName,
+	std::vector<std::string>& outFiles,
+	bool findAll)
+{
+	bool bFind = false;
+	std::vector<std::string> subfolders;
+	std::vector<std::string> files;
+	bool bOK = dir(folder + Path_Sep_S + "*.*", subfolders, files);
+	if (bOK)
+	{
+		for (auto& f : files)
+		{
+			if (f == fileName)
+			{
+				outFiles.push_back(folder + Path_Sep_S+f);
+				bFind = true;
+				break;
+			}
+		}
+		for (auto& fd : subfolders)
+		{
+			bool bRet = file_search(folder + Path_Sep_S + fd, fileName,outFiles,findAll);
+			if (bRet)
+			{
+				bFind = true;
+				if (!findAll)
+				{
+					break;
+				}
+			}
+		}
+	}
+	return bFind;
+}
+bool dir(std::string search_pat,
+	std::vector<std::string>& subfolders,
+	std::vector<std::string>& files)
+{
+	bool ret = false;
+#if (WIN32)
+	BOOL result = TRUE;
+	WIN32_FIND_DATA ff;
+
+	HANDLE findhandle = FindFirstFile(search_pat.c_str(), &ff);
+	if (findhandle != INVALID_HANDLE_VALUE)
+	{
+		ret = true;
+		BOOL res = TRUE;
+		while (res)
+		{
+			// We only want directories
+			if (ff.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				std::string fileName(ff.cFileName);
+				if (fileName != "." && fileName != "..")
+				{
+					subfolders.push_back(fileName);
+				}
+			}
+			else
+			{
+				std::string fileName(ff.cFileName);
+				files.push_back(fileName);
+			}
+			res = FindNextFile(findhandle, &ff);
+		}
+		FindClose(findhandle);
+	}
+#else
+#include <dirent.h>
+	DIR* dir;
+	struct dirent* ent;
+	if ((dir = opendir(search_pat.c_str())) != NULL)
+	{
+		ret = true;
+		while ((ent = readdir(dir)) != NULL)
+		{
+			if (ent->d_type == DT_DIR)
+			{
+				std::string fileName(ent->d_name);
+				if (fileName != "." && fileName != "..")
+				{
+					subfolders.push_back(fileName);
+				}
+			}
+			else if (ent->d_type == DT_REG)//A regular file
+			{
+				std::string fileName(ent->d_name);
+				files.push_back(fileName);
+			}
+		}
+		closedir(dir);
+	}
+#endif
+	return ret;
 }

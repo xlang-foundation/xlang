@@ -120,6 +120,7 @@ class Import :
 	std::string m_path;
 
 	std::vector<ImportInfo> m_importInfos;
+	bool FindAndLoadExtensions(std::string& curModulePath,std::string& loadingModuleName);
 public:
 	Import(short op) :
 		BinaryOp(op)

@@ -2,6 +2,10 @@
 #include "manager.h"
 #include "pyproxyobject.h"
 #include "dotop.h"
+#include "port.h"
+
+extern std::string g_ExePath;
+
 X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
 {
 	return nullptr;
@@ -12,6 +16,45 @@ bool X::AST::Import::CalcCallables(Runtime* rt, void* pContext,
 	ScopeProxy* pProxy = new ScopeProxy();
 	callables.push_back(pProxy);
 	return true;
+}
+bool X::AST::Import::FindAndLoadExtensions(std::string& curModulePath,
+	std::string& loadingModuleName)
+{
+	std::string loadDllName;
+	bool bHaveDll = false;
+	//search xlang.exe folder first
+	std::vector<std::string> candiateFiles;
+	bool bRet = file_search(g_ExePath, loadingModuleName + ShareLibExt, candiateFiles);
+	if (bRet && candiateFiles.size() > 0)
+	{
+		loadDllName = candiateFiles[0];
+		bHaveDll = true;
+	}
+	else
+	{
+		bRet = file_search(curModulePath, loadingModuleName + ShareLibExt, candiateFiles);
+		if (bRet && candiateFiles.size() > 0)
+		{
+			loadDllName = candiateFiles[0];
+			bHaveDll = true;
+		}
+	}
+	bool bOK = false;
+	if (bHaveDll)
+	{
+		typedef void (*LOAD)(void* pHost);
+		void* libHandle = LOADLIB(loadDllName.c_str());
+		if (libHandle)
+		{
+			LOAD load = (LOAD)GetProc(libHandle, "Load");
+			if (load)
+			{
+				load((void*)g_pXHost);
+			}
+			bOK = true;
+		}
+	}
+	return bOK;
 }
 bool X::AST::Import::Run(Runtime* rt, void* pContext, 
 	Value& v, LValue* lValue)
@@ -31,6 +74,20 @@ bool X::AST::Import::Run(Runtime* rt, void* pContext,
 		if (m_path.empty())
 		{
 			Package* pPackage = nullptr;
+			bool bOK = Manager::I().QueryAndCreatePackage(rt,
+				im.name, &pPackage);
+			if (bOK)
+			{
+				v = Value(pPackage);
+				rt->M()->Add(rt, varName, nullptr, v);
+				continue;
+			}
+		}
+		else
+		{
+			Package* pPackage = nullptr;
+			std::string curPath = rt->M()->GetModulePath();
+			bool bLoaded = FindAndLoadExtensions(curPath, m_path);
 			bool bOK = Manager::I().QueryAndCreatePackage(rt,
 				im.name, &pPackage);
 			if (bOK)
