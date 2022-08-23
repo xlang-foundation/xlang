@@ -1,5 +1,5 @@
-"""File Name: test.json """ 
-x = {
+"""File Name: test.json """
+{
 	"glossary": {
 		"title": "example glossary",
 		"GlossDiv": {
@@ -22,4 +22,5 @@ x = {
 			}
 		}
 	}
-} print(x)
+}
+

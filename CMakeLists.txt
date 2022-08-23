@@ -7,13 +7,15 @@ project ("xlang")
 
 include_directories("Api")
 include_directories("Inc")
+include_directories("Serialize")
 include_directories("Ext")
 include_directories("Core")
 include_directories("Http")
 include_directories("Text")
 include_directories("Main")
 
-FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp" "Api/*.cpp")
+FILE(GLOB Core_SRC "Core/*.h" "Core/*.cpp" "Api/*.cpp" 
+		"Serialize/*.cpp")
 FILE(GLOB Ext_SRC "Ext/*.cpp")
 FILE(GLOB Text_SRC "Text/*.cpp")
 FILE(GLOB Main_SRC "X.cpp" "Main/*.cpp")

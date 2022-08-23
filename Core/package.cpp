@@ -17,7 +17,8 @@ bool X::AST::Import::CalcCallables(Runtime* rt, void* pContext,
 	callables.push_back(pProxy);
 	return true;
 }
-bool X::AST::Import::FindAndLoadExtensions(std::string& curModulePath,
+bool X::AST::Import::FindAndLoadExtensions(Runtime* rt,
+	std::string& curModulePath,
 	std::string& loadingModuleName)
 {
 	std::string loadDllName;
@@ -37,6 +38,21 @@ bool X::AST::Import::FindAndLoadExtensions(std::string& curModulePath,
 		{
 			loadDllName = candiateFiles[0];
 			bHaveDll = true;
+		}
+	}
+	if (!bHaveDll)
+	{
+		std::vector<std::string> searchPaths;
+		rt->M()->GetSearchPaths(searchPaths);
+		for (auto& pa : searchPaths)
+		{
+			bRet = file_search(pa, loadingModuleName + ShareLibExt, candiateFiles);
+			if (bRet && candiateFiles.size() > 0)
+			{
+				loadDllName = candiateFiles[0];
+				bHaveDll = true;
+				break;
+			}
 		}
 	}
 	bool bOK = false;
@@ -87,7 +103,7 @@ bool X::AST::Import::Run(Runtime* rt, void* pContext,
 		{
 			Package* pPackage = nullptr;
 			std::string curPath = rt->M()->GetModulePath();
-			bool bLoaded = FindAndLoadExtensions(curPath, m_path);
+			bool bLoaded = FindAndLoadExtensions(rt,curPath, m_path);
 			bool bOK = Manager::I().QueryAndCreatePackage(rt,
 				im.name, &pPackage);
 			if (bOK)

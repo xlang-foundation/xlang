@@ -37,6 +37,15 @@ namespace X
 		}
 		x.obj = p;
 	}
+	void Value::SetString(std::string& s)
+	{
+		t = ValueType::Object;
+		x.obj = g_pXHost->CreateStr(s.c_str(), (int)s.size());
+	}
+	Value::Value(std::string& s)
+	{
+		SetString(s);
+	}
 	bool Value::ChangeToStrObject()
 	{
 		if (t == ValueType::Object)
@@ -45,7 +54,7 @@ namespace X
 		}
 		else if (t == ValueType::Str)
 		{
-			x.obj = g_pXHost->CreateStr((const char*)x.str, (int)flags);;
+			x.obj = g_pXHost->CreateStr((const char*)x.str, (int)flags);
 		}
 		else
 		{
@@ -176,5 +185,13 @@ namespace X
 			break;
 		}
 		return strType;
+	}
+	bool Value::ToBytes(XLStream* pStream)
+	{
+		return g_pXHost->ConvertToBytes(*this, pStream);
+	}
+	bool Value::FromBytes(XLStream* pStream)
+	{
+		return g_pXHost->ConvertToBytes(*this, pStream);
 	}
 }

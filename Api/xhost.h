@@ -34,6 +34,8 @@ namespace X
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) = 0;
 		virtual std::string StringifyString(const std::string& str) = 0;
 		virtual XBin* CreateBin(char* data, size_t size) = 0;
+		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream=nullptr) = 0;
+		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
 	};
 	extern XHost* g_pXHost;
 }

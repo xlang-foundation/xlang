@@ -7,7 +7,11 @@
       "project": "CMakeLists.txt",
       "projectTarget": "xlang.exe",
       "args.bak": [ "-dbg", "-enable_python", "\"-c 'import fs\n'\"", "c:/Dev/X/Scripts/service.x", "--x", "--y=10" ],
-      "args": [ "C:\\Dev\\X\\Scripts\\service.x" ],
+      "args0": [ "C:\\Dev\\X\\Scripts\\service.x" ],
+      "args5": [ "C:\\Dev\\X\\test\\serialize_test.x" ],
+      "args": [ "C:\\Dev\\X\\test\\json_test.x" ],
+      "args9": [ "C:\\Dev\\X\\test\\test.json" ],
+      "args4": [ "C:\\Dev\\Cantor\\test\\xlang\\cantor_client_test.x" ],
       "args.dbg": [ "-dbg", "-enable_python" ],
       "name": "xlang.exe"
     }

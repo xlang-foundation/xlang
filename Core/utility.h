@@ -28,3 +28,5 @@ bool dir(std::string search_pat,
 bool file_search(std::string folder,
 	std::string fileName,
 	std::vector<std::string>& outFiles,bool findAll=false);
+bool IsAbsPath(std::string& strPath);
+bool LoadStringFromFile(std::string& fileName, std::string& content);

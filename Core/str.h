@@ -36,6 +36,17 @@ namespace Data
 		}
 		virtual char* Buffer() override { return (char*)m_s.c_str(); }
 		virtual AST::Scope* GetScope();
+		virtual bool ToBytes(X::XLangStream& stream) override
+		{
+			Object::ToBytes(stream);
+			stream << m_s;
+			return true;
+		}
+		virtual bool FromBytes(X::XLangStream& stream) override
+		{
+			stream >> m_s;
+			return true;
+		}
 		inline virtual std::string ToString(bool WithFormat = false) override
 		{
 			return m_s;

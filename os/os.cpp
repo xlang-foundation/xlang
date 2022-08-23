@@ -1,4 +1,5 @@
 #include "fs.h"
+#include "utils.h"
 #include "xhost.h"
 #include "xpackage.h"
 
@@ -16,6 +17,7 @@ extern "C"  X_EXPORT void Load(void* pHost)
 {
 	X::g_pXHost = (X::XHost*)pHost;
 	REGISTER_PACKAGE("fs", X::FileSystem);
+	REGISTER_PACKAGE("utils", X::Utils);
 }
 extern "C"  X_EXPORT void Unload()
 {

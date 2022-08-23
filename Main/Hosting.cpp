@@ -121,7 +121,15 @@ namespace X
 		X::Value v;
 		bool bOK = pTopModule->Run(pRuntime, nullptr, v);
 		pRuntime->PopFrame();
-		retVal = pModuleFrame->GetReturnValue();
+		X::Value v1 = pModuleFrame->GetReturnValue();
+		if (v1.IsValid())
+		{
+			retVal = v1;
+		}
+		else
+		{
+			retVal = v;
+		}
 		delete pModuleFrame;
 		delete pRuntime;
 		return bOK;

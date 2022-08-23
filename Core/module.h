@@ -49,6 +49,8 @@ class Module :
 	public Block,
 	public Scope
 {
+	Locker m_lockSearchPath;
+	std::vector<std::string> m_searchPaths;
 	std::string m_moduleName;
 	std::string m_path;
 	std::string m_code;
@@ -73,6 +75,35 @@ public:
 		m_type = ObType::Module;
 		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	void GetSearchPaths(std::vector<std::string>& searchPaths)
+	{
+		m_lockSearchPath.Lock();
+		searchPaths = m_searchPaths;
+		m_lockSearchPath.Unlock();
+	}
+	void AddSearchPath(std::string& strPath)
+	{
+		RemoveSearchPath(strPath);//remove duplicated
+		m_lockSearchPath.Lock();
+		m_searchPaths.push_back(strPath);
+		m_lockSearchPath.Unlock();
+	}
+	void RemoveSearchPath(std::string& strPath)
+	{
+		m_lockSearchPath.Lock();
+		for (auto it = m_searchPaths.begin();it != m_searchPaths.end();)
+		{
+			if (*it == strPath)
+			{
+				it = m_searchPaths.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+		m_lockSearchPath.Unlock();
 	}
 	void SetModuleName(std::string& name)
 	{

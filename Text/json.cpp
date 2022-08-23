@@ -1,69 +1,54 @@
 #include "json.h"
-#include "lex.h"
-#include <iostream>
+#include "Hosting.h"
+#include "utility.h"
+#include "port.h"
+
+//TODO: for security, diable any funtion call inside json string or file
 
 namespace X
 {
-namespace Text 
-{
-	enum class OP_ID
+	bool JsonWrapper::LoadFromString(void* rt, void* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		X::Value& retValue)
 	{
-		Colon,
-		SemiColon,
-		Curlybracket_L, Curlybracket_R,
-		Brackets_L, Brackets_R,
-		Count
-	};
-	std::vector<JsonOpInfo> Json::OPList =
-	{
-		{0,":"},{1,","},
-		{2,"{"},{3,"}"},
-		{4,"["},{5,"]"}
-	};
-	std::vector<short> Json::kwTree;
-	std::vector<JsonAction> Json::OpActions;
-
-	Json::Json()
-	{
-	}
-
-	Json::~Json()
-	{
-		if (mToken)
+		if (params.size() == 0)
 		{
-			delete mToken;
+			retValue = X::Value(false);
+			return false;
 		}
+		std::string jsonStr = params[0].ToString();
+		std::string fileName = "inline_code";
+		bool bOK = X::Hosting::I().Run(fileName, jsonStr.c_str(),
+			(int)jsonStr.size(), retValue);
+		return bOK;
 	}
-
-	bool Json::Init()
+	bool JsonWrapper::LoadFromFile(void* rt, void* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		X::Value& retValue)
 	{
-		Lex<JsonOpInfo, JsonAction>().MakeLexTree(
-			OPList, kwTree,OpActions);
-		mToken = new Token(&kwTree[0]);
-		return true;
-	}
-	bool Json::LoadFromString(char* code, int size)
-	{
-		mToken->SetStream(code, size);
-		return Parse();
-	}
-	bool Json::Parse()
-	{
-		while (true)
+		if (params.size() == 0)
 		{
-			OneToken one;
-			short idx = mToken->Get(one);
-			int startLine = one.lineStart;
-			String s = one.id;
-			if (idx == TokenEOS)
-			{
-				break;
-			}
-			std::string txt(s.s, s.size);
-			std::cout << "token:" << txt <<",idx:" << idx << ",line:"
-				<< one.lineStart << ",pos:" << one.charPos<<std::endl;
+			retValue = X::Value(false);
+			return false;
 		}
-		return true;
+		std::string fileName = params[0].ToString();
+		if (!IsAbsPath(fileName))
+		{
+			X::Runtime* pRt = (X::Runtime*)(X::XRuntime*)rt;
+			std::string curPath = pRt->M()->GetModulePath();
+			fileName = curPath + Path_Sep_S + fileName;
+		}
+		std::string jsonStr;
+		bool bOK = LoadStringFromFile(fileName, jsonStr);
+		if (!bOK)
+		{
+			retValue = X::Value(false);
+			return false;
+		}
+		bOK = X::Hosting::I().Run(fileName, jsonStr.c_str(),
+			(int)jsonStr.size(), retValue);
+		return bOK;
 	}
-}
 }

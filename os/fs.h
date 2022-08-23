@@ -17,7 +17,7 @@ namespace X
 			ADD_FUNC("write", write)
 			ADD_FUNC("close", close)
 			ADD_FUNC("size", get_size)
-			END_PACKAGE
+		END_PACKAGE
 
 		File(ARGS& params,KWARGS& kwParams)
 		{

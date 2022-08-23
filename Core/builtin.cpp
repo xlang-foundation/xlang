@@ -20,9 +20,13 @@
 #include <fstream>
 #include <sstream>
 #include "event.h"
+#include "bin.h"
+#include "BlockStream.h"
+#include "xpackage.h"
+#include "json.h"
 
 Locker _printLock;
-bool U_Print(X::Runtime* rt,void* pContext,
+bool U_Print(X::XRuntime* rt,void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -38,7 +42,7 @@ bool U_Print(X::Runtime* rt,void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
-bool U_Load(X::Runtime* rt, void* pContext,
+bool U_Load(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -64,7 +68,8 @@ bool U_Load(X::Runtime* rt, void* pContext,
 	retValue = X::Value(moduleKey);
 	return true;
 }
-bool U_Run(X::Runtime* rt, void* pContext,
+
+bool U_Run(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -84,7 +89,7 @@ bool U_Run(X::Runtime* rt, void* pContext,
 	}
 	return X::Hosting::I().Run(key, kwParams, retValue);
 }
-bool U_RunInMain(X::Runtime* rt, void* pContext,
+bool U_RunInMain(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -128,7 +133,7 @@ bool U_RunInMain(X::Runtime* rt, void* pContext,
 	return true;
 }
 
-bool U_Rand(X::Runtime* rt, void* pContext,
+bool U_Rand(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -143,7 +148,7 @@ bool U_Rand(X::Runtime* rt, void* pContext,
 	retValue = X::Value(r);
 	return true;
 }
-bool U_ThreadId(X::Runtime* rt, void* pContext,
+bool U_ThreadId(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -152,7 +157,7 @@ bool U_ThreadId(X::Runtime* rt, void* pContext,
 	retValue = X::Value(id);
 	return true;
 }
-bool U_Sleep(X::Runtime* rt, void* pContext,
+bool U_Sleep(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -195,7 +200,7 @@ bool U_Sleep(X::Runtime* rt, void* pContext,
 	}
 	return bOK;
 }
-bool U_Time(X::Runtime* rt, void* pContext,
+bool U_Time(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -234,19 +239,34 @@ bool Builtin::Register(const char* name, void* func,
 	return true;
 }
 
-bool U_BreakPoint(X::Runtime* rt, void* pContext,
+bool U_BreakPoint(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	KWARGS& kwParams,
 	X::Value& retValue)
 {
-	rt->M()->SetDbgType(AST::dbg::Step,
+	((X::Runtime*)rt)->M()->SetDbgType(AST::dbg::Step,
 		AST::dbg::Step);
 	retValue = X::Value(true);
 	return true;
 }
+bool U_ToBytes(X::XRuntime* rt, void* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::BlockStream stream;
+	for (auto& v : params)
+	{
+		stream << v;
+	}
+	auto size = stream.Size();
+	char* pData = new char[size];
+	stream.FullCopyTo(pData, size);
+	X::Data::Binary* pBinOut = new X::Data::Binary(pData, size);
+	retValue = X::Value(pBinOut);
+	return true;
+}
 
-
-bool U_TaskRun(X::Runtime* rt, void* pContext,
+bool U_TaskRun(X::XRuntime* rt, void* pContext,
 	ARGS& params,KWARGS& kwParams,
 	X::Value& retValue)
 {
@@ -262,17 +282,17 @@ bool U_TaskRun(X::Runtime* rt, void* pContext,
 			{
 				pFutureList = new Data::List();
 				X::Value vTask(pFuture);
-				pFutureList->Add(rt, vTask);
+				pFutureList->Add((X::Runtime*)rt, vTask);
 				pFuture = nil;
 			}
 			X::Value vTask(f);
-			pFutureList->Add(rt, vTask);
+			pFutureList->Add((X::Runtime*)rt, vTask);
 		}
 		else
 		{
 			pFuture = f;
 		}
-		bool bRet = tsk->Call(pFunc, rt, pContext, params, kwParams);
+		bool bRet = tsk->Call(pFunc, (X::Runtime*)rt, pContext, params, kwParams);
 		return bRet;
 	};
 	bool bOK = true;
@@ -302,7 +322,7 @@ bool U_TaskRun(X::Runtime* rt, void* pContext,
 	}
 	return bOK;
 }
-bool U_FireEvent(X::Runtime* rt, void* pContext,
+bool U_FireEvent(X::XRuntime* rt, void* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
@@ -321,8 +341,47 @@ bool U_FireEvent(X::Runtime* rt, void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
+bool U_AddPath(X::XRuntime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::Runtime* pRt = (X::Runtime*)rt;
+	for (auto& p : params)
+	{
+		std::string strPath = p.ToString();
+		if (!IsAbsPath(strPath))
+		{
+			std::string curPath = pRt->M()->GetModulePath();
+			strPath = curPath + Path_Sep_S + strPath;
+		}
+		pRt->M()->AddSearchPath(strPath);
+	}
+	return true;
+}
+bool U_RemovePath(X::XRuntime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::Runtime* pRt = (X::Runtime*)rt;
+	for (auto& p : params)
+	{
+		std::string strPath = p.ToString();
+		if (!IsAbsPath(strPath))
+		{
+			std::string curPath = pRt->M()->GetModulePath();
+			strPath = curPath + Path_Sep_S + strPath;
+		}
+		pRt->M()->RemoveSearchPath(strPath);
+	}
+	return true;
+}
+
 bool Builtin::RegisterInternals()
 {
+	REGISTER_PACKAGE("json", X::JsonWrapper);
+
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (void*)U_Print, params);
 	Register("load", (void*)U_Load, params);
@@ -335,6 +394,9 @@ bool Builtin::RegisterInternals()
 	Register("threadid", (void*)U_ThreadId, params);
 	Register("mainrun", (void*)U_RunInMain, params);
 	Register("fire", (void*)U_FireEvent, params);
+	Register("addpath", (void*)U_AddPath, params);
+	Register("removepath", (void*)U_RemovePath, params);
+	Register("bytes", (void*)U_ToBytes, params);
 	return true;
 }
 }

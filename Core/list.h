@@ -99,6 +99,32 @@ public:
 
 		return *this;
 	}
+	virtual bool ToBytes(X::XLangStream& stream) override
+	{
+		Object::ToBytes(stream);
+		size_t size = Size();
+		stream << size;
+		for (size_t i = 0; i < size; i++)
+		{
+			X::Value v0;
+			Get(i, v0);
+			stream << v0;
+		}
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		//TODO:need to pass runtime,and calculate base class for some objects
+		size_t size;
+		stream >> size;
+		for (size_t i = 0; i < size; i++)
+		{
+			X::Value v0;
+			stream >> v0;
+			m_data.push_back(v0);
+		}
+		return true;
+	}
 	virtual std::string ToString(bool WithFormat = false) override
 	{
 		std::string strList = "[\n";

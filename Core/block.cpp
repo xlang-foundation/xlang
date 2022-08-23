@@ -29,6 +29,10 @@ void Block::Add(Expression* item)
 }
 bool Block::Run(XRuntime* rt0,void* pContext, Value& v, LValue* lValue)
 {
+	if (Body.size() == 0)
+	{
+		return false;
+	}
 	Runtime* rt = (Runtime*)rt0;
 	bool bOk = true;
 	m_bRunning = true;
@@ -40,7 +44,8 @@ bool Block::Run(XRuntime* rt0,void* pContext, Value& v, LValue* lValue)
 			TraceEvent::Call,
 			dynamic_cast<Scope*>(this),nullptr);
 	}
-	for (auto i : Body)
+	auto last = Body[Body.size() - 1];
+	for (auto& i : Body)
 	{
 		//Update Stack Frame
 		int line = i->GetStartLine();
@@ -69,6 +74,10 @@ bool Block::Run(XRuntime* rt0,void* pContext, Value& v, LValue* lValue)
 		if (!bOk)
 		{//TODO: error process here
 			break;
+		}
+		if (v0.IsValid() && (i == last))
+		{
+			v = v0;
 		}
 	}
 	m_bRunning = false;

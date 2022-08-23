@@ -15,6 +15,8 @@
 #include <cmath>
 #include <sstream>
 #include <limits>
+#include <fstream>
+
 
 bool RunProcess(std::string cmd,
 	std::string initPath, bool newConsole, unsigned long& processId)
@@ -34,7 +36,7 @@ bool RunProcess(std::string cmd,
 	ProcessInformation.hProcess = INVALID_HANDLE_VALUE;
 
 	BOOL bOK = CreateProcess(NULL, (LPSTR)cmd.c_str(), NULL, NULL, TRUE,
-		newConsole?CREATE_NEW_CONSOLE: 0,//if use CREATE_NEW_CONSOLE will show new cmd window
+		newConsole ? CREATE_NEW_CONSOLE : 0,//if use CREATE_NEW_CONSOLE will show new cmd window
 		NULL, NULL,
 		&StartupInfo, &ProcessInformation);
 	if (bOK)
@@ -109,11 +111,11 @@ long long rand64()
 	static std::uniform_int_distribution<long long int> dist(std::llround(std::pow(2, 61)), std::llround(std::pow(2, 62)));
 	return dist(e2);
 }
-double randDouble(double m0,double mx)
+double randDouble(double m0, double mx)
 {
 	static std::random_device rd;
 	static std::mt19937_64 e2(rd());
-	static std::uniform_real_distribution<double> dist(m0,mx);
+	static std::uniform_real_distribution<double> dist(m0, mx);
 	return dist(e2);
 }
 std::vector<std::string> split(const std::string& str, char delim)
@@ -274,14 +276,14 @@ bool file_search(std::string folder,
 		{
 			if (f == fileName)
 			{
-				outFiles.push_back(folder + Path_Sep_S+f);
+				outFiles.push_back(folder + Path_Sep_S + f);
 				bFind = true;
 				break;
 			}
 		}
 		for (auto& fd : subfolders)
 		{
-			bool bRet = file_search(folder + Path_Sep_S + fd, fileName,outFiles,findAll);
+			bool bRet = file_search(folder + Path_Sep_S + fd, fileName, outFiles, findAll);
 			if (bRet)
 			{
 				bFind = true;
@@ -355,4 +357,33 @@ bool dir(std::string search_pat,
 	}
 #endif
 	return ret;
+}
+bool IsAbsPath(std::string& strPath)
+{
+	bool bIsAbs = false;
+#if (WIN32)
+	if (strPath.find(":/") != std::string::npos
+		|| strPath.find(":\\") != std::string::npos
+		|| strPath.find("\\\\") != std::string::npos//network path
+		|| strPath.find("//") != std::string::npos//network path
+		)
+	{
+		bIsAbs = true;
+	}
+#else
+	if (strPath.starts_with('/'))
+	{
+		bIsAbs = true;
+	}
+#endif
+	return bIsAbs;
+}
+bool LoadStringFromFile(std::string& fileName, std::string& content)
+{
+	std::ifstream file(fileName);
+	std::string data((std::istreambuf_iterator<char>(
+		file)), std::istreambuf_iterator<char>());
+	file.close();
+	content = data;
+	return true;
 }

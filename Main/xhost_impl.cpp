@@ -6,6 +6,8 @@
 #include "package.h"
 #include "dict.h"
 #include "bin.h"
+#include "BlockStream.h"
+
 
 namespace X 
 {
@@ -69,5 +71,31 @@ namespace X
 		auto* pObjBin = new Data::Binary(data, size);
 		pObjBin->AddRef();
 		return pObjBin;
+	}
+	bool XHost_Impl::ConvertToBytes(X::Value& v, X::XLStream* pStreamExternal)
+	{
+		X::XLangStream* pStream = nullptr;
+		if (pStreamExternal == nullptr)
+		{
+			pStream = new X::BlockStream();
+		}
+		else
+		{
+			pStream = new XLangStream();
+			pStream->SetProvider(pStreamExternal);
+		}
+		(*pStream) << v;
+		if (pStream)
+		{
+			delete pStream;
+		}
+		return true;
+	}
+	bool XHost_Impl::ConvertFromBytes(X::Value& v, X::XLStream* pStreamExternal)
+	{
+		X::XLangStream stream;
+		stream.SetProvider(pStreamExternal);
+		stream >> v;
+		return true;
 	}
 }

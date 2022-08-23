@@ -72,6 +72,31 @@ namespace X
 				}
 				return bOK;
 			}
+			virtual bool ToBytes(X::XLangStream& stream) override
+			{
+				Object::ToBytes(stream);
+				size_t size = Size();
+				stream << size;
+				for (auto& it : mMap)
+				{
+					stream<<it.first;
+					stream<<it.second;
+				}
+				return true;
+			}
+			virtual bool FromBytes(X::XLangStream& stream) override
+			{
+				//TODO:need to pass runtime,and calculate base class for some objects
+				size_t size;
+				stream >> size;
+				for (size_t i = 0; i < size; i++)
+				{
+					X::Value key,val;
+					stream >> key >>val;
+					mMap[key] = val;
+				}
+				return true;
+			}
 			virtual std::string ToString(bool WithFormat = false) override
 			{
 				std::string strOut = "{\n";

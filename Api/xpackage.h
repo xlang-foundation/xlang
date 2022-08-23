@@ -13,18 +13,18 @@
 		bool Create(X::XRuntime* rt, X::XPackage** ppackage)\
 		{\
 			std::vector<std::pair<int,X::XFunc*>> name_funcs;\
-			auto* pPackage = g_pXHost->CreatePackage(this);
+			auto* pPackage = X::g_pXHost->CreatePackage(this);
 
 #define ADD_FUNC(fn_name,function_name)\
 	{\
 	int idx = pPackage->AddMethod(fn_name);\
-	auto* pFuncObj = g_pXHost->CreateFunction(fn_name,\
+	auto* pFuncObj = X::g_pXHost->CreateFunction(fn_name,\
 			(X::U_FUNC)([](X::XRuntime* rt, void* pContext,\
-				ARGS& params,\
-				KWARGS& kwParams,\
+				X::ARGS& params,\
+				X::KWARGS& kwParams,\
 				X::Value& retValue)\
 				{\
-					auto* pXObj = g_pXHost->ConvertObjFromPointer(pContext);\
+					auto* pXObj = X::g_pXHost->ConvertObjFromPointer(pContext);\
 					auto* pPackage = dynamic_cast<X::XPackage*>(pXObj);\
 					auto* pThis = (THIS_CLASS_NAME*)pPackage->GetEmbedObj();\
 					return pThis->function_name(rt,pContext,params, kwParams, retValue);\
@@ -32,13 +32,14 @@
 	name_funcs.push_back(std::make_pair(idx, pFuncObj));\
 	}
 
+
 #define ADD_CLASS(class_name,class_impl_name)\
 	{\
 	int idx= pPackage->AddMethod(class_name);\
-	auto* pFuncObj = g_pXHost->CreateFunction(class_name,\
+	auto* pFuncObj = X::g_pXHost->CreateFunction(class_name,\
 		(X::U_FUNC)([](X::XRuntime* rt, void* pContext,\
-			ARGS& params,\
-			KWARGS& kwParams,\
+			X::ARGS& params,\
+			X::KWARGS& kwParams,\
 			X::Value& retValue)\
 			{\
 				class_impl_name* cls = \

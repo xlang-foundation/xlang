@@ -4,7 +4,8 @@
 
 namespace X 
 {
-	class XObj;
+class XObj;
+class XLStream;
 enum class ValueType
 {
 	Invalid,
@@ -106,6 +107,10 @@ public:
 	{
 		return (t == ValueType::Invalid);
 	}
+	inline bool IsValid()
+	{
+		return (t != ValueType::Invalid);
+	}
 	inline ~Value()
 	{
 		switch (t)
@@ -183,6 +188,8 @@ public:
 		x.obj = nullptr;
 		AssignObject(p);
 	}
+	Value(std::string& s);
+
 	bool Clone();
 	bool ChangeToStrObject();
 	void AssignObject(XObj* p);
@@ -210,9 +217,17 @@ public:
 			break;
 		}
 	}
+	operator bool() const
+	{
+		return (x.l != 0);
+	}
 	operator double() const
 	{
 		return x.d;
+	}
+	operator float() const
+	{
+		return (float)x.d;
 	}
 	operator long long() const
 	{
@@ -222,16 +237,29 @@ public:
 	{
 		return (int)x.l;
 	}
+	operator std::string()
+	{
+		return ToString();
+	}
 
 	size_t Hash();
 	inline double GetDouble()
 	{
 		return x.d;
 	}
+	inline void SetDouble(double d)
+	{
+		x.d = d;
+	}
 	inline long long GetLongLong()
 	{
 		return x.l;
 	}
+	inline void SetLongLong(long long l)
+	{
+		x.l =l;
+	}
+	void SetString(std::string& s);
 	inline bool GetBool()
 	{
 		return (x.l!=0);
@@ -276,6 +304,7 @@ public:
 	}
 	std::string GetValueType();
 	inline ValueType GetType() { return t; }
+	inline void SetType(ValueType t0) { t = t0; }
 	inline int GetF() { return flags; }
 	inline void operator = (const Value& v)
 	{
@@ -312,6 +341,8 @@ public:
 	COMPARE_OP(<=);
 
 	std::string ToString(bool WithFormat = false);
+	bool FromBytes(XLStream* pStream = nullptr);
+	bool ToBytes(XLStream* pStream = nullptr);
 };
 typedef Value* LValue;
 };

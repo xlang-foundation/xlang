@@ -10,6 +10,7 @@
 #include "utility.h"
 #include "objref.h"
 #include "xlang.h"
+#include "XLangStream.h"
 
 namespace X {
 	namespace AST { class Scope; }
@@ -39,7 +40,6 @@ namespace Data {
 		{
 			return ObjRef::Release();
 		}
-
 		inline bool IsFunc()
 		{
 			return (m_t == ObjType::Function);
@@ -108,6 +108,15 @@ namespace Data {
 		virtual size_t Hash()
 		{
 			return 0;
+		}
+		virtual bool ToBytes(X::XLangStream& stream)
+		{ 
+			stream << (char)m_t;
+			return true; 
+		}
+		virtual bool FromBytes(X::XLangStream& stream)
+		{
+			return true;
 		}
 		virtual std::string ToString(bool WithFormat = false)
 		{

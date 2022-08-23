@@ -1,33 +1,28 @@
 #pragma once
 
-#include "token.h"
+#include "xpackage.h"
+#include "xlang.h"
 
 namespace X 
 {
-namespace Text 
-{
-struct JsonAction
-{
-	int precedence = 0;
-};
-struct JsonOpInfo
-{
-	int id;
-	std::string name;
-	JsonAction act;
-};
-class Json
-{
-	Token* mToken = nullptr;
-	static std::vector<JsonOpInfo> OPList;
-	static std::vector<short> kwTree;
-	static std::vector<JsonAction> OpActions;
-public:
-	Json();
-	~Json();
-	bool Init();
-	bool LoadFromString(char* code, int size);
-	bool Parse();
-};
-}
+	class JsonWrapper
+	{
+	public:
+		BEGIN_PACKAGE(JsonWrapper)
+			ADD_FUNC("loads", LoadFromString)
+			ADD_FUNC("load", LoadFromFile)
+		END_PACKAGE
+		JsonWrapper()
+		{
+
+		}
+		bool LoadFromString(void* rt, void* pContext,
+			ARGS& params,
+			KWARGS& kwParams,
+			X::Value& retValue);
+		bool LoadFromFile(void* rt, void* pContext,
+			ARGS& params,
+			KWARGS& kwParams,
+			X::Value& retValue);
+	};
 }

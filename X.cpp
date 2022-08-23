@@ -2,9 +2,7 @@
 //
 
 #include "X.h"
-#include "Core/builtin.h"
-#include <fstream>
-#include <sstream>
+#include "builtin.h"
 #include "manager.h"
 #include "xpackage.h"
 #include "runtime.h"
@@ -183,17 +181,6 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 	return true;
 }
 
-bool LoadCodeFromFile(std::string& fileName, std::string& codeInFile)
-{
-	std::ifstream pyFile(fileName);
-	std::string code((std::istreambuf_iterator<char>(
-		pyFile)), std::istreambuf_iterator<char>());
-	pyFile.close();
-	codeInFile = code;
-	return true;
-}
-
-
 int main(int argc, char* argv[])
 {
 	std::vector<std::string> params(argv, argv+argc);
@@ -235,7 +222,7 @@ int main(int argc, char* argv[])
 	}
 	else if (!g_ParamConfig.fileName.empty())
 	{
-		bool bOK = LoadCodeFromFile(g_ParamConfig.fileName, code);
+		bool bOK = LoadStringFromFile(g_ParamConfig.fileName, code);
 		if (bOK)
 		{
 			HasCode = true;
@@ -260,7 +247,7 @@ int main(int argc, char* argv[])
 		{
 			X::Value retVal;
 			X::Hosting::I().Run(fileName, code.c_str(), (int)code.size(), retVal);
-			if (!retVal.IsInvalid())
+			if (retVal.IsValid())
 			{
 				std::cout << retVal.ToString() << std::endl;
 			}
