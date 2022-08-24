@@ -20,6 +20,7 @@ namespace X
 		XClassObject,
 		FuncCalls,
 		Package,
+		ModuleObject,
 		Future,
 		List,
 		Dict,

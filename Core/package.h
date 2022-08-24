@@ -122,6 +122,9 @@ class Import :
 	std::vector<ImportInfo> m_importInfos;
 	bool FindAndLoadExtensions(Runtime* rt,
 		std::string& curModulePath,std::string& loadingModuleName);
+	bool FindAndLoadXModule(Runtime* rt,
+		std::string& curModulePath, std::string& loadingModuleName,
+		Module** ppSubModule);
 public:
 	Import(short op) :
 		BinaryOp(op)

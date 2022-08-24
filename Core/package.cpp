@@ -3,6 +3,8 @@
 #include "pyproxyobject.h"
 #include "dotop.h"
 #include "port.h"
+#include "Hosting.h"
+#include "moduleobject.h"
 
 extern std::string g_ExePath;
 
@@ -72,6 +74,67 @@ bool X::AST::Import::FindAndLoadExtensions(Runtime* rt,
 	}
 	return bOK;
 }
+bool X::AST::Import::FindAndLoadXModule(Runtime* rt,
+	std::string& curModulePath,
+	std::string& loadingModuleName,
+	Module** ppSubModule)
+{
+	std::string loadXModuleFileName;
+	bool bHaveX = false;
+	std::string prefixPath;
+	if (!m_path.empty())
+	{
+		prefixPath = m_path;
+		ReplaceAll(prefixPath, ".", Path_Sep_S);
+	}
+	
+	std::vector<std::string> searchPaths;
+	searchPaths.push_back(curModulePath);
+	searchPaths.push_back(g_ExePath);
+
+	auto search = [](std::string& loadingModuleName,
+		std::vector<std::string>& searchPaths,
+		std::string& loadXModuleName, std::string prefixPath)
+	{
+		for (auto& pa : searchPaths)
+		{
+			std::vector<std::string> candiateFiles;
+			bool bRet = file_search(pa+ Path_Sep_S+ prefixPath, 
+				loadingModuleName + ".x", candiateFiles);
+			if (bRet && candiateFiles.size() > 0)
+			{
+				loadXModuleName = candiateFiles[0];
+				return true;
+			}
+		}
+		return false;
+	};
+	bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
+	if (!bHaveX)
+	{
+		rt->M()->GetSearchPaths(searchPaths);
+		bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
+	}
+	bool bOK = false;
+	if (bHaveX)
+	{
+		std::string code;
+		bOK = LoadStringFromFile(loadXModuleFileName, code);
+		if (bOK)
+		{
+			unsigned long long moduleKey = 0;
+			auto* pSubModule = Hosting::I().Load(loadXModuleFileName, 
+				code.c_str(), (int)code.size(), moduleKey);
+			if (pSubModule)
+			{
+				X::Value v0;
+				bOK = Hosting::I().Run(pSubModule, v0);
+			}
+			*ppSubModule = pSubModule;
+		}
+	}
+	return bOK;
+}
 bool X::AST::Import::Run(Runtime* rt, void* pContext, 
 	Value& v, LValue* lValue)
 {
@@ -113,10 +176,18 @@ bool X::AST::Import::Run(Runtime* rt, void* pContext,
 				continue;
 			}
 		}
-		//TODO: check if it is X module
-		//
-		//then Python Module
+		//Check if it is X module
 		std::string curPath = rt->M()->GetModulePath();
+		Module* pSubModule = nullptr;
+		bool bOK = FindAndLoadXModule(rt, curPath, im.name, &pSubModule);
+		if (bOK && pSubModule != nullptr)
+		{
+			ModuleObject* pModuleObj = new ModuleObject(pSubModule);
+			v = Value(pModuleObj);
+			rt->M()->Add(rt, varName, nullptr, v);
+			continue;
+		}
+		//then Python Module
 		auto* pProxyObj =
 			new Data::PyProxyObject(rt, pContext,
 				im.name,m_path, curPath);

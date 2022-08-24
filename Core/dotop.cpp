@@ -5,6 +5,8 @@
 #include "list.h"
 #include "function.h"
 #include "funclist.h"
+#include "moduleobject.h"
+
 namespace X
 {
 namespace AST
@@ -50,6 +52,11 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,
 		//for function, meta function like taskrun,
 		//put into top module
 		bases.push_back(rt->M());
+	}
+	else if (pObj->GetType() == X::ObjType::ModuleObject)
+	{
+		ModuleObject* pModuleObj = dynamic_cast<ModuleObject*>(pObj);
+		bases.push_back(pModuleObj->M());
 	}
 }
 void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
