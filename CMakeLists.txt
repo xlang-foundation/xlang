@@ -7,6 +7,7 @@ project ("xlang")
 
 include_directories("Api")
 include_directories("Inc")
+include_directories("utils")
 include_directories("Ast")
 include_directories("Parse")
 include_directories("Serialize")
@@ -17,6 +18,7 @@ include_directories("Text")
 include_directories("Main")
 
 FILE(GLOB Api_SRC "Api/*.cpp")
+FILE(GLOB Utils_SRC "utils/*.cpp")
 FILE(GLOB Core_SRC "Core/*.cpp")
 FILE(GLOB Ast_SRC "Ast/*.cpp")
 FILE(GLOB Serialize_SRC "Serialize/*.cpp")
@@ -27,6 +29,7 @@ FILE(GLOB Main_SRC "X.cpp" "Main/*.cpp")
 
 add_executable (${PROJECT_NAME}
 	${Api_SRC}
+	${Utils_SRC}
 	${Core_SRC}
 	${Ast_SRC}
 	${Parse_SRC}

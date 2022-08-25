@@ -13,7 +13,7 @@ FILE(GLOB Dev_SRC "../Ext/gthread.cpp"
 		"../Ext/ipc.cpp"
 		"../Ext/Locker.cpp"
 		"../Ext/wait.cpp"
-		"../Core/utility.cpp")
+		"../utils/utility.cpp")
 
 if (WIN32)
 	if (USING_UI)
