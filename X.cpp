@@ -18,6 +18,8 @@
 #include "xhost_impl.h"
 #include "action.h"
 
+void test();
+
 struct ParamConfig
 {
 	bool print_usage = false;//-help |-? |-h
@@ -191,6 +193,8 @@ int main(int argc, char* argv[])
 		PrintUsage();
 		return 0;
 	}
+	test();
+
 	signal(SIGINT, signal_callback_handler);
 
 	X::CreatXHost();
@@ -273,4 +277,17 @@ int main(int argc, char* argv[])
 	X::G::I().Check();
 	X::DestoryXHost();
 	return 0;
+}
+
+#include "yaml_parser.h"
+
+void test()
+{
+	std::string strData;
+	bool bOK = LoadStringFromFile(g_ParamConfig.fileName, strData);
+	X::Text::YamlParser yml;
+	yml.Init();
+	yml.LoadFromString((char*)strData.c_str(), strData.size());
+	yml.Parse();
+
 }

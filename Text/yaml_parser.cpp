@@ -10,7 +10,8 @@ namespace X
 		{
 			{0,":"},{1,","},
 			{2,"{"},{3,"}"},
-			{4,"["},{5,"]"}
+			{4,"["},{5,"]"},
+			{6,"---"},{7,"-"}
 		};
 		std::vector<short> YamlParser::kwTree;
 		std::vector<OpAction> YamlParser::OpActions;
@@ -54,7 +55,7 @@ namespace X
 					break;
 				}
 				std::string txt(s.s, s.size);
-				std::cout << "token:" << txt << ",idx:" << idx << ",line:"
+				std::cout << txt << ",idx:" << idx << ",line:"
 					<< one.lineStart << ",pos:" << one.charPos << std::endl;
 			}
 			return true;
