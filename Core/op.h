@@ -345,7 +345,7 @@ public:
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands)
 	{
-		if (NeedParam)
+		if (NeedParam && operands.size()>0)
 		{
 			auto operandR = operands.top();
 			operands.pop();
