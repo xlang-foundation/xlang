@@ -7,10 +7,10 @@
 #define GetProc(handle,funcName) GetProcAddress((HMODULE)handle, funcName)
 #define UNLOADLIB(h) FreeLibrary((HMODULE)h)
 
+#define SPRINTF sprintf_s
 #define SCANF sscanf_s
 #define MS_SLEEP(t) Sleep(t)
 #define US_SLEEP(t) Sleep(t/1000)
-
 
 #else
 #include <unistd.h>
@@ -25,6 +25,7 @@
 #define GetProc(handle,funcName) dlsym(handle, funcName)
 #define UNLOADLIB(handle) dlclose(handle)
 
+#define SPRINTF snprintf
 #define SCANF sscanf
 #define MS_SLEEP(t)  usleep((t)*1000)
 #define US_SLEEP(t) usleep(t)

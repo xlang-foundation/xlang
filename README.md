@@ -33,13 +33,17 @@ base on expression eval
    stack should have only one value in it, which is the final result.
 
 
-   #Misc
-   map find less or greator
-   https://stackoverflow.com/questions/529831/returning-the-greatest-key-strictly-less-than-the-given-key-in-a-c-map
-   #Flask template syntax
-   https://flask.palletsprojects.com/en/2.1.x/tutorial/templates/
-   #jinja :Template Designer Documentation
-   https://jinja.palletsprojects.com/en/3.1.x/templates/
+#Misc
+map find less or greator
+https://stackoverflow.com/questions/529831/returning-the-greatest-key-strictly-less-than-the-given-key-in-a-c-map
+#Flask template syntax
+https://flask.palletsprojects.com/en/2.1.x/tutorial/templates/
+#jinja :Template Designer Documentation
+https://jinja.palletsprojects.com/en/3.1.x/templates/
 
-   #for WSL, to compile PyEng, run:
-   sudo apt-get install python3.10-dev
+#for WSL, to compile PyEng, run:
+sudo apt-get install python3.10-dev
+
+#For uuid/uuid.h in linux -wsl, maybe need to run line below
+sudo apt-get install uuid-dev
+

@@ -14,6 +14,7 @@
 
 namespace X {
 	namespace AST { class Scope; }
+	typedef X::Value(*EnumProc)(X::Value& elm, unsigned long long idx);
 class Runtime;
 namespace Data {
 	class List;

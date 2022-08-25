@@ -1,15 +1,8 @@
 #pragma once
 #include <string>
-#include <vector>
-#include <unordered_map>
 
-#if (WIN32)
-#define SPRINTF sprintf_s
-#else
-#define SPRINTF snprintf
-#endif
-
-namespace X {
+namespace X 
+{
 #define nil 0
 #define MAX_VAL(x,y) ((x)>(y)?(x):(y))
 #define MIN_VAL(x,y) ((x)<(y)?(x):(y))
@@ -40,7 +33,8 @@ enum class OP_ID
 class Parser;
 class Runtime;
 class Value;
-namespace AST {
+namespace AST 
+{
 	class Operator;
 	class UnaryOp;
 	class BinaryOp;
@@ -74,6 +68,4 @@ struct OpInfo
 	std::string name;
 	OpAction act;
 };
-
-typedef X::Value (*EnumProc)(X::Value& elm,unsigned long long idx);
 }

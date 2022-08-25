@@ -371,7 +371,7 @@ bool IsAbsPath(std::string& strPath)
 		bIsAbs = true;
 	}
 #else
-	if (strPath.starts_with('/'))
+	if (strPath.find('/')==0)
 	{
 		bIsAbs = true;
 	}
