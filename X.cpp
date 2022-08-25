@@ -16,6 +16,7 @@
 #include "PyEngObject.h"
 #include "xhost.h"
 #include "xhost_impl.h"
+#include "action.h"
 
 struct ParamConfig
 {
@@ -205,6 +206,7 @@ int main(int argc, char* argv[])
 		dbg->Init();
 	}
 	X::Builtin::I().RegisterInternals();
+	X::BuildOps();
 
 	bool HasCode = false;
 	std::string code;

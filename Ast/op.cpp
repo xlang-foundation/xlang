@@ -5,6 +5,7 @@
 #include "dict.h"
 #include "pair.h"
 #include "funclist.h"
+#include "op_registry.h"
 
 namespace X
 {
@@ -67,7 +68,7 @@ bool UnaryOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 	{
 		return false;
 	}
-	auto func = G::I().OpAct(Op).unaryop;
+	auto func = G::I().R().OpAct(Op).unaryop;
 	return func ? func(rt,this, v_r, v) : false;
 }
 

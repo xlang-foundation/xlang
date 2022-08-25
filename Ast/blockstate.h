@@ -3,6 +3,7 @@
 #include "op.h"
 #include "glob.h"
 #include <stack>
+#include "op_registry.h"
 //for compile not for runtime
 namespace X {
 	namespace AST { class Block; }
@@ -22,7 +23,7 @@ class BlockState
 
 	inline OpAction OpAct(short idx)
 	{
-		return G::I().OpAct(idx);
+		return G::I().R().OpAct(idx);
 	}
 public:
 	//below,before meet first non-tab char,it is true 

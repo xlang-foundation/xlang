@@ -2,6 +2,7 @@
 #include "exp.h"
 #include "xlang.h"
 #include <stack>
+#include "op_registry.h"
 
 namespace X
 {
@@ -146,7 +147,7 @@ public:
 		{
 			return false;
 		}
-		auto func = G::I().OpAct(Op).binaryop;
+		auto func = G::I().R().OpAct(Op).binaryop;
 		return func ? func(rt,this, v_l, v_r, v) : false;
 	}
 };

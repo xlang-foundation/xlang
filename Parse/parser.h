@@ -9,10 +9,14 @@
 #include "blockstate.h"
 #include "number.h"
 #include "module.h"
+#include "op_registry.h"
 
-namespace X {
+namespace X 
+{
+class OpRegistry;
 class Parser
 {
+	OpRegistry* m_reg = nullptr;
 	Token* mToken = nil;
 	AST::Block* m_lastComingBlock = nullptr;
 	std::stack<BlockState*> m_stackBlocks;
@@ -72,12 +76,12 @@ public:
 
 	inline OpAction OpAct(short idx)
 	{
-		return G::I().OpAct(idx);
+		return G::I().R().OpAct(idx);
 	}
 public:
 	Parser();
 	~Parser();
-	bool Init();
+	bool Init(OpRegistry* reg = nullptr);
 	bool Compile(char* code, int size);
 	AST::Module* GetModule();
 };

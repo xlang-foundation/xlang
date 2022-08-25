@@ -6,6 +6,7 @@
 
 namespace X 
 {
+	class OpRegistry;
 	class RegOP
 	{
 		std::vector<std::string> ops;
@@ -34,8 +35,8 @@ namespace X
 			OPList.push_back(OpInfo{ (int)OPList.size(),name });
 			return OPList.back();
 		}
-		RegOP& SetId(OP_ID id);
-		RegOP& SetIds(std::vector<OP_ID> ids);
+		RegOP& SetId(OpRegistry* reg,OP_ID id);
+		RegOP& SetIds(OpRegistry* reg, std::vector<OP_ID> ids);
 		RegOP& SetPrecedence(int p)
 		{
 			for (auto& n : ops)

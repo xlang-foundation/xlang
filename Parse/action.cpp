@@ -9,10 +9,11 @@
 #include "dotop.h"
 #include "pipeop.h"
 #include "lex.h"
+#include "op_registry.h"
 
 namespace X {
 
-void RegisterOps()
+void RegisterOps(OpRegistry* reg)
 {
 	RegOP("+")
 	.SetUnaryop([](Runtime* rt,AST::UnaryOp* op,X::Value& R, X::Value& v) {
@@ -119,7 +120,7 @@ void RegisterOps()
 		return true;
 	});
 }
-void Register()
+void Register(OpRegistry* reg)
 {
 	/*treat as Token 0-2*/
 	RegOP("False", "True","None");
@@ -327,19 +328,19 @@ void Register()
 			return op;
 		});
 	
-	RegOP("(").SetId(OP_ID::Parenthesis_L);
-	RegOP("<|").SetId(OP_ID::TableBracket_L);
-	RegOP("[").SetId(OP_ID::Brackets_L);
-	RegOP("{").SetId(OP_ID::Curlybracket_L);
-	RegOP("\\").SetId(OP_ID::Slash);
-	RegOP(":").SetId(OP_ID::Colon);
-	RegOP(",").SetId(OP_ID::Comma);
-	RegOP("\t").SetId(OP_ID::Tab);
+	RegOP("(").SetId(reg,OP_ID::Parenthesis_L);
+	RegOP("<|").SetId(reg, OP_ID::TableBracket_L);
+	RegOP("[").SetId(reg, OP_ID::Brackets_L);
+	RegOP("{").SetId(reg, OP_ID::Curlybracket_L);
+	RegOP("\\").SetId(reg, OP_ID::Slash);
+	RegOP(":").SetId(reg, OP_ID::Colon);
+	RegOP(",").SetId(reg, OP_ID::Comma);
+	RegOP("\t").SetId(reg, OP_ID::Tab);
 
-	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(
+	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(reg,
 		{ OP_ID::Equ,OP_ID::AddEqu,OP_ID::MinusEqu,OP_ID::MulEqu,
 		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu });
-	RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(
+	RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
 		{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
 		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu });
 
@@ -356,6 +357,7 @@ void Register()
 }
 
 std::vector<OpInfo> RegOP::OPList;
+static OpRegistry __op_reg;
 void BuildOps()
 {
 	//only need to run once
@@ -364,28 +366,30 @@ void BuildOps()
 	{
 		return;
 	}
-	Register();
-	RegisterOps();
+	OpRegistry* reg = &__op_reg;
+	G::I().SetReg(reg);
+	Register(reg);
+	RegisterOps(reg);
 	Lex<OpInfo, OpAction>().MakeLexTree(
 		RegOP::OPList,
-		G::I().GetKwTree(),
-		G::I().GetOpActions());
-	G::I().SetActionWithOpId();
+		reg->GetKwTree(),
+		reg->GetOpActions());
+	reg->SetActionWithOpId();
 	Inited = true;
 }
-RegOP& RegOP::SetId(OP_ID id)
+RegOP& RegOP::SetId(OpRegistry* reg, OP_ID id)
 {
 	if (ops.size() > 0)
 	{
-		G::I().SetOpId(id, AddOrGet(ops[0]).id);
+		reg->SetOpId(id, AddOrGet(ops[0]).id);
 	}
 	return *this;
 }
-RegOP& RegOP::SetIds(std::vector<OP_ID> ids)
+RegOP& RegOP::SetIds(OpRegistry* reg, std::vector<OP_ID> ids)
 {
 	for(int i=0;i<ops.size() && i<ids.size();i++)
 	{
-		G::I().SetOpId(ids[i], AddOrGet(ops[i]).id);
+		reg->SetOpId(ids[i], AddOrGet(ops[i]).id);
 	}
 	return *this;
 }

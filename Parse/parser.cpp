@@ -1,14 +1,12 @@
 #include "parser.h"
 #include <iostream>
 #include <string>
-#include <vector>
 #include "action.h"
-#include "runtime.h"
 #include "module.h"
 #include "var.h"
 #include "func.h"
-#include "http.h"
 #include "manager.h"
+#include "op_registry.h"
 
 namespace X
 {		
@@ -24,10 +22,17 @@ Parser::~Parser()
 	}
 }
 
-bool Parser::Init()
+bool Parser::Init(OpRegistry* reg)
 {
-	BuildOps();
-	mToken = new Token(&G::I().GetKwTree()[0]);
+	if (reg == nullptr)
+	{
+		m_reg = &G::I().R();
+	}
+	else
+	{
+		m_reg = reg;
+	}
+	mToken = new Token(&m_reg->GetKwTree()[0]);
 	return true;
 }
 
@@ -201,7 +206,7 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 		}
 	}
 	short lastToken = get_last_token();
-	short pairLeftToken = G::I().GetOpId(leftOpToMeetAsEnd);
+	short pairLeftToken = m_reg->GetOpId(leftOpToMeetAsEnd);
 	bool bEmptyPair = (lastToken == pairLeftToken);
 	AST::PairOp* pPair = nil;
 	while (!m_curBlkState->IsOpStackEmpty())
