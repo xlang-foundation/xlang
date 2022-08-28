@@ -14,12 +14,15 @@ namespace X
 			Sequence,
 			Dict
 		};
+		class YamlNode;
 		struct Status
 		{
+			YamlNode* rootNode = nullptr;
 			bool NewLine = false;
 			int lineNo = 1;
 			int LeadingSpaces = 0;
 			int LeadingTabs = 0;
+			int pair_count = 0;
 			//for comment before document start
 			char* comment_start = nullptr;
 			char* comment_end = nullptr;

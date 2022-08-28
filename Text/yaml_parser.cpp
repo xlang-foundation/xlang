@@ -28,6 +28,13 @@ namespace X
 		}
 		YamlNode* YamlParser::GetParentNode(YamlNode* pCurNode, Status& status)
 		{//for sequence
+			if (pCurNode == nullptr)
+			{
+				pCurNode = new YamlNode(nullptr, status);
+				pCurNode->SetType(YamlNodeType::Doc);
+				status.rootNode = pCurNode;
+				return pCurNode;
+			}
 			YamlNode* pMyParentNode = pCurNode;
 			while (pMyParentNode)
 			{
@@ -123,6 +130,43 @@ namespace X
 					pCurNode = pNewNode;
 				}
 			}
+			else if (ch == '{' || ch=='[')
+			{
+				status.pair_count++;
+				start = getPos();
+				YamlNode* pMyParentNode = GetParentNode(pCurNode, status);
+				YamlNode* pDictNode = new YamlNode(start, status);
+				pDictNode->SetParent(pMyParentNode);
+				pDictNode->SetLeadingInfo(status.LeadingSpaces,
+					status.LeadingTabs);
+				pDictNode->SetType(ch == '{' ? YamlNodeType::Dict : YamlNodeType::Sequence);
+				pMyParentNode->Add(pDictNode);
+
+				YamlNode* pNewNode = new YamlNode(start, status);
+				pNewNode->SetParent(pDictNode);
+				pNewNode->SetLeadingInfo(status.LeadingSpaces,
+					status.LeadingTabs);
+				pDictNode->Add(pNewNode);
+
+				pCurNode = pNewNode;
+			}
+			else if (ch == ',')
+			{
+				pCurNode->SetEndPos(start - 1, status.lineNo);
+				YamlNode* pMyParentNode = pCurNode->Parent();
+				YamlNode* pNewNode = new YamlNode(start, status);
+				pNewNode->SetParent(pMyParentNode);
+				pNewNode->SetLeadingInfo(status.LeadingSpaces,
+					status.LeadingTabs);
+				pMyParentNode->Add(pNewNode);
+				pCurNode = pNewNode;
+			}
+			else if (ch == '}' ||ch ==']')
+			{
+				status.pair_count--;
+				pCurNode->SetEndPos(start - 1, status.lineNo);
+				pCurNode = pCurNode->Parent();
+			}
 			else if(ch ==':')
 			{
 				pCurNode->SetEndPos(start-1, status.lineNo);
@@ -133,7 +177,10 @@ namespace X
 			}
 			else if (ch == '\n')
 			{//end line
-				pCurNode->SetEndPos(start-1, status.lineNo);
+				if (status.pair_count == 0)
+				{
+					pCurNode->SetEndPos(start - 1, status.lineNo);
+				}
 				status.NewLine = true;
 				status.LeadingSpaces = 0;
 				status.LeadingTabs = 0;
@@ -221,7 +268,15 @@ namespace X
 				}
 				if (pRootNode == nullptr)
 				{
-					pRootNode = pCurNode;
+					if (status.rootNode)
+					{
+						pRootNode = status.rootNode;
+						status.rootNode = nullptr;
+					}
+					else
+					{
+						pRootNode = pCurNode;
+					}
 				}
 			}
 			if (pCurNode && !pCurNode->IsClosed())

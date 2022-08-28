@@ -1,6 +1,14 @@
 #doc start
 #this is a document for YAML
 ---
+
+ [1,2,3]
+ zx: 
+  {
+    x:1,
+    y:1,
+    z:1
+  }
  doe: "a \"deer, 
 
 
