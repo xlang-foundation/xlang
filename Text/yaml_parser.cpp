@@ -35,6 +35,10 @@ namespace X
 				status.rootNode = pCurNode;
 				return pCurNode;
 			}
+			if (status.pair_count > 0)
+			{
+				return pCurNode;
+			}
 			YamlNode* pMyParentNode = pCurNode;
 			while (pMyParentNode)
 			{
