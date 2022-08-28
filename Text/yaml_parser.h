@@ -14,6 +14,16 @@ namespace X
 			Sequence,
 			Dict
 		};
+		struct Status
+		{
+			bool NewLine = false;
+			int lineNo = 1;
+			int LeadingSpaces = 0;
+			int LeadingTabs = 0;
+			//for comment before document start
+			char* comment_start = nullptr;
+			char* comment_end = nullptr;
+		};
 		class YamlNode
 		{
 		protected:
@@ -28,11 +38,32 @@ namespace X
 
 			int m_leadingSpaces = 0;
 			int m_leadingTabs = 0;
+
+			//for comment
+			char* m_comment_start = nullptr;
+			char* m_comment_end = nullptr;
 		public:
-			YamlNode(char* startPos, int lineNo)
+			YamlNode(char* startPos,Status& s)
 			{
 				m_start_pos = startPos;
-				m_startLineNo = lineNo;
+				m_startLineNo = s.lineNo;
+				if (s.comment_start != nullptr &&
+					s.comment_end != nullptr)
+				{
+					SetComment(s.comment_start, s.comment_end);
+					s.comment_start = s.comment_end = nullptr;
+				}
+			}
+			~YamlNode()
+			{
+				for (auto& p : m_children)
+				{
+					delete p;
+				}
+				if (m_valueNode)
+				{
+					delete m_valueNode;
+				}
 			}
 			void SetStartPos(char* p,int lineNo)
 			{
@@ -55,6 +86,11 @@ namespace X
 			{
 				m_leadingSpaces = spaces;
 				m_leadingTabs = tabs;
+			}
+			void SetComment(char* start, char* end)
+			{
+				m_comment_start = start;
+				m_comment_end = end;
 			}
 			int LeadingSpaces() { return m_leadingSpaces; }
 			bool IsClosed()
@@ -97,17 +133,8 @@ namespace X
 			YamlNodeType Type() { return m_type; }
 			bool IsNullStartPos() { return m_start_pos == nullptr; }
 		};
-
-		struct Status
-		{
-			bool NewLine = false;
-			int lineNo = 1;
-			int LeadingSpaces = 0;
-			int LeadingTabs = 0;
-		};
 		class YamlParser
 		{
-			typedef std::function<void(int)> EventHandler;
 			enum class eventType
 			{
 				Start,
@@ -118,19 +145,21 @@ namespace X
 			int m_size = 0;
 			char* m_cur = nullptr;
 			char* m_last = nullptr;
-			std::unordered_map<eventType, EventHandler> m_Handlers;
-			std::vector<eventType> m_events;
-			void Fire(eventType evt)
-			{
-				m_events.push_back(evt);
-			}
-			void On(eventType evt, EventHandler func)
-			{
-				m_Handlers.emplace(std::make_pair(evt,func));
-			}
-			void Process();
 			bool m_bRun = false;
 
+			YamlNode* m_root = nullptr;
+
+			char getPrevChar()
+			{
+				if (m_cur > m_data)
+				{
+					return *(m_cur - 1);
+				}
+				else
+				{
+					return 0;
+				}
+			}
 			char getChar()
 			{
 				char ch = 0;
@@ -147,17 +176,13 @@ namespace X
 			char* getPos() { return m_cur; }
 			YamlNode* Scan(YamlNode* pCurNode, Status& status);
 			YamlNode* GetParentNode(YamlNode* pCurNode, Status& status);
-			YamlNode* GetParentNode3(YamlNode* pCurNode, Status& status);
-			YamlNode* GetParentNode2(YamlNode* pCurNode, Status& status);
-			bool IsValueNode(YamlNode* pNode);
 		public:
 			YamlParser();
 			~YamlParser();
 			bool Init();
 			bool LoadFromString(char* code, int size);
 			bool Parse();
-			bool Parse3();
-			bool Parse2();
+			void Cleanup();
 		};
 	}
 }

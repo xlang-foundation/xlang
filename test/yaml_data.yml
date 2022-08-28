@@ -1,7 +1,14 @@
+#doc start
+#this is a document for YAML
 ---
- doe: "a deer, a female deer"
+ doe: "a \"deer, 
+
+
+a female deer"
  ray: "a drop of golden sun"
- pi: 3.14159
+ pi: 3.14159 #pi value
+ #xmas 1
+ #xmas 2
  xmas: true
  french-hens: 3
  calling-birds:
@@ -14,7 +21,8 @@
    - 3:
      x: 1
      y: 2
-     z: "wwwwww"
+     z: 'wwwwww.microsoft.
+com'
  xmas-fifth-day:
   calling-birds: four
   french-hens: 3
@@ -23,4 +31,3 @@
     count: 1
     location: "a pear tree"
   turtle-doves: two
-

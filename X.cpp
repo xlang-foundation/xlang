@@ -287,7 +287,7 @@ void test()
 	bool bOK = LoadStringFromFile(g_ParamConfig.fileName, strData);
 	X::Text::YamlParser yml;
 	yml.Init();
-	yml.LoadFromString((char*)strData.c_str(), strData.size());
+	yml.LoadFromString((char*)strData.c_str(), (int)strData.size());
 	yml.Parse();
 
 }

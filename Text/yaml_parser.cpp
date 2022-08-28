@@ -13,7 +13,7 @@ namespace X
 
 		YamlParser::~YamlParser()
 		{
-
+			Cleanup();
 		}
 
 		bool YamlParser::Init()
@@ -25,25 +25,6 @@ namespace X
 			m_data = code;
 			m_size = size;
 			return true;
-		}
-		void YamlParser::Process()
-		{
-			while (m_bRun)
-			{
-				auto it0 = m_events.begin();
-				auto evt = *it0;
-				m_events.erase(it0);
-				EventHandler handler = m_Handlers[evt];
-				try
-				{
-					handler(0);
-				}
-				catch (eventType e) 
-				{
-					std::cout << (int)e << std::endl;
-					Fire(e);
-				}
-			}
 		}
 		YamlNode* YamlParser::GetParentNode(YamlNode* pCurNode, Status& status)
 		{//for sequence
@@ -62,80 +43,6 @@ namespace X
 				else
 				{//greater
 					break;
-				}
-			}
-			return pMyParentNode;
-		}
-		YamlNode* YamlParser::GetParentNode2(YamlNode* pCurNode, Status& status)
-		{//for sequence
-			YamlNode* pMyParentNode = pCurNode;
-			//check if pCurNode is a value node
-			if (IsValueNode(pCurNode))
-			{
-				pMyParentNode = pCurNode;
-			}
-			else
-			{
-				while (pMyParentNode)
-				{
-					if (status.LeadingSpaces == pMyParentNode->LeadingSpaces())
-					{
-						pMyParentNode = pMyParentNode->Parent();
-						break;
-					}
-					else if (status.LeadingSpaces < pMyParentNode->LeadingSpaces())
-					{
-						pMyParentNode = pMyParentNode->Parent();
-						if (pMyParentNode && IsValueNode(pMyParentNode))
-						{
-							pMyParentNode = pMyParentNode->Parent();
-						}
-					}
-					else
-					{//greater
-						break;
-					}
-				}
-			}
-			return pMyParentNode;
-		}
-		bool YamlParser::IsValueNode(YamlNode* pNode)
-		{
-			return (pNode->Parent() &&
-				pNode->Parent()->ValueNode() == pNode);
-		}
-		YamlNode* YamlParser::GetParentNode3(YamlNode* pCurNode, Status& status)
-		{
-			YamlNode* pMyParentNode = pCurNode;
-			if (IsValueNode(pMyParentNode))
-			{
-				//compair wtih the main key part's LeadingSpace
-				YamlNode* pKeyNode = pMyParentNode->Parent();
-				if (status.LeadingSpaces == pKeyNode->LeadingSpaces())
-				{
-					pMyParentNode = pKeyNode->Parent();
-					return pMyParentNode;
-				}
-				else if(status.LeadingSpaces > pKeyNode->LeadingSpaces())
-				{
-					return pCurNode;
-				}
-			}
-			if (status.LeadingSpaces <= pMyParentNode->LeadingSpaces())
-			{
-				pMyParentNode = pMyParentNode->Parent();
-				if (IsValueNode(pMyParentNode))
-				{
-					pMyParentNode = pMyParentNode->Parent();
-				}
-				while (pMyParentNode &&
-					status.LeadingSpaces <= pMyParentNode->LeadingSpaces())
-				{
-					pMyParentNode = pMyParentNode->Parent();
-					if (pMyParentNode && IsValueNode(pMyParentNode))
-					{
-						pMyParentNode = pMyParentNode->Parent();
-					}
 				}
 			}
 			return pMyParentNode;
@@ -167,7 +74,7 @@ namespace X
 					start = getPos();
 					YamlNode* pMyParentNode = GetParentNode(pCurNode, status);
 					//new sequence node
-					YamlNode* pNewNode = new YamlNode(start,status.lineNo);
+					YamlNode* pNewNode = new YamlNode(start,status);
 					pNewNode->SetLeadingInfo(status.LeadingSpaces,
 						status.LeadingTabs);
 					pNewNode->SetType(YamlNodeType::Sequence);
@@ -188,7 +95,7 @@ namespace X
 						}
 						else
 						{//new document
-							pCurNode = new YamlNode(start, status.lineNo);
+							pCurNode = new YamlNode(start, status);
 							pCurNode->SetLeadingInfo(status.LeadingSpaces,
 								status.LeadingTabs);
 							pCurNode->SetType(YamlNodeType::Doc);
@@ -197,7 +104,7 @@ namespace X
 					else
 					{
 						//treat as Key starts from var:start
-						YamlNode* pNewNode = new YamlNode(start, status.lineNo);
+						YamlNode* pNewNode = new YamlNode(start, status);
 						pNewNode->SetLeadingInfo(status.LeadingSpaces,
 							status.LeadingTabs);
 						pNewNode->SetType(YamlNodeType::Dict);
@@ -208,7 +115,7 @@ namespace X
 				else
 				{
 					//treat as Key starts from var:start
-					YamlNode* pNewNode = new YamlNode(start, status.lineNo);
+					YamlNode* pNewNode = new YamlNode(start, status);
 					pNewNode->SetLeadingInfo(status.LeadingSpaces,
 						status.LeadingTabs);
 					pNewNode->SetType(YamlNodeType::Dict);
@@ -220,14 +127,56 @@ namespace X
 			{
 				pCurNode->SetEndPos(start-1, status.lineNo);
 				start = getPos();
-				YamlNode* pNewNode = new YamlNode(start, status.lineNo);
+				YamlNode* pNewNode = new YamlNode(start, status);
 				pCurNode->SetValueNode(pNewNode);
 				//still use pCurNode as Current Node
-				//pCurNode = pNewNode;
 			}
 			else if (ch == '\n')
 			{//end line
 				pCurNode->SetEndPos(start-1, status.lineNo);
+				status.NewLine = true;
+				status.LeadingSpaces = 0;
+				status.LeadingTabs = 0;
+				status.lineNo += 1;
+			}
+			else if ( (ch == '"' || ch=='\'') && getPrevChar() != '\\')
+			{//scan all quoted string
+				char quote_char = ch;
+				char prev_ch = ch;
+				ch = getChar();
+				while (ch != quote_char || prev_ch == '\\')//for case \" or \' inside quotes
+				{
+					prev_ch = ch;
+					ch = getChar();
+				}
+			}
+			else if (ch == '#' && getPrevChar()!='\\')//not like \#
+			{//scan until meet end of line
+				//treat like to end line
+				bool curIsClosed = pCurNode?pCurNode->IsClosed():false;
+				if (pCurNode && !curIsClosed)
+				{
+					pCurNode->SetEndPos(start - 1, status.lineNo);
+				}
+				char* commment_start = start;
+				while (ch != '\n')
+				{
+					ch = getChar();
+				}
+				char* commment_end = getPos() - 1;
+				if (pCurNode && !curIsClosed)
+				{
+					pCurNode->SetComment(commment_start, commment_end);
+				}
+				else
+				{//just put into status, then next document will pick it up
+					if (status.comment_start == nullptr)
+					{//for multiple lines
+						status.comment_start = commment_start;
+					}
+					status.comment_end = commment_end;
+				}
+				//end line
 				status.NewLine = true;
 				status.LeadingSpaces = 0;
 				status.LeadingTabs = 0;
@@ -240,7 +189,7 @@ namespace X
 				if (pCurNode->IsClosed())
 				{
 					YamlNode* pMyParentNode = GetParentNode(pCurNode,status);
-					YamlNode* pNewNode = new YamlNode(start, status.lineNo);
+					YamlNode* pNewNode = new YamlNode(start, status);
 					pNewNode->SetParent(pMyParentNode);
 					pNewNode->SetLeadingInfo(status.LeadingSpaces,
 						status.LeadingTabs);
@@ -275,87 +224,20 @@ namespace X
 					pRootNode = pCurNode;
 				}
 			}
-			return true;
-		}
-		bool YamlParser::Parse3()
-		{
-			On(eventType::Start, [this](int x)
+			if (pCurNode && !pCurNode->IsClosed())
 			{
-				getChar();
-			});
-			On(eventType::End, [this](int x)
-			{
-					m_bRun = false;
-			});
-			//init
-			m_cur = m_data;
-			//m_last = m_data + m_size;
-			m_bRun = true;
-			Fire(eventType::Start);
-			Process();
-			return true;
-		}
-		bool YamlParser::Parse2()
-		{
-			struct statusInfo
-			{
-				
-			};
-			char* start = m_data;
-			char* end = m_data + m_size;
-			while (start<end)
-			{
-				char ch = *start++;
-				//feed space at line begin
-				int space_cnt = 0;
-				while (ch == ' ' && start<end)
-				{
-					space_cnt++;
-					ch = *start++;
-				}
-				if (ch == '-')
-				{
-					if (space_cnt == 0)
-					{
-						if (start < (end - 2) && *start =='-' && *(start+1) =='-')
-						{
-							//document start
-							start += 2;
-							continue;
-						}
-					}
-					if (start < end && *start == ' ')
-					{
-						//enter sequence
-						start++;
-						continue;
-					}
-				}
-				if (ch == ':')
-				{
-					if (start < end && *start == ' ')
-					{
-						//meet common case
-						start++;
-						//process chars before
-
-						continue;
-					}
-				}
-				if (ch == '"' || ch == '\'')
-				{
-
-				}
-				if (ch == '#')
-				{
-
-				}
-				if (ch == '\n')
-				{
-
-				}
+				pCurNode->SetEndPos(getPos(), status.lineNo);
 			}
+			m_root = pRootNode;
 			return true;
+		}
+		void YamlParser::Cleanup()
+		{
+			if (m_root)
+			{
+				delete m_root;
+				m_root = nullptr;
+			}
 		}
 	}
 }
