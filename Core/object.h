@@ -16,15 +16,20 @@
 namespace X {
 	namespace AST { class Scope; }
 	typedef X::Value(*EnumProc)(X::Value& elm, unsigned long long idx);
+	typedef X::Value(*IterateProc)(
+		X::XRuntime* rt, void* pContext,
+		X::Value& keyOrIdx,X::Value& val,ARGS& params,KWARGS& kwParams);
 class Runtime;
 namespace Data {
 	class List;
+	class AttributeBag;
 	class Object :
 		virtual public XObj,
 		virtual public ObjRef
 	{
 	protected:
 		ObjType m_t = ObjType::Base;
+		AttributeBag* m_aBag = nullptr;
 		Locker m_lock;
 	public:
 		Object()
@@ -33,6 +38,7 @@ namespace Data {
 		}
 		virtual ~Object()
 		{
+			DeleteAttrBag();
 			G::I().RemoveObj(this);
 		}
 		inline virtual int IncRef()
@@ -40,6 +46,8 @@ namespace Data {
 			AutoLock(m_lock);
 			return ObjRef::AddRef();
 		}
+		AttributeBag* GetAttrBag();
+		void DeleteAttrBag();
 		inline virtual int DecRef()
 		{
 			AutoLock(m_lock);
@@ -64,6 +72,11 @@ namespace Data {
 		virtual List* FlatPack(Runtime* rt,long long startIndex,long long count)
 		{ 
 			return nullptr; 
+		}
+		virtual bool Iterate(X::XRuntime* rt, void* pContext,
+			IterateProc proc,ARGS& params, KWARGS& kwParams)
+		{
+			return true;
 		}
 		virtual bool CalcCallables(Runtime* rt, void* pContext,
 			std::vector<AST::Scope*>& callables)

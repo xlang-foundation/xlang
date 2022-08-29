@@ -57,6 +57,27 @@ public:
 		}
 		return outs;
 	}
+	virtual bool Iterate(X::XRuntime* rt, void* pContext,
+		IterateProc proc, ARGS& params, KWARGS& kwParams) override
+	{
+		if (m_useLValue)
+		{
+			for (size_t i = 0; i < m_ptrs.size(); i++)
+			{
+				X::Value idx((int)i);
+				proc(rt, pContext,idx,* m_ptrs[i], params, kwParams);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < m_data.size(); i++)
+			{
+				X::Value idx((int)i);
+				proc(rt, pContext, idx,m_data[i], params, kwParams);
+			}
+		}
+		return true;
+	}
 	void Each(EnumProc proc)
 	{
 		if (m_useLValue)

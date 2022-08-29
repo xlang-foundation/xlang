@@ -38,8 +38,9 @@ public:
 		{
 			ScopeLayout();
 			if (Index == -1 || m_scope == nullptr)
-			{
-				return false;
+			{//treat as string
+				v = Value(Name.s, Name.size);
+				return true;
 			}
 		}
 		m_scope->Get(rt, pContext, Index, v, lValue);

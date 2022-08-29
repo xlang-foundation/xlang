@@ -6,6 +6,7 @@
 #include "function.h"
 #include "funclist.h"
 #include "moduleobject.h"
+#include "metascope.h"
 
 namespace X
 {
@@ -58,6 +59,7 @@ void DotOp::QueryBases(Runtime* rt,void* pObj0,
 		ModuleObject* pModuleObj = dynamic_cast<ModuleObject*>(pObj);
 		bases.push_back(pModuleObj->M());
 	}
+	bases.push_back(&MetaScope::I());
 }
 void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
 	std::vector<Scope*>& scopes)
@@ -106,6 +108,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	{
 		RunScopeLayoutWithScopes(R, scopes);
 	}
+
 	Data::FuncCalls* pCallList = nil;
 	Data::List* pValueList = nil;
 
@@ -186,7 +189,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	if (pLeftObj0)
 	{
 		Data::Object* pLeftObj = (Data::Object*)pLeftObj0;
-		if (pLeftObj->GetType() == X::ObjType::List)
+		if (false /*pLeftObj->GetType() == X::ObjType::List*/)
 		{
 			Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
 			if (pList)

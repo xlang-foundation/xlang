@@ -24,6 +24,8 @@
 #include "BlockStream.h"
 #include "xpackage.h"
 #include "json.h"
+#include "metascope.h"
+#include "attribute.h"
 
 Locker _printLock;
 bool U_Print(X::XRuntime* rt,void* pContext,
@@ -229,13 +231,22 @@ namespace X {
 	return (it!= m_mapFuncs.end())?it->second:nil;
 }
 bool Builtin::Register(const char* name, void* func,
-	std::vector<std::pair<std::string, std::string>>& params)
+	std::vector<std::pair<std::string, std::string>>& params,
+	bool regToMeta)
 {
 	std::string strName(name);
 	AST::ExternFunc* extFunc = new AST::ExternFunc(
 		strName,
 		(X::U_FUNC)func);
 	m_mapFuncs.emplace(std::make_pair(name,extFunc));
+	if (regToMeta)
+	{
+		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);
+		auto* pFuncObj = new Data::Function(extFunc);
+		pFuncObj->AddRef();
+		X::Value vFunc(pFuncObj);
+		X::AST::MetaScope::I().Set(nullptr, nullptr, idx,vFunc);
+	}
 	return true;
 }
 
@@ -377,7 +388,162 @@ bool U_RemovePath(X::XRuntime* rt, void* pContext,
 	}
 	return true;
 }
+bool U_SetAttribute(X::XRuntime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::Data::Object* pObj = nullptr;
+	std::string name;
+	X::Value val;
+	if (pContext == nullptr)
+	{//format setattr(obj,name,value)
+		if (params.size() < 3 || !params[0].IsObject())
+		{
+			retValue = X::Value();
+			return false;
+		}
+		pObj = dynamic_cast<X::Data::Object*>(params[0].GetObj());
+		name = params[1].ToString();
+		val = params[2];
+	}
+	else
+	{
+		if (params.size() < 2)
+		{
+			retValue = X::Value();
+			return false;
+		}
+		pObj = (X::Data::Object*)pContext;
+		name = params[0].ToString();
+		val = params[1];
+	}
+	auto* aBag = pObj->GetAttrBag();
+	aBag->Set(name, val);
+	retValue = X::Value(true);
+	return true;
+}
+bool U_GetAttribute(X::XRuntime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::Data::Object* pObj = nullptr;
+	std::string name;
+	if (pContext == nullptr)
+	{//format getattr(obj,name)
+		if (params.size() < 2 || !params[0].IsObject())
+		{
+			retValue = X::Value();
+			return false;
+		}
+		pObj = dynamic_cast<X::Data::Object*>(params[0].GetObj());
+		name = params[1].ToString();
+	}
+	else
+	{
+		if (params.size() < 1)
+		{
+			retValue = X::Value();
+			return false;
+		}
+		pObj = (X::Data::Object*)pContext;
+		name = params[0].ToString();
+	}
+	auto* aBag = pObj->GetAttrBag();
+	retValue = aBag->Get(name);
+	return true;
+}
+bool U_DeleteAttribute(X::XRuntime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::Data::Object* pObj = nullptr;
+	std::string name;
+	if (pContext == nullptr)
+	{//format delattr(obj,name)
+		if (params.size() < 2 || !params[0].IsObject())
+		{
+			retValue = X::Value();
+			return false;
+		}
+		pObj = dynamic_cast<X::Data::Object*>(params[0].GetObj());
+		name = params[1].ToString();
+	}
+	else
+	{
+		if (params.size() < 1)
+		{
+			retValue = X::Value();
+			return false;
+		}
+		pObj = (X::Data::Object*)pContext;
+		name = params[0].ToString();
+	}
+	auto* aBag = pObj->GetAttrBag();
+	aBag->Delete(name);
+	retValue = X::Value(true);
+	return true;
+}
+bool U_Each(X::XRuntime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	auto proc = [](X::XRuntime* rt, void* pContext,X::Value& keyOrIdx, X::Value& val,
+		ARGS& params, KWARGS& kwParams)
+	{
+		X::Value vfunc = params[0];
+		X::Data::Function* pFuncObj = dynamic_cast<X::Data::Function*>(vfunc.GetObj());
+		X::AST::Func* pFunc = pFuncObj->GetFunc();
 
+		X::Value retVal;
+		ARGS params_to_cb;
+		params_to_cb.push_back(keyOrIdx);
+		params_to_cb.push_back(val);
+		for (int i = 1; i < params.size(); i++)
+		{
+			params_to_cb.push_back(params[i]);
+		}
+		pFunc->Call(rt, pContext, params_to_cb, kwParams, retVal);
+		return retVal;
+	};
+	ARGS params_proc;
+
+	X::Data::Object* pObj = nullptr;
+	if (pContext == nullptr)
+	{//format delattr(obj,name)
+		if (params.size() < 2 || !params[0].IsObject())
+		{
+			retValue = X::Value();
+			return false;
+		}
+		pObj = dynamic_cast<X::Data::Object*>(params[0].GetObj());
+		for (int i = 1; i < params.size(); i++)
+		{
+			params_proc.push_back(params[i]);
+		}
+	}
+	else
+	{
+		if (params.size() < 1)
+		{
+			retValue = X::Value();
+			return false;
+		}
+		pObj = (X::Data::Object*)pContext;
+		for (int i = 0; i < params.size(); i++)
+		{
+			params_proc.push_back(params[i]);
+		}
+	}
+	if (pObj)
+	{
+		pObj->Iterate(rt, pContext,proc, params_proc, kwParams);
+	}
+	return true;
+}
 bool Builtin::RegisterInternals()
 {
 	REGISTER_PACKAGE("json", X::JsonWrapper);
@@ -397,6 +563,10 @@ bool Builtin::RegisterInternals()
 	Register("addpath", (void*)U_AddPath, params);
 	Register("removepath", (void*)U_RemovePath, params);
 	Register("bytes", (void*)U_ToBytes, params);
+	Register("setattr", (void*)U_SetAttribute, params,true);
+	Register("getattr", (void*)U_GetAttribute, params,true);
+	Register("delattr", (void*)U_DeleteAttribute, params, true);
+	Register("each", (void*)U_Each, params, true);
 	return true;
 }
 }
