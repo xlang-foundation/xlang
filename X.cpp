@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
 		PrintUsage();
 		return 0;
 	}
-	test();
+	//test();
 
 	signal(SIGINT, signal_callback_handler);
 

@@ -8,10 +8,9 @@ include_directories("../Inc")
 include_directories("../Ext")
 include_directories("../Http")
 
-FILE(GLOB Main_SRC "*.cpp")
+FILE(GLOB Main_SRC "*.cpp" "../Core/Locker.cpp")
 FILE(GLOB Dev_SRC "../Ext/gthread.cpp" 
 		"../Ext/ipc.cpp"
-		"../Ext/Locker.cpp"
 		"../Ext/wait.cpp"
 		"../utils/utility.cpp")
 

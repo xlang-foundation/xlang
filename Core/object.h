@@ -11,6 +11,7 @@
 #include "objref.h"
 #include "xlang.h"
 #include "XLangStream.h"
+#include "Locker.h"
 
 namespace X {
 	namespace AST { class Scope; }
@@ -24,6 +25,7 @@ namespace Data {
 	{
 	protected:
 		ObjType m_t = ObjType::Base;
+		Locker m_lock;
 	public:
 		Object()
 		{
@@ -35,11 +37,21 @@ namespace Data {
 		}
 		inline virtual int IncRef()
 		{
+			AutoLock(m_lock);
 			return ObjRef::AddRef();
 		}
 		inline virtual int DecRef()
 		{
+			AutoLock(m_lock);
 			return ObjRef::Release();
+		}
+		inline void Lock()
+		{
+			m_lock.Lock();
+		}
+		inline void Unlock()
+		{
+			m_lock.Unlock();
 		}
 		inline bool IsFunc()
 		{
