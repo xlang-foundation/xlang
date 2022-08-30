@@ -7,7 +7,7 @@ namespace X
 namespace AST
 {
 class Var :
-	public Expression
+	virtual public Expression
 {
 	String Name;
 	int Index = -1;//index for this Var,set by compiling

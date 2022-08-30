@@ -206,7 +206,7 @@ std::string X::AST::Import::ConvertDotSeqToString(
 	std::string rightName;
 	if (L0 && L0->m_type == ObType::Var)
 	{
-		leftName = ((Var*)L0)->GetNameString();
+		leftName = (dynamic_cast<Var*>(L0))->GetNameString();
 	}
 	if (R0)
 	{
@@ -216,7 +216,7 @@ std::string X::AST::Import::ConvertDotSeqToString(
 		}
 		else if (R0->m_type == ObType::Var)
 		{
-			rightName = ((Var*)R0)->GetNameString();
+			rightName = (dynamic_cast<Var*>(R0))->GetNameString();
 		}
 	}
 	return leftName + "." + rightName;
@@ -229,7 +229,7 @@ void X::AST::Import::ScopeLayout()
 	{
 		if (L->m_type == ObType::From)
 		{
-			m_path = ((From*)L)->GetPath();
+			m_path = (dynamic_cast<From*>(L))->GetPath();
 		}
 	}
 	auto proc_AsOP = [&](Expression* expr)
@@ -243,7 +243,7 @@ void X::AST::Import::ScopeLayout()
 		{
 			if (L0->m_type == ObType::Var)
 			{
-				leftName = ((Var*)L0)->GetNameString();
+				leftName = (dynamic_cast<Var*>(L0))->GetNameString();
 			}
 			else if (L0->m_type == ObType::Dot)
 			{
@@ -252,7 +252,7 @@ void X::AST::Import::ScopeLayout()
 		}
 		if (R0 && R0->m_type == ObType::Var)
 		{
-			rightName = ((Var*)R0)->GetNameString();
+			rightName = (dynamic_cast<Var*>(R0))->GetNameString();
 		}
 		ImportInfo importInfo;
 		importInfo.name = leftName;
@@ -261,7 +261,7 @@ void X::AST::Import::ScopeLayout()
 	};
 	auto proc_Var = [&](Expression* expr)
 	{
-		auto name = ((Var*)expr)->GetNameString();
+		auto name = (dynamic_cast<Var*>(expr))->GetNameString();
 		ImportInfo importInfo;
 		importInfo.name = name;
 		m_importInfos.push_back(importInfo);

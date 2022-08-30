@@ -8,7 +8,7 @@ namespace X
 namespace AST
 {
 	class PairOp :
-		public BinaryOp
+		virtual public BinaryOp
 	{
 		short m_preceding_token = 0;
 		bool ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
@@ -23,6 +23,7 @@ namespace AST
 			Value& v, LValue* lValue);
 	public:
 		PairOp(short opIndex, short preceding_token) :
+			Operator(opIndex),
 			BinaryOp(opIndex)
 		{
 			m_preceding_token = preceding_token;

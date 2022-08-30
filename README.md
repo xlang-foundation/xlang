@@ -47,3 +47,5 @@ sudo apt-get install python3.10-dev
 #For uuid/uuid.h in linux -wsl, maybe need to run line below
 sudo apt-get install uuid-dev
 
+#8/30/2022. Windows 11 Python install from Store, issues
+https://stackoverflow.com/questions/58754860/cmd-opens-windows-store-when-i-type-python

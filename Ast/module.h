@@ -46,8 +46,8 @@ struct CommandInfo
 };
 
 class Module :
-	public Block,
-	public Scope
+	virtual public Block,
+	virtual public Scope
 {
 	Locker m_lockSearchPath;
 	std::vector<std::string> m_searchPaths;

@@ -9,7 +9,7 @@
       "args.bak": [ "-dbg", "-enable_python", "\"-c 'import fs\n'\"", "c:/Dev/X/Scripts/service.x", "--x", "--y=10" ],
       "args11": [ "C:\\Dev\\X\\Scripts\\service.x" ],
       "args12": [ "C:\\Dev\\X\\test\\serialize_test.x" ],
-      "args2": [ "C:\\Dev\\X\\test\\json_test.x" ],
+      "args112": [ "-enable_python", "C:\\Dev\\X\\test\\simple.x" ],
       "args11d": [ "C:\\Dev\\X\\test\\testimportX.x" ],
       "args_yaml": [ "C:\\Dev\\X\\test\\yaml_data.yml" ],
       "args": [ "C:\\Dev\\X\\test\\attr_test.x" ],

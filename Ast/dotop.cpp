@@ -66,7 +66,7 @@ void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
 {
 	if (pExpr->m_type == ObType::Pair)
 	{
-		PairOp* pPair = (PairOp*)pExpr;
+		PairOp* pPair = dynamic_cast<PairOp*>(pExpr);
 		Expression* pair_r = pPair->GetR();
 		if (pair_r && pair_r->m_type == ObType::List)
 		{
@@ -150,7 +150,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	{
 		if (pExpr->m_type == ObType::Pair)
 		{
-			PairOp* pPair = (PairOp*)pExpr;
+			PairOp* pPair = dynamic_cast<PairOp*>(pExpr);
 			Expression* pair_r = pPair->GetR();
 			if (pair_r && pair_r->m_type == ObType::List)
 			{
@@ -248,19 +248,19 @@ bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 	}
 	if (L->m_type == ObType::Number)
 	{	
-		Number* pLeftNum = (Number*)L;
+		Number* pLeftNum = dynamic_cast<Number*>(L);
 		double dValue = (double)pLeftNum->GetVal();
 		double fraction = 0;
 		int digiNum = 0;
 		if (R->m_type == ObType::Number)
 		{
-			Number* pNum = (Number*)R;
+			Number* pNum = dynamic_cast<Number*>(R);
 			fraction = (double)pNum->GetVal();
 			digiNum = pNum->GetDigiNum();
 		}
 		else if(R->m_type == ObType::Var)
 		{
-			String name = ((Var*)R)->GetName();
+			String name = (dynamic_cast<Var*>(R))->GetName();
 			double dVal =0;
 			long long llVal =0;
 			ParseState st = ParseNumber(name, dVal, llVal);
@@ -291,7 +291,7 @@ bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 	Expression* r = R;
 	while (r->m_type == ObType::Dot)
 	{
-		DotOp* dotR = (DotOp*)r;
+		DotOp* dotR = dynamic_cast<DotOp*>(r);
 		Value v0;
 		LValue lValue0=nil;
 		DotProcess(rt, pContext, v_l, dotR->GetL(),v0,&lValue0);

@@ -102,7 +102,7 @@ public:
 	ObType m_type = ObType::Base;
 };
 class Str :
-	public Expression
+	virtual public Expression
 {
 	bool m_haveFormat = false;
 	char* m_s = nil;
@@ -129,7 +129,7 @@ public:
 	}
 };
 class Number :
-	public Expression
+	virtual public Expression
 {
 	long long m_val;
 	int m_digiNum = 0;
@@ -165,7 +165,7 @@ public:
 	}
 };
 class Double :
-	public Expression
+	virtual public Expression
 {
 	double m_val;
 public:
@@ -176,7 +176,7 @@ public:
 	}
 };
 class List :
-	public Expression
+	virtual public Expression
 {
 	std::vector<Expression*> list;
 public:
@@ -256,7 +256,7 @@ public:
 	}
 };
 class Param :
-	public Expression
+	virtual public Expression
 {
 	Expression* Name = nil;
 	Expression* Type = nil;

@@ -9,15 +9,14 @@ namespace X
 namespace AST
 {
 class Operator :
-	public Expression
+	virtual public Expression
 {
 protected:
-	short Op;//index of _kws
+	short Op=0;//index of _kws
 	OP_ID opId = OP_ID::None;
 public:
 	Operator()
 	{
-		Op = 0;
 	}
 	Operator(short op)
 	{
@@ -37,12 +36,16 @@ public:
 };
 
 class BinaryOp :
-	public Operator
+	virtual public Operator
 {
 protected:
 	Expression* L=nil;
 	Expression* R = nil;
 public:
+	BinaryOp()
+	{
+
+	}
 	BinaryOp(short op):
 		Operator(op)
 	{
@@ -94,6 +97,7 @@ public:
 	{
 		if (!operands.empty())
 		{
+
 			auto operandR = operands.top();
 			operands.pop();
 			SetR(operandR);
@@ -152,11 +156,12 @@ public:
 	}
 };
 class Assign :
-	public BinaryOp
+	virtual public BinaryOp
 {
 	bool AssignToDataObject(Runtime* rt,void* pObjPtr);
 public:
 	Assign(short op) :
+		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::Assign;
@@ -273,7 +278,7 @@ public:
 	}
 };
 class ColonOP :
-	public Operator
+	virtual public Operator
 {
 public:
 	ColonOP(short op) :
@@ -284,7 +289,7 @@ public:
 		std::stack<AST::Expression*>& operands);
 };
 class CommaOp :
-	public Operator
+	virtual public Operator
 {
 public:
 	CommaOp(short op) :
@@ -295,7 +300,7 @@ public:
 		std::stack<AST::Expression*>& operands);
 };
 class SemicolonOp :
-	public Operator
+	virtual public Operator
 {
 public:
 	SemicolonOp(short op) :
@@ -307,7 +312,7 @@ public:
 };
 
 class UnaryOp :
-	public Operator
+	virtual public Operator
 {
 protected:
 	Expression* R = nil;
@@ -368,7 +373,7 @@ public:
 	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
-	public UnaryOp
+	virtual public UnaryOp
 {
 	bool m_evaluated = false;
 	long long m_start=0;
@@ -378,6 +383,7 @@ class Range :
 	bool Eval(Runtime* rt);
 public:
 	Range(short op) :
+		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::Range;
@@ -386,10 +392,11 @@ public:
 	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class InOp :
-	public BinaryOp
+	virtual public BinaryOp
 {
 public:
 	InOp(short op) :
+		Operator(op),
 		BinaryOp(op)
 	{
 	}

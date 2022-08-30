@@ -90,6 +90,10 @@ bool LoadPythonEngine()
 	}
 	else
 	{
+#if (WIN32)
+		DWORD err = GetLastError();
+		err = err;
+#endif
 		return false;
 	}
 }

@@ -31,7 +31,7 @@ struct Indent
 	}
 };
 class Block:
-	public UnaryOp
+	virtual public UnaryOp
 {
 	bool NoIndentCheck = false;//just for lambda block
 	Indent IndentCount = { 0,-1,-1 };
@@ -43,6 +43,7 @@ public:
 	{
 	}
 	Block(short op) :
+		Operator(op),
 		UnaryOp(op)
 	{
 	}
@@ -81,20 +82,22 @@ public:
 	virtual bool Run(XRuntime* rt,void* pContext, Value& v, LValue* lValue = nullptr);
 };
 class For :
-	public Block
+	virtual public Block
 {
 public:
 	For(short op):
+		Operator(op),
 		Block(op)
 	{
 	}
 	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class While :
-	public Block
+	virtual public Block
 {
 public:
 	While(short op) :
+		Operator(op), 
 		Block(op)
 	{
 	}
@@ -103,12 +106,12 @@ public:
 };
 
 class If :
-	public Block
+	virtual public Block
 {
 	If* m_next = nil;//elif  or else
 public:
 	If(short op,bool needParam =true) :
-		Block(op)
+		Operator(op),Block(op)
 	{
 		NeedParam = needParam;
 	}

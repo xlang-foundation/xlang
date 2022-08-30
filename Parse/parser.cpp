@@ -214,7 +214,7 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 		auto top = m_curBlkState->OpTop();
 		if (top->getOp() == pairLeftToken)
 		{
-			pPair = (AST::PairOp*)top;
+			pPair = dynamic_cast<AST::PairOp*>(top);
 			m_curBlkState->OpPop();
 			break;
 		}
@@ -256,7 +256,7 @@ bool Parser::LastIsLambda()
 		auto lastOpernad = m_curBlkState->OperandTop();
 		if (lastOpernad->m_type == AST::ObType::Pair)
 		{
-			AST::PairOp* pPair = (AST::PairOp*)lastOpernad;
+			AST::PairOp* pPair = dynamic_cast<AST::PairOp*>(lastOpernad);
 			if (pPair->GetId() == OP_ID::Parenthesis_L
 				&& pPair->GetL() == nil)
 			{
@@ -266,7 +266,7 @@ bool Parser::LastIsLambda()
 					if (p_r->m_type == AST::ObType::List)
 					{
 						IsLambda = true;
-						auto& list = ((AST::List*)p_r)->GetList();
+						auto& list = (dynamic_cast<AST::List*>(p_r))->GetList();
 						for (auto i : list)
 						{
 							if (i->m_type != AST::ObType::Var &&
@@ -451,7 +451,7 @@ AST::Module* Parser::GetModule()
 	if (!m_stackBlocks.empty())
 	{
 		BlockState* pBlockState = m_stackBlocks.top();
-		pTopModule = (AST::Module*)pBlockState->Block();
+		pTopModule = dynamic_cast<AST::Module*>(pBlockState->Block());
 	}
 	return pTopModule;
 }

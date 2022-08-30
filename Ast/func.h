@@ -12,8 +12,8 @@ namespace X
 namespace AST
 {
 class Func :
-	public Block,
-	public Scope
+	virtual public Block,
+	virtual public Scope
 {
 protected:
 	String m_Name = { nil,0 };
@@ -97,7 +97,7 @@ public:
 	{
 		if (r->m_type == AST::ObType::Pair)
 		{//have to be a pair
-			AST::PairOp* pair = (AST::PairOp*)r;
+			AST::PairOp* pair =dynamic_cast<AST::PairOp*>(r);
 			AST::Expression* paramList = pair->GetR();
 			if (paramList)
 			{
@@ -108,7 +108,7 @@ public:
 				}
 				else
 				{
-					SetParams((AST::List*)paramList);
+					SetParams(dynamic_cast<AST::List*>(paramList));
 				}
 			}
 			pair->SetR(nil);//clear R, because it used by SetParams
@@ -145,7 +145,7 @@ public:
 		Value& v, LValue* lValue = nullptr) override;
 };
 class ExternFunc
-	:public Func
+	:virtual public Func
 {
 	std::string m_funcName;
 	U_FUNC m_func;

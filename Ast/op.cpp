@@ -48,7 +48,7 @@ namespace AST
 		}
 		else
 		{
-			auto& list = ((List*)e)->GetList();
+			auto& list = (dynamic_cast<List*>(e))->GetList();
 			for (auto i : list)
 			{
 				bOK = proc(i);
@@ -151,7 +151,7 @@ bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 		}
 		else
 		{
-			list = (AST::List*)operandL;
+			list = dynamic_cast<AST::List*>(operandL);
 		}
 	}
 	else
@@ -164,7 +164,7 @@ bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 	}
 	else
 	{
-		List& list_r = *(AST::List*)operandR;
+		List& list_r = *dynamic_cast<AST::List*>(operandR);
 		*list += list_r;
 		list_r.ClearList();
 		delete operandR;

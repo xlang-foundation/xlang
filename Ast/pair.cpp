@@ -67,7 +67,7 @@ bool PairOp::GetItemFromList(Runtime* rt, void* pContext,
 	std::vector<long long> IdxAry;
 	if (R->m_type == ObType::List)
 	{
-		auto& list = ((List*)R)->GetList();
+		auto& list = (dynamic_cast<List*>(R))->GetList();
 		for (auto e : list)
 		{
 			Value v1;
@@ -126,7 +126,7 @@ bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 		Data::List* pDataList = new Data::List();
 		if (R && R->m_type == ObType::List)
 		{
-			auto& list = ((List*)R)->GetList();
+			auto& list = (dynamic_cast<List*>(R))->GetList();
 			for (auto e : list)
 			{
 				Value v;
@@ -169,15 +169,15 @@ bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 		switch (i->m_type)
 		{
 		case ObType::Param:
-			((Param*)i)->GetName()->Run(rt, pContext, Key);
-			((Param*)i)->GetType()->Run(rt, pContext, Val);
+			(dynamic_cast<Param*>(i))->GetName()->Run(rt, pContext, Key);
+			(dynamic_cast<Param*>(i))->GetType()->Run(rt, pContext, Val);
 			break;
 		case ObType::Assign:
-			((Assign*)i)->GetL()->Run(rt, pContext, Key);
-			((Assign*)i)->GetL()->Run(rt, pContext, Val);
+			(dynamic_cast<Assign*>(i))->GetL()->Run(rt, pContext, Key);
+			(dynamic_cast<Assign*>(i))->GetL()->Run(rt, pContext, Val);
 			break;
 		case ObType::Var:
-			((Var*)i)->Run(rt, pContext, Key);
+			(dynamic_cast<Var*>(i))->Run(rt, pContext, Key);
 			break;
 		default:
 			break;
@@ -187,7 +187,7 @@ bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 	};
 	if (R->m_type == ObType::List)
 	{
-		auto& list = ((AST::List*)R)->GetList();
+		auto& list = (dynamic_cast<AST::List*>(R))->GetList();
 		for (auto& i : list)
 		{
 			SetKWProc(i,pDict);
@@ -210,7 +210,7 @@ bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 		Value valDefaultValue;
 		if (name && name->m_type == ObType::Var)
 		{
-			String& szName = ((Var*)name)->GetName();
+			String& szName = (dynamic_cast<Var*>(name))->GetName();
 			strName = std::string(szName.s, szName.size);
 		}
 		auto type0 = p->GetType();
@@ -218,11 +218,11 @@ bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 		{
 			while (type0->m_type == ObType::Param)
 			{
-				auto p0 = (Param*)type0;
+				auto p0 = dynamic_cast<Param*>(type0);
 				auto name0 = p0->GetName();
 				if (name0 && name0->m_type == ObType::Var)
 				{
-					String& sz0 = ((Var*)name0)->GetName();
+					String& sz0 = (dynamic_cast<Var*>(name0))->GetName();
 					std::string str0 = std::string(sz0.s, sz0.size);
 					props.push_back(str0);
 				}
@@ -230,11 +230,11 @@ bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 			}
 			if (type0->m_type == ObType::Assign)
 			{
-				auto assign0 = (Assign*)type0;
+				auto assign0 = dynamic_cast<Assign*>(type0);
 				auto name0 = assign0->GetL();
 				if (name0 && name0->m_type == ObType::Var)
 				{
-					String& sz0 = ((Var*)name0)->GetName();
+					String& sz0 = (dynamic_cast<Var*>(name0))->GetName();
 					std::string str0 = std::string(sz0.s, sz0.size);
 					props.push_back(str0);
 				}
@@ -244,7 +244,7 @@ bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 			}
 			else if (type0->m_type == ObType::Var)
 			{
-				String& sz0 = ((Var*)type0)->GetName();
+				String& sz0 = (dynamic_cast<Var*>(type0))->GetName();
 				std::string str0 = std::string(sz0.s, sz0.size);
 				props.push_back(str0);
 			}
@@ -255,12 +255,12 @@ bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 	{
 		if (R->m_type == ObType::List)
 		{
-			auto& list = ((List*)R)->GetList();
+			auto& list = (dynamic_cast<List*>(R))->GetList();
 			for (auto e : list)
 			{
 				if (e->m_type == ObType::Param)
 				{
-					parsParam((Param*)e);
+					parsParam(dynamic_cast<Param*>(e));
 				}
 				else
 				{//todo: error
@@ -270,7 +270,7 @@ bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 		}
 		else if (R->m_type == ObType::Param)
 		{
-			parsParam((Param*)R);
+			parsParam(dynamic_cast<Param*>(R));
 		}
 		else
 		{

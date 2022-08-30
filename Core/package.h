@@ -54,24 +54,24 @@ public:
 		{
 			if (l->m_type == ObType::Var)
 			{
-				l_name = ((Var*)l)->GetNameString();
+				l_name = (dynamic_cast<Var*>(l))->GetNameString();
 			}
 			else if (l->m_type == ObType::BinaryOp)
 			{				
-				l_name = CalcPath(((BinaryOp*)l)->GetL(),
-					((BinaryOp*)l)->GetR());
+				l_name = CalcPath((dynamic_cast<BinaryOp*>(l))->GetL(),
+					(dynamic_cast<BinaryOp*>(l))->GetR());
 			}
 		}
 		if (r)
 		{
 			if (r->m_type == ObType::Var)
 			{
-				r_name = ((Var*)r)->GetNameString();
+				r_name = (dynamic_cast<Var*>(r))->GetNameString();
 			}
 			else if (r->m_type == ObType::BinaryOp)
 			{
-				r_name = CalcPath(((BinaryOp*)r)->GetL(),
-					((BinaryOp*)r)->GetR());
+				r_name = CalcPath((dynamic_cast<BinaryOp*>(r))->GetL(),
+					(dynamic_cast<BinaryOp*>(r))->GetR());
 			}
 		}
 		return l_name + "/" + r_name;
@@ -85,12 +85,12 @@ public:
 		{
 			if (R->m_type == ObType::Var)
 			{
-				m_path = ((Var*)R)->GetNameString();
+				m_path = (dynamic_cast<Var*>(R))->GetNameString();
 			}
 			else if (R->m_type == ObType::BinaryOp)
 			{
-				m_path = CalcPath(((BinaryOp*)R)->GetL(),
-					((BinaryOp*)R)->GetR());
+				m_path = CalcPath((dynamic_cast<BinaryOp*>(R))->GetL(),
+					(dynamic_cast<BinaryOp*>(R))->GetR());
 			}
 		}
 	}

@@ -11,11 +11,13 @@ namespace X
 	namespace AST
 	{
 		class PipeOp :
-			public DotOp
+			virtual public DotOp
 		{
 		public:
-			PipeOp(short idx)
-				:DotOp(idx,1)
+			PipeOp(short idx):
+				Operator(idx),
+				BinaryOp(idx),
+				DotOp(idx,1)
 			{
 				m_type = ObType::PipeOp;
 			}
@@ -89,7 +91,7 @@ namespace X
 				//do one pipe with x|expR
 				if (val_l.IsObject() && expR->m_type == ObType::Pair)
 				{
-					PairOp* pPair0 = (PairOp*)expR;
+					PairOp* pPair0 = dynamic_cast<PairOp*>(expR);
 					auto* pairL = pPair0->GetL();
 					if (pairL == nullptr)
 					{
@@ -130,7 +132,7 @@ namespace X
 				bool bOK = true;
 				if (R1->m_type == ObType::PipeOp)
 				{
-					PipeOp* pPipeOp = (PipeOp*)R1;
+					PipeOp* pPipeOp = dynamic_cast<PipeOp*>(R1);
 					Expression* L2 = pPipeOp->GetL();
 					Expression* R2 = pPipeOp->GetR();
 					Value v_l2;
