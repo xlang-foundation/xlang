@@ -1,12 +1,13 @@
-x=[](size=10000,init='rand(1.0,100.0)')
-num =1
+x=[](size=10,init='rand(1.0,100.0)')
+num =10
 
-def test():
-  print("test")
+def test(i):
+  print("test->",i)
 x.each((i,item,passIn){
-	num1 = num+1;
-	num = num1;
-	print(num,",i=",i,",item=",item,",PassIn->",passIn);
+	num1 = num+i;
+	#num = num1;
+	test(num1);
+	print(num1,",i=",i,",item=",item,",PassIn->",passIn);
 },"passed in param 1")
 setattr(x,a2,'this is an attribute for a2')
 print(x.getattr(a2))
