@@ -13,11 +13,11 @@
       "args11d": [ "C:\\Dev\\X\\test\\testimportX.x" ],
       "args_yaml": [ "C:\\Dev\\X\\test\\yaml_data.yml" ],
       "argssss": [ "C:\\Dev\\X\\test\\attr_test.x" ],
-      "args": [ "C:\\Dev\\X\\test\\test3.x" ],
+      "argss": [ "C:\\Dev\\X\\test\\test3.x" ],
       "args_json": [ "C:\\Dev\\X\\test\\simple_test.json" ],
       "args9": [ "C:\\Dev\\X\\test\\test.json" ],
       "args4": [ "C:\\Dev\\Cantor\\test\\xlang\\cantor_client_test.x" ],
-      "args.dbg": [ "-dbg", "-enable_python" ],
+      "args": [ "-dbg", "-enable_python", "-event_loop" ],
       "name": "xlang.exe"
     }
   ]
