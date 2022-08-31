@@ -4,6 +4,7 @@ num =10
 def test(i):
   print("test->",i)
 x.each((i,item,passIn){
+    extern num;
 	num1 = num+i;
 	#num = num1;
 	test(num1);

@@ -23,21 +23,23 @@ public:
 	}
 };
 class AsOp :
-	public BinaryOp
+	virtual public BinaryOp
 {
 public:
 	AsOp(short op) :
+		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::As;
 	}
 };
 class From :
-	public UnaryOp
+	virtual public UnaryOp
 {
 	std::string m_path;
 public:
 	From(short op) :
+		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::From;
@@ -113,7 +115,7 @@ struct ImportInfo
 	std::string fileName;
 };
 class Import :
-	public BinaryOp
+	virtual public BinaryOp
 {
 	//from path import moudule_lists
 	//only put one path after term: from
@@ -127,6 +129,7 @@ class Import :
 		Module** ppSubModule);
 public:
 	Import(short op) :
+		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::Import;

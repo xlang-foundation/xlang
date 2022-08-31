@@ -1,6 +1,4 @@
 from xlang_http import http
-#import test_class(12) as t,numpy(1,2,3) as np
-#from python import numpy as np,os,cv2 as cv 
 print("http Server Started")
 srv = http.Server()
 srv.get("/hi",(req,res){

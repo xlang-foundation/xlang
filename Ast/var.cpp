@@ -59,17 +59,22 @@ void Var::ScopeLayout()
 {
 	Scope* pMyScope = GetScope();
 	int idx = -1;
-	while (pMyScope != nullptr && idx == -1)
+	bool bIsLeftValue = m_isLeftValue;
+	while (pMyScope != nullptr && idx <0)
 	{
 		std::string strName(Name.s, Name.size);
 		idx = pMyScope->AddOrGet(strName,
 			!m_isLeftValue);
-		if (m_isLeftValue)
+		if (idx == (int)ScopeVarIndex::EXTERN)
+		{//for extern var, always looking up parent scopes
+			bIsLeftValue = false;
+		}
+		if (bIsLeftValue)
 		{//Left value will add into local scope
 		//don't need to go up
 			break;
 		}
-		if (idx != -1)
+		if (idx >=0)
 		{//use the scope to find this name as its scope
 			m_scope = pMyScope;
 			break;

@@ -148,7 +148,7 @@ void Parser::NewLine(bool checkIfIsLambdaOrPair)
 			m_curBlkState->OpPop();
 			break;
 		case OP_ID::Comma:
-			return;
+			//todo:return;
 		default:
 			break;
 		}

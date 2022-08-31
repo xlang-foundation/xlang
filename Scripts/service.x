@@ -9,16 +9,15 @@ srv.get(".*",(req,res){
   print("path=${path}");
   pos = path.rfind(".");
   mime = "text/html";
-  openMode ="r"
+  openMode ="r";
   if pos >0:
-	ext =path.slice(pos+1,path.size())
+    ext =path.slice(pos+1,path.size())
 	print("ext=${ext}")
 	if ext == "js":
 	  mime = "text/javascript"
 	elif ext == "jpg":
 	  mime = "image/jpeg"
 	  openMode ="rb"
-
   params = req.get_params();
   pa = root;
   pa += path;
@@ -26,7 +25,7 @@ srv.get(".*",(req,res){
   f = fs.File(pa,openMode);
   f_size = f.size();
   if f_size >=0:
-	data = f.read(f_size)
+    data = f.read(f_size)
   else:
     data=""
   f.close();

@@ -132,6 +132,12 @@ void Register(OpRegistry* reg)
 		"in", "is", "lambda", "nonlocal", /*22-25*/
 		"not", "or", "pass", "raise", "return", /*26-30*/
 		"try", "while", "with", "yield"/*31-34*/);
+	RegOP("extern", "nonlocal","global")
+		.SetProcess(
+			[](Parser* p, short opIndex) {
+				auto op = new AST::ExternDecl(opIndex);
+				return (AST::Operator*)op;
+			});
 	RegOP("range")
 		.SetProcess(
 			[](Parser* p, short opIndex) {
@@ -351,6 +357,8 @@ void Register(OpRegistry* reg)
 	RegOP("*", "/", "%", "**", "//")
 		.SetPrecedence(Precedence_Reqular + 1);
 	RegOP(",", "import")//for example from . import XYZ as xyz,AWD as awd 
+		.SetPrecedence(Precedence_LOW2);
+	RegOP("extern", "nonlocal", "global")
 		.SetPrecedence(Precedence_LOW2);
 	RegOP("and", "or")
 		.SetPrecedence(Precedence_LOW1);

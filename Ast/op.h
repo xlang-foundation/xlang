@@ -418,6 +418,20 @@ public:
 		}
 	}
 };
-
+class ExternDecl :
+	virtual public UnaryOp
+{
+public:
+	ExternDecl(short op) :
+		Operator(op),
+		UnaryOp(op)
+	{
+	}
+	virtual void ScopeLayout() override;
+	inline virtual bool Run(Runtime* rt, void* pContext, Value& v, LValue* lValue = nullptr) override
+	{
+		return true;//dont' run Base class's Run
+	}
+};
 }
 }

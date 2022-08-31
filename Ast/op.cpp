@@ -196,6 +196,22 @@ bool SemicolonOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 {
 	return true;
 }
-
+void ExternDecl::ScopeLayout()
+{
+	UnaryOp::ScopeLayout();
+	Scope* myScope = GetScope();
+	if (R->m_type != ObType::List)
+	{
+		myScope->AddExternVar(dynamic_cast<Var*>(R));
+	}
+	else
+	{
+		auto& list = (dynamic_cast<List*>(R))->GetList();
+		for (auto i : list)
+		{
+			myScope->AddExternVar(dynamic_cast<Var*>(i));
+		}
+	}
+}
 }
 }

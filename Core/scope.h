@@ -12,21 +12,30 @@ namespace X
 { 
 namespace AST 
 {
+class Var;
 enum class ScopeWaitingStatus
 {
 	NoWaiting,
 	HasWaiting,
 	NeedFurtherCallWithName
 };
+enum class ScopeVarIndex
+{
+	INVALID =-1,
+	EXTERN =-2
+};
 class Scope:
 	virtual public ObjRef
 {//variables scope support, for Module and Func/Class
 protected:
 	std::unordered_map <std::string, int> m_Vars;
+	std::unordered_map <std::string, AST::Var*> m_ExternVarMap;
 public:
 	Scope()
 	{
 	}
+	void AddExternVar(AST::Var* var);
+
 	inline int GetVarNum()
 	{
 		return (int)m_Vars.size();
@@ -67,6 +76,12 @@ public:
 	virtual Scope* GetParentScope()= 0;
 	virtual int AddOrGet(std::string& name, bool bGetOnly)
 	{//Always append,no remove, so new item's index is size of m_Vars;
+		//check extern map first,if it is extern var
+		//just return -1 to make caller look up to parent scopes
+		if (m_ExternVarMap.find(name)!= m_ExternVarMap.end())
+		{
+			return (int)ScopeVarIndex::EXTERN;
+		}
 		auto it = m_Vars.find(name);
 		if (it != m_Vars.end())
 		{
@@ -80,7 +95,7 @@ public:
 		}
 		else
 		{
-			return -1;
+			return (int)ScopeVarIndex::INVALID;
 		}
 	}
 	inline virtual bool Get(Runtime* rt, void* pContext,
