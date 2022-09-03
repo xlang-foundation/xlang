@@ -94,7 +94,7 @@ namespace X
 			}
 			X::Value valObjReq;
 			pParamObj->Get(0, valObjReq);
-			Data::Object* pObjReq = (Data::Object*)valObjReq.GetLongLong();
+			Data::Object* pObjReq = dynamic_cast<Data::Object*>((XObj*)valObjReq.GetLongLong());
 			long long startIdx = 0;
 			if (pParamObj->Size() >= 1)
 			{
