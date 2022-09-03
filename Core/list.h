@@ -1,29 +1,71 @@
 #pragma once
 #include "object.h"
 #include "str.h"
+#include "scope.h"
+#include "stackframe.h"
 
 namespace X
 {
 namespace Data
 {
+class ListScope :
+	virtual public AST::Scope
+{
+	List* m_owner = nullptr;
+	AST::StackFrame* m_stackFrame = nullptr;
+public:
+	ListScope(List* p) :
+		Scope()
+	{
+		m_owner = p;
+	}
+	~ListScope()
+	{
+		if (m_stackFrame)
+		{
+			delete m_stackFrame;
+		}
+	}
+	void Init();
+	// Inherited via Scope
+	virtual Scope* GetParentScope() override;
+	virtual bool Set(Runtime* rt, void* pContext, int idx, Value& v) override
+	{
+		m_stackFrame->Set(idx, v);
+		return true;
+	}
+	virtual bool Get(Runtime* rt, void* pContext, int idx, Value& v,
+		LValue* lValue = nullptr) override
+	{
+		m_stackFrame->Get(idx, v, lValue);
+		return true;
+	}
+};
 class List :
 	public Object
 {
+	friend class ListScope;
 protected:
 	bool m_useLValue = false;
 	std::vector<X::Value> m_data;
 	std::vector<X::LValue> m_ptrs;
-	std::vector<AST::Expression*> m_bases;
+	std::vector<AST::Scope*> m_bases;
+	ListScope* m_listScope = nullptr;
 public:
 	List() :
 		Object()
 	{
 		m_t = ObjType::List;
+		m_listScope = new ListScope(this);
+		m_listScope->Init();
+		m_listScope->AddRef();
+		m_bases.push_back(m_listScope);
 
 	}
 	List(std::vector<std::string>& strs) :
 		List()
 	{
+		AutoLock(m_lock);
 		for (auto& s : strs)
 		{
 			m_data.push_back(X::Value(new Str(s.c_str(), (int)s.size())));
@@ -31,9 +73,11 @@ public:
 	}
 	~List()
 	{
+		AutoLock(m_lock);
 		m_bases.clear();
 		m_ptrs.clear();
 		m_data.clear();
+		m_listScope->Release();
 	}
 	template<typename T>
 	std::vector<T> Map(EnumProc proc)
@@ -60,6 +104,7 @@ public:
 	virtual bool Iterate(X::XRuntime* rt, void* pContext,
 		IterateProc proc, ARGS& params, KWARGS& kwParams) override
 	{
+		AutoLock(m_lock);
 		if (m_useLValue)
 		{
 			for (size_t i = 0; i < m_ptrs.size(); i++)
@@ -80,6 +125,7 @@ public:
 	}
 	void Each(EnumProc proc)
 	{
+		AutoLock(m_lock);
 		if (m_useLValue)
 		{
 			for (size_t i = 0; i < m_ptrs.size(); i++)
@@ -97,6 +143,7 @@ public:
 	}
 	virtual List& operator +=(X::Value& r) override
 	{
+		AutoLock(m_lock);
 		if (r.IsObject())
 		{
 			Object* pObj = dynamic_cast<Object*>(r.GetObj());
@@ -122,6 +169,7 @@ public:
 	}
 	virtual bool ToBytes(X::XLangStream& stream) override
 	{
+		AutoLock(m_lock);
 		Object::ToBytes(stream);
 		size_t size = Size();
 		stream << size;
@@ -135,6 +183,7 @@ public:
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override
 	{
+		AutoLock(m_lock);
 		//TODO:need to pass runtime,and calculate base class for some objects
 		size_t size;
 		stream >> size;
@@ -148,6 +197,7 @@ public:
 	}
 	virtual std::string ToString(bool WithFormat = false) override
 	{
+		AutoLock(m_lock);
 		std::string strList = "[\n";
 		size_t size = Size();
 		for (size_t i = 0; i < size; i++)
@@ -169,17 +219,22 @@ public:
 	}
 	inline virtual long long Size() override 
 	{
-		return m_useLValue ? m_ptrs.size() : m_data.size(); 
+		AutoLock(m_lock);
+		return m_useLValue ? m_ptrs.size() : m_data.size();
 	}
 	ARGS& Data()
 	{
 		return m_data;
 	}
-	std::vector<AST::Expression*>& GetBases() { return m_bases; }
+	std::vector<AST::Scope*>& GetBases() 
+	{ 
+		return m_bases; 
+	}
 	virtual bool Call(XRuntime* rt, ARGS& params,
 		KWARGS& kwParams,X::Value& retValue) override;
 	inline void Add(X::LValue p)
 	{
+		AutoLock(m_lock);
 		m_useLValue = true;
 		m_ptrs.push_back(p);
 	}
@@ -191,16 +246,16 @@ public:
 		{//append all
 			for (auto it : bases_0)
 			{
-				m_bases.push_back(it);
+				m_bases.push_back(dynamic_cast<AST::Scope*>(it));
 			}
-			m_bases.push_back(pThisBase);
+			m_bases.push_back(dynamic_cast<AST::Scope*>(pThisBase));
 		}
 		else
 		{//find common
 			auto it = m_bases.begin();
 			while (it != m_bases.end())
 			{
-				if (*it != pThisBase)
+				if (*it != dynamic_cast<AST::Scope*>(pThisBase))
 				{
 					bool bFind = false;
 					for (auto it2 : bases_0)
@@ -221,8 +276,14 @@ public:
 			}//end while
 		}//end else
 	}
+	inline void Remove(long long idx)
+	{
+		AutoLock(m_lock);
+		m_data.erase(std::next(m_data.begin(), idx));
+	}
 	inline void Add(Runtime* rt, X::Value& v)
 	{
+		AutoLock(m_lock);
 		if (v.IsObject())
 		{
 			Object* obj = dynamic_cast<Object*>(v.GetObj());
@@ -251,6 +312,7 @@ public:
 	inline bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{
+		AutoLock(m_lock);
 		if (m_useLValue)
 		{
 			if (idx >= (long long)m_ptrs.size())

@@ -22,6 +22,7 @@ void RegisterOps(OpRegistry* reg)
 	})
 	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
 		v = L;
+		v.Clone();
 		v += R;
 		return true;
 	});

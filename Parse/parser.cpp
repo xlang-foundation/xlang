@@ -303,6 +303,10 @@ AST::Operator* Parser::PairLeft(short opIndex)
 	if (lastToken == TokenID && LastIsLambda())
 	{
 		auto op = new AST::Func();
+		//for code line inside this function, 
+		//we need to assign upper block as its parent
+		//it may be replaced 
+		op->SetParent(m_curBlkState->Block());
 		op->NeedSetHint(true);
 		op->SetNoIndentCheck(true);
 		m_curBlkState->PushOp(op);

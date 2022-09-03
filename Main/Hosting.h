@@ -72,6 +72,6 @@ namespace X
 			bool stopOnEntry = false);
 		bool Run(std::string& moduleName,
 			const char* code, int size,X::Value& retVal);
-		bool RunAsBackend(std::string& moduleName,const char* code, int size);
+		bool RunAsBackend(std::string& moduleName, std::string& code);
 	};
 }

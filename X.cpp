@@ -1,6 +1,5 @@
 ﻿// LitePy.cpp : Defines the entry point for the application.
 //
-
 #include "X.h"
 #include "builtin.h"
 #include "manager.h"
@@ -10,13 +9,13 @@
 #include "Hosting.h"
 #include <signal.h>
 #include "utility.h"
-#include "devops.h"
 #include "event.h"
 #include "port.h"
 #include "PyEngObject.h"
 #include "xhost.h"
 #include "xhost_impl.h"
 #include "action.h"
+#include "AddScripts.h"
 
 void test();
 
@@ -207,14 +206,11 @@ int main(int argc, char* argv[])
 	{
 		LoadPythonEngine();
 	}
-	X::DevOps::Debugger* dbg=nullptr;
-	if (g_ParamConfig.dbg)
-	{
-		dbg = new X::DevOps::Debugger();
-		dbg->Init();
-	}
 	X::Builtin::I().RegisterInternals();
 	X::BuildOps();
+
+	X::ScriptsManager::I().Load();
+	X::ScriptsManager::I().Run();
 
 	bool HasCode = false;
 	std::string code;
@@ -248,7 +244,7 @@ int main(int argc, char* argv[])
 	{
 		if (g_ParamConfig.runAsBackend)
 		{
-			X::Hosting::I().RunAsBackend(fileName, code.c_str(), (int)code.size());
+			X::Hosting::I().RunAsBackend(fileName, code);
 			std::cout << "Running in background" << std::endl;
 			X::EventSystem::I().Loop();
 			enterEventLoop = false;
@@ -266,10 +262,6 @@ int main(int argc, char* argv[])
 	if(enterEventLoop)//enter event loop if no file or no code
 	{
 		X::EventSystem::I().Loop();
-	}
-	if (g_ParamConfig.dbg)
-	{
-		dbg->Uninit();
 	}
 	X::Builtin::I().Cleanup();
 	X::Manager::I().Cleanup();

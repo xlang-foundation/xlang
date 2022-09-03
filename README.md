@@ -49,3 +49,8 @@ sudo apt-get install uuid-dev
 
 #8/30/2022. Windows 11 Python install from Store, issues
 https://stackoverflow.com/questions/58754860/cmd-opens-windows-store-when-i-type-python
+#9/1/2022
+srv.listen("::1", 8088) if use this , nodejs can't connect to 
+change to srv.listen("::", 8088) or
+srv.listen("0.0.0.0", 8088)
+is OK

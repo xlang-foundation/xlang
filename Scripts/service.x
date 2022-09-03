@@ -1,3 +1,4 @@
+#define XX  R"(
 from xlang_http import http
 from xlang_os import fs
 print("http Server Started")
@@ -19,8 +20,7 @@ srv.get(".*",(req,res){
 	  mime = "image/jpeg"
 	  openMode ="rb"
   params = req.get_params();
-  pa = root;
-  pa += path;
+  pa = root+path;
   print("pa=${pa}")
   f = fs.File(pa,openMode);
   f_size = f.size();
@@ -39,3 +39,4 @@ srv.get("/stop",(req,res){
 
 srv.listen("::1", 8088)
 print("Http Server Stopped")
+#)"

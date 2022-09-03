@@ -26,6 +26,7 @@
 #include "json.h"
 #include "metascope.h"
 #include "attribute.h"
+#include "devops.h"
 
 Locker _printLock;
 bool U_Print(X::XRuntime* rt,void* pContext,
@@ -91,6 +92,20 @@ bool U_Run(X::XRuntime* rt, void* pContext,
 	}
 	return X::Hosting::I().Run(key, kwParams, retValue);
 }
+bool U_RunCode(X::XRuntime* rt, void* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() < 2)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	std::string moduleName = params[0].ToString();
+	std::string code = params[1].ToString();
+	return X::Hosting::I().Run(moduleName, code.c_str(), (int)code.size(), retValue);
+}
 bool U_RunInMain(X::XRuntime* rt, void* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -100,7 +115,7 @@ bool U_RunInMain(X::XRuntime* rt, void* pContext,
 	if (pEvt == nullptr)
 	{
 		pEvt = X::EventSystem::I().Register("RunModule");
-		pEvt->Add([](void* pContext, X::Event* pEvt) 
+		pEvt->Add([](void* pContext, void* pContext2, X::Event* pEvt)
 			{
 				unsigned long long mKey = 0;
 				auto valKey = pEvt->Get("ModuleKey");
@@ -109,7 +124,7 @@ bool U_RunInMain(X::XRuntime* rt, void* pContext,
 				pEvt->CovertPropsToArgs(kwParams0);
 				X::Value retValue0;
 				X::Hosting::I().Run(mKey, kwParams0, retValue0);
-			}, rt);
+			}, rt,nullptr);
 	}
 	unsigned long long key = 0;
 	if (params.size() > 0)
@@ -260,6 +275,21 @@ bool U_BreakPoint(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
+bool U_ToString(X::XRuntime* rt, void* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() != 1)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	auto formatFlag = kwParams["format"];
+	bool bFmt = formatFlag.IsTrue();
+	auto retStr = params[0].ToString(bFmt);
+	retValue = X::Value(retStr);
+	return true;
+}
 bool U_ToBytes(X::XRuntime* rt, void* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
@@ -332,6 +362,48 @@ bool U_TaskRun(X::XRuntime* rt, void* pContext,
 		retValue = X::Value(pFuture);
 	}
 	return bOK;
+}
+bool U_OnEvent(X::XRuntime* rt, void* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{// on(evtName,handler)
+	if (params.size() !=2)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	std::string name = params[0].ToString();
+	auto* pEvt = X::EventSystem::I().Query(name);
+	if (pEvt == nullptr)
+	{//Create it
+		pEvt = X::EventSystem::I().Register(name);
+	}
+	X::Data::Function* pFuncHandler = nullptr;
+	auto handler = params[1];
+	if (handler.IsObject())
+	{
+		auto* pObjHandler = dynamic_cast<X::Data::Object*>(handler.GetObj());
+		if (pObjHandler && pObjHandler->GetType() == ObjType::Function)
+		{
+			pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
+			pFuncHandler->AddRef();
+		}
+	}
+	pEvt->Add([](void* pContext, void* pContext2, Event* pEvt) {
+		if (pContext)
+		{
+			X::Value valEvt(pEvt);
+			X::ARGS params;
+			params.push_back(valEvt);
+			X::KWARGS kwParams;
+			X::Value retValue;
+			X::Data::Function* pFuncHandler = (X::Data::Function*)pContext;
+			pFuncHandler->Call((X::XRuntime*)pContext2, params, kwParams, retValue);
+		}
+	}, pFuncHandler,rt);
+
+	retValue = X::Value(true);
+	return true;
 }
 bool U_FireEvent(X::XRuntime* rt, void* pContext,
 	ARGS& params, KWARGS& kwParams,
@@ -547,11 +619,13 @@ bool U_Each(X::XRuntime* rt, void* pContext,
 bool Builtin::RegisterInternals()
 {
 	REGISTER_PACKAGE("json", X::JsonWrapper);
+	REGISTER_PACKAGE("xdb", X::DevOps::DebugService);
 
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (void*)U_Print, params);
 	Register("load", (void*)U_Load, params);
 	Register("run", (void*)U_Run, params);
+	Register("runcode", (void*)U_RunCode, params);
 	Register("rand", (void*)U_Rand, params);
 	Register("sleep", (void*)U_Sleep, params);
 	Register("time", (void*)U_Time, params);
@@ -559,9 +633,11 @@ bool Builtin::RegisterInternals()
 	Register("taskrun", (void*)U_TaskRun, params);
 	Register("threadid", (void*)U_ThreadId, params);
 	Register("mainrun", (void*)U_RunInMain, params);
+	Register("on", (void*)U_OnEvent, params);
 	Register("fire", (void*)U_FireEvent, params);
 	Register("addpath", (void*)U_AddPath, params);
 	Register("removepath", (void*)U_RemovePath, params);
+	Register("tostring", (void*)U_ToString, params);
 	Register("bytes", (void*)U_ToBytes, params);
 	Register("setattr", (void*)U_SetAttribute, params,true);
 	Register("getattr", (void*)U_GetAttribute, params,true);

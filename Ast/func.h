@@ -63,6 +63,7 @@ protected:
 	}
 public:
 	Func() :
+		Block(), UnaryOp(), Operator(),
 		Scope()
 	{
 		m_type = ObType::Func;
@@ -91,7 +92,7 @@ public:
 	}
 	virtual Scope* GetParentScope() override
 	{
-		return GetScope();
+		return FindScope();
 	}
 	virtual void SetR(Expression* r) override
 	{

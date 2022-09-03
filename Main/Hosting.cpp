@@ -8,26 +8,25 @@ namespace X
 		public GThread
 	{
 		std::string m_moduleName;
-		char* m_code = nullptr;
-		int m_codeSize = 0;
+		std::string m_code;
 		// Inherited via GThread
 		virtual void run() override
 		{
 			X::Value retVal;
-			Hosting::I().Run(m_moduleName,m_code, m_codeSize,retVal);
+			Hosting::I().Run(m_moduleName,m_code.c_str(),
+				(int)m_code.size(), retVal);
 		}
 	public:
-		Backend(std::string& moduleName,const char* code, int size)
+		Backend(std::string& moduleName,std::string& code)
 		{
 			m_moduleName = moduleName;
-			m_code = (char*)code;
-			m_codeSize = size;
+			m_code = code;
 		}
 
 	};
-	bool Hosting::RunAsBackend(std::string& moduleName,const char* code, int size)
+	bool Hosting::RunAsBackend(std::string& moduleName, std::string& code)
 	{
-		Backend* pBackend = new Backend(moduleName,code, size);
+		Backend* pBackend = new Backend(moduleName,code);
 		pBackend->Start();
 		return true;
 	}

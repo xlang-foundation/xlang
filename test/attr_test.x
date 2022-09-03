@@ -1,5 +1,5 @@
 x=[](size=10,init='rand(1.0,100.0)')
-num =10
+num =x.size()
 
 def test(i):
   print("test->",i)

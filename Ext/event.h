@@ -9,62 +9,39 @@
 #include "wait.h"
 #include "utility.h"
 #include "xlang.h"
+#include "object.h"
+#include "attribute.h"
 
 namespace X
 {
 	class Event;
-	typedef void (*EventHandler)(void* pContext,Event* pEvt);
+	typedef void (*EventHandler)(void* pContext, void* pContext2,Event* pEvt);
 	struct HandlerInfo
 	{
 		EventHandler Handler=nullptr;
 		void* Context =nullptr;
+		void* Context2 = nullptr;
 		int OwnerThreadId = -1;
 	};
-	class Event
+	class Event:
+		virtual public Data::Object
 	{
 		friend class EventSystem;
-		Locker m_lock;
-		int m_ref = 0;
 		std::string m_name;
 		Locker m_lockHandlers;
 		std::vector<HandlerInfo> m_handlers;
-		Locker m_lockProps;
-		std::unordered_map<std::string, X::Value> m_props;
 	public:
-		int AddRef()
-		{
-			m_lock.Lock();
-			int ref = ++m_ref;
-			m_lock.Unlock();
-			return ref;
-		}
-		int Release()
-		{
-			m_lock.Lock();
-			if (--m_ref == 0)
-			{
-				m_lock.Unlock();
-				delete this;
-				return 0;
-			}
-			else
-			{
-				m_lock.Unlock();
-				return m_ref;
-			}
-		}
 		void CovertPropsToArgs(KWARGS& kwargs)
 		{
-			m_lockProps.Lock();
-			for (auto& it : m_props)
+			auto pAttrBag = GetAttrBag();
+			if (pAttrBag)
 			{
-				kwargs.emplace(it);
+				pAttrBag->CovertToDict(kwargs);
 			}
-			m_lockProps.Unlock();
 		}
 		void Fire(KWARGS& kwargs, bool inMain =false)
 		{
-			int threadId = 0;
+			int threadId = -1;
 			for (auto& k : kwargs)
 			{
 				if (k.first == "tid")
@@ -94,11 +71,11 @@ namespace X
 			m_lockHandlers.Lock();
 			for (auto& it : m_handlers)
 			{
-				if (ownerThreadId ==-1 || it.OwnerThreadId == ownerThreadId)
+				//if (ownerThreadId ==-1 || it.OwnerThreadId == ownerThreadId)
 				{
-					AddRef();
-					it.Handler(it.Context, this);
-					Release();
+					IncRef();
+					it.Handler(it.Context, it.Context2, this);
+					DecRef();
 				}
 			}
 			m_lockHandlers.Unlock();
@@ -111,13 +88,11 @@ namespace X
 		inline X::Value Get(std::string& name)
 		{
 			X::Value ret;
-			m_lockProps.Lock();
-			auto it = m_props.find(name);
-			if (it != m_props.end())
+			auto pAttrBag = GetAttrBag();
+			if (pAttrBag)
 			{
-				ret = it->second;
+				ret = pAttrBag->Get(name);
 			}
-			m_lockProps.Unlock();
 			return ret;
 		}
 		inline void Set(const char* name, X::Value& val)
@@ -127,23 +102,17 @@ namespace X
 		}
 		inline void Set(std::string& name, X::Value& val)
 		{
-			m_lockProps.Lock();
-			auto it = m_props.find(name);
-			if (it != m_props.end())
+			auto pAttrBag = GetAttrBag();
+			if (pAttrBag)
 			{
-				it->second = val;
+				pAttrBag->Set(name,val);
 			}
-			else
-			{
-				m_props.emplace(std::make_pair(name, val));
-			}
-			m_lockProps.Unlock();
 		}
-		inline void* Add(EventHandler handler, void* pContext)
+		inline void* Add(EventHandler handler, void* pContext, void* pContext2)
 		{
 			int tid = (int)GetThreadID();
 			m_lockHandlers.Lock();
-			m_handlers.push_back(HandlerInfo{ handler,pContext,tid});
+			m_handlers.push_back(HandlerInfo{ handler,pContext,pContext2,tid});
 			m_lockHandlers.Unlock();
 			return (void*)handler;
 		}
@@ -184,7 +153,7 @@ namespace X
 		}
 		inline void FireInMain(Event* pEvt)
 		{
-			pEvt->AddRef();
+			pEvt->IncRef();
 			m_lockEventOnFire.Lock();
 			m_eventsOnFire.push_back(pEvt);
 			m_lockEventOnFire.Unlock();
@@ -207,7 +176,7 @@ namespace X
 			m_lockEventMap.Unlock();
 			if (pEvt)
 			{
-				pEvt->AddRef();
+				pEvt->IncRef();
 			}
 			return pEvt;
 		}
@@ -222,7 +191,7 @@ namespace X
 					Event* pEvtToRun = m_eventsOnFire[0];
 					m_eventsOnFire.erase(m_eventsOnFire.begin());
 					m_lockEventOnFire.Unlock();
-					pEvtToRun->Release();//for m_eventsOnFire
+					pEvtToRun->DecRef();//for m_eventsOnFire
 					pEvtToRun->Fire();
 					m_lockEventOnFire.Lock();
 				}
@@ -236,7 +205,7 @@ namespace X
 			if (pEvt)
 			{
 				pEvt->Fire(kwargs, inMain);
-				pEvt->Release();
+				pEvt->DecRef();
 			}
 		}
 		inline bool Unregister(const char* name)
@@ -257,7 +226,7 @@ namespace X
 			m_lockEventMap.Unlock();
 			if (pEvt)
 			{
-				pEvt->Release();
+				pEvt->DecRef();
 			}
 			return true;
 		}
@@ -278,12 +247,12 @@ namespace X
 			else
 			{
 				pEvt = new Event();
-				pEvt->AddRef();
+				pEvt->IncRef();
 				pEvt->m_name = name;
 				m_eventMap.emplace(std::make_pair(name, pEvt));
 			}
 			m_lockEventMap.Unlock();
-			pEvt->AddRef();
+			pEvt->IncRef();
 			return pEvt;
 		}
 	};

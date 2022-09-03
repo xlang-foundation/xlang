@@ -21,6 +21,13 @@ namespace X
 			{
 
 			}
+			void CovertToDict(KWARGS& kwargs)
+			{
+				for (auto& it : m_attrs)
+				{
+					kwargs.emplace(it);
+				}
+			}
 			void Set(std::string name,X::Value& v)
 			{
 				AutoLock(m_lock);

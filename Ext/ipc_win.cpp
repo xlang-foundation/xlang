@@ -158,7 +158,7 @@ namespace X
     void IpcSession::run()
     {
         X::Event* pEvt = X::EventSystem::I().Query("IPC.Session");
-        void* h = pEvt->Add([](void* pContext, X::Event* pEvt) {
+        void* h = pEvt->Add([](void* pContext, void* pContext2, X::Event* pEvt) {
             IpcSession* pThis = (IpcSession*)pContext;
             auto valAction = pEvt->Get("action");
             auto strAction = valAction.ToString();
@@ -174,7 +174,7 @@ namespace X
                 pThis->Send((char*)notifyInfo.c_str(), (int)notifyInfo.size());
                 std::cout << "IPC,Sent out Notify:" << notifyInfo << std::endl;
             }
-         },this);
+         },this,nullptr);
         int bufSize = m_srv->GetBufferSize();
         char* buf = new char[bufSize];
         m_run = true;

@@ -13,24 +13,6 @@ namespace X
 	*/
 	namespace DevOps
 	{
-		class Debugger
-		{
-			Debugger* mImpl = nullptr;
-		public:
-			Debugger();
-			inline Debugger(int) {}//avoid recursive constructor calls
-			~Debugger();
-			//must be virtual
-			inline virtual bool Init()
-			{
-				return mImpl->Init();
-			}
-			//must be virtual
-			inline virtual bool Uninit()
-			{
-				return mImpl->Uninit();
-			}
-		};
 		class DebugService
 		{
 			bool BuildStackInfo(
@@ -45,6 +27,7 @@ namespace X
 				void* pContextCurrent, int frameId, X::Value& valParam,
 				X::Value& valObject);
 		public:
+			DebugService();
 			BEGIN_PACKAGE(DebugService)
 				ADD_FUNC("get_startline", GetModuleStartLine)
 				ADD_FUNC("set_breakpoints", SetBreakpoints)

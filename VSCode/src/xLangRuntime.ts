@@ -1,9 +1,8 @@
 /*---------------------------------------------------------
  * https://microsoft.github.io/debug-adapter-protocol/overview
  *--------------------------------------------------------*/
-import { resolve } from 'dns';
+
 import { EventEmitter } from 'events';
-import { XlangDevOps } from './extension';
 
 
 export interface IRuntimeBreakpoint {
@@ -88,9 +87,9 @@ export function timeout(ms: number) {
 
 export class XLangRuntime extends EventEmitter {
 
-	private _xlangDevOps?:XlangDevOps;
 	private _sourceFile: string = '';
 	private _moduleKey: number = 0;
+	private _sessionEnd: boolean = false;
 	public get sourceFile() {
 		return this._sourceFile;
 	}
@@ -136,39 +135,8 @@ export class XLangRuntime extends EventEmitter {
 	public getScopeRef(refId) {
 		return this.varRefMap[refId];
 	}
-	public getDevOpsConnection() {
-		return this._xlangDevOps;
-	}
-	checkConnection()
-	{
-		let This = this;
-		if(this._xlangDevOps == undefined)
-		{
-			this._xlangDevOps = new XlangDevOps((act, param) => {
-				if (act == "end" || act == "error") {
-					This.sendEvent('end');
-				}
-				else if (act == "notify") {
-					var notis = JSON.parse(param);
-					if (notis) {
-						for (let n in notis) {
-							let kv = notis[n];
-							let v = kv["HitBreakpoint"];
-							if(v!=undefined){
-								This.sendEvent('stopOnBreakpoint');
-							}
-                        }
-                    }
-                }
-            });
-			this._xlangDevOps.Start();
-		}
-	}
+
 	public close() {
-		if (this._xlangDevOps) {
-			this._xlangDevOps.Close();
-			this._xlangDevOps = undefined;
-        }
 	}
 	private async loadSource(file: string): Promise<number> {
 		let srcFile = this.normalizePathAndCasing(file);
@@ -186,16 +154,67 @@ export class XLangRuntime extends EventEmitter {
 		this.sourceModuleKeyMap.set(srcFile, retVal);
 		return retVal;
 	}
+	private async fetchNotify()
+	{
+		const https = require('http');
+		const options = {
+		hostname: 'localhost',
+		port: 3141,
+		path: '/devops/getnotify',
+		method: 'GET'
+		};
+		const req = https.request(options, res => {
+		console.log(`statusCode: ${res.statusCode}`);	
+		res.on('data', d => {
+			var strData = new TextDecoder().decode(d);
+			console.log(strData);
+			let tagNoti = "$notify$";
+			if (strData.startsWith(tagNoti)){
+				var param = strData.substring(tagNoti.length);
+				var notis = JSON.parse(param);
+				if (notis) {
+					for (let n in notis) {
+						let kv = notis[n];
+						let v = kv["HitBreakpoint"];
+						if(v!==undefined){
+							this.sendEvent('stopOnBreakpoint');
+						}
+					}
+				}
+			}
+			else if(strData === "end" || strData === "error")
+			{
+				this.sendEvent('end');
+				this._sessionEnd = false;
+			}
+			if(this._sessionEnd )
+			{
+				this.fetchNotify();
+			}
+		});
+		});
+	
+		req.on('error', error => {
+			console.error(error);
+			if(this._sessionEnd )
+			{
+				this.fetchNotify();
+			}
+		});
+	
+		req.end();		
+	}
 	/**
 	 * Start executing the given program.
 	 */
 	public async start(program: string, stopOnEntry: boolean, debug: boolean): Promise<void> {
-		this.checkConnection();
+		this._sessionEnd = true;
+		this.fetchNotify();
 		this._sourceFile = this.normalizePathAndCasing(program);
 		this._moduleKey = await this.loadSource(this._sourceFile);
 		if (this._moduleKey!=0) {
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
-				+ ", onFinish = 'fire(\"Devops.Dbg\",action=\"end\",tid=${tid})'"
+				+ ", onFinish = 'fire(\"devops.dbg\",action=\"end\",tid=${tid})'"
 				+ ",stopOnEntry=True)\nreturn True";
 			this.Call(code, (ret) => {
 				console.log(ret);
@@ -218,9 +237,34 @@ export class XLangRuntime extends EventEmitter {
 	}
 	private Call(code,cb)
 	{
-		this.checkConnection();		
-		this._xlangDevOps.Call(code, cb);
+		const https = require('http');
+		const querystring = require('querystring');
+		const parameters = {
+			'code': code
+		};
+		const requestargs = querystring.stringify(parameters);
+		const options = {
+		hostname: 'localhost',
+		port: 3141,
+		path: '/devops/run?'+requestargs,
+		method: 'GET'
+		};
+		const req = https.request(options, res => {
+		console.log(`statusCode: ${res.statusCode}`);	
+		res.on('data', d => {
+			var strData = new TextDecoder().decode(d);
+			cb(strData);
+		});
+		});
+	
+		req.on('error', error => {
+		console.error(error);
+		});
+	
+		req.end();
+	
 	}
+
 	public continue(reverse: boolean,cb) {
 		let code = "import xdb\nreturn xdb.command("
 			+ this._moduleKey.toString() + ",cmd='Continue')";
@@ -234,7 +278,6 @@ export class XLangRuntime extends EventEmitter {
         });
 	}
 	public async setBreakPoints(path: string, lines: number[], cb: Function) {
-		this.checkConnection();
 		let mKey = await this.loadSource(this.normalizePathAndCasing(path));
 		let code = "import xdb\nreturn xdb.set_breakpoints(" + mKey.toString()
 			+ ",[" + lines.join() + "]"
