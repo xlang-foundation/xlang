@@ -241,7 +241,10 @@ public:
 	{
 		return ToString();
 	}
-
+	operator XObj* () const
+	{
+		return x.obj;
+	}
 	size_t Hash();
 	inline double GetDouble()
 	{
@@ -272,7 +275,7 @@ public:
 	{
 		flags = f;
 	}
-	inline bool IsObject()
+	inline bool IsObject() const
 	{
 		return (t == ValueType::Object) && (x.obj != nullptr);
 	}
@@ -343,6 +346,8 @@ public:
 	std::string ToString(bool WithFormat = false);
 	bool FromBytes(XLStream* pStream = nullptr);
 	bool ToBytes(XLStream* pStream = nullptr);
+	Value getattr(const char* attrName) const;
+	void setattr(const char* attrName, X::Value& attrVal) const;
 };
 typedef Value* LValue;
 };

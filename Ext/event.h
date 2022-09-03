@@ -11,17 +11,18 @@
 #include "xlang.h"
 #include "object.h"
 #include "attribute.h"
+#include "xhost.h"
+#include <functional>
 
 namespace X
 {
 	class Event;
-	typedef void (*EventHandler)(void* pContext, void* pContext2,Event* pEvt);
+
 	struct HandlerInfo
 	{
 		EventHandler Handler=nullptr;
-		void* Context =nullptr;
-		void* Context2 = nullptr;
 		int OwnerThreadId = -1;
+		long cookie = 0;
 	};
 	class Event:
 		virtual public Data::Object
@@ -29,6 +30,7 @@ namespace X
 		friend class EventSystem;
 		std::string m_name;
 		Locker m_lockHandlers;
+		long m_lastCookie = 0;
 		std::vector<HandlerInfo> m_handlers;
 	public:
 		void CovertPropsToArgs(KWARGS& kwargs)
@@ -74,7 +76,7 @@ namespace X
 				//if (ownerThreadId ==-1 || it.OwnerThreadId == ownerThreadId)
 				{
 					IncRef();
-					it.Handler(it.Context, it.Context2, this);
+					it.Handler(this);
 					DecRef();
 				}
 			}
@@ -108,21 +110,22 @@ namespace X
 				pAttrBag->Set(name,val);
 			}
 		}
-		inline void* Add(EventHandler handler, void* pContext, void* pContext2)
+		inline long Add(EventHandler handler)
 		{
 			int tid = (int)GetThreadID();
 			m_lockHandlers.Lock();
-			m_handlers.push_back(HandlerInfo{ handler,pContext,pContext2,tid});
+			long cookie = ++m_lastCookie;
+			m_handlers.push_back(HandlerInfo{ handler,tid,cookie });
 			m_lockHandlers.Unlock();
-			return (void*)handler;
+			return cookie;
 		}
-		inline void Remove(void* handler)
+		inline void Remove(long cookie)
 		{
 			m_lockHandlers.Lock();
 			auto it = m_handlers.begin();
 			while (it != m_handlers.end())
-			{
-				if ((*it).Handler == handler)
+			{//todo: check here
+				if ((*it).cookie == cookie)
 				{
 					m_handlers.erase(it);
 					break;

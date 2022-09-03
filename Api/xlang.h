@@ -138,7 +138,14 @@ namespace X
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(XRuntime* rt, void* pContext, int idx, Value& v) = 0;
 	};
-
+	inline long OnEvent(const char* evtName, EventHandler handler)
+	{
+		return g_pXHost->OnEvent(evtName, handler);
+	}
+	inline void OffEvent(const char* evtName, long Cookie)
+	{
+		return g_pXHost->OffEvent(evtName, Cookie);
+	}
 }
 
 #endif

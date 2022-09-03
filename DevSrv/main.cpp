@@ -1,21 +1,30 @@
-#include <iostream>
+#include "devsrv.h"
+#include "xhost.h"
+#include "xpackage.h"
 
-extern void MainLoop();
-
-#if (WIN32 && USING_UI)
-#include <windows.h>
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-    _In_opt_ HINSTANCE hPrevInstance,
-    _In_ LPWSTR    lpCmdLine,
-    _In_ int       nCmdShow)
-{
-    MainLoop();
-    return 0;
-}
+#if (WIN32)
+#define X_EXPORT __declspec(dllexport) 
 #else
-int main(int argc, char* argv[])
-{
-    MainLoop();
-	return 0;
-}
+#define X_EXPORT
 #endif
+
+namespace X
+{
+	XHost* g_pXHost = nullptr;
+	X::DevServer* g_pDevOps = nullptr;
+}
+extern "C"  X_EXPORT void Load(void* pHost,int port)
+{
+	X::g_pXHost = (X::XHost*)pHost;
+	X::g_pDevOps = new X::DevServer(port);
+	X::g_pDevOps->Start();
+}
+extern "C"  X_EXPORT void Unload()
+{
+	if (X::g_pDevOps)
+	{
+		X::g_pDevOps->Stop();
+		delete X::g_pDevOps;
+	}
+	X::g_pXHost = nullptr;
+}

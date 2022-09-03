@@ -7,7 +7,8 @@
 #include "dict.h"
 #include "bin.h"
 #include "BlockStream.h"
-
+#include "Hosting.h"
+#include "event.h"
 
 namespace X 
 {
@@ -98,4 +99,58 @@ namespace X
 		stream >> v;
 		return true;
 	}
+	bool XHost_Impl::RunCode(std::string& moduleName, std::string& code, X::Value& retVal)
+	{
+		return X::Hosting::I().Run(moduleName, code.c_str(), (int)code.size(), retVal);
+	}
+	long XHost_Impl::OnEvent(const char* evtName, EventHandler handler)
+	{
+		auto* pEvt = X::EventSystem::I().Query(evtName);
+		if (pEvt == nullptr)
+		{//Create it
+			pEvt = X::EventSystem::I().Register(evtName);
+		}
+		return pEvt->Add(handler);
+	}
+	void XHost_Impl::OffEvent(const char* evtName, long Cookie)
+	{
+		auto* pEvt = X::EventSystem::I().Query(evtName);
+		if (pEvt)
+		{
+			pEvt->Remove(Cookie);
+		}
+	}
+	Value XHost_Impl::GetAttr(const X::Value& v, const char* attrName)
+	{
+		Value retVal;
+		if (v.IsObject())
+		{
+			Data::Object* pObj = dynamic_cast<Data::Object*>((XObj*)v);
+			if (pObj)
+			{
+				auto* pBag = pObj->GetAttrBag();
+				if (pBag)
+				{
+					retVal = pBag->Get(attrName);
+				}
+			}
+		}
+		return retVal;
+	}
+	void XHost_Impl::SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal)
+	{
+		if (v.IsObject())
+		{
+			Data::Object* pObj = dynamic_cast<Data::Object*>((XObj*)v);
+			if (pObj)
+			{
+				auto* pBag = pObj->GetAttrBag();
+				if (pBag)
+				{
+					pBag->Set(attrName,attrVal);
+				}
+			}
+		}
+	}
+
 }

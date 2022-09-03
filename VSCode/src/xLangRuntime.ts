@@ -89,7 +89,7 @@ export class XLangRuntime extends EventEmitter {
 
 	private _sourceFile: string = '';
 	private _moduleKey: number = 0;
-	private _sessionEnd: boolean = false;
+	private _sessionRunning: boolean = false;
 	public get sourceFile() {
 		return this._sourceFile;
 	}
@@ -185,9 +185,9 @@ export class XLangRuntime extends EventEmitter {
 			else if(strData === "end" || strData === "error")
 			{
 				this.sendEvent('end');
-				this._sessionEnd = false;
+				this._sessionRunning = false;
 			}
-			if(this._sessionEnd )
+			if(this._sessionRunning )
 			{
 				this.fetchNotify();
 			}
@@ -196,9 +196,12 @@ export class XLangRuntime extends EventEmitter {
 	
 		req.on('error', error => {
 			console.error(error);
-			if(this._sessionEnd )
+			if(this._sessionRunning )
 			{
-				this.fetchNotify();
+				var thisObj = this;
+				setTimeout(function() {
+					thisObj.fetchNotify();
+				}, 100);
 			}
 		});
 	
@@ -208,7 +211,7 @@ export class XLangRuntime extends EventEmitter {
 	 * Start executing the given program.
 	 */
 	public async start(program: string, stopOnEntry: boolean, debug: boolean): Promise<void> {
-		this._sessionEnd = true;
+		this._sessionRunning = true;
 		this.fetchNotify();
 		this._sourceFile = this.normalizePathAndCasing(program);
 		this._moduleKey = await this.loadSource(this._sourceFile);

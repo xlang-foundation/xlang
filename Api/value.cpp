@@ -194,4 +194,12 @@ namespace X
 	{
 		return g_pXHost->ConvertToBytes(*this, pStream);
 	}
+	Value Value::getattr(const char* attrName) const
+	{
+		return g_pXHost->GetAttr(*this, attrName);
+	}
+	void Value::setattr(const char* attrName, X::Value& attrVal) const
+	{
+		g_pXHost->SetAttr(*this,attrName, attrVal);
+	}
 }

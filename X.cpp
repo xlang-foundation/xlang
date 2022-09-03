@@ -33,6 +33,7 @@ struct ParamConfig
 
 	//context
 	void* pythonLibHandle = nullptr;
+	void* devopsLibHandler = nullptr;
 };
 
 PyEngHost* g_pHost = nullptr;
@@ -61,6 +62,53 @@ void UnloadPythonEngine()
 		}
 		UNLOADLIB(g_ParamConfig.pythonLibHandle);
 		g_ParamConfig.pythonLibHandle = nullptr;
+	}
+}
+void UnloadDevopsEngine()
+{
+	typedef void (*UNLOAD)();
+	if (g_ParamConfig.devopsLibHandler)
+	{
+		UNLOAD unload = (UNLOAD)GetProc(g_ParamConfig.devopsLibHandler, "Unload");
+		if (unload)
+		{
+			unload();
+		}
+		UNLOADLIB(g_ParamConfig.devopsLibHandler);
+		g_ParamConfig.devopsLibHandler = nullptr;
+	}
+}
+bool LoadDevopsEngine(int port=3141)
+{
+	std::string loadDllName;
+	bool bHaveDll = false;
+	std::vector<std::string> candiateFiles;
+	std::string engName("xlang_devsrv");
+	bool bRet = file_search(g_ExePath, engName + ShareLibExt, candiateFiles);
+	if (bRet && candiateFiles.size() > 0)
+	{
+		loadDllName = candiateFiles[0];
+		bHaveDll = true;
+	}
+	if (!bHaveDll)
+	{
+		return false;
+	}
+	typedef void (*LOAD)(void* pHost,int port);
+	void* libHandle = LOADLIB(loadDllName.c_str());
+	if (libHandle)
+	{
+		LOAD load = (LOAD)GetProc(libHandle, "Load");
+		if (load)
+		{
+			load((void*)X::g_pXHost,port);
+		}
+		g_ParamConfig.devopsLibHandler = libHandle;
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 bool LoadPythonEngine()
@@ -208,6 +256,10 @@ int main(int argc, char* argv[])
 	}
 	X::Builtin::I().RegisterInternals();
 	X::BuildOps();
+	if (g_ParamConfig.dbg)
+	{
+		LoadDevopsEngine();
+	}
 
 	X::ScriptsManager::I().Load();
 	X::ScriptsManager::I().Run();
@@ -269,6 +321,10 @@ int main(int argc, char* argv[])
 	if (g_ParamConfig.enablePython)
 	{
 		UnloadPythonEngine();
+	}
+	if (g_ParamConfig.dbg)
+	{
+		UnloadDevopsEngine();
 	}
 	X::G::I().Check();
 	X::DestoryXHost();

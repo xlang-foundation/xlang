@@ -3,6 +3,7 @@
 #include "value.h"
 #include <vector>
 #include <unordered_map>
+#include <functional>
 
 namespace X
 {
@@ -22,6 +23,7 @@ namespace X
 	typedef std::unordered_map<std::string, X::Value> KWARGS;
 	typedef bool (*U_FUNC) (XRuntime* rt, void* pContext,
 		std::vector<Value>& params, KWARGS& kwParams, Value& retValue);
+	using EventHandler = std::function<void(const Value&)>;
 
 	class XHost
 	{
@@ -36,6 +38,11 @@ namespace X
 		virtual XBin* CreateBin(char* data, size_t size) = 0;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream=nullptr) = 0;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
+		virtual bool RunCode(std::string& moduleName, std::string& code, X::Value& retVal) = 0;
+		virtual long OnEvent(const char* evtName, EventHandler handler) = 0;
+		virtual void OffEvent(const char* evtName, long Cookie) = 0;
+		virtual Value GetAttr(const X::Value& v, const char* attrName) = 0;
+		virtual void SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal) = 0;
 	};
 	extern XHost* g_pXHost;
 }

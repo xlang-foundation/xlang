@@ -115,8 +115,9 @@ bool U_RunInMain(X::XRuntime* rt, void* pContext,
 	if (pEvt == nullptr)
 	{
 		pEvt = X::EventSystem::I().Register("RunModule");
-		pEvt->Add([](void* pContext, void* pContext2, X::Event* pEvt)
+		pEvt->Add([rt](const X::Value& evt)
 			{
+				X::Event* pEvt = dynamic_cast<X::Event*>((X::XObj*)evt);
 				unsigned long long mKey = 0;
 				auto valKey = pEvt->Get("ModuleKey");
 				mKey = valKey.GetLongLong();
@@ -124,7 +125,7 @@ bool U_RunInMain(X::XRuntime* rt, void* pContext,
 				pEvt->CovertPropsToArgs(kwParams0);
 				X::Value retValue0;
 				X::Hosting::I().Run(mKey, kwParams0, retValue0);
-			}, rt,nullptr);
+			});
 	}
 	unsigned long long key = 0;
 	if (params.size() > 0)
@@ -389,18 +390,13 @@ bool U_OnEvent(X::XRuntime* rt, void* pContext,
 			pFuncHandler->AddRef();
 		}
 	}
-	pEvt->Add([](void* pContext, void* pContext2, Event* pEvt) {
-		if (pContext)
-		{
-			X::Value valEvt(pEvt);
-			X::ARGS params;
-			params.push_back(valEvt);
-			X::KWARGS kwParams;
-			X::Value retValue;
-			X::Data::Function* pFuncHandler = (X::Data::Function*)pContext;
-			pFuncHandler->Call((X::XRuntime*)pContext2, params, kwParams, retValue);
-		}
-	}, pFuncHandler,rt);
+	pEvt->Add([pFuncHandler,rt](const X::Value& evt) {
+		X::ARGS params;
+		params.push_back(evt);
+		X::KWARGS kwParams;
+		X::Value retValue;
+		pFuncHandler->Call(rt, params, kwParams, retValue);
+		});
 
 	retValue = X::Value(true);
 	return true;

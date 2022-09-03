@@ -1,33 +1,20 @@
-﻿# CMakeList.txt : CMake project for DevOps Server
+# CMakeList.txt : CMake project for http Package, include source and define
+# project specific logic here.
 #
 cmake_minimum_required (VERSION 3.8)
 
-project ("xdev")
+project ("xlang_devsrv")
 
-include_directories("../Inc")
-include_directories("../Ext")
+include_directories("../Api")
 include_directories("../Http")
+include_directories("../Ext")
 
-FILE(GLOB Main_SRC "*.cpp" "../Core/Locker.cpp")
-FILE(GLOB Dev_SRC "../Ext/gthread.cpp" 
-		"../Ext/ipc.cpp"
-		"../Ext/wait.cpp"
-		"../utils/utility.cpp")
+FILE(GLOB API_SRC "../Api/*.cpp")
+FILE(GLOB Main_SRC "*.cpp" "../Ext/gthread.cpp" "../Ext/wait.cpp" "../Core/Locker.cpp")
 
-if (WIN32)
-	if (USING_UI)
-		add_executable (${PROJECT_NAME} WIN32 
-			${Main_SRC} ${Dev_SRC})
-	else()
-		add_executable (${PROJECT_NAME} 
-			${Main_SRC} ${Dev_SRC})
-	endif()
-else()
-	add_executable (${PROJECT_NAME} ${Main_SRC}
-		${Dev_SRC})
-    target_link_libraries(${PROJECT_NAME} pthread dl)
-endif()
+add_library(${PROJECT_NAME} 
+	SHARED
+	${API_SRC}
+	${Main_SRC}
+)
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
-endif()
