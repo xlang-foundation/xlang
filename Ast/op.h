@@ -56,7 +56,7 @@ public:
 		if (L) delete L;
 		if (R) delete R;
 	}
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		bool bHave = false;
@@ -135,7 +135,7 @@ public:
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
 
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
@@ -174,7 +174,7 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
@@ -370,7 +370,7 @@ public:
 	}
 	Expression* GetR() { return R; }
 
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
 	virtual public UnaryOp
@@ -389,7 +389,7 @@ public:
 		m_type = ObType::Range;
 	}
 
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class InOp :
 	virtual public BinaryOp
@@ -400,7 +400,7 @@ public:
 		BinaryOp(op)
 	{
 	}
-	inline virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		bool bIn = R->Run(rt,pContext, v);
 		if(bIn)
@@ -428,7 +428,7 @@ public:
 	{
 	}
 	virtual void ScopeLayout() override;
-	inline virtual bool Run(Runtime* rt, void* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		return true;//dont' run Base class's Run
 	}

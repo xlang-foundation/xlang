@@ -26,7 +26,7 @@ struct BreakPointInfo
 
 struct CommandInfo;
 typedef void (*CommandProcessProc)(Runtime* rt,
-	void* pContextCurrent,
+	XObj* pContextCurrent,
 	CommandInfo* pCommandInfo,
 	X::Value& retVal);
 struct CommandInfo
@@ -190,7 +190,7 @@ public:
 	virtual void ScopeLayout() override;
 	void AddBuiltins(Runtime* rt);
 	inline void Add(Runtime* rt, std::string& name,
-		void* pContext, Value& v)
+		XObj* pContext, Value& v)
 	{
 		int idx = AddOrGet(name, false);
 		if (idx >= 0)
@@ -201,12 +201,12 @@ public:
 		}
 	}
 	// Inherited via Scope
-	virtual bool Set(Runtime* rt, void* pContext, int idx, Value& v) override
+	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		m_stackFrame->Set(idx, v);
 		return true;
 	}
-	virtual bool Get(Runtime* rt, void* pContext, int idx, Value& v,
+	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override
 	{
 		m_stackFrame->Get(idx, v, lValue);

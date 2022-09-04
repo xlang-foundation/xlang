@@ -82,13 +82,13 @@ public:
 	{
 		return m_parent;
 	}
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables)
 	{
 		return false;
 	}
-	virtual void Set(Runtime* rt,void* pContext, Value& v){}
-	virtual bool Run(Runtime* rt,void* pContext,Value& v,LValue* lValue=nullptr)
+	virtual void Set(Runtime* rt,XObj* pContext, Value& v){}
+	virtual bool Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;
 	}
@@ -114,8 +114,8 @@ public:
 		m_s = s;
 		m_size = size;
 	}
-	bool RunWithFormat(Runtime* rt, void* pContext, Value& v, LValue* lValue);
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
+	bool RunWithFormat(Runtime* rt, XObj* pContext, Value& v, LValue* lValue);
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (m_haveFormat)
 		{
@@ -149,7 +149,7 @@ public:
 	}
 	inline long long GetVal() { return m_val; }
 	inline int GetDigiNum() { return m_digiNum; }
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		if (m_isBool)
@@ -193,7 +193,7 @@ public:
 			delete e;
 		}
 	}
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		bool bHave = false;
@@ -285,7 +285,7 @@ public:
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		bool bHave = Name ? Name->CalcCallables(rt, pContext, callables) : false;

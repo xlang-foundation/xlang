@@ -106,7 +106,7 @@ namespace X
 				AddRef();
 				PyObjectCache::I().AddModule(strFileName, this);
 			}
-			PyProxyObject(Runtime* rt, void* pContext,
+			PyProxyObject(Runtime* rt, XObj* pContext,
 				std::string name,std::string fromPath,
 				std::string curPath);
 			void SetPyFrame(PyEng::Object objFrame)
@@ -131,7 +131,7 @@ namespace X
 			{
 				return m_name;
 			}
-			virtual void EachVar(Runtime* rt, void* pContext,
+			virtual void EachVar(Runtime* rt, XObj* pContext,
 				std::function<void(std::string, X::Value&)> const& f) override;
 			virtual std::string GetModuleName(Runtime* rt) override
 			{
@@ -176,16 +176,16 @@ namespace X
 				return m_path + "/" + m_name + ".py";
 			}
 			// Inherited via Scope
-			virtual bool CalcCallables(Runtime* rt, void* pContext,
+			virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 				std::vector<AST::Scope*>& callables) override;
 			virtual int AddOrGet(std::string& name, bool bGetOnly) override;
-			virtual bool Set(Runtime* rt, void* pContext, 
+			virtual bool Set(Runtime* rt, XObj* pContext, 
 				int idx, X::Value& v) override
 			{
 				m_stackFrame->Set(idx, v);
 				return true;
 			}
-			virtual bool Get(Runtime* rt, void* pContext, 
+			virtual bool Get(Runtime* rt, XObj* pContext, 
 				int idx, X::Value& v,
 				X::LValue* lValue = nullptr) override
 			{

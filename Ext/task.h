@@ -14,7 +14,7 @@ namespace X
 	{
 		AST::Func* m_pFunc = nil;
 		Runtime* m_rt = nil;
-		void* m_pContext = nil;
+		XObj* m_pContext = nil;
 		ARGS m_params;
 		KWARGS m_kwParams;
 		X::Value m_retValue;
@@ -23,7 +23,7 @@ namespace X
 		virtual void run() override;
 	public:
 		bool Call(AST::Func* pFunc,
-			Runtime* rt, void* pContext,
+			Runtime* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams)
 		{

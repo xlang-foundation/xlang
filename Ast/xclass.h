@@ -35,19 +35,19 @@ public:
 		return m_stackFrame;
 	}
 
-	virtual bool Set(Runtime* rt, void* pContext, int idx, Value& v) override;
-	virtual bool Get(Runtime* rt, void* pContext, int idx, Value& v,
+	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override;
+	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override;
 	inline std::vector<XClass*>& GetBases() { return m_bases; }
-	virtual bool Run(Runtime* rt, void* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
 	virtual bool Call(Runtime* rt,
-		void* pContext,
+		XObj* pContext,
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue);
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		bool bHave = false;

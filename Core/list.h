@@ -29,12 +29,12 @@ public:
 	void Init();
 	// Inherited via Scope
 	virtual Scope* GetParentScope() override;
-	virtual bool Set(Runtime* rt, void* pContext, int idx, Value& v) override
+	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		m_stackFrame->Set(idx, v);
 		return true;
 	}
-	virtual bool Get(Runtime* rt, void* pContext, int idx, Value& v,
+	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override
 	{
 		m_stackFrame->Get(idx, v, lValue);
@@ -101,7 +101,7 @@ public:
 		}
 		return outs;
 	}
-	virtual bool Iterate(X::XRuntime* rt, void* pContext,
+	virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
 		IterateProc proc, ARGS& params, KWARGS& kwParams) override
 	{
 		AutoLock(m_lock);

@@ -24,7 +24,7 @@ namespace X
 			}
 		}
 		bool DebugService::BuildLocals(Runtime* rt,
-			void* pContextCurrent,int frameId,
+			XObj* pContextCurrent,int frameId,
 			X::Value& valLocals)
 		{
 			int index = 0;
@@ -79,7 +79,7 @@ namespace X
 			return true;
 		}
 		bool DebugService::BuildObjectContent(Runtime* rt,
-			void* pContextCurrent, int frameId,X::Value& valParam,
+			XObj* pContextCurrent, int frameId,X::Value& valParam,
 			X::Value& valObject)
 		{
 			if (!valParam.IsObject())
@@ -114,7 +114,7 @@ namespace X
 			return true;
 		}
 		bool DebugService::BuildStackInfo(
-			Runtime* rt, void* pContextCurrent,
+			Runtime* rt, XObj* pContextCurrent,
 			AST::CommandInfo* pCommandInfo,
 			X::Value& valStackInfo)
 		{
@@ -161,7 +161,7 @@ namespace X
 			valStackInfo = X::Value(pList);
 			return true;
 		}
-		bool DebugService::GetModuleStartLine(void* rt, void* pContext,
+		bool DebugService::GetModuleStartLine(void* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
 			if (params.size() == 0)
@@ -179,7 +179,7 @@ namespace X
 			retValue = X::Value(nStartLine);
 			return true;
 		}
-		bool DebugService::SetBreakpoints(void* rt, void* pContext,
+		bool DebugService::SetBreakpoints(void* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
 			if (params.size() != 2)
@@ -220,7 +220,7 @@ namespace X
 			retValue = X::Value(pList);
 			return true;
 		}
-		bool DebugService::Command(void* rt, void* pContext,
+		bool DebugService::Command(void* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
 			if (params.size() == 0)
@@ -251,7 +251,7 @@ namespace X
 			if (strCmd == "Stack")
 			{
 				auto stackTracePack = [](Runtime* rt,
-					void* pContextCurrent,
+					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
 					X::Value& retVal)
 				{
@@ -277,7 +277,7 @@ namespace X
 				cmdInfo.m_frameId = frameId;
 				cmdInfo.dbgType = AST::dbg::GetRuntime;
 				auto localPack = [](Runtime* rt,
-					void* pContextCurrent,
+					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
 					X::Value& retVal)
 				{
@@ -287,7 +287,7 @@ namespace X
 						pCommandInfo->m_frameId, retVal);
 				};
 				auto objPack = [](Runtime* rt,
-					void* pContextCurrent,
+					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
 					X::Value& retVal)
 				{

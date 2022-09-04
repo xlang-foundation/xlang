@@ -110,12 +110,12 @@ namespace X
 			{
 				strName = "remove";
 				AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-					(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
+					(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 						X::ARGS& params,
 						X::KWARGS& kwParams,
 						X::Value& retValue)
 						{
-							List* pObj = dynamic_cast<List*>((Object*)pContext);
+							List* pObj = dynamic_cast<List*>(pContext);
 							long long idx = params[0];
 							pObj->Remove(idx);
 							retValue = Value(true);
@@ -130,13 +130,13 @@ namespace X
 			{
 				strName = "size";
 				AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-					(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
+					(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 						X::ARGS& params,
 						X::KWARGS& kwParams,
 						X::Value& retValue)
 						{
 							std::cout << "List.Size" << std::endl;
-							List* pObj = dynamic_cast<List*>((Object*)pContext);
+							List* pObj = dynamic_cast<List*>(pContext);
 							retValue = Value(pObj->Size());
 							std::cout << "List.Size->End" << std::endl;
 							return true;

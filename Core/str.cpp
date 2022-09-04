@@ -25,12 +25,12 @@ namespace X
 				{
 					std::string name("find");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-							(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
+							(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 								ARGS& params,
 								KWARGS& kwParams,
 					X::Value& retValue)
 					{
-						auto* pObj = (Object*)pContext;
+						auto* pObj = dynamic_cast<Object*>(pContext);
 						auto* pStrObj = dynamic_cast<Str*>(pObj);
 						std::string x = params[0].ToString();
 						size_t offset = 0;
@@ -48,12 +48,12 @@ namespace X
 				{
 					std::string name("rfind");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								auto* pObj = (Object*)pContext;
+								auto* pObj = dynamic_cast<Object*>(pContext);
 								auto* pStrObj = dynamic_cast<Str*>(pObj);
 								std::string x = params[0].ToString();
 								size_t offset = std::string::npos;
@@ -71,12 +71,12 @@ namespace X
 				{
 					std::string name("slice");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								auto* pObj = (Object*)pContext;
+								auto* pObj = dynamic_cast<Object*>(pContext);
 								auto* pStrObj = dynamic_cast<Str*>(pObj);
 								size_t start = 0;
 								size_t end = -1;
@@ -100,12 +100,12 @@ namespace X
 				{
 					std::string name("size");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								auto* pObj = (Object*)pContext;
+								auto* pObj = dynamic_cast<Object*>(pContext);
 								auto* pStrObj = dynamic_cast<Str*>(pObj);
 								size_t  size = pStrObj->GetSize();
 								retValue = X::Value((long long)size);
@@ -117,7 +117,7 @@ namespace X
 				{
 					std::string name("split");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						(X::U_FUNC)([](X::XRuntime* rt, void* pContext,
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)
@@ -127,7 +127,7 @@ namespace X
 								{
 									delim = params[0].ToString();
 								}
-								auto* pObj = (Object*)pContext;
+								auto* pObj = dynamic_cast<Object*>(pContext);
 								auto* pStrObj = dynamic_cast<Str*>(pObj);
 								std::vector<std::string> li;
 								pStrObj->Split(delim, li);
@@ -147,16 +147,16 @@ namespace X
 			{
 				return nullptr;
 			}
-			inline virtual bool Set(Runtime* rt, void* pContext,
+			inline virtual bool Set(Runtime* rt, XObj* pContext,
 				int idx, X::Value& v)
 			{
 				return false;
 			}
 
-			inline virtual bool Get(Runtime* rt, void* pContext,
+			inline virtual bool Get(Runtime* rt, XObj* pContext,
 				int idx, X::Value& v, X::LValue* lValue = nullptr)
 			{
-				Str* pStrObj = (Str*)pContext;
+				Str* pStrObj = dynamic_cast<Str*>(pContext);
 				v = m_funcs[idx];
 				return true;
 			}

@@ -7,7 +7,7 @@ namespace X
 namespace AST
 {
 bool XClass::Call(Runtime* rt,
-	void* pContext,
+	XObj* pContext,
 	std::vector<Value>& params, 
 	KWARGS& kwParams,
 	Value& retValue)
@@ -59,11 +59,11 @@ XClass* XClass::FindBase(Runtime* rt, std::string& strName)
 	}
 	return pBase;
 }
-bool XClass::Set(Runtime* rt, void* pContext, int idx, Value& v)
+bool XClass::Set(Runtime* rt, XObj* pContext, int idx, Value& v)
 {
 	if (pContext)
 	{
-		Data::XClassObject* pObj = (Data::XClassObject*)pContext;
+		Data::XClassObject* pObj = dynamic_cast<Data::XClassObject*>(pContext);
 		pObj->GetStack()->Set(idx, v);
 	}
 	else if (m_stackFrame)
@@ -72,11 +72,11 @@ bool XClass::Set(Runtime* rt, void* pContext, int idx, Value& v)
 	}
 	return true;
 }
-bool XClass::Get(Runtime* rt,void* pContext, int idx, Value& v, LValue* lValue)
+bool XClass::Get(Runtime* rt,XObj* pContext, int idx, Value& v, LValue* lValue)
 {
 	if (pContext)
 	{
-		Data::XClassObject* pObj = dynamic_cast<Data::XClassObject*>((Data::Object*)pContext);
+		Data::XClassObject* pObj = dynamic_cast<Data::XClassObject*>(pContext);
 		pObj->GetStack()->Get(idx, v, lValue);
 	}
 	else if (m_stackFrame)
@@ -85,7 +85,7 @@ bool XClass::Get(Runtime* rt,void* pContext, int idx, Value& v, LValue* lValue)
 	}
 	return true;
 }
-bool XClass::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
+bool XClass::Run(Runtime* rt,XObj* pContext,Value& v, LValue* lValue)
 {
 	m_stackFrame = new StackFrame(this);
 	m_stackFrame->SetVarCount((int)m_Vars.size());

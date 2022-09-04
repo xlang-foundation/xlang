@@ -19,13 +19,12 @@
 	{\
 	int idx = pPackage->AddMethod(fn_name);\
 	auto* pFuncObj = X::g_pXHost->CreateFunction(fn_name,\
-			(X::U_FUNC)([](X::XRuntime* rt, void* pContext,\
+			(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,\
 				X::ARGS& params,\
 				X::KWARGS& kwParams,\
 				X::Value& retValue)\
 				{\
-					auto* pXObj = X::g_pXHost->ConvertObjFromPointer(pContext);\
-					auto* pPackage = dynamic_cast<X::XPackage*>(pXObj);\
+					auto* pPackage = dynamic_cast<X::XPackage*>(pContext);\
 					auto* pThis = (THIS_CLASS_NAME*)pPackage->GetEmbedObj();\
 					return pThis->function_name(rt,pContext,params, kwParams, retValue);\
 				}));\
@@ -37,7 +36,7 @@
 	{\
 	int idx= pPackage->AddMethod(class_name);\
 	auto* pFuncObj = X::g_pXHost->CreateFunction(class_name,\
-		(X::U_FUNC)([](X::XRuntime* rt, void* pContext,\
+		(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,\
 			X::ARGS& params,\
 			X::KWARGS& kwParams,\
 			X::Value& retValue)\

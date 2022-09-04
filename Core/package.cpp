@@ -12,7 +12,7 @@ X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
 {
 	return nullptr;
 }
-bool X::AST::Import::CalcCallables(Runtime* rt, void* pContext,
+bool X::AST::Import::CalcCallables(Runtime* rt, XObj* pContext,
 	std::vector<Scope*>& callables)
 {
 	ScopeProxy* pProxy = new ScopeProxy();
@@ -135,7 +135,7 @@ bool X::AST::Import::FindAndLoadXModule(Runtime* rt,
 	}
 	return bOK;
 }
-bool X::AST::Import::Run(Runtime* rt, void* pContext, 
+bool X::AST::Import::Run(Runtime* rt, XObj* pContext, 
 	Value& v, LValue* lValue)
 {
 	for (auto& im : m_importInfos)
@@ -303,7 +303,7 @@ void X::AST::Import::ScopeLayout()
 		}
 	}
 }
-bool X::AST::From::Run(Runtime* rt, void* pContext,
+bool X::AST::From::Run(Runtime* rt, XObj* pContext,
 	Value& v, LValue* lValue)
 {
 	return true;

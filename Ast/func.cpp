@@ -66,7 +66,7 @@ void Func::ScopeLayout()
 		}
 	}
 }
-bool Func::Run(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+bool Func::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);
 	Value v0(f);
@@ -79,20 +79,20 @@ bool Func::Run(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 }
 
 bool Func::Call(XRuntime* rt0,
-	void* pContext,
+	XObj* pContext,
 	std::vector<Value>& params,
 	KWARGS& kwParams,
 	Value& retValue)
 {
 	Runtime* rt = G::I().Threading((Runtime*)rt0);
-	auto* pContextObj = (X::Data::Object*)pContext;
+	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
 	StackFrame* frame = new StackFrame(this);
 	rt->PushFrame(frame,GetVarNum());
 	//Add this if This is not null
 	if (m_IndexOfThis >=0 &&
 		pContextObj && pContextObj->GetType() == X::ObjType::XClassObject)
 	{
-		Value v0((Data::Object*)pContext);
+		Value v0(dynamic_cast<Data::Object*>(pContext));
 		Scope::Set(rt, pContext, m_IndexOfThis, v0);
 	}
 	int num = m_positionParamCnt > (int)params.size() ?

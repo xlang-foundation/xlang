@@ -15,7 +15,7 @@ protected:
 		std::vector<Scope*>& bases);
 	void RunScopeLayoutWithScopes(Expression* pExpr, 
 		std::vector<Scope*>& scopes);
-	bool DotProcess(Runtime* rt, void* pContext, 
+	bool DotProcess(Runtime* rt, XObj* pContext, 
 		Value& v_l, Expression* r,
 		Value& v, LValue* lValue = nullptr);
 public:
@@ -34,9 +34,9 @@ public:
 		m_type = ObType::Dot;
 		m_dotNum = dotNum;
 	}
-	virtual bool Run(Runtime* rt,void* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
 };
 }

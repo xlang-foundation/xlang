@@ -11,14 +11,14 @@ namespace AST
 		virtual public BinaryOp
 	{
 		short m_preceding_token = 0;
-		bool ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
-		bool BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
-		bool CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
-		bool TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue);
-		bool GetItemFromList(Runtime* rt, void* pContext,
+		bool ParentRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue);
+		bool BracketRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue);
+		bool CurlyBracketRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue);
+		bool TableBracketRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue);
+		bool GetItemFromList(Runtime* rt, XObj* pContext,
 			Data::List* pDataList, Expression* r,
 			Value& v, LValue* lValue);
-		bool GetItemFromDict(Runtime* rt, void* pContext,
+		bool GetItemFromDict(Runtime* rt, XObj* pContext,
 			Data::Dict* pDataDict, Expression* r,
 			Value& v, LValue* lValue);
 	public:
@@ -33,7 +33,7 @@ namespace AST
 		{
 			return m_preceding_token;
 		}
-		virtual bool Run(Runtime* rt, void* pContext, Value& v, LValue* lValue = nullptr) override;
+		virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	};
 }
 }

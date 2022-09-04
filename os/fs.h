@@ -39,7 +39,7 @@ namespace X
 				m_stream.close();
 			}
 		}
-		bool read(void* rt, void* pContext,
+		bool read(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
@@ -65,14 +65,14 @@ namespace X
 			}
 			return true;
 		}
-		bool write(void* rt, void* pContext,
+		bool write(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
 			return true;
 		}
-		bool close(void* rt, void* pContext,
+		bool close(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
@@ -81,7 +81,7 @@ namespace X
 			retValue = X::Value(true);
 			return true;
 		}
-		bool get_size(void* rt, void* pContext,
+		bool get_size(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)

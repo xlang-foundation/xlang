@@ -46,7 +46,7 @@ print(x0.prop2)
 x3 = test_class()
 x3.prop1 =4
 x3.prop2 ="calss x3"
-x =[x0,x1,x2,x3]
+x =x0
 ret = x.[method1,method2](1,2)
 print("ret=",ret)
 

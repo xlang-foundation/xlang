@@ -21,7 +21,7 @@ public:
 	virtual void ScopeLayout() override;
 	String& GetName() { return Name; }
 	std::string GetNameString() { return std::string(Name.s, Name.size); }
-	inline virtual void Set(Runtime* rt, void* pContext, Value& v) override
+	inline virtual void Set(Runtime* rt, XObj* pContext, Value& v) override
 	{
 		if (Index == -1)
 		{
@@ -30,9 +30,9 @@ public:
 		}
 		m_scope->Set(rt, pContext, Index, v);
 	}
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
-	inline virtual bool Run(Runtime* rt, void* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (Index == -1 || m_scope == nullptr)
 		{

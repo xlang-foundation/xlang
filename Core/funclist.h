@@ -9,7 +9,7 @@ namespace Data
 {
 struct VectorCall
 {
-	void* m_context = nil;
+	XObj* m_context = nil;
 	AST::Func* m_func = nil;
 	X::LValue m_lVal = nil;
 };
@@ -27,7 +27,7 @@ public:
 	{
 		return m_list;
 	}
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<AST::Scope*>& callables) override
 	{
 		bool bHave = false;
@@ -39,7 +39,7 @@ public:
 		}
 		return bHave;
 	}
-	void Add(void* pContext, AST::Func* func, X::LValue lVal)
+	void Add(XObj* pContext, AST::Func* func, X::LValue lVal)
 	{
 		m_list.push_back(VectorCall{ pContext ,func,lVal });
 	}

@@ -9,7 +9,7 @@ namespace X
 {
 namespace AST
 {
-bool PairOp::ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+bool PairOp::ParentRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = false;
 	if (L)
@@ -45,7 +45,7 @@ bool PairOp::ParentRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 	}
 	return bOK;
 }
-bool PairOp::GetItemFromDict(Runtime* rt, void* pContext,
+bool PairOp::GetItemFromDict(Runtime* rt, XObj* pContext,
 	Data::Dict* pDataDict, Expression* r,
 	Value& v, LValue* lValue)
 {
@@ -58,7 +58,7 @@ bool PairOp::GetItemFromDict(Runtime* rt, void* pContext,
 	}
 	return bOK;
 }
-bool PairOp::GetItemFromList(Runtime* rt, void* pContext,
+bool PairOp::GetItemFromList(Runtime* rt, XObj* pContext,
 	Data::List* pDataList, Expression* r,
 	Value& v, LValue* lValue)
 {
@@ -97,7 +97,7 @@ bool PairOp::GetItemFromList(Runtime* rt, void* pContext,
 	}
 	return bOK;
 }
-bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+bool PairOp::BracketRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = false;
 	if (L)
@@ -157,7 +157,7 @@ bool PairOp::BracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
 	}
 	return bOK;
 }
-bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+bool PairOp::CurlyBracketRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = true;
 	Data::Dict* pDict = new Data::Dict();
@@ -200,7 +200,7 @@ bool PairOp::CurlyBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 	v = Value(pDict);
 	return bOK;
 }
-bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+bool PairOp::TableBracketRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	Data::Table* pDataTable = new Data::Table();
 	auto parsParam = [rt, pContext, pDataTable](Param* p) {
@@ -281,7 +281,7 @@ bool PairOp::TableBracketRun(Runtime* rt, void* pContext, Value& v, LValue* lVal
 	v = Value(pDataTable);
 	return true;
 }
-bool PairOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
+bool PairOp::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	bool bOK = false;
 	switch (opId)

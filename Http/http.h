@@ -19,20 +19,20 @@ namespace X
 		HttpServer(ARGS& params,
 			KWARGS& kwParams);
 		~HttpServer();
-		bool Listen(void* rt,void* pContext,
+		bool Listen(void* rt,XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue);
-		bool Stop(void* rt, void* pContext,
+		bool Stop(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue);
-		bool Get(void* rt, void* pContext,ARGS& params,
+		bool Get(void* rt, XObj* pContext,ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue);
 	};
 #define GET_FUNC(name) \
-	bool Get##name(void* rt, void* pContext,\
+	bool Get##name(void* rt, XObj* pContext,\
 		ARGS& params,\
 		KWARGS& kwParams,\
 		X::Value& retValue);
@@ -62,11 +62,11 @@ namespace X
 		GET_FUNC(path)
 		GET_FUNC(remote_addr)
 
-		bool GetAllHeaders(void* rt, void* pContext,
+		bool GetAllHeaders(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue);
-		bool GetParams(void* rt, void* pContext, ARGS& params,
+		bool GetParams(void* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams, X::Value& retValue);
 	};
 	class HttpResponse
@@ -84,7 +84,7 @@ namespace X
 		{
 
 		}
-		bool SetContent(void* rt, void* pContext,
+		bool SetContent(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue);

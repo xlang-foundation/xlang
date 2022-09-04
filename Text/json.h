@@ -16,11 +16,11 @@ namespace X
 		{
 
 		}
-		bool LoadFromString(void* rt, void* pContext,
+		bool LoadFromString(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue);
-		bool LoadFromFile(void* rt, void* pContext,
+		bool LoadFromFile(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue);

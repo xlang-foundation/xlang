@@ -29,7 +29,7 @@
 #include "devops.h"
 
 Locker _printLock;
-bool U_Print(X::XRuntime* rt,void* pContext,
+bool U_Print(X::XRuntime* rt,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -45,7 +45,7 @@ bool U_Print(X::XRuntime* rt,void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
-bool U_Load(X::XRuntime* rt, void* pContext,
+bool U_Load(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -72,7 +72,7 @@ bool U_Load(X::XRuntime* rt, void* pContext,
 	return true;
 }
 
-bool U_Run(X::XRuntime* rt, void* pContext,
+bool U_Run(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -92,7 +92,7 @@ bool U_Run(X::XRuntime* rt, void* pContext,
 	}
 	return X::Hosting::I().Run(key, kwParams, retValue);
 }
-bool U_RunCode(X::XRuntime* rt, void* pContext,
+bool U_RunCode(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -106,7 +106,7 @@ bool U_RunCode(X::XRuntime* rt, void* pContext,
 	std::string code = params[1].ToString();
 	return X::Hosting::I().Run(moduleName, code.c_str(), (int)code.size(), retValue);
 }
-bool U_RunInMain(X::XRuntime* rt, void* pContext,
+bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -151,7 +151,7 @@ bool U_RunInMain(X::XRuntime* rt, void* pContext,
 	return true;
 }
 
-bool U_Rand(X::XRuntime* rt, void* pContext,
+bool U_Rand(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -166,7 +166,7 @@ bool U_Rand(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(r);
 	return true;
 }
-bool U_ThreadId(X::XRuntime* rt, void* pContext,
+bool U_ThreadId(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -175,7 +175,7 @@ bool U_ThreadId(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(id);
 	return true;
 }
-bool U_Sleep(X::XRuntime* rt, void* pContext,
+bool U_Sleep(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -208,7 +208,7 @@ bool U_Sleep(X::XRuntime* rt, void* pContext,
 	MS_SLEEP((int)t);
 	if (pContext)
 	{//with a function, means after sleep, call this function
-		X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
+		X::Data::Function* pFuncObj = dynamic_cast<X::Data::Function*>(pContext);
 		X::AST::Func* pFunc = pFuncObj->GetFunc();
 		bOK = pFunc->Call(rt, nullptr,params, kwParams, retValue);
 	}
@@ -218,7 +218,7 @@ bool U_Sleep(X::XRuntime* rt, void* pContext,
 	}
 	return bOK;
 }
-bool U_Time(X::XRuntime* rt, void* pContext,
+bool U_Time(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -266,7 +266,7 @@ bool Builtin::Register(const char* name, void* func,
 	return true;
 }
 
-bool U_BreakPoint(X::XRuntime* rt, void* pContext,
+bool U_BreakPoint(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	KWARGS& kwParams,
 	X::Value& retValue)
@@ -276,7 +276,7 @@ bool U_BreakPoint(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
-bool U_ToString(X::XRuntime* rt, void* pContext,
+bool U_ToString(X::XRuntime* rt, XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
@@ -291,7 +291,7 @@ bool U_ToString(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(retStr);
 	return true;
 }
-bool U_ToBytes(X::XRuntime* rt, void* pContext,
+bool U_ToBytes(X::XRuntime* rt, XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
@@ -308,7 +308,7 @@ bool U_ToBytes(X::XRuntime* rt, void* pContext,
 	return true;
 }
 
-bool U_TaskRun(X::XRuntime* rt, void* pContext,
+bool U_TaskRun(X::XRuntime* rt, XObj* pContext,
 	ARGS& params,KWARGS& kwParams,
 	X::Value& retValue)
 {
@@ -338,7 +338,7 @@ bool U_TaskRun(X::XRuntime* rt, void* pContext,
 		return bRet;
 	};
 	bool bOK = true;
-	auto* pContextObj = (X::Data::Object*)pContext;
+	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
 	if (pContextObj->GetType() == X::ObjType::FuncCalls)
 	{
 		X::Data::FuncCalls* pFuncCalls = (X::Data::FuncCalls*)pContextObj;
@@ -350,7 +350,7 @@ bool U_TaskRun(X::XRuntime* rt, void* pContext,
 	}
 	else
 	{
-		X::Data::Function* pFuncObj = (X::Data::Function*)pContext;
+		X::Data::Function* pFuncObj = dynamic_cast<X::Data::Function*>(pContext);
 		X::AST::Func* pFunc = pFuncObj->GetFunc();
 		buildtask(pFunc);
 	}
@@ -364,7 +364,7 @@ bool U_TaskRun(X::XRuntime* rt, void* pContext,
 	}
 	return bOK;
 }
-bool U_OnEvent(X::XRuntime* rt, void* pContext,
+bool U_OnEvent(X::XRuntime* rt, XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {// on(evtName,handler)
@@ -401,7 +401,7 @@ bool U_OnEvent(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
-bool U_FireEvent(X::XRuntime* rt, void* pContext,
+bool U_FireEvent(X::XRuntime* rt, XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
@@ -420,7 +420,7 @@ bool U_FireEvent(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
-bool U_AddPath(X::XRuntime* rt, void* pContext,
+bool U_AddPath(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -438,7 +438,7 @@ bool U_AddPath(X::XRuntime* rt, void* pContext,
 	}
 	return true;
 }
-bool U_RemovePath(X::XRuntime* rt, void* pContext,
+bool U_RemovePath(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -456,7 +456,7 @@ bool U_RemovePath(X::XRuntime* rt, void* pContext,
 	}
 	return true;
 }
-bool U_SetAttribute(X::XRuntime* rt, void* pContext,
+bool U_SetAttribute(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -482,7 +482,7 @@ bool U_SetAttribute(X::XRuntime* rt, void* pContext,
 			retValue = X::Value();
 			return false;
 		}
-		pObj = (X::Data::Object*)pContext;
+		pObj = dynamic_cast<X::Data::Object*>(pContext);
 		name = params[0].ToString();
 		val = params[1];
 	}
@@ -491,7 +491,7 @@ bool U_SetAttribute(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
-bool U_GetAttribute(X::XRuntime* rt, void* pContext,
+bool U_GetAttribute(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -515,14 +515,14 @@ bool U_GetAttribute(X::XRuntime* rt, void* pContext,
 			retValue = X::Value();
 			return false;
 		}
-		pObj = (X::Data::Object*)pContext;
+		pObj = dynamic_cast<X::Data::Object*>(pContext);
 		name = params[0].ToString();
 	}
 	auto* aBag = pObj->GetAttrBag();
 	retValue = aBag->Get(name);
 	return true;
 }
-bool U_DeleteAttribute(X::XRuntime* rt, void* pContext,
+bool U_DeleteAttribute(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -546,7 +546,7 @@ bool U_DeleteAttribute(X::XRuntime* rt, void* pContext,
 			retValue = X::Value();
 			return false;
 		}
-		pObj = (X::Data::Object*)pContext;
+		pObj = dynamic_cast<X::Data::Object*>(pContext);
 		name = params[0].ToString();
 	}
 	auto* aBag = pObj->GetAttrBag();
@@ -554,12 +554,12 @@ bool U_DeleteAttribute(X::XRuntime* rt, void* pContext,
 	retValue = X::Value(true);
 	return true;
 }
-bool U_Each(X::XRuntime* rt, void* pContext,
+bool U_Each(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	auto proc = [](X::XRuntime* rt, void* pContext,X::Value& keyOrIdx, X::Value& val,
+	auto proc = [](X::XRuntime* rt, XObj* pContext,X::Value& keyOrIdx, X::Value& val,
 		ARGS& params, KWARGS& kwParams)
 	{
 		X::Value vfunc = params[0];
@@ -600,7 +600,7 @@ bool U_Each(X::XRuntime* rt, void* pContext,
 			retValue = X::Value();
 			return false;
 		}
-		pObj = (X::Data::Object*)pContext;
+		pObj = dynamic_cast<X::Data::Object*>(pContext);
 		for (int i = 0; i < params.size(); i++)
 		{
 			params_proc.push_back(params[i]);

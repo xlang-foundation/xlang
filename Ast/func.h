@@ -80,7 +80,7 @@ public:
 	{
 		return std::string(m_Name.s, m_Name.size);
 	}
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		if (Params)
@@ -138,11 +138,11 @@ public:
 		int retIdx = Scope::AddOrGet(name, bGetOnly);
 		return retIdx;
 	}
-	virtual bool Call(XRuntime* rt, void* pContext,
+	virtual bool Call(XRuntime* rt, XObj* pContext,
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue);
-	virtual bool Run(Runtime* rt, void* pContext,
+	virtual bool Run(Runtime* rt, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
 };
 class ExternFunc
@@ -157,7 +157,7 @@ public:
 		m_func = func;
 		m_type = ObType::BuiltinFunc;
 	}
-	inline virtual bool Call(XRuntime* rt, void* pContext,
+	inline virtual bool Call(XRuntime* rt, XObj* pContext,
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue) override

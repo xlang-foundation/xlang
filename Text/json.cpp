@@ -7,7 +7,7 @@
 
 namespace X
 {
-	bool JsonWrapper::LoadFromString(void* rt, void* pContext,
+	bool JsonWrapper::LoadFromString(void* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
@@ -23,7 +23,7 @@ namespace X
 			(int)jsonStr.size(), retValue);
 		return bOK;
 	}
-	bool JsonWrapper::LoadFromFile(void* rt, void* pContext,
+	bool JsonWrapper::LoadFromFile(void* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)

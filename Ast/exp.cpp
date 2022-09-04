@@ -58,7 +58,7 @@ bool Param::Parse(std::string& strVarName,
 	}
 	return true;
 }
-bool Str::RunWithFormat(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+bool Str::RunWithFormat(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	std::string str0;
 	bool bMeetSlash = false;

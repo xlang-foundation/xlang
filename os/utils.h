@@ -18,7 +18,7 @@ namespace X
 		Utils()
 		{
 		}
-		bool generate_uid(void* rt, void* pContext,
+		bool generate_uid(void* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)

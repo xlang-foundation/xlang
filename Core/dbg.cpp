@@ -5,7 +5,7 @@ namespace X
 {
 	bool Dbg::xTraceFunc(
 		Runtime* rt,
-		void* pContext,
+		XObj* pContext,
 		AST::StackFrame* frame,
 		TraceEvent traceEvent,
 		AST::Scope* pThisBlock,

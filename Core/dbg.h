@@ -21,7 +21,7 @@ public:
 	}
 	static bool xTraceFunc(
 		Runtime* rt,
-		void* pContext,
+		XObj* pContext,
 		AST::StackFrame* frame,
 		TraceEvent traceEvent,
 		AST::Scope* pThisBlock,
@@ -32,7 +32,7 @@ public:
 		PyEngObjectPtr frame,
 		int event,
 		PyEngObjectPtr args);
-	void Loop(X::Value& lineRet,AST::Expression* exp, void* pContext)
+	void Loop(X::Value& lineRet,AST::Expression* exp, XObj* pContext)
 	{
 		std::cout << lineRet.ToString() << std::endl;
 		int line = exp->GetStartLine();
@@ -94,7 +94,7 @@ public:
 	}
 	void WaitForCommnd(TraceEvent evt,Runtime* rt, 
 		AST::Scope* pThisBlock,
-		AST::Expression* exp, void* pContext)
+		AST::Expression* exp, XObj* pContext)
 	{
 		auto* pModule = rt->M();
 		AST::CommandInfo cmdInfo;
@@ -159,7 +159,7 @@ public:
 			}
 		}
 	}
-	inline bool ExitBlockRun(Runtime* rt,void* pContext,
+	inline bool ExitBlockRun(Runtime* rt,XObj* pContext,
 		AST::Scope* pThisBlock)
 	{
 		if (m_rt->M()->IsInDebug())
@@ -170,7 +170,7 @@ public:
 	}
 	inline bool Check(TraceEvent evt,Runtime* rt,
 		AST::Scope* pThisBlock,
-		AST::Expression* exp, void* pContext)
+		AST::Expression* exp, XObj* pContext)
 	{
 		if (!m_rt->M()->IsInDebug())
 		{

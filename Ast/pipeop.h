@@ -45,7 +45,7 @@ namespace X
 					r->SetIsLeftValue(true);
 				}
 			}
-			bool SimpleProcess(Runtime* rt, void* pContext, Value& v_l,
+			bool SimpleProcess(Runtime* rt, XObj* pContext, Value& v_l,
 				Expression* expR,Value& v, LValue* lValue)
 			{
 				bool bRet = true;
@@ -85,7 +85,7 @@ namespace X
 				return bRet;
 
 			}
-			bool Process(Runtime* rt, void* pContext, Value& val_l, Expression* expR, Value& v, LValue* lValue)
+			bool Process(Runtime* rt, XObj* pContext, Value& val_l, Expression* expR, Value& v, LValue* lValue)
 			{
 				bool bOK = true;
 				//do one pipe with x|expR
@@ -125,7 +125,7 @@ namespace X
 				}
 				return bOK;
 			}
-			bool RunOne(Runtime* rt, void* pContext,
+			bool RunOne(Runtime* rt, XObj* pContext,
 				Value& v_l, Expression* R1,
 				Value& v, LValue* lValue)
 			{
@@ -154,7 +154,7 @@ namespace X
 				}
 				return bOK;
 			}
-			virtual bool Run(Runtime* rt, void* pContext, Value& v, LValue* lValue = nullptr) override
+			virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 			{
 				if (!L || !R)
 				{

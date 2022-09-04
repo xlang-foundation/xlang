@@ -61,7 +61,7 @@ namespace AST
 		return bOK;
 	}
 
-bool UnaryOp::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
+bool UnaryOp::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	Value v_r;
 	if (!R->Run(rt,pContext,v_r))
@@ -99,7 +99,7 @@ bool Range::Eval(Runtime* rt)
 	m_evaluated = true;
 	return true;
 }
-bool Range::Run(Runtime* rt, void* pContext, Value& v, LValue* lValue)
+bool Range::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	if (!m_evaluated)
 	{

@@ -25,7 +25,7 @@ enum class TraceEvent
 };
 typedef bool (*XTraceFunc)(
 	Runtime* rt,
-	void* pContext,
+	XObj* pContext,
 	AST::StackFrame* frame,
 	TraceEvent traceEvent,
 	AST::Scope* pThisBlock,
@@ -78,7 +78,7 @@ public:
 	{
 		return m_stackBottom;
 	}
-	inline virtual bool Set(AST::Scope* s,void* pContext, int idx, X::Value& v)
+	inline virtual bool Set(AST::Scope* s,XObj* pContext, int idx, X::Value& v)
 	{
 		bool bOK = false;
 		auto it = m_stackBottom;
@@ -99,7 +99,7 @@ public:
 		m_stackBottom->SetReturn(v);
 		return true;
 	}
-	inline virtual bool Get(AST::Scope* s,void* pContext, int idx, 
+	inline virtual bool Get(AST::Scope* s,XObj* pContext, int idx, 
 		X::Value& v,X::LValue* lValue = nullptr)
 	{
 		bool bOK = false;

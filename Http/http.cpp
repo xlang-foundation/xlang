@@ -23,7 +23,7 @@ namespace X
 		}
 		m_handlers.clear();
 	}
-	bool HttpServer::Listen(void* rt, void* pContext,
+	bool HttpServer::Listen(void* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
@@ -35,7 +35,7 @@ namespace X
 		retValue = X::Value(bOK);
 		return bOK;
 	}
-	bool HttpServer::Stop(void* rt, void* pContext,
+	bool HttpServer::Stop(void* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
@@ -43,7 +43,7 @@ namespace X
 		((httplib::Server*)m_pSrv)->stop();
 		return true;
 	}
-	bool HttpServer::Get(void* rt, void* pContext,
+	bool HttpServer::Get(void* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
@@ -101,7 +101,7 @@ namespace X
 			});
 		return true;
 	}
-	bool HttpResponse::SetContent(void* rt, void* pContext,
+	bool HttpResponse::SetContent(void* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, X::Value& retValue)
 	{
 		auto* pResp = (httplib::Response*)m_pResponse;
@@ -142,7 +142,7 @@ namespace X
 		}
 		return true;
 	}
-	bool HttpRequest::Getmethod(void* rt, void* pContext,
+	bool HttpRequest::Getmethod(void* rt, XObj* pContext,
 		ARGS& params, 
 		KWARGS& kwParams, 
 		X::Value& retValue)
@@ -152,7 +152,7 @@ namespace X
 		retValue = X::Value((char*)strVal.c_str(), (int)strVal.size()); 
 		return true; 
 	}
-	bool HttpRequest::Getbody(void* rt, void* pContext,
+	bool HttpRequest::Getbody(void* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
@@ -162,7 +162,7 @@ namespace X
 		retValue = X::Value((char*)strVal.c_str(), (int)strVal.size());
 		return true;
 	}
-	bool HttpRequest::Getpath(void* rt, void* pContext,
+	bool HttpRequest::Getpath(void* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
@@ -172,7 +172,7 @@ namespace X
 		retValue = X::Value((char*)strVal.c_str(), (int)strVal.size());
 		return true;
 	}
-	bool HttpRequest::Getremote_addr(void* rt, void* pContext,
+	bool HttpRequest::Getremote_addr(void* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
@@ -182,7 +182,7 @@ namespace X
 		retValue = X::Value((char*)strVal.c_str(), (int)strVal.size());
 		return true;
 	}
-	bool HttpRequest::GetAllHeaders(void* rt, void* pContext, ARGS& params,
+	bool HttpRequest::GetAllHeaders(void* rt, XObj* pContext, ARGS& params,
 		KWARGS& kwParams, X::Value& retValue)
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
@@ -198,7 +198,7 @@ namespace X
 		retValue = X::Value(dict);
 		return true;
 	}
-	bool HttpRequest::GetParams(void* rt, void* pContext, ARGS& params,
+	bool HttpRequest::GetParams(void* rt, XObj* pContext, ARGS& params,
 		KWARGS& kwParams, X::Value& retValue)
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;

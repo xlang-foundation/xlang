@@ -96,7 +96,7 @@ public:
 			}
 		}
 	}
-	virtual bool Run(Runtime* rt, void* pContext,
+	virtual bool Run(Runtime* rt, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
 };
 
@@ -151,9 +151,9 @@ public:
 	}
 	std::string ConvertDotSeqToString(Expression* expr);
 	virtual void ScopeLayout() override;
-	virtual bool Run(Runtime* rt, void* pContext,
+	virtual bool Run(Runtime* rt, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
-	virtual bool CalcCallables(Runtime* rt, void* pContext,
+	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
 };
 class Package :
@@ -200,16 +200,16 @@ public:
 		return true;
 	}
 	// Inherited via Scope
-	virtual bool Set(Runtime* rt, void* pContext, int idx, Value& v) override
+	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		m_stackFrame->Set(idx, v);
 		return true;
 	}
-	virtual bool SetIndexValue(XRuntime* rt, void* pContext, int idx, Value& v) override
+	virtual bool SetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		return Set((Runtime*)rt, pContext, idx, v);
 	}
-	virtual bool Get(Runtime* rt, void* pContext, int idx, Value& v,
+	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override
 	{
 		m_stackFrame->Get(idx, v, lValue);

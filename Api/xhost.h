@@ -21,7 +21,7 @@ namespace X
 	typedef XPackage* (*PackageCreator)(XRuntime* rt);
 	typedef std::vector<X::Value> ARGS;
 	typedef std::unordered_map<std::string, X::Value> KWARGS;
-	typedef bool (*U_FUNC) (XRuntime* rt, void* pContext,
+	typedef bool (*U_FUNC) (XRuntime* rt, XObj* pContext,
 		std::vector<Value>& params, KWARGS& kwParams, Value& retValue);
 	using EventHandler = std::function<void(const Value&)>;
 

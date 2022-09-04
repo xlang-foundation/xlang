@@ -15,7 +15,7 @@ namespace X
 		public:
 			Function(AST::Func* p);
 			~Function();
-			virtual bool CalcCallables(Runtime* rt, void* pContext,
+			virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 				std::vector<AST::Scope*>& callables) override
 			{
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;

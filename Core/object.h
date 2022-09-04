@@ -17,7 +17,7 @@ namespace X {
 	namespace AST { class Scope; }
 	typedef X::Value(*EnumProc)(X::Value& elm, unsigned long long idx);
 	typedef X::Value(*IterateProc)(
-		X::XRuntime* rt, void* pContext,
+		X::XRuntime* rt, XObj* pContext,
 		X::Value& keyOrIdx,X::Value& val,ARGS& params,KWARGS& kwParams);
 class Runtime;
 namespace Data {
@@ -73,12 +73,12 @@ namespace Data {
 		{ 
 			return nullptr; 
 		}
-		virtual bool Iterate(X::XRuntime* rt, void* pContext,
+		virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
 			IterateProc proc,ARGS& params, KWARGS& kwParams)
 		{
 			return true;
 		}
-		virtual bool CalcCallables(Runtime* rt, void* pContext,
+		virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
 			return false;
@@ -251,7 +251,7 @@ namespace Data {
 		}
 		virtual List* FlatPack(Runtime* rt,
 			long long startIndex, long long count) override;
-		virtual bool CalcCallables(Runtime* rt, void* pContext,
+		virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables) override
 		{
 			return m_obj ? m_obj->CalcCallables(rt, pContext, callables) : false;

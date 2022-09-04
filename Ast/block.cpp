@@ -27,7 +27,7 @@ void Block::Add(Expression* item)
 	item->ScopeLayout();
 
 }
-bool Block::Run(XRuntime* rt0,void* pContext, Value& v, LValue* lValue)
+bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 {
 	if (Body.size() == 0)
 	{
@@ -91,7 +91,7 @@ bool Block::Run(XRuntime* rt0,void* pContext, Value& v, LValue* lValue)
 	}
 	return bOk;
 }
-bool While::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
+bool While::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	if (R == nil)
 	{
@@ -113,7 +113,7 @@ bool While::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
 	}
 	return true;
 }
-bool For::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
+bool For::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	Value v0;
 	while (true)
@@ -149,7 +149,7 @@ bool If::EatMe(Expression* other)
 		return false;
 	}
 }
-bool If::Run(Runtime* rt,void* pContext,Value& v,LValue* lValue)
+bool If::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	bool bRet = true;
 	bool bCanRun = false;

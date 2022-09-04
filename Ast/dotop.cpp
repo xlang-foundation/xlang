@@ -93,7 +93,7 @@ void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
 		var->ScopeLayout(scopes);
 	}
 }
-bool DotOp::DotProcess(Runtime* rt, void* pContext, 
+bool DotOp::DotProcess(Runtime* rt, XObj* pContext, 
 	Value& v_l, Expression* R,
 	Value& v, LValue* lValue)
 {
@@ -114,7 +114,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 
 	auto AddFunc = [&](
 		Value& v0, LValue& lVal,
-		void* pContext)
+		XObj* pContext)
 	{
 		if (v0.IsObject())
 		{
@@ -146,7 +146,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	};
 	auto RunCallPerObj = [&](
 		Expression* pExpr,
-		void* pContext)
+		XObj* pContext)
 	{
 		if (pExpr->m_type == ObType::Pair)
 		{
@@ -240,7 +240,7 @@ bool DotOp::DotProcess(Runtime* rt, void* pContext,
 	}
 	return true;
 }
-bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
+bool DotOp::Run(Runtime* rt,XObj* pContext,Value& v, LValue* lValue)
 {
 	if (!L || !R)
 	{
@@ -301,7 +301,7 @@ bool DotOp::Run(Runtime* rt,void* pContext,Value& v, LValue* lValue)
 	DotProcess(rt, pContext,v_l, r,v, lValue);
 	return true;
 }
-bool DotOp::CalcCallables(Runtime* rt, void* pContext,
+bool DotOp::CalcCallables(Runtime* rt, XObj* pContext,
 	std::vector<Scope*>& callables)
 {
 	Value val;

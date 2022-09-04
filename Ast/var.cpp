@@ -6,7 +6,7 @@ namespace X
 {
 namespace AST
 {
-bool Var::CalcCallables(Runtime* rt, void* pContext,
+bool Var::CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables)
 {
 	Value val;

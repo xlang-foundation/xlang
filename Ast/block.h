@@ -79,7 +79,7 @@ public:
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
-	virtual bool Run(XRuntime* rt,void* pContext, Value& v, LValue* lValue = nullptr);
+	virtual bool Run(XRuntime* rt,XObj* pContext, Value& v, LValue* lValue = nullptr);
 };
 class For :
 	virtual public Block
@@ -90,7 +90,7 @@ public:
 		Block(op)
 	{
 	}
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class While :
 	virtual public Block
@@ -102,7 +102,7 @@ public:
 	{
 	}
 
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class If :
@@ -120,7 +120,7 @@ public:
 		if (m_next) delete m_next;
 	}
 	virtual bool EatMe(Expression* other) override;
-	virtual bool Run(Runtime* rt,void* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 }
 }

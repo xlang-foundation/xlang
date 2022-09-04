@@ -22,7 +22,7 @@ namespace X
 			return pRetObj;
 		}
 		PyProxyObject::PyProxyObject(
-			Runtime* rt, void* pContext,
+			Runtime* rt, XObj* pContext,
 			std::string name, std::string fromPath,
 			std::string curPath)
 			:PyProxyObject()
@@ -81,7 +81,7 @@ namespace X
 			}
 			return true;
 		}
-		void PyProxyObject::EachVar(Runtime* rt, void* pContext,
+		void PyProxyObject::EachVar(Runtime* rt, XObj* pContext,
 			std::function<void(std::string, X::Value&)> const& f)
 		{
 			auto keys = m_locals.Keys();
@@ -104,7 +104,7 @@ namespace X
 			return (pS_Proxy->m_name == m_name &&
 				pS_Proxy->m_proxyType == m_proxyType);
 		}
-		bool PyProxyObject::CalcCallables(Runtime* rt, void* pContext,
+		bool PyProxyObject::CalcCallables(Runtime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
 			callables.push_back(dynamic_cast<AST::Scope*>(this));

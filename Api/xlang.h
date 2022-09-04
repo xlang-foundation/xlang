@@ -136,7 +136,7 @@ namespace X
 		virtual int AddMethod(const char* name) = 0;
 		virtual void* GetEmbedObj() = 0;
 		virtual bool Init(int varNum) = 0;
-		virtual bool SetIndexValue(XRuntime* rt, void* pContext, int idx, Value& v) = 0;
+		virtual bool SetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v) = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)
 	{

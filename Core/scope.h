@@ -57,7 +57,7 @@ public:
 		}
 		return names;
 	}
-	virtual void EachVar(Runtime* rt,void* pContext,
+	virtual void EachVar(Runtime* rt,XObj* pContext,
 		std::function<void(std::string,X::Value&)> const& f)
 	{
 		for (auto it : m_Vars)
@@ -98,20 +98,20 @@ public:
 			return (int)ScopeVarIndex::INVALID;
 		}
 	}
-	inline virtual bool Get(Runtime* rt, void* pContext,
+	inline virtual bool Get(Runtime* rt, XObj* pContext,
 		std::string& name, X::Value& v, LValue* lValue = nullptr)
 	{
 		int idx = AddOrGet(name, true);
 		return (idx>=0)?rt->Get(this, pContext, idx, v, lValue):false;
 	}
-	inline virtual bool Set(Runtime* rt, void* pContext,
+	inline virtual bool Set(Runtime* rt, XObj* pContext,
 		int idx, X::Value& v)
 	{
 		assert(idx != -1);
 		return rt->Set(this, pContext, idx, v);
 	}
 
-	inline virtual bool Get(Runtime* rt, void* pContext,
+	inline virtual bool Get(Runtime* rt, XObj* pContext,
 		int idx, X::Value& v, LValue* lValue = nullptr)
 	{
 		return rt->Get(this, pContext, idx, v, lValue);
