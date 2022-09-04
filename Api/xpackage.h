@@ -19,7 +19,7 @@
 	{\
 	int idx = pPackage->AddMethod(fn_name);\
 	auto* pFuncObj = X::g_pXHost->CreateFunction(fn_name,\
-			(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,\
+			(X::U_FUNC)([](X::XRuntime* rt, X::XObj* pContext,\
 				X::ARGS& params,\
 				X::KWARGS& kwParams,\
 				X::Value& retValue)\
@@ -36,7 +36,7 @@
 	{\
 	int idx= pPackage->AddMethod(class_name);\
 	auto* pFuncObj = X::g_pXHost->CreateFunction(class_name,\
-		(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,\
+		(X::U_FUNC)([](X::XRuntime* rt, X::XObj* pContext,\
 			X::ARGS& params,\
 			X::KWARGS& kwParams,\
 			X::Value& retValue)\
