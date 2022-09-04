@@ -115,7 +115,7 @@ namespace X
 						X::KWARGS& kwParams,
 						X::Value& retValue)
 						{
-							List* pObj = (List*)pContext;
+							List* pObj = dynamic_cast<List*>((Object*)pContext);
 							long long idx = params[0];
 							pObj->Remove(idx);
 							retValue = Value(true);
@@ -136,7 +136,7 @@ namespace X
 						X::Value& retValue)
 						{
 							std::cout << "List.Size" << std::endl;
-							List* pObj = (List*)pContext;
+							List* pObj = dynamic_cast<List*>((Object*)pContext);
 							retValue = Value(pObj->Size());
 							std::cout << "List.Size->End" << std::endl;
 							return true;

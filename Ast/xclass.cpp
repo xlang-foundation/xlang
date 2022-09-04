@@ -76,7 +76,7 @@ bool XClass::Get(Runtime* rt,void* pContext, int idx, Value& v, LValue* lValue)
 {
 	if (pContext)
 	{
-		Data::XClassObject* pObj = (Data::XClassObject*)pContext;
+		Data::XClassObject* pObj = dynamic_cast<Data::XClassObject*>((Data::Object*)pContext);
 		pObj->GetStack()->Get(idx, v, lValue);
 	}
 	else if (m_stackFrame)

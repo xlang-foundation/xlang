@@ -42,7 +42,7 @@ public:
 	}
 };
 class List :
-	public Object
+	public virtual Object
 {
 	friend class ListScope;
 protected:
@@ -149,7 +149,7 @@ public:
 			Object* pObj = dynamic_cast<Object*>(r.GetObj());
 			if (pObj->GetType() == ObjType::List)
 			{
-				List* pOther = (List*)pObj;
+				List* pOther = dynamic_cast<List*>(pObj);
 				for (auto& it : pOther->m_data)
 				{
 					Add(nullptr,it);

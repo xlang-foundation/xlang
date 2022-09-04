@@ -184,8 +184,8 @@ export class XLangRuntime extends EventEmitter {
 			}
 			else if(strData === "end" || strData === "error")
 			{
-				this.sendEvent('end');
 				this._sessionRunning = false;
+				this.sendEvent('end');
 			}
 			if(this._sessionRunning )
 			{

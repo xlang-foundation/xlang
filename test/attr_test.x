@@ -1,4 +1,4 @@
-x=[](size=10,init='rand(1.0,100.0)')
+x=[](size=10000,init='rand(1.0,100.0)')
 num =x.size()
 
 def test(i):

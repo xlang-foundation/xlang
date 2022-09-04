@@ -82,7 +82,7 @@ namespace X
 				auto valType = val.GetValueType();
 				Data::Str* pStrType = new Data::Str(valType);
 				dict->Set("Type", X::Value("TableRow"));
-				X::Value objId((unsigned long long)row);
+				X::Value objId((unsigned long long)(X::XObj*)row);
 				dict->Set("Value", objId);
 				X::Value valSize(row->Size());
 				dict->Set("Size", valSize);

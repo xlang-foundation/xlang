@@ -190,14 +190,15 @@ struct ColInfo
 };
 class Table;
 class TableRow :
-	public Object
+	virtual public Object
 {
 	friend class Table;
 	long long m_r = 0;
 	long long m_rowId = 0;
 	Table* m_table = nullptr;
 public:
-	TableRow(Table* table,long long id, long long r)
+	TableRow(Table* table,long long id, long long r):
+		Object(), XObj(), ObjRef()
 	{
 		m_table = table;
 		m_r = r;
@@ -214,7 +215,7 @@ public:
 	virtual List* FlatPack(Runtime* rt, long long startIndex, long long count) override;
 };
 class Table
-	:public Object
+	:virtual public Object
 {
 	friend class TableRow;
 
@@ -226,7 +227,7 @@ class Table
 	std::unordered_map<std::string, int> m_colMap;
 	std::map<long long, TableRow*> m_rowMap;
 public:
-	Table()
+	Table():Object(), XObj(), ObjRef()
 	{
 		m_t = ObjType::Table;
 		m_rowIDcol.ary = new DynVariantAry(1, sizeof(long long),ValueType::Int64);
@@ -268,7 +269,7 @@ public:
 			Data::Object* pObjVal = dynamic_cast<Data::Object*>(r.GetObj());
 			if (pObjVal->GetType() == X::ObjType::List)
 			{
-				List* pList = (List*)pObjVal;
+				List* pList = dynamic_cast<List*>(pObjVal);
 				FillWithList(pList->Data());
 			}
 		}

@@ -32,7 +32,7 @@ namespace Data {
 		AttributeBag* m_aBag = nullptr;
 		Locker m_lock;
 	public:
-		Object()
+		Object():XObj(), ObjRef()
 		{
 			G::I().AddObj(this);
 		}
@@ -173,7 +173,7 @@ namespace Data {
 		}
 	};
 	class Expr
-		:public Object
+		: public virtual Object
 	{//any valid AST tree with one root
 	protected:
 		AST::Expression* m_expr = nullptr;
@@ -197,7 +197,7 @@ namespace Data {
 		TaskRun,
 	};
 	class MetaFunction :
-		public Object
+		public virtual Object
 	{
 	protected:
 		AST::Func* m_func = nullptr;
@@ -220,7 +220,7 @@ namespace Data {
 	};
 
 	class XClassObject :
-		public Object
+		public virtual Object
 	{
 	protected:
 		AST::XClass* m_obj = nullptr;
@@ -277,7 +277,7 @@ namespace Data {
 		}
 	};
 	class Future:
-		public Object
+		public virtual Object
 	{
 		void* m_pTask = nullptr;
 	public:

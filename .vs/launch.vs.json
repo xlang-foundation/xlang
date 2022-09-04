@@ -19,7 +19,7 @@
       "args_json": [ "C:\\Dev\\X\\test\\simple_test.json" ],
       "args9": [ "C:\\Dev\\X\\test\\test.json" ],
       "args4": [ "C:\\Dev\\Cantor\\test\\xlang\\cantor_client_test.x" ],
-      "args": [ "-event_loop", "-dbg" ],
+      "args": [ "-event_loop", "-dbg", "-enable_python" ],
       "name": "xlang.exe"
     }
   ]
