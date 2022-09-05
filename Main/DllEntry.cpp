@@ -62,6 +62,20 @@ bool LoadDevopsEngine(int port = 3141)
 		loadDllName = candiateFiles[0];
 		bHaveDll = true;
 	}
+	else
+	{
+		for (auto& pa : g_pXload->GetConfig().dllSearchPath)
+		{
+			bRet = file_search(pa,
+				engName + ShareLibExt, candiateFiles);
+			if (bRet && candiateFiles.size() > 0)
+			{
+				loadDllName = candiateFiles[0];
+				bHaveDll = true;
+				break;
+			}
+		}
+	}
 	if (!bHaveDll)
 	{
 		return false;
@@ -97,6 +111,20 @@ bool LoadPythonEngine()
 	{
 		loadDllName = candiateFiles[0];
 		bHaveDll = true;
+	}
+	else
+	{
+		for (auto& pa : g_pXload->GetConfig().dllSearchPath)
+		{
+			bRet = file_search(pa,
+				engName + ShareLibExt, candiateFiles);
+			if (bRet && candiateFiles.size() > 0)
+			{
+				loadDllName = candiateFiles[0];
+				bHaveDll = true;
+				break;
+			}
+		}
 	}
 	if (!bHaveDll)
 	{

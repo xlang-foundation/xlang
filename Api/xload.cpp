@@ -170,7 +170,7 @@ namespace X
 		{
 			for (auto pa : m_pConfig->dllSearchPath)
 			{
-				bFound = SearchDll(engName, m_pConfig->appPath,pa);
+				bFound = SearchDll(engName,pa, loadDllName);
 				if (bFound)
 				{
 					break;
