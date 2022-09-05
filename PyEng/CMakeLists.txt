@@ -55,8 +55,7 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VER
 #set(_Python3_LIBRARY_DEBUG,${_Python3_LIBRARY_RELEASE})
 #set(Python3_LIBRARIES,"${_Python3_LIBRARY_RELEASE})
 FILE(GLOB SRC *.cpp)
-FILE(GLOB Out_SRC ../Ext/Locker.cpp
-        ../utils/utility.cpp)
+FILE(GLOB Out_SRC ../utils/utility.cpp)
 
 
 add_library(${PROJECT_NAME} 
@@ -68,8 +67,6 @@ add_library(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC
     "../Inc"
-    "../Ext"
-    "../Core"
     "../utils"
 	"${Python3_INCLUDE_DIRS}"
 	"${Python3_NumPy_INCLUDE_DIRS}"
