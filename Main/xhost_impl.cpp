@@ -13,9 +13,10 @@
 namespace X 
 {
 	X::XHost* g_pXHost = nullptr;
-	void CreatXHost()
+	X::XHost* CreatXHost()
 	{
 		g_pXHost = new XHost_Impl();
+		return g_pXHost;
 	}
 	void DestoryXHost()
 	{
@@ -152,5 +153,8 @@ namespace X
 			}
 		}
 	}
-
+	AppEventCode XHost_Impl::HandleAppEvent(int signum)
+	{
+		return Hosting::I().HandleAppEvent(signum);
+	}
 }

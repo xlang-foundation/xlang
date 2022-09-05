@@ -22,7 +22,8 @@ namespace X
 		virtual void OffEvent(const char* evtName, long Cookie) override;
 		virtual Value GetAttr(const X::Value& v, const char* attrName) override;
 		virtual void SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal) override;
+		virtual AppEventCode HandleAppEvent(int signum) override;
 	};
-	void CreatXHost();
+	X::XHost* CreatXHost();
 	void DestoryXHost();
 }

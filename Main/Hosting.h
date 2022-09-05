@@ -6,11 +6,6 @@
 #include <unordered_map>
 namespace X
 {
-	enum class AppEventCode
-	{
-		Exit,
-		Continue,
-	};
 	class Hosting:
 		public Singleton<Hosting>
 	{

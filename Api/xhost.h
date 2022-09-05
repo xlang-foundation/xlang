@@ -1,6 +1,7 @@
 #ifndef _X_HOST_H_
 #define _X_HOST_H_
 #include "value.h"
+#include "xload.h"
 #include <vector>
 #include <unordered_map>
 #include <functional>
@@ -43,6 +44,7 @@ namespace X
 		virtual void OffEvent(const char* evtName, long Cookie) = 0;
 		virtual Value GetAttr(const X::Value& v, const char* attrName) = 0;
 		virtual void SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal) = 0;
+		virtual AppEventCode HandleAppEvent(int signum) = 0;
 	};
 	extern XHost* g_pXHost;
 }

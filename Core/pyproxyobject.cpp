@@ -41,7 +41,7 @@ namespace X
 				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
 					TraceEvent::Call, this, this);
 			}
-			m_obj = g_pHost->Import(name.c_str());
+			m_obj = g_pPyHost->Import(name.c_str());
 			sys["path.remove"](m_path);
 		}
 		PyProxyObject::~PyProxyObject()

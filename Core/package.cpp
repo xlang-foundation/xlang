@@ -6,7 +6,10 @@
 #include "Hosting.h"
 #include "moduleobject.h"
 
-extern std::string g_ExePath;
+namespace X
+{
+	extern XLoad* g_pXload;
+}
 
 X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
 {
@@ -25,9 +28,10 @@ bool X::AST::Import::FindAndLoadExtensions(Runtime* rt,
 {
 	std::string loadDllName;
 	bool bHaveDll = false;
-	//search xlang.exe folder first
+	//search xlang.engine folder first
 	std::vector<std::string> candiateFiles;
-	bool bRet = file_search(g_ExePath, loadingModuleName + ShareLibExt, candiateFiles);
+	bool bRet = file_search(g_pXload->GetConfig().xlangEnginePath,
+		loadingModuleName + ShareLibExt, candiateFiles);
 	if (bRet && candiateFiles.size() > 0)
 	{
 		loadDllName = candiateFiles[0];
@@ -90,7 +94,7 @@ bool X::AST::Import::FindAndLoadXModule(Runtime* rt,
 	
 	std::vector<std::string> searchPaths;
 	searchPaths.push_back(curModulePath);
-	searchPaths.push_back(g_ExePath);
+	searchPaths.push_back(g_pXload->GetConfig().xlangEnginePath);
 
 	auto search = [](std::string& loadingModuleName,
 		std::vector<std::string>& searchPaths,

@@ -1,48 +1,28 @@
 ﻿// LitePy.cpp : Defines the entry point for the application.
 //
-#include "X.h"
-#include "builtin.h"
-#include "manager.h"
-#include "xpackage.h"
-#include "runtime.h"
-#include "json.h"
-#include "Hosting.h"
 #include <signal.h>
-#include "utility.h"
-#include "event.h"
-#include "port.h"
-#include "PyEngObject.h"
-#include "xhost.h"
-#include "xhost_impl.h"
-#include "action.h"
-#include "AddScripts.h"
-
-void test();
+#include <vector>
+#include <string>
+#include "X.h"
+#include "xload.h"
+#if (WIN32)
+#define Path_Sep_S "\\"
+#define Path_Sep '\\'
+#else
+#define Path_Sep_S "/"
+#define Path_Sep '/'
+#endif
 
 struct ParamConfig
 {
+	X::Config config;
 	bool print_usage = false;//-help |-? |-h
-	bool dbg = false;//-dbg
-	bool enablePython = false;//-enable_python
-	bool runAsBackend = false;//-run_as_backend
-	bool enterEventLoop = false;//-event_loop
-	std::string inlineCode;//-c "code"
-	std::string fileName;
-	std::vector<std::string> passInParams;
-
-
-	//context
-	void* pythonLibHandle = nullptr;
-	void* devopsLibHandler = nullptr;
 };
 
-PyEngHost* g_pHost = nullptr;
-std::string g_ExePath;
-ParamConfig g_ParamConfig;
-
+X::XLoad g_xLoad;
 void signal_callback_handler(int signum) 
 {
-	X::AppEventCode code = X::Hosting::I().HandleAppEvent(signum);
+	X::AppEventCode code = g_xLoad.HandleAppEvent(signum);
 	if (code == X::AppEventCode::Exit)
 	{
 		exit(signum);
@@ -50,100 +30,6 @@ void signal_callback_handler(int signum)
 	signal(SIGINT, signal_callback_handler);
 }
 
-void UnloadPythonEngine()
-{
-	typedef void (*UNLOAD)();
-	if (g_ParamConfig.pythonLibHandle)
-	{
-		UNLOAD unload = (UNLOAD)GetProc(g_ParamConfig.pythonLibHandle, "Unload");
-		if (unload)
-		{
-			unload();
-		}
-		UNLOADLIB(g_ParamConfig.pythonLibHandle);
-		g_ParamConfig.pythonLibHandle = nullptr;
-	}
-}
-void UnloadDevopsEngine()
-{
-	typedef void (*UNLOAD)();
-	if (g_ParamConfig.devopsLibHandler)
-	{
-		UNLOAD unload = (UNLOAD)GetProc(g_ParamConfig.devopsLibHandler, "Unload");
-		if (unload)
-		{
-			unload();
-		}
-		UNLOADLIB(g_ParamConfig.devopsLibHandler);
-		g_ParamConfig.devopsLibHandler = nullptr;
-	}
-}
-bool LoadDevopsEngine(int port=3141)
-{
-	std::string loadDllName;
-	bool bHaveDll = false;
-	std::vector<std::string> candiateFiles;
-	std::string engName("xlang_devsrv");
-	bool bRet = file_search(g_ExePath, engName + ShareLibExt, candiateFiles);
-	if (bRet && candiateFiles.size() > 0)
-	{
-		loadDllName = candiateFiles[0];
-		bHaveDll = true;
-	}
-	if (!bHaveDll)
-	{
-		return false;
-	}
-	typedef void (*LOAD)(void* pHost,int port);
-	void* libHandle = LOADLIB(loadDllName.c_str());
-	if (libHandle)
-	{
-		LOAD load = (LOAD)GetProc(libHandle, "Load");
-		if (load)
-		{
-			load((void*)X::g_pXHost,port);
-		}
-		g_ParamConfig.devopsLibHandler = libHandle;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-bool LoadPythonEngine()
-{
-	typedef void (*LOAD)(void** ppHost);
-
-	std::string engFilePath = g_ExePath+Path_Sep_S+"pyeng.dll";
-	if (!exists(engFilePath))
-	{
-		engFilePath = g_ExePath + Path_Sep_S +"PyEng"+ Path_Sep_S+"pyeng.dll";
-		if (!exists(engFilePath))
-		{
-			return false;
-		}
-	}
-	void* libHandle = LOADLIB(engFilePath.c_str());
-	if (libHandle)
-	{
-		LOAD load = (LOAD)GetProc(libHandle,"Load");
-		if (load)
-		{
-			load((void**) &g_pHost);
-		}
-		g_ParamConfig.pythonLibHandle = libHandle;
-		return true;
-	}
-	else
-	{
-#if (WIN32)
-		DWORD err = GetLastError();
-		err = err;
-#endif
-		return false;
-	}
-}
 
 void PrintUsage()
 {
@@ -161,7 +47,7 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 	auto pos = progName.rfind(Path_Sep);
 	if (pos != progName.npos)
 	{
-		g_ExePath = progName.substr(0, pos);
+		paramCfg.config.appPath = progName.substr(0, pos);
 	}
 	if (params.size() == 1)
 	{
@@ -184,7 +70,7 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 				i++;
 				if (i < (int)params.size())
 				{
-					paramCfg.inlineCode = params[i];
+					paramCfg.config.inlineCode = params[i];
 					i++;
 				}
 			}
@@ -193,29 +79,29 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 				paramCfg.print_usage = true;
 				i++;
 			}
-			else if (s.starts_with("-c"))
+			else if (s.find("-c")==0)
 			{//pass code as string
-				paramCfg.inlineCode = params[i].substr(2);
+				paramCfg.config.inlineCode = params[i].substr(2);
 				i++;
 			}
 			else if (s == "-dbg")
 			{
-				paramCfg.dbg = true;
+				paramCfg.config.dbg = true;
 				i++;
 			}
 			else if (s == "-enable_python" || s == "-python")
 			{
-				paramCfg.enablePython = true;
+				paramCfg.config.enablePython = true;
 				i++;
 			}
 			else if (s == "-run_as_backend" || s == "-backend")
 			{
-				paramCfg.runAsBackend = true;
+				paramCfg.config.runAsBackend = true;
 				i++;
 			}
 			else if (s == "-event_loop")
 			{
-				paramCfg.enterEventLoop = true;
+				paramCfg.config.enterEventLoop = true;
 				i++;
 			}
 		}
@@ -223,12 +109,12 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 		{
 			starFile = true;
 			//first one is file name
-			paramCfg.fileName = s;
+			paramCfg.config.fileName = s;
 			i++;
 		}
 		else
 		{//parse passIn Params after file name
-			paramCfg.passInParams.push_back(s);
+			paramCfg.config.passInParams.push_back(s);
 			i++;
 		}
 	}
@@ -238,108 +124,19 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 int main(int argc, char* argv[])
 {
 	std::vector<std::string> params(argv, argv+argc);
-	ParseCommandLine(params, g_ParamConfig);
-	if (g_ParamConfig.print_usage)
+	ParamConfig paramConfig;
+
+	ParseCommandLine(params, paramConfig);
+	if (paramConfig.print_usage)
 	{
 		PrintUsage();
 		return 0;
 	}
-	//test();
-
 	signal(SIGINT, signal_callback_handler);
-
-	X::CreatXHost();
-
-	if (g_ParamConfig.enablePython)
+	int retCode = g_xLoad.Load(&paramConfig.config);
+	if (retCode == 0)
 	{
-		LoadPythonEngine();
+		retCode = g_xLoad.Run();
 	}
-	X::Builtin::I().RegisterInternals();
-	X::BuildOps();
-	if (g_ParamConfig.dbg)
-	{
-		LoadDevopsEngine();
-	}
-
-	X::ScriptsManager::I().Load();
-	X::ScriptsManager::I().Run();
-
-	bool HasCode = false;
-	std::string code;
-	std::string fileName;
-	if (!g_ParamConfig.inlineCode.empty())
-	{
-		X::Value retVal;
-		fileName = "inline_code";
-		HasCode = true;
-		code = g_ParamConfig.inlineCode;
-		ReplaceAll(code, "\\n", "\n");
-		ReplaceAll(code, "\\t", "\t");
-		X::Hosting::I().Run(fileName, g_ParamConfig.inlineCode.c_str(),
-			(int)g_ParamConfig.inlineCode.size(), retVal);
-	}
-	else if (!g_ParamConfig.fileName.empty())
-	{
-		bool bOK = LoadStringFromFile(g_ParamConfig.fileName, code);
-		if (bOK)
-		{
-			HasCode = true;
-			fileName = g_ParamConfig.fileName;
-		}
-		else
-		{
-			//todo:
-		}
-	}
-	bool enterEventLoop = g_ParamConfig.enterEventLoop;
-	if (HasCode)
-	{
-		if (g_ParamConfig.runAsBackend)
-		{
-			X::Hosting::I().RunAsBackend(fileName, code);
-			std::cout << "Running in background" << std::endl;
-			X::EventSystem::I().Loop();
-			enterEventLoop = false;
-		}
-		else
-		{
-			X::Value retVal;
-			X::Hosting::I().Run(fileName, code.c_str(), (int)code.size(), retVal);
-			if (retVal.IsValid())
-			{
-				std::cout << retVal.ToString() << std::endl;
-			}
-		}
-	}
-	if(enterEventLoop)//enter event loop if no file or no code
-	{
-		X::EventSystem::I().Loop();
-	}
-	X::Builtin::I().Cleanup();
-	X::Manager::I().Cleanup();
-
-	if (g_ParamConfig.enablePython)
-	{
-		UnloadPythonEngine();
-	}
-	if (g_ParamConfig.dbg)
-	{
-		UnloadDevopsEngine();
-	}
-	X::G::I().Check();
-	X::DestoryXHost();
-	return 0;
-}
-
-#include "yaml_parser.h"
-
-void test()
-{
-	std::string strData;
-	bool bOK = LoadStringFromFile(g_ParamConfig.fileName, strData);
-	X::Text::YamlParser yml;
-	yml.Init();
-	yml.LoadFromString((char*)strData.c_str(), (int)strData.size());
-	yml.Parse();
-
+	return retCode;
 }

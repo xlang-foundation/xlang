@@ -70,7 +70,7 @@ public:
 	virtual PyEngObjectPtr GetLocals() = 0;
 };
 
-extern PyEngHost* g_pHost;
+extern PyEngHost* g_pPyHost;
 
 #endif//_PyEngHost_H_
 

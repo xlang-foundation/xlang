@@ -7,7 +7,7 @@ project ("xlang_http")
 
 include_directories("../Api")
 
-FILE(GLOB API_SRC "../Api/*.cpp")
+FILE(GLOB API_SRC "../Api/value.cpp")
 FILE(GLOB Main_SRC "*.cpp")
 
 add_library(${PROJECT_NAME} 

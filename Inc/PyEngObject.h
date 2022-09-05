@@ -40,11 +40,11 @@ public:
 	{
 		if (m_idxType == IndexType::KEY)
 		{
-			g_pHost->KVSet(m_p,(TBase)m_key, (TBase)v);
+			g_pPyHost->KVSet(m_p,(TBase)m_key, (TBase)v);
 		}
 		else if (m_idxType == IndexType::Index)
 		{
-			g_pHost->Set(m_p,m_index, (TBase)v);
+			g_pPyHost->Set(m_p,m_index, (TBase)v);
 		}
 	}
 	template<typename TC>
@@ -52,11 +52,11 @@ public:
 	{
 		if (m_idxType == IndexType::KEY)
 		{
-			return (TC)(TBase)g_pHost->Get(m_p, m_key.c_str());
+			return (TC)(TBase)g_pPyHost->Get(m_p, m_key.c_str());
 		}
 		else
 		{
-			return (TC)(TBase)g_pHost->Get(m_p,m_index);
+			return (TC)(TBase)g_pPyHost->Get(m_p,m_index);
 		}
 	}
 
@@ -64,11 +64,11 @@ public:
 	{
 		if (m_idxType == IndexType::KEY)
 		{
-			return (TBase)g_pHost->Get(m_p, m_key.c_str());
+			return (TBase)g_pPyHost->Get(m_p, m_key.c_str());
 		}
 		else
 		{
-			return (TBase)g_pHost->Get(m_p, m_index);
+			return (TBase)g_pPyHost->Get(m_p, m_index);
 		}
 	}
 
@@ -148,26 +148,26 @@ public:
 	static void SetTrace(Python_TraceFunc func,
 		PyEngObjectPtr args)
 	{
-		if (g_pHost)
+		if (g_pPyHost)
 		{
-			g_pHost->SetTrace(func, args);
+			g_pPyHost->SetTrace(func, args);
 		}
 	}
 	inline static Object Import(const char* moduleName)
 	{
-		return g_pHost->Import(moduleName);
+		return g_pPyHost->Import(moduleName);
 	}
 	inline static Object FromGlobals()
 	{
-		return Object(g_pHost->GetGlobals(),true);
+		return Object(g_pPyHost->GetGlobals(),true);
 	}
 	inline static Object FromLocals()
 	{
-		return Object(g_pHost->GetLocals(),true);
+		return Object(g_pPyHost->GetLocals(),true);
 	}
 	Object(const char* buf, long long size)
 	{
-		m_p = g_pHost->CreateByteArray(buf, size);
+		m_p = g_pPyHost->CreateByteArray(buf, size);
 	}
 	Object(X::Value& v)
 	{
@@ -176,15 +176,15 @@ public:
 		case X::ValueType::None:
 			break;
 		case X::ValueType::Int64:
-			m_p = g_pHost->from_longlong(v);
+			m_p = g_pPyHost->from_longlong(v);
 			break;
 		case X::ValueType::Double:
-			m_p = g_pHost->from_double(v);
+			m_p = g_pPyHost->from_double(v);
 			break;
 		case X::ValueType::Object:
 			break;
 		case X::ValueType::Str:
-			m_p = g_pHost->from_str(v.ToString().c_str());
+			m_p = g_pPyHost->from_str(v.ToString().c_str());
 			break;
 		default:
 			break;
@@ -193,28 +193,28 @@ public:
 	template <typename VALUE>
 	Object(std::vector<VALUE> li)
 	{
-		m_p = g_pHost->NewList(li.size());
+		m_p = g_pPyHost->NewList(li.size());
 		for (int i=0;i<(int)li.size();i++)
 		{
-			g_pHost->Set(m_p,i,(Object)li[i]);
+			g_pPyHost->Set(m_p,i,(Object)li[i]);
 		}
 	}
 	template <typename KEY, typename VALUE>
 	Object(std::map <KEY, VALUE> kvMap)
 	{
-		m_p = g_pHost->NewDict();
+		m_p = g_pPyHost->NewDict();
 		for (auto kv : kvMap)
 		{
-			g_pHost->KVSet(m_p,(Object)kv.first,(Object)kv.second);
+			g_pPyHost->KVSet(m_p,(Object)kv.first,(Object)kv.second);
 		}
 	}
 	template <typename KEY, typename VALUE>
 	Object(std::unordered_map <KEY, VALUE> kvMap)
 	{
-		m_p = g_pHost->NewDict();
+		m_p = g_pPyHost->NewDict();
 		for (auto kv : kvMap)
 		{
-			g_pHost->Set(m_p, (Object)kv.first, (Object)kv.second);
+			g_pPyHost->Set(m_p, (Object)kv.first, (Object)kv.second);
 		}
 	}
 	//p is new ref which will call release on deconstructor
@@ -227,7 +227,7 @@ public:
 		m_p = p;
 		if (bAddRef && m_p != nullptr)
 		{
-			g_pHost->AddRef(m_p);
+			g_pPyHost->AddRef(m_p);
 		}
 	}
 	//p below, caller will release its refcount, so Object
@@ -240,7 +240,7 @@ public:
 		case PyEng::Action::AddRef:
 			if (m_p != nullptr)
 			{
-				g_pHost->AddRef(m_p);
+				g_pPyHost->AddRef(m_p);
 			}
 			break;
 		case PyEng::Action::ConvertToPythonObject:
@@ -260,54 +260,54 @@ public:
 
 	Object(int v)
 	{
-		m_p = g_pHost->from_int(v);
+		m_p = g_pPyHost->from_int(v);
 	}
 	Object(unsigned int v)
 	{
-		m_p = g_pHost->from_int((int)v);
+		m_p = g_pPyHost->from_int((int)v);
 	}
 	Object(long long v)
 	{
-		m_p = g_pHost?g_pHost->from_longlong(v):nullptr;
+		m_p = g_pPyHost?g_pPyHost->from_longlong(v):nullptr;
 	}
 	Object(unsigned long long v)
 	{
-		m_p = g_pHost?g_pHost->from_longlong((long long)v):nullptr;
+		m_p = g_pPyHost?g_pPyHost->from_longlong((long long)v):nullptr;
 	}
 	Object(float v)
 	{
-		m_p = g_pHost->from_float(v);
+		m_p = g_pPyHost->from_float(v);
 	}
 	Object(double v)
 	{
-		m_p = g_pHost->from_double(v);
+		m_p = g_pPyHost->from_double(v);
 	}
 	Object(const char* v)
 	{
-		m_p = g_pHost->from_str(v);
+		m_p = g_pPyHost->from_str(v);
 	}
 	Object(const std::string& v)
 	{
-		m_p = g_pHost->from_str(v.c_str());
+		m_p = g_pPyHost->from_str(v.c_str());
 	}
 	Object(const Object& self)
 	{
 		m_p = self.m_p;
 		if (m_p)
 		{
-			g_pHost->AddRef(m_p);
+			g_pPyHost->AddRef(m_p);
 		}
 	}
 	Object& operator=(const Object& o)
 	{
 		if (m_p)
 		{
-			g_pHost->Release(m_p);
+			g_pPyHost->Release(m_p);
 		}
 		m_p = o.m_p;
 		if (m_p)
 		{
-			g_pHost->AddRef(m_p);
+			g_pPyHost->AddRef(m_p);
 		}
 		return *this;
 	}
@@ -315,14 +315,14 @@ public:
 	{
 		if (m_p)
 		{
-			g_pHost->Release(m_p);
+			g_pPyHost->Release(m_p);
 		}
 	}
 	const char* GetType()
 	{
 		if (m_p)
 		{
-			return g_pHost->GetObjectType(m_p);
+			return g_pPyHost->GetObjectType(m_p);
 		}
 		else
 		{
@@ -333,7 +333,7 @@ public:
 	{
 		if (m_p)
 		{
-			g_pHost->AddRef(m_p);
+			g_pPyHost->AddRef(m_p);
 		}
 		return m_p;
 	}
@@ -352,86 +352,86 @@ public:
 	}
 	inline bool ContainKey(const char* key)
 	{
-		return g_pHost->ContainKey(m_p, Object(key));
+		return g_pPyHost->ContainKey(m_p, Object(key));
 	}
 	long long GetCount()
 	{
-		return g_pHost->GetCount(m_p);
+		return g_pPyHost->GetCount(m_p);
 	}
 	operator int() const 
 	{ 
-		return g_pHost->to_int(m_p);
+		return g_pPyHost->to_int(m_p);
 	}
 	operator long long() const
 	{
-		return g_pHost->to_longlong(m_p);
+		return g_pPyHost->to_longlong(m_p);
 	}
 	operator unsigned long long() const
 	{
-		return (unsigned long long)g_pHost->to_longlong(m_p);
+		return (unsigned long long)g_pPyHost->to_longlong(m_p);
 	}
 	operator float() const
 	{
-		return g_pHost->to_float(m_p);
+		return g_pPyHost->to_float(m_p);
 	}
 	operator double() const
 	{
-		return g_pHost->to_double(m_p);
+		return g_pPyHost->to_double(m_p);
 	}
 	operator bool() const
 	{
-		return (bool)g_pHost->to_int(m_p);
+		return (bool)g_pPyHost->to_int(m_p);
 	}
 	operator std::string() const
 	{
-		auto sz =  g_pHost->to_str(m_p);
+		auto sz =  g_pPyHost->to_str(m_p);
 		std::string str(sz);
-		g_pHost->Free(sz);
+		g_pPyHost->Free(sz);
 		return str;
 	}
 	inline bool IsNull()
 	{
-		return (m_p == nullptr)?true: g_pHost->IsNone(m_p);
+		return (m_p == nullptr)?true: g_pPyHost->IsNone(m_p);
 	}
 	inline bool IsBool()
 	{
-		return m_p == nullptr ? false : g_pHost->IsBool(m_p);
+		return m_p == nullptr ? false : g_pPyHost->IsBool(m_p);
 	}
 	inline bool IsLong()
 	{
-		return m_p == nullptr ? false : g_pHost->IsLong(m_p);
+		return m_p == nullptr ? false : g_pPyHost->IsLong(m_p);
 	}
 	inline bool IsDouble()
 	{
-		return m_p == nullptr ? false : g_pHost->IsDouble(m_p);
+		return m_p == nullptr ? false : g_pPyHost->IsDouble(m_p);
 	}
 	inline bool IsString()
 	{
-		return m_p == nullptr ? false : g_pHost->IsString(m_p);
+		return m_p == nullptr ? false : g_pPyHost->IsString(m_p);
 	}
 	inline bool IsDict()
 	{
-		return m_p == nullptr ? false : g_pHost->IsDict(m_p);
+		return m_p == nullptr ? false : g_pPyHost->IsDict(m_p);
 	}
 	inline bool IsArray()
 	{
-		return m_p == nullptr ? false : g_pHost->IsArray(m_p);
+		return m_p == nullptr ? false : g_pPyHost->IsArray(m_p);
 	}
 	inline bool IsList()
 	{
-		return m_p==nullptr?false:g_pHost->IsList(m_p);
+		return m_p==nullptr?false:g_pPyHost->IsList(m_p);
 	}
 	inline Object Call(int size, PyEngObjectPtr* ptrs)
 	{
-		return g_pHost->Call(m_p, size, ptrs);
+		return g_pPyHost->Call(m_p, size, ptrs);
 	}
 	inline Object Call(int size, PyEngObjectPtr* ptrs, PyEngObjectPtr kwargs)
 	{
-		return g_pHost->Call(m_p, size, ptrs, kwargs);
+		return g_pPyHost->Call(m_p, size, ptrs, kwargs);
 	}
 	inline Object Call(PyEngObjectPtr args,PyEngObjectPtr kwargs)
 	{
-		return g_pHost->Call(m_p,args,kwargs);
+		return g_pPyHost->Call(m_p,args,kwargs);
 	}
 
 	template<typename... VarList>
@@ -455,13 +455,13 @@ public:
 	{
 		if (m_p)
 		{
-			g_pHost->Release(m_p);
+			g_pPyHost->Release(m_p);
 			m_p = nullptr;
 		}
 	}
 	char* Data()
 	{
-		return m_p?(char*)g_pHost->GetDataPtr(m_p):nullptr;
+		return m_p?(char*)g_pPyHost->GetDataPtr(m_p):nullptr;
 	}
 protected:
 	PyEngObjectPtr m_p = nullptr;
@@ -474,7 +474,7 @@ public:
 	None():
 		Object()
 	{
-		m_p = g_pHost->GetPyNone();
+		m_p = g_pPyHost->GetPyNone();
 	}
 };
 class Tuple :
@@ -484,20 +484,20 @@ public:
 	Tuple() :
 		Object()
 	{
-		m_p = g_pHost->NewTuple(0);
+		m_p = g_pPyHost->NewTuple(0);
 	}
 	Tuple(long long size) :
 		Object()
 	{
-		m_p = g_pHost->NewTuple(size);
+		m_p = g_pPyHost->NewTuple(size);
 	}
 	template <typename VALUE>
 	Tuple(std::vector<VALUE> li)
 	{
-		m_p = g_pHost->NewTuple(li.size());
+		m_p = g_pPyHost->NewTuple(li.size());
 		for (unsigned long long i = 0; i < li.size(); i++)
 		{
-			g_pHost->Set(m_p, (int)i, (Object)li[i]);
+			g_pPyHost->Set(m_p, (int)i, (Object)li[i]);
 		}
 	}
 };
@@ -508,11 +508,11 @@ public:
 	Dict() :
 		Object()
 	{
-		m_p = g_pHost->NewDict();
+		m_p = g_pPyHost->NewDict();
 	}
 	Dict(const Object& self)
 	{
-		if (g_pHost->IsDict(self))
+		if (g_pPyHost->IsDict(self))
 		{
 			//will addref
 			m_p = (PyEngObjectPtr)self;
@@ -526,9 +526,9 @@ public:
 	{
 		if (m_p)
 		{
-			g_pHost->Release(m_p);
+			g_pPyHost->Release(m_p);
 		}
-		if (g_pHost->IsDict(o))
+		if (g_pPyHost->IsDict(o))
 		{
 			//will addref
 			m_p = (PyEngObjectPtr)o;
@@ -542,13 +542,13 @@ public:
 	bool Contain(const char* key)
 	{
 		std::string strKey(key);
-		return g_pHost->DictContain(m_p, strKey);
+		return g_pPyHost->DictContain(m_p, strKey);
 	}
 	bool Enum(long long& pos, Object& key, Object& val)
 	{
 		PyEngObjectPtr ptrKey = nullptr;
 		PyEngObjectPtr ptrVal = nullptr;
-		bool bOK = g_pHost->EnumDictItem(m_p, pos, ptrKey, ptrVal);
+		bool bOK = g_pPyHost->EnumDictItem(m_p, pos, ptrKey, ptrVal);
 		if (bOK)
 		{
 			key = Object(ptrKey);
@@ -558,11 +558,11 @@ public:
 	}
 	Object Keys()
 	{
-		return (Object)g_pHost->GetDictKeys(m_p);
+		return (Object)g_pPyHost->GetDictKeys(m_p);
 	}
 	Object ToList()
 	{
-		return (Object)g_pHost->GetDictItems(m_p);
+		return (Object)g_pPyHost->GetDictItems(m_p);
 	}
 };
 
@@ -579,9 +579,9 @@ public:
 	Array(const Object& obj)
 		:Object(obj)
 	{
-		m_data = (ItemData_Type*)g_pHost->GetDataPtr(m_p);
+		m_data = (ItemData_Type*)g_pPyHost->GetDataPtr(m_p);
 		int itemType = 0;
-		g_pHost->GetDataDesc(m_p, itemType, m_itemsize,
+		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize,
 			m_dims, m_strides);
 		m_itemdatatype = (JIT_DATA_TYPES)itemType;
 		int a = 1;
@@ -608,11 +608,11 @@ public:
 		}
 		m_size = a * m_dims[0];
 		SetItemType();
-		m_p = g_pHost->NewArray(nd, dims, (int)m_itemdatatype);
+		m_p = g_pPyHost->NewArray(nd, dims, (int)m_itemdatatype);
 		int itemType = 0;
-		g_pHost->GetDataDesc(m_p, itemType, m_itemsize,
+		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize,
 			m_dims, m_strides);
-		m_data = (ItemData_Type*)g_pHost->GetDataPtr(m_p);
+		m_data = (ItemData_Type*)g_pPyHost->GetDataPtr(m_p);
 	}
 	Array(int nd, unsigned long long* dims,int itemDataType)
 	{
@@ -629,11 +629,11 @@ public:
 		}
 		m_size = a * m_dims[0];
 		m_itemdatatype = (JIT_DATA_TYPES)itemDataType;
-		m_p = g_pHost->NewArray(nd, dims, (int)m_itemdatatype);
+		m_p = g_pPyHost->NewArray(nd, dims, (int)m_itemdatatype);
 		int itemType = 0;
-		g_pHost->GetDataDesc(m_p, itemType, m_itemsize,
+		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize,
 			m_dims, m_strides);
-		m_data = (ItemData_Type*)g_pHost->GetDataPtr(m_p);
+		m_data = (ItemData_Type*)g_pPyHost->GetDataPtr(m_p);
 	}
 	template<typename... index>
 	inline ItemData_Type& operator()(index... i)
@@ -710,7 +710,7 @@ inline void Array<int>::SetItemType()
 
 inline Object Get(const char* key)
 {
-	return g_pHost->Get(nullptr,key);
+	return g_pPyHost->Get(nullptr,key);
 }
 
 template <class Native_Class,bool hasPythonProxy>
@@ -731,7 +731,7 @@ Object Extract(PyEngObjectPtr self,const char* class_name,Native_Class* pNativeO
 	}
 	else
 	{
-		return nullptr;// g_pHost->QueryOrCreate(self, class_name, pNativeObj);
+		return nullptr;// g_pPyHost->QueryOrCreate(self, class_name, pNativeObj);
 	}
 }
 

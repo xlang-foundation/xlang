@@ -70,6 +70,7 @@ target_include_directories(${PROJECT_NAME}
     "../Inc"
     "../Ext"
     "../Core"
+    "../utils"
 	"${Python3_INCLUDE_DIRS}"
 	"${Python3_NumPy_INCLUDE_DIRS}"
 	)

@@ -8,7 +8,7 @@
 #include <iostream>
 
 
-PyEngHost* g_pHost = nullptr;
+PyEngHost* g_pPyHost = nullptr;
 
 
 enum class TraceEvent
@@ -66,8 +66,8 @@ int x_Py_tracefunc(PyObject* self,
 extern "C"  X_EXPORT void Load(void** ppHost)
 {
 	Py_Initialize();
-	g_pHost = &GrusPyEngHost::I();
-	*ppHost = (void*)g_pHost;
+	g_pPyHost = &GrusPyEngHost::I();
+	*ppHost = (void*)g_pPyHost;
 	//auto ts = PyThreadState_GET();
 	//PyEval_SetTrace(x_Py_tracefunc, nullptr);
 }

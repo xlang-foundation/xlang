@@ -7,10 +7,13 @@ project ("xlang_devsrv")
 
 include_directories("../Api")
 include_directories("../Http")
-include_directories("../Ext")
+include_directories("../utils")
 
-FILE(GLOB API_SRC "../Api/*.cpp")
-FILE(GLOB Main_SRC "*.cpp" "../Ext/gthread.cpp" "../Ext/wait.cpp" "../Core/Locker.cpp")
+FILE(GLOB API_SRC "../Api/value.cpp")
+FILE(GLOB Main_SRC "*.cpp" 
+	"../utils/gthread.cpp" 
+	"../utils/wait.cpp" 
+	"../utils/Locker.cpp")
 
 add_library(${PROJECT_NAME} 
 	SHARED
