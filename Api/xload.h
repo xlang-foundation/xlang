@@ -17,6 +17,7 @@ namespace X
 		bool enablePython = false;//-enable_python
 		bool runAsBackend = false;//-run_as_backend
 		bool enterEventLoop = false;//-event_loop
+		bool runEventLoopInThread = false;
 		std::string inlineCode;//-c "code"
 		std::string fileName;
 		std::vector<std::string> passInParams;

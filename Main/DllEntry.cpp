@@ -14,6 +14,7 @@
 #include "AddScripts.h"
 #include "xload.h"
 #include "Hosting.h"
+#include "EventLoopInThread.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -219,7 +220,14 @@ void XLangRun()
 	}
 	if (enterEventLoop)//enter event loop if no file or no code
 	{
-		EventSystem::I().Loop();
+		if (g_pXload->GetConfig().runEventLoopInThread)
+		{
+			EventLoopThread::I().Start();
+		}
+		else
+		{
+			EventSystem::I().Loop();
+		}
 	}
 }
 void XLangUnload()
@@ -234,6 +242,13 @@ void XLangUnload()
 	if (g_pXload->GetConfig().dbg)
 	{
 		UnloadDevopsEngine();
+	}
+	if (g_pXload->GetConfig().enterEventLoop)
+	{
+		if (g_pXload->GetConfig().runEventLoopInThread)
+		{
+			EventLoopThread::I().Stop();
+		}
 	}
 	G::I().Check();
 	DestoryXHost();
