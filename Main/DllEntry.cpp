@@ -193,6 +193,9 @@ void XLangRun()
 	{
 		EventSystem::I().Loop();
 	}
+}
+void XLangUnload()
+{
 	Builtin::I().Cleanup();
 	Manager::I().Cleanup();
 
@@ -273,5 +276,5 @@ extern "C"  X_EXPORT void Run()
 }
 extern "C"  X_EXPORT void Unload()
 {
-
+	X::XLangUnload();
 }

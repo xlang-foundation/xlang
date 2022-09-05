@@ -137,6 +137,7 @@ int main(int argc, char* argv[])
 	if (retCode == 0)
 	{
 		retCode = g_xLoad.Run();
+		g_xLoad.Unload();
 	}
 	return retCode;
 }

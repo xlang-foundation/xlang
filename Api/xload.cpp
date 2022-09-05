@@ -146,6 +146,20 @@ namespace X
 		}
 		return bHaveDll;
 	}
+	void XLoad::Unload()
+	{
+		if (xlangLibHandler)
+		{
+			typedef void (*Unload)();
+			Unload unload = (Unload)GetProc(xlangLibHandler, "Unload");
+			if (unload)
+			{
+				unload();
+			}
+			UNLOADLIB(xlangLibHandler);
+			xlangLibHandler = nullptr;
+		}
+	}
 	int XLoad::Load(Config* pCfg)
 	{
 		m_pConfig = pCfg;

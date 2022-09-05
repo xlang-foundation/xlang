@@ -36,6 +36,7 @@ namespace X
 		AppEventCode HandleAppEvent(int signum);
 		inline Config& GetConfig() { return *m_pConfig; }
 		int Load(Config* pCfg);
+		void Unload();
 		int Run();
 		inline void SetXLangLibHandler(void* handle) { xlangLibHandler = handle; }
 		inline void SetPythonLibHandler(void* handle) { pythonLibHandle = handle; }
