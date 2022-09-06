@@ -5,7 +5,7 @@
 #include "module.h"
 #include "func.h"
 #include "xclass.h"
-#include "package.h"
+#include "import.h"
 #include "dotop.h"
 #include "pipeop.h"
 #include "lex.h"

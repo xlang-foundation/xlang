@@ -1,10 +1,11 @@
-#include "package.h"
+#include "import.h"
 #include "manager.h"
 #include "pyproxyobject.h"
 #include "dotop.h"
 #include "port.h"
 #include "Hosting.h"
 #include "moduleobject.h"
+
 
 namespace X
 {
@@ -28,16 +29,27 @@ bool X::AST::Import::FindAndLoadExtensions(Runtime* rt,
 {
 	std::string loadDllName;
 	bool bHaveDll = false;
-	//search xlang.engine folder first
+	//search xlang.app folder first
 	std::vector<std::string> candiateFiles;
-	bool bRet = file_search(g_pXload->GetConfig().xlangEnginePath,
+	bool bRet = file_search(g_pXload->GetConfig().appPath,
 		loadingModuleName + ShareLibExt, candiateFiles);
 	if (bRet && candiateFiles.size() > 0)
 	{
 		loadDllName = candiateFiles[0];
 		bHaveDll = true;
 	}
-	else
+	//search xlang.engine folder first
+	if (!bHaveDll)
+	{
+		bRet = file_search(g_pXload->GetConfig().xlangEnginePath,
+			loadingModuleName + ShareLibExt, candiateFiles);
+		if (bRet && candiateFiles.size() > 0)
+		{
+			loadDllName = candiateFiles[0];
+			bHaveDll = true;
+		}
+	}
+	if (!bHaveDll)
 	{
 		bRet = file_search(curModulePath, loadingModuleName + ShareLibExt, candiateFiles);
 		if (bRet && candiateFiles.size() > 0)
