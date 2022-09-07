@@ -29,7 +29,7 @@ namespace X
 		{
 			delete m_stackFrame;
 		}
-		void SetObjID(ROBJ_ID id)
+		virtual void SetObjID(void* id)
 		{
 			m_remote_Obj_id = id;
 		}

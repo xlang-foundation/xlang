@@ -35,6 +35,18 @@ namespace X
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,objPackage }));
 			return true;
 		}
+		bool QueryPackage(std::string& name,Value& valPack)
+		{
+			bool bHave = false;
+			auto it = m_mapPackage.find(name);
+			if (it != m_mapPackage.end())
+			{
+				PackageInfo& info = it->second;
+				bHave = info.package.IsValid();
+				valPack = info.package;
+			}
+			return bHave;
+		}
 		bool QueryAndCreatePackage(Runtime* rt,std::string& name,
 			Value& valPack)
 		{

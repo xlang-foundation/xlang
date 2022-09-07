@@ -25,11 +25,17 @@ public:
 	{
 		std::cout << "~Package()"<<std::endl;
 	}
-	virtual int AddMethod(const char* name) override
+	inline virtual int AddMethod(const char* name) override
 	{
 		std::string strName(name);
 		return Scope::AddOrGet(strName, false);
 	}
+	inline virtual int QueryMethod(const char* name) override
+	{
+		std::string strName(name);
+		return Scope::AddOrGet(strName, true);
+	}
+
 	inline virtual AST::Scope* GetScope()
 	{
 		return dynamic_cast<Scope*>(this);
@@ -59,6 +65,11 @@ public:
 	virtual bool SetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		return Set((Runtime*)rt, pContext, idx, v);
+	}
+	virtual bool GetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v)
+	{
+		m_stackFrame->Get(idx,v);
+		return true;
 	}
 	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override

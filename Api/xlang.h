@@ -133,15 +133,20 @@ namespace X
 	class XRemoteObject :
 		virtual public XObj
 	{
+	public:
+		virtual void SetObjID(void* id) = 0;
 	};
 	class XPackage:
 		virtual public XObj
 	{
 	public:
 		virtual int AddMethod(const char* name) = 0;
+		virtual int QueryMethod(const char* name) = 0;
+
 		virtual void* GetEmbedObj() = 0;
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v) = 0;
+		virtual bool GetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v) = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)
 	{

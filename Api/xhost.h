@@ -31,8 +31,10 @@ namespace X
 	class XHost
 	{
 	public:
+		virtual XRuntime* CreateRuntime() = 0;
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) = 0;
 		virtual bool RegisterPackage(const char* name, Value& objPackage) = 0;
+		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;
 		virtual XDict* CreateDict() = 0;

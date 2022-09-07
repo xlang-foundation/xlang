@@ -7,9 +7,11 @@ namespace X
 		public XHost
 	{
 	public:
+		virtual XRuntime* CreateRuntime() override;
 		virtual XStr* CreateStr(const char* data, int size) override;
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) override;
 		virtual bool RegisterPackage(const char* name, Value& objPackage) override;
+		virtual bool QueryPackage(XRuntime* rt, const char* name, Value& objPackage) override;
 		virtual XPackage* CreatePackage(void* pRealObj) override;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) override;
 		virtual XDict* CreateDict() override;

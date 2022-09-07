@@ -26,6 +26,11 @@ namespace X
 			delete g_pXHost;
 		}
 	}
+	XRuntime* XHost_Impl::CreateRuntime()
+	{
+		Runtime* rt = new Runtime();
+		return dynamic_cast<XRuntime*>(rt);
+	}
 	XStr* XHost_Impl::CreateStr(const char* data, int size)
 	{
 		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
@@ -39,6 +44,11 @@ namespace X
 	bool XHost_Impl::RegisterPackage(const char* name, Value& objPackage)
 	{
 		return X::Manager::I().Register(name, objPackage);
+	}
+	bool XHost_Impl::QueryPackage(XRuntime* rt, const char* name, Value& objPackage)
+	{
+		std::string strName(name);
+		return X::Manager::I().QueryAndCreatePackage((Runtime*)rt,strName, objPackage);
 	}
 	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
