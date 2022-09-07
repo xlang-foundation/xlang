@@ -9,6 +9,7 @@
 #include "BlockStream.h"
 #include "Hosting.h"
 #include "event.h"
+#include "remote_object.h"
 
 namespace X 
 {
@@ -34,6 +35,10 @@ namespace X
 	bool XHost_Impl::RegisterPackage(const char* name, PackageCreator creator)
 	{
 		return X::Manager::I().Register(name, creator);
+	}
+	bool XHost_Impl::RegisterPackage(const char* name, Value& objPackage)
+	{
+		return X::Manager::I().Register(name, objPackage);
 	}
 	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
@@ -73,6 +78,12 @@ namespace X
 		auto* pObjBin = new Data::Binary(data, size);
 		pObjBin->AddRef();
 		return pObjBin;
+	}
+	XRemoteObject* XHost_Impl::CreateRemoteObject(XProxy* proxy)
+	{
+		auto* pRObj = new RemoteObject(proxy);
+		pRObj->AddRef();
+		return pRObj;
 	}
 	bool XHost_Impl::ConvertToBytes(X::Value& v, X::XLStream* pStreamExternal)
 	{

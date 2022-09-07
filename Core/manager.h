@@ -17,42 +17,39 @@ namespace X
 		struct PackageInfo
 		{
 			PackageCreator creator = nullptr;
-			AST::Package* package = nullptr;
+			Value package;
 		};
 		std::unordered_map<std::string, PackageInfo> m_mapPackage;
 	public:
 		void Cleanup()
 		{
-			for (auto& it : m_mapPackage)
-			{
-				if (it.second.package)
-				{
-					it.second.package->Release();
-				}
-			}
 			m_mapPackage.clear();
 		}
 		bool Register(const char* name, PackageCreator creator)
 		{
-			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,nullptr }));
+			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,Value()}));
+			return true;
+		}
+		bool Register(const char* name, Value& objPackage)
+		{
+			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,objPackage }));
 			return true;
 		}
 		bool QueryAndCreatePackage(Runtime* rt,std::string& name,
-			AST::Package** ppPackage)
+			Value& valPack)
 		{
 			bool bCreated = false;
 			auto it = m_mapPackage.find(name);
 			if (it != m_mapPackage.end())
 			{
 				PackageInfo& info = it->second;
-				if (info.package == nullptr)
+				if (info.package.IsInvalid())
 				{
 					auto* pPack = info.creator(rt);
-					pPack->IncRef();
-					info.package = dynamic_cast<AST::Package*>(pPack);
+					info.package = pPack;
 				}
-				bCreated = (info.package != nullptr);
-				*ppPackage = info.package;
+				bCreated = info.package.IsValid();
+				valPack = info.package;
 			}
 			return bCreated;
 		}

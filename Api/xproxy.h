@@ -1,0 +1,20 @@
+#ifndef _X_PROXY_H_
+#define _X_PROXY_H_
+
+#include "xlang.h"
+
+namespace X
+{
+	typedef void* ROBJ_ID;
+	typedef int ROBJ_MEMBER_ID;
+	class XProxy
+	{
+	public:
+		virtual ROBJ_MEMBER_ID QueryMember(ROBJ_ID id,std::string& name) = 0;
+		virtual ROBJ_ID GetMemberObject(ROBJ_ID id, ROBJ_MEMBER_ID memId) = 0;
+		virtual bool Call(ROBJ_ID id, ROBJ_MEMBER_ID memId,
+			ARGS& params,KWARGS& kwParams,Value& retValue) = 0;
+	};
+}
+
+#endif //_X_PROXY_H_

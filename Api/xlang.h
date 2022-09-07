@@ -26,6 +26,7 @@ namespace X
 		Dict,
 		TableRow,
 		Table,
+		RemoteObject,
 		PyProxyObject
 	};
 #define Internal_Reserve(cls_name)  cls_name(int){}
@@ -128,6 +129,10 @@ namespace X
 		virtual public XObj
 	{
 
+	};
+	class XRemoteObject :
+		virtual public XObj
+	{
 	};
 	class XPackage:
 		virtual public XObj

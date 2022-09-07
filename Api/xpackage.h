@@ -8,6 +8,10 @@
 		pPackImpl->Create(rt, &pPackage);\
 		return pPackage;\
 	});
+
+#define REGISTER_OBJ_PACKAGE(pack_name,valObj)\
+	X::g_pXHost->RegisterPackage(pack_name, valObj);
+
 #define BEGIN_PACKAGE(class_name) \
 		typedef class_name THIS_CLASS_NAME;\
 		bool Create(X::XRuntime* rt, X::XPackage** ppackage)\

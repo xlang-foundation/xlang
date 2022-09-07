@@ -9,12 +9,14 @@ namespace X
 	public:
 		virtual XStr* CreateStr(const char* data, int size) override;
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) override;
+		virtual bool RegisterPackage(const char* name, Value& objPackage) override;
 		virtual XPackage* CreatePackage(void* pRealObj) override;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) override;
 		virtual XDict* CreateDict() override;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) override;
 		virtual std::string StringifyString(const std::string& str) override;
 		virtual XBin* CreateBin(char* data, size_t size) override;
+		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) override;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool RunCode(std::string& moduleName, std::string& code, X::Value& retVal) override;

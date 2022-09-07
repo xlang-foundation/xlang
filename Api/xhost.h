@@ -14,6 +14,8 @@ namespace X
 	class XFunc;
 	class XDict;
 	class XBin;
+	class XRemoteObject;
+	class XProxy;
 	class XRuntime
 	{
 	public:
@@ -30,6 +32,7 @@ namespace X
 	{
 	public:
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) = 0;
+		virtual bool RegisterPackage(const char* name, Value& objPackage) = 0;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;
 		virtual XDict* CreateDict() = 0;
@@ -37,6 +40,7 @@ namespace X
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) = 0;
 		virtual std::string StringifyString(const std::string& str) = 0;
 		virtual XBin* CreateBin(char* data, size_t size) = 0;
+		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) = 0;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream=nullptr) = 0;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
 		virtual bool RunCode(std::string& moduleName, std::string& code, X::Value& retVal) = 0;

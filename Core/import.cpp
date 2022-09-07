@@ -168,26 +168,22 @@ bool X::AST::Import::Run(Runtime* rt, XObj* pContext,
 		//check if it is builtin
 		if (m_path.empty())
 		{
-			Package* pPackage = nullptr;
 			bool bOK = Manager::I().QueryAndCreatePackage(rt,
-				im.name, &pPackage);
+				im.name,v);
 			if (bOK)
 			{
-				v = Value(pPackage);
 				rt->M()->Add(rt, varName, nullptr, v);
 				continue;
 			}
 		}
 		else
 		{
-			Package* pPackage = nullptr;
 			std::string curPath = rt->M()->GetModulePath();
 			bool bLoaded = FindAndLoadExtensions(rt,curPath, m_path);
 			bool bOK = Manager::I().QueryAndCreatePackage(rt,
-				im.name, &pPackage);
+				im.name, v);
 			if (bOK)
 			{
-				v = Value(pPackage);
 				rt->M()->Add(rt, varName, nullptr, v);
 				continue;
 			}

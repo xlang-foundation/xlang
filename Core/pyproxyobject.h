@@ -54,9 +54,9 @@ namespace X
 		};
 		//wrap for Python PyObject through PyEng::Object
 		class PyProxyObject :
-			public Object,
-			public AST::Scope,
-			public AST::Expression
+			public virtual Object,
+			public virtual AST::Scope,
+			public virtual AST::Expression
 		{
 			PyProxyObject* m_PyModule = nullptr;
 			PyProxyType m_proxyType = PyProxyType::None;
