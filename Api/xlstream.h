@@ -3,6 +3,12 @@
 
 namespace X
 {
+	typedef long long STREAM_SIZE;
+	struct blockIndex
+	{
+		int blockIndex;
+		STREAM_SIZE offset;
+	};
 	struct blockInfo
 	{
 		char* buf;
@@ -12,6 +18,8 @@ namespace X
 	class XLStream
 	{
 	public:
+		virtual blockIndex GetPos() = 0;
+		virtual void SetPos(blockIndex pos) = 0;
 		virtual void Refresh() = 0;
 		virtual int BlockNum() = 0;
 		virtual blockInfo& GetBlockInfo(int index) = 0;

@@ -8,13 +8,6 @@
 
 namespace X 
 {
-    typedef long long STREAM_SIZE;
-    struct blockIndex
-    {
-        int blockIndex;
-        STREAM_SIZE offset;
-    };
-
     class XLangStreamException
         : public std::exception
     {
@@ -45,6 +38,7 @@ namespace X
         void SetProvider(XLStream* p)
         {
             m_pProvider = p;
+            SetPos(p->GetPos());
         }
         void ResetPos()
         {
@@ -109,11 +103,11 @@ namespace X
         {
             return m_streamKey;
         }
-        inline blockIndex GetPos()
+        inline virtual blockIndex GetPos() override
         {
             return curPos;
         }
-        inline void SetPos(blockIndex pos)
+        inline virtual void SetPos(blockIndex pos) override
         {
             curPos = pos;
         }

@@ -122,7 +122,7 @@ namespace X
 			m_stackFrame->Set(idx, v);
 			return idx;
 		}
-		bool PyProxyObject::Call(XRuntime* rt, 
+		bool PyProxyObject::Call(XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams,
 			X::Value& retValue)
 		{

@@ -192,7 +192,7 @@ namespace X
 	}
 	bool Value::FromBytes(XLStream* pStream)
 	{
-		return g_pXHost->ConvertToBytes(*this, pStream);
+		return g_pXHost->ConvertFromBytes(*this, pStream);
 	}
 	Value Value::getattr(const char* attrName) const
 	{

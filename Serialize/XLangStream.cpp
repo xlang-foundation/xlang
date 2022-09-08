@@ -1,6 +1,7 @@
 #include "XLangStream.h"
 #include <stdexcept>
 #include "object.h"
+#include "str.h"
 
 namespace X 
 {
@@ -12,6 +13,10 @@ namespace X
 	XLangStream::~XLangStream()
 	{
 		//GrusJitHost::I().UnregisterStream(m_streamKey);
+		if (m_pProvider)
+		{
+			m_pProvider->SetPos(GetPos());
+		}
 		m_size = 0;
 		curPos = { 0,0 };
 	}
@@ -260,6 +265,7 @@ namespace X
 		case X::ValueType::Object:
 		{
 			X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(v.GetObj());
+			(*this) << (char)pObj->GetType();
 			pObj->ToBytes(*this);
 		}
 		break;
@@ -300,8 +306,52 @@ namespace X
 			break;
 		case X::ValueType::Object:
 		{
-			X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(v.GetObj());
-			pObj->FromBytes(*this);
+			(*this) >> ch;
+			X::ObjType objT = (X::ObjType)ch;
+			X::Data::Object* pObjToRestore = nullptr;
+			switch (objT)
+			{
+			case X::ObjType::Str:
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Str());
+				break;
+			case X::ObjType::Binary:
+				break;
+			case X::ObjType::Expr:
+				break;
+			case X::ObjType::Function:
+				break;
+			case X::ObjType::MetaFunction:
+				break;
+			case X::ObjType::XClassObject:
+				break;
+			case X::ObjType::FuncCalls:
+				break;
+			case X::ObjType::Package:
+				break;
+			case X::ObjType::ModuleObject:
+				break;
+			case X::ObjType::Future:
+				break;
+			case X::ObjType::List:
+				break;
+			case X::ObjType::Dict:
+				break;
+			case X::ObjType::TableRow:
+				break;
+			case X::ObjType::Table:
+				break;
+			case X::ObjType::RemoteObject:
+				break;
+			case X::ObjType::PyProxyObject:
+				break;
+			default:
+				break;
+			}
+			if (pObjToRestore)
+			{
+				pObjToRestore->FromBytes(*this);
+				v = dynamic_cast<XObj*>(pObjToRestore);
+			}
 		}
 		break;
 		case X::ValueType::Str:

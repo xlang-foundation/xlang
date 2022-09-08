@@ -33,7 +33,7 @@ bool PairOp::ParentRun(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 		Data::Object* obj = dynamic_cast<Data::Object*>(lVal.GetObj());
 		if (obj)
 		{
-			bOK = obj->Call(rt, params, kwParams, v);
+			bOK = obj->Call(rt, pContext,params, kwParams, v);
 		}
 	}
 	else

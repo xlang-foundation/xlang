@@ -13,6 +13,7 @@ namespace X
 		public virtual AST::Expression
 	{
 		XProxy* m_proxy = nullptr;
+		ROBJ_ID m_remote_Parent_Obj_id = nullptr;
 		ROBJ_ID m_remote_Obj_id = nullptr;
 		AST::StackFrame* m_stackFrame = nullptr;
 		std::string m_objName;
@@ -50,11 +51,12 @@ namespace X
 		{
 			return nullptr;
 		}
-		virtual bool Call(XRuntime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
-			return m_proxy->Call(m_remote_Obj_id, m_memmberId,
+			return m_proxy->Call(m_remote_Parent_Obj_id,
+				m_remote_Obj_id, m_memmberId,
 				params, kwParams, retValue);
 		}
 		virtual int AddOrGet(std::string& name, bool bGetOnly) override
@@ -70,6 +72,7 @@ namespace X
 					m_stackFrame->SetVarCount(GetVarNum());
 
 					auto* r_obj = new RemoteObject(m_proxy);
+					r_obj->m_remote_Parent_Obj_id = m_remote_Obj_id;
 					r_obj->m_remote_Obj_id = objId;
 					r_obj->m_memmberId = memId;
 					r_obj->m_objName = name;

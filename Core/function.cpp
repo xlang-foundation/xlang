@@ -12,11 +12,12 @@ namespace X
 		Function::~Function()
 		{
 		}
-		bool Function::Call(XRuntime* rt, ARGS& params,
+		bool Function::Call(XRuntime* rt, XObj* pContext,
+			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return m_func->Call(rt, nullptr, params, kwParams, retValue);
+			return m_func->Call(rt, pContext, params, kwParams, retValue);
 		}
 	}
 }

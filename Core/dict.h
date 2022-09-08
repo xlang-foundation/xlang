@@ -122,7 +122,8 @@ namespace X
 				strOut += "}";
 				return strOut;
 			}
-			virtual bool Call(XRuntime* rt, ARGS& params,
+			virtual bool Call(XRuntime* rt, XObj* pContext,
+				ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue) override
 			{

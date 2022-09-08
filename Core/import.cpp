@@ -165,6 +165,11 @@ bool X::AST::Import::Run(Runtime* rt, XObj* pContext,
 		{
 			varName = im.alias;
 		}
+		if (Manager::I().QueryAndCreatePackage(rt,im.name, v))
+		{
+			rt->M()->Add(rt, varName, nullptr, v);
+			continue;
+		}
 		//check if it is builtin
 		if (m_path.empty())
 		{

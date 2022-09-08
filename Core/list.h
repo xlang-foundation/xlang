@@ -230,7 +230,7 @@ public:
 	{ 
 		return m_bases; 
 	}
-	virtual bool Call(XRuntime* rt, ARGS& params,
+	virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 		KWARGS& kwParams,X::Value& retValue) override;
 	inline void Add(X::LValue p)
 	{

@@ -50,7 +50,8 @@ public:
 		m_stackFrame->SetVarCount(varNum);
 		return true;
 	}
-	virtual bool Call(XRuntime* rt, ARGS& params,
+	virtual bool Call(XRuntime* rt, XObj* pContext,
+		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& retValue)
 	{

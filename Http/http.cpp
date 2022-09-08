@@ -61,7 +61,7 @@ namespace X
 			}
 		}
 		((httplib::Server*)m_pSrv)->Get(pattern,
-			[pHandler,rt](const httplib::Request& req,
+			[pHandler, pContext,rt](const httplib::Request& req,
 				httplib::Response& res)
 			{
 				if (pHandler)
@@ -85,7 +85,7 @@ namespace X
 					X::Value retValue0;
 					try 
 					{
-						pHandler->Call((X::XRuntime*)rt,
+						pHandler->Call((X::XRuntime*)rt, pContext,
 							params0, kwParams0,
 							retValue0);
 					}

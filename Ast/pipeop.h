@@ -72,7 +72,7 @@ namespace X
 							ARGS params;
 							KWARGS kwparams;
 							params.push_back(v_l);
-							bRet = pFuncObj->Call(rt, params, kwparams, v);
+							bRet = pFuncObj->Call(rt, pContext,params, kwparams, v);
 						}
 					}
 					else
@@ -116,7 +116,7 @@ namespace X
 					Data::Object* obj = dynamic_cast<Data::Object*>(callList.GetObj());
 					if (obj)
 					{
-						bOK = obj->Call(rt, params, kwParams, v);
+						bOK = obj->Call(rt, pContext,params, kwParams, v);
 					}
 				}
 				else

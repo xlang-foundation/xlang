@@ -390,12 +390,12 @@ bool U_OnEvent(X::XRuntime* rt, XObj* pContext,
 			pFuncHandler->AddRef();
 		}
 	}
-	pEvt->Add([pFuncHandler,rt](const X::Value& evt) {
+	pEvt->Add([pFuncHandler, pContext,rt](const X::Value& evt) {
 		X::ARGS params;
 		params.push_back(evt);
 		X::KWARGS kwParams;
 		X::Value retValue;
-		pFuncHandler->Call(rt, params, kwParams, retValue);
+		pFuncHandler->Call(rt, pContext,params, kwParams, retValue);
 		});
 
 	retValue = X::Value(true);

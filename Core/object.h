@@ -137,7 +137,6 @@ namespace Data {
 		}
 		virtual bool ToBytes(X::XLangStream& stream)
 		{ 
-			stream << (char)m_t;
 			return true; 
 		}
 		virtual bool FromBytes(X::XLangStream& stream)
@@ -184,7 +183,7 @@ namespace Data {
 			m_expr = e;
 		}
 		AST::Expression* Get() { return m_expr; }
-		virtual bool Call(XRuntime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
@@ -210,7 +209,7 @@ namespace Data {
 			m_func = p;
 		}
 		AST::Func* GetFunc() { return m_func; }
-		virtual bool Call(XRuntime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
@@ -268,7 +267,7 @@ namespace Data {
 			return m_stackFrame;
 		}
 		AST::XClass* GetClassObj() { return m_obj; }
-		virtual bool Call(XRuntime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
@@ -290,7 +289,7 @@ namespace Data {
 		{
 			m_pTask = task;
 		}
-		virtual bool Call(XRuntime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{

@@ -8,7 +8,8 @@ namespace X
 {
 	namespace Data
 	{
-		bool List::Call(XRuntime* rt, ARGS& params,
+		bool List::Call(XRuntime* rt, XObj* pContext,
+			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{

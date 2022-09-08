@@ -61,11 +61,12 @@ namespace X
 		{
 			return m_p ? m_p->ToString() : "";
 		}
-		virtual bool Call(XRuntime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, XObj* pContext,
+			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return m_p ? m_p->Call(rt, params, kwParams,retValue) : false;
+			return m_p ? m_p->Call(rt, pContext,params, kwParams,retValue) : false;
 		}
 
 		virtual XObj& operator +=(Value& r)

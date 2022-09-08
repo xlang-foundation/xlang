@@ -14,6 +14,10 @@ namespace Data
 	protected:
 		std::string m_s;
 	public:
+		Str() :XStr(0)
+		{
+			m_t = ObjType::Str;
+		}
 		Str(size_t size):XStr(0)
 		{
 			m_t = ObjType::Str;
@@ -144,7 +148,7 @@ namespace Data
 			}
 			return true;
 		}
-		virtual bool Call(XRuntime* rt, ARGS& params,
+		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
