@@ -1,8 +1,11 @@
-x=[](size=10000,init='rand(1.0,100.0)')
+x=[](size=5,init='rand(1.0,100.0)')
 num =x.size()
 
 def test(i):
   print("test->",i)
+
+test.setattr("func_name","function also can have attributes")
+print(test.getattr("func_name"))
 x.each((i,item,passIn){
     extern num;
 	num1 = num+i;
