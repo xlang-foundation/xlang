@@ -1,6 +1,7 @@
 #include "xclass.h"
 #include "object.h"
 #include "function.h"
+#include "xclass_object.h"
 
 namespace X
 {

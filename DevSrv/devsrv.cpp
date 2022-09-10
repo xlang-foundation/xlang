@@ -36,7 +36,7 @@ namespace X
 			notis.push_back(notifyInfo);
 			notiLock.Unlock();
 			notiWait.Release();
-			std::cout << "DevServer got event:" << notifyInfo<<std::endl;
+			//std::cout << "DevServer got event:" << notifyInfo<<std::endl;
 		});
 		m_srv.Get("/devops/run",
 			[this](const httplib::Request& req,httplib::Response& res)
@@ -47,7 +47,7 @@ namespace X
 				if (it != req_params.end())
 				{
 					std::string code = it->second;
-					std::cout << "code:\n" << code << std::endl;
+					//std::cout << "code:\n" << code << std::endl;
 					if (X::g_pXHost)
 					{
 						X::Value retVal;
@@ -61,7 +61,7 @@ namespace X
 					retData = "error";
 				}
 				res.set_content(retData, "text/html");
-				std::cout << "BackData:" << retData << std::endl;
+				//std::cout << "BackData:" << retData << std::endl;
 			}
 		);
 		m_srv.Get("/devops/getnotify",

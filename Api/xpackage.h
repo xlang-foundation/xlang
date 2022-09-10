@@ -43,17 +43,17 @@
 	retType _retVal = pThis->function_name();\
 	DEF_U_FUNC_TAIL()
 
-#define ADD_U_FUNC1(fn_name,function_name,retType,p1)\
+#define ADD_FUNC1(fn_name,function_name,retType,p1)\
 	DEF_U_FUNC_HEAD(fn_name)\
 	retType _retVal = pThis->function_name((p1)params[0]);\
 	DEF_U_FUNC_TAIL()
 
-#define ADD_U_FUNC2(fn_name,function_name,retType,p1,p2)\
+#define ADD_FUNC2(fn_name,function_name,retType,p1,p2)\
 	DEF_U_FUNC_HEAD(fn_name)\
 	retType _retVal = pThis->function_name((p1)params[0],(p2)params[1]);\
 	DEF_U_FUNC_TAIL()
 
-#define ADD_U_FUNC3(fn_name,function_name,retType,p1,p2,p3)\
+#define ADD_FUNC3(fn_name,function_name,retType,p1,p2,p3)\
 	DEF_U_FUNC_HEAD(fn_name)\
 	retType _retVal = pThis->function_name((p1)params[0],\
 			(p2)params[1],(p3)params[2]);\

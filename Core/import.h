@@ -247,6 +247,28 @@ public:
 	{
 		m_type = ObType::Import;
 	}
+	virtual int GetLeftMostCharPos() override
+	{
+		int pos = GetCharPos();
+		int startLine = GetStartLine();
+		if (m_from)
+		{
+			int posL = m_from->GetLeftMostCharPos();
+			if (posL < pos && m_from->GetStartLine() <= startLine)
+			{
+				pos = posL;
+			}
+		}
+		if (m_imports)
+		{
+			int posR = m_imports->GetLeftMostCharPos();
+			if (posR < pos && m_imports->GetStartLine() <= startLine)
+			{
+				pos = posR;
+			}
+		}
+		return pos;
+	}
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands)
 	{

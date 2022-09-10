@@ -14,13 +14,13 @@
       "argssss": [ "C:\\Dev\\X\\test\\testimport.x" ],
       "args_yaml": [ "C:\\Dev\\X\\test\\yaml_data.yml" ],
       "argsssss": [ "C:\\Dev\\X\\test\\attr_test.x" ],
-      "args101": [ "C:\\Dev\\X\\test\\test101.x" ],
+      "args": [ "C:\\Dev\\X\\test\\test101.x" ],
       "argsdd": [ "C:\\Dev\\X\\test\\test3.x" ],
       "args_json": [ "C:\\Dev\\X\\test\\simple_test.json" ],
       "args9": [ "C:\\Dev\\X\\test\\test.json" ],
       "args4": [ "C:\\Dev\\Cantor\\test\\xlang\\cantor_client_test.x" ],
-      "args__s": [ "-event_loop", "-dbg", "-enable_python" ],
-      "args": [ "C:\\Dev\\X\\test\\remote_test.x" ],
+      "argszss": [ "-event_loop", "-dbg", "-enable_python" ],
+      "argsaa": [ "C:\\Dev\\X\\test\\remote_test.x" ],
       "name": "xlang.exe"
     }
   ]

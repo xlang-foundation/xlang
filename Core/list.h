@@ -3,6 +3,7 @@
 #include "str.h"
 #include "scope.h"
 #include "stackframe.h"
+#include "xclass_object.h"
 
 namespace X
 {
