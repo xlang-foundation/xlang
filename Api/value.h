@@ -279,6 +279,7 @@ public:
 	{
 		return (t == ValueType::Object) && (x.obj != nullptr);
 	}
+	bool IsList() const;
 	inline bool IsTrue()
 	{
 		return !IsZero();
@@ -348,6 +349,7 @@ public:
 	bool ToBytes(XLStream* pStream = nullptr);
 	Value getattr(const char* attrName) const;
 	void setattr(const char* attrName, X::Value& attrVal) const;
+	long long Size();
 };
 typedef Value* LValue;
 };

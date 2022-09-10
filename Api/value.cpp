@@ -186,6 +186,30 @@ namespace X
 		}
 		return strType;
 	}
+	long long Value::Size()
+	{
+		long long  sizeRet = 0;
+		switch (t)
+		{
+		case ValueType::Int64:
+			sizeRet = 1;
+			break;
+		case ValueType::Double:
+			sizeRet = 1;
+			break;
+		case ValueType::Object:
+			sizeRet = (x.obj != nullptr ? x.obj->Size() : 0);
+			break;
+		default:
+			break;
+		}
+		return sizeRet;
+	}
+	bool Value::IsList() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::List);
+	}
 	bool Value::ToBytes(XLStream* pStream)
 	{
 		return g_pXHost->ConvertToBytes(*this, pStream);
