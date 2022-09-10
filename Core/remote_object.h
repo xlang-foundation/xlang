@@ -30,6 +30,14 @@ namespace X
 		{
 			delete m_stackFrame;
 		}
+		void SetObjName(std::string& name)
+		{
+			m_objName = name;
+			if (m_remote_Obj_id == nullptr)
+			{
+				m_remote_Obj_id = m_proxy->QueryRootObject(name);
+			}
+		}
 		virtual void SetObjID(void* id)
 		{
 			m_remote_Obj_id = id;

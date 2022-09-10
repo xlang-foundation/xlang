@@ -10,6 +10,7 @@ namespace X
 	class XProxy
 	{
 	public:
+		virtual ROBJ_ID QueryRootObject(std::string& name) = 0;
 		virtual ROBJ_MEMBER_ID QueryMember(ROBJ_ID id,std::string& name) = 0;
 		virtual ROBJ_ID GetMemberObject(ROBJ_ID id, ROBJ_MEMBER_ID memId) = 0;
 		virtual bool Call(ROBJ_ID parent_id,ROBJ_ID id, ROBJ_MEMBER_ID memId,

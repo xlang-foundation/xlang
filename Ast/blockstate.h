@@ -81,7 +81,7 @@ public:
 			//after . it is a ops,not var
 			if (lastToken != top->getOp()
 				&& top->m_type != AST::ObType::Pair
-				&& topAct.precedence > cur_opAct.precedence)
+				&& topAct.precedence > cur_opAct.precedence) 
 			{
 				DoOpTop();
 			}

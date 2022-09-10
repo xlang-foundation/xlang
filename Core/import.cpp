@@ -5,7 +5,7 @@
 #include "port.h"
 #include "Hosting.h"
 #include "moduleobject.h"
-
+#include "remote_object.h"
 
 namespace X
 {
@@ -154,6 +154,22 @@ bool X::AST::Import::FindAndLoadXModule(Runtime* rt,
 bool X::AST::Import::Run(Runtime* rt, XObj* pContext, 
 	Value& v, LValue* lValue)
 {
+	if (m_from)
+	{
+		Value v0;
+		if (m_from->Run(rt, pContext, v0, nullptr))
+		{
+			m_path = v0.ToString();
+		}
+	}
+	if (m_thru)
+	{
+		Value v0;
+		if (m_thru->Run(rt, pContext, v0, nullptr))
+		{
+			m_thruUrl = v0.ToString();
+		}
+	}
 	for (auto& im : m_importInfos)
 	{
 		std::string varName;
@@ -170,6 +186,20 @@ bool X::AST::Import::Run(Runtime* rt, XObj* pContext,
 			rt->M()->Add(rt, varName, nullptr, v);
 			continue;
 		}
+		if (!m_thruUrl.empty())
+		{
+			XProxy* proxy = Manager::I().QueryProxy(m_thruUrl);
+			if (proxy)
+			{
+				auto* remoteObj = new RemoteObject(proxy);
+				remoteObj->SetObjName(im.name);
+				remoteObj->AddRef();
+				v = Value(dynamic_cast<XObj*>(remoteObj));
+				rt->M()->Add(rt, varName, nullptr, v);
+				continue;
+			}
+		}
+
 		//check if it is builtin
 		if (m_path.empty())
 		{
@@ -241,18 +271,15 @@ std::string X::AST::Import::ConvertDotSeqToString(
 
 void X::AST::Import::ScopeLayout()
 {
-	BinaryOp::ScopeLayout();
-	if (L)
+	Operator::ScopeLayout();
+	if (m_from)
 	{
-		if (L->m_type == ObType::From)
-		{
-			m_path = (dynamic_cast<From*>(L))->GetPath();
-		}
+		m_from->ScopeLayout();
 	}
 	auto proc_AsOP = [&](Expression* expr)
 	{
 		AsOp* asOp = dynamic_cast<AsOp*>(expr);
-		auto L0 = asOp->GetL();
+		AST::Expression* L0 = asOp->GetL();
 		auto R0 = asOp->GetR();
 		std::string leftName;
 		std::string rightName;
@@ -302,26 +329,25 @@ void X::AST::Import::ScopeLayout()
 			}
 		}
 	};
-	if (R)
+	if (m_imports)
 	{//{var|AsOp}*
-		switch (R->m_type)
+		switch (m_imports->m_type)
 		{
 		case ObType::List:
-			proc_List(R);
+			proc_List(m_imports);
 			break;
 		case ObType::As:
-			proc_AsOP(R);
+			proc_AsOP(m_imports);
 			break;
 		case ObType::Var:
-			proc_Var(R);
+			proc_Var(m_imports);
 			break;
 		default:
 			break;
 		}
 	}
-}
-bool X::AST::From::Run(Runtime* rt, XObj* pContext,
-	Value& v, LValue* lValue)
-{
-	return true;
+	if (m_thru)
+	{
+		m_thru->ScopeLayout();
+	}
 }

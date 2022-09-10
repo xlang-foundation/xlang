@@ -27,6 +27,7 @@
 #include "metascope.h"
 #include "attribute.h"
 #include "devops.h"
+#include "msgthread.h"
 
 Locker _printLock;
 bool U_Print(X::XRuntime* rt,X::XObj* pContext,
@@ -612,6 +613,14 @@ bool U_Each(X::XRuntime* rt, XObj* pContext,
 	}
 	return true;
 }
+bool U_LRpc_Listen(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::MsgThread::I().Start();
+	return true;
+}
 bool Builtin::RegisterInternals()
 {
 	REGISTER_PACKAGE("json", X::JsonWrapper);
@@ -639,6 +648,7 @@ bool Builtin::RegisterInternals()
 	Register("getattr", (void*)U_GetAttribute, params,true);
 	Register("delattr", (void*)U_DeleteAttribute, params, true);
 	Register("each", (void*)U_Each, params, true);
+	Register("lrpc_listen", (void*)U_LRpc_Listen, params, true);
 	return true;
 }
 }

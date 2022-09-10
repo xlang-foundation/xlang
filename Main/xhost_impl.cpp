@@ -10,6 +10,7 @@
 #include "Hosting.h"
 #include "event.h"
 #include "remote_object.h"
+#include "msgthread.h"
 
 namespace X 
 {
@@ -177,5 +178,18 @@ namespace X
 	AppEventCode XHost_Impl::HandleAppEvent(int signum)
 	{
 		return Hosting::I().HandleAppEvent(signum);
+	}
+	bool XHost_Impl::Lrpc_Listen(int port, bool blockMode)
+	{
+		bool bOK = true;
+		if (blockMode)
+		{
+			MsgThread::I().run();
+		}
+		else
+		{
+			bOK = MsgThread::I().Start();
+		}
+		return bOK;
 	}
 }

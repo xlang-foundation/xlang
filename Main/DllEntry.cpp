@@ -15,6 +15,7 @@
 #include "xload.h"
 #include "Hosting.h"
 #include "EventLoopInThread.h"
+#include "Proxy.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -167,9 +168,9 @@ void XLangRun()
 	{
 		LoadDevopsEngine();
 	}
-
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
+	XLangProxyManager::I().Register();
 
 	bool HasCode = false;
 	std::string code;

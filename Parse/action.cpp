@@ -125,14 +125,14 @@ void Register(OpRegistry* reg)
 {
 	/*treat as Token 0-2*/
 	RegOP("False", "True","None");
-	RegOP("and","as", "assert", "async", "await", /*4-7*/
-		"break", "class", "continue", /*8-10*/
-		"def", "del", "elif", "else", /*11-14*/
-		"except", "finally", "for", /*15-17*/
-		"from", "global", "if", "import", /*18-21*/
-		"in", "is", "lambda", "nonlocal", /*22-25*/
-		"not", "or", "pass", "raise", "return", /*26-30*/
-		"try", "while", "with", "yield"/*31-34*/);
+	RegOP("and","as", "assert", "async", "await",
+		"break", "class", "continue",
+		"def", "del", "elif", "else",
+		"except", "finally", "for",
+		"from", "global", "if", "import","thru",
+		"in", "is", "lambda", "nonlocal",
+		"not", "or", "pass", "raise", "return",
+		"try", "while", "with", "yield");
 	RegOP("extern", "nonlocal","global")
 		.SetProcess(
 			[](Parser* p, short opIndex) {
@@ -214,6 +214,11 @@ void Register(OpRegistry* reg)
 	RegOP("as")
 		.SetProcess([](Parser* p, short opIndex) {
 		auto op = new AST::AsOp(opIndex);
+		return (AST::Operator*)op;
+			});
+	RegOP("thru")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::ThruOp(opIndex);
 		return (AST::Operator*)op;
 			});
 	RegOP(
@@ -357,8 +362,16 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_High1);
 	RegOP("*", "/", "%", "**", "//")
 		.SetPrecedence(Precedence_Reqular + 1);
-	RegOP(",", "import")//for example from . import XYZ as xyz,AWD as awd 
+
+	RegOP("as")
+		.SetPrecedence(Precedence_LOW2+1);
+	RegOP(",")//for example from . import XYZ as xyz,AWD as awd 
 		.SetPrecedence(Precedence_LOW2);
+	RegOP("thru")
+		.SetPrecedence(Precedence_LOW2-1);
+	RegOP("import")
+		.SetPrecedence(Precedence_LOW2 - 2);
+
 	RegOP("extern", "nonlocal", "global")
 		.SetPrecedence(Precedence_LOW2);
 	RegOP("and", "or")

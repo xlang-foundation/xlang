@@ -27,6 +27,7 @@ namespace X
 		virtual Value GetAttr(const X::Value& v, const char* attrName) override;
 		virtual void SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal) override;
 		virtual AppEventCode HandleAppEvent(int signum) override;
+		virtual bool Lrpc_Listen(int port, bool blockMode) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

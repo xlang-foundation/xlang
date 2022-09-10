@@ -3,6 +3,7 @@
 #include "value.h"
 #include "xload.h"
 #include <vector>
+#include <string>
 #include <unordered_map>
 #include <functional>
 
@@ -22,6 +23,7 @@ namespace X
 
 	};
 	typedef XPackage* (*PackageCreator)(XRuntime* rt);
+	typedef XProxy* (*XProxyCreator)(std::string& url);
 	typedef std::vector<X::Value> ARGS;
 	typedef std::unordered_map<std::string, X::Value> KWARGS;
 	typedef bool (*U_FUNC) (XRuntime* rt, XObj* pContext,
@@ -51,6 +53,7 @@ namespace X
 		virtual Value GetAttr(const X::Value& v, const char* attrName) = 0;
 		virtual void SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal) = 0;
 		virtual AppEventCode HandleAppEvent(int signum) = 0;
+		virtual bool Lrpc_Listen(int port,bool blockMode = false) = 0;
 	};
 	extern XHost* g_pXHost;
 }

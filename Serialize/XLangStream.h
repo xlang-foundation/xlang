@@ -132,6 +132,13 @@ namespace X
         {
             return true;
         }
+        virtual void ReInit()
+        {
+            m_streamKey = 0;
+            curPos = { 0,0 };
+            m_size = 0;
+            m_InOverrideMode = false;
+        }
     protected:
         XLStream* m_pProvider = nullptr;//real impl.
         unsigned long long m_streamKey = 0;

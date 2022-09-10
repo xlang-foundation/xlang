@@ -20,5 +20,15 @@ public:
 protected:
     void* mThreadHandle =nullptr;
 };
-
+class GThread2
+    :public GThread
+{
+public:
+    virtual bool Start();
+    virtual void Stop();
+    virtual void WaitToEnd();
+    virtual void run2() = 0;
+protected:
+    void* mThreadHandle2 = nullptr;
+};
 #endif //!__gthread_h__

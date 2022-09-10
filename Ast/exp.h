@@ -19,6 +19,7 @@ enum class ObType
 	PipeOp,
 	Range,
 	Var,
+	Str,
 	Number,
 	Double,
 	Param,
@@ -31,6 +32,7 @@ enum class ObType
 	Class,
 	From,
 	As,
+	Thru,
 	Import
 };
 class Func;
@@ -110,6 +112,7 @@ class Str :
 public:
 	Str(char* s, int size,bool haveFormat)
 	{
+		m_type = ObType::Str;
 		m_haveFormat = haveFormat;
 		m_s = s;
 		m_size = size;
