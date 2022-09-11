@@ -158,7 +158,6 @@ public:
 class Assign :
 	virtual public BinaryOp
 {
-	bool AssignToDataObject(Runtime* rt,void* pObjPtr);
 public:
 	Assign(short op) :
 		Operator(op),
@@ -174,108 +173,7 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
-	{
-		if (!L || !R)
-		{
-			return false;
-		}
-		Value v_l;
-		LValue lValue_L = nullptr;
-		L->Run(rt,pContext, v_l, &lValue_L);
-		if (v_l.IsObject())
-		{
-			bool bOK = AssignToDataObject(rt,v_l.GetObj());
-			if (bOK)
-			{
-				return true;
-			}
-		}
-		Value v_r;
-		if (R->Run(rt,pContext, v_r))
-		{
-			if (lValue_L)
-			{
-				switch (opId)
-				{
-				case X::OP_ID::Equ:
-					*lValue_L = v_r;
-					break;
-				case X::OP_ID::AddEqu:
-					lValue_L->Clone();
-					*lValue_L += v_r;
-					break;
-				case X::OP_ID::MinusEqu:
-					break;
-				case X::OP_ID::MulEqu:
-					*lValue_L *= v_r;
-					break;
-				case X::OP_ID::DivEqu:
-					break;
-				case X::OP_ID::ModEqu:
-					break;
-				case X::OP_ID::FloorDivEqu:
-					break;
-				case X::OP_ID::PowerEqu:
-					break;
-				case X::OP_ID::AndEqu:
-					break;
-				case X::OP_ID::OrEqu:
-					break;
-				case X::OP_ID::NotEqu:
-					break;
-				case X::OP_ID::RightShiftEqu:
-					break;
-				case X::OP_ID::LeftShitEqu:
-					break;
-				case X::OP_ID::Count:
-					break;
-				default:
-					break;
-				}
-			}
-			else
-			{
-				switch (opId)
-				{
-				case X::OP_ID::Equ:
-					L->Set(rt, pContext, v_r);
-					break;
-				case X::OP_ID::AddEqu:
-					v_l.Clone();
-					v_l += v_r;
-					break;
-				case X::OP_ID::MinusEqu:
-					break;
-				case X::OP_ID::MulEqu:
-					break;
-				case X::OP_ID::DivEqu:
-					break;
-				case X::OP_ID::ModEqu:
-					break;
-				case X::OP_ID::FloorDivEqu:
-					break;
-				case X::OP_ID::PowerEqu:
-					break;
-				case X::OP_ID::AndEqu:
-					break;
-				case X::OP_ID::OrEqu:
-					break;
-				case X::OP_ID::NotEqu:
-					break;
-				case X::OP_ID::RightShiftEqu:
-					break;
-				case X::OP_ID::LeftShitEqu:
-					break;
-				case X::OP_ID::Count:
-					break;
-				default:
-					break;
-				}
-			}
-		}
-		return true;
-	}
+	virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 };
 class ColonOP :
 	virtual public Operator

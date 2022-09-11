@@ -16,7 +16,7 @@
 		typedef class_name THIS_CLASS_NAME;\
 		bool Create(X::XRuntime* rt, X::XPackage** ppackage)\
 		{\
-			std::vector<std::pair<int,X::XFunc*>> name_funcs;\
+			std::vector<std::pair<int,X::XObj*>> _members_;\
 			auto* pPackage = X::g_pXHost->CreatePackage(this);
 
 #define DEF_U_FUNC_HEAD(fn_name)\
@@ -35,8 +35,39 @@
 			retValue = X::Value(_retVal);\
 			return true;\
 		}));\
-	name_funcs.push_back(std::make_pair(idx, pFuncObj));\
+	_members_.push_back(std::make_pair(idx, pFuncObj));\
 	}
+
+
+#define ADD_PROP2(prop_name_out,prop_name_inner)\
+	{\
+	int idx = pPackage->AddMethod(prop_name_out);\
+	auto* pPropObj = X::g_pXHost->CreateProp(prop_name_out,\
+	(X::U_FUNC)([](X::XRuntime* rt, X::XObj* pContext,\
+		X::ARGS& params,\
+		X::KWARGS& kwParams,\
+		X::Value& retValue)\
+		{\
+			auto* pPackage = dynamic_cast<X::XPackage*>(pContext);\
+			auto* pThis = (THIS_CLASS_NAME*)pPackage->GetEmbedObj();\
+			pThis->prop_name_inner = params[0]; \
+			return true; \
+		}),\
+	(X::U_FUNC)([](X::XRuntime* rt, X::XObj* pContext,\
+		X::ARGS& params,\
+		X::KWARGS& kwParams,\
+		X::Value& retValue)\
+		{\
+			auto* pPackage = dynamic_cast<X::XPackage*>(pContext);\
+			auto* pThis = (THIS_CLASS_NAME*)pPackage->GetEmbedObj();\
+			retValue = X::Value(pThis->prop_name_inner);\
+			return true; \
+		})\
+		);\
+	_members_.push_back(std::make_pair(idx, pPropObj)); \
+	}
+
+#define ADD_PROP(prop_name) ADD_PROP2(#prop_name, prop_name)
 
 #define ADD_FUNC0(fn_name,function_name,retType)\
 	DEF_U_FUNC_HEAD(fn_name)\
@@ -78,7 +109,7 @@
 	auto* pFuncObj = X::g_pXHost->CreateFunction(fn_name,\
 			DEF_U_FUNC_XLANG_STYLE_CALL(function_name)\
 			);\
-	name_funcs.push_back(std::make_pair(idx, pFuncObj));\
+	_members_.push_back(std::make_pair(idx, pFuncObj));\
 	}
 
 #define DEF_CLASS_HEAD(class_name)\
@@ -96,7 +127,7 @@
 				retValue = X::Value(pPackage_Srv);\
 				return true;\
 			}));\
-	name_funcs.push_back(std::make_pair(idx, pFuncObj));\
+	_members_.push_back(std::make_pair(idx, pFuncObj));\
 	}
 
 #define ADD_CLASS_INSTANCE(class_name,class_inst)\
@@ -110,8 +141,8 @@
 	DEF_CLASS_TAIL()
 
 #define END_PACKAGE \
-	pPackage->Init((int)name_funcs.size());\
-	for(auto& it:name_funcs)\
+	pPackage->Init((int)_members_.size());\
+	for(auto& it:_members_)\
 	{\
 		X::Value v0(it.second);\
 		pPackage->SetIndexValue(rt, nullptr, it.first, v0);\

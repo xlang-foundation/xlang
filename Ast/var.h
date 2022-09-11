@@ -11,6 +11,8 @@ class Var :
 {
 	String Name;
 	int Index = -1;//index for this Var,set by compiling
+
+	bool GetPropValue(Runtime* rt, XObj* pContext,XObj* pObj,Value& val);
 public:
 	Var(String& n)
 	{
@@ -44,6 +46,16 @@ public:
 			}
 		}
 		m_scope->Get(rt, pContext, Index, v, lValue);
+		if(m_parent && m_parent->m_type == ObType::Dot 
+			&& (!m_parent->IsLeftValue()) && v.IsObject()
+			&& v.GetObj()->GetType() == ObjType::Prop)
+		{//for right value, if it is prop, need to calc out
+			GetPropValue(rt, pContext, v.GetObj(), v);
+			if (lValue)
+			{
+				*lValue =v;
+			}
+		}
 		return true;
 	}
 };

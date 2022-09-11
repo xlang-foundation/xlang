@@ -94,10 +94,15 @@ namespace X
 	{
 	public:
 		BEGIN_PACKAGE(Http)
+			ADD_PROP(name)
+			ADD_PROP(test)
 			ADD_CLASS("Server", HttpServer)
 			ADD_CLASS("Response", HttpResponse)
 			ADD_CLASS("Request", HttpRequest)
 		END_PACKAGE
+	public:
+		int test = 1234;
+		std::string name;
 		Http()
 		{
 

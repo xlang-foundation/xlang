@@ -23,7 +23,6 @@ public:
 	}
 	~Package()
 	{
-		std::cout << "~Package()"<<std::endl;
 	}
 	inline virtual int AddMethod(const char* name) override
 	{

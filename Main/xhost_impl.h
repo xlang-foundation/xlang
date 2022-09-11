@@ -14,6 +14,7 @@ namespace X
 		virtual bool QueryPackage(XRuntime* rt, const char* name, Value& objPackage) override;
 		virtual XPackage* CreatePackage(void* pRealObj) override;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) override;
+		virtual XProp* CreateProp(const char* name, U_FUNC setter, U_FUNC getter) override;
 		virtual XDict* CreateDict() override;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) override;
 		virtual std::string StringifyString(const std::string& str) override;

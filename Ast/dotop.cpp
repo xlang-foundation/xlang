@@ -4,6 +4,7 @@
 #include "number.h"
 #include "list.h"
 #include "function.h"
+#include "prop.h"
 #include "funclist.h"
 #include "moduleobject.h"
 #include "metascope.h"
@@ -134,13 +135,21 @@ bool DotOp::DotProcess(Runtime* rt, XObj* pContext,
 			}
 			else
 			{
-				if (pValueList == nil) pValueList = new Data::List();
+				lVal.SetContext(pContext);
+				if (pValueList == nil)
+				{
+					pValueList = new Data::List();
+				}
 				pValueList->Add(lVal);
 			}
 		}
 		else
 		{
-			if (pValueList == nil) pValueList = new Data::List();
+			if (pValueList == nil)
+			{
+				pValueList = new Data::List();
+			}
+			lVal.SetContext(pContext);
 			pValueList->Add(lVal);
 		}
 	};
@@ -189,25 +198,22 @@ bool DotOp::DotProcess(Runtime* rt, XObj* pContext,
 	if (pLeftObj0)
 	{
 		Data::Object* pLeftObj = (Data::Object*)pLeftObj0;
-		if (false /*pLeftObj->GetType() == X::ObjType::List*/)
+		Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
+		if (pList)
 		{
-			Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
-			if (pList)
+			auto& data = pList->Data();
+			for (auto& it : data)
 			{
-				auto& data = pList->Data();
-				for (auto& it : data)
+				if (it.IsObject())
 				{
-					if (it.IsObject())
+					Data::Object* pItObj = dynamic_cast<Data::Object*>(it.GetObj());
+					if (pItObj->GetType() == X::ObjType::XClassObject)
 					{
-						Data::Object* pItObj = dynamic_cast<Data::Object*>(it.GetObj());
-						if (pItObj->GetType() == X::ObjType::XClassObject)
-						{
-							RunCallPerObj(R,pItObj);
-						}
-						else if (pItObj->GetType() == X::ObjType::Function)
-						{
-							RunCallPerObj(R,pItObj);
-						}
+						RunCallPerObj(R, pItObj);
+					}
+					else if (pItObj->GetType() == X::ObjType::Function)
+					{
+						RunCallPerObj(R, pItObj);
 					}
 				}
 			}

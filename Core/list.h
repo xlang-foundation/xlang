@@ -111,7 +111,8 @@ public:
 			for (size_t i = 0; i < m_ptrs.size(); i++)
 			{
 				X::Value idx((int)i);
-				proc(rt, pContext,idx,* m_ptrs[i], params, kwParams);
+				X::Value val(*m_ptrs[i]);
+				proc(rt, pContext,idx, val, params, kwParams);
 			}
 		}
 		else
@@ -131,7 +132,8 @@ public:
 		{
 			for (size_t i = 0; i < m_ptrs.size(); i++)
 			{
-				proc(*m_ptrs[i], i);
+				Value val(*m_ptrs[i]);
+				proc(val, i);
 			}
 		}
 		else

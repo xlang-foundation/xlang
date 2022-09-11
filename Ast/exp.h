@@ -58,6 +58,7 @@ public:
 		m_lineEnd = endLine;
 		m_charPos = charPos;
 	}
+	inline bool IsLeftValue() { return m_isLeftValue; }
 	inline int GetStartLine() { return m_lineStart+1; }
 	inline int GetEndLine() { return m_lineEnd+1; }
 	inline int GetCharPos() { return m_charPos; }
@@ -65,7 +66,6 @@ public:
 	{
 		m_isLeftValue = b;
 	}
-	inline bool IsLeftValue() { return m_isLeftValue; }
 	virtual ~Expression(){}
 	inline virtual Scope* GetScope()
 	{

@@ -3,6 +3,7 @@
 #include "str.h"
 #include "manager.h"
 #include "function.h"
+#include "prop.h"
 #include "package.h"
 #include "dict.h"
 #include "bin.h"
@@ -64,6 +65,18 @@ namespace X
 		auto* pFuncObj = new X::Data::Function(extFunc);
 		pFuncObj->AddRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
+	}
+	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC setter, U_FUNC getter)
+	{
+		std::string strName(name);
+		std::string strSetName = "set_" + strName;
+		std::string strGetName = "get_" + strName;
+
+		AST::ExternFunc* extFunc_set = new AST::ExternFunc(strSetName, setter);
+		AST::ExternFunc* extFunc_get = new AST::ExternFunc(strGetName, getter);
+		auto* pPropObj = new X::Data::PropObject(extFunc_set, extFunc_get);
+		pPropObj->AddRef();
+		return dynamic_cast<XProp*>(pPropObj);
 	}
 	/*   TODO:
 		some pointer convert to Data::Object and pass to Value

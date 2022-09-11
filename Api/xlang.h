@@ -18,6 +18,7 @@ namespace X
 		Function,
 		MetaFunction,
 		XClassObject,
+		Prop,
 		FuncCalls,
 		Package,
 		ModuleObject,
@@ -125,6 +126,11 @@ namespace X
 			m_p = g_pXHost->CreateBin(data,size);
 		}
 		virtual char* Data() { return m_p ? dynamic_cast<XBin*>(m_p)->Data() : nullptr; }
+	};
+	class XProp :
+		virtual public XObj
+	{
+
 	};
 	class XFunc:
 		virtual public XObj

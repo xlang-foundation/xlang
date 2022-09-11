@@ -1,11 +1,22 @@
 #include "var.h"
 #include "value.h"
 #include "object.h"
+#include "prop.h"
 
 namespace X
 {
 namespace AST
 {
+	bool Var::GetPropValue(Runtime* rt, XObj* pContext,XObj* pObj, Value& val)
+	{
+		bool bOK = false;
+		auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
+		if (pPropObj)
+		{
+			bOK = pPropObj->GetProp(rt, pContext, val);
+		}
+		return bOK;
+	}
 bool Var::CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables)
 {

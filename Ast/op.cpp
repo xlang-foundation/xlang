@@ -4,6 +4,7 @@
 #include "def.h"
 #include "dict.h"
 #include "pair.h"
+#include "prop.h"
 #include "funclist.h"
 #include "op_registry.h"
 
@@ -11,6 +12,116 @@ namespace X
 {
 namespace AST
 {
+	bool Assign::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
+	{
+		if (!L || !R)
+		{
+			return false;
+		}
+		Value v_l;
+		LValue lValue_L = nullptr;
+		L->Run(rt, pContext, v_l, &lValue_L);
+		Value v_r;
+		if (!R->Run(rt, pContext, v_r))
+		{
+			return false;
+		}
+		if (v_l.IsObject())
+		{
+			auto* pObj = v_l.GetObj();
+			if (pObj->GetType() == X::ObjType::FuncCalls)
+			{
+				auto* pCalls = dynamic_cast<Data::FuncCalls*>(pObj);
+				return pCalls->SetValue(v_r);
+			}
+			else if (pObj->GetType() == X::ObjType::Prop)
+			{
+				auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
+				return pPropObj->SetProp(rt, lValue_L.GetContext(), v_r);
+			}
+		}
+		else if (lValue_L)
+		{
+			switch (opId)
+			{
+			case X::OP_ID::Equ:
+				*lValue_L = v_r;
+				break;
+			case X::OP_ID::AddEqu:
+				lValue_L->Clone();
+				*lValue_L += v_r;
+				break;
+			case X::OP_ID::MinusEqu:
+				break;
+			case X::OP_ID::MulEqu:
+				*lValue_L *= v_r;
+				break;
+			case X::OP_ID::DivEqu:
+				break;
+			case X::OP_ID::ModEqu:
+				break;
+			case X::OP_ID::FloorDivEqu:
+				break;
+			case X::OP_ID::PowerEqu:
+				break;
+			case X::OP_ID::AndEqu:
+				break;
+			case X::OP_ID::OrEqu:
+				break;
+			case X::OP_ID::NotEqu:
+				break;
+			case X::OP_ID::RightShiftEqu:
+				break;
+			case X::OP_ID::LeftShitEqu:
+				break;
+			case X::OP_ID::Count:
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+			switch (opId)
+			{
+			case X::OP_ID::Equ:
+				L->Set(rt, pContext, v_r);
+				break;
+			case X::OP_ID::AddEqu:
+				v_l.Clone();
+				v_l += v_r;
+				break;
+			case X::OP_ID::MinusEqu:
+				break;
+			case X::OP_ID::MulEqu:
+				break;
+			case X::OP_ID::DivEqu:
+				break;
+			case X::OP_ID::ModEqu:
+				break;
+			case X::OP_ID::FloorDivEqu:
+				break;
+			case X::OP_ID::PowerEqu:
+				break;
+			case X::OP_ID::AndEqu:
+				break;
+			case X::OP_ID::OrEqu:
+				break;
+			case X::OP_ID::NotEqu:
+				break;
+			case X::OP_ID::RightShiftEqu:
+				break;
+			case X::OP_ID::LeftShitEqu:
+				break;
+			case X::OP_ID::Count:
+				break;
+			default:
+				break;
+			}
+		}
+		return true;
+	}
+
 	bool Operator::GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
 	{
 		auto proc = [&](Expression* i)
@@ -171,25 +282,6 @@ bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 	}
 	operands.push(list);
 	return true;
-}
-
-bool Assign::AssignToDataObject(Runtime* rt, void* pObjPtr)
-{
-	XObj* pObj = (XObj*)pObjPtr;
-	Value v_r;
-	if (!R->Run(rt, nullptr, v_r))
-	{
-		return false;
-	}
-	if (pObj->GetType() == X::ObjType::FuncCalls)
-	{
-		Data::FuncCalls* pCalls = dynamic_cast<Data::FuncCalls*>(pObj);
-		return pCalls->SetValue(v_r);
-	}
-	else
-	{
-		return false;
-	}
 }
 
 bool SemicolonOp::OpWithOperands(std::stack<AST::Expression*>& operands)
