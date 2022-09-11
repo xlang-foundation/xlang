@@ -38,6 +38,69 @@
 	_members_.push_back(std::make_pair(idx, pFuncObj));\
 	}
 
+#define ADD_PROP4(prop_name_out,prop_name_inner,op_before,op_after,conv)\
+	{\
+	int idx = pPackage->AddMethod(prop_name_out);\
+	auto* pPropObj = X::g_pXHost->CreateProp(prop_name_out,\
+	(X::U_FUNC)([](X::XRuntime* rt, X::XObj* pContext,\
+		X::ARGS& params,\
+		X::KWARGS& kwParams,\
+		X::Value& retValue)\
+		{\
+			auto* pPackage = dynamic_cast<X::XPackage*>(pContext);\
+			auto* pThis = (THIS_CLASS_NAME*)pPackage->GetEmbedObj();\
+			pThis->op_before;\
+			pThis->prop_name_inner = pThis->conv(params[0]); \
+			pThis->op_after;\
+			return true; \
+		}),\
+	(X::U_FUNC)([](X::XRuntime* rt, X::XObj* pContext,\
+		X::ARGS& params,\
+		X::KWARGS& kwParams,\
+		X::Value& retValue)\
+		{\
+			auto* pPackage = dynamic_cast<X::XPackage*>(pContext);\
+			auto* pThis = (THIS_CLASS_NAME*)pPackage->GetEmbedObj();\
+			pThis->op_before;\
+			retValue = X::Value(pThis->conv(pThis->prop_name_inner));\
+			pThis->op_after;\
+			return true; \
+		})\
+		);\
+	_members_.push_back(std::make_pair(idx, pPropObj)); \
+	}
+
+#define ADD_PROP3(prop_name_out,prop_name_inner,op_before,op_after)\
+	{\
+	int idx = pPackage->AddMethod(prop_name_out);\
+	auto* pPropObj = X::g_pXHost->CreateProp(prop_name_out,\
+	(X::U_FUNC)([](X::XRuntime* rt, X::XObj* pContext,\
+		X::ARGS& params,\
+		X::KWARGS& kwParams,\
+		X::Value& retValue)\
+		{\
+			auto* pPackage = dynamic_cast<X::XPackage*>(pContext);\
+			auto* pThis = (THIS_CLASS_NAME*)pPackage->GetEmbedObj();\
+			pThis->op_before;\
+			pThis->prop_name_inner = params[0]; \
+			pThis->op_after;\
+			return true; \
+		}),\
+	(X::U_FUNC)([](X::XRuntime* rt, X::XObj* pContext,\
+		X::ARGS& params,\
+		X::KWARGS& kwParams,\
+		X::Value& retValue)\
+		{\
+			auto* pPackage = dynamic_cast<X::XPackage*>(pContext);\
+			auto* pThis = (THIS_CLASS_NAME*)pPackage->GetEmbedObj();\
+			pThis->op_before;\
+			retValue = X::Value(pThis->prop_name_inner);\
+			pThis->op_after;\
+			return true; \
+		})\
+		);\
+	_members_.push_back(std::make_pair(idx, pPropObj)); \
+	}
 
 #define ADD_PROP2(prop_name_out,prop_name_inner)\
 	{\

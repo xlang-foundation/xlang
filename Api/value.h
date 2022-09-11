@@ -150,6 +150,11 @@ public:
 		t = ValueType::Int64;
 		x.l = l;
 	}
+	inline Value(unsigned int l)
+	{
+		t = ValueType::Int64;
+		x.l = l;
+	}
 	inline Value(long l)
 	{
 		t = ValueType::Int64;
@@ -233,9 +238,17 @@ public:
 	{
 		return x.l;
 	}
+	operator unsigned long long() const
+	{
+		return x.l;
+	}
 	operator int() const
 	{
 		return (int)x.l;
+	}
+	operator unsigned int() const
+	{
+		return (unsigned int)x.l;
 	}
 	operator std::string()
 	{
