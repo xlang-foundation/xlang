@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "value.h"
+#include "lvalue.h"
 #include "glob.h"
 
 namespace X 

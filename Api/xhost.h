@@ -13,6 +13,7 @@ namespace X
 	class XStr;
 	class XPackage;
 	class XFunc;
+	class XProp;
 	class XDict;
 	class XBin;
 	class XRemoteObject;
@@ -42,6 +43,7 @@ namespace X
 		virtual XDict* CreateDict() = 0;
 		virtual XPackage* CreatePackage(void* pRealObj) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) = 0;
+		virtual XProp* CreateProp(const char* name, U_FUNC setter, U_FUNC getter) = 0;
 		virtual std::string StringifyString(const std::string& str) = 0;
 		virtual XBin* CreateBin(char* data, size_t size) = 0;
 		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) = 0;

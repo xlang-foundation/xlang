@@ -1,6 +1,7 @@
 #pragma once
 #include "def.h"
 #include "value.h"
+#include "lvalue.h"
 
 namespace X {namespace AST {
 class Scope;

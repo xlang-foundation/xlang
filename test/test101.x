@@ -1,10 +1,11 @@
 from xlang_http import http
-http.test = 111
-print(http.test)
-http.name = "http set prop to this"
-x = http.name
+srv = http.Server()
+srv.test = 111*10
+print(srv.test)
+srv.name = "http set prop to this"
+x = srv.name
+x+="->1000"
 print(x)
 
-srv = http.Server
 srv.listen("localhost", 8080)
 print("end")

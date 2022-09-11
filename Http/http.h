@@ -11,10 +11,15 @@ namespace X
 		std::vector<void*> m_handlers;
 	public:
 		BEGIN_PACKAGE(HttpServer)
+			ADD_PROP(name)
+			ADD_PROP(test)
 			ADD_FUNC("listen", Listen)
 			ADD_FUNC("stop", Stop)
 			ADD_FUNC("get", Get)
 		END_PACKAGE
+
+		int test = 1234;
+		std::string name;
 
 		HttpServer(ARGS& params,
 			KWARGS& kwParams);
@@ -94,15 +99,11 @@ namespace X
 	{
 	public:
 		BEGIN_PACKAGE(Http)
-			ADD_PROP(name)
-			ADD_PROP(test)
 			ADD_CLASS("Server", HttpServer)
 			ADD_CLASS("Response", HttpResponse)
 			ADD_CLASS("Request", HttpRequest)
 		END_PACKAGE
 	public:
-		int test = 1234;
-		std::string name;
 		Http()
 		{
 
