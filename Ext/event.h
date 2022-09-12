@@ -12,6 +12,7 @@
 #include "object.h"
 #include "attribute.h"
 #include "xhost.h"
+#include "function.h"
 #include <functional>
 
 namespace X
@@ -21,11 +22,12 @@ namespace X
 	struct HandlerInfo
 	{
 		EventHandler Handler=nullptr;
+		X::Data::Function* FuncHandler = nullptr;
 		int OwnerThreadId = -1;
 		long cookie = 0;
 	};
 	class Event:
-		virtual public Data::Object
+		public virtual Data::Object
 	{
 		friend class EventSystem;
 		std::string m_name;
@@ -33,6 +35,23 @@ namespace X
 		long m_lastCookie = 0;
 		std::vector<HandlerInfo> m_handlers;
 	public:
+		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
+			KWARGS& kwParams, X::Value& retValue) override;
+		virtual Event& operator +=(X::Value& r) override
+		{
+			AutoLock(m_lock);
+			if (r.IsObject())
+			{
+				auto* pObjHandler = dynamic_cast<X::Data::Object*>(r.GetObj());
+				if (pObjHandler && pObjHandler->GetType() == ObjType::Function)
+				{
+					auto pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
+					pFuncHandler->AddRef();
+					Add(pFuncHandler);
+				}
+			}
+			return *this;
+		}
 		void CovertPropsToArgs(KWARGS& kwargs)
 		{
 			auto pAttrBag = GetAttrBag();
@@ -41,7 +60,8 @@ namespace X
 				pAttrBag->CovertToDict(kwargs);
 			}
 		}
-		void Fire(KWARGS& kwargs, bool inMain =false)
+		void Fire(X::XRuntime* rt, XObj* pContext,
+			ARGS& params,KWARGS& kwargs, bool inMain =false)
 		{
 			int threadId = -1;
 			for (auto& k : kwargs)
@@ -60,15 +80,16 @@ namespace X
 			}
 			if (inMain)
 			{
-				FireInMain();
+				FireInMain(rt, pContext, params, kwargs);
 			}
 			else
 			{
-				Fire(threadId);
+				DoFire(rt, pContext, params,kwargs);
 			}
 		}
-		void FireInMain();
-		void Fire(int ownerThreadId=-1)
+		void FireInMain(X::XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwargs);
+		void DoFire(XRuntime* rt, XObj* pContext,ARGS& params, KWARGS& kwargs)
 		{
 			m_lockHandlers.Lock();
 			for (auto& it : m_handlers)
@@ -76,7 +97,16 @@ namespace X
 				//if (ownerThreadId ==-1 || it.OwnerThreadId == ownerThreadId)
 				{
 					IncRef();
-					it.Handler(this);
+					if (it.Handler)
+					{
+						Value retVal;
+						it.Handler(rt, pContext,params,kwargs, retVal);
+					}
+					else if (it.FuncHandler)
+					{
+						Value retVal;
+						it.FuncHandler->Call(rt, pContext, params, kwargs, retVal);
+					}
 					DecRef();
 				}
 			}
@@ -115,7 +145,16 @@ namespace X
 			int tid = (int)GetThreadID();
 			m_lockHandlers.Lock();
 			long cookie = ++m_lastCookie;
-			m_handlers.push_back(HandlerInfo{ handler,tid,cookie });
+			m_handlers.push_back(HandlerInfo{ handler,nullptr,tid,cookie });
+			m_lockHandlers.Unlock();
+			return cookie;
+		}
+		inline long Add(X::Data::Function* pFuncHandler)
+		{
+			int tid = (int)GetThreadID();
+			m_lockHandlers.Lock();
+			long cookie = ++m_lastCookie;
+			m_handlers.push_back(HandlerInfo{ nullptr,pFuncHandler,tid,cookie });
 			m_lockHandlers.Unlock();
 			return cookie;
 		}
@@ -141,9 +180,17 @@ namespace X
 	class EventSystem :
 		public Singleton<EventSystem>
 	{
+		struct EventFireInfo
+		{
+			Event* pEvtObj;
+			X::XRuntime* rt;
+			X::Value valContext;
+			ARGS params;
+			KWARGS kwParams;
+		};
 		bool m_run = true;
 		Locker m_lockEventOnFire;
-		std::vector<Event*> m_eventsOnFire;
+		std::vector<EventFireInfo> m_eventsOnFire;
 
 		XWait m_wait;
 		Locker m_lockEventMap;
@@ -154,11 +201,14 @@ namespace X
 			m_run = false;
 			m_wait.Release();
 		}
-		inline void FireInMain(Event* pEvt)
+		inline void FireInMain(Event* pEvt,XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwParams)
 		{
+			ARGS params0 = params;//for copy
+			KWARGS kwParams0 = kwParams;//for copy
 			pEvt->IncRef();
 			m_lockEventOnFire.Lock();
-			m_eventsOnFire.push_back(pEvt);
+			m_eventsOnFire.push_back({ pEvt,rt,Value(pContext),params0,kwParams0 });
 			m_lockEventOnFire.Unlock();
 			m_wait.Release();
 		}
@@ -191,23 +241,26 @@ namespace X
 				m_lockEventOnFire.Lock();
 				while (m_eventsOnFire.size() > 0)
 				{
-					Event* pEvtToRun = m_eventsOnFire[0];
+					auto fireInfo = m_eventsOnFire[0];
 					m_eventsOnFire.erase(m_eventsOnFire.begin());
+					Event* pEvtToRun = fireInfo.pEvtObj;
 					m_lockEventOnFire.Unlock();
 					pEvtToRun->DecRef();//for m_eventsOnFire
-					pEvtToRun->Fire();
+					//todo:
+					pEvtToRun->DoFire(fireInfo.rt, fireInfo.valContext.GetObj(),
+						fireInfo.params,fireInfo.kwParams);
 					m_lockEventOnFire.Lock();
 				}
 				m_lockEventOnFire.Unlock();
 			}
 		}
-		inline void Fire(std::string& name, 
-			KWARGS& kwargs,bool inMain=false)
+		inline void Fire(X::XRuntime* rt, XObj* pContext,
+			std::string& name,ARGS& params,KWARGS& kwargs,bool inMain=false)
 		{
 			Event* pEvt = Query(name);
 			if (pEvt)
 			{
-				pEvt->Fire(kwargs, inMain);
+				pEvt->Fire(rt, pContext,params,kwargs, inMain);
 				pEvt->DecRef();
 			}
 		}

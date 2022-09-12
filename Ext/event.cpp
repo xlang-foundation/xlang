@@ -1,8 +1,18 @@
 #include "event.h"
 namespace X
 {
-	void Event::FireInMain()
+	bool Event::Call(XRuntime* rt, XObj* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		X::Value& retValue)
 	{
-		EventSystem::I().FireInMain(this);
+		DoFire(rt, pContext, params, kwParams);
+		retValue = Value(true);
+		return true;
+	}
+	void Event::FireInMain(X::XRuntime* rt, XObj* pContext,
+		ARGS& params, KWARGS& kwargs)
+	{
+		EventSystem::I().FireInMain(this,rt,pContext,params,kwargs);
 	}
 }

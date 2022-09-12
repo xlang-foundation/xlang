@@ -376,6 +376,8 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_LOW2);
 	RegOP("and", "or")
 		.SetPrecedence(Precedence_LOW1);
+	RegOP("\n")
+		.SetPrecedence(Precedence_VERYLOW);
 }
 
 std::vector<OpInfo> RegOP::OPList;

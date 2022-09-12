@@ -1,6 +1,7 @@
 #include "xclass.h"
 #include "object.h"
 #include "function.h"
+#include "event.h"
 #include "xclass_object.h"
 
 namespace X
@@ -92,9 +93,16 @@ bool XClass::Run(Runtime* rt,XObj* pContext,Value& v, LValue* lValue)
 	m_stackFrame->SetVarCount((int)m_Vars.size());
 	for (auto it : m_tempMemberList)
 	{
-		Value& v0 = it.second;
+		Value& v0 = it.defaultValue;
 		bool bSet = false;
-		if (v0.IsObject())
+		if (it.typeName == EVENT_OBJ_TYPE_NAME)
+		{
+			auto* pEvtObj = new Event();
+			Value valEvent(dynamic_cast<XObj*>(pEvtObj));
+			Set(rt, pContext, it.index, valEvent);
+			bSet = true;
+		}
+		else if (v0.IsObject())
 		{
 			Data::Object* pObj = dynamic_cast<Data::Object*>(v0.GetObj());
 			if (pObj->GetType() == X::ObjType::Expr)
@@ -108,16 +116,17 @@ bool XClass::Run(Runtime* rt,XObj* pContext,Value& v, LValue* lValue)
 						Value v1;
 						if (pExpression->Run(rt,pContext,v1))
 						{
-							Set(rt,pContext,it.first, v1);
+							Set(rt,pContext,it.index, v1);
 							bSet = true;
 						}
 					}
 				}
 			}
 		}
+
 		if (!bSet)
 		{
-			Set(rt,pContext,it.first, v0);
+			Set(rt,pContext,it.index, v0);
 		}
 	}
 	m_tempMemberList.clear();
@@ -158,12 +167,12 @@ void XClass::Add(Expression* item)
 	{
 		Param* param = dynamic_cast<Param*>(item);
 		std::string strVarName;
-		std::string strVarType;//TODO: deal with type
+		std::string strVarType;
 		Value defaultValue;
 		if (param->Parse(strVarName, strVarType, defaultValue))
 		{
 			int idx = AddOrGet(strVarName,false);
-			m_tempMemberList.push_back(std::make_pair(idx, defaultValue));
+			m_tempMemberList.push_back(MemberInfo{ idx,strVarType,defaultValue });
 		}
 	}
 		break;
@@ -175,7 +184,7 @@ void XClass::Add(Expression* item)
 		int idx = AddOrGet(strName, false);
 		Data::Function* f = new Data::Function(func);
 		Value funcObj(f);
-		m_tempMemberList.push_back(std::make_pair(idx, funcObj));
+		m_tempMemberList.push_back(MemberInfo{ idx,"",funcObj });
 		if (strName == "constructor")//TODO: add class name also can be constructor
 		{
 			m_constructor = func;

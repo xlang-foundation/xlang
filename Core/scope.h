@@ -31,7 +31,8 @@ protected:
 	std::unordered_map <std::string, int> m_Vars;
 	std::unordered_map <std::string, AST::Var*> m_ExternVarMap;
 public:
-	Scope()
+	Scope():
+		ObjRef()
 	{
 	}
 	void AddExternVar(AST::Var* var);

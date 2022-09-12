@@ -5,12 +5,12 @@ x.remove(0)
 print(x)
 
 rint("test event system")
-on("event1",(evt){
-	print("event1 fire");
+on("event1",(x1,y,z){
+	print("event1 fire",x1,y,z);
 })
 
-on("event1",(evt){
-	print("event1 fire 2");
+on("event1",(x,y,z){
+	print("event1 fire 2",x1,y,z);
 })
 
-fire("event1",1,2,3)
+fire("event1",10,-20,-30)

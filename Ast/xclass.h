@@ -3,6 +3,7 @@
 #include "scope.h"
 #include "func.h"
 
+#define EVENT_OBJ_TYPE_NAME "event"
 namespace X
 {
 namespace AST
@@ -12,10 +13,16 @@ namespace AST
 class XClass
 	:virtual public Func
 {
+	struct MemberInfo
+	{
+		int index;
+		std::string typeName;
+		Value defaultValue;
+	};
 	Func* m_constructor = nil;
 	AST::StackFrame* m_stackFrame = nullptr;//to hold non-instance properties
 	std::vector<XClass*> m_bases;
-	std::vector<std::pair<int, Value>> m_tempMemberList;
+	std::vector<MemberInfo> m_tempMemberList;
 	XClass* FindBase(Runtime* rt, std::string& strName);
 public:
 	XClass() :

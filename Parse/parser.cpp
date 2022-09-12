@@ -144,8 +144,11 @@ void Parser::NewLine(bool checkIfIsLambdaOrPair)
 			pop_preceding_token();//pop Slash
 			return;
 		case OP_ID::Colon:
-			delete top;
-			m_curBlkState->OpPop();
+			if (lastToken == topIdx)
+			{
+				delete top;
+				m_curBlkState->OpPop();
+			}
 			break;
 		case OP_ID::Comma:
 			//todo:return;

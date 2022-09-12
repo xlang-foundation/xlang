@@ -19,9 +19,12 @@ namespace X
 		Locker notiLock;
 		XWait notiWait;
 		long dbg_handler_cookie = X::OnEvent("devops.dbg", 
-			[this, &notis, &notiLock,&notiWait](const X::Value& evt)
+			[this, &notis, &notiLock,&notiWait](
+				XRuntime* rt, XObj* pContext,
+				ARGS& params, KWARGS& kwParams,
+				X::Value& retValue)
 		{
-			auto action = evt.getattr("action");
+			auto action = kwParams["action"];
 			std::string notifyInfo;
 			if (action == "end")
 			{
@@ -29,7 +32,7 @@ namespace X
 			}
 			else if (action == "notify")
 			{
-				auto param = evt.getattr("param");
+				auto param = kwParams["param"];
 				notifyInfo = "$notify$" + param.ToString();
 			}
 			notiLock.Lock();

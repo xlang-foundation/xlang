@@ -130,7 +130,7 @@ namespace X
 	class XProp :
 		virtual public XObj
 	{
-
+	
 	};
 	class XFunc:
 		virtual public XObj

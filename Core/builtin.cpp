@@ -116,38 +116,23 @@ bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 	if (pEvt == nullptr)
 	{
 		pEvt = X::EventSystem::I().Register("RunModule");
-		pEvt->Add([rt](const X::Value& evt)
+		pEvt->Add([rt](X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 			{
-				X::Event* pEvt = dynamic_cast<X::Event*>((X::XObj*)evt);
 				unsigned long long mKey = 0;
-				auto valKey = pEvt->Get("ModuleKey");
+				auto valKey = kwParams["ModuleKey"];
 				mKey = valKey.GetLongLong();
-				X::KWARGS kwParams0;
-				pEvt->CovertPropsToArgs(kwParams0);
-				X::Value retValue0;
-				X::Hosting::I().Run(mKey, kwParams0, retValue0);
+				X::Hosting::I().Run(mKey, kwParams, retValue);
 			});
 	}
 	unsigned long long key = 0;
 	if (params.size() > 0)
 	{
 		key = params[0].GetLongLong();
+		X::Value valKey(key);
+		kwParams.emplace(std::make_pair("ModuleKey", valKey));
 	}
-	else
-	{
-		auto it = kwParams.find("ModuleKey");
-		if (it != kwParams.end())
-		{
-			key = it->second.GetLongLong();
-		}
-	}
-	X::Value valKey(key);
-	pEvt->Set("ModuleKey", valKey);
-	for (auto& it : kwParams)
-	{
-		pEvt->Set(it.first.c_str(), it.second);
-	}
-	pEvt->FireInMain();
+	pEvt->FireInMain(rt,pContext,params,kwParams);
 	pEvt->Release();
 	return true;
 }
@@ -380,24 +365,17 @@ bool U_OnEvent(X::XRuntime* rt, XObj* pContext,
 	{//Create it
 		pEvt = X::EventSystem::I().Register(name);
 	}
-	X::Data::Function* pFuncHandler = nullptr;
 	auto handler = params[1];
 	if (handler.IsObject())
 	{
 		auto* pObjHandler = dynamic_cast<X::Data::Object*>(handler.GetObj());
 		if (pObjHandler && pObjHandler->GetType() == ObjType::Function)
 		{
-			pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
+			auto* pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
 			pFuncHandler->AddRef();
+			pEvt->Add(pFuncHandler);
 		}
 	}
-	pEvt->Add([pFuncHandler, pContext,rt](const X::Value& evt) {
-		X::ARGS params;
-		params.push_back(evt);
-		X::KWARGS kwParams;
-		X::Value retValue;
-		pFuncHandler->Call(rt, pContext,params, kwParams, retValue);
-		});
 
 	retValue = X::Value(true);
 	return true;
@@ -412,12 +390,13 @@ bool U_FireEvent(X::XRuntime* rt, XObj* pContext,
 		return false;
 	}
 	std::string name = params[0].ToString();
+	params.erase(params.begin());
 	if (kwParams.find("tid") == kwParams.end())
 	{
 		int tid = (int)GetThreadID();
 		kwParams.emplace(std::make_pair("tid", tid));
 	}
-	X::EventSystem::I().Fire(name, kwParams);
+	X::EventSystem::I().Fire(rt,pContext,name, params,kwParams);
 	retValue = X::Value(true);
 	return true;
 }

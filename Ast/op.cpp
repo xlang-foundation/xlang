@@ -40,7 +40,7 @@ namespace AST
 				return pPropObj->SetProp(rt, lValue_L.GetContext(), v_r);
 			}
 		}
-		else if (lValue_L)
+		if (lValue_L)
 		{
 			switch (opId)
 			{

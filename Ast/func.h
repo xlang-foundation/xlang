@@ -64,7 +64,7 @@ protected:
 public:
 	Func() :
 		Block(), UnaryOp(), Operator(),
-		Scope()
+		Scope(),ObjRef()
 	{
 		m_type = ObType::Func;
 	}

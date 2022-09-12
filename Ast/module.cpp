@@ -94,7 +94,8 @@ bool Module::HitBreakpoint(int line)
 		kwParams.emplace(std::make_pair("param", strBuf));
 		std::cout << "HitBreakpoint in line:" << line << std::endl;
 		std::string evtName("devops.dbg");
-		X::EventSystem::I().Fire(evtName, kwParams);
+		ARGS params;
+		X::EventSystem::I().Fire(nullptr,nullptr,evtName,params,kwParams);
 	}
 	return bHit;
 }
