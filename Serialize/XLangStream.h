@@ -44,11 +44,11 @@ namespace X
         {
             curPos = { 0,0 };
         }
-        STREAM_SIZE Size()
+        virtual STREAM_SIZE Size() override
         {
             return m_size;
         }
-        bool FullCopyTo(char* buf, STREAM_SIZE bufSize);
+        virtual bool FullCopyTo(char* buf, STREAM_SIZE bufSize) override;
         bool CopyTo(char* buf, STREAM_SIZE size);
         bool appendchar(char c);
         bool fetchchar(char& c);
@@ -110,6 +110,7 @@ namespace X
         inline virtual void SetPos(blockIndex pos) override
         {
             curPos = pos;
+            m_size = CalcSize(curPos);
         }
         STREAM_SIZE CalcSize(blockIndex pos);
         void SetOverrideMode(bool b)

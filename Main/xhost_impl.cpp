@@ -103,6 +103,24 @@ namespace X
 		pObjBin->AddRef();
 		return pObjBin;
 	}
+	X::XLStream* XHost_Impl::CreateStream(const char* buf, long long size)
+	{
+		X::BlockStream* pStream = nullptr;
+		if (buf == nullptr && size == 0)
+		{
+			pStream = new X::BlockStream();
+		}
+		else
+		{
+			pStream = new X::BlockStream((char*)buf,size,false);
+		}
+		return dynamic_cast<X::XLStream*>(pStream);
+	}
+	void XHost_Impl::ReleaseStream(X::XLStream* pStream)
+	{
+		auto* pBlockStream = dynamic_cast<X::BlockStream*>(pStream);
+		delete pBlockStream;
+	}
 	XRemoteObject* XHost_Impl::CreateRemoteObject(XProxy* proxy)
 	{
 		auto* pRObj = new RemoteObject(proxy);

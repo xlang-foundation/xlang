@@ -19,6 +19,8 @@ namespace X
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) override;
 		virtual std::string StringifyString(const std::string& str) override;
 		virtual XBin* CreateBin(char* data, size_t size) override;
+		virtual X::XLStream* CreateStream(const char* buf=nullptr, long long size=0) override;
+		virtual void ReleaseStream(X::XLStream* pStream) override;
 		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) override;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) override;

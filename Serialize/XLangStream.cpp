@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include "object.h"
 #include "str.h"
+#include "list.h"
 
 namespace X 
 {
@@ -333,6 +334,7 @@ namespace X
 			case X::ObjType::Future:
 				break;
 			case X::ObjType::List:
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::List());
 				break;
 			case X::ObjType::Dict:
 				break;

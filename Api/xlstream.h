@@ -18,6 +18,7 @@ namespace X
 	class XLStream
 	{
 	public:
+		virtual STREAM_SIZE Size() = 0;
 		virtual blockIndex GetPos() = 0;
 		virtual void SetPos(blockIndex pos) = 0;
 		virtual void Refresh() = 0;
@@ -25,6 +26,7 @@ namespace X
 		virtual blockInfo& GetBlockInfo(int index) = 0;
 		virtual bool NewBlock() = 0;
 		virtual bool MoveToNextBlock() = 0;
+		virtual bool FullCopyTo(char* buf, STREAM_SIZE bufSize) = 0;
 	};
 }
 
