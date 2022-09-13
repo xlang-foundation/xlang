@@ -5,6 +5,7 @@
 #include "value.h"
 #include "lvalue.h"
 #include "glob.h"
+#include "token.h"
 
 namespace X 
 {
@@ -21,6 +22,7 @@ enum class ObType
 	Range,
 	Var,
 	Str,
+	Const,
 	Number,
 	Double,
 	Param,
@@ -130,6 +132,25 @@ public:
 			v = Value(m_s, m_size);
 			return true;
 		}
+	}
+};
+class XConst :
+	virtual public Expression
+{
+	int m_tokenIndex;
+public:
+	XConst(int t)
+	{
+		m_tokenIndex = t;
+		m_type = ObType::Const;
+	}
+	virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	{
+		if (m_tokenIndex == TokenIndex::Token_None)
+		{
+			v.SetType(ValueType::None);
+		}
+		return true;
 	}
 };
 class Number :

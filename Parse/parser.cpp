@@ -380,6 +380,13 @@ bool Parser::Compile(char* code, int size)
 			m_curBlkState->PushExp(v);
 			push_preceding_token(TokenNum);
 		}
+		else if (idx == Token_None)
+		{
+			AST::Expression* v = new AST::XConst((TokenIndex)idx);
+			v->SetHint(one.lineStart, one.lineEnd, one.charPos);
+			m_curBlkState->PushExp(v);
+			push_preceding_token(Token_None);
+		}
 		else if (idx == TokenID)
 		{
 			m_curBlkState->m_NewLine_WillStart = false;
