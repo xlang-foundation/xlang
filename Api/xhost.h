@@ -23,7 +23,7 @@ namespace X
 	public:
 
 	};
-	typedef XPackage* (*PackageCreator)(XRuntime* rt);
+	typedef XPackage* (*PackageCreator)();
 	typedef XProxy* (*XProxyCreator)(std::string& url);
 	typedef std::vector<X::Value> ARGS;
 	typedef std::unordered_map<std::string, X::Value> KWARGS;

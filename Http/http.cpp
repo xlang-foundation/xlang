@@ -70,15 +70,13 @@ namespace X
 					HttpRequest* pHttpReq
 						= new HttpRequest((void*)&req);
 					X::XPackage* pPackageReq = nullptr;
-					pHttpReq->Create((X::XRuntime*)rt,
-						&pPackageReq);
+					pHttpReq->Create(&pPackageReq);
 					params0.push_back(X::Value(pPackageReq));
 
 					HttpResponse* pHttpResp 
 						= new HttpResponse(&res);
 					X::XPackage* pPackageResp = nullptr;
-					pHttpResp->Create((X::XRuntime*)rt,
-						&pPackageResp);
+					pHttpResp->Create(&pPackageResp);
 					params0.push_back(X::Value(pPackageResp));
 
 					KWARGS kwParams0;

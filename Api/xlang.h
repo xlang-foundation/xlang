@@ -152,8 +152,8 @@ namespace X
 
 		virtual void* GetEmbedObj() = 0;
 		virtual bool Init(int varNum) = 0;
-		virtual bool SetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v) = 0;
-		virtual bool GetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v) = 0;
+		virtual bool SetIndexValue(int idx, Value& v) = 0;
+		virtual bool GetIndexValue(int idx, Value& v) = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)
 	{
@@ -163,6 +163,46 @@ namespace X
 	{
 		return g_pXHost->OffEvent(evtName, Cookie);
 	}
+
+	template<typename T>
+	class XPackageValue
+	{
+		T* m_obj = nullptr;
+	public:
+		XPackageValue()
+		{
+			m_obj = new T();
+		}
+		XPackageValue(X::Value& v)
+		{
+			if (v.IsObject())
+			{
+				X::XPackage* pPack = dynamic_cast<X::XPackage*>(v.GetObj());
+				m_obj = (T*)pPack->GetEmbedObj();
+			}
+		}
+		operator Value() const
+		{
+			if (m_obj)
+			{
+				X::XPackage* pPackage = nullptr;
+				m_obj->Create(&pPackage);
+				return dynamic_cast<X::XObj*>(pPackage);
+			}
+			else
+			{
+				return Value();
+			}
+		}
+		T& operator *() const
+		{
+			return *m_obj;
+		}
+		operator T() const
+		{
+			return *m_obj;
+		}
+	};
 }
 
 #endif

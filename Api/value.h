@@ -6,6 +6,7 @@ namespace X
 {
 class XObj;
 class XLStream;
+class XPackage;
 enum class ValueType
 {
 	Invalid,
@@ -164,6 +165,12 @@ public:
 	{
 		t = ValueType::Int64;
 		x.l = l;
+	}
+
+	inline Value(void* pointer)
+	{
+		t = ValueType::Int64;
+		x.l = (long long)pointer;
 	}
 	inline Value(unsigned long long l)
 	{

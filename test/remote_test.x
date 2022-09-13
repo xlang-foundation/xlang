@@ -8,5 +8,7 @@ d = [](size=500,init='rand(1.0,100.0)')
 df.data =d
 x = df.data
 host = cantor.Host()
+uid = host.generate_uid()
+print(uid)
 host.PushFrame(df)
 print("end")

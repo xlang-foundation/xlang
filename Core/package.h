@@ -62,11 +62,12 @@ public:
 		m_stackFrame->Set(idx, v);
 		return true;
 	}
-	virtual bool SetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v) override
+	virtual bool SetIndexValue(int idx, Value& v) override
 	{
-		return Set((Runtime*)rt, pContext, idx, v);
+		m_stackFrame->Set(idx, v);
+		return true;
 	}
-	virtual bool GetIndexValue(XRuntime* rt, XObj* pContext, int idx, Value& v)
+	virtual bool GetIndexValue(int idx, Value& v)
 	{
 		m_stackFrame->Get(idx,v);
 		return true;

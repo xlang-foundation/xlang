@@ -1,11 +1,11 @@
 #pragma once
 
 #define REGISTER_PACKAGE(pack_name,impl_pack_name)\
-	X::g_pXHost->RegisterPackage(pack_name, [](X::XRuntime* rt)\
+	X::g_pXHost->RegisterPackage(pack_name, []()\
 	{\
 		impl_pack_name* pPackImpl = new impl_pack_name();\
 		X::XPackage* pPackage = nullptr;\
-		pPackImpl->Create(rt, &pPackage);\
+		pPackImpl->Create(&pPackage);\
 		return pPackage;\
 	});
 
@@ -14,7 +14,7 @@
 
 #define BEGIN_PACKAGE(class_name) \
 		typedef class_name THIS_CLASS_NAME;\
-		bool Create(X::XRuntime* rt, X::XPackage** ppackage)\
+		bool Create(X::XPackage** ppackage)\
 		{\
 			std::vector<std::pair<int,X::XObj*>> _members_;\
 			auto* pPackage = X::g_pXHost->CreatePackage(this);
@@ -186,7 +186,7 @@
 			{
 #define DEF_CLASS_TAIL()\
 				X::XPackage* pPackage_Srv = nullptr;\
-				cls->Create(rt, &pPackage_Srv);\
+				cls->Create(&pPackage_Srv);\
 				retValue = X::Value(pPackage_Srv);\
 				return true;\
 			}));\
@@ -208,7 +208,7 @@
 	for(auto& it:_members_)\
 	{\
 		X::Value v0(it.second);\
-		pPackage->SetIndexValue(rt, nullptr, it.first, v0);\
+		pPackage->SetIndexValue(it.first, v0);\
 	}\
 	*ppackage = pPackage;\
 	return true;\

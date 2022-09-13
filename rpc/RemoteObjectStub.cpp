@@ -116,7 +116,7 @@ namespace X
 		auto pXObj = CovertIdToXObj(objId);
 		auto pXPack = dynamic_cast<X::XPackage*>(pXObj);
 		X::Value valObj;
-		bool bOK = pXPack->GetIndexValue(m_rt, pXObj, memId, valObj);
+		bool bOK = pXPack->GetIndexValue(memId, valObj);
 		pProc->NotifyAfterCall(channel, stream, bOK);
 		if (bOK)
 		{

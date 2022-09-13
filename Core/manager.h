@@ -109,7 +109,7 @@ namespace X
 				PackageInfo& info = it->second;
 				if (info.package.IsInvalid())
 				{
-					auto* pPack = info.creator(rt);
+					auto* pPack = info.creator();
 					info.package = pPack;
 				}
 				bCreated = info.package.IsValid();
