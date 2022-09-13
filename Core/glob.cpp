@@ -21,7 +21,10 @@ namespace X {
 		if (it == m_rtMap.end())
 		{
 			X::Runtime* pRuntime = new X::Runtime();
-			pRuntime->MirrorStacksFrom(rt);
+			if (rt)
+			{
+				pRuntime->MirrorStacksFrom(rt);
+			}
 			m_rtMap.emplace(std::make_pair(curTId, pRuntime));
 			pRet = pRuntime;
 		}

@@ -14,10 +14,22 @@
 
 #define BEGIN_PACKAGE(class_name) \
 		typedef class_name THIS_CLASS_NAME;\
+		X::XPackage* __xpack =nullptr;\
+		std::vector<X::XEvent*> __events;\
+		inline void Fire(int evtIndex,\
+			ARGS& params, KWARGS& kwargs)\
+		{\
+			if (evtIndex >= 0 && evtIndex < (int)__events.size())\
+			{\
+				auto* rt = X::g_pXHost->GetCurrentRuntime();\
+				__events[evtIndex]->DoFire(rt,nullptr,params,kwargs);\
+			}\
+		}\
 		bool Create(X::XPackage** ppackage)\
 		{\
 			std::vector<std::pair<int,X::XObj*>> _members_;\
-			auto* pPackage = X::g_pXHost->CreatePackage(this);
+			auto* pPackage = X::g_pXHost->CreatePackage(this);\
+			__xpack = pPackage;
 
 #define DEF_U_FUNC_HEAD(fn_name)\
 	{\
@@ -174,6 +186,15 @@
 			);\
 	_members_.push_back(std::make_pair(idx, pFuncObj));\
 	}
+
+#define ADD_EVENT(name)\
+	{\
+	int idx = pPackage->AddMethod(#name);\
+	auto* pEvtObj = X::g_pXHost->CreateXEvent(#name);\
+	__events.push_back(pEvtObj);\
+	_members_.push_back(std::make_pair(idx, pEvtObj)); \
+	}
+
 
 #define DEF_CLASS_HEAD(class_name)\
 	{\

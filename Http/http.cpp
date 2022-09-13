@@ -28,6 +28,7 @@ namespace X
 		KWARGS& kwParams,
 		X::Value& retValue)
 	{
+		Fire(0, params, kwParams);//event test
 		std::string srvName = params[0].ToString();
 		int port = (int)params[1].GetLongLong();
 		bool bOK = ((httplib::Server*)m_pSrv)->listen(

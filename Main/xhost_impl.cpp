@@ -33,6 +33,10 @@ namespace X
 		Runtime* rt = new Runtime();
 		return dynamic_cast<XRuntime*>(rt);
 	}
+	XRuntime* XHost_Impl::GetCurrentRuntime()
+	{
+		return G::I().GetCurrentRuntime();
+	}
 	XStr* XHost_Impl::CreateStr(const char* data, int size)
 	{
 		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
@@ -56,7 +60,14 @@ namespace X
 	{
 		auto* pPack = new AST::Package(pRealObj);
 		pPack->AddRef();
-		return pPack;
+		return dynamic_cast<XPackage*>(pPack);
+	}
+	XEvent* XHost_Impl::CreateXEvent(const char* name)
+	{
+		std::string strName(name);
+		auto* pEvt = new X::Event(strName);
+		pEvt->AddRef();
+		return dynamic_cast<XEvent*>(pEvt);
 	}
 	XFunc* XHost_Impl::CreateFunction(const char* name,U_FUNC func)
 	{

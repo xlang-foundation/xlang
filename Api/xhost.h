@@ -14,6 +14,7 @@ namespace X
 	class XPackage;
 	class XFunc;
 	class XProp;
+	class XEvent;
 	class XDict;
 	class XBin;
 	class XRemoteObject;
@@ -36,6 +37,7 @@ namespace X
 	{
 	public:
 		virtual XRuntime* CreateRuntime() = 0;
+		virtual XRuntime* GetCurrentRuntime() = 0;
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) = 0;
 		virtual bool RegisterPackage(const char* name, Value& objPackage) = 0;
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
@@ -43,6 +45,7 @@ namespace X
 		virtual XStr* CreateStr(const char* data, int size) = 0;
 		virtual XDict* CreateDict() = 0;
 		virtual XPackage* CreatePackage(void* pRealObj) = 0;
+		virtual XEvent* CreateXEvent(const char* name) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func) = 0;
 		virtual XProp* CreateProp(const char* name, U_FUNC setter, U_FUNC getter) = 0;
 		virtual std::string StringifyString(const std::string& str) = 0;

@@ -6,6 +6,7 @@
 #include "utility.h"
 #include "runtime.h"
 #include <iostream>
+#include "Locker.h"
 
 namespace X {
 	namespace Data { class Object; }
@@ -25,10 +26,23 @@ namespace X {
 		~G();
 		inline OpRegistry& R() { return *m_reg;}
 		inline void SetReg(OpRegistry* r) { m_reg = r; }
+		inline XRuntime* GetCurrentRuntime()
+		{
+			unsigned long tid = GetThreadID();
+			XRuntime* pRet = nullptr;
+			((Locker*)m_lockRTMap)->Lock();
+			auto it = m_rtMap.find(tid);
+			if (it != m_rtMap.end())
+			{
+				pRet = dynamic_cast<XRuntime*>(it->second);
+			}
+			((Locker*)m_lockRTMap)->Unlock();
+			return pRet;
+		}
 		inline Runtime* Threading(Runtime* fromRt)
 		{
 			long long curTId = GetThreadID();
-			if (fromRt->GetThreadId() != curTId)
+			if (fromRt == nullptr || fromRt->GetThreadId() != curTId)
 			{
 				fromRt = MakeThreadRuntime(curTId, fromRt);
 			}

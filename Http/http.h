@@ -11,6 +11,7 @@ namespace X
 		std::vector<void*> m_handlers;
 	public:
 		BEGIN_PACKAGE(HttpServer)
+			ADD_EVENT(OnConnect)
 			ADD_PROP(name)
 			ADD_PROP(test)
 			ADD_FUNC("listen", Listen)

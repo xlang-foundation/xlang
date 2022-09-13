@@ -27,7 +27,8 @@ namespace X
 		long cookie = 0;
 	};
 	class Event:
-		public virtual Data::Object
+		public virtual Data::Object,
+		public virtual XEvent
 	{
 		friend class EventSystem;
 		std::string m_name;
@@ -35,6 +36,14 @@ namespace X
 		long m_lastCookie = 0;
 		std::vector<HandlerInfo> m_handlers;
 	public:
+		Event():Data::Object(), XObj(), ObjRef(), XEvent()
+		{
+			m_t = ObjType::Event;
+		}
+		Event(std::string& name) :Event()
+		{
+			m_name = name;
+		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams, X::Value& retValue) override;
 		virtual Event& operator +=(X::Value& r) override
@@ -89,7 +98,7 @@ namespace X
 		}
 		void FireInMain(X::XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwargs);
-		void DoFire(XRuntime* rt, XObj* pContext,ARGS& params, KWARGS& kwargs)
+		virtual void DoFire(XRuntime* rt, XObj* pContext,ARGS& params, KWARGS& kwargs) override
 		{
 			m_lockHandlers.Lock();
 			for (auto& it : m_handlers)

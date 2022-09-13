@@ -19,6 +19,7 @@ namespace X
 		MetaFunction,
 		XClassObject,
 		Prop,
+		Event,
 		FuncCalls,
 		Package,
 		ModuleObject,
@@ -131,6 +132,12 @@ namespace X
 		virtual public XObj
 	{
 	
+	};
+	class XEvent :
+		virtual public XObj
+	{
+	public:
+		virtual void DoFire(XRuntime* rt, XObj* pContext, ARGS& params, KWARGS& kwargs) = 0;
 	};
 	class XFunc:
 		virtual public XObj
