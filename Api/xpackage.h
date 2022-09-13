@@ -17,7 +17,7 @@
 		X::XPackage* __xpack =nullptr;\
 		std::vector<X::XEvent*> __events;\
 		inline void Fire(int evtIndex,\
-			ARGS& params, KWARGS& kwargs)\
+			X::ARGS& params, X::KWARGS& kwargs)\
 		{\
 			if (evtIndex >= 0 && evtIndex < (int)__events.size())\
 			{\
