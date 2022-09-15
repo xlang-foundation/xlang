@@ -35,7 +35,7 @@ namespace X
 		public virtual XEvent
 	{
 		friend class EventSystem;
-		ObjectScope<Event> m_apis;
+		Data::ObjectScope<Event> m_APIs;
 		std::string m_name;
 		Locker m_lockHandlers;
 		long m_lastCookie = 0;
@@ -43,14 +43,16 @@ namespace X
 	public:
 		inline void Fire(int evtIndex,X::ARGS& params, X::KWARGS& kwargs)
 		{
-			return m_apis.Fire(evtIndex,params,kwargs);
+			return m_APIs.Fire(evtIndex,params,kwargs);
 		}
 
 		Event() :Data::Object(), XObj(), ObjRef(), XEvent()
 		{
 			m_t = ObjType::Event;
-			m_apis.AddFunc<2>("wait", &Event::wait);
-			m_apis.Create();
+			//auto x0 = typeid(this).name();
+			//auto x = typeid(&Event::wait).name();
+			m_APIs.AddFunc<2>("wait", &Event::wait);
+			m_APIs.Create();
 		}
 		Event(std::string& name) :Event()
 		{
@@ -58,7 +60,7 @@ namespace X
 		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 		{
-			bases.push_back(dynamic_cast<AST::Scope*>(&m_apis));
+			bases.push_back(m_APIs.GetScope());
 		}
 		double wait(int x,double y)
 		{
