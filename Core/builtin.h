@@ -18,7 +18,7 @@ namespace X {
 		}
 		void Cleanup();
 		AST::ExternFunc* Find(std::string& name);
-		bool Register(const char* name, void* func,
+		bool Register(const char* name, X::U_FUNC func,
 			std::vector<std::pair<std::string, std::string>>& params,
 			bool regToMeta=false);
 		bool RegisterInternals();

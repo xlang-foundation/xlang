@@ -28,8 +28,11 @@ namespace X
 	typedef XProxy* (*XProxyCreator)(std::string& url);
 	typedef std::vector<X::Value> ARGS;
 	typedef std::unordered_map<std::string, X::Value> KWARGS;
-	typedef bool (*U_FUNC) (XRuntime* rt, XObj* pContext,
+	//todo: evaluate performace change to use std::function
+	typedef bool (*U_FUNC_bak) (XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, Value& retValue);
+	using U_FUNC = std::function<bool(XRuntime* rt, XObj* pContext,
+		ARGS& params, KWARGS& kwParams, Value& retValue)>;
 	using EventHandler = std::function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;
 

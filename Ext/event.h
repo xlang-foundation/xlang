@@ -14,35 +14,55 @@
 #include "xhost.h"
 #include "function.h"
 #include <functional>
+#include "stackframe.h"
+#include "object_scope.h"
 
 namespace X
 {
 	class Event;
-
+	class XObj;
+	class XPackage;
 	struct HandlerInfo
 	{
-		EventHandler Handler=nullptr;
+		EventHandler Handler = nullptr;
 		X::Data::Function* FuncHandler = nullptr;
 		int OwnerThreadId = -1;
 		long cookie = 0;
 	};
-	class Event:
+
+	class Event :
 		public virtual Data::Object,
 		public virtual XEvent
 	{
 		friend class EventSystem;
+		ObjectScope<Event> m_apis;
 		std::string m_name;
 		Locker m_lockHandlers;
 		long m_lastCookie = 0;
 		std::vector<HandlerInfo> m_handlers;
 	public:
-		Event():Data::Object(), XObj(), ObjRef(), XEvent()
+		inline void Fire(int evtIndex,X::ARGS& params, X::KWARGS& kwargs)
+		{
+			return m_apis.Fire(evtIndex,params,kwargs);
+		}
+
+		Event() :Data::Object(), XObj(), ObjRef(), XEvent()
 		{
 			m_t = ObjType::Event;
+			m_apis.AddFunc<2>("wait", &Event::wait);
+			m_apis.Create();
 		}
 		Event(std::string& name) :Event()
 		{
 			m_name = name;
+		}
+		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+		{
+			bases.push_back(dynamic_cast<AST::Scope*>(&m_apis));
+		}
+		double wait(int x,double y)
+		{
+			return x*10.1+y;
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams, X::Value& retValue) override;
@@ -70,7 +90,7 @@ namespace X
 			}
 		}
 		void Fire(X::XRuntime* rt, XObj* pContext,
-			ARGS& params,KWARGS& kwargs, bool inMain =false)
+			ARGS& params, KWARGS& kwargs, bool inMain = false)
 		{
 			int threadId = -1;
 			for (auto& k : kwargs)
@@ -93,12 +113,12 @@ namespace X
 			}
 			else
 			{
-				DoFire(rt, pContext, params,kwargs);
+				DoFire(rt, pContext, params, kwargs);
 			}
 		}
 		void FireInMain(X::XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwargs);
-		virtual void DoFire(XRuntime* rt, XObj* pContext,ARGS& params, KWARGS& kwargs) override
+		virtual void DoFire(XRuntime* rt, XObj* pContext, ARGS& params, KWARGS& kwargs) override
 		{
 			m_lockHandlers.Lock();
 			for (auto& it : m_handlers)
@@ -109,7 +129,7 @@ namespace X
 					if (it.Handler)
 					{
 						Value retVal;
-						it.Handler(rt, pContext,params,kwargs, retVal);
+						it.Handler(rt, pContext, params, kwargs, retVal);
 					}
 					else if (it.FuncHandler)
 					{
@@ -146,7 +166,7 @@ namespace X
 			auto pAttrBag = GetAttrBag();
 			if (pAttrBag)
 			{
-				pAttrBag->Set(name,val);
+				pAttrBag->Set(name, val);
 			}
 		}
 		inline long Add(EventHandler handler)
@@ -210,7 +230,7 @@ namespace X
 			m_run = false;
 			m_wait.Release();
 		}
-		inline void FireInMain(Event* pEvt,XRuntime* rt, XObj* pContext,
+		inline void FireInMain(Event* pEvt, XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams)
 		{
 			ARGS params0 = params;//for copy
@@ -257,19 +277,19 @@ namespace X
 					pEvtToRun->DecRef();//for m_eventsOnFire
 					//todo:
 					pEvtToRun->DoFire(fireInfo.rt, fireInfo.valContext.GetObj(),
-						fireInfo.params,fireInfo.kwParams);
+						fireInfo.params, fireInfo.kwParams);
 					m_lockEventOnFire.Lock();
 				}
 				m_lockEventOnFire.Unlock();
 			}
 		}
 		inline void Fire(X::XRuntime* rt, XObj* pContext,
-			std::string& name,ARGS& params,KWARGS& kwargs,bool inMain=false)
+			std::string& name, ARGS& params, KWARGS& kwargs, bool inMain = false)
 		{
 			Event* pEvt = Query(name);
 			if (pEvt)
 			{
-				pEvt->Fire(rt, pContext,params,kwargs, inMain);
+				pEvt->Fire(rt, pContext, params, kwargs, inMain);
 				pEvt->DecRef();
 			}
 		}
@@ -307,7 +327,7 @@ namespace X
 			auto it = m_eventMap.find(name);
 			if (it != m_eventMap.end())
 			{
-				pEvt =it->second;
+				pEvt = it->second;
 			}
 			else
 			{

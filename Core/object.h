@@ -46,6 +46,7 @@ namespace Data {
 			AutoLock(m_lock);
 			return ObjRef::AddRef();
 		}
+		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases){}
 		AttributeBag* GetAttrBag();
 		void DeleteAttrBag();
 		inline virtual int DecRef()

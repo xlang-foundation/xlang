@@ -33,6 +33,10 @@ namespace X {
 			{
 				return m_obj ? m_obj->GetVarNum() : 0;
 			}
+			inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+			{
+				bases.push_back(GetClassObj());
+			}
 			virtual List* FlatPack(Runtime* rt,
 				long long startIndex, long long count) override;
 			virtual bool CalcCallables(Runtime* rt, XObj* pContext,
@@ -51,7 +55,7 @@ namespace X {
 			{
 				return m_stackFrame;
 			}
-			AST::XClass* GetClassObj() { return m_obj; }
+			inline AST::XClass* GetClassObj() { return m_obj; }
 			virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue)

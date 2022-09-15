@@ -1,5 +1,6 @@
 from xlang_http import http
 srv = http.Server()
+srv.OnConnect.wait(100,200)
 srv.OnConnect+=(name,port){
 	print("event fired,srv.OnConnect->",name,":",port)
 }

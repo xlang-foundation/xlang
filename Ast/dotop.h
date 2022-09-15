@@ -4,6 +4,7 @@
 
 namespace X
 {
+	namespace Data { class Object; }
 namespace AST
 {
 class DotOp :
@@ -11,7 +12,7 @@ class DotOp :
 {
 	int m_dotNum = 1;
 protected:
-	void QueryBases(Runtime* rt,void* pObj0,
+	void QueryBases(Runtime* rt, Data::Object* pObj,
 		std::vector<Scope*>& bases);
 	void RunScopeLayoutWithScopes(Expression* pExpr, 
 		std::vector<Scope*>& scopes);

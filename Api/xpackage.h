@@ -15,6 +15,7 @@
 #define BEGIN_PACKAGE(class_name) \
 		typedef class_name THIS_CLASS_NAME;\
 		X::XPackage* __xpack =nullptr;\
+		inline X::XPackage* get_xpack() {return __xpack;}\
 		std::vector<X::XEvent*> __events;\
 		inline void Fire(int evtIndex,\
 			X::ARGS& params, X::KWARGS& kwargs)\

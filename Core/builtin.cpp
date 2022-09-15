@@ -232,7 +232,7 @@ namespace X {
 	auto it = m_mapFuncs.find(name);
 	return (it!= m_mapFuncs.end())?it->second:nil;
 }
-bool Builtin::Register(const char* name, void* func,
+bool Builtin::Register(const char* name, X::U_FUNC func,
 	std::vector<std::pair<std::string, std::string>>& params,
 	bool regToMeta)
 {
@@ -606,28 +606,28 @@ bool Builtin::RegisterInternals()
 	REGISTER_PACKAGE("xdb", X::DevOps::DebugService);
 
 	std::vector<std::pair<std::string, std::string>> params;
-	Register("print", (void*)U_Print, params);
-	Register("load", (void*)U_Load, params);
-	Register("run", (void*)U_Run, params);
-	Register("runcode", (void*)U_RunCode, params);
-	Register("rand", (void*)U_Rand, params);
-	Register("sleep", (void*)U_Sleep, params);
-	Register("time", (void*)U_Time, params);
-	Register("breakpoint", (void*)U_BreakPoint, params);
-	Register("taskrun", (void*)U_TaskRun, params);
-	Register("threadid", (void*)U_ThreadId, params);
-	Register("mainrun", (void*)U_RunInMain, params);
-	Register("on", (void*)U_OnEvent, params);
-	Register("fire", (void*)U_FireEvent, params);
-	Register("addpath", (void*)U_AddPath, params);
-	Register("removepath", (void*)U_RemovePath, params);
-	Register("tostring", (void*)U_ToString, params);
-	Register("bytes", (void*)U_ToBytes, params);
-	Register("setattr", (void*)U_SetAttribute, params,true);
-	Register("getattr", (void*)U_GetAttribute, params,true);
-	Register("delattr", (void*)U_DeleteAttribute, params, true);
-	Register("each", (void*)U_Each, params, true);
-	Register("lrpc_listen", (void*)U_LRpc_Listen, params, true);
+	Register("print", (X::U_FUNC)U_Print, params);
+	Register("load", (X::U_FUNC)U_Load, params);
+	Register("run", (X::U_FUNC)U_Run, params);
+	Register("runcode", (X::U_FUNC)U_RunCode, params);
+	Register("rand", (X::U_FUNC)U_Rand, params);
+	Register("sleep", (X::U_FUNC)U_Sleep, params);
+	Register("time", (X::U_FUNC)U_Time, params);
+	Register("breakpoint", (X::U_FUNC)U_BreakPoint, params);
+	Register("taskrun", (X::U_FUNC)U_TaskRun, params, true);
+	Register("threadid", (X::U_FUNC)U_ThreadId, params);
+	Register("mainrun", (X::U_FUNC)U_RunInMain, params);
+	Register("on", (X::U_FUNC)U_OnEvent, params);
+	Register("fire", (X::U_FUNC)U_FireEvent, params);
+	Register("addpath", (X::U_FUNC)U_AddPath, params);
+	Register("removepath", (X::U_FUNC)U_RemovePath, params);
+	Register("tostring", (X::U_FUNC)U_ToString, params);
+	Register("bytes", (X::U_FUNC)U_ToBytes, params);
+	Register("setattr", (X::U_FUNC)U_SetAttribute, params,true);
+	Register("getattr", (X::U_FUNC)U_GetAttribute, params,true);
+	Register("delattr", (X::U_FUNC)U_DeleteAttribute, params, true);
+	Register("each", (X::U_FUNC)U_Each, params, true);
+	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, true);
 	return true;
 }
 }

@@ -24,6 +24,10 @@ namespace X
 			{
 			}
 			Module* M() { return m_pModule; }
+			inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+			{
+				bases.push_back(m_pModule);
+			}
 			// Inherited via Scope
 			virtual Scope* GetParentScope() override;
 		};

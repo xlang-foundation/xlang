@@ -239,27 +239,27 @@ public:
 	}
 	operator double() const
 	{
-		return x.d;
+		return (t == ValueType::Int64)?(double)x.l:x.d;
 	}
 	operator float() const
 	{
-		return (float)x.d;
+		return (t == ValueType::Int64) ? (float)x.l : (float)x.d;
 	}
 	operator long long() const
 	{
-		return x.l;
+		return (t == ValueType::Int64) ? x.l : (long long)x.d;
 	}
 	operator unsigned long long() const
 	{
-		return x.l;
+		return (t == ValueType::Int64) ? (unsigned long long)x.l : (unsigned long long)x.d;
 	}
 	operator int() const
 	{
-		return (int)x.l;
+		return (t == ValueType::Int64) ? (int)x.l : (int)x.d;
 	}
 	operator unsigned int() const
 	{
-		return (unsigned int)x.l;
+		return (t == ValueType::Int64) ? (unsigned int)x.l : (unsigned int)x.d;
 	}
 	operator std::string()
 	{

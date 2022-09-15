@@ -82,6 +82,10 @@ public:
 	{
 		return nullptr;
 	}
+	virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+	{
+		bases.push_back(dynamic_cast<Scope*>(this));
+	}
 };
 }
 }

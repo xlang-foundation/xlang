@@ -19,47 +19,10 @@ void DotOp::ScopeLayout()
 	if (L) L->ScopeLayout();
 	//R will be decided in run stage
 }
-void DotOp::QueryBases(Runtime* rt,void* pObj0,
+void DotOp::QueryBases(Runtime* rt, Data::Object* pObj,
 	std::vector<Scope*>& bases)
 {
-	Data::Object* pObj = (Data::Object*)pObj0;
-	Scope* objScope = pObj->GetScope();
-	if (objScope)
-	{
-		bases.push_back(objScope);
-	}
-	if (pObj->GetType() == ObjType::List)
-	{
-		Data::List* pList = dynamic_cast<Data::List*>(pObj);
-		if (pList)
-		{
-			auto& bs = pList->GetBases();
-			for (auto it : bs)
-			{
-				bases.push_back(dynamic_cast<Scope*>(it));
-			}
-		}
-	}
-	else if (pObj->GetType() == X::ObjType::XClassObject)
-	{
-		Data::XClassObject* pClassObj = dynamic_cast<Data::XClassObject*>(pObj);
-		if (pClassObj)
-		{
-			bases.push_back(pClassObj->GetClassObj());
-		}
-	}
-	else if (pObj->GetType() == X::ObjType::Function ||
-		pObj->GetType() == X::ObjType::FuncCalls)
-	{
-		//for function, meta function like taskrun,
-		//put into top module
-		bases.push_back(rt->M());
-	}
-	else if (pObj->GetType() == X::ObjType::ModuleObject)
-	{
-		ModuleObject* pModuleObj = dynamic_cast<ModuleObject*>(pObj);
-		bases.push_back(pModuleObj->M());
-	}
+	pObj->GetBaseScopes(bases);
 	bases.push_back(&MetaScope::I());
 }
 void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
@@ -99,7 +62,7 @@ bool DotOp::DotProcess(Runtime* rt, XObj* pContext,
 	Value& v, LValue* lValue)
 {
 	std::vector<Scope*> scopes;
-	void* pLeftObj0 = dynamic_cast<Data::Object*>(v_l.GetObj());
+	auto* pLeftObj0 = dynamic_cast<Data::Object*>(v_l.GetObj());
 	if (pLeftObj0)
 	{
 		QueryBases(rt, pLeftObj0, scopes);

@@ -229,9 +229,12 @@ public:
 	{
 		return m_data;
 	}
-	std::vector<AST::Scope*>& GetBases() 
+	virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{ 
-		return m_bases; 
+		for (auto it : m_bases)
+		{
+			bases.push_back(it);
+		}
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 		KWARGS& kwParams,X::Value& retValue) override;
