@@ -602,8 +602,8 @@ bool U_LRpc_Listen(X::XRuntime* rt, XObj* pContext,
 }
 bool Builtin::RegisterInternals()
 {
-	REGISTER_PACKAGE("json", X::JsonWrapper);
-	REGISTER_PACKAGE("xdb", X::DevOps::DebugService);
+	X::RegisterPackage<X::JsonWrapper>("json");
+	X::RegisterPackage<X::DevOps::DebugService>("xdb");
 
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params);

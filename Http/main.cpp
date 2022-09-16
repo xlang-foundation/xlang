@@ -15,7 +15,7 @@ namespace X
 extern "C"  X_EXPORT void Load(void* pHost)
 {
 	X::g_pXHost = (X::XHost*)pHost;
-	REGISTER_PACKAGE("http", X::Http)
+	X::RegisterPackage<X::Http>("http");
 }
 extern "C"  X_EXPORT void Unload()
 {

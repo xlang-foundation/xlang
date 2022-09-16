@@ -26,22 +26,14 @@ namespace X
 			bool BuildObjectContent(Runtime* rt,
 				XObj* pContextCurrent, int frameId, X::Value& valParam,
 				X::Value& valObject);
+			XPackageAPISet<DebugService> m_Apis;
 		public:
+			XPackageAPISet<DebugService>& APISET() { return m_Apis; }
 			DebugService();
-			BEGIN_PACKAGE(DebugService)
-				ADD_FUNC("get_startline", GetModuleStartLine)
-				ADD_FUNC("set_breakpoints", SetBreakpoints)
-				ADD_FUNC("command", Command)
-			END_PACKAGE
-			bool GetModuleStartLine(void* rt, XObj* pContext,
-					ARGS& params,
-					KWARGS& kwParams,
-					X::Value& retValue);
-			bool SetBreakpoints(void* rt, XObj* pContext,
-				ARGS& params,
-				KWARGS& kwParams,
-				X::Value& retValue);
-			bool Command(void* rt, XObj* pContext,
+			int GetModuleStartLine(unsigned long long moduleKey);
+			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext,
+				unsigned long long moduleKey, Value& varLines);
+			bool Command(X::XRuntime* rt, X::XObj* pContext,
 				ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue);

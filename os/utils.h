@@ -11,17 +11,15 @@ namespace X
 {
 	class Utils
 	{
+		XPackageAPISet<Utils> m_Apis;
 	public:
-		BEGIN_PACKAGE(Utils)
-			ADD_FUNC("generate_uid", generate_uid)
-		END_PACKAGE
+		XPackageAPISet<Utils>& APISET() { return m_Apis; }
 		Utils()
 		{
+			m_Apis.AddFunc<0>("generate_uid", &Utils::generate_uid);
+			m_Apis.Create(this);
 		}
-		bool generate_uid(void* rt, XObj* pContext,
-			ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue)
+		X::Value generate_uid()
 		{
 			std::string strGuid;
 #if (WIN32)
@@ -41,8 +39,7 @@ namespace X
 
 			strGuid = szGuid;
 #endif
-			retValue = X::Value(strGuid);
-			return true;
+			return X::Value(strGuid);
 		}
 	};
 }

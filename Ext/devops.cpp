@@ -17,6 +17,10 @@ namespace X
 		#define	dbg_evt_name "devops.dbg"
 		DebugService::DebugService()
 		{
+			m_Apis.AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);
+			m_Apis.AddRTFunc<2>("set_breakpoints", &DebugService::SetBreakpoints);
+			m_Apis.AddVarFunc("command", &DebugService::Command);
+			m_Apis.Create(this);
 			X::Event* pEvt = X::EventSystem::I().Register(dbg_evt_name);
 			if (pEvt)
 			{
@@ -161,45 +165,28 @@ namespace X
 			valStackInfo = X::Value(pList);
 			return true;
 		}
-		bool DebugService::GetModuleStartLine(void* rt, XObj* pContext,
-			ARGS& params, KWARGS& kwParams, X::Value& retValue)
+		int DebugService::GetModuleStartLine(unsigned long long moduleKey)
 		{
-			if (params.size() == 0)
-			{
-				retValue = X::Value(false);
-				return true;
-			}
-			unsigned long long moduleKey = params[0].GetLongLong();
 			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
 			int nStartLine = -1;
 			if (pModule)
 			{
 				nStartLine = pModule->GetStartLine();
 			}
-			retValue = X::Value(nStartLine);
-			return true;
+			return nStartLine;
 		}
-		bool DebugService::SetBreakpoints(void* rt, XObj* pContext,
-			ARGS& params, KWARGS& kwParams, X::Value& retValue)
+		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext,
+			unsigned long long moduleKey, Value& varLines)
 		{
-			if (params.size() != 2)
-			{
-				retValue = X::Value(false);
-				return false;
-			}
-			unsigned long long moduleKey = params[0].GetLongLong();
-			X::Value varLines = params[1];
 			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
 			if (pModule == nullptr)
 			{
-				retValue = varLines;
-				return true;
+				return varLines;
 			}
 			if (!varLines.IsObject()
 				|| varLines.GetObj()->GetType() != X::ObjType::List)
 			{
-				retValue = X::Value(false);
-				return true;
+				return X::Value(false);
 			}
 			auto* pLineList = dynamic_cast<X::Data::List*>(varLines.GetObj());
 			auto lines = pLineList->Map<int>(
@@ -217,10 +204,9 @@ namespace X
 					pList->Add((Runtime*)rt,varL);
 				}
 			}
-			retValue = X::Value(pList);
-			return true;
+			return X::Value(pList);
 		}
-		bool DebugService::Command(void* rt, XObj* pContext,
+		bool DebugService::Command(X::XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
 			if (params.size() == 0)

@@ -16,8 +16,8 @@ namespace X
 extern "C"  X_EXPORT void Load(void* pHost)
 {
 	X::g_pXHost = (X::XHost*)pHost;
-	REGISTER_PACKAGE("fs", X::FileSystem);
-	REGISTER_PACKAGE("utils", X::Utils);
+	X::RegisterPackage<X::FileSystem>("fs");
+	X::RegisterPackage<X::Utils>("utils");
 }
 extern "C"  X_EXPORT void Unload()
 {

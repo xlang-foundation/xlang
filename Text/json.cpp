@@ -7,48 +7,32 @@
 
 namespace X
 {
-	bool JsonWrapper::LoadFromString(void* rt, XObj* pContext,
-		ARGS& params,
-		KWARGS& kwParams,
-		X::Value& retValue)
+	X::Value JsonWrapper::LoadFromString(std::string jsonStr)
 	{
-		if (params.size() == 0)
-		{
-			retValue = X::Value(false);
-			return false;
-		}
-		std::string jsonStr = params[0].ToString();
 		std::string fileName = "inline_code";
-		bool bOK = X::Hosting::I().Run(fileName, jsonStr.c_str(),
+		X::Value retValue;
+		X::Hosting::I().Run(fileName, jsonStr.c_str(),
 			(int)jsonStr.size(), retValue);
-		return bOK;
+		return retValue;
 	}
-	bool JsonWrapper::LoadFromFile(void* rt, XObj* pContext,
-		ARGS& params,
-		KWARGS& kwParams,
-		X::Value& retValue)
+	X::Value  JsonWrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,
+		std::string fileName)
 	{
-		if (params.size() == 0)
-		{
-			retValue = X::Value(false);
-			return false;
-		}
-		std::string fileName = params[0].ToString();
 		if (!IsAbsPath(fileName))
 		{
-			X::Runtime* pRt = (X::Runtime*)(X::XRuntime*)rt;
+			X::Runtime* pRt = (X::Runtime*)rt;
 			std::string curPath = pRt->M()->GetModulePath();
 			fileName = curPath + Path_Sep_S + fileName;
 		}
+		X::Value retValue;
 		std::string jsonStr;
 		bool bOK = LoadStringFromFile(fileName, jsonStr);
 		if (!bOK)
 		{
 			retValue = X::Value(false);
-			return false;
 		}
-		bOK = X::Hosting::I().Run(fileName, jsonStr.c_str(),
+		X::Hosting::I().Run(fileName, jsonStr.c_str(),
 			(int)jsonStr.size(), retValue);
-		return bOK;
+		return retValue;
 	}
 }

@@ -7,107 +7,88 @@ namespace X
 {
 	class HttpServer
 	{
+		XPackageAPISet<HttpServer> m_Apis;
 		void* m_pSrv = nullptr;
 		std::vector<void*> m_handlers;
 	public:
-		BEGIN_PACKAGE(HttpServer)
-			ADD_EVENT(OnConnect)
-			ADD_PROP(name)
-			ADD_PROP(test)
-			ADD_FUNC("listen", Listen)
-			ADD_FUNC("stop", Stop)
-			ADD_FUNC("get", Get)
-		END_PACKAGE
+		XPackageAPISet<HttpServer>& APISET() { return m_Apis; }
 
 		int test = 1234;
 		std::string name;
 
-		HttpServer(ARGS& params,
-			KWARGS& kwParams);
+		HttpServer()
+		{
+			m_Apis.AddEvent("OnConnect");
+			m_Apis.AddProp0("name", &HttpServer::name);
+			m_Apis.AddProp0("test", &HttpServer::test);
+			m_Apis.AddFunc<2>("listen", &HttpServer::Listen);
+			m_Apis.AddFunc<0>("stop", &HttpServer::Stop);
+			m_Apis.AddFunc<2>("get", &HttpServer::Get);
+			m_Apis.Create(this);
+			Init();
+		}
 		~HttpServer();
-		bool Listen(void* rt,XObj* pContext,
-			ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue);
-		bool Stop(void* rt, XObj* pContext,
-			ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue);
-		bool Get(void* rt, XObj* pContext,ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue);
+		void Init();
+		bool Listen(std::string srvName, int port);
+		bool Stop();
+		bool Get(std::string pattern, X::Value& valHandler);
 	};
-#define GET_FUNC(name) \
-	bool Get##name(void* rt, XObj* pContext,\
-		ARGS& params,\
-		KWARGS& kwParams,\
-		X::Value& retValue);
-
 	class HttpRequest
 	{
+		XPackageAPISet<HttpRequest> m_Apis;
 		void* m_pRequest = nullptr;
 	public:
-		BEGIN_PACKAGE(HttpRequest)
-			ADD_FUNC("get_params", GetParams)
-			ADD_FUNC("get_all_headers", GetAllHeaders)
-			ADD_FUNC("get_body", Getbody)
-			ADD_FUNC("get_method", Getmethod)
-			ADD_FUNC("get_path", Getpath)
-			ADD_FUNC("get_remote_addr", Getremote_addr)
-		END_PACKAGE
-		HttpRequest(void* pReq)
+		XPackageAPISet<HttpRequest>& APISET() { return m_Apis; }
+		HttpRequest()
+		{
+			m_Apis.AddProp("params", &HttpRequest::GetParams);
+			m_Apis.AddProp("all_headers",&HttpRequest::GetAllHeaders);
+			m_Apis.AddProp("body", &HttpRequest::GetBody);
+			m_Apis.AddProp("method",&HttpRequest::GetMethod);
+			m_Apis.AddProp("path", &HttpRequest::GetPath);
+			m_Apis.AddProp("remote_addr",&HttpRequest::Get_remote_addr);
+			m_Apis.Create(this);
+		}
+		HttpRequest(void* pReq):HttpRequest()
 		{
 			m_pRequest = pReq;
 		}
-		HttpRequest(ARGS& params, KWARGS& kwParams)
-		{
-
-		}
-		GET_FUNC(method)
-		GET_FUNC(body)
-		GET_FUNC(path)
-		GET_FUNC(remote_addr)
-
-		bool GetAllHeaders(void* rt, XObj* pContext,
-			ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue);
-		bool GetParams(void* rt, XObj* pContext, ARGS& params,
-			KWARGS& kwParams, X::Value& retValue);
+		X::Value GetMethod();
+		X::Value GetBody();
+		X::Value GetPath();
+		X::Value Get_remote_addr();
+		X::Value GetAllHeaders();
+		X::Value GetParams();
 	};
 	class HttpResponse
 	{
+		XPackageAPISet<HttpResponse> m_Apis;
 		void* m_pResponse = nullptr;
 	public:
-		BEGIN_PACKAGE(HttpResponse)
-			ADD_FUNC("set_content",SetContent)
-		END_PACKAGE
-		HttpResponse(void* pResp)
+		XPackageAPISet<HttpResponse>& APISET() { return m_Apis; }
+		HttpResponse()
+		{
+			m_Apis.AddFunc<2>("set_content", &HttpResponse::SetContent);
+			m_Apis.Create(this);
+		}
+		HttpResponse(void* pResp):HttpResponse()
 		{
 			m_pResponse = pResp;
 		}
-		HttpResponse(ARGS& params, KWARGS& kwParams)
-		{
-
-		}
-		bool SetContent(void* rt, XObj* pContext,
-			ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue);
+		bool SetContent(X::Value& valContent, std::string contentType);
 	};
 
 	class Http
 	{
+		XPackageAPISet<Http> m_Apis;
 	public:
-		BEGIN_PACKAGE(Http)
-			ADD_CLASS("Server", HttpServer)
-			ADD_CLASS("Response", HttpResponse)
-			ADD_CLASS("Request", HttpRequest)
-		END_PACKAGE
-	public:
+		XPackageAPISet<Http>& APISET() { return m_Apis; }
 		Http()
 		{
-
+			m_Apis.AddClass<0,HttpServer>("Server");
+			m_Apis.AddClass<0, HttpResponse>("Response");
+			m_Apis.AddClass<0, HttpRequest>("Request");
+			m_Apis.Create(this);
 		}
 	};
 }
