@@ -192,8 +192,7 @@ namespace X
 		{
 			if (m_obj)
 			{
-				X::XPackage* pPackage = nullptr;
-				m_obj->Create(&pPackage);
+				X::XPackage* pPackage = m_obj->APISET().GetPack();
 				return dynamic_cast<X::XObj*>(pPackage);
 			}
 			else
