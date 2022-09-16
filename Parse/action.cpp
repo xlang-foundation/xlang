@@ -9,6 +9,7 @@
 #include "dotop.h"
 #include "pipeop.h"
 #include "lex.h"
+#include "decor.h"
 #include "op_registry.h"
 
 namespace X {
@@ -204,7 +205,10 @@ void Register(OpRegistry* reg)
 			auto op = new AST::BinaryOp(opIndex);
 			return (AST::Operator*)op;
 	});
-
+	RegOP("@").SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::Decorator(opIndex);
+		return (AST::Operator*)op;
+	});
 	//for import, from nnn as its left operand
 	RegOP("import")
 		.SetProcess([](Parser* p, short opIndex) {

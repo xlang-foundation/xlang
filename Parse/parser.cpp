@@ -58,14 +58,17 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		{
 			curBlock->SetChildIndentCount(lineIndent);
 			curBlock->Add(line);
+			pCurBlockState->HaveNewLine(line);
 		}
 		else if (child_indent_CurBlock == lineIndent)
 		{
 			curBlock->Add(line);
+			pCurBlockState->HaveNewLine(line);
 		}
 		else if (curBlock->IsNoIndentCheck())
 		{
 			curBlock->Add(line);
+			pCurBlockState->HaveNewLine(line);
 		}
 		else
 		{
@@ -99,6 +102,7 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		if (curBlock != nil)
 		{
 			curBlock->Add(line);
+			pCurBlockState->HaveNewLine(line);
 		}
 		else
 		{

@@ -59,6 +59,7 @@ private:
 	void LineOpFeedIntoBlock(AST::Expression* line,
 		AST::Indent& lineIndent);
 public:
+	BlockState* GetCurBlockState() {return m_curBlkState;}
 	void NewLine(bool checkIfIsLambdaOrPair = true);
 	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
 	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'

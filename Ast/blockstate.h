@@ -2,11 +2,12 @@
 #include "exp.h"
 #include "op.h"
 #include "glob.h"
+#include "decor.h"
 #include <stack>
 #include "op_registry.h"
 //for compile not for runtime
 namespace X {
-	namespace AST { class Block; }
+	namespace AST { class Block;}
 
 struct PairInfo
 {
@@ -20,7 +21,7 @@ class BlockState
 	std::stack<AST::Expression*> m_operands;
 	std::stack<AST::Operator*> m_ops;
 	std::stack<PairInfo> m_stackPair;
-
+	std::vector<AST::Decorator*> m_unsolved_decors;
 	inline OpAction OpAct(short idx)
 	{
 		return G::I().R().OpAct(idx);
@@ -89,6 +90,25 @@ public:
 			{
 				break;
 			}
+		}
+	}
+	inline void PushDecor(AST::Decorator* p)
+	{
+		m_unsolved_decors.push_back(p);
+	}
+	inline void HaveNewLine(AST::Expression* newLine)
+	{
+		if (newLine->m_type == AST::ObType::Decor)
+		{
+			m_unsolved_decors.push_back(dynamic_cast<AST::Decorator*>(newLine));
+		}
+		else
+		{
+			for (auto* d : m_unsolved_decors)
+			{
+				d->SetClient(newLine);
+			}
+			m_unsolved_decors.clear();
 		}
 	}
 	inline bool DoOpTop()

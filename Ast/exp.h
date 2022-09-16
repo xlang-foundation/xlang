@@ -29,6 +29,7 @@ enum class ObType
 	List,
 	Pair,
 	Dot,
+	Decor,
 	Func,
 	BuiltinFunc,
 	Module,
