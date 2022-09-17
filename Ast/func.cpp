@@ -69,7 +69,18 @@ void Func::ScopeLayout()
 bool Func::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);
-	Value v0(f);
+	Value v0(f);//hold one refcount
+	XObj* pPassContext = f;
+	for(auto it = m_decors.rbegin(); it != m_decors.rend(); ++it)
+	{
+		X::Value retVal;
+		(*it)->Run(rt, pPassContext, retVal);
+		if (retVal.IsObject())
+		{
+			pPassContext = retVal.GetObj();
+			v0 = retVal;
+		}
+	}
 	if (m_Index >= 0)
 	{//Lambda doesn't need to register it, which doesn't have a name
 		m_scope->Set(rt, pContext, m_Index, v0);
@@ -87,6 +98,10 @@ bool Func::Call(XRuntime* rt0,
 	Runtime* rt = G::I().Threading((Runtime*)rt0);
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
 	StackFrame* frame = new StackFrame(this);
+	for (auto& kw : kwParams)
+	{
+		Scope::AddOrGet((std::string&)kw.first, false);
+	}
 	rt->PushFrame(frame,GetVarNum());
 	//Add this if This is not null
 	if (m_IndexOfThis >=0 &&
@@ -101,7 +116,14 @@ bool Func::Call(XRuntime* rt0,
 	{
 		Scope::Set(rt, pContext, m_paramStartIndex + i, params[i]);
 	}
-
+	for (auto& kw : kwParams)
+	{
+		int idx = Scope::AddOrGet((std::string&)kw.first, false);
+		if (idx >= 0)
+		{
+			Scope::Set(rt, pContext, idx, kw.second);
+		}
+	}
 	Value v0;
 	Block::Run(rt, pContext, v0);
 	rt->PopFrame();

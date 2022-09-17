@@ -4,6 +4,7 @@
 #include "glob.h"
 #include "decor.h"
 #include <stack>
+#include "func.h"
 #include "op_registry.h"
 //for compile not for runtime
 namespace X {
@@ -102,12 +103,18 @@ public:
 		{
 			m_unsolved_decors.push_back(dynamic_cast<AST::Decorator*>(newLine));
 		}
-		else
+		else if(newLine->m_type == AST::ObType::Class ||
+			newLine->m_type == AST::ObType::Func)
 		{
+			AST::Func* pFunc = dynamic_cast<AST::Func*>(newLine);
 			for (auto* d : m_unsolved_decors)
 			{
-				d->SetClient(newLine);
+				pFunc->AddDecor(d);
 			}
+			m_unsolved_decors.clear();
+		}
+		else
+		{//not func or class, clear
 			m_unsolved_decors.clear();
 		}
 	}

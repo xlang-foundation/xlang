@@ -6,6 +6,7 @@
 #include "pair.h"
 #include "op.h"
 #include <vector>
+#include "decor.h"
 
 namespace X
 {
@@ -16,6 +17,8 @@ class Func :
 	virtual public Scope
 {
 protected:
+	std::vector<Decorator*> m_decors;
+
 	String m_Name = { nil,0 };
 	int m_Index = -1;//index for this Var,set by compiling
 	int m_positionParamCnt = 0;
@@ -72,6 +75,10 @@ public:
 	{
 		if (Params) delete Params;
 		if (RetType) delete RetType;
+	}
+	inline void AddDecor(Decorator* pDecor)
+	{
+		m_decors.push_back(pDecor);
 	}
 	void NeedSetHint(bool b) { m_needSetHint = b; }
 	Expression* GetName() { return Name; }
