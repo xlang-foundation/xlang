@@ -7,6 +7,7 @@
 #include "op.h"
 #include <vector>
 #include "decor.h"
+#include "xlang.h"
 
 namespace X
 {
@@ -157,12 +158,25 @@ class ExternFunc
 {
 	std::string m_funcName;
 	U_FUNC m_func;
+	XObj* m_pContext = nullptr;
 public:
-	ExternFunc(std::string& funcName, U_FUNC func)
+	ExternFunc(std::string& funcName, U_FUNC func, XObj* pContext = nullptr)
 	{
 		m_funcName = funcName;
 		m_func = func;
 		m_type = ObType::BuiltinFunc;
+		m_pContext = pContext;
+		if (m_pContext)
+		{
+			m_pContext->IncRef();
+		}
+	}
+	~ExternFunc()
+	{
+		if (m_pContext)
+		{
+			m_pContext->DecRef();
+		}
 	}
 	inline virtual bool Call(XRuntime* rt, XObj* pContext,
 		std::vector<Value>& params,
@@ -170,7 +184,7 @@ public:
 		Value& retValue) override
 	{
 		return m_func ? m_func(rt,
-			pContext, params, kwParams, retValue) : false;
+			pContext==nullptr? m_pContext: pContext, params, kwParams, retValue) : false;
 	}
 };
 

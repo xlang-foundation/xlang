@@ -5,13 +5,22 @@
 namespace X
 {
 	template<class impl_pack_class>
-	void RegisterPackage(const char* pack_name) 
+	void RegisterPackage(const char* pack_name, impl_pack_class* instance =nullptr)
 	{
-		X::g_pXHost->RegisterPackage(pack_name, []()
-			{
-				impl_pack_class* pPackImpl = new impl_pack_class(); \
-				return pPackImpl->APISET().GetPack();
-			});
+		if (instance == nullptr)
+		{
+			X::g_pXHost->RegisterPackage(pack_name, []()
+				{
+					impl_pack_class* pPackImpl = new impl_pack_class(); \
+						return pPackImpl->APISET().GetPack();
+				});
+		}
+		else
+		{
+			auto* pXPack = instance->APISET().GetPack();
+			X::Value v0(dynamic_cast<X::XObj*>(pXPack));
+			X::g_pXHost->RegisterPackage(pack_name, v0);
+		}
 	}
 
 	namespace HelpFuncs
@@ -260,7 +269,8 @@ namespace X
 				case MemberType::Class:
 				case MemberType::Func:
 				{
-					auto* pFuncObj = X::g_pXHost->CreateFunction(m.name.c_str(), m.func);
+					auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
+					auto* pFuncObj = X::g_pXHost->CreateFunction(m.name.c_str(), m.func, pObjFun);
 					v0 = dynamic_cast<X::XObj*>(pFuncObj);
 				}
 				break;
