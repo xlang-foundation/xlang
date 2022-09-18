@@ -22,6 +22,20 @@ public:
 	{
 		Op = op;
 	}
+	virtual bool ToBytes(X::XLangStream& stream) override
+	{
+		Expression::ToBytes(stream);
+		stream << Op;
+		stream << opId;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		Expression::FromBytes(stream);
+		stream >> Op;
+		stream >> opId;
+		return true;
+	}
 	bool GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
 	inline void SetId(OP_ID id) { opId = id; }
 	inline OP_ID GetId() { return opId; }
@@ -44,7 +58,7 @@ protected:
 public:
 	BinaryOp()
 	{
-
+		m_type = ObType::BinaryOp;
 	}
 	BinaryOp(short op):
 		Operator(op)
@@ -56,6 +70,21 @@ public:
 		if (L) delete L;
 		if (R) delete R;
 	}
+	virtual bool ToBytes(X::XLangStream& stream) override
+	{
+		Operator::ToBytes(stream);
+		SaveToStream(L, stream);
+		SaveToStream(R, stream);
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		Operator::FromBytes(stream);
+		L = BuildFromStream<Expression>(stream);
+		R = BuildFromStream<Expression>(stream);
+		return true;
+	}
+
 	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
@@ -159,6 +188,10 @@ class Assign :
 	virtual public BinaryOp
 {
 public:
+	Assign() :Operator(), BinaryOp()
+	{
+		m_type = ObType::Assign;
+	}
 	Assign(short op) :
 		Operator(op),
 		BinaryOp(op)
@@ -179,9 +212,14 @@ class ColonOP :
 	virtual public Operator
 {
 public:
+	ColonOP() :Operator()
+	{
+		m_type = ObType::ColonOp;
+	}
 	ColonOP(short op) :
 		Operator(op)
 	{
+		m_type = ObType::ColonOp;
 	}
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands);
@@ -190,9 +228,14 @@ class CommaOp :
 	virtual public Operator
 {
 public:
+	CommaOp() :Operator()
+	{
+		m_type = ObType::CommaOp;
+	}
 	CommaOp(short op) :
 		Operator(op)
 	{
+		m_type = ObType::CommaOp;
 	}
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands);
@@ -201,9 +244,14 @@ class SemicolonOp :
 	virtual public Operator
 {
 public:
+	SemicolonOp() :Operator()
+	{
+		m_type = ObType::SemicolonOp;
+	}
 	SemicolonOp(short op) :
 		Operator(op)
 	{
+		m_type = ObType::SemicolonOp;
 	}
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands);
@@ -218,6 +266,7 @@ protected:
 public:
 	UnaryOp()
 	{
+		m_type = ObType::UnaryOp;
 	}
 	UnaryOp(short op):
 		Operator(op)
@@ -227,6 +276,20 @@ public:
 	~UnaryOp()
 	{
 		if (R) delete R;
+	}
+	virtual bool ToBytes(X::XLangStream& stream) override
+	{
+		Operator::ToBytes(stream);
+		SaveToStream(R, stream);
+		stream << NeedParam;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		Operator::FromBytes(stream);
+		R = BuildFromStream<Expression>(stream);
+		stream >> NeedParam;
+		return true;
 	}
 	virtual int GetLeftMostCharPos() override
 	{
@@ -280,23 +343,49 @@ class Range :
 
 	bool Eval(Runtime* rt);
 public:
+	Range() :
+		Operator(),
+		UnaryOp()
+	{
+		m_type = ObType::Range;
+	}
 	Range(short op) :
 		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::Range;
 	}
-
+	virtual bool ToBytes(X::XLangStream& stream) override
+	{
+		UnaryOp::ToBytes(stream);
+		SaveToStream(R, stream);
+		stream << m_evaluated << m_start<< m_stop<< m_step;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		UnaryOp::FromBytes(stream);
+		R = BuildFromStream<Expression>(stream);
+		stream >> m_evaluated >> m_start >> m_stop >> m_step;
+		return true;
+	}
 	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class InOp :
 	virtual public BinaryOp
 {
 public:
+	InOp() :
+		Operator(),
+		BinaryOp()
+	{
+		m_type = ObType::In;
+	}
 	InOp(short op) :
 		Operator(op),
 		BinaryOp(op)
 	{
+		m_type = ObType::In;
 	}
 	inline virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
@@ -320,10 +409,17 @@ class ExternDecl :
 	virtual public UnaryOp
 {
 public:
+	ExternDecl() :
+		Operator(),
+		UnaryOp()
+	{
+		m_type = ObType::ExternDecl;
+	}
 	ExternDecl(short op) :
 		Operator(op),
 		UnaryOp(op)
 	{
+		m_type = ObType::ExternDecl;
 	}
 	virtual void ScopeLayout() override;
 	inline virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override

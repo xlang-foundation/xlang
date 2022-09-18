@@ -463,6 +463,7 @@ bool Parser::Compile(char* code, int size)
 	}
 	return true;
 }
+
 AST::Module* Parser::GetModule()
 {
 	AST::Module* pTopModule = nullptr;

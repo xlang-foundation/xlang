@@ -22,6 +22,12 @@ namespace AST
 			Data::Dict* pDataDict, Expression* r,
 			Value& v, LValue* lValue);
 	public:
+		PairOp() :
+			Operator(),
+			BinaryOp()
+		{
+			m_type = ObType::Pair;
+		}
 		PairOp(short opIndex, short preceding_token) :
 			Operator(opIndex),
 			BinaryOp(opIndex)

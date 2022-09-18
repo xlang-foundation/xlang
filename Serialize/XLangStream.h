@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <exception>
 #include <string.h>
 #include "xlstream.h"
@@ -27,14 +28,36 @@ namespace X
     private:
         int m_code = 0;
     };
-
+    class AddressSpace
+    {
+        std::unordered_map<unsigned long long, void*> m_map;
+    public:
+        void Add(unsigned long long id, void* addr)
+        {
+            m_map.emplace(std::make_pair(id, addr));
+        }
+        void* Query(unsigned long long id)
+        {
+            auto it = m_map.find(id);
+            if (it != m_map.end())
+            {
+                return it->second;
+            }
+            else
+            {
+                return nullptr;
+            }
+        }
+    };
     class XLangStream :
         public XLStream
     {
+        AddressSpace m_addr_space;
     public:
         XLangStream();
         ~XLangStream();
 
+        AddressSpace& AddrSpace() { return m_addr_space; }
         void SetProvider(XLStream* p)
         {
             m_pProvider = p;

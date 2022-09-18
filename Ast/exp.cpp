@@ -9,11 +9,122 @@
 #include "func.h"
 #include "str.h"
 #include "utility.h"
+#include "pipeop.h"
+#include "import.h"
 
 namespace X 
 {
 namespace AST 
 {
+Expression* Expression::CreateByType(ObType t)
+{
+	Expression* pExp = nullptr;
+	switch (t)
+	{
+	case ObType::Base:
+		pExp = new Expression();
+		break;
+	case ObType::Assign:
+		pExp = new Assign();
+		break;
+	case ObType::BinaryOp:
+		pExp = new BinaryOp();
+		break;
+	case ObType::UnaryOp:
+		pExp = new UnaryOp();
+		break;
+	case ObType::PipeOp:
+		pExp = new PipeOp();
+		break;
+	case ObType::In:
+		pExp = new InOp();
+		break;
+	case ObType::Range:
+		pExp = new Range();
+		break;
+	case ObType::Var:
+		pExp = new Var();
+		break;
+	case ObType::Str:
+		pExp = new Str();
+		break;
+	case ObType::Const:
+		pExp = new XConst();
+		break;
+	case ObType::Number:
+		pExp = new Number();
+		break;
+	case ObType::Double:
+		pExp = new Double();
+		break;
+	case ObType::Param:
+		pExp = new Param();
+		break;
+	case ObType::List:
+		pExp = new List();
+		break;
+	case ObType::Pair:
+		pExp = new PairOp();
+		break;
+	case ObType::Dot:
+		pExp = new DotOp();
+		break;
+	case ObType::Decor:
+		pExp = new Decorator();
+		break;
+	case ObType::Func:
+		pExp = new Func();
+		break;
+	case ObType::BuiltinFunc:
+		pExp = new Func();
+		break;
+	case ObType::Module:
+		pExp = new Func();
+		break;
+	case ObType::Block:
+		pExp = new Block();
+		break;
+	case ObType::Class:
+		pExp = new XClass();
+		break;
+	case ObType::From:
+		pExp = new From();
+		break;
+	case ObType::ColonOp:
+		pExp = new ColonOP();
+		break;
+	case ObType::CommaOp:
+		pExp = new CommaOp();
+		break;
+	case ObType::SemicolonOp:
+		pExp = new SemicolonOp();
+		break;
+	case ObType::As:
+		pExp = new AsOp();
+		break;
+	case ObType::For:
+		pExp = new For();
+		break;
+	case ObType::While:
+		pExp = new While();
+		break;
+	case ObType::If:
+		pExp = new If();
+		break;
+	case ObType::ExternDecl:
+		pExp = new ExternDecl();
+		break;
+	case ObType::Thru:
+		pExp = new ThruOp();
+		break;
+	case ObType::Import:
+		pExp = new Import();
+		break;
+	default:
+		break;
+	}
+	return pExp;
+}
 Scope* Expression::FindScope()
 {
 	Scope* pMyScope = nil;
@@ -25,7 +136,40 @@ Scope* Expression::FindScope()
 	}
 	return pMyScope;
 }
+bool Expression::ToBytes(X::XLangStream& stream)
+{
+	stream << m_type;
+	stream << ID();
+	ExpId parentId = 0;
+	if (m_parent) parentId = m_parent->ID();
+	ExpId scopeId = 0;
+	if (m_scope) scopeId = m_scope->ID();
+	stream << parentId;
+	stream << scopeId;
+	stream << m_isLeftValue;
+	stream << m_lineStart;
+	stream << m_lineEnd;
+	stream << m_charPos;
+	return true;
+}
+bool Expression::FromBytes(X::XLangStream& stream)
+{
+	stream >> m_type;
 
+	ExpId parentId = 0;
+	ExpId scopeId = 0;
+	stream >> parentId;
+	stream >> scopeId;
+	//will look back to get the real addres
+	m_parent = (Expression*)parentId;
+	m_scope = (Scope*)scopeId;
+
+	stream >> m_isLeftValue;
+	stream >> m_lineStart;
+	stream >> m_lineEnd;
+	stream >> m_charPos;
+	return true;
+}
 bool Param::Parse(std::string& strVarName, 
 	std::string& strVarType, Value& defaultValue)
 {

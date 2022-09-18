@@ -6,6 +6,7 @@
 #include "lvalue.h"
 #include "glob.h"
 #include "token.h"
+#include "XLangStream.h"
 
 namespace X 
 {
@@ -19,6 +20,7 @@ enum class ObType
 	BinaryOp,
 	UnaryOp,
 	PipeOp,
+	In,
 	Range,
 	Var,
 	Str,
@@ -33,15 +35,24 @@ enum class ObType
 	Func,
 	BuiltinFunc,
 	Module,
+	Block,
 	Class,
 	From,
+	ColonOp,
+	CommaOp,
+	SemicolonOp,
 	As,
+	For,
+	While,
+	If,
+	ExternDecl,
 	Thru,
 	Import
 };
 class Func;
 class Scope;
 class Var;
+
 class Expression
 {
 protected:
@@ -56,6 +67,41 @@ public:
 	Expression()
 	{
 	}
+	static Expression* CreateByType(ObType t);
+	template<typename T>
+	T* BuildFromStream(X::XLangStream& stream)
+	{
+		Expression* pRetExp = nullptr;
+		ExpId  Id = 0;
+		stream >> Id;
+		if (Id)
+		{
+			ObType ty;
+			stream >> ty;
+			pRetExp = CreateByType(ty);
+			if (pRetExp)
+			{
+				pRetExp->FromBytes(stream);
+				stream.AddrSpace().Add(Id, pRetExp);
+			}
+		}
+		return pRetExp?dynamic_cast<T*>(pRetExp):nullptr;
+	}
+	bool SaveToStream(Expression* pExp, X::XLangStream& stream)
+	{
+		if (pExp)
+		{
+			stream << pExp->ID();
+			pExp->ToBytes(stream);
+		}
+		else
+		{
+			stream << nullptr;
+		}
+		return true;
+	}
+	//use address as ID, just used Serialization
+	ExpId ID() { return (ExpId)this; }
 	inline void SetHint(int startLine, int endLine, int charPos)
 	{
 		m_lineStart = startLine;
@@ -104,7 +150,27 @@ public:
 	}
 	virtual void ScopeLayout() {}
 	virtual int GetLeftMostCharPos() { return m_charPos; }
-
+	virtual bool ToBytes(X::XLangStream& stream);
+	virtual bool FromBytes(X::XLangStream& stream);
+	virtual void ConvertIDToRealAddress(std::unordered_map<ExpId,void*>& addressMap)
+	{
+		if (m_parent)
+		{
+			auto it = addressMap.find((ExpId)m_parent);
+			if (it != addressMap.end())
+			{
+				m_parent = (Expression*)it->second;
+			}
+		}
+		if (m_scope)
+		{
+			auto it = addressMap.find((ExpId)m_scope);
+			if (it != addressMap.end())
+			{
+				m_scope = (Scope*)it->second;
+			}
+		}
+	}
 	ObType m_type = ObType::Base;
 };
 class Str :
@@ -112,14 +178,52 @@ class Str :
 {
 	bool m_haveFormat = false;
 	char* m_s = nil;
+	bool m_needRelease = false;//m_s is created by this Str,then = true
 	int m_size = 0;
 public:
+	Str():Expression()
+	{
+		m_type = ObType::Str;
+	}
 	Str(char* s, int size,bool haveFormat)
 	{
 		m_type = ObType::Str;
 		m_haveFormat = haveFormat;
 		m_s = s;
+		m_needRelease = false;
 		m_size = size;
+	}
+	~Str()
+	{
+		if (m_needRelease)
+		{
+			delete m_s;
+		}
+	}
+	virtual bool ToBytes(X::XLangStream& stream)
+	{
+		Expression::ToBytes(stream);
+		stream << m_haveFormat;
+		stream << m_size;
+		stream.append(m_s, m_size);
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream)
+	{
+		Expression::FromBytes(stream);
+		stream >> m_haveFormat;
+		stream >> m_size;
+		if (m_size > 0)
+		{
+			m_s = new char[m_size];
+			m_needRelease = true;
+			stream.CopyTo(m_s, m_size);
+		}
+		else
+		{
+			m_s = nullptr;
+		}
+		return true;
 	}
 	bool RunWithFormat(Runtime* rt, XObj* pContext, Value& v, LValue* lValue);
 	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
@@ -140,10 +244,26 @@ class XConst :
 {
 	int m_tokenIndex;
 public:
+	XConst():Expression()
+	{
+		m_type = ObType::Const;
+	}
 	XConst(int t)
 	{
 		m_tokenIndex = t;
 		m_type = ObType::Const;
+	}
+	virtual bool ToBytes(X::XLangStream& stream)
+	{
+		Expression::ToBytes(stream);
+		stream << m_tokenIndex;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream)
+	{
+		Expression::FromBytes(stream);
+		stream >> m_tokenIndex;
+		return true;
 	}
 	virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
@@ -161,6 +281,10 @@ class Number :
 	int m_digiNum = 0;
 	bool m_isBool = false;
 public:
+	Number():Expression()
+	{
+		m_type = ObType::Number;
+	}
 	Number(long long val, int num=0)
 	{
 		m_val = val;
@@ -172,6 +296,18 @@ public:
 		m_val = val?1:0;
 		m_type = ObType::Number;
 		m_isBool = true;
+	}
+	virtual bool ToBytes(X::XLangStream& stream)
+	{
+		Expression::ToBytes(stream);
+		stream << m_val<< m_digiNum<< m_isBool;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream)
+	{
+		Expression::FromBytes(stream);
+		stream >> m_val >> m_digiNum >> m_isBool;
+		return true;
 	}
 	inline long long GetVal() { return m_val; }
 	inline int GetDigiNum() { return m_digiNum; }
@@ -193,12 +329,28 @@ public:
 class Double :
 	virtual public Expression
 {
-	double m_val;
+	double m_val=0;
 public:
+	Double()
+	{
+		m_type = ObType::Double;
+	}
 	Double(double val)
 	{
 		m_val = val;
 		m_type = ObType::Double;
+	}
+	virtual bool ToBytes(X::XLangStream& stream)
+	{
+		Expression::ToBytes(stream);
+		stream << m_val;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream)
+	{
+		Expression::FromBytes(stream);
+		stream >> m_val;
+		return true;
 	}
 };
 class List :
@@ -218,6 +370,29 @@ public:
 		{
 			delete e;
 		}
+	}
+	virtual bool ToBytes(X::XLangStream& stream)
+	{
+		Expression::ToBytes(stream);
+		stream << (int)list.size();
+		for (auto* exp : list)
+		{
+			stream << exp->ID();
+		}
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream)
+	{
+		Expression::FromBytes(stream);
+		int size = 0;
+		stream >> size;
+		for (int i = 0; i < size; i++)
+		{
+			ExpId id;
+			stream >> id;
+			list.push_back((Expression*)id);
+		}
+		return true;
 	}
 	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
@@ -287,6 +462,10 @@ class Param :
 	Expression* Name = nil;
 	Expression* Type = nil;
 public:
+	Param() :Expression()
+	{
+		m_type = ObType::Param;
+	}
 	Param(Expression* name, Expression* type)
 	{
 		Name = name;

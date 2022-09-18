@@ -38,6 +38,7 @@ namespace AST
 	class Operator;
 	class UnaryOp;
 	class BinaryOp;
+	typedef unsigned long long ExpId;
 }
 struct OpAction;
 typedef AST::Operator* (*OpProc)(

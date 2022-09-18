@@ -14,6 +14,11 @@ namespace X
 			virtual public DotOp
 		{
 		public:
+			PipeOp():
+				Operator(), BinaryOp(), DotOp()
+			{
+				m_type = ObType::PipeOp;
+			}
 			PipeOp(short idx):
 				Operator(idx),
 				BinaryOp(idx),

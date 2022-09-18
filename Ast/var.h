@@ -14,6 +14,10 @@ class Var :
 
 	bool GetPropValue(Runtime* rt, XObj* pContext,XObj* pObj,Value& val);
 public:
+	Var()
+	{
+		m_type = ObType::Var;
+	}
 	Var(String& n)
 	{
 		Name = n;

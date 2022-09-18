@@ -26,6 +26,12 @@ class AsOp :
 	virtual public BinaryOp
 {
 public:
+	AsOp() :
+		Operator(),
+		BinaryOp()
+	{
+		m_type = ObType::As;
+	}
 	AsOp(short op) :
 		Operator(op),
 		BinaryOp(op)
@@ -113,6 +119,12 @@ class ThruOp :
 		return l_name + "/" + r_name;
 	}
 public:
+	ThruOp() :
+		Operator(),
+		UnaryOp()
+	{
+		m_type = ObType::Thru;
+	}
 	ThruOp(short op) :
 		Operator(op),
 		UnaryOp(op)
@@ -149,6 +161,12 @@ class From :
 {
 	std::string m_path;
 public:
+	From() :
+		Operator(),
+		UnaryOp()
+	{
+		m_type = ObType::From;
+	}
 	From(short op) :
 		Operator(op),
 		UnaryOp(op)
@@ -242,6 +260,11 @@ class Import :
 		std::string& curModulePath, std::string& loadingModuleName,
 		Module** ppSubModule);
 public:
+	Import() :
+		Operator()
+	{
+		m_type = ObType::Import;
+	}
 	Import(short op) :
 		Operator(op)
 	{

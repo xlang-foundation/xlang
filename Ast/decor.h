@@ -10,6 +10,12 @@ namespace X
 		{
 			Expression* m_client = nullptr;
 		public:
+			Decorator() :
+				Operator(),
+				UnaryOp()
+			{
+				m_type = ObType::Decor;
+			}
 			Decorator(short op) :
 				Operator(op),
 				UnaryOp(op)

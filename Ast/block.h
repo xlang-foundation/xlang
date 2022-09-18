@@ -39,13 +39,15 @@ class Block:
 	bool m_bRunning = false;
 	std::vector<Expression*> Body;
 public:
-	Block()
+	Block():Operator(), UnaryOp()
 	{
+		m_type = ObType::Block;
 	}
 	Block(short op) :
 		Operator(op),
 		UnaryOp(op)
 	{
+		m_type = ObType::Block;
 	}
 	~Block()
 	{
@@ -54,6 +56,32 @@ public:
 			delete it;
 		}
 		Body.clear();
+	}
+	virtual bool ToBytes(X::XLangStream& stream) override
+	{
+		UnaryOp::ToBytes(stream);
+		stream << NoIndentCheck << IndentCount 
+			<< ChildIndentCount << m_bRunning;
+		stream << (int)Body.size();
+		for (auto* exp : Body)
+		{
+			SaveToStream(exp, stream);
+		}
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		UnaryOp::FromBytes(stream);
+		stream >> NoIndentCheck >> IndentCount
+			>> ChildIndentCount >> m_bRunning;
+		int size = 0;
+		stream >> size;
+		for (int i = 0; i < size; i++)
+		{
+			auto* exp = BuildFromStream<Expression>(stream);
+			Body.push_back(exp);
+		}
+		return true;
 	}
 	inline int GetStartLine()
 	{
@@ -85,10 +113,17 @@ class For :
 	virtual public Block
 {
 public:
+	For() :
+		Operator(),
+		Block()
+	{
+		m_type = ObType::For;
+	}
 	For(short op):
 		Operator(op),
 		Block(op)
 	{
+		m_type = ObType::For;
 	}
 	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
@@ -96,10 +131,17 @@ class While :
 	virtual public Block
 {
 public:
+	While() :
+		Operator(), 
+		Block()
+	{
+		m_type = ObType::While;
+	}
 	While(short op) :
-		Operator(op), 
+		Operator(op),
 		Block(op)
 	{
+		m_type = ObType::While;
 	}
 
 	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
@@ -110,14 +152,32 @@ class If :
 {
 	If* m_next = nil;//elif  or else
 public:
+	If() :
+		Operator(), Block()
+	{
+		m_type = ObType::If;
+	}
 	If(short op,bool needParam =true) :
 		Operator(op),Block(op)
 	{
+		m_type = ObType::If;
 		NeedParam = needParam;
 	}
 	~If()
 	{
 		if (m_next) delete m_next;
+	}
+	virtual bool ToBytes(X::XLangStream& stream) override
+	{
+		Block::ToBytes(stream);
+		SaveToStream(m_next, stream);
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		Block::FromBytes(stream);
+		m_next = BuildFromStream<If>(stream);
+		return true;
 	}
 	virtual bool EatMe(Expression* other) override;
 	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;

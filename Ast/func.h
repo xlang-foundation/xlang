@@ -19,8 +19,8 @@ class Func :
 {
 protected:
 	std::vector<Decorator*> m_decors;
-
 	String m_Name = { nil,0 };
+	bool m_NameNeedRelease = false;
 	int m_Index = -1;//index for this Var,set by compiling
 	int m_positionParamCnt = 0;
 	int m_paramStartIndex = 0;
@@ -42,7 +42,56 @@ protected:
 			Name->SetParent(this);
 		}
 	}
+	virtual bool ToBytes(X::XLangStream& stream) override
+	{
+		Block::ToBytes(stream);
+		stream << (int)m_decors.size();
+		for (auto* decor : m_decors)
+		{
+			SaveToStream(decor, stream);
+		}
+		stream << m_Name.size;
+		if (m_Name.size > 0)
+		{
+			stream.append(m_Name.s, m_Name.size);
+		}
+		stream << m_Index << m_positionParamCnt
+			<< m_paramStartIndex << m_IndexOfThis
+			<< m_needSetHint;
+		SaveToStream(Name,stream);
+		SaveToStream(Params, stream);
+		SaveToStream(RetType, stream);
 
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		Block::FromBytes(stream);
+		int size = 0;
+		stream >> size;
+		for (int i=0;i<size;i++)
+		{
+			auto* decor = BuildFromStream<Decorator>(stream);
+			if (decor)
+			{
+				m_decors.push_back(decor);
+			}
+		}
+		stream >> m_Name.size;
+		if (m_Name.size > 0)
+		{
+			m_Name.s = new char[m_Name.size];
+			stream.CopyTo(m_Name.s, m_Name.size);
+			m_NameNeedRelease = true;
+		}
+		stream >> m_Index >> m_positionParamCnt
+			>> m_paramStartIndex >> m_IndexOfThis
+			>> m_needSetHint;
+		Name = BuildFromStream<Expression>(stream);
+		Params = BuildFromStream<List>(stream);
+		RetType = BuildFromStream<Expression>(stream);
+		return true;
+	}
 	virtual void ScopeLayout() override;
 	virtual void SetParams(List* p)
 	{
@@ -76,6 +125,10 @@ public:
 	{
 		if (Params) delete Params;
 		if (RetType) delete RetType;
+		if (m_NameNeedRelease)
+		{
+			delete m_Name.s;
+		}
 	}
 	inline void AddDecor(Decorator* pDecor)
 	{

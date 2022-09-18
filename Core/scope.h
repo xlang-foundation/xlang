@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <functional>
 #include "objref.h"
+#include "def.h"
 
 namespace X 
 { 
@@ -35,6 +36,8 @@ public:
 		ObjRef()
 	{
 	}
+	//use address as ID, just used Serialization
+	ExpId ID() { return (ExpId)this; }
 	void AddExternVar(AST::Var* var);
 
 	inline int GetVarNum()
