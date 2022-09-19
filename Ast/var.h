@@ -10,6 +10,7 @@ class Var :
 	virtual public Expression
 {
 	String Name;
+	bool m_needRelease = false;//Name.s is created by this Var,then = true
 	int Index = -1;//index for this Var,set by compiling
 
 	bool GetPropValue(Runtime* rt, XObj* pContext,XObj* pObj,Value& val);
@@ -22,6 +23,41 @@ public:
 	{
 		Name = n;
 		m_type = ObType::Var;
+	}
+	~Var()
+	{
+		if (m_needRelease)
+		{
+			delete Name.s;
+		}
+	}
+	virtual bool ToBytes(X::XLangStream& stream)
+	{
+		Expression::ToBytes(stream);
+		stream << Name.size;
+		if (Name.size > 0)
+		{
+			stream.append(Name.s, Name.size);
+		}
+		stream << Index;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream)
+	{
+		Expression::FromBytes(stream);
+		stream >> Name.size;
+		if (Name.size > 0)
+		{
+			Name.s = new char[Name.size];
+			m_needRelease = true;
+			stream.CopyTo(Name.s, Name.size);
+		}
+		else
+		{
+			Name.s = nullptr;
+		}
+		stream << Index;
+		return true;
 	}
 	void ScopeLayout(std::vector<Scope*>& candidates);
 	virtual void ScopeLayout() override;

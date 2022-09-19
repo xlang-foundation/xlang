@@ -162,6 +162,7 @@ namespace X
 		}
 		auto pXObj = CovertIdToXObj(objId);
 		X::Value valRet;
+
 		bool bOK = pXObj->Call(m_rt, pParentObj, params, kwParams, valRet);//TODO...
 		pProc->NotifyAfterCall(channel, stream, bOK);
 		if (bOK)

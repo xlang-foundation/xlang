@@ -75,6 +75,8 @@ struct OneToken
 	int lineStart;
 	int lineEnd;
 	int charPos;
+	int charStart;//offset from code begin
+	int charEnd;//offset from code begin
 };
 class Token
 {

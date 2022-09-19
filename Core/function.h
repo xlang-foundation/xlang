@@ -13,8 +13,24 @@ namespace X
 		protected:
 			AST::Func* m_func = nullptr;
 		public:
+			Function() :XFunc(), Object()
+			{
+
+			}
 			Function(AST::Func* p);
 			~Function();
+			virtual bool ToBytes(X::XLangStream& stream)
+			{
+				AST::Expression exp;
+				exp.SaveToStream(m_func, stream);
+				return true;
+			}
+			virtual bool FromBytes(X::XLangStream& stream)
+			{
+				AST::Expression exp;
+				m_func = exp.BuildFromStream<AST::Func>(stream);
+				return true;
+			}
 			virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 				std::vector<AST::Scope*>& callables) override
 			{

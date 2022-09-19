@@ -82,6 +82,17 @@ public:
 		searchPaths = m_searchPaths;
 		m_lockSearchPath.Unlock();
 	}
+	std::string GetCodeFragment(int startPos, int endPos)
+	{
+		if (endPos >= m_code.size())
+		{
+			return m_code.substr(startPos);
+		}
+		else
+		{
+			return m_code.substr(startPos, endPos - startPos+1);
+		}
+	}
 	void AddSearchPath(std::string& strPath)
 	{
 		RemoveSearchPath(strPath);//remove duplicated

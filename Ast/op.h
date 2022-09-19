@@ -2,6 +2,7 @@
 #include "exp.h"
 #include "xlang.h"
 #include <stack>
+#include "def.h"
 #include "op_registry.h"
 
 namespace X
@@ -126,7 +127,6 @@ public:
 	{
 		if (!operands.empty())
 		{
-
 			auto operandR = operands.top();
 			operands.pop();
 			SetR(operandR);
@@ -150,6 +150,7 @@ public:
 		L = l;
 		if (L) 
 		{
+			ReCalcHint(L);
 			L->SetParent(this);
 		}
 	}
@@ -158,6 +159,7 @@ public:
 		R = r;
 		if (R)
 		{
+			ReCalcHint(R);
 			R->SetParent(this);
 		}
 	}
@@ -326,6 +328,7 @@ public:
 		R = r;
 		if (R)
 		{
+			ReCalcHint(R);
 			R->SetParent(this);
 		}
 	}

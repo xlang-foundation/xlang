@@ -233,13 +233,8 @@ bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
 	auto operandL = operands.top();
 	operands.pop();
 	auto param = new AST::Param(operandL, operandR);
-	param->SetHint(MIN_VAL(operandL->GetStartLine(),
-		operandR->GetStartLine()),
-		MIN_VAL(operandL->GetEndLine(),
-			operandR->GetEndLine()),
-		MIN_VAL(operandL->GetCharPos(),
-			operandR->GetCharPos())
-	);
+	param->ReCalcHint(operandL);
+	param->ReCalcHint(operandR);
 	operands.push(param);
 	return true;
 }

@@ -3,6 +3,7 @@
 #include "object.h"
 #include "str.h"
 #include "list.h"
+#include "function.h"
 
 namespace X 
 {
@@ -320,6 +321,7 @@ namespace X
 			case X::ObjType::Expr:
 				break;
 			case X::ObjType::Function:
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Function());
 				break;
 			case X::ObjType::MetaFunction:
 				break;

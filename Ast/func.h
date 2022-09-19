@@ -8,6 +8,7 @@
 #include <vector>
 #include "decor.h"
 #include "xlang.h"
+#include "def.h"
 
 namespace X
 {
@@ -41,9 +42,58 @@ protected:
 		{
 			Name->SetParent(this);
 		}
+		ReCalcHint(Name);
+	}
+	virtual void ScopeLayout() override;
+	virtual void SetParams(List* p)
+	{
+		if (m_needSetHint)
+		{
+			if (p)
+			{
+				auto& list = p->GetList();
+				if (list.size() > 0)
+				{
+					ReCalcHint(list[0]);
+					if (list.size() > 1)
+					{
+						ReCalcHint(list[list.size() - 1]);
+					}
+				}
+			}
+		}
+		Params = p;
+		if (Params)
+		{
+			ReCalcHint(Params);
+			Params->SetParent(this);
+		}
+	}
+public:
+	Func() :
+		Block(), UnaryOp(), Operator(),
+		Scope(),ObjRef()
+	{
+		m_type = ObType::Func;
+	}
+	~Func()
+	{
+		if (Params) delete Params;
+		if (RetType) delete RetType;
+		if (m_NameNeedRelease)
+		{
+			delete m_Name.s;
+		}
 	}
 	virtual bool ToBytes(X::XLangStream& stream) override
 	{
+		std::string code;
+		for (auto* decor : m_decors)
+		{
+			code += decor->GetCode()+"\n";
+			SaveToStream(decor, stream);
+		}
+		code += GetCode();
 		Block::ToBytes(stream);
 		stream << (int)m_decors.size();
 		for (auto* decor : m_decors)
@@ -58,7 +108,7 @@ protected:
 		stream << m_Index << m_positionParamCnt
 			<< m_paramStartIndex << m_IndexOfThis
 			<< m_needSetHint;
-		SaveToStream(Name,stream);
+		SaveToStream(Name, stream);
 		SaveToStream(Params, stream);
 		SaveToStream(RetType, stream);
 
@@ -69,7 +119,7 @@ protected:
 		Block::FromBytes(stream);
 		int size = 0;
 		stream >> size;
-		for (int i=0;i<size;i++)
+		for (int i = 0; i < size; i++)
 		{
 			auto* decor = BuildFromStream<Decorator>(stream);
 			if (decor)
@@ -91,44 +141,6 @@ protected:
 		Params = BuildFromStream<List>(stream);
 		RetType = BuildFromStream<Expression>(stream);
 		return true;
-	}
-	virtual void ScopeLayout() override;
-	virtual void SetParams(List* p)
-	{
-		if (m_needSetHint)
-		{
-			if (p)
-			{
-				auto& list = p->GetList();
-				if (list.size() > 0)
-				{
-					auto exp = list[0];
-					SetHint(exp->GetStartLine(), exp->GetEndLine(),
-						exp->GetCharPos());
-				}
-			}
-		}
-		Params = p;
-		if (Params)
-		{
-			Params->SetParent(this);
-		}
-	}
-public:
-	Func() :
-		Block(), UnaryOp(), Operator(),
-		Scope(),ObjRef()
-	{
-		m_type = ObType::Func;
-	}
-	~Func()
-	{
-		if (Params) delete Params;
-		if (RetType) delete RetType;
-		if (m_NameNeedRelease)
-		{
-			delete m_Name.s;
-		}
 	}
 	inline void AddDecor(Decorator* pDecor)
 	{

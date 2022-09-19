@@ -60,9 +60,11 @@ protected:
 	Scope* m_scope = nil;//set by compiling
 	bool m_isLeftValue = false;
 	//hint
-	int m_lineStart=0;
-	int m_lineEnd=0;
-	int m_charPos=0;
+	int m_lineStart=-1;
+	int m_lineEnd=-1;
+	int m_charPos=-1;
+	int m_charStart = -1;//offset in entire code
+	int m_charEnd = -1;
 public:
 	Expression()
 	{
@@ -100,18 +102,39 @@ public:
 		}
 		return true;
 	}
+	std::string GetCode();
 	//use address as ID, just used Serialization
 	ExpId ID() { return (ExpId)this; }
-	inline void SetHint(int startLine, int endLine, int charPos)
+	inline void SetHint(int startLine, int endLine, int charPos,
+		int charStart,int charEnd)
 	{
 		m_lineStart = startLine;
 		m_lineEnd = endLine;
 		m_charPos = charPos;
+		m_charStart = charStart;
+		m_charEnd = charEnd;
+	}
+	inline void ReCalcHint(Expression* pAnotherExp)
+	{
+		auto min_val = [](int x, int y) {
+			return x >= 0 ? MIN_VAL(x, y) : y;
+		};
+		auto max_val = [](int x, int y) {
+			return x >= 0 ? MAX_VAL(x, y) : y;
+		};
+
+		m_lineStart = min_val(m_lineStart, pAnotherExp->m_lineStart);
+		m_lineEnd = max_val(m_lineEnd, pAnotherExp->m_lineEnd);
+		m_charPos = min_val(m_charPos, pAnotherExp->m_charPos);
+		m_charStart = min_val(m_charStart, pAnotherExp->m_charStart);
+		m_charEnd = max_val(m_charEnd, pAnotherExp->m_charEnd);
 	}
 	inline bool IsLeftValue() { return m_isLeftValue; }
 	inline int GetStartLine() { return m_lineStart+1; }
 	inline int GetEndLine() { return m_lineEnd+1; }
 	inline int GetCharPos() { return m_charPos; }
+	inline int GetCharStart() { return m_charStart; }
+	inline int GetCharEnd() { return m_charEnd; }
 	inline void SetIsLeftValue(bool b)
 	{
 		m_isLeftValue = b;
@@ -377,7 +400,7 @@ public:
 		stream << (int)list.size();
 		for (auto* exp : list)
 		{
-			stream << exp->ID();
+			SaveToStream(exp, stream);
 		}
 		return true;
 	}
@@ -388,9 +411,8 @@ public:
 		stream >> size;
 		for (int i = 0; i < size; i++)
 		{
-			ExpId id;
-			stream >> id;
-			list.push_back((Expression*)id);
+			auto* exp = BuildFromStream<Expression>(stream);
+			list.push_back(exp);
 		}
 		return true;
 	}
@@ -428,6 +450,7 @@ public:
 	}
 	List(Expression* item):List()
 	{
+		ReCalcHint(item);
 		list.push_back(item);
 		if (item)
 		{
@@ -438,16 +461,15 @@ public:
 	{
 		for (auto i : rhs.list)
 		{
+			ReCalcHint(i);
 			list.push_back(i);
-			if (i)
-			{
-				i->SetParent(this);
-			}
+			i->SetParent(this);
 		}
 		return *this;
 	}
 	List& operator+=(Expression* item)
 	{
+		ReCalcHint(item);
 		list.push_back(item);
 		if (item)
 		{

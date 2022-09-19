@@ -11,11 +11,34 @@
 #include "utility.h"
 #include "pipeop.h"
 #include "import.h"
+#include "module.h"
 
 namespace X 
 {
 namespace AST 
 {
+std::string Expression::GetCode()
+{
+	Module* pMyModule = nil;
+	Expression* pa = m_parent;
+	while (pa != nil)
+	{	
+		if (pa->m_type == ObType::Module)
+		{
+			pMyModule = dynamic_cast<Module*>(pa);
+			break;
+		}
+		pa = pa->GetParent();
+	}
+	if (pMyModule)
+	{
+		return pMyModule->GetCodeFragment(m_charStart, m_charEnd);
+	}
+	else
+	{
+		return "";
+	}
+}
 Expression* Expression::CreateByType(ObType t)
 {
 	Expression* pExp = nullptr;
@@ -123,6 +146,10 @@ Expression* Expression::CreateByType(ObType t)
 	default:
 		break;
 	}
+	if (pExp)
+	{
+		pExp->m_type = t;
+	}
 	return pExp;
 }
 Scope* Expression::FindScope()
@@ -139,7 +166,6 @@ Scope* Expression::FindScope()
 bool Expression::ToBytes(X::XLangStream& stream)
 {
 	stream << m_type;
-	stream << ID();
 	ExpId parentId = 0;
 	if (m_parent) parentId = m_parent->ID();
 	ExpId scopeId = 0;
@@ -154,8 +180,7 @@ bool Expression::ToBytes(X::XLangStream& stream)
 }
 bool Expression::FromBytes(X::XLangStream& stream)
 {
-	stream >> m_type;
-
+	//m_type already loadd in callee
 	ExpId parentId = 0;
 	ExpId scopeId = 0;
 	stream >> parentId;

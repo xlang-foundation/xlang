@@ -38,6 +38,10 @@ namespace X
 				m_remote_Obj_id = m_proxy->QueryRootObject(name);
 			}
 		}
+		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
+		{
+			bases.push_back(dynamic_cast<Scope*>(this));
+		}
 		virtual void SetObjID(void* id)
 		{
 			m_remote_Obj_id = id;
@@ -53,7 +57,6 @@ namespace X
 		}
 		virtual void ScopeLayout() override
 		{
-			std::cout << "ScopeLayout" << std::endl;
 		}
 		virtual Scope* GetParentScope() override
 		{

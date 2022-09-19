@@ -22,6 +22,7 @@ void Block::Add(Expression* item)
 			return;
 		}
 	}
+	ReCalcHint(item);
 	Body.push_back(item);
 	item->SetParent(this);
 	item->ScopeLayout();
