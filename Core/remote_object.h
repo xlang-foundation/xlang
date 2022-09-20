@@ -66,7 +66,8 @@ namespace X
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
-			return m_proxy->Call(m_remote_Parent_Obj_id,
+			return m_proxy->Call(rt,pContext,
+				m_remote_Parent_Obj_id,
 				m_remote_Obj_id, m_memmberId,
 				params, kwParams, retValue);
 		}

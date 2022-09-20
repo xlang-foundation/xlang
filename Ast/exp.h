@@ -84,17 +84,17 @@ public:
 			if (pRetExp)
 			{
 				pRetExp->FromBytes(stream);
-				stream.AddrSpace().Add(Id, pRetExp);
+				stream.ScopeSpace().Add(Id, pRetExp);
 			}
 		}
 		return pRetExp?dynamic_cast<T*>(pRetExp):nullptr;
 	}
-	bool SaveToStream(Expression* pExp, X::XLangStream& stream)
+	bool SaveToStream(Runtime* rt, XObj* pContext,Expression* pExp, X::XLangStream& stream)
 	{
 		if (pExp)
 		{
 			stream << pExp->ID();
-			pExp->ToBytes(stream);
+			pExp->ToBytes(rt,pContext,stream);
 		}
 		else
 		{
@@ -173,7 +173,7 @@ public:
 	}
 	virtual void ScopeLayout() {}
 	virtual int GetLeftMostCharPos() { return m_charPos; }
-	virtual bool ToBytes(X::XLangStream& stream);
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream);
 	virtual bool FromBytes(X::XLangStream& stream);
 	virtual void ConvertIDToRealAddress(std::unordered_map<ExpId,void*>& addressMap)
 	{
@@ -223,9 +223,9 @@ public:
 			delete m_s;
 		}
 	}
-	virtual bool ToBytes(X::XLangStream& stream)
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
 	{
-		Expression::ToBytes(stream);
+		Expression::ToBytes(rt, pContext,stream);
 		stream << m_haveFormat;
 		stream << m_size;
 		stream.append(m_s, m_size);
@@ -276,9 +276,9 @@ public:
 		m_tokenIndex = t;
 		m_type = ObType::Const;
 	}
-	virtual bool ToBytes(X::XLangStream& stream)
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
 	{
-		Expression::ToBytes(stream);
+		Expression::ToBytes(rt,pContext,stream);
 		stream << m_tokenIndex;
 		return true;
 	}
@@ -320,9 +320,9 @@ public:
 		m_type = ObType::Number;
 		m_isBool = true;
 	}
-	virtual bool ToBytes(X::XLangStream& stream)
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
 	{
-		Expression::ToBytes(stream);
+		Expression::ToBytes(rt,pContext,stream);
 		stream << m_val<< m_digiNum<< m_isBool;
 		return true;
 	}
@@ -363,9 +363,9 @@ public:
 		m_val = val;
 		m_type = ObType::Double;
 	}
-	virtual bool ToBytes(X::XLangStream& stream)
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
 	{
-		Expression::ToBytes(stream);
+		Expression::ToBytes(rt,pContext,stream);
 		stream << m_val;
 		return true;
 	}
@@ -394,13 +394,13 @@ public:
 			delete e;
 		}
 	}
-	virtual bool ToBytes(X::XLangStream& stream)
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
 	{
-		Expression::ToBytes(stream);
+		Expression::ToBytes(rt,pContext,stream);
 		stream << (int)list.size();
 		for (auto* exp : list)
 		{
-			SaveToStream(exp, stream);
+			SaveToStream(rt, pContext,exp, stream);
 		}
 		return true;
 	}

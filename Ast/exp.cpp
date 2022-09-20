@@ -163,7 +163,7 @@ Scope* Expression::FindScope()
 	}
 	return pMyScope;
 }
-bool Expression::ToBytes(X::XLangStream& stream)
+bool Expression::ToBytes(Runtime* rt, XObj* pContext,X::XLangStream& stream)
 {
 	stream << m_type;
 	ExpId parentId = 0;

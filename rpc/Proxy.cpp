@@ -88,7 +88,8 @@ namespace X
 		return oId;
 	}
 
-	bool XLangProxy::Call(X::ROBJ_ID parent_id, X::ROBJ_ID id, X::ROBJ_MEMBER_ID memId,
+	bool XLangProxy::Call(XRuntime* rt, XObj* pContext,
+		X::ROBJ_ID parent_id, X::ROBJ_ID id, X::ROBJ_MEMBER_ID memId,
 		X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 	{
 		if (!CheckConnectReadyStatus())
@@ -97,6 +98,8 @@ namespace X
 		}
 		X::ROBJ_ID oId = nullptr;
 		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call);
+		stream.ScopeSpace().SetContext((Runtime*)rt, pContext);
+
 		stream << parent_id;
 		stream << id;
 		stream << memId;

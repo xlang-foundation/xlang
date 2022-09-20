@@ -13,7 +13,8 @@ namespace X
 		virtual ROBJ_ID QueryRootObject(std::string& name) = 0;
 		virtual ROBJ_MEMBER_ID QueryMember(ROBJ_ID id,std::string& name) = 0;
 		virtual ROBJ_ID GetMemberObject(ROBJ_ID id, ROBJ_MEMBER_ID memId) = 0;
-		virtual bool Call(ROBJ_ID parent_id,ROBJ_ID id, ROBJ_MEMBER_ID memId,
+		virtual bool Call(XRuntime* rt, XObj* pContext,
+			ROBJ_ID parent_id,ROBJ_ID id, ROBJ_MEMBER_ID memId,
 			ARGS& params,KWARGS& kwParams,Value& retValue) = 0;
 	};
 }

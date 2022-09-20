@@ -9,6 +9,8 @@
 
 namespace X 
 {
+    namespace AST { class Scope; }
+    class Runtime;
     class XLangStreamException
         : public std::exception
     {
@@ -28,10 +30,27 @@ namespace X
     private:
         int m_code = 0;
     };
-    class AddressSpace
+    class ScopeSpace
     {
+        friend class XLangStream;
         std::unordered_map<unsigned long long, void*> m_map;
+        AST::Scope* m_curScope = nullptr;
+        Runtime* m_rt = nullptr;
+        XObj* m_pContext = nullptr;
     public:
+        void SetCurrentScope(AST::Scope* p)
+        {
+            m_curScope = p;
+        }
+        void SetContext(Runtime* rt, XObj* pContext)
+        {
+            m_rt = rt;
+            m_pContext = pContext;
+        }
+        AST::Scope* GetCurrentScope()
+        {
+            return m_curScope;
+        }
         void Add(unsigned long long id, void* addr)
         {
             m_map.emplace(std::make_pair(id, addr));
@@ -52,12 +71,12 @@ namespace X
     class XLangStream :
         public XLStream
     {
-        AddressSpace m_addr_space;
+        ScopeSpace m_scope_space;
     public:
         XLangStream();
         ~XLangStream();
 
-        AddressSpace& AddrSpace() { return m_addr_space; }
+        ScopeSpace& ScopeSpace() { return m_scope_space; }
         void SetProvider(XLStream* p)
         {
             m_pProvider = p;

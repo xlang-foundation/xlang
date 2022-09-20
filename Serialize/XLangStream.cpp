@@ -268,7 +268,7 @@ namespace X
 		{
 			X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(v.GetObj());
 			(*this) << (char)pObj->GetType();
-			pObj->ToBytes(*this);
+			pObj->ToBytes(m_scope_space.m_rt, m_scope_space.m_pContext,*this);
 		}
 		break;
 		case X::ValueType::Str:

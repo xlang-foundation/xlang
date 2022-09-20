@@ -23,9 +23,9 @@ public:
 	{
 		Op = op;
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
-		Expression::ToBytes(stream);
+		Expression::ToBytes(rt,pContext,stream);
 		stream << Op;
 		stream << opId;
 		return true;
@@ -71,11 +71,11 @@ public:
 		if (L) delete L;
 		if (R) delete R;
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
-		Operator::ToBytes(stream);
-		SaveToStream(L, stream);
-		SaveToStream(R, stream);
+		Operator::ToBytes(rt,pContext,stream);
+		SaveToStream(rt, pContext,L, stream);
+		SaveToStream(rt, pContext,R, stream);
 		return true;
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override
@@ -279,10 +279,10 @@ public:
 	{
 		if (R) delete R;
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
-		Operator::ToBytes(stream);
-		SaveToStream(R, stream);
+		Operator::ToBytes(rt,pContext,stream);
+		SaveToStream(rt, pContext,R, stream);
 		stream << NeedParam;
 		return true;
 	}
@@ -358,10 +358,10 @@ public:
 	{
 		m_type = ObType::Range;
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
-		UnaryOp::ToBytes(stream);
-		SaveToStream(R, stream);
+		UnaryOp::ToBytes(rt,pContext,stream);
+		SaveToStream(rt, pContext,R, stream);
 		stream << m_evaluated << m_start<< m_stop<< m_step;
 		return true;
 	}

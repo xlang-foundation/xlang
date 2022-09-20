@@ -2,11 +2,28 @@
 #include "value.h"
 #include "object.h"
 #include "prop.h"
+#include <iostream>
 
 namespace X
 {
 namespace AST
 {
+	bool Var::ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream)
+	{
+		Expression::ToBytes(rt, pContext, stream);
+		stream << Name.size;
+		if (Name.size > 0)
+		{
+			stream.append(Name.s, Name.size);
+		}
+		stream << Index;
+		//check the value if it is external
+		if (m_scope != stream.ScopeSpace().GetCurrentScope())
+		{
+			std::cout << "Var::ToBytes" << std::endl;
+		}
+		return true;
+	}
 	bool Var::GetPropValue(Runtime* rt, XObj* pContext,XObj* pObj, Value& val)
 	{
 		bool bOK = false;

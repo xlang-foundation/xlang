@@ -136,7 +136,7 @@ namespace Data {
 		{
 			return 0;
 		}
-		virtual bool ToBytes(X::XLangStream& stream)
+		virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
 		{ 
 			return true; 
 		}

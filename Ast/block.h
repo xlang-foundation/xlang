@@ -57,15 +57,15 @@ public:
 		}
 		Body.clear();
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
-		UnaryOp::ToBytes(stream);
+		UnaryOp::ToBytes(rt,pContext,stream);
 		stream << NoIndentCheck << IndentCount 
 			<< ChildIndentCount << m_bRunning;
 		stream << (int)Body.size();
 		for (auto* exp : Body)
 		{
-			SaveToStream(exp, stream);
+			SaveToStream(rt, pContext,exp, stream);
 		}
 		return true;
 	}
@@ -167,10 +167,10 @@ public:
 	{
 		if (m_next) delete m_next;
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
-		Block::ToBytes(stream);
-		SaveToStream(m_next, stream);
+		Block::ToBytes(rt,pContext,stream);
+		SaveToStream(rt, pContext,m_next, stream);
 		return true;
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override

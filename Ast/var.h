@@ -31,17 +31,7 @@ public:
 			delete Name.s;
 		}
 	}
-	virtual bool ToBytes(X::XLangStream& stream)
-	{
-		Expression::ToBytes(stream);
-		stream << Name.size;
-		if (Name.size > 0)
-		{
-			stream.append(Name.s, Name.size);
-		}
-		stream << Index;
-		return true;
-	}
+	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream);
 	virtual bool FromBytes(X::XLangStream& stream)
 	{
 		Expression::FromBytes(stream);

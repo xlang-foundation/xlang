@@ -19,10 +19,10 @@ namespace X
 			}
 			Function(AST::Func* p);
 			~Function();
-			virtual bool ToBytes(X::XLangStream& stream)
+			virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
 			{
 				AST::Expression exp;
-				exp.SaveToStream(m_func, stream);
+				exp.SaveToStream(rt, pContext, m_func, stream);
 				return true;
 			}
 			virtual bool FromBytes(X::XLangStream& stream)

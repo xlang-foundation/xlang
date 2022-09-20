@@ -38,9 +38,9 @@ public:
 		m_type = ObType::Dot;
 		m_dotNum = dotNum;
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
-		BinaryOp::ToBytes(stream);
+		BinaryOp::ToBytes(rt,pContext,stream);
 		stream << m_dotNum;
 		return true;
 	}

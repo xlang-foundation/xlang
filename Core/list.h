@@ -170,10 +170,10 @@ public:
 
 		return *this;
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		AutoLock(m_lock);
-		Object::ToBytes(stream);
+		Object::ToBytes(rt,pContext,stream);
 		size_t size = Size();
 		stream << size;
 		for (size_t i = 0; i < size; i++)

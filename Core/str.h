@@ -40,9 +40,9 @@ namespace Data
 		}
 		virtual char* Buffer() override { return (char*)m_s.c_str(); }
 		virtual AST::Scope* GetScope();
-		virtual bool ToBytes(X::XLangStream& stream) override
+		virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 		{
-			Object::ToBytes(stream);
+			Object::ToBytes(rt,pContext,stream);
 			stream << m_s;
 			return true;
 		}

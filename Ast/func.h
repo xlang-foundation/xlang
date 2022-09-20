@@ -85,21 +85,31 @@ public:
 			delete m_Name.s;
 		}
 	}
-	virtual bool ToBytes(X::XLangStream& stream) override
+	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		std::string code;
 		for (auto* decor : m_decors)
 		{
 			code += decor->GetCode()+"\n";
-			SaveToStream(decor, stream);
+			SaveToStream(rt, pContext,decor, stream);
 		}
 		code += GetCode();
-		Block::ToBytes(stream);
+		//change current scope of stream
+		Scope* pOldScope = stream.ScopeSpace().GetCurrentScope();
+		stream.ScopeSpace().SetCurrentScope(dynamic_cast<Scope*>(this));
+		Block::ToBytes(rt,pContext,stream);
 		stream << (int)m_decors.size();
 		for (auto* decor : m_decors)
 		{
-			SaveToStream(decor, stream);
+			SaveToStream(rt, pContext,decor, stream);
 		}
+		SaveToStream(rt, pContext,Name, stream);
+		SaveToStream(rt, pContext, Params, stream);
+		SaveToStream(rt, pContext, RetType, stream);
+		//restore old scope
+		stream.ScopeSpace().SetCurrentScope(pOldScope);
+
+		//Coding itself
 		stream << m_Name.size;
 		if (m_Name.size > 0)
 		{
@@ -108,9 +118,6 @@ public:
 		stream << m_Index << m_positionParamCnt
 			<< m_paramStartIndex << m_IndexOfThis
 			<< m_needSetHint;
-		SaveToStream(Name, stream);
-		SaveToStream(Params, stream);
-		SaveToStream(RetType, stream);
 
 		return true;
 	}
@@ -127,6 +134,11 @@ public:
 				m_decors.push_back(decor);
 			}
 		}
+		Name = BuildFromStream<Expression>(stream);
+		Params = BuildFromStream<List>(stream);
+		RetType = BuildFromStream<Expression>(stream);
+
+		//decoding itself
 		stream >> m_Name.size;
 		if (m_Name.size > 0)
 		{
@@ -137,9 +149,6 @@ public:
 		stream >> m_Index >> m_positionParamCnt
 			>> m_paramStartIndex >> m_IndexOfThis
 			>> m_needSetHint;
-		Name = BuildFromStream<Expression>(stream);
-		Params = BuildFromStream<List>(stream);
-		RetType = BuildFromStream<Expression>(stream);
 		return true;
 	}
 	inline void AddDecor(Decorator* pDecor)

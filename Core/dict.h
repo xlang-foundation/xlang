@@ -72,9 +72,9 @@ namespace X
 				}
 				return bOK;
 			}
-			virtual bool ToBytes(X::XLangStream& stream) override
+			virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
 			{
-				Object::ToBytes(stream);
+				Object::ToBytes(rt,pContext,stream);
 				size_t size = Size();
 				stream << size;
 				for (auto& it : mMap)
