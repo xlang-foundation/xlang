@@ -27,7 +27,6 @@ protected:
 	int m_paramStartIndex = 0;
 	int m_IndexOfThis = -1;//for THIS pointer
 	bool m_needSetHint = false;
-	Expression* Name = nil;
 	List* Params = nil;
 	Expression* RetType = nil;
 	void SetName(Expression* n)
@@ -37,12 +36,7 @@ protected:
 		{
 			m_Name = vName->GetName();
 		}
-		Name = n;
-		if (Name)
-		{
-			Name->SetParent(this);
-		}
-		ReCalcHint(Name);
+		ReCalcHint(n);
 	}
 	virtual void ScopeLayout() override;
 	virtual void SetParams(List* p)
@@ -91,7 +85,6 @@ public:
 		for (auto* decor : m_decors)
 		{
 			code += decor->GetCode()+"\n";
-			SaveToStream(rt, pContext,decor, stream);
 		}
 		code += GetCode();
 		//change current scope of stream
@@ -103,7 +96,6 @@ public:
 		{
 			SaveToStream(rt, pContext,decor, stream);
 		}
-		SaveToStream(rt, pContext,Name, stream);
 		SaveToStream(rt, pContext, Params, stream);
 		SaveToStream(rt, pContext, RetType, stream);
 		//restore old scope
@@ -118,7 +110,7 @@ public:
 		stream << m_Index << m_positionParamCnt
 			<< m_paramStartIndex << m_IndexOfThis
 			<< m_needSetHint;
-
+		Scope::ToBytes(rt, pContext, stream);
 		return true;
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override
@@ -134,7 +126,6 @@ public:
 				m_decors.push_back(decor);
 			}
 		}
-		Name = BuildFromStream<Expression>(stream);
 		Params = BuildFromStream<List>(stream);
 		RetType = BuildFromStream<Expression>(stream);
 
@@ -149,6 +140,7 @@ public:
 		stream >> m_Index >> m_positionParamCnt
 			>> m_paramStartIndex >> m_IndexOfThis
 			>> m_needSetHint;
+		Scope::FromBytes(stream);
 		return true;
 	}
 	inline void AddDecor(Decorator* pDecor)
@@ -156,7 +148,6 @@ public:
 		m_decors.push_back(pDecor);
 	}
 	void NeedSetHint(bool b) { m_needSetHint = b; }
-	Expression* GetName() { return Name; }
 	String& GetNameStr() { return m_Name; }
 	virtual std::string GetNameString() override
 	{
@@ -231,9 +222,13 @@ class ExternFunc
 	:virtual public Func
 {
 	std::string m_funcName;
-	U_FUNC m_func;
+	U_FUNC m_func =nullptr;
 	XObj* m_pContext = nullptr;
 public:
+	ExternFunc()
+	{
+
+	}
 	ExternFunc(std::string& funcName, U_FUNC func, XObj* pContext = nullptr)
 	{
 		m_funcName = funcName;
@@ -251,6 +246,18 @@ public:
 		{
 			m_pContext->DecRef();
 		}
+	}
+	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream) override
+	{
+		Expression::ToBytes(rt, pContext, stream);
+		stream << m_funcName;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		Expression::FromBytes(stream);
+		stream >> m_funcName;
+		return true;
 	}
 	inline virtual bool Call(XRuntime* rt, XObj* pContext,
 		std::vector<Value>& params,

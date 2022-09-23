@@ -31,24 +31,10 @@ public:
 			delete Name.s;
 		}
 	}
+	void EncodeExtern(Runtime* rt, XObj* pContext, X::XLangStream& stream);
+	void DecodeExtern(Runtime* rt, XObj* pContext, X::XLangStream& stream);
 	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream);
-	virtual bool FromBytes(X::XLangStream& stream)
-	{
-		Expression::FromBytes(stream);
-		stream >> Name.size;
-		if (Name.size > 0)
-		{
-			Name.s = new char[Name.size];
-			m_needRelease = true;
-			stream.CopyTo(Name.s, Name.size);
-		}
-		else
-		{
-			Name.s = nullptr;
-		}
-		stream << Index;
-		return true;
-	}
+	virtual bool FromBytes(X::XLangStream& stream);
 	void ScopeLayout(std::vector<Scope*>& candidates);
 	virtual void ScopeLayout() override;
 	String& GetName() { return Name; }

@@ -36,11 +36,12 @@ namespace X
 							return bOK;
 						}
 					}
-					kwParams.emplace(std::make_pair("origin", pContext));
+					//kwParams.emplace(std::make_pair("origin", pContext));
 					Data::Object* obj = dynamic_cast<Data::Object*>(lVal.GetObj());
 					if (obj)
 					{
-						bOK = obj->Call(rt, pContext, params, kwParams, v);
+						X::Value valTrailer(pContext);
+						bOK = obj->CallEx(rt, pContext, params, kwParams, valTrailer,v);
 					}
 				}
 			}

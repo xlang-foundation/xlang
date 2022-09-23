@@ -213,6 +213,17 @@ namespace X
 		return size;
 	}
 
+	STREAM_SIZE XLangStream::CalcSize()
+	{
+		auto blkNum = BlockNum();
+		STREAM_SIZE size = 0;
+		for (int i = 0; i < blkNum; i++)
+		{
+			blockInfo& curBlock = GetBlockInfo(i);
+			size += curBlock.data_size;
+		}
+		return size;
+	}
 	void XLangStream::Refresh()
 	{
 		if (m_pProvider)

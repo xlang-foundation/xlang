@@ -90,7 +90,7 @@ namespace X
 
 	bool XLangProxy::Call(XRuntime* rt, XObj* pContext,
 		X::ROBJ_ID parent_id, X::ROBJ_ID id, X::ROBJ_MEMBER_ID memId,
-		X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+		X::ARGS& params, X::KWARGS& kwParams, X::Value& trailer,X::Value& retValue)
 	{
 		if (!CheckConnectReadyStatus())
 		{
@@ -117,6 +117,13 @@ namespace X
 			stream << kw.first;
 			kw.second.ToBytes(&stream);
 		}
+		//set flag to show if there is a trailer
+		stream << trailer.IsValid();
+		if (trailer.IsValid())
+		{
+			stream << trailer;
+		}
+
 		auto& stream2 = CommitCall();
 		bool bOK = false;
 		stream2 >> bOK;

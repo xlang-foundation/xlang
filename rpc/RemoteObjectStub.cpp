@@ -1,6 +1,6 @@
 #include "RemoteObjectStub.h"
 #include "StubMgr.h"
-
+#include "bin.h"
 
 namespace X
 {
@@ -153,6 +153,19 @@ namespace X
 			X::Value v;
 			v.FromBytes(&stream);
 			kwParams.emplace(std::make_pair(key, v));
+		}
+		bool haveTrailer = false;
+		stream >> haveTrailer;
+		X::Value trailer;
+		if (haveTrailer)
+		{
+			auto size0 = stream.CalcSize(stream.GetPos());
+			auto size1 = stream.CalcSize();
+			auto trailerSize = size1 - size0;
+			char* pBinBuf = new char[trailerSize];
+			stream.CopyTo(pBinBuf, trailerSize);
+			Data::Binary* pTrailerBin = new Data::Binary(pBinBuf, trailerSize);
+			trailer = pTrailerBin;
 		}
 		pProc->NotifyBeforeCall(channel, stream);
 		X::XObj* pParentObj = nullptr;

@@ -72,7 +72,27 @@ bool U_Load(X::XRuntime* rt, X::XObj* pContext,
 	retValue = X::Value(moduleKey);
 	return true;
 }
-
+bool U_RunByteCode(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	auto valCode = params[0];
+	if (valCode.IsObject() && valCode.GetObj()->GetType() == X::ObjType::Binary)
+	{
+		auto* pBin = dynamic_cast<X::Data::Binary*>(valCode.GetObj());
+		X::BlockStream stream(pBin->Data(), pBin->Size(), false);
+		X::Value valCallable;
+		valCallable.FromBytes(&stream);
+		std::cout << "U_RunByteCode" << std::endl;
+	}
+	return true;
+}
 bool U_Run(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -107,6 +127,7 @@ bool U_RunCode(X::XRuntime* rt, X::XObj* pContext,
 	std::string code = params[1].ToString();
 	return X::Hosting::I().Run(moduleName, code.c_str(), (int)code.size(), retValue);
 }
+
 bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -610,6 +631,7 @@ bool Builtin::RegisterInternals()
 	Register("load", (X::U_FUNC)U_Load, params);
 	Register("run", (X::U_FUNC)U_Run, params);
 	Register("runcode", (X::U_FUNC)U_RunCode, params);
+	Register("runbytecode", (X::U_FUNC)U_RunByteCode, params);
 	Register("rand", (X::U_FUNC)U_Rand, params);
 	Register("sleep", (X::U_FUNC)U_Sleep, params);
 	Register("time", (X::U_FUNC)U_Time, params);

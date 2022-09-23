@@ -99,7 +99,7 @@ Expression* Expression::CreateByType(ObType t)
 		pExp = new Func();
 		break;
 	case ObType::BuiltinFunc:
-		pExp = new Func();
+		pExp = new ExternFunc();
 		break;
 	case ObType::Module:
 		pExp = new Func();

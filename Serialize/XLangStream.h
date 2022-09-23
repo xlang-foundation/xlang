@@ -47,6 +47,8 @@ namespace X
             m_rt = rt;
             m_pContext = pContext;
         }
+        Runtime* RT() { return m_rt; }
+        XObj* Context() { return m_pContext; }
         AST::Scope* GetCurrentScope()
         {
             return m_curScope;
@@ -155,6 +157,7 @@ namespace X
             m_size = CalcSize(curPos);
         }
         STREAM_SIZE CalcSize(blockIndex pos);
+        STREAM_SIZE CalcSize();
         void SetOverrideMode(bool b)
         {
             m_InOverrideMode = b;

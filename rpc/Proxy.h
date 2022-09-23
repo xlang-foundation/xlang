@@ -27,7 +27,7 @@ namespace X
 		virtual X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId);
 		virtual bool Call(XRuntime* rt, XObj* pContext,
 			X::ROBJ_ID parent_id, X::ROBJ_ID id, X::ROBJ_MEMBER_ID memId,
-			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& trailer,X::Value& retValue);
 		// GThread interface
 	protected:
 		bool mRun = true;

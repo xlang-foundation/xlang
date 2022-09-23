@@ -66,10 +66,22 @@ namespace X
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
+			X::Value dummyTrailer;
 			return m_proxy->Call(rt,pContext,
 				m_remote_Parent_Obj_id,
 				m_remote_Obj_id, m_memmberId,
-				params, kwParams, retValue);
+				params, kwParams, dummyTrailer,retValue);
+		}
+		virtual bool CallEx(XRuntime* rt, XObj* pContext,
+			ARGS& params,
+			KWARGS& kwParams,
+			X::Value& trailer,
+			X::Value& retValue)
+		{
+			return m_proxy->Call(rt, pContext,
+				m_remote_Parent_Obj_id,
+				m_remote_Obj_id, m_memmberId,
+				params, kwParams, trailer,retValue);
 		}
 		virtual int AddOrGet(std::string& name, bool bGetOnly) override
 		{

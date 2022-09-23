@@ -8,6 +8,7 @@
 #include <functional>
 #include "objref.h"
 #include "def.h"
+#include "XLangStream.h"
 
 namespace X 
 { 
@@ -40,6 +41,8 @@ public:
 	ExpId ID() { return (ExpId)this; }
 	void AddExternVar(AST::Var* var);
 
+	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream);
+	virtual bool FromBytes(X::XLangStream& stream);
 	inline int GetVarNum()
 	{
 		return (int)m_Vars.size();

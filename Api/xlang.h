@@ -70,6 +70,14 @@ namespace X
 		{
 			return m_p ? m_p->Call(rt, pContext,params, kwParams,retValue) : false;
 		}
+		virtual bool CallEx(XRuntime* rt, XObj* pContext,
+			ARGS& params,
+			KWARGS& kwParams,
+			X::Value& trailer,
+			X::Value& retValue)
+		{
+			return m_p ? m_p->CallEx(rt, pContext, params, kwParams, trailer,retValue) : false;
+		}
 
 		virtual XObj& operator +=(Value& r)
 		{

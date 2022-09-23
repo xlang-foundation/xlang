@@ -5,7 +5,7 @@ namespace X
 {
 	BlockStream::BlockStream()
 	{
-		m_pProvider = this;
+		//m_pProvider = this;
 		m_streamKey = 0;// GrusJitHost::I().RegisterStream(this);
 	}
 	BlockStream::BlockStream(char* buf, STREAM_SIZE size, bool needReleasBuf) :
