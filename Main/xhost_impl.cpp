@@ -77,6 +77,14 @@ namespace X
 		pFuncObj->AddRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
+	XFunc* XHost_Impl::CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext)
+	{
+		std::string strName(name);
+		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
+		auto* pFuncObj = new X::Data::Function(extFunc);
+		pFuncObj->AddRef();
+		return dynamic_cast<XFunc*>(pFuncObj);
+	}
 	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC setter, U_FUNC getter)
 	{
 		std::string strName(name);

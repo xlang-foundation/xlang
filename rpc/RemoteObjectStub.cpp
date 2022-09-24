@@ -176,7 +176,15 @@ namespace X
 		auto pXObj = CovertIdToXObj(objId);
 		X::Value valRet;
 
-		bool bOK = pXObj->Call(m_rt, pParentObj, params, kwParams, valRet);//TODO...
+		bool bOK = false;
+		if (haveTrailer)
+		{
+			bOK = pXObj->CallEx(m_rt, pParentObj, params, kwParams, trailer,valRet);
+		}
+		else
+		{
+			bOK = pXObj->Call(m_rt, pParentObj, params, kwParams, valRet);
+		}
 		pProc->NotifyAfterCall(channel, stream, bOK);
 		if (bOK)
 		{

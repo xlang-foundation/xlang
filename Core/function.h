@@ -57,6 +57,11 @@ namespace X
 				ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue) override;
+			virtual bool CallEx(XRuntime* rt, XObj* pContext,
+				ARGS& params,
+				KWARGS& kwParams,
+				X::Value& trailer,
+				X::Value& retValue) override;
 		};
 
 	}

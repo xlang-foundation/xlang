@@ -88,7 +88,14 @@ bool Func::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 	v = v0;
 	return true;
 }
-
+bool Func::CallEx(XRuntime* rt, XObj* pContext,
+	ARGS& params,
+	KWARGS& kwParams,
+	X::Value& trailer,
+	X::Value& retValue)
+{
+	return true;
+}
 bool Func::Call(XRuntime* rt0,
 	XObj* pContext,
 	std::vector<Value>& params,

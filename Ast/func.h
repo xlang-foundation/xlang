@@ -215,6 +215,11 @@ public:
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue);
+	virtual bool CallEx(XRuntime* rt, XObj* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		X::Value& trailer,
+		X::Value& retValue);
 	virtual bool Run(Runtime* rt, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
 };
@@ -223,6 +228,7 @@ class ExternFunc
 {
 	std::string m_funcName;
 	U_FUNC m_func =nullptr;
+	U_FUNC_EX m_func_ex = nullptr;
 	XObj* m_pContext = nullptr;
 public:
 	ExternFunc()
@@ -233,6 +239,17 @@ public:
 	{
 		m_funcName = funcName;
 		m_func = func;
+		m_type = ObType::BuiltinFunc;
+		m_pContext = pContext;
+		if (m_pContext)
+		{
+			m_pContext->IncRef();
+		}
+	}
+	ExternFunc(std::string& funcName, U_FUNC_EX func, XObj* pContext = nullptr)
+	{
+		m_funcName = funcName;
+		m_func_ex = func;
 		m_type = ObType::BuiltinFunc;
 		m_pContext = pContext;
 		if (m_pContext)
@@ -259,13 +276,24 @@ public:
 		stream >> m_funcName;
 		return true;
 	}
+	inline virtual bool CallEx(XRuntime* rt, XObj* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		X::Value& trailer,
+		X::Value& retValue) override
+	{
+		return m_func_ex ? m_func_ex(rt,
+			pContext == nullptr ? m_pContext : pContext, params, 
+			kwParams, trailer,retValue) : false;
+	}
 	inline virtual bool Call(XRuntime* rt, XObj* pContext,
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue) override
 	{
 		return m_func ? m_func(rt,
-			pContext==nullptr? m_pContext: pContext, params, kwParams, retValue) : false;
+			pContext==nullptr? m_pContext: pContext, 
+			params, kwParams, retValue) : false;
 	}
 };
 

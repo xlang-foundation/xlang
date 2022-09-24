@@ -35,6 +35,16 @@ namespace X
 		{
 			return VarCall_impl(pThis, f, a, Indices{});
 		}
+		template<class class_T, typename F, typename Array, std::size_t... I>
+		inline auto VarCall_Ex_impl(class_T* pThis, F f, X::Value& extra, Array& a, std::index_sequence<I...>)
+		{
+			return (pThis->*f)(extra,a[I]...);
+		}
+		template<std::size_t N, class class_T, typename F, typename T, typename Indices = std::make_index_sequence<N>>
+		inline auto VarCallEx(class_T* pThis, F f,X::Value& extra,T& a)
+		{
+			return VarCall_Ex_impl(pThis, f, extra,a, Indices{});
+		}
 
 		template<class class_T, typename F, typename Array, std::size_t... I>
 		inline auto VarCall_impl_Extra(X::XRuntime* rt, X::XObj* pContext,
@@ -66,6 +76,7 @@ namespace X
 		enum MemberType
 		{
 			Func,
+			FuncEx,
 			Prop,
 			Event,
 			Class,
@@ -77,6 +88,7 @@ namespace X
 			std::string name;
 			X::U_FUNC func;
 			X::U_FUNC func2;
+			X::U_FUNC_EX func_ex;
 		};
 		std::vector<MemberInfo> m_members;
 		std::vector<X::XEvent*> __events;
@@ -140,6 +152,21 @@ namespace X
 					}),nullptr });
 		}
 		template<std::size_t Parameter_Num, typename F>
+		void AddFuncEx(const char* func_name, F f)
+		{
+			m_members.push_back(MemberInfo{
+				MemberType::FuncEx,func_name,nullptr,nullptr,
+				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
+					{
+						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+						auto* pThis = (T*)pPackage->GetEmbedObj();
+						auto _retVal = HelpFuncs::VarCallEx<Parameter_Num>(pThis,f, trailer,params);
+						retValue = X::Value(_retVal);
+						return true;
+					})});
+		}
+		template<std::size_t Parameter_Num, typename F>
 		void AddRTFunc(const char* func_name, F f)
 		{
 			m_members.push_back(MemberInfo{
@@ -153,6 +180,20 @@ namespace X
 						retValue = X::Value(_retVal);
 						return true;
 					}),nullptr });
+		}
+		template<typename F>
+		void AddVarFuncEx(const char* func_name, F f)
+		{
+			m_members.push_back(MemberInfo{
+				MemberType::FuncEx,func_name,nullptr,nullptr,
+				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
+					{
+						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+						auto* pThis = (T*)pPackage->GetEmbedObj();
+						(pThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
+						return true;
+					})});
 		}
 		template<typename F>
 		void AddVarFunc(const char* func_name, F f)
@@ -271,6 +312,13 @@ namespace X
 				{
 					auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
 					auto* pFuncObj = X::g_pXHost->CreateFunction(m.name.c_str(), m.func, pObjFun);
+					v0 = dynamic_cast<X::XObj*>(pFuncObj);
+				}
+				break;
+				case MemberType::FuncEx:
+				{
+					auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
+					auto* pFuncObj = X::g_pXHost->CreateFunctionEx(m.name.c_str(), m.func_ex, pObjFun);
 					v0 = dynamic_cast<X::XObj*>(pFuncObj);
 				}
 				break;

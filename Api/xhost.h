@@ -33,6 +33,8 @@ namespace X
 		ARGS& params, KWARGS& kwParams, Value& retValue);
 	using U_FUNC = std::function<bool(XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, Value& retValue)>;
+	using U_FUNC_EX = std::function<bool(XRuntime* rt, XObj* pContext,
+		ARGS& params, KWARGS& kwParams, X::Value& trailer,Value& retValue)>;
 	using EventHandler = std::function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;
 
@@ -50,6 +52,7 @@ namespace X
 		virtual XPackage* CreatePackage(void* pRealObj) = 0;
 		virtual XEvent* CreateXEvent(const char* name) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func,X::XObj* pContext=nullptr) = 0;
+		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext = nullptr) = 0;
 		virtual XProp* CreateProp(const char* name, U_FUNC setter, U_FUNC getter) = 0;
 		virtual std::string StringifyString(const std::string& str) = 0;
 		virtual XBin* CreateBin(char* data, size_t size) = 0;
