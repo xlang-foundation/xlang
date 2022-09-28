@@ -49,7 +49,7 @@ bool X::AST::Import::FindAndLoadExtensions(Runtime* rt,
 			bHaveDll = true;
 		}
 	}
-	if (!bHaveDll)
+	if (!bHaveDll && !curModulePath.empty())
 	{
 		bRet = file_search(curModulePath, loadingModuleName + ShareLibExt, candiateFiles);
 		if (bRet && candiateFiles.size() > 0)

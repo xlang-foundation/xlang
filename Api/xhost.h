@@ -22,7 +22,7 @@ namespace X
 	class XRuntime
 	{
 	public:
-
+		virtual bool CreateEmptyModule() = 0;
 	};
 	typedef XPackage* (*PackageCreator)();
 	typedef XProxy* (*XProxyCreator)(std::string& url);
@@ -45,6 +45,7 @@ namespace X
 		virtual XRuntime* GetCurrentRuntime() = 0;
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) = 0;
 		virtual bool RegisterPackage(const char* name, Value& objPackage) = 0;
+		virtual XObj* QueryMember(XRuntime* rt, XObj* pObj, const char* name) = 0;
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;
@@ -60,6 +61,8 @@ namespace X
 		virtual void ReleaseStream(X::XLStream* pStream) = 0;
 		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) = 0;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream=nullptr) = 0;
+		virtual bool ToBytes(X::Value& input, X::Value& output) = 0;
+		virtual bool FromBytes(X::Value& input, X::Value& output) = 0;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
 		virtual bool RunCode(std::string& moduleName, std::string& code, X::Value& retVal) = 0;
 		virtual long OnEvent(const char* evtName, EventHandler handler) = 0;
@@ -68,6 +71,8 @@ namespace X
 		virtual void SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal) = 0;
 		virtual AppEventCode HandleAppEvent(int signum) = 0;
 		virtual bool Lrpc_Listen(int port,bool blockMode = false) = 0;
+		virtual bool Import(XRuntime* rt,const char* moduleName, 
+					const char* from, const char* thru, X::Value& objPackage) = 0;
 	};
 	extern XHost* g_pXHost;
 }

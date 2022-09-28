@@ -12,6 +12,7 @@
 #include "event.h"
 #include "remote_object.h"
 #include "msgthread.h"
+#include "import.h"
 
 namespace X 
 {
@@ -50,6 +51,28 @@ namespace X
 	bool XHost_Impl::RegisterPackage(const char* name, Value& objPackage)
 	{
 		return X::Manager::I().Register(name, objPackage);
+	}
+	XObj* XHost_Impl::QueryMember(XRuntime* rt, XObj* pObj, const char* name)
+	{
+		Data::Object* pRealObj = dynamic_cast<Data::Object*>(pObj);
+		if (pRealObj == nullptr)
+		{
+			return nullptr;
+		}
+		XObj* pRetObj = nullptr;
+		AST::Scope* pScope = dynamic_cast<AST::Scope*>(pRealObj);
+		if (pScope)
+		{
+			std::string strName(name);
+			int idx = pScope->AddOrGet(strName, true);
+			if (idx >= 0)
+			{
+				Value v0;
+				pScope->Get((Runtime*)rt, pRealObj, idx, v0);
+				pRetObj = (XObj*)v0;//will addref
+			}
+		}
+		return pRetObj;
 	}
 	bool XHost_Impl::QueryPackage(XRuntime* rt, const char* name, Value& objPackage)
 	{
@@ -146,6 +169,30 @@ namespace X
 		pRObj->AddRef();
 		return pRObj;
 	}
+	bool XHost_Impl::ToBytes(X::Value& input, X::Value& output)
+	{
+		X::BlockStream stream;
+		stream << input;
+		auto size = stream.Size();
+		char* pData = new char[size];
+		stream.FullCopyTo(pData, size);
+		X::Data::Binary* pBinOut = new X::Data::Binary(pData, size);
+		output = X::Value(pBinOut);
+		return true;
+	}
+	bool XHost_Impl::FromBytes(X::Value& input, X::Value& output)
+	{
+		if (!input.IsObject() || input.GetObj()->GetType() != ObjType::Binary)
+		{
+			return false;
+		}
+		Data::Binary* pBin = dynamic_cast<Data::Binary*>(input.GetObj());
+		X::BlockStream stream(pBin->Data(), pBin->Size(),false);
+		stream.ScopeSpace().SetContext((Runtime*)pBin->GetContext()->rt,
+			pBin->GetContext()->m_parent);
+		stream >> output;
+		return true;
+	}
 	bool XHost_Impl::ConvertToBytes(X::Value& v, X::XLStream* pStreamExternal)
 	{
 		X::XLangStream* pStream = nullptr;
@@ -239,6 +286,18 @@ namespace X
 		else
 		{
 			bOK = MsgThread::I().Start();
+		}
+		return bOK;
+	}
+	bool XHost_Impl::Import(XRuntime* rt, const char* moduleName, 
+		const char* from, const char* thru, X::Value& objPackage)
+	{
+		AST::Import* pImp = new AST::Import(moduleName, from, thru);
+		//todo: CHECK here if pImp will be released by out of scope
+		bool bOK = pImp->Run((Runtime*)rt, nullptr, objPackage);
+		if (objPackage.IsObject())
+		{
+			objPackage.GetObj()->SetContext(rt, nullptr);
 		}
 		return bOK;
 	}

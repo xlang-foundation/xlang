@@ -3,6 +3,7 @@
 #include "object.h"
 #include "str.h"
 #include "list.h"
+#include "bin.h"
 #include "function.h"
 
 namespace X 
@@ -328,6 +329,7 @@ namespace X
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Str());
 				break;
 			case X::ObjType::Binary:
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Binary(nullptr,0));
 				break;
 			case X::ObjType::Expr:
 				break;

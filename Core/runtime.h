@@ -47,13 +47,17 @@ public:
 	{
 		m_tracefunc = f;
 	}
-
+	virtual bool CreateEmptyModule() override;
 	inline XTraceFunc GetTrace() { return m_tracefunc; }
 	inline long long GetThreadId() { return m_threadId; }
 	inline void MirrorStacksFrom(Runtime* rt)
 	{
 		m_pModule = rt->m_pModule;
 		m_stackBottom = rt->m_stackBottom;
+	}
+	inline bool SetVarCount(int cnt)
+	{
+		return m_stackBottom ? m_stackBottom->SetVarCount(cnt) : false;
 	}
 	inline void SetM(AST::Module* m) { m_pModule = m; }
 	inline AST::Module* M() { return m_pModule; }

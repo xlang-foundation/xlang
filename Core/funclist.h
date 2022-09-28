@@ -54,6 +54,46 @@ public:
 		}
 		return true;
 	}
+	virtual bool CallEx(XRuntime* rt, XObj* pContext,
+		ARGS& params,
+		KWARGS& kwParams,
+		X::Value& trailer,
+		X::Value& retValue) override
+	{
+		if (m_list.size() == 1)
+		{
+			auto& fc = m_list[0];
+			return fc.m_func->CallEx(rt,
+				fc.m_context,
+				params, kwParams, trailer,retValue);
+		}
+		List* pValueList = new List();
+		bool bOK = true;
+		for (auto& fc : m_list)
+		{
+			X::Value v0;
+			bool bOK = fc.m_func->CallEx(rt,
+				fc.m_context,
+				params, kwParams, trailer, v0);
+			if (bOK)
+			{
+				pValueList->Add((Runtime*)rt, v0);
+			}
+			else
+			{
+				break;
+			}
+		}
+		if (bOK)
+		{
+			retValue = X::Value(pValueList);
+		}
+		else
+		{
+			delete pValueList;
+		}
+		return bOK;
+	}
 	virtual bool Call(XRuntime* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,

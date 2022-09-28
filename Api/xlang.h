@@ -33,42 +33,183 @@ namespace X
 	};
 #define Internal_Reserve(cls_name)  cls_name(int){}
 
+	struct XObj_Context
+	{
+		XRuntime* rt = nullptr;
+		XObj* m_parent = nullptr;
+		XObj* m_this = nullptr;
+	};
 	class XObj
 	{
 	protected:
-		XObj* m_p = nullptr;
+		XObj_Context* m_cxt = nullptr;
+		inline XObj& SetRT(XRuntime* rt)
+		{
+			m_cxt->rt = rt;
+			return *this;
+		}
+		inline XObj& SetParent(XObj* p)
+		{
+			m_cxt->m_parent = p;
+			if (m_cxt->m_parent)
+			{
+				m_cxt->m_parent->IncRef();
+			}
+			return *this;
+		}
+		
 	public:
+		XObj()
+		{
+
+		}
+		XObj(X::Value& v0)
+		{
+			m_cxt = new XObj_Context;
+			XObj* pObj = (XObj*)v0;
+			m_cxt->m_this = pObj;
+			if (pObj->m_cxt)
+			{
+				m_cxt->rt = pObj->m_cxt->rt;
+				m_cxt->m_parent = pObj->m_cxt->m_parent;
+				if (m_cxt->m_parent)
+				{
+					m_cxt->m_parent->IncRef();
+				}
+			}
+		}
+		XObj(XObj* p)
+		{//callee need to addref for p
+			m_cxt = new XObj_Context;
+			m_cxt->m_this = p;
+			if (p->m_cxt)
+			{
+				m_cxt->rt = p->m_cxt->rt;
+				m_cxt->m_parent = p->m_cxt->m_parent;
+				if (m_cxt->m_parent)
+				{
+					m_cxt->m_parent->IncRef();
+				}
+			}
+		}
 		~XObj()
 		{
-			if (m_p)
+			if (m_cxt)
 			{
-				m_p->DecRef();
+				if (m_cxt->m_this)
+				{
+					m_cxt->m_this->DecRef();
+				}
+				if (m_cxt->m_parent)
+				{
+					m_cxt->m_parent->DecRef();
+				}
+				delete m_cxt;
 			}
 		}
+		void SetContext(XRuntime* rt, XObj* pa)
+		{
+			if (m_cxt)
+			{
+				if (m_cxt->m_this)
+				{
+					m_cxt->m_this->DecRef();
+				}
+				if (m_cxt->m_parent)
+				{
+					m_cxt->m_parent->DecRef();
+				}
+				delete m_cxt;
+			}
+			m_cxt = new XObj_Context();
+			m_cxt->rt = rt;
+			m_cxt->m_parent = pa;
+			if (pa)
+			{
+				pa->IncRef();
+			}
+		}
+		XObj(const XObj& self)
+		{
+			if (self.m_cxt)
+			{
+				m_cxt = new XObj_Context;
+				m_cxt->rt = self.m_cxt->rt;
+				m_cxt->m_this = self.m_cxt->m_this;
+				if (m_cxt->m_this)
+				{
+					m_cxt->m_this->IncRef();
+				}
+				m_cxt->m_parent = self.m_cxt->m_parent;
+				if (m_cxt->m_parent)
+				{
+					m_cxt->m_parent->IncRef();
+				}
+			}
+		}
+		XObj_Context* GetContext() { return m_cxt; }
+		XObj& operator=(const XObj& o)
+		{
+			if (m_cxt)
+			{
+				if (m_cxt->m_this)
+				{
+					m_cxt->m_this->DecRef();
+				}
+				if (m_cxt->m_parent)
+				{
+					m_cxt->m_parent->DecRef();
+				}
+				delete m_cxt;
+			}
+			if (o.m_cxt)
+			{
+				m_cxt = new XObj_Context;
+				m_cxt->rt = o.m_cxt->rt;
+				m_cxt->m_this = o.m_cxt->m_this;
+				if (m_cxt->m_this)
+				{
+					m_cxt->m_this->IncRef();
+				}
+				m_cxt->m_parent = o.m_cxt->m_parent;
+				if (m_cxt->m_parent)
+				{
+					m_cxt->m_parent->IncRef();
+				}
+			}
+			return *this;
+		}
+		inline bool WithContext() { return m_cxt != nullptr; }
+		inline XObj* This() { return m_cxt->m_this; }
 		inline operator XObj*() const
 		{
-			if (m_p)
+			XObj* p = nullptr;
+			if (m_cxt)
 			{
-				m_p->IncRef();
+				if (m_cxt->m_this)
+				{
+					m_cxt->m_this->IncRef();
+					p = m_cxt->m_this;
+				}
 			}
-			return m_p;
+			return p;
 		}
-		virtual int IncRef() { return m_p ? m_p->IncRef() : 0; }
-		virtual int DecRef() { return m_p ? m_p->DecRef() : 0; }
-		virtual ObjType GetType() { return m_p ? m_p->GetType(): ObjType::Base; }
-		virtual std::string GetTypeString() { return m_p ? m_p->GetTypeString() : ""; }
-		virtual long long Size() { return m_p ? m_p->Size() : 0; }
-		virtual size_t Hash() { return m_p ? m_p->Hash() : 0; }
+		virtual int IncRef() { return m_cxt ? m_cxt->m_this->IncRef() : 0; }
+		virtual int DecRef() { return m_cxt ? m_cxt->m_this->DecRef() : 0; }
+		virtual ObjType GetType() { return m_cxt ? m_cxt->m_this->GetType(): ObjType::Base; }
+		virtual std::string GetTypeString() { return m_cxt ? m_cxt->m_this->GetTypeString() : ""; }
+		virtual long long Size() { return m_cxt ? m_cxt->m_this->Size() : 0; }
+		virtual size_t Hash() { return m_cxt ? m_cxt->m_this->Hash() : 0; }
 		virtual std::string ToString(bool WithFormat = false) 
 		{
-			return m_p ? m_p->ToString() : "";
+			return m_cxt ? m_cxt->m_this->ToString() : "";
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return m_p ? m_p->Call(rt, pContext,params, kwParams,retValue) : false;
+			return WithContext() ? This()->Call(rt, pContext, params, kwParams, retValue) : false;
 		}
 		virtual bool CallEx(XRuntime* rt, XObj* pContext,
 			ARGS& params,
@@ -76,7 +217,7 @@ namespace X
 			X::Value& trailer,
 			X::Value& retValue)
 		{
-			return m_p ? m_p->CallEx(rt, pContext, params, kwParams, trailer,retValue) : false;
+			return WithContext() ? This()->CallEx(rt, pContext, params, kwParams, trailer,retValue) : false;
 		}
 
 		virtual XObj& operator +=(Value& r)
@@ -99,30 +240,70 @@ namespace X
 		{
 			return 0;
 		}
-
+		//API Wrapper
+		inline XObj Member(XRuntime* rt,const char* name)
+		{
+			return XObj(g_pXHost->QueryMember(rt, m_cxt ? m_cxt->m_this : this, name))
+				.SetRT(rt).SetParent(m_cxt->m_this);
+		}
+		template<typename... VarList>
+		X::Value operator()(VarList... args)
+		{
+			const int size = sizeof...(args);
+			X::Value vals[size] = { args... };
+			X::ARGS params;
+			for (int i = 0; i < size; i++)
+			{
+				params.push_back(vals[i]);
+			}
+			X::KWARGS kwargs;
+			X::Value v0;
+			Call(m_cxt->rt,m_cxt->m_parent,params, kwargs,v0);
+			if (v0.IsObject())
+			{
+				v0.GetObj()->SetContext(m_cxt->rt, m_cxt->m_parent);
+			}
+			return v0;
+		}
+		inline X::Value operator()()
+		{
+			X::ARGS params;
+			X::KWARGS kwargs;
+			X::Value v0;
+			Call(m_cxt->rt, m_cxt->m_parent, params, kwargs, v0);
+			if (v0.IsObject())
+			{
+				v0.GetObj()->SetContext(m_cxt->rt, m_cxt->m_parent);
+			}
+			return v0;
+		}
+		inline XObj operator[](const char* key)
+		{
+			return Member(m_cxt->rt,key);
+		}
 	};
 	class XStr :
 		virtual public XObj
 	{
 	public:
 		Internal_Reserve(XStr)
-		XStr(const char* data, int size)
+		XStr(const char* data, int size):
+			XObj(g_pXHost->CreateStr(data, size))
 		{
-			m_p = g_pXHost->CreateStr(data, size);
 		}
-		virtual char* Buffer() { return m_p ? dynamic_cast<XStr*>(m_p)->Buffer() : nullptr; }
+		virtual char* Buffer() { return WithContext() ? dynamic_cast<XStr*>(This())->Buffer() : nullptr; }
 	};
 	class XDict :
 		virtual public XObj
 	{
 	public:
 		Internal_Reserve(XDict)
-		XDict()
+		XDict():
+			XObj(g_pXHost->CreateDict())
 		{
-			m_p = g_pXHost->CreateDict();
 		}
 		virtual void Set(X::Value& key, X::Value& val) {
-			if (m_p) dynamic_cast<XDict*>(m_p)->Set(key, val);
+			if (WithContext()) dynamic_cast<XDict*>(This())->Set(key, val);
 		}
 	};
 	class XBin :
@@ -130,16 +311,29 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XBin)
-		XBin(char* data, size_t size)
+		XBin(char* data, size_t size):
+			XObj(g_pXHost->CreateBin(data, size))
 		{
-			m_p = g_pXHost->CreateBin(data,size);
 		}
-		virtual char* Data() { return m_p ? dynamic_cast<XBin*>(m_p)->Data() : nullptr; }
+		virtual char* Data() { return WithContext() ? dynamic_cast<XBin*>(This())->Data() : nullptr; }
 	};
 	class XProp :
 		virtual public XObj
 	{
-	
+	protected:
+		virtual bool SetProp(XRuntime* rt0, XObj* pContext, Value& v) = 0;
+		virtual bool GetProp(XRuntime* rt0, XObj* pContext, Value& v) = 0;
+	public:
+		Value Get()
+		{
+			Value v0;
+			GetProp(m_cxt->rt, m_cxt->m_parent, v0);
+			return v0;
+		}
+		bool Set(Value& v)
+		{
+			SetProp(m_cxt->rt, m_cxt->m_parent, v);
+		}
 	};
 	class XEvent :
 		virtual public XObj

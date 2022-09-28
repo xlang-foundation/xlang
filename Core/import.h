@@ -265,6 +265,25 @@ public:
 	{
 		m_type = ObType::Import;
 	}
+	Import(const char* moduleName,
+		const char* from=nullptr, const char* thru=nullptr):
+		Operator()
+	{
+		m_type = ObType::Import;
+		if (moduleName)
+		{
+			std::string strModuleName = moduleName;
+			m_importInfos.push_back(ImportInfo{ ImportType::Builtin,strModuleName });
+		}
+		if (from)
+		{
+			m_path = from;
+		}
+		if (thru)
+		{
+			m_thruUrl = thru;
+		}
+	}
 	Import(short op) :
 		Operator(op)
 	{

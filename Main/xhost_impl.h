@@ -12,6 +12,7 @@ namespace X
 		virtual XStr* CreateStr(const char* data, int size) override;
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) override;
 		virtual bool RegisterPackage(const char* name, Value& objPackage) override;
+		virtual XObj* QueryMember(XRuntime* rt, XObj* pObj, const char* name) override;
 		virtual bool QueryPackage(XRuntime* rt, const char* name, Value& objPackage) override;
 		virtual XPackage* CreatePackage(void* pRealObj) override;
 		virtual XEvent* CreateXEvent(const char* name) override;
@@ -25,6 +26,8 @@ namespace X
 		virtual X::XLStream* CreateStream(const char* buf=nullptr, long long size=0) override;
 		virtual void ReleaseStream(X::XLStream* pStream) override;
 		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) override;
+		virtual bool ToBytes(X::Value& input, X::Value& output) override;
+		virtual bool FromBytes(X::Value& input, X::Value& output) override;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool RunCode(std::string& moduleName, std::string& code, X::Value& retVal) override;
@@ -34,6 +37,8 @@ namespace X
 		virtual void SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal) override;
 		virtual AppEventCode HandleAppEvent(int signum) override;
 		virtual bool Lrpc_Listen(int port, bool blockMode) override;
+		virtual bool Import(XRuntime* rt, const char* moduleName,
+			const char* from, const char* thru, X::Value& objPackage) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

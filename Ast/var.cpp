@@ -120,12 +120,14 @@ namespace AST
 			stream >> v0;
 			std::string varName = GetNameString();
 			Index = pCurScope->AddOrGet(varName, false);
+			rt->SetVarCount(pCurScope->GetVarNum());
 			pCurScope->Set(rt, pContext, Index, v0);
 		}
 		else
 		{
 			std::string varName = GetNameString();
 			Index = pCurScope->AddOrGet(varName, false);
+			rt->SetVarCount(pCurScope->GetVarNum());
 			bool bObjEmbedHere = false;
 			stream >> bObjEmbedHere;
 			if (bObjEmbedHere)
