@@ -18,6 +18,7 @@ namespace X
 		AST::StackFrame* m_stackFrame = nullptr;
 		std::string m_objName;
 		ROBJ_MEMBER_ID m_memmberId = -1;
+		bool m_KeepRawParams = false;
 	public:
 		RemoteObject(XProxy* p):
 			ObjRef(),XObj(),Scope(), Object()
@@ -66,11 +67,23 @@ namespace X
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
-			X::Value dummyTrailer;
-			return m_proxy->Call(rt,pContext,
-				m_remote_Parent_Obj_id,
-				m_remote_Obj_id, m_memmberId,
-				params, kwParams, dummyTrailer,retValue);
+			if (m_KeepRawParams && params.size() ==1 && kwParams.size() ==0)
+			{
+				ARGS params0;
+				KWARGS kwParams0;
+				return m_proxy->Call(rt, pContext,
+					m_remote_Parent_Obj_id,
+					m_remote_Obj_id, m_memmberId,
+					params0, kwParams0, params[0], retValue);
+			}
+			else
+			{
+				X::Value dummyTrailer;
+				return m_proxy->Call(rt, pContext,
+					m_remote_Parent_Obj_id,
+					m_remote_Obj_id, m_memmberId,
+					params, kwParams, dummyTrailer, retValue);
+			}
 		}
 		virtual bool CallEx(XRuntime* rt, XObj* pContext,
 			ARGS& params,
@@ -88,7 +101,8 @@ namespace X
 			int idx = Scope::AddOrGet(name, bGetOnly);
 			if (idx == (int)X::AST::ScopeVarIndex::INVALID)
 			{
-				auto memId = m_proxy->QueryMember(m_remote_Obj_id, name);
+				bool KeepRawParams = false;
+				auto memId = m_proxy->QueryMember(m_remote_Obj_id, name, KeepRawParams);
 				if (memId != -1)
 				{
 					auto objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId);
@@ -100,6 +114,7 @@ namespace X
 					r_obj->m_remote_Obj_id = objId;
 					r_obj->m_memmberId = memId;
 					r_obj->m_objName = name;
+					r_obj->m_KeepRawParams = KeepRawParams;
 					r_obj->IncRef();
 					Value valObj(dynamic_cast<XObj*>(r_obj));
 					m_stackFrame->Set(idx, valObj);

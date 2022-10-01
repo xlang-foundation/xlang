@@ -356,7 +356,7 @@ namespace X
 		virtual public XObj
 	{
 	public:
-		virtual int AddMethod(const char* name) = 0;
+		virtual int AddMethod(const char* name,bool keepRawParams =false) = 0;
 		virtual int QueryMethod(const char* name) = 0;
 
 		virtual void* GetEmbedObj() = 0;

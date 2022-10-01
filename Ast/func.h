@@ -293,7 +293,12 @@ public:
 	{
 		return m_func ? m_func(rt,
 			pContext==nullptr? m_pContext: pContext, 
-			params, kwParams, retValue) : false;
+			params, kwParams, retValue) : 
+			(
+				m_func_ex ? m_func_ex(rt,
+					pContext == nullptr ? m_pContext : pContext, params,
+					kwParams, params[0], retValue) : false
+			);
 	}
 };
 

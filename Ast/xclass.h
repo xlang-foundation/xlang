@@ -41,7 +41,19 @@ public:
 	{
 		return m_stackFrame;
 	}
-
+	virtual void AddAndSet(Runtime* rt, XObj* pContext, std::string& name, Value& v) override
+	{
+		int idx = AddOrGet(name, false);
+		if (idx >= 0)
+		{
+			int cnt = m_stackFrame->GetVarCount();
+			if (cnt <= idx)
+			{
+				m_stackFrame->SetVarCount(idx + 1);
+			}
+			Set(rt, pContext, idx, v);
+		}
+	}
 	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override;
 	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override;

@@ -1,6 +1,7 @@
 #include "RemoteObjectStub.h"
 #include "StubMgr.h"
 #include "bin.h"
+#include "package.h"
 
 namespace X
 {
@@ -99,10 +100,11 @@ namespace X
 		stream >> name;
 		pProc->NotifyBeforeCall(channel, stream);
 		auto pXObj = CovertIdToXObj(objId);
-		auto pXPack = dynamic_cast<X::XPackage*>(pXObj);
-		int memId = pXPack->QueryMethod(name.c_str());
+		auto pXPack = dynamic_cast<X::AST::Package*>(pXObj);
+		auto memberInfo = pXPack->QueryMethod(name);
 		pProc->NotifyAfterCall(channel, stream, true);
-		stream << memId;
+		stream << memberInfo.Index;
+		stream << memberInfo.KeepRawParams;
 		return true;
 	}
 

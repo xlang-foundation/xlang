@@ -206,12 +206,19 @@ public:
 		int idx = AddOrGet(name, false);
 		if (idx >= 0)
 		{
-			//changed
-			m_stackFrame->SetVarCount(GetVarNum());
+			int cnt = m_stackFrame->GetVarCount();
+			if (cnt <= idx)
+			{
+				m_stackFrame->SetVarCount(idx + 1);
+			}
 			Set(rt, pContext, idx, v);
 		}
 	}
 	// Inherited via Scope
+	virtual void AddAndSet(Runtime* rt, XObj* pContext, std::string& name, Value& v) override
+	{
+		Add(rt,name, pContext,v);
+	}
 	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		m_stackFrame->Set(idx, v);

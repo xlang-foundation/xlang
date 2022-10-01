@@ -89,6 +89,7 @@ namespace X
 			X::U_FUNC func;
 			X::U_FUNC func2;
 			X::U_FUNC_EX func_ex;
+			bool keepRawParams = false;
 		};
 		std::vector<MemberInfo> m_members;
 		std::vector<X::XEvent*> __events;
@@ -194,6 +195,20 @@ namespace X
 						(pThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
 						return true;
 					})});
+		}
+		template<typename F>
+		void AddRawParamFunc(const char* func_name, F f)
+		{
+			m_members.push_back(MemberInfo{
+				MemberType::FuncEx,func_name,nullptr,nullptr,
+				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
+					{
+						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+						auto* pThis = (T*)pPackage->GetEmbedObj();
+						(pThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
+						return true;
+					}),true});
 		}
 		template<typename F>
 		void AddVarFunc(const char* func_name, F f)
@@ -303,7 +318,7 @@ namespace X
 			pPackage->Init((int)m_members.size());
 			for (auto& m : m_members)
 			{
-				int idx = pPackage->AddMethod(m.name.c_str());
+				int idx = pPackage->AddMethod(m.name.c_str(),m.keepRawParams);
 				X::Value v0;
 				switch (m.type)
 				{

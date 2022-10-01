@@ -7,6 +7,12 @@ namespace X
 {
 namespace AST
 {
+	struct MemberInfo
+	{
+		std::string name;
+		int Index = -1;
+		bool KeepRawParams =false;//treat last parameter as bytes, don't do decoding
+	};
 class Package :
 	virtual public XPackage,
 	virtual public Data::Object,
@@ -14,6 +20,7 @@ class Package :
 {
 	void* m_pObject = nullptr;
 	StackFrame* m_stackFrame = nullptr;
+	std::vector<MemberInfo> m_memberInfos;
 public:
 	Package(void* pObj):
 		Data::Object(), Scope()
@@ -24,15 +31,34 @@ public:
 	~Package()
 	{
 	}
-	inline virtual int AddMethod(const char* name) override
+	inline virtual int AddMethod(const char* name, bool keepRawParams=false) override
 	{
 		std::string strName(name);
-		return Scope::AddOrGet(strName, false);
+		int idx =  Scope::AddOrGet(strName, false);
+		int size = (int)m_memberInfos.size();
+		if (size <= idx)
+		{
+			for (int i = size; i < idx; i++)
+			{
+				m_memberInfos.push_back({});
+			}
+			m_memberInfos.push_back({ name,idx,keepRawParams });
+		}
+		else
+		{
+			m_memberInfos[idx] = { name,idx,keepRawParams };
+		}
+		return idx;
 	}
 	inline virtual int QueryMethod(const char* name) override
 	{
 		std::string strName(name);
 		return Scope::AddOrGet(strName, true);
+	}
+	inline virtual MemberInfo QueryMethod(std::string name)
+	{
+		int idx =  Scope::AddOrGet(name, true);
+		return m_memberInfos[idx];
 	}
 
 	inline virtual AST::Scope* GetScope()

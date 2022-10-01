@@ -46,7 +46,8 @@ namespace X
 		FinishCall();
 		return oId;
 	}
-	X::ROBJ_MEMBER_ID XLangProxy::QueryMember(X::ROBJ_ID id, std::string& name)
+	X::ROBJ_MEMBER_ID XLangProxy::QueryMember(X::ROBJ_ID id, std::string& name,
+		bool& KeepRawParams)
 	{
 		if (!CheckConnectReadyStatus())
 		{
@@ -62,6 +63,7 @@ namespace X
 		if (bOK)
 		{
 			stream2 >> mId;
+			stream2 >> KeepRawParams;
 		}
 		FinishCall();
 		return mId;

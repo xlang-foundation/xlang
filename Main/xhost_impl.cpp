@@ -188,8 +188,11 @@ namespace X
 		}
 		Data::Binary* pBin = dynamic_cast<Data::Binary*>(input.GetObj());
 		X::BlockStream stream(pBin->Data(), pBin->Size(),false);
-		stream.ScopeSpace().SetContext((Runtime*)pBin->GetContext()->rt,
-			pBin->GetContext()->m_parent);
+		if (pBin->GetContext())
+		{
+			stream.ScopeSpace().SetContext((Runtime*)pBin->GetContext()->rt,
+				pBin->GetContext()->m_parent);
+		}
 		stream >> output;
 		return true;
 	}

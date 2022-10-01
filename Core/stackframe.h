@@ -50,6 +50,7 @@ public:
 		}
 		m_retVal = pFrom->m_retVal;
 	}
+	inline int GetVarCount() { return m_varCnt; }
 	inline bool SetVarCount(int cnt)
 	{//can be called multiple times,
 	//so need to check if m_Values is created

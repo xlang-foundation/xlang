@@ -81,6 +81,14 @@ public:
 		return ScopeWaitingStatus::NoWaiting;
 	};
 	virtual Scope* GetParentScope()= 0;
+	virtual void AddAndSet(Runtime* rt, XObj* pContext,std::string& name, Value& v)
+	{
+		int idx = AddOrGet(name, false);
+		if (idx >= 0)
+		{
+			rt->DynSet(this, pContext, idx, v);
+		}
+	}
 	virtual int AddOrGet(std::string& name, bool bGetOnly)
 	{//Always append,no remove, so new item's index is size of m_Vars;
 		//check extern map first,if it is extern var

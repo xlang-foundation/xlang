@@ -186,8 +186,8 @@ bool Expression::FromBytes(X::XLangStream& stream)
 	stream >> parentId;
 	stream >> scopeId;
 	//will look back to get the real addres
-	m_parent = (Expression*)parentId;
-	m_scope = (Scope*)scopeId;
+	m_parent = (Expression*)stream.ScopeSpace().Query(parentId);
+	m_scope = (Scope*)stream.ScopeSpace().Query(scopeId);
 
 	stream >> m_isLeftValue;
 	stream >> m_lineStart;

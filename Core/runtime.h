@@ -82,6 +82,15 @@ public:
 	{
 		return m_stackBottom;
 	}
+	inline virtual bool DynSet(AST::Scope* s, XObj* pContext, int idx, X::Value& v)
+	{
+		int cnt = m_stackBottom->GetVarCount();
+		if (cnt <= idx)
+		{
+			m_stackBottom->SetVarCount(idx + 1);
+		}
+		return Set(s, pContext, idx, v);
+	}
 	inline virtual bool Set(AST::Scope* s,XObj* pContext, int idx, X::Value& v)
 	{
 		bool bOK = false;

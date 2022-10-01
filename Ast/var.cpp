@@ -95,7 +95,11 @@ namespace AST
 			switch (st)
 			{
 			case ScopeType::Module:
-				pCurScope = dynamic_cast<Scope*>(new Module());
+			{
+				AST::Module* pModule = new AST::Module();
+				pModule->ScopeLayout();
+				pCurScope = dynamic_cast<Scope*>(pModule);
+			}
 				break;
 			case ScopeType::Class:
 				pCurScope = dynamic_cast<Scope*>(new XClass());
@@ -114,26 +118,21 @@ namespace AST
 		}
 		unsigned long long objid = 0;
 		stream >> objid;
+		std::string varName = GetNameString();
 		Value v0;
 		if (objid == 0)
 		{
 			stream >> v0;
-			std::string varName = GetNameString();
-			Index = pCurScope->AddOrGet(varName, false);
-			rt->SetVarCount(pCurScope->GetVarNum());
-			pCurScope->Set(rt, pContext, Index, v0);
+			pCurScope->AddAndSet(rt, pContext, varName, v0);
 		}
 		else
 		{
-			std::string varName = GetNameString();
-			Index = pCurScope->AddOrGet(varName, false);
-			rt->SetVarCount(pCurScope->GetVarNum());
 			bool bObjEmbedHere = false;
 			stream >> bObjEmbedHere;
 			if (bObjEmbedHere)
 			{
 				stream >> v0;
-				pCurScope->Set(rt, pContext, Index, v0);
+				pCurScope->AddAndSet(rt, pContext, varName, v0);
 			}
 		}
 		m_scope = pCurScope;
