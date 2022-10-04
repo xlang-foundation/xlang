@@ -96,6 +96,7 @@ namespace X
 		XPackage* m_xPack = nullptr;
 	public:
 		XPackage* GetPack() { return m_xPack; }
+		X::XEvent* GetEvent(int idx) { return __events[idx]; }
 		~XPackageAPISet()
 		{
 			if (m_xPack)
@@ -347,6 +348,7 @@ namespace X
 				{
 					auto* pEvtObj = X::g_pXHost->CreateXEvent(m.name.c_str());
 					v0 = dynamic_cast<X::XObj*>(pEvtObj);
+					__events.push_back(pEvtObj);
 				}
 				default:
 					break;

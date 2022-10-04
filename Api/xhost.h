@@ -37,7 +37,7 @@ namespace X
 		ARGS& params, KWARGS& kwParams, X::Value& trailer,Value& retValue)>;
 	using EventHandler = std::function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;
-
+	using OnEventHandlerChanged = std::function<void(bool AddOrRemove,int handlerCnt)>;
 	class XHost
 	{
 	public:

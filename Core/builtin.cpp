@@ -47,6 +47,16 @@ bool U_Print(X::XRuntime* rt,X::XObj* pContext,
 	retValue = X::Value(true);
 	return true;
 }
+bool U_Input(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	std::string in;
+	std::cin >> in;
+	retValue = X::Value(in);
+	return true;
+}
 bool U_Load(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -629,6 +639,7 @@ bool Builtin::RegisterInternals()
 
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params);
+	Register("input", (X::U_FUNC)U_Input, params);
 	Register("load", (X::U_FUNC)U_Load, params);
 	Register("run", (X::U_FUNC)U_Run, params);
 	Register("runcode", (X::U_FUNC)U_RunCode, params);

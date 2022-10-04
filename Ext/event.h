@@ -40,6 +40,7 @@ namespace X
 		Locker m_lockHandlers;
 		long m_lastCookie = 0;
 		std::vector<HandlerInfo> m_handlers;
+		OnEventHandlerChanged m_changeHandler =nullptr;
 	public:
 		inline void Fire(int evtIndex,X::ARGS& params, X::KWARGS& kwargs)
 		{
@@ -57,6 +58,10 @@ namespace X
 		Event(std::string& name) :Event()
 		{
 			m_name = name;
+		}
+		virtual void SetChangeHandler(OnEventHandlerChanged ch) override
+		{
+			m_changeHandler = ch;
 		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 		{
@@ -173,24 +178,37 @@ namespace X
 		}
 		inline long Add(EventHandler handler)
 		{
+			int cnt = 0;
 			int tid = (int)GetThreadID();
 			m_lockHandlers.Lock();
 			long cookie = ++m_lastCookie;
 			m_handlers.push_back(HandlerInfo{ handler,nullptr,tid,cookie });
+			cnt = (int)m_handlers.size();
 			m_lockHandlers.Unlock();
+			if (m_changeHandler)
+			{
+				m_changeHandler(true, cnt);
+			}
 			return cookie;
 		}
 		inline long Add(X::Data::Function* pFuncHandler)
 		{
+			int cnt = 0;
 			int tid = (int)GetThreadID();
 			m_lockHandlers.Lock();
 			long cookie = ++m_lastCookie;
 			m_handlers.push_back(HandlerInfo{ nullptr,pFuncHandler,tid,cookie });
+			cnt = (int)m_handlers.size();
 			m_lockHandlers.Unlock();
+			if (m_changeHandler)
+			{
+				m_changeHandler(true, cnt);
+			}
 			return cookie;
 		}
 		inline void Remove(long cookie)
 		{
+			int cnt = 0;
 			m_lockHandlers.Lock();
 			auto it = m_handlers.begin();
 			while (it != m_handlers.end())
@@ -205,7 +223,12 @@ namespace X
 					++it;
 				}
 			}
+			cnt = (int)m_handlers.size();
 			m_lockHandlers.Unlock();
+			if (m_changeHandler)
+			{
+				m_changeHandler(false, cnt);
+			}
 		}
 	};
 	class EventSystem :

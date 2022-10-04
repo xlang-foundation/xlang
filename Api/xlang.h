@@ -339,6 +339,7 @@ namespace X
 		virtual public XObj
 	{
 	public:
+		virtual void SetChangeHandler(OnEventHandlerChanged ch) = 0;
 		virtual void DoFire(XRuntime* rt, XObj* pContext, ARGS& params, KWARGS& kwargs) = 0;
 	};
 	class XFunc:
