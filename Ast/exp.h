@@ -83,8 +83,9 @@ public:
 			pRetExp = CreateByType(ty);
 			if (pRetExp)
 			{
-				pRetExp->FromBytes(stream);
+				//add it into map first, then child item can find parent
 				stream.ScopeSpace().Add(Id, pRetExp);
+				pRetExp->FromBytes(stream);
 			}
 		}
 		return pRetExp?dynamic_cast<T*>(pRetExp):nullptr;

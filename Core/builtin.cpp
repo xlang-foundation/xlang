@@ -193,6 +193,15 @@ bool U_ThreadId(X::XRuntime* rt, X::XObj* pContext,
 	retValue = X::Value(id);
 	return true;
 }
+bool U_ProcessId(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	long long id = GetPID();
+	retValue = X::Value(id);
+	return true;
+}
 bool U_Sleep(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -650,6 +659,7 @@ bool Builtin::RegisterInternals()
 	Register("breakpoint", (X::U_FUNC)U_BreakPoint, params);
 	Register("taskrun", (X::U_FUNC)U_TaskRun, params, true);
 	Register("threadid", (X::U_FUNC)U_ThreadId, params);
+	Register("pid", (X::U_FUNC)U_ProcessId, params);
 	Register("mainrun", (X::U_FUNC)U_RunInMain, params);
 	Register("on", (X::U_FUNC)U_OnEvent, params);
 	Register("fire", (X::U_FUNC)U_FireEvent, params);

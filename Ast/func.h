@@ -127,7 +127,15 @@ public:
 			}
 		}
 		Params = BuildFromStream<List>(stream);
+		if (Params)
+		{
+			Params->SetParent(this);
+		}
 		RetType = BuildFromStream<Expression>(stream);
+		if (RetType)
+		{
+			RetType->SetParent(this);
+		}
 
 		//decoding itself
 		stream >> m_Name.size;

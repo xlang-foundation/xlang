@@ -67,14 +67,20 @@ namespace X
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
-			if (m_KeepRawParams && params.size() ==1 && kwParams.size() ==0)
+			//if keep m_KeepRawParams is true, the last params
+			//as trailer
+			if (m_KeepRawParams && params.size() >0)
 			{
 				ARGS params0;
+				for (int i = 0; i < (params.size() - 1);i++)
+				{
+					params0.push_back(params[i]);
+				}
 				KWARGS kwParams0;
 				return m_proxy->Call(rt, pContext,
 					m_remote_Parent_Obj_id,
 					m_remote_Obj_id, m_memmberId,
-					params0, kwParams0, params[0], retValue);
+					params0, kwParams0, params[params.size() - 1], retValue);
 			}
 			else
 			{
