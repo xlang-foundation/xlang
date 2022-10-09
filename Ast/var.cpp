@@ -24,21 +24,28 @@ namespace AST
 			return;
 		}
 		ScopeType st = ScopeType::Module;
+		Scope* thisScope = m_scope;
 		//code scope ID for each Var
-		if (dynamic_cast<Module*>(m_scope))
+		//if this scope is a top module, code the scopeid as 0,
+		//then in decoding stage, will use top module to replace it
+		if (dynamic_cast<Module*>(thisScope))
 		{
 			st = ScopeType::Module;
+			if (thisScope->GetParentScope() == nullptr)
+			{
+				thisScope = nullptr;
+			}
 		}
-		else if(dynamic_cast<XClass*>(m_scope))
+		else if(dynamic_cast<XClass*>(thisScope))
 		{
 			st = ScopeType::Class;
 		}
-		else if (dynamic_cast<Func*>(m_scope))
+		else if (dynamic_cast<Func*>(thisScope))
 		{
 			st = ScopeType::Func;
 		}
 		stream << st;
-		stream << (unsigned long long)(void*)m_scope;
+		stream << (unsigned long long)(void*)thisScope;
 		unsigned long long id = 0;
 		bool isExternFunc = false;
 		if (v0.IsObject())
@@ -62,9 +69,13 @@ namespace AST
 			}
 		}
 		stream << id;// decoding stage, if Zero, treat as value not object
-		if (isExternFunc || (!v0.IsObject()))
+		stream << isExternFunc;
+		if (id ==0)
 		{
-			stream << v0;
+			if (!isExternFunc)
+			{
+				stream << v0;
+			}
 		}
 		else
 		{
@@ -96,9 +107,16 @@ namespace AST
 			{
 			case ScopeType::Module:
 			{
-				AST::Module* pModule = new AST::Module();
-				pModule->ScopeLayout();
-				pCurScope = dynamic_cast<Scope*>(pModule);
+				if (scopeId == 0)
+				{
+					pCurScope = dynamic_cast<Scope*>(rt->M());
+				}
+				else
+				{//todo: need to do more to recove sub-module
+					AST::Module* pModule = new AST::Module();
+					pModule->ScopeLayout();
+					pCurScope = dynamic_cast<Scope*>(pModule);
+				}
 			}
 				break;
 			case ScopeType::Class:
@@ -110,7 +128,10 @@ namespace AST
 			default:
 				break;
 			}
-			stream.ScopeSpace().Add(scopeId, pCurScope);
+			if (scopeId != 0)
+			{
+				stream.ScopeSpace().Add(scopeId, pCurScope);
+			}
 		}
 		else
 		{
@@ -118,12 +139,22 @@ namespace AST
 		}
 		unsigned long long objid = 0;
 		stream >> objid;
+		bool isExternFunc = false;
+		stream >> isExternFunc;
 		std::string varName = GetNameString();
 		Value v0;
 		if (objid == 0)
 		{
-			stream >> v0;
-			pCurScope->AddAndSet(rt, pContext, varName, v0);
+			if (isExternFunc)
+			{
+				m_scope = pCurScope;
+				ScopeLayout();//find the index
+			}
+			else
+			{
+				stream >> v0;
+				pCurScope->AddAndSet(rt, pContext, varName, v0);
+			}
 		}
 		else
 		{

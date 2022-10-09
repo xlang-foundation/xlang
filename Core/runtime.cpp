@@ -12,6 +12,12 @@ namespace X
 			delete m_pModule;
 		}
 		m_pModule = new AST::Module();
+		m_pModule->ScopeLayout();
+		AST::StackFrame* pModuleFrame = new AST::StackFrame(m_pModule);
+		pModuleFrame->SetLine(m_pModule->GetStartLine());
+		m_pModule->AddBuiltins(this);
+		PushFrame(pModuleFrame, m_pModule->GetVarNum());
+
 		return true;
 	}
 }
