@@ -190,6 +190,18 @@ namespace Data {
 		{
 			return true;
 		}
+		virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream)
+		{
+			AST::Expression exp;
+			exp.SaveToStream(rt, pContext, m_expr, stream);
+			return true;
+		}
+		virtual bool FromBytes(X::XLangStream& stream)
+		{
+			AST::Expression exp;
+			m_expr = exp.BuildFromStream<AST::Expression>(stream);
+			return true;
+		}
 	};
 	enum class MetaFuncType
 	{

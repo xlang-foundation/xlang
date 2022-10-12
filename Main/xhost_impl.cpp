@@ -13,6 +13,7 @@
 #include "remote_object.h"
 #include "msgthread.h"
 #include "import.h"
+#include "expr_scope.h"
 
 namespace X 
 {
@@ -302,6 +303,28 @@ namespace X
 		{
 			objPackage.GetObj()->SetContext(rt, nullptr);
 		}
+		return bOK;
+	}
+	bool XHost_Impl::RunExpression(XCustomScope* pScope, X::Value& expr, X::Value& result)
+	{
+		if (!expr.IsObject())
+		{
+			return false;
+		}
+		Data::Expr* pExprObj = dynamic_cast<Data::Expr*>(expr.GetObj());
+		if (pExprObj == nullptr)
+		{
+			return false;
+		}
+		AST::Expression* pExpr = pExprObj->Get();
+		if (pExpr == nullptr)
+		{
+			return false;
+		}
+		Data::ExpressionScope scope(pScope);
+		pExpr->SetScope(&scope);
+
+		bool bOK = pExpr->Run(nullptr, nullptr, result);
 		return bOK;
 	}
 }

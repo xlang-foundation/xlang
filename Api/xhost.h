@@ -19,6 +19,7 @@ namespace X
 	class XBin;
 	class XRemoteObject;
 	class XProxy;
+	class XCustomScope;
 	class XRuntime
 	{
 	public:
@@ -73,6 +74,7 @@ namespace X
 		virtual bool Lrpc_Listen(int port,bool blockMode = false) = 0;
 		virtual bool Import(XRuntime* rt,const char* moduleName, 
 					const char* from, const char* thru, X::Value& objPackage) = 0;
+		virtual bool RunExpression(XCustomScope* pScope,X::Value& expr, X::Value& result) = 0;
 	};
 	extern XHost* g_pXHost;
 }

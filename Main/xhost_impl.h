@@ -39,6 +39,7 @@ namespace X
 		virtual bool Lrpc_Listen(int port, bool blockMode) override;
 		virtual bool Import(XRuntime* rt, const char* moduleName,
 			const char* from, const char* thru, X::Value& objPackage) override;
+		virtual bool RunExpression(XCustomScope* pScope, X::Value& expr, X::Value& result) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

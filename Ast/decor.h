@@ -9,6 +9,7 @@ namespace X
 			virtual public UnaryOp
 		{
 			Expression* m_client = nullptr;
+			bool GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
 		public:
 			Decorator() :
 				Operator(),

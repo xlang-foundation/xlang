@@ -6,6 +6,23 @@ namespace X
 {
 	namespace AST
 	{
+		bool Decorator::GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
+		{
+			if (e->m_type != ObType::List)
+			{
+				params.push_back(Value(new Data::Expr(e)));
+			}
+			else
+			{
+				auto& list = (dynamic_cast<List*>(e))->GetList();
+				for (auto i : list)
+				{
+					params.push_back(Value(new Data::Expr(i)));
+				}
+			}
+			return true;
+		}
+
 		bool Decorator::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
 		{
 			if (pContext == nullptr)

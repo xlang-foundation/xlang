@@ -109,7 +109,10 @@ namespace AST
 			{
 				if (scopeId == 0)
 				{
-					pCurScope = dynamic_cast<Scope*>(rt->M());
+					if (rt)
+					{
+						pCurScope = dynamic_cast<Scope*>(rt->M());
+					}
 				}
 				else
 				{//todo: need to do more to recove sub-module
@@ -153,7 +156,10 @@ namespace AST
 			else
 			{
 				stream >> v0;
-				pCurScope->AddAndSet(rt, pContext, varName, v0);
+				if (pCurScope)
+				{
+					pCurScope->AddAndSet(rt, pContext, varName, v0);
+				}
 			}
 		}
 		else
@@ -163,7 +169,10 @@ namespace AST
 			if (bObjEmbedHere)
 			{
 				stream >> v0;
-				pCurScope->AddAndSet(rt, pContext, varName, v0);
+				if (pCurScope)
+				{
+					pCurScope->AddAndSet(rt, pContext, varName, v0);
+				}
 			}
 		}
 		m_scope = pCurScope;

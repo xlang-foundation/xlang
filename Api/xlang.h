@@ -353,6 +353,13 @@ namespace X
 	public:
 		virtual void SetObjID(void* id) = 0;
 	};
+	class XCustomScope
+	{
+	public:
+		virtual int Query(std::string& name) = 0;
+		virtual bool Get(int idx, X::Value& v) = 0;
+		virtual void Set(int idx, X::Value& v) = 0;
+	};
 	class XPackage:
 		virtual public XObj
 	{
