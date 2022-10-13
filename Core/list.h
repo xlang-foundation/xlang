@@ -43,7 +43,7 @@ public:
 	}
 };
 class List :
-	public virtual Object
+	virtual public Object
 {
 	friend class ListScope;
 protected:

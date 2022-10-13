@@ -305,6 +305,11 @@ namespace X
 		virtual void Set(X::Value& key, X::Value& val) {
 			if (WithContext()) dynamic_cast<XDict*>(This())->Set(key, val);
 		}
+		inline void Set(const char* key, X::Value val)
+		{
+			X::Value k(key);
+			Set(k,val);
+		}
 	};
 	class XBin :
 		virtual public XObj

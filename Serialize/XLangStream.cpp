@@ -3,6 +3,7 @@
 #include "object.h"
 #include "str.h"
 #include "list.h"
+#include "dict.h"
 #include "bin.h"
 #include "function.h"
 
@@ -260,7 +261,7 @@ namespace X
 	{
 		return m_pProvider ? m_pProvider->MoveToNextBlock() : false;
 	}
-	XLangStream& XLangStream::operator<<(X::Value& v)
+	XLangStream& XLangStream::operator<<(X::Value v)
 	{
 		auto t = v.GetType();
 		(*this) << (char)t;
@@ -353,6 +354,7 @@ namespace X
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::List());
 				break;
 			case X::ObjType::Dict:
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Dict());
 				break;
 			case X::ObjType::TableRow:
 				break;

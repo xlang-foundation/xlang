@@ -125,7 +125,7 @@ namespace X
             append((char*)str, size);
             return *this;
         }
-        XLangStream& operator<<(X::Value& v);
+        XLangStream& operator<<(X::Value v);
         XLangStream& operator>>(X::Value& v);
         template<typename T>
         XLangStream& operator>>(T& v)

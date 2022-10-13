@@ -51,6 +51,7 @@ namespace X
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;
 		virtual XDict* CreateDict() = 0;
+		virtual XObj* CreateList() = 0;
 		virtual XPackage* CreatePackage(void* pRealObj) = 0;
 		virtual XEvent* CreateXEvent(const char* name) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func,X::XObj* pContext=nullptr) = 0;

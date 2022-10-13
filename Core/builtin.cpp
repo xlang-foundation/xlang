@@ -44,7 +44,6 @@ bool U_Print(X::XRuntime* rt,X::XObj* pContext,
 	}
 	std::cout << std::endl;
 	_printLock.Unlock();
-	retValue = X::Value(true);
 	return true;
 }
 bool U_Input(X::XRuntime* rt, X::XObj* pContext,

@@ -21,7 +21,7 @@
       "args_json": [ "C:\\Dev\\X\\test\\simple_test.json" ],
       "args9": [ "C:\\Dev\\X\\test\\test.json" ],
       "args4": [ "C:\\Dev\\Cantor\\test\\xlang\\cantor_client_test.x" ],
-      "args--": [ "-event_loop", "-dbg", "-enable_python" ],
+      "args_s": [ "-event_loop", "-dbg", "-enable_python" ],
       "args": [ "-cli"],
       "argsaa": [ "C:\\Dev\\X\\test\\remote_test.x" ],
       "args_xx": [ "C:\\Dev\\X\\test\\func_to_bytes.x" ],

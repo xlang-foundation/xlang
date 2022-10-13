@@ -6,6 +6,7 @@
 #include "prop.h"
 #include "package.h"
 #include "dict.h"
+#include "list.h"
 #include "bin.h"
 #include "BlockStream.h"
 #include "Hosting.h"
@@ -129,6 +130,12 @@ namespace X
 	XObj* XHost_Impl::ConvertObjFromPointer(void* pObjectPtr)
 	{
 		return (XObj*)(X::Data::Object*)(pObjectPtr);
+	}
+	XObj* XHost_Impl::CreateList()
+	{
+		auto* pList = new X::Data::List();
+		pList->AddRef();
+		return pList;
 	}
 	XDict* XHost_Impl::CreateDict()
 	{
