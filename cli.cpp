@@ -13,13 +13,20 @@ namespace X
 		{
 			std::string input;
 			std::getline(std::cin, input);
+			if (input == "!quit")
+			{
+				break;
+			}
 			X::Value retValue;
 			bool bOK = host->RunCodeLine(input, retValue);
 			if (!bOK)
 			{
 
 			}
-			std::cout << retValue.ToString() << std::endl;
+			if (retValue.IsValid())
+			{
+				std::cout << retValue.ToString() << std::endl;
+			}
 			std::cout << prompt;
 		}
 	}
