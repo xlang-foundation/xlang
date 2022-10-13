@@ -150,10 +150,9 @@ public:
 		return m_scope;
 	}
 	Scope* FindScope();
-	void SetScope(Scope* p)
+	virtual void SetScope(Scope* p)
 	{
 		m_scope = p;
-		ScopeLayout();
 	}
 	void SetParent(Expression* p)
 	{

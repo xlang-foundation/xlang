@@ -355,7 +355,17 @@ namespace X
 	};
 	class XCustomScope
 	{
+		void* m_embedScope = nullptr;
 	public:
+		~XCustomScope()
+		{
+			if (m_embedScope)
+			{
+				g_pXHost->DeleteScopeWrapper(this);
+			}
+		}
+		void SetScope(void* p) { m_embedScope = p; }
+		void* GetScope() { return m_embedScope; }
 		virtual int Query(std::string& name) = 0;
 		virtual bool Get(int idx, X::Value& v) = 0;
 		virtual void Set(int idx, X::Value& v) = 0;

@@ -74,7 +74,10 @@ namespace X
 		virtual bool Lrpc_Listen(int port,bool blockMode = false) = 0;
 		virtual bool Import(XRuntime* rt,const char* moduleName, 
 					const char* from, const char* thru, X::Value& objPackage) = 0;
-		virtual bool RunExpression(XCustomScope* pScope,X::Value& expr, X::Value& result) = 0;
+		virtual bool CreateScopeWrapper(XCustomScope* pScope) = 0;
+		virtual bool DeleteScopeWrapper(XCustomScope* pScope) = 0;
+		virtual bool SetExpressionScope(XCustomScope* pScope, X::Value& expr) = 0;
+		virtual bool RunExpression(X::Value& expr, X::Value& result) = 0;
 	};
 	extern XHost* g_pXHost;
 }

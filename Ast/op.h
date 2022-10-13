@@ -85,7 +85,12 @@ public:
 		R = BuildFromStream<Expression>(stream);
 		return true;
 	}
-
+	virtual void SetScope(Scope* p) override
+	{
+		Expression::SetScope(p);
+		if (L) L->SetScope(p);
+		if (R) R->SetScope(p);
+	}
 	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
@@ -285,6 +290,11 @@ public:
 		SaveToStream(rt, pContext,R, stream);
 		stream << NeedParam;
 		return true;
+	}
+	virtual void SetScope(Scope* p) override
+	{
+		Expression::SetScope(p);
+		if (R) R->SetScope(p);
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override
 	{

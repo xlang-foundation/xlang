@@ -33,6 +33,11 @@ public:
 	}
 	void EncodeExtern(Runtime* rt, XObj* pContext, X::XLangStream& stream);
 	void DecodeExtern(Runtime* rt, XObj* pContext, X::XLangStream& stream);
+	virtual void SetScope(Scope* p) override
+	{
+		Expression::SetScope(p);
+		Index = -1;
+	}
 	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream);
 	virtual bool FromBytes(X::XLangStream& stream);
 	void ScopeLayout(std::vector<Scope*>& candidates);

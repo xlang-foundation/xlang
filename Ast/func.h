@@ -39,6 +39,12 @@ protected:
 		ReCalcHint(n);
 	}
 	virtual void ScopeLayout() override;
+	virtual void SetScope(Scope* p) override
+	{
+		Expression::SetScope(p);
+		if (Params) Params->SetScope(p);
+		if (RetType) RetType->SetScope(p);
+	}
 	virtual void SetParams(List* p)
 	{
 		if (m_needSetHint)

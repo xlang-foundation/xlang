@@ -305,7 +305,22 @@ namespace X
 		}
 		return bOK;
 	}
-	bool XHost_Impl::RunExpression(XCustomScope* pScope, X::Value& expr, X::Value& result)
+	bool XHost_Impl::CreateScopeWrapper(XCustomScope* pScope)
+	{
+		Data::ExpressionScope* pExprScope = new Data::ExpressionScope(pScope);
+		pScope->SetScope((void*)pExprScope);
+		return true;
+	}
+	bool XHost_Impl::DeleteScopeWrapper(XCustomScope* pScope)
+	{
+		Data::ExpressionScope* pExprScope = (Data::ExpressionScope*)pScope->GetScope();
+		if (pExprScope)
+		{
+			delete pExprScope;
+		}
+		return true;
+	}
+	bool XHost_Impl::SetExpressionScope(XCustomScope* pScope, X::Value& expr)
 	{
 		if (!expr.IsObject())
 		{
@@ -321,9 +336,26 @@ namespace X
 		{
 			return false;
 		}
-		Data::ExpressionScope scope(pScope);
-		pExpr->SetScope(&scope);
-
+		Data::ExpressionScope* pExprScope = (Data::ExpressionScope*)pScope->GetScope();
+		pExpr->SetScope(pExprScope);
+		return true;
+	}
+	bool XHost_Impl::RunExpression(X::Value& expr, X::Value& result)
+	{
+		if (!expr.IsObject())
+		{
+			return false;
+		}
+		Data::Expr* pExprObj = dynamic_cast<Data::Expr*>(expr.GetObj());
+		if (pExprObj == nullptr)
+		{
+			return false;
+		}
+		AST::Expression* pExpr = pExprObj->Get();
+		if (pExpr == nullptr)
+		{
+			return false;
+		}
 		bool bOK = pExpr->Run(nullptr, nullptr, result);
 		return bOK;
 	}
