@@ -175,9 +175,12 @@ public:
 		m_lockCommands.Unlock();
 		return bRet;
 	}
-	inline void SetCode(char* code, int size)
+	inline char* SetCode(char* code, int size)
 	{
-		m_code = code;
+		int pos = (int)m_code.size();
+		m_code += code;
+		char* szCode = (char*)m_code.c_str();
+		return  szCode + pos;
 	}
 	std::string& GetCode() { return m_code; }
 	~Module()

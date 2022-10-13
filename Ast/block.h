@@ -107,6 +107,7 @@ public:
 	inline Indent GetChildIndentCount() { return ChildIndentCount; }
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
+	bool RunLast(XRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr);
 	virtual bool Run(XRuntime* rt,XObj* pContext, Value& v, LValue* lValue = nullptr);
 };
 class For :

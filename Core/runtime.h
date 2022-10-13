@@ -61,6 +61,13 @@ public:
 	}
 	inline void SetM(AST::Module* m) { m_pModule = m; }
 	inline AST::Module* M() { return m_pModule; }
+	inline void AdjustStack(int varNum)
+	{
+		if (m_stackBottom)
+		{
+			m_stackBottom->SetVarCount(varNum);
+		}
+	}
 	inline void PushFrame(AST::StackFrame* frame,int varNum)
 	{
 		frame->SetVarCount(varNum);

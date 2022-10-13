@@ -92,6 +92,21 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 	}
 	return bOk;
 }
+bool Block::RunLast(XRuntime* rt0, XObj* pContext, Value& v, LValue* lValue)
+{
+	if (Body.size() == 0)
+	{
+		return false;
+	}
+	auto last = Body[Body.size() - 1];
+	Value v0;
+	bool bOk = last->Run((Runtime*)rt0, pContext, v0);
+	if (bOk)
+	{
+		v = v0;
+	}
+	return bOk;
+}
 bool While::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	if (R == nil)

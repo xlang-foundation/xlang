@@ -83,7 +83,7 @@ public:
 	Parser();
 	~Parser();
 	bool Init(OpRegistry* reg = nullptr);
-	bool Compile(char* code, int size);
+	bool Compile(AST::Module* pModule,char* code, int size);
 	AST::Module* GetModule();
 };
 }

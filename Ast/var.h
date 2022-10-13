@@ -57,8 +57,10 @@ public:
 		std::vector<Scope*>& callables) override;
 	inline virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
-		if (Index == -1 || m_scope == nullptr)
-		{
+		if (Index == -1 || m_scope == nullptr || rt == nullptr)
+		{//case 1:RunExpression in XHost will call with rt is null,
+		//in this case, always search Index from scope
+		//because this scope may changed from caller side
 			ScopeLayout();
 			if (Index == -1 || m_scope == nullptr)
 			{//treat as string

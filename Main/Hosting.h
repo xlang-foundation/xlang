@@ -9,6 +9,11 @@ namespace X
 	class Hosting:
 		public Singleton<Hosting>
 	{
+		//use to run code line for interactive mode
+		AST::Module* m_pInteractiveModule = nullptr;
+		Runtime* m_pInteractiveRuntime = nullptr;
+		AST::StackFrame* m_pInteractiveStackFrame = nullptr;
+
 		std::vector<AST::Module*> m_Modules;
 		std::unordered_map<unsigned long long, AST::Module*> m_ModuleMap;
 		Locker m_lock;
@@ -62,6 +67,7 @@ namespace X
 		AST::Module* Load(std::string& moduleName,
 			const char* code, int size,unsigned long long& moduleKey);
 		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,X::Value& retVal);
+		bool RunCodeLine(const char* code, int size, X::Value& retVal);
 		bool Unload(AST::Module* pTopModule);
 		bool Run(AST::Module* pTopModule,X::Value& retVal,
 			bool stopOnEntry = false);

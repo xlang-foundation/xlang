@@ -333,17 +333,14 @@ AST::Operator* Parser::PairLeft(short opIndex)
 	}
 }
 
-bool Parser::Compile(char* code, int size)
+bool Parser::Compile(AST::Module* pModule,char* code, int size)
 {
-	//prepare top module for this code
-	AST::Module* pTopModule = new AST::Module();
-	pTopModule->SetCode(code, size);
+	char* szCode = pModule->SetCode(code, size);
 	//keep memory to ref in AST tree
-	mToken->SetStream((char*)pTopModule->GetCode().c_str(), size);
+	mToken->SetStream(szCode, size);
 	//mToken->Test();
 	reset_preceding_token();
-	pTopModule->ScopeLayout();
-	BlockState* pBlockState = new BlockState(pTopModule);
+	BlockState* pBlockState = new BlockState(pModule);
 	m_stackBlocks.push(pBlockState);
 	m_curBlkState = pBlockState;
 	while (true)

@@ -5,6 +5,8 @@
 #include <string>
 #include "X.h"
 #include "xload.h"
+#include "cli.h"
+
 #if (WIN32)
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
@@ -17,6 +19,7 @@ struct ParamConfig
 {
 	X::Config config;
 	bool print_usage = false;//-help |-? |-h
+	bool cli = false;
 };
 
 X::XLoad g_xLoad;
@@ -37,6 +40,7 @@ void PrintUsage()
 "xlang [-dbg] [-enable_python|-python] \n\
       [-run_as_backend|-backend] [-event_loop]\n\
       [-c \"code,use \\n as line separator\"]\n\
+      [-cli]\n\
       [file parameters]" << std::endl;
 	std::cout << "xlang -help | -? | -h for help" << std::endl;
 }
@@ -79,7 +83,7 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 				paramCfg.print_usage = true;
 				i++;
 			}
-			else if (s.find("-c")==0)
+			else if (s.find("-c ")==0)
 			{//pass code as string
 				paramCfg.config.inlineCode = params[i].substr(2);
 				i++;
@@ -87,6 +91,11 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 			else if (s == "-dbg")
 			{
 				paramCfg.config.dbg = true;
+				i++;
+			}
+			else if (s == "-cli")
+			{
+				paramCfg.cli = true;
 				i++;
 			}
 			else if (s == "-enable_python" || s == "-python")
@@ -137,6 +146,11 @@ int main(int argc, char* argv[])
 	if (retCode == 0)
 	{
 		retCode = g_xLoad.Run();
+		if (paramConfig.cli)
+		{
+			X::CLI cli;
+			cli.MainLoop();
+		}
 		g_xLoad.Unload();
 	}
 	return retCode;

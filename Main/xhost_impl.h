@@ -31,6 +31,7 @@ namespace X
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool RunCode(std::string& moduleName, std::string& code, X::Value& retVal) override;
+		virtual bool RunCodeLine(std::string& codeLine, X::Value& retVal) override;
 		virtual long OnEvent(const char* evtName, EventHandler handler) override;
 		virtual void OffEvent(const char* evtName, long Cookie) override;
 		virtual Value GetAttr(const X::Value& v, const char* attrName) override;

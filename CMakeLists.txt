@@ -8,7 +8,7 @@ project ("xlang")
 include_directories("Api")
 
 FILE(GLOB Api_SRC "Api/*.cpp")
-FILE(GLOB AppEntry_SRC "X.cpp")
+FILE(GLOB AppEntry_SRC "X.cpp" "cli.cpp")
 
 
 add_executable (${PROJECT_NAME}

@@ -1,0 +1,26 @@
+#include "cli.h"
+#include <string>
+#include "xhost.h"
+
+namespace X
+{
+	void CLI::MainLoop()
+	{
+		auto host = X::g_pXHost;
+		std::string prompt = ">>> ";
+		std::cout << prompt;
+		while (m_run)
+		{
+			std::string input;
+			std::getline(std::cin, input);
+			X::Value retValue;
+			bool bOK = host->RunCodeLine(input, retValue);
+			if (!bOK)
+			{
+
+			}
+			std::cout << retValue.ToString() << std::endl;
+			std::cout << prompt;
+		}
+	}
+}

@@ -89,8 +89,10 @@ namespace X
 		{
 			return nullptr;
 		}
-		parser.Compile((char*)code, size);
-		AST::Module* pTopModule = parser.GetModule();
+		//prepare top module for this code
+		AST::Module* pTopModule = new AST::Module();
+		pTopModule->ScopeLayout();
+		parser.Compile(pTopModule,(char*)code, size);
 		pTopModule->SetModuleName(moduleName);
 		moduleKey = AddModule(pTopModule);
 		return pTopModule;
@@ -131,6 +133,41 @@ namespace X
 		}
 		delete pModuleFrame;
 		delete pRuntime;
+		return bOK;
+	}
+	/*
+		keep a module to run lines from interactive mode
+		such as commmand line input
+	*/
+	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal)
+	{
+		if (m_pInteractiveModule == nullptr)
+		{
+			auto* pTopModule = new AST::Module();
+			pTopModule->ScopeLayout();
+			Runtime* pRuntime = new Runtime();
+			pRuntime->SetM(pTopModule);
+			AST::StackFrame* pModuleFrame = new AST::StackFrame(pTopModule);
+			pModuleFrame->SetLine(pTopModule->GetStartLine());
+			pTopModule->AddBuiltins(pRuntime);
+			pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+			m_pInteractiveModule = pTopModule;
+			m_pInteractiveRuntime = pRuntime;
+			m_pInteractiveStackFrame = pModuleFrame;
+		}
+		Parser parser;
+		if (!parser.Init())
+		{
+			return false;
+		}
+		bool bOK = parser.Compile(m_pInteractiveModule, (char*)code, size);
+		if (!bOK)
+		{
+			//todo:syntax error
+			return false;
+		}
+		m_pInteractiveRuntime->AdjustStack(m_pInteractiveModule->GetVarNum());
+		bOK = m_pInteractiveModule->RunLast(m_pInteractiveRuntime, nullptr, retVal);
 		return bOK;
 	}
 	bool Hosting::Run(std::string& moduleName,
