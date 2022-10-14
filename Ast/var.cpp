@@ -190,7 +190,10 @@ namespace AST
 			ScopeLayout();
 		}
 		stream << Index;
-		bool isExtern = m_scope != stream.ScopeSpace().GetCurrentScope();
+		//if Index is still -1, this case
+		//will happen in decor function
+		//just treat as local var
+		bool isExtern = (Index !=-1) && (m_scope != stream.ScopeSpace().GetCurrentScope());
 		stream << isExtern;
 		//check the value if it is external
 		if (isExtern)

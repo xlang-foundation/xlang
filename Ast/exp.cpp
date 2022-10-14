@@ -180,7 +180,7 @@ bool Expression::ToBytes(Runtime* rt, XObj* pContext,X::XLangStream& stream)
 }
 bool Expression::FromBytes(X::XLangStream& stream)
 {
-	//m_type already loadd in callee
+	//m_type already loaded in callee
 	ExpId parentId = 0;
 	ExpId scopeId = 0;
 	stream >> parentId;
