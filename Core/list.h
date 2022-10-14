@@ -144,6 +144,19 @@ public:
 			}
 		}
 	}
+	virtual XObj* Clone() override
+	{
+		auto* newList = new List();
+		newList->IncRef();
+		auto size = Size();
+		for (long long i = 0; i < size; i++)
+		{
+			Value v;
+			Get(i, v);
+			newList->Add(v);
+		}
+		return newList;
+	}
 	virtual List& operator +=(X::Value& r) override
 	{
 		AutoLock(m_lock);
@@ -243,6 +256,11 @@ public:
 		AutoLock(m_lock);
 		m_useLValue = true;
 		m_ptrs.push_back(p);
+	}
+	inline void Add(X::Value v)
+	{
+		AutoLock(m_lock);
+		m_data.push_back(v);
 	}
 	inline void MakeCommonBases(
 		AST::Expression* pThisBase,

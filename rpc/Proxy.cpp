@@ -2,7 +2,6 @@
 #include "sm_buffer.h"
 #include "wait.h"
 #include "utility.h"
-#include <time.h>
 #include <iostream>
 #include "port.h"
 #include "manager.h"
@@ -172,7 +171,10 @@ namespace X
 		//Deliver the last block
 		head.payloadType = PayloadType::SendLast;
 		head.size = mStream1.Size();
-		head.blockSize = mStream1.GetPos().offset;
+		//use SwapBuffer is shared memory buffer,
+		//we assume it is not too big more then 2G
+		//so keep as one block with blockSize
+		head.blockSize = (unsigned int)mStream1.GetPos().offset;
 		mSMSwapBuffer1->EndWrite();//Notify another side
 		//Fetch Result
 		mStream1.ReInit();
@@ -214,7 +216,10 @@ namespace X
 		//Deliver the last block
 		head.payloadType = PayloadType::SendLast;
 		head.size = mStream2.Size();
-		head.blockSize = mStream2.GetPos().offset;
+		//use SwapBuffer is shared memory buffer,
+		//we assume it is not too big more then 2G
+		//so keep as one block with blockSize
+		head.blockSize = (unsigned int)mStream2.GetPos().offset;
 		mSMSwapBuffer2->EndWrite();//Notify another side
 		//Fetch Result
 		mStream2.ReInit();
@@ -311,9 +316,8 @@ namespace X
 	{
 		int timeoutMS = -1;
 
-		srand(time(nullptr));
 		unsigned long pid = GetPID();
-		unsigned long long shmKey = rand();
+		unsigned long long shmKey = rand64();
 		shmKey <<= 32;
 		shmKey |= pid;
 

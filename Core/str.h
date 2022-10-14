@@ -38,6 +38,12 @@ namespace Data
 			m_t = ObjType::Str;
 			m_s = std::string(s, size);
 		}
+		virtual XObj* Clone() override
+		{
+			auto* newObj =  new Str(m_s);
+			newObj->IncRef();
+			return newObj;
+		}
 		virtual char* Buffer() override { return (char*)m_s.c_str(); }
 		virtual AST::Scope* GetScope();
 		virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override

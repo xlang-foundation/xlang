@@ -165,7 +165,10 @@ namespace X
 			//Deliver the last block
 			head.payloadType = PayloadType::SendLast;
 			head.size = stream.Size();
-			head.blockSize = stream.GetPos().offset;
+			//use SwapBuffer is shared memory buffer,
+			//we assume it is not too big more then 2G
+			//so keep as one block with blockSize
+			head.blockSize = (unsigned int)stream.GetPos().offset;
 		}
 		pSMSwapBuffer->EndWrite();//Notify another side
 	}

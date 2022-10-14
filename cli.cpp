@@ -13,6 +13,17 @@ namespace X
 		{
 			std::string input;
 			std::getline(std::cin, input);
+			if (input == "!code")
+			{
+				std::string code;
+				bool bOK = host->GetInteractiveCode(code);
+				if (bOK)
+				{
+					std::cout << code<<std::endl;
+				}
+				std::cout << prompt;
+				continue;
+			}
 			if (input == "!quit")
 			{
 				break;

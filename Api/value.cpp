@@ -19,12 +19,10 @@ namespace X
 	{
 		if (t == ValueType::Object)
 		{
-			if (x.obj && x.obj->GetType() == ObjType::Str)
+			if (x.obj)
 			{
-				std::string oldStr = x.obj->ToString();
-				auto newObj = g_pXHost->CreateStr(oldStr.c_str(), (int)oldStr.size());
 				x.obj->DecRef();
-				x.obj = newObj;
+				x.obj = x.obj->Clone();
 			}
 		}
 		return true;

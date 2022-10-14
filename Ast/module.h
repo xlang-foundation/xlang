@@ -76,6 +76,10 @@ public:
 		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
 	}
+	StackFrame* GetStack()
+	{
+		return m_stackFrame;
+	}
 	void GetSearchPaths(std::vector<std::string>& searchPaths)
 	{
 		m_lockSearchPath.Lock();
@@ -178,6 +182,11 @@ public:
 	inline char* SetCode(char* code, int size)
 	{
 		int pos = (int)m_code.size();
+		if (pos > 0)
+		{
+			m_code += "\n";
+			pos++;//skip the new added char
+		}
 		m_code += code;
 		char* szCode = (char*)m_code.c_str();
 		return  szCode + pos;

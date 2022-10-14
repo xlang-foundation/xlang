@@ -181,6 +181,7 @@ namespace X
 		}
 		inline bool WithContext() { return m_cxt != nullptr; }
 		inline XObj* This() { return m_cxt->m_this; }
+		virtual XObj* Clone() { return m_cxt ? m_cxt->m_this->Clone(): nullptr; }
 		inline operator XObj*() const
 		{
 			XObj* p = nullptr;

@@ -46,6 +46,10 @@ namespace Data {
 			AutoLock(m_lock);
 			return ObjRef::AddRef();
 		}
+		virtual XObj* Clone() override
+		{
+			return nullptr;
+		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases){}
 		AttributeBag* GetAttrBag();
 		void DeleteAttrBag();

@@ -238,6 +238,11 @@ namespace X
 	{
 		return X::Hosting::I().RunCodeLine(codeLine.c_str(), (int)codeLine.size(), retVal);
 	}
+	bool XHost_Impl::GetInteractiveCode(std::string& code)
+	{
+		return X::Hosting::I().GetInteractiveCode(code);
+	}
+
 	long XHost_Impl::OnEvent(const char* evtName, EventHandler handler)
 	{
 		auto* pEvt = X::EventSystem::I().Query(evtName);

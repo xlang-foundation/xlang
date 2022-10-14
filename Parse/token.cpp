@@ -38,7 +38,7 @@ void Token::token_out(short idx,int offset,bool callReset)
 		return;
 	}
 	OneToken one;
-	one.charStart = _context.token_start - _context.src_code;
+	one.charStart = int(_context.token_start - _context.src_code);
 	one.charEnd = one.charStart + size;
 	one.id.s = _context.token_start;
 	one.id.size = size;

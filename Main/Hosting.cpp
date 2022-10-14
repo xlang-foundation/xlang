@@ -115,7 +115,7 @@ namespace X
 				AST::dbg::Step);
 		}
 
-		AST::StackFrame* pModuleFrame = new AST::StackFrame(pTopModule);
+		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 		pModuleFrame->SetLine(pTopModule->GetStartLine());
 		pTopModule->AddBuiltins(pRuntime);
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
@@ -131,7 +131,6 @@ namespace X
 		{
 			retVal = v;
 		}
-		delete pModuleFrame;
 		delete pRuntime;
 		return bOK;
 	}
@@ -147,13 +146,12 @@ namespace X
 			pTopModule->ScopeLayout();
 			Runtime* pRuntime = new Runtime();
 			pRuntime->SetM(pTopModule);
-			AST::StackFrame* pModuleFrame = new AST::StackFrame(pTopModule);
+			AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 			pModuleFrame->SetLine(pTopModule->GetStartLine());
 			pTopModule->AddBuiltins(pRuntime);
 			pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
 			m_pInteractiveModule = pTopModule;
 			m_pInteractiveRuntime = pRuntime;
-			m_pInteractiveStackFrame = pModuleFrame;
 		}
 		Parser parser;
 		if (!parser.Init())
@@ -169,6 +167,14 @@ namespace X
 		m_pInteractiveRuntime->AdjustStack(m_pInteractiveModule->GetVarNum());
 		bOK = m_pInteractiveModule->RunLast(m_pInteractiveRuntime, nullptr, retVal);
 		return bOK;
+	}
+	bool Hosting::GetInteractiveCode(std::string& code)
+	{
+		if (m_pInteractiveModule)
+		{
+			code = m_pInteractiveModule->GetCode();
+		}
+		return (m_pInteractiveModule !=nullptr);
 	}
 	bool Hosting::Run(std::string& moduleName,
 		const char* code, int size, X::Value& retVal)

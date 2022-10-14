@@ -68,6 +68,7 @@ namespace X
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
 		virtual bool RunCode(std::string& moduleName, std::string& code, X::Value& retVal) = 0;
 		virtual bool RunCodeLine(std::string& codeLine, X::Value& retVal) = 0;
+		virtual bool GetInteractiveCode(std::string& code) = 0;
 		virtual long OnEvent(const char* evtName, EventHandler handler) = 0;
 		virtual void OffEvent(const char* evtName, long Cookie) = 0;
 		virtual Value GetAttr(const X::Value& v, const char* attrName) = 0;
