@@ -63,9 +63,8 @@ public:
 		//because this scope may changed from caller side
 			ScopeLayout();
 			if (Index == -1 || m_scope == nullptr)
-			{//treat as string
-				v = Value(Name.s, Name.size);
-				return true;
+			{
+				return false;
 			}
 		}
 		m_scope->Get(rt, pContext, Index, v, lValue);
