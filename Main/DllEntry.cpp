@@ -299,7 +299,7 @@ extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 	}
 #else
 	Dl_info dl_info;
-	dladdr((void*)PyInit_russell, &dl_info);
+	dladdr((void*)Load, &dl_info);
 	std::string strPath = dl_info.dli_fname;
 	strFullPath = strPath;
 	auto pos = strPath.rfind("/");

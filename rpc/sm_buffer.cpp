@@ -14,6 +14,7 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <fcntl.h>
+#include <sys/time.h>
 
 #define RESETEVENT(evt)
 #define SETEVENT(evt)  sem_post(evt);

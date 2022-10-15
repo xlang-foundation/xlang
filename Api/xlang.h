@@ -338,7 +338,7 @@ namespace X
 		}
 		bool Set(Value& v)
 		{
-			SetProp(m_cxt->rt, m_cxt->m_parent, v);
+			return SetProp(m_cxt->rt, m_cxt->m_parent, v);
 		}
 	};
 	class XEvent :

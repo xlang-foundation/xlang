@@ -15,6 +15,7 @@
 #include <sys/msg.h>
 #include <sys/wait.h>
 #include <dlfcn.h>
+#include <dirent.h>
 #define Path_Sep_S "/"
 #define Path_Sep '/'
 #define ShareLibExt ".so"
@@ -61,7 +62,6 @@ namespace X
 			FindClose(findhandle);
 		}
 #else
-#include <dirent.h>
 		DIR* dir;
 		struct dirent* ent;
 		if ((dir = opendir(search_pat.c_str())) != NULL)

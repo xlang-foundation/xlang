@@ -117,18 +117,18 @@ namespace X
 		{
 			m_members.push_back(MemberInfo{ MemberType::Event,name });
 		}
-		template<std::size_t Parameter_Num, class T>
-		void AddClass(const char* class_name,T* class_inst =nullptr)
+		template<std::size_t Parameter_Num, class Class_T>
+		void AddClass(const char* class_name, Class_T* class_inst =nullptr)
 		{
 			m_members.push_back(MemberInfo{
 				MemberType::Class,class_name,
 				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						T* cls = nullptr;
+						Class_T* cls = nullptr;
 						if (class_inst == nullptr)
 						{
-							cls = HelpFuncs::NewClass<Parameter_Num,T>(params);
+							cls = HelpFuncs::NewClass<Parameter_Num, Class_T>(params);
 						}
 						else
 						{

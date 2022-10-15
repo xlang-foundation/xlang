@@ -263,7 +263,7 @@ public:
 	}
 	operator std::string()
 	{
-		return ToString();
+		return ToString() ;
 	}
 	operator XObj* () const
 	{

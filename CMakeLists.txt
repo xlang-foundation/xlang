@@ -15,7 +15,9 @@ add_executable (${PROJECT_NAME}
 	${Api_SRC}
 	${AppEntry_SRC}
 )
-
+if(NOT (WIN32))
+target_link_libraries(${PROJECT_NAME} dl)
+endif()
 add_subdirectory("Main")
 add_subdirectory("os")
 add_subdirectory("http")

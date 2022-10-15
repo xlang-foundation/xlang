@@ -147,7 +147,7 @@ bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 	if (pEvt == nullptr)
 	{
 		pEvt = X::EventSystem::I().Register("RunModule");
-		pEvt->Add([rt](X::XRuntime* rt, X::XObj* pContext,
+		pEvt->Add([rt](X::XRuntime* rt1, X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 			{
 				unsigned long long mKey = 0;

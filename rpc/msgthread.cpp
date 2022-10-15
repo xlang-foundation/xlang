@@ -153,7 +153,7 @@ namespace X
                     (unsigned long long)PAS_MSG_TYPE::CreateSharedMem)
                 {
                     std::cout << "MsgThread,Get Message to Create Stub with key:"
-                        << m.shmKey << std::endl;
+                        << message.shmKey << std::endl;
                     RemotingManager::I().CreateStub(message.shmKey);
                 }
             }

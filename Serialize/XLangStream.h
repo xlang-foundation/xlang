@@ -30,7 +30,7 @@ namespace X
     private:
         int m_code = 0;
     };
-    class ScopeSpace
+    class XScopeSpace
     {
         friend class XLangStream;
         std::unordered_map<unsigned long long, void*> m_map;
@@ -73,12 +73,12 @@ namespace X
     class XLangStream :
         public XLStream
     {
-        ScopeSpace m_scope_space;
+        XScopeSpace m_scope_space;
     public:
         XLangStream();
         ~XLangStream();
 
-        ScopeSpace& ScopeSpace() { return m_scope_space; }
+        XScopeSpace& ScopeSpace() { return m_scope_space; }
         void SetProvider(XLStream* p)
         {
             m_pProvider = p;
