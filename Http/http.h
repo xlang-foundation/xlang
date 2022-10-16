@@ -19,7 +19,7 @@ namespace X
 		HttpServer()
 		{
 			m_Apis.AddEvent("OnConnect");
-			m_Apis.AddProp0("name", &HttpServer::name);
+			m_Apis.AddPropWithType<std::string>("name", &HttpServer::name);
 			m_Apis.AddProp0("test", &HttpServer::test);
 			m_Apis.AddFunc<2>("listen", &HttpServer::Listen);
 			m_Apis.AddFunc<0>("stop", &HttpServer::Stop);

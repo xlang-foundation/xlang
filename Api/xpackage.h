@@ -249,6 +249,33 @@ namespace X
 					})
 				});
 		}
+		//in gcc, id PTMV is std::string will make error
+		//with ambiguous overload for ‘operator=’ 
+		//so use this way to add type
+		template<typename VAR_TYPE,typename PTMV>
+		void AddPropWithType(const char* func_name, PTMV var)
+		{
+			m_members.push_back(MemberInfo{
+				MemberType::Prop,func_name,
+				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+						auto* pThis = (T*)pPackage->GetEmbedObj();
+						(pThis->*var) = (VAR_TYPE)params[0];
+						retValue = X::Value(true);
+						return true;
+					}),
+				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+						auto* pThis = (T*)pPackage->GetEmbedObj();
+						retValue = X::Value(pThis->*var);
+						return true;
+					})
+				});
+		}
 		void AddPropL(const char* func_name,std::function<void(X::Value)> setF,
 			std::function<X::Value()> getF)
 		{

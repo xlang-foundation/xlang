@@ -269,7 +269,7 @@ bool file_search(std::string folder,
 	bool bFind = false;
 	std::vector<std::string> subfolders;
 	std::vector<std::string> files;
-	bool bOK = dir(folder + Path_Sep_S + "*.*", subfolders, files);
+	bool bOK = dir(folder, subfolders, files);
 	if (bOK)
 	{
 		for (auto& f : files)

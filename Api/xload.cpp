@@ -27,7 +27,7 @@
 
 namespace X
 {
-	static bool dir(std::string search_pat,
+	static bool dir(std::string search_path,
 		std::vector<std::string>& subfolders,
 		std::vector<std::string>& files)
 	{
@@ -35,7 +35,7 @@ namespace X
 #if (WIN32)
 		BOOL result = TRUE;
 		WIN32_FIND_DATA ff;
-
+		std::string search_pat = search_path + Path_Sep_S + "*.*";
 		HANDLE findhandle = FindFirstFile(search_pat.c_str(), &ff);
 		if (findhandle != INVALID_HANDLE_VALUE)
 		{
@@ -64,7 +64,7 @@ namespace X
 #else
 		DIR* dir;
 		struct dirent* ent;
-		if ((dir = opendir(search_pat.c_str())) != NULL)
+		if ((dir = opendir(search_path.c_str())) != NULL)
 		{
 			ret = true;
 			while ((ent = readdir(dir)) != NULL)
@@ -96,7 +96,7 @@ namespace X
 		bool bFind = false;
 		std::vector<std::string> subfolders;
 		std::vector<std::string> files;
-		bool bOK = dir(folder + Path_Sep_S + "*.*", subfolders, files);
+		bool bOK = dir(folder, subfolders, files);
 		if (bOK)
 		{
 			for (auto& f : files)
@@ -163,7 +163,11 @@ namespace X
 	int XLoad::Load(Config* pCfg)
 	{
 		m_pConfig = pCfg;
+#if (WIN32)
 		std::string engName("xlang_eng");
+#else
+		std::string engName("libxlang_eng");
+#endif
 		std::string loadDllName;
 		bool bFound = SearchDll(engName, m_pConfig->appPath, loadDllName);
 		if (!bFound)
