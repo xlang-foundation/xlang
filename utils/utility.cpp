@@ -304,7 +304,8 @@ bool dir(std::string search_pat,
 #if (WIN32)
 	BOOL result = TRUE;
 	WIN32_FIND_DATA ff;
-
+	search_pat += Path_Sep_S;
+	search_pat +="*.*";
 	HANDLE findhandle = FindFirstFile(search_pat.c_str(), &ff);
 	if (findhandle != INVALID_HANDLE_VALUE)
 	{
