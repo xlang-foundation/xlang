@@ -11,14 +11,10 @@ namespace X
 {
 	class Utils
 	{
-		XPackageAPISet<Utils> m_Apis;
 	public:
-		XPackageAPISet<Utils>& APISET() { return m_Apis; }
-		Utils()
-		{
-			m_Apis.AddFunc<0>("generate_uid", &Utils::generate_uid);
-			m_Apis.Create(this);
-		}
+		BEGIN_PACKAGE(Utils)
+			APISET().AddFunc<0>("generate_uid", &Utils::generate_uid);
+		END_PACKAGE
 		X::Value generate_uid()
 		{
 			std::string strGuid;

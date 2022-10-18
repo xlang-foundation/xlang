@@ -28,7 +28,11 @@ namespace X
 				X::Value& valObject);
 			XPackageAPISet<DebugService> m_Apis;
 		public:
-			XPackageAPISet<DebugService>& APISET() { return m_Apis; }
+			BEGIN_PACKAGE(DebugService)
+				APISET().AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);
+				APISET().AddRTFunc<2>("set_breakpoints", &DebugService::SetBreakpoints);
+				APISET().AddVarFunc("command", &DebugService::Command);
+			END_PACKAGE
 			DebugService();
 			int GetModuleStartLine(unsigned long long moduleKey);
 			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext,

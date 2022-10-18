@@ -7,24 +7,24 @@ namespace X
 {
 	class HttpServer
 	{
-		XPackageAPISet<HttpServer> m_Apis;
 		void* m_pSrv = nullptr;
 		std::vector<void*> m_handlers;
 	public:
-		XPackageAPISet<HttpServer>& APISET() { return m_Apis; }
+		BEGIN_PACKAGE(HttpServer)
+			APISET().AddEvent("OnConnect");
+			APISET().AddPropWithType<std::string>("name", &HttpServer::name);
+			APISET().AddProp0("test", &HttpServer::test);
+			APISET().AddFunc<2>("listen", &HttpServer::Listen);
+			APISET().AddFunc<0>("stop", &HttpServer::Stop);
+			APISET().AddFunc<2>("get", &HttpServer::Get);
+		END_PACKAGE
+	public:
 
 		int test = 1234;
 		std::string name;
 
 		HttpServer()
 		{
-			m_Apis.AddEvent("OnConnect");
-			m_Apis.AddPropWithType<std::string>("name", &HttpServer::name);
-			m_Apis.AddProp0("test", &HttpServer::test);
-			m_Apis.AddFunc<2>("listen", &HttpServer::Listen);
-			m_Apis.AddFunc<0>("stop", &HttpServer::Stop);
-			m_Apis.AddFunc<2>("get", &HttpServer::Get);
-			m_Apis.Create(this);
 			Init();
 		}
 		~HttpServer();
@@ -35,19 +35,19 @@ namespace X
 	};
 	class HttpRequest
 	{
-		XPackageAPISet<HttpRequest> m_Apis;
 		void* m_pRequest = nullptr;
+
 	public:
-		XPackageAPISet<HttpRequest>& APISET() { return m_Apis; }
+		BEGIN_PACKAGE(HttpRequest)
+			APISET().AddProp("params", &HttpRequest::GetParams);
+			APISET().AddProp("all_headers", &HttpRequest::GetAllHeaders);
+			APISET().AddProp("body", &HttpRequest::GetBody);
+			APISET().AddProp("method", &HttpRequest::GetMethod);
+			APISET().AddProp("path", &HttpRequest::GetPath);
+			APISET().AddProp("remote_addr", &HttpRequest::Get_remote_addr);
+		END_PACKAGE
 		HttpRequest()
 		{
-			m_Apis.AddProp("params", &HttpRequest::GetParams);
-			m_Apis.AddProp("all_headers",&HttpRequest::GetAllHeaders);
-			m_Apis.AddProp("body", &HttpRequest::GetBody);
-			m_Apis.AddProp("method",&HttpRequest::GetMethod);
-			m_Apis.AddProp("path", &HttpRequest::GetPath);
-			m_Apis.AddProp("remote_addr",&HttpRequest::Get_remote_addr);
-			m_Apis.Create(this);
 		}
 		HttpRequest(void* pReq):HttpRequest()
 		{
@@ -62,14 +62,13 @@ namespace X
 	};
 	class HttpResponse
 	{
-		XPackageAPISet<HttpResponse> m_Apis;
 		void* m_pResponse = nullptr;
 	public:
-		XPackageAPISet<HttpResponse>& APISET() { return m_Apis; }
+		BEGIN_PACKAGE(HttpResponse)
+			APISET().AddFunc<2>("set_content", &HttpResponse::SetContent);
+		END_PACKAGE
 		HttpResponse()
 		{
-			m_Apis.AddFunc<2>("set_content", &HttpResponse::SetContent);
-			m_Apis.Create(this);
 		}
 		HttpResponse(void* pResp):HttpResponse()
 		{
@@ -80,15 +79,11 @@ namespace X
 
 	class Http
 	{
-		XPackageAPISet<Http> m_Apis;
 	public:
-		XPackageAPISet<Http>& APISET() { return m_Apis; }
-		Http()
-		{
-			m_Apis.AddClass<0,HttpServer>("Server");
-			m_Apis.AddClass<0, HttpResponse>("Response");
-			m_Apis.AddClass<0, HttpRequest>("Request");
-			m_Apis.Create(this);
-		}
+		BEGIN_PACKAGE(Http)
+			APISET().AddClass<0, HttpServer>("Server");
+			APISET().AddClass<0, HttpResponse>("Response");
+			APISET().AddClass<0, HttpRequest>("Request");
+		END_PACKAGE
 	};
 }

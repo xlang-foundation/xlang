@@ -7,17 +7,21 @@ namespace X
 	template<class impl_pack_class>
 	void RegisterPackage(const char* pack_name, impl_pack_class* instance =nullptr)
 	{
+		auto& apiset = impl_pack_class::APISET();
+		impl_pack_class::BuildAPI();
+		apiset.Create(nullptr);
+
 		if (instance == nullptr)
 		{
 			X::g_pXHost->RegisterPackage(pack_name, []()
 				{
-					impl_pack_class* pPackImpl = new impl_pack_class(); \
-						return pPackImpl->APISET().GetPack();
+					impl_pack_class* pPackImpl = new impl_pack_class();
+					return impl_pack_class::APISET().GetPack();
 				});
 		}
 		else
 		{
-			auto* pXPack = instance->APISET().GetPack();
+			auto* pXPack = impl_pack_class::APISET().GetPack();
 			X::Value v0(dynamic_cast<X::XObj*>(pXPack));
 			X::g_pXHost->RegisterPackage(pack_name, v0);
 		}
@@ -95,7 +99,11 @@ namespace X
 		std::vector<X::XEvent*> __events;
 		XPackage* m_xPack = nullptr;
 	public:
-		XPackage* GetPack() { return m_xPack; }
+		inline XPackage* GetPack() { return m_xPack; }
+		inline XPackage* GetProxy(void* pRealObj)
+		{
+			return g_pXHost->CreatePackageProxy(m_xPack, pRealObj);
+		}
 		X::XEvent* GetEvent(int idx) { return __events[idx]; }
 		~XPackageAPISet()
 		{
@@ -118,8 +126,12 @@ namespace X
 			m_members.push_back(MemberInfo{ MemberType::Event,name });
 		}
 		template<std::size_t Parameter_Num, class Class_T>
-		void AddClass(const char* class_name, Class_T* class_inst =nullptr)
+		void AddClass(const char* class_name, Class_T* class_inst = nullptr)
 		{
+			auto& apiset = Class_T::APISET();
+			Class_T::BuildAPI();
+			apiset.Create(nullptr);
+
 			m_members.push_back(MemberInfo{
 				MemberType::Class,class_name,
 				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
@@ -134,10 +146,11 @@ namespace X
 						{
 							cls = class_inst;
 						}
-						retValue = X::Value(cls->APISET().GetPack());
+						retValue = X::Value(Class_T::APISET().GetProxy(cls));
 						return true;
 					}),nullptr });
 		}
+
 		template<std::size_t Parameter_Num, typename F>
 		void AddFunc(const char* func_name, F f)
 		{
@@ -389,16 +402,18 @@ namespace X
 	};
 }
 #define BEGIN_PACKAGE(class_name)\
-	X::XPackageAPISet<class_name> m_Apis;\
 public:\
-	X::XPackageAPISet<class_name>& APISET() { return m_Apis; }\
-	void RegisterAPIS()\
+	static XPackageAPISet<class_name>& APISET()\
+	{\
+		static 	XPackageAPISet<class_name> _Apis;\
+		return _Apis;\
+	}\
+	static void BuildAPI()\
 	{
 
 #define ADD_FUNC(parameter_num,name,Func)\
-	m_Apis.AddFunc<parameter_num>(name,Func);
-#define ADD_EVENT(name) m_Apis.AddEvent(#name);
+	APISET().AddFunc<parameter_num>(name,Func);
+#define ADD_EVENT(name) APISET().AddEvent(#name);
 
 #define END_PACKAGE\
-	m_Apis.Create(this);\
 	}

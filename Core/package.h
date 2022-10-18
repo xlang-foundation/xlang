@@ -113,5 +113,82 @@ public:
 		bases.push_back(dynamic_cast<Scope*>(this));
 	}
 };
+class PackageProxy :
+	virtual public XPackage,
+	virtual public Data::Object,
+	virtual public Scope
+{
+	void* m_pObject = nullptr;
+	Package* m_pPackage = nullptr;
+public:
+	PackageProxy(Package* pPack,void* pObj) :
+		Data::Object(), Scope()
+	{
+		m_pPackage = pPack;
+		if (m_pPackage)
+		{
+			m_pPackage->Scope::IncRef();
+		}
+		m_pObject = pObj;
+		m_t = X::ObjType::Package;
+	}
+	~PackageProxy()
+	{
+		if (m_pPackage)
+		{
+			m_pPackage->Scope::DecRef();
+		}
+	}
+	inline virtual int AddMethod(const char* name, bool keepRawParams = false) override
+	{
+		return m_pPackage->AddMethod(name, keepRawParams);
+	}
+	inline virtual int QueryMethod(const char* name) override
+	{
+		return m_pPackage->QueryMethod(name);
+	}
+	inline virtual MemberInfo QueryMethod(std::string name)
+	{
+		return m_pPackage->QueryMethod(name);
+	}
+	inline virtual AST::Scope* GetScope()
+	{
+		return m_pPackage->GetScope();
+	}
+	virtual void* GetEmbedObj() override
+	{
+		return m_pObject;
+	}
+	// Inherited via Scope
+	inline virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
+	{
+		return m_pPackage->Set(rt,pContext,idx,v);
+	}
+	inline virtual bool SetIndexValue(int idx, Value& v) override
+	{
+		return m_pPackage->SetIndexValue(idx,v);
+	}
+	inline virtual bool GetIndexValue(int idx, Value& v)
+	{
+		return m_pPackage->GetIndexValue(idx,v);
+	}
+	inline virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
+		LValue* lValue = nullptr) override
+	{
+		return m_pPackage->Get(rt,pContext,idx,v,lValue);
+	}
+	inline virtual Scope* GetParentScope() override
+	{
+		return m_pPackage->GetParentScope();
+	}
+	inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+	{
+		m_pPackage->GetBaseScopes(bases);
+	}
+	virtual bool Init(int varNum) override
+	{
+		return true;
+	}
+};
 }
 }

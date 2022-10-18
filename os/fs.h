@@ -11,15 +11,14 @@ namespace X
 		std::ifstream m_stream;
 		std::string m_fileName;
 		bool m_IsBinary = true;
-		XPackageAPISet<File> m_Apis;
 	public:
-		XPackageAPISet<File>& APISET() { return m_Apis; }
+		BEGIN_PACKAGE(File)
+			APISET().AddFunc<1>("read", &File::read);
+			APISET().AddFunc<0>("close", &File::close);
+			APISET().AddProp("size", &File::get_size);
+		END_PACKAGE
 		File()
 		{
-			m_Apis.AddFunc<1>("read", &File::read);
-			m_Apis.AddFunc<0>("close", &File::close);
-			m_Apis.AddProp("size", &File::get_size);
-			m_Apis.Create(this);
 		}
 		File(std::string fileName, std::string mode):
 			File()
@@ -83,13 +82,9 @@ namespace X
 	};
 	class FileSystem
 	{
-		XPackageAPISet<FileSystem> m_Apis;
 	public:
-		XPackageAPISet<FileSystem>& APISET() { return m_Apis; }
-		FileSystem()
-		{
-			m_Apis.AddClass<2, File>("File");
-			m_Apis.Create(this);
-		}
+		BEGIN_PACKAGE(FileSystem)
+			APISET().AddClass<2, File>("File");
+		END_PACKAGE
 	};
 }

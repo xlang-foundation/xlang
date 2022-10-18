@@ -87,6 +87,12 @@ namespace X
 		pPack->Scope::IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}
+	XPackage* XHost_Impl::CreatePackageProxy(XPackage* pPackage, void* pRealObj)
+	{
+		auto* pPack = new AST::PackageProxy(dynamic_cast<AST::Package*>(pPackage),pRealObj);
+		pPack->Scope::IncRef();
+		return dynamic_cast<XPackage*>(pPack);
+	}
 	XEvent* XHost_Impl::CreateXEvent(const char* name)
 	{
 		std::string strName(name);

@@ -15,6 +15,7 @@ namespace X
 		virtual XObj* QueryMember(XRuntime* rt, XObj* pObj, const char* name) override;
 		virtual bool QueryPackage(XRuntime* rt, const char* name, Value& objPackage) override;
 		virtual XPackage* CreatePackage(void* pRealObj) override;
+		virtual XPackage* CreatePackageProxy(XPackage* pPackage, void* pRealObj) override;
 		virtual XEvent* CreateXEvent(const char* name) override;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func, X::XObj* pContext = nullptr) override;
 		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext = nullptr) override;

@@ -7,15 +7,14 @@ namespace X
 {
 	class JsonWrapper
 	{
-		XPackageAPISet<JsonWrapper> m_Apis;
 	public:
-		XPackageAPISet<JsonWrapper>& APISET() { return m_Apis; }
+		BEGIN_PACKAGE(JsonWrapper)
+			APISET().AddFunc<1>("loads", &JsonWrapper::LoadFromString);
+			APISET().AddRTFunc<1>("loads", &JsonWrapper::LoadFromFile);
+		END_PACKAGE
 	public:
 		JsonWrapper()
 		{
-			m_Apis.AddFunc<1>("loads", &JsonWrapper::LoadFromString);
-			m_Apis.AddRTFunc<1>("loads", &JsonWrapper::LoadFromFile);
-			m_Apis.Create(this);
 		}
 		X::Value LoadFromString(std::string jsonStr);
 		X::Value  LoadFromFile(X::XRuntime* rt, X::XObj* pContext,std::string fileName);

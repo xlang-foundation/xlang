@@ -17,10 +17,6 @@ namespace X
 		#define	dbg_evt_name "devops.dbg"
 		DebugService::DebugService()
 		{
-			m_Apis.AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);
-			m_Apis.AddRTFunc<2>("set_breakpoints", &DebugService::SetBreakpoints);
-			m_Apis.AddVarFunc("command", &DebugService::Command);
-			m_Apis.Create(this);
 			X::Event* pEvt = X::EventSystem::I().Register(dbg_evt_name);
 			if (pEvt)
 			{
