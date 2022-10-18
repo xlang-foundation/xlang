@@ -336,6 +336,10 @@ public:
 	inline int GetF() { return flags; }
 	inline void operator = (const Value& v)
 	{
+		if (IsObject())
+		{
+			ReleaseObject(x.obj);
+		}
 		flags = v.flags;
 		t = v.t;
 		switch (t)

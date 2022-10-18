@@ -48,7 +48,8 @@ namespace AST
 				*lValue_L = v_r;
 				break;
 			case X::OP_ID::AddEqu:
-				lValue_L->Clone();
+				//TODO: need clone??
+				//lValue_L->Clone();
 				*lValue_L += v_r;
 				break;
 			case X::OP_ID::MinusEqu:

@@ -48,7 +48,8 @@ namespace Data {
 		}
 		virtual XObj* Clone() override
 		{
-			return nullptr;
+			IncRef();
+			return this;
 		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases){}
 		AttributeBag* GetAttrBag();

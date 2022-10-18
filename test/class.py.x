@@ -12,7 +12,7 @@ class another_class():
 
 class test_class(base_class,another_class):
  prop1:int=1
- prop2:str='prop2'
+ prop2:str='prop2_orgi'
  
  def constructor():
      print("test_class")
