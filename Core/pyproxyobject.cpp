@@ -17,7 +17,7 @@ namespace X
 			if (it != m_mapModules.end())
 			{
 				pRetObj = it->second;
-				pRetObj->AddRef();
+				pRetObj->Object::IncRef();
 			}
 			return pRetObj;
 		}

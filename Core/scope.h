@@ -9,6 +9,7 @@
 #include "objref.h"
 #include "def.h"
 #include "XLangStream.h"
+#include "Locker.h"
 
 namespace X 
 { 
@@ -29,6 +30,7 @@ enum class ScopeVarIndex
 class Scope:
 	virtual public ObjRef
 {//variables scope support, for Module and Func/Class
+	Locker m_lock;
 protected:
 	std::unordered_map <std::string, int> m_Vars;
 	std::unordered_map <std::string, AST::Var*> m_ExternVarMap;
@@ -40,7 +42,16 @@ public:
 	//use address as ID, just used Serialization
 	ExpId ID() { return (ExpId)this; }
 	void AddExternVar(AST::Var* var);
-
+	inline virtual int IncRef()
+	{
+		AutoLock(m_lock);
+		return ObjRef::AddRef();
+	}
+	inline virtual int DecRef()
+	{
+		AutoLock(m_lock);
+		return ObjRef::Release();
+	}
 	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream);
 	virtual bool FromBytes(X::XLangStream& stream);
 	inline int GetVarNum()

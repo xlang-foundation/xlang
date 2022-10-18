@@ -8,6 +8,106 @@ namespace X
 {
 	namespace Data
 	{
+		class ListScope :
+			virtual public AST::Scope
+		{
+			AST::StackFrame* m_stackFrame = nullptr;
+		public:
+			ListScope() :
+				Scope()
+			{
+			}
+			void clean()
+			{
+				if (m_stackFrame)
+				{
+					delete m_stackFrame;
+				}
+			}
+			~ListScope()
+			{
+				if (m_stackFrame)
+				{
+					delete m_stackFrame;
+				}
+			}
+			void Init()
+			{
+				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame->SetVarCount(2);
+
+				std::string strName;
+				{
+					strName = "remove";
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							X::ARGS& params,
+							X::KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								List* pObj = dynamic_cast<List*>(pContext);
+								long long idx = params[0];
+								pObj->Remove(idx);
+								retValue = Value(true);
+								return true;
+							}));
+					auto* pFuncObj = new Function(extFunc);
+					pFuncObj->IncRef();
+					int idx = AddOrGet(strName, false);
+					Value funcVal(pFuncObj);
+					m_stackFrame->Set(idx, funcVal);
+				}
+				{
+					strName = "size";
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							X::ARGS& params,
+							X::KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								std::cout << "List.Size" << std::endl;
+								List* pObj = dynamic_cast<List*>(pContext);
+								retValue = Value(pObj->Size());
+								std::cout << "List.Size->End" << std::endl;
+								return true;
+							}));
+					auto* pFuncObj = new Function(extFunc);
+					pFuncObj->IncRef();
+					int idx = AddOrGet(strName, false);
+					Value funcVal(pFuncObj);
+					m_stackFrame->Set(idx, funcVal);
+				}
+
+			}
+			// Inherited via Scope
+			virtual Scope* GetParentScope() override
+			{
+				return nullptr;
+			}
+			virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
+			{
+				m_stackFrame->Set(idx, v);
+				return true;
+			}
+			virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
+				LValue* lValue = nullptr) override
+			{
+				m_stackFrame->Get(idx, v, lValue);
+				return true;
+			}
+		};
+		static ListScope _listScope;
+		void List::cleanup()
+		{
+			_listScope.clean();
+		}
+		List::List() :
+			Object()
+		{
+			m_t = ObjType::List;
+			m_bases.push_back(&_listScope);
+
+		}
 		bool List::Call(XRuntime* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
@@ -101,58 +201,6 @@ namespace X
 				pOutList->Add(rt, valDict);
 			}
 			return pOutList;
-		}
-		void ListScope::Init()
-		{
-			m_stackFrame = new AST::StackFrame(this);
-			m_stackFrame->SetVarCount(2);
-
-			std::string strName;
-			{
-				strName = "remove";
-				AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-					(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-						{
-							List* pObj = dynamic_cast<List*>(pContext);
-							long long idx = params[0];
-							pObj->Remove(idx);
-							retValue = Value(true);
-							return true;
-						}));
-				auto* pFuncObj = new Function(extFunc);
-				pFuncObj->IncRef();
-				int idx = AddOrGet(strName, false);
-				Value funcVal(pFuncObj);
-				m_stackFrame->Set(idx, funcVal);
-			}
-			{
-				strName = "size";
-				AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-					(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-						{
-							std::cout << "List.Size" << std::endl;
-							List* pObj = dynamic_cast<List*>(pContext);
-							retValue = Value(pObj->Size());
-							std::cout << "List.Size->End" << std::endl;
-							return true;
-						}));
-				auto* pFuncObj = new Function(extFunc);
-				pFuncObj->IncRef();
-				int idx = AddOrGet(strName, false);
-				Value funcVal(pFuncObj);
-				m_stackFrame->Set(idx, funcVal);
-			}
-
-		}
-		AST::Scope* ListScope::GetParentScope()
-		{
-			return nullptr;
 		}
 	}
 }

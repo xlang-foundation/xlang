@@ -288,14 +288,14 @@ public:
 		if (m_dbgScopes.size() > 0)
 		{
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
-			last->Release();
-			s->AddRef();
+			last->DecRef();
+			s->IncRef();
 			m_dbgScopes[m_dbgScopes.size() - 1] = s;
 		}
 	}
 	inline void AddDbgScope(Scope* s)
 	{
-		s->AddRef();
+		s->IncRef();
 		m_dbgScopes.push_back(s);
 	}
 	inline void RemoveDbgScope(Scope* s)
@@ -306,7 +306,7 @@ public:
 			Scope* s0 = (*it);
 			if (s0->isEqual(s))
 			{
-				s0->Release();
+				s0->DecRef();
 				m_dbgScopes.erase(it);
 				break;
 			}

@@ -82,7 +82,7 @@ namespace X
 				if (pObjHandler && pObjHandler->GetType() == ObjType::Function)
 				{
 					auto pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
-					pFuncHandler->AddRef();
+					pFuncHandler->IncRef();
 					Add(pFuncHandler);
 				}
 			}

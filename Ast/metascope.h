@@ -17,9 +17,20 @@ namespace X
 			{
 				m_stack = new StackFrame();
 			}
+			void Cleanup()
+			{
+				if (m_stack)
+				{
+					delete m_stack;
+					m_stack = nullptr;
+				}
+			}
 			~MetaScope()
 			{
-				delete m_stack;
+				if (m_stack)
+				{
+					delete m_stack;
+				}
 			}
 			virtual Scope* GetParentScope()
 			{

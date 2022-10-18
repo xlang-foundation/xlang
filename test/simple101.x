@@ -1,3 +1,4 @@
-x =1000
-print(x)
-return x
+x=10
+y=11
+z=12
+print("end")

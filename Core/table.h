@@ -253,7 +253,7 @@ public:
 		m_colMap.clear();
 		for (auto& it : m_rowMap)
 		{
-			it.second->Release();
+			it.second->DecRef();
 		}
 		m_rowMap.clear();
 	}
@@ -390,7 +390,7 @@ public:
 			it.ary->Remove(rObj->r());
 		}
 		m_rowMap.erase(find);
-		rObj->Release();
+		rObj->DecRef();
 		return true;
 	}
 	bool GetRow(long long rowId, KWARGS& kwargs)

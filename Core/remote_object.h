@@ -121,7 +121,7 @@ namespace X
 					r_obj->m_memmberId = memId;
 					r_obj->m_objName = name;
 					r_obj->m_KeepRawParams = KeepRawParams;
-					r_obj->IncRef();
+					r_obj->Object::IncRef();
 					Value valObj(dynamic_cast<XObj*>(r_obj));
 					m_stackFrame->Set(idx, valObj);
 				}

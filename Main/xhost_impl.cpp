@@ -43,7 +43,7 @@ namespace X
 	XStr* XHost_Impl::CreateStr(const char* data, int size)
 	{
 		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
-		pStrObj->AddRef();
+		pStrObj->IncRef();
 		return pStrObj;
 	}
 	bool XHost_Impl::RegisterPackage(const char* name, PackageCreator creator)
@@ -84,14 +84,14 @@ namespace X
 	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
 		auto* pPack = new AST::Package(pRealObj);
-		pPack->AddRef();
+		pPack->Scope::IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}
 	XEvent* XHost_Impl::CreateXEvent(const char* name)
 	{
 		std::string strName(name);
 		auto* pEvt = new X::Event(strName);
-		pEvt->AddRef();
+		pEvt->IncRef();
 		return dynamic_cast<XEvent*>(pEvt);
 	}
 	XFunc* XHost_Impl::CreateFunction(const char* name,U_FUNC func, X::XObj* pContext)
@@ -99,7 +99,7 @@ namespace X
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
 		auto* pFuncObj = new X::Data::Function(extFunc);
-		pFuncObj->AddRef();
+		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
 	XFunc* XHost_Impl::CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext)
@@ -107,7 +107,7 @@ namespace X
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
 		auto* pFuncObj = new X::Data::Function(extFunc);
-		pFuncObj->AddRef();
+		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
 	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC setter, U_FUNC getter)
@@ -119,7 +119,7 @@ namespace X
 		AST::ExternFunc* extFunc_set = new AST::ExternFunc(strSetName, setter);
 		AST::ExternFunc* extFunc_get = new AST::ExternFunc(strGetName, getter);
 		auto* pPropObj = new X::Data::PropObject(extFunc_set, extFunc_get);
-		pPropObj->AddRef();
+		pPropObj->IncRef();
 		return dynamic_cast<XProp*>(pPropObj);
 	}
 	/*   TODO:
@@ -134,13 +134,13 @@ namespace X
 	XObj* XHost_Impl::CreateList()
 	{
 		auto* pList = new X::Data::List();
-		pList->AddRef();
+		pList->IncRef();
 		return pList;
 	}
 	XDict* XHost_Impl::CreateDict()
 	{
 		auto* pDict =  new X::Data::Dict();
-		pDict->AddRef();
+		pDict->IncRef();
 		return pDict;
 	}
 	std::string XHost_Impl::StringifyString(const std::string& str)
@@ -150,7 +150,7 @@ namespace X
 	XBin* XHost_Impl::CreateBin(char* data, size_t size)
 	{
 		auto* pObjBin = new Data::Binary(data, size);
-		pObjBin->AddRef();
+		pObjBin->IncRef();
 		return pObjBin;
 	}
 	X::XLStream* XHost_Impl::CreateStream(const char* buf, long long size)
@@ -174,7 +174,7 @@ namespace X
 	XRemoteObject* XHost_Impl::CreateRemoteObject(XProxy* proxy)
 	{
 		auto* pRObj = new RemoteObject(proxy);
-		pRObj->AddRef();
+		pRObj->Object::IncRef();
 		return pRObj;
 	}
 	bool XHost_Impl::ToBytes(X::Value& input, X::Value& output)

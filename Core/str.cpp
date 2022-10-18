@@ -139,9 +139,12 @@ namespace X
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
 			}
-			~StrOp()
+			void clean()
 			{
 				m_funcs.clear();
+			}
+			~StrOp()
+			{
 			}
 			virtual Scope* GetParentScope()
 			{
@@ -166,6 +169,10 @@ namespace X
 		AST::Scope* Str::GetScope()
 		{
 			return &_strop;
+		}
+		void Str::cleanup()
+		{
+			_strop.clean();
 		}
 	}
 }

@@ -16,6 +16,9 @@
 #include "Hosting.h"
 #include "EventLoopInThread.h"
 #include "Proxy.h"
+#include "str.h"
+#include "list.h"
+#include "metascope.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -156,6 +159,7 @@ bool LoadPythonEngine()
 		return false;
 	}
 }
+
 void XLangRun()
 {
 	if (g_pXload->GetConfig().enablePython)
@@ -231,10 +235,14 @@ void XLangRun()
 		}
 	}
 }
+
 void XLangUnload()
 {
 	Builtin::I().Cleanup();
 	Manager::I().Cleanup();
+	X::Data::Str::cleanup();
+	X::Data::List::cleanup();
+	X::AST::MetaScope().I().Cleanup();
 
 	if (g_pXload->GetConfig().enablePython)
 	{

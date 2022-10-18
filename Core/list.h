@@ -9,60 +9,17 @@ namespace X
 {
 namespace Data
 {
-class ListScope :
-	virtual public AST::Scope
-{
-	List* m_owner = nullptr;
-	AST::StackFrame* m_stackFrame = nullptr;
-public:
-	ListScope(List* p) :
-		Scope()
-	{
-		m_owner = p;
-	}
-	~ListScope()
-	{
-		if (m_stackFrame)
-		{
-			delete m_stackFrame;
-		}
-	}
-	void Init();
-	// Inherited via Scope
-	virtual Scope* GetParentScope() override;
-	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
-	{
-		m_stackFrame->Set(idx, v);
-		return true;
-	}
-	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
-		LValue* lValue = nullptr) override
-	{
-		m_stackFrame->Get(idx, v, lValue);
-		return true;
-	}
-};
 class List :
 	virtual public Object
 {
-	friend class ListScope;
 protected:
 	bool m_useLValue = false;
 	std::vector<X::Value> m_data;
 	std::vector<X::LValue> m_ptrs;
 	std::vector<AST::Scope*> m_bases;
-	ListScope* m_listScope = nullptr;
 public:
-	List() :
-		Object()
-	{
-		m_t = ObjType::List;
-		m_listScope = new ListScope(this);
-		m_listScope->Init();
-		m_listScope->AddRef();
-		m_bases.push_back(m_listScope);
-
-	}
+	static void cleanup();
+	List();
 	List(std::vector<std::string>& strs) :
 		List()
 	{
@@ -78,7 +35,6 @@ public:
 		m_bases.clear();
 		m_ptrs.clear();
 		m_data.clear();
-		m_listScope->Release();
 	}
 	template<typename T>
 	std::vector<T> Map(EnumProc proc)

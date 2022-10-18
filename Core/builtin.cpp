@@ -164,7 +164,7 @@ bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 		kwParams.emplace(std::make_pair("ModuleKey", valKey));
 	}
 	pEvt->FireInMain(rt,pContext,params,kwParams);
-	pEvt->Release();
+	pEvt->DecRef();
 	return true;
 }
 
@@ -285,7 +285,6 @@ bool Builtin::Register(const char* name, X::U_FUNC func,
 	{
 		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);
 		auto* pFuncObj = new Data::Function(extFunc);
-		pFuncObj->AddRef();
 		X::Value vFunc(pFuncObj);
 		X::AST::MetaScope::I().Set(nullptr, nullptr, idx,vFunc);
 	}
@@ -412,7 +411,7 @@ bool U_OnEvent(X::XRuntime* rt, XObj* pContext,
 		if (pObjHandler && pObjHandler->GetType() == ObjType::Function)
 		{
 			auto* pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
-			pFuncHandler->AddRef();
+			pFuncHandler->IncRef();
 			pEvt->Add(pFuncHandler);
 		}
 	}

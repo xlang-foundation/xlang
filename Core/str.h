@@ -14,6 +14,7 @@ namespace Data
 	protected:
 		std::string m_s;
 	public:
+		static void cleanup();
 		Str() :XStr(0)
 		{
 			m_t = ObjType::Str;

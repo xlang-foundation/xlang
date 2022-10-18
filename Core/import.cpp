@@ -193,7 +193,7 @@ bool X::AST::Import::Run(Runtime* rt, XObj* pContext,
 			{
 				auto* remoteObj = new RemoteObject(proxy);
 				remoteObj->SetObjName(im.name);
-				remoteObj->AddRef();
+				remoteObj->Object::IncRef();
 				v = Value(dynamic_cast<XObj*>(remoteObj));
 				rt->M()->Add(rt, varName, nullptr, v);
 				continue;

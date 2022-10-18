@@ -89,14 +89,14 @@ namespace X
 		auto* pProxyModule = Data::PyObjectCache::I().QueryModule(fileName);
 		AST::Scope* pThisBlock = nullptr;
 		auto* blockObj = new Data::PyProxyObject(coName);
-		blockObj->AddRef();
+		blockObj->Scope::IncRef();
 		blockObj->SetPyFrame(objFrame);
 		blockObj->SetModule(pProxyModule);
 		blockObj->SetModuleFileName(fileName);
-		blockObj->AddRef();//for pThisBlock
+		blockObj->Scope::IncRef();//for pThisBlock
 		pThisBlock = dynamic_cast<AST::Scope*>(blockObj);
 		auto* pLine = new Data::PyProxyObject(line-1);//X start line from 0 not 1
-		pLine->AddRef();
+		pLine->Scope::IncRef();
 		pLine->SetModuleFileName(fileName);
 		pLine->SetScope(pThisBlock);
 		if (te == TraceEvent::Call)
@@ -117,15 +117,15 @@ namespace X
 			dynamic_cast<AST::Expression*>(pLine));
 		if (pProxyModule)
 		{
-			pProxyModule->Release();
+			pProxyModule->Scope::DecRef();
 		}
 		if (blockObj)
 		{
-			blockObj->Release();
+			blockObj->Scope::DecRef();
 		}
 		if (pLine)
 		{
-			pLine->Release();
+			pLine->Scope::DecRef();
 		}
 		if (te == TraceEvent::Return)
 		{
