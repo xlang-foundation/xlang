@@ -1,5 +1,5 @@
 """File Name: test.json """ 
-s = var
+s = "var"
 print(s)
 x = {
 	"glos sary": {
