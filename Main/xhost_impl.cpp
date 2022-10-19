@@ -71,7 +71,10 @@ namespace X
 			{
 				Value v0;
 				pScope->Get((Runtime*)rt, pRealObj, idx, v0);
-				pRetObj = (XObj*)v0;//will addref
+				pRetObj = (XObj*)v0;
+				//(XObj*) doesn't add refcount
+				//so add here
+				pRetObj->IncRef();
 			}
 		}
 		return pRetObj;

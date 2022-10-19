@@ -130,7 +130,7 @@ namespace X
 		{
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
-			apiset.Create(nullptr);
+			apiset.Create(class_inst);
 
 			m_members.push_back(MemberInfo{
 				MemberType::Class,class_name,
