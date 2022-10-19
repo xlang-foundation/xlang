@@ -26,6 +26,7 @@ namespace X
 		virtual bool CreateEmptyModule() = 0;
 	};
 	typedef XPackage* (*PackageCreator)();
+	typedef void (*PackageCleanup)(void* pContextObj);
 	typedef XProxy* (*XProxyCreator)(std::string& url);
 	typedef std::vector<X::Value> ARGS;
 	typedef std::unordered_map<std::string, X::Value> KWARGS;

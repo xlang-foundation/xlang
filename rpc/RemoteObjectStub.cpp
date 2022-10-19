@@ -38,6 +38,13 @@ namespace X
 			std::string("bool")
 		);
 		RemotingManager::I().Register(
+			(unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject,
+			this,
+			std::string("ReleaseObject"),
+			std::vector<std::string>{},
+			std::string("bool")
+		);
+		RemotingManager::I().Register(
 			(unsigned int)RPC_CALL_TYPE::CantorProxy_Call,
 			this,
 			std::string("Call"),
@@ -100,11 +107,12 @@ namespace X
 		stream >> name;
 		pProc->NotifyBeforeCall(channel, stream);
 		auto pXObj = CovertIdToXObj(objId);
-		auto pXPack = dynamic_cast<X::AST::Package*>(pXObj);
-		auto memberInfo = pXPack->QueryMethod(name);
+		auto pXPack = dynamic_cast<X::XPackage*>(pXObj);
+		bool keepRawParams = false;
+		int idx = pXPack->QueryMethod(name.c_str(),&keepRawParams);
 		pProc->NotifyAfterCall(channel, stream, true);
-		stream << memberInfo.Index;
-		stream << memberInfo.KeepRawParams;
+		stream << idx;
+		stream << keepRawParams;
 		return true;
 	}
 
@@ -127,7 +135,16 @@ namespace X
 		}
 		return true;
 	}
-
+	bool RemoteObjectStub::ReleaseObject(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	{
+		X::ROBJ_ID objId;
+		stream >> objId;
+		pProc->NotifyBeforeCall(channel, stream);
+		auto pXObj = CovertIdToXObj(objId);
+		pXObj->DecRef();
+		pProc->NotifyAfterCall(channel, stream, true);
+		return true;
+	}
 	bool RemoteObjectStub::RCall(int channel, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID parent_ObjId;
@@ -223,6 +240,9 @@ namespace X
 			break;
 		case RPC_CALL_TYPE::CantorProxy_GetMemberObject:
 			bOK = GetMemberObject(channel, stream, pProc);
+			break;
+		case RPC_CALL_TYPE::CantorProxy_ReleaseObject:
+			bOK = ReleaseObject(channel, stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_Call:
 			bOK = RCall(channel, stream, pProc);

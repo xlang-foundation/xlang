@@ -67,7 +67,20 @@ namespace X
 		FinishCall();
 		return mId;
 	}
-
+	bool XLangProxy::ReleaseObject(ROBJ_ID id)
+	{
+		if (!CheckConnectReadyStatus())
+		{
+			return false;
+		}
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject);
+		stream << id;
+		auto& stream2 = CommitCall();
+		bool bOK = false;
+		stream2 >> bOK;
+		FinishCall();
+		return bOK;
+	}
 	X::ROBJ_ID XLangProxy::GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId)
 	{
 		if (!CheckConnectReadyStatus())
@@ -142,6 +155,7 @@ namespace X
 					X::g_pXHost->CreateRemoteObject(this);
 				pRetObj->SetObjID(retId);
 				retValue = (X::XObj*)pRetObj;
+				pRetObj->DecRef();
 			}
 		}
 		FinishCall();

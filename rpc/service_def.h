@@ -33,6 +33,7 @@ namespace X
         CantorProxy_QueryRootObject,
         CantorProxy_QueryMember,
         CantorProxy_GetMemberObject,
+        CantorProxy_ReleaseObject,
         CantorProxy_Call,
         //--------------
         PushFrame,

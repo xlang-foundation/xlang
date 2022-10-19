@@ -289,8 +289,8 @@ namespace X
 					})
 				});
 		}
-		void AddPropL(const char* func_name,std::function<void(X::Value)> setF,
-			std::function<X::Value()> getF)
+		void AddPropL(const char* func_name,std::function<void(T* pThis,X::Value)> setF,
+			std::function<X::Value(T* pThis)> getF)
 		{
 			m_members.push_back(MemberInfo{
 				MemberType::Prop,func_name,
@@ -299,7 +299,7 @@ namespace X
 					{
 						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
 						auto* pThis = (T*)pPackage->GetEmbedObj();
-						setF(params[0]);
+						setF(pThis,params[0]);
 						retValue = X::Value(true);
 						return true;
 					}),
@@ -308,7 +308,7 @@ namespace X
 					{
 						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
 						auto* pThis = (T*)pPackage->GetEmbedObj();
-						retValue = getF();
+						retValue = getF(pThis);
 						return true;
 					})
 				});
@@ -356,6 +356,9 @@ namespace X
 		bool Create(T* thisObj)
 		{
 			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
+			pPackage->SetPackageCleanupFunc([](void* pObj) {
+				delete (T*)pObj;
+				});
 			pPackage->Init((int)m_members.size());
 			for (auto& m : m_members)
 			{
@@ -403,9 +406,9 @@ namespace X
 }
 #define BEGIN_PACKAGE(class_name)\
 public:\
-	static XPackageAPISet<class_name>& APISET()\
+	static X::XPackageAPISet<class_name>& APISET()\
 	{\
-		static 	XPackageAPISet<class_name> _Apis;\
+		static 	X::XPackageAPISet<class_name> _Apis;\
 		return _Apis;\
 	}\
 	static void BuildAPI()\

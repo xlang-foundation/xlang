@@ -2,6 +2,7 @@
 #include "exp.h"
 #include "object.h"
 #include "stackframe.h"
+#include <functional>
 
 namespace X
 {
@@ -21,6 +22,11 @@ class Package :
 	void* m_pObject = nullptr;
 	StackFrame* m_stackFrame = nullptr;
 	std::vector<MemberInfo> m_memberInfos;
+	PackageCleanup m_funcPackageCleanup = nullptr;
+	virtual void SetPackageCleanupFunc(PackageCleanup func) override
+	{
+		m_funcPackageCleanup = func;
+	}
 public:
 	Package(void* pObj):
 		Data::Object(), Scope()
@@ -30,6 +36,17 @@ public:
 	}
 	~Package()
 	{
+		if (m_pObject)
+		{
+			Cleanup(m_pObject);
+		}
+	}
+	inline void Cleanup(void* pObj)
+	{
+		if (m_funcPackageCleanup)
+		{
+			m_funcPackageCleanup(pObj);
+		}
 	}
 	inline virtual int AddMethod(const char* name, bool keepRawParams=false) override
 	{
@@ -50,10 +67,15 @@ public:
 		}
 		return idx;
 	}
-	inline virtual int QueryMethod(const char* name) override
+	inline virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
 	{
 		std::string strName(name);
-		return Scope::AddOrGet(strName, true);
+		int idx =  Scope::AddOrGet(strName, true);
+		if (pKeepRawParams)
+		{
+			*pKeepRawParams = m_memberInfos[idx].KeepRawParams;
+		}
+		return idx;
 	}
 	inline virtual MemberInfo QueryMethod(std::string name)
 	{
@@ -120,6 +142,11 @@ class PackageProxy :
 {
 	void* m_pObject = nullptr;
 	Package* m_pPackage = nullptr;
+	PackageCleanup m_funcPackageCleanup = nullptr;
+	virtual void SetPackageCleanupFunc(PackageCleanup func) override
+	{
+		m_funcPackageCleanup = func;
+	}
 public:
 	PackageProxy(Package* pPack,void* pObj) :
 		Data::Object(), Scope()
@@ -134,6 +161,17 @@ public:
 	}
 	~PackageProxy()
 	{
+		if (m_funcPackageCleanup)
+		{
+			m_funcPackageCleanup(m_pObject);
+		}
+		else
+		{
+			if (m_pPackage)
+			{
+				m_pPackage->Cleanup(m_pObject);
+			}
+		}
 		if (m_pPackage)
 		{
 			m_pPackage->Scope::DecRef();
@@ -143,9 +181,9 @@ public:
 	{
 		return m_pPackage->AddMethod(name, keepRawParams);
 	}
-	inline virtual int QueryMethod(const char* name) override
+	inline virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
 	{
-		return m_pPackage->QueryMethod(name);
+		return m_pPackage->QueryMethod(name, pKeepRawParams);
 	}
 	inline virtual MemberInfo QueryMethod(std::string name)
 	{

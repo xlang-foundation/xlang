@@ -19,6 +19,7 @@ namespace X
 			}
 			return ref;
 		}
+		inline int Ref() { return m_ref; }
 	public:
 		ObjRef() {}
 		//line below, need to use virtual

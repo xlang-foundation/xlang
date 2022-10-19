@@ -380,8 +380,9 @@ namespace X
 		virtual public XObj
 	{
 	public:
+		virtual void SetPackageCleanupFunc(PackageCleanup func) = 0;
 		virtual int AddMethod(const char* name,bool keepRawParams =false) = 0;
-		virtual int QueryMethod(const char* name) = 0;
+		virtual int QueryMethod(const char* name,bool* pKeepRawParams = nullptr) = 0;
 
 		virtual void* GetEmbedObj() = 0;
 		virtual bool Init(int varNum) = 0;
@@ -418,7 +419,7 @@ namespace X
 		{
 			if (m_obj)
 			{
-				X::XPackage* pPackage = m_obj->APISET().GetPack();
+				X::XPackage* pPackage = m_obj->APISET().GetProxy(m_obj);
 				return dynamic_cast<X::XObj*>(pPackage);
 			}
 			else

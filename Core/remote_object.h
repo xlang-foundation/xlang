@@ -39,6 +39,18 @@ namespace X
 				m_remote_Obj_id = m_proxy->QueryRootObject(name);
 			}
 		}
+		inline virtual int DecRef()
+		{
+			Lock();
+			int ref = Ref();
+			if (ref == 1)
+			{
+				m_proxy->ReleaseObject(m_remote_Obj_id);
+			}
+			Unlock();
+
+			return Data::Object::DecRef();;
+		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			bases.push_back(dynamic_cast<Scope*>(this));
@@ -121,7 +133,7 @@ namespace X
 					r_obj->m_memmberId = memId;
 					r_obj->m_objName = name;
 					r_obj->m_KeepRawParams = KeepRawParams;
-					r_obj->Object::IncRef();
+					//r_obj->Object::IncRef();
 					Value valObj(dynamic_cast<XObj*>(r_obj));
 					m_stackFrame->Set(idx, valObj);
 				}
