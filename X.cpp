@@ -15,6 +15,7 @@
 #define Path_Sep '/'
 #endif
 
+
 struct ParamConfig
 {
 	X::Config config;

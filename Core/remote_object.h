@@ -59,7 +59,7 @@ namespace X
 		{
 			m_remote_Obj_id = id;
 		}
-		virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+		virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
 			return false;
@@ -140,13 +140,13 @@ namespace X
 			}
 			return idx;
 		}
-		inline virtual bool Set(Runtime* rt, XObj* pContext,
+		inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
 			int idx, X::Value& v) override
 		{
 			m_stackFrame->Set(idx, v);
 			return true;
 		}
-		inline virtual bool Get(Runtime* rt, XObj* pContext,
+		inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
 			int idx, X::Value& v, LValue* lValue = nullptr) override
 		{
 			m_stackFrame->Get(idx, v, lValue);

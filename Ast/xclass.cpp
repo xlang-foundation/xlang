@@ -8,7 +8,7 @@ namespace X
 {
 namespace AST
 {
-bool XClass::Call(Runtime* rt,
+bool XClass::Call(XlangRuntime* rt,
 	XObj* pContext,
 	std::vector<Value>& params, 
 	KWARGS& kwParams,
@@ -33,7 +33,7 @@ void XClass::ScopeLayout()
 		m_Index = pMyScope->AddOrGet(strName, false);
 	}
 }
-XClass* XClass::FindBase(Runtime* rt, std::string& strName)
+XClass* XClass::FindBase(XlangRuntime* rt, std::string& strName)
 {
 	XClass* pBase = nullptr;
 	auto* pScope = GetScope();
@@ -61,7 +61,7 @@ XClass* XClass::FindBase(Runtime* rt, std::string& strName)
 	}
 	return pBase;
 }
-bool XClass::Set(Runtime* rt, XObj* pContext, int idx, Value& v)
+bool XClass::Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v)
 {
 	if (pContext)
 	{
@@ -74,7 +74,7 @@ bool XClass::Set(Runtime* rt, XObj* pContext, int idx, Value& v)
 	}
 	return true;
 }
-bool XClass::Get(Runtime* rt,XObj* pContext, int idx, Value& v, LValue* lValue)
+bool XClass::Get(XlangRuntime* rt,XObj* pContext, int idx, Value& v, LValue* lValue)
 {
 	if (pContext)
 	{
@@ -87,7 +87,7 @@ bool XClass::Get(Runtime* rt,XObj* pContext, int idx, Value& v, LValue* lValue)
 	}
 	return true;
 }
-bool XClass::Run(Runtime* rt,XObj* pContext,Value& v, LValue* lValue)
+bool XClass::Run(XlangRuntime* rt,XObj* pContext,Value& v, LValue* lValue)
 {
 	m_stackFrame = new StackFrame(this);
 	m_stackFrame->SetVarCount((int)m_Vars.size());
@@ -97,7 +97,7 @@ bool XClass::Run(Runtime* rt,XObj* pContext,Value& v, LValue* lValue)
 		bool bSet = false;
 		if (it.typeName == EVENT_OBJ_TYPE_NAME)
 		{
-			auto* pEvtObj = new Event();
+			auto* pEvtObj = new ObjectEvent();
 			Value valEvent(dynamic_cast<XObj*>(pEvtObj));
 			Set(rt, pContext, it.index, valEvent);
 			bSet = true;

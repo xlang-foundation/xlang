@@ -6,7 +6,7 @@ namespace X
 {
 	namespace AST
 	{
-		bool Decorator::GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
+		bool Decorator::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
 		{
 			if (e->m_type != ObType::List)
 			{
@@ -23,7 +23,7 @@ namespace X
 			return true;
 		}
 
-		bool Decorator::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
+		bool Decorator::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 		{
 			if (pContext == nullptr)
 			{

@@ -13,14 +13,14 @@ namespace X
 {
 class Dbg
 {
-	Runtime* m_rt = nullptr;
+	XlangRuntime* m_rt = nullptr;
 public:
-	inline Dbg(Runtime* rt)
+	inline Dbg(XlangRuntime* rt)
 	{
 		m_rt = rt;
 	}
 	static bool xTraceFunc(
-		Runtime* rt,
+		XlangRuntime* rt,
 		XObj* pContext,
 		AST::StackFrame* frame,
 		TraceEvent traceEvent,
@@ -92,7 +92,7 @@ public:
 			std::cout << ">>";
 		}
 	}
-	void WaitForCommnd(TraceEvent evt,Runtime* rt, 
+	void WaitForCommnd(TraceEvent evt,XlangRuntime* rt, 
 		AST::Scope* pThisBlock,
 		AST::Expression* exp, XObj* pContext)
 	{
@@ -159,7 +159,7 @@ public:
 			}
 		}
 	}
-	inline bool ExitBlockRun(Runtime* rt,XObj* pContext,
+	inline bool ExitBlockRun(XlangRuntime* rt,XObj* pContext,
 		AST::Scope* pThisBlock)
 	{
 		if (m_rt->M()->IsInDebug())
@@ -168,7 +168,7 @@ public:
 		}
 		return true;
 	}
-	inline bool Check(TraceEvent evt,Runtime* rt,
+	inline bool Check(TraceEvent evt,XlangRuntime* rt,
 		AST::Scope* pThisBlock,
 		AST::Expression* exp, XObj* pContext)
 	{

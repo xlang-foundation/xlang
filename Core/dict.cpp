@@ -5,7 +5,7 @@ namespace X
 {
 	namespace Data
 	{
-		List* Dict::FlatPack(Runtime* rt, long long startIndex, long long count)
+		List* Dict::FlatPack(XlangRuntime* rt, long long startIndex, long long count)
 		{
 			List* pOutList = new List();
 			for (auto& it: mMap)

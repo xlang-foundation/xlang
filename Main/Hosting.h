@@ -11,7 +11,7 @@ namespace X
 	{
 		//use to run code line for interactive mode
 		AST::Module* m_pInteractiveModule = nullptr;
-		Runtime* m_pInteractiveRuntime = nullptr;
+		XlangRuntime* m_pInteractiveRuntime = nullptr;
 
 		std::vector<AST::Module*> m_Modules;
 		std::unordered_map<unsigned long long, AST::Module*> m_ModuleMap;

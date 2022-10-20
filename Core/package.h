@@ -105,7 +105,7 @@ public:
 		return true;
 	}
 	// Inherited via Scope
-	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
+	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		m_stackFrame->Set(idx, v);
 		return true;
@@ -120,7 +120,7 @@ public:
 		m_stackFrame->Get(idx,v);
 		return true;
 	}
-	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
+	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override
 	{
 		m_stackFrame->Get(idx, v, lValue);
@@ -198,7 +198,7 @@ public:
 		return m_pObject;
 	}
 	// Inherited via Scope
-	inline virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
+	inline virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		return m_pPackage->Set(rt,pContext,idx,v);
 	}
@@ -210,7 +210,7 @@ public:
 	{
 		return m_pPackage->GetIndexValue(idx,v);
 	}
-	inline virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
+	inline virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override
 	{
 		return m_pPackage->Get(rt,pContext,idx,v,lValue);

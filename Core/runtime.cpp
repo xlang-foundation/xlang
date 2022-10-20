@@ -5,7 +5,7 @@
 
 namespace X 
 {
-	bool Runtime::CreateEmptyModule()
+	bool XlangRuntime::CreateEmptyModule()
 	{
 		if (m_pModule)
 		{

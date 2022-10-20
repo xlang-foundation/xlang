@@ -21,7 +21,7 @@ namespace X
 		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext = nullptr) override;
 		virtual XProp* CreateProp(const char* name, U_FUNC setter, U_FUNC getter) override;
 		virtual XDict* CreateDict() override;
-		virtual XObj* CreateList() override;
+		virtual XList* CreateList() override;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) override;
 		virtual std::string StringifyString(const std::string& str) override;
 		virtual XBin* CreateBin(char* data, size_t size) override;

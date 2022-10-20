@@ -17,13 +17,13 @@ namespace X
 		#define	dbg_evt_name "devops.dbg"
 		DebugService::DebugService()
 		{
-			X::Event* pEvt = X::EventSystem::I().Register(dbg_evt_name);
+			X::ObjectEvent* pEvt = X::EventSystem::I().Register(dbg_evt_name);
 			if (pEvt)
 			{
 				pEvt->IncRef();
 			}
 		}
-		bool DebugService::BuildLocals(Runtime* rt,
+		bool DebugService::BuildLocals(XlangRuntime* rt,
 			XObj* pContextCurrent,int frameId,
 			X::Value& valLocals)
 		{
@@ -78,7 +78,7 @@ namespace X
 			valLocals = X::Value(pList);
 			return true;
 		}
-		bool DebugService::BuildObjectContent(Runtime* rt,
+		bool DebugService::BuildObjectContent(XlangRuntime* rt,
 			XObj* pContextCurrent, int frameId,X::Value& valParam,
 			X::Value& valObject)
 		{
@@ -114,7 +114,7 @@ namespace X
 			return true;
 		}
 		bool DebugService::BuildStackInfo(
-			Runtime* rt, XObj* pContextCurrent,
+			XlangRuntime* rt, XObj* pContextCurrent,
 			AST::CommandInfo* pCommandInfo,
 			X::Value& valStackInfo)
 		{
@@ -197,7 +197,7 @@ namespace X
 				if (l >= 0)
 				{
 					X::Value varL(l);
-					pList->Add((Runtime*)rt,varL);
+					pList->Add((XlangRuntime*)rt,varL);
 				}
 			}
 			return X::Value(pList);
@@ -232,7 +232,7 @@ namespace X
 			AST::CommandInfo cmdInfo;
 			if (strCmd == "Stack")
 			{
-				auto stackTracePack = [](Runtime* rt,
+				auto stackTracePack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
 					X::Value& retVal)
@@ -258,7 +258,7 @@ namespace X
 				}
 				cmdInfo.m_frameId = frameId;
 				cmdInfo.dbgType = AST::dbg::GetRuntime;
-				auto localPack = [](Runtime* rt,
+				auto localPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
 					X::Value& retVal)
@@ -268,7 +268,7 @@ namespace X
 					pDebugService->BuildLocals(rt, pContextCurrent,
 						pCommandInfo->m_frameId, retVal);
 				};
-				auto objPack = [](Runtime* rt,
+				auto objPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
 					X::Value& retVal)

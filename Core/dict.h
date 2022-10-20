@@ -72,7 +72,7 @@ namespace X
 				}
 				return bOK;
 			}
-			virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 			{
 				Object::ToBytes(rt,pContext,stream);
 				size_t size = Size();
@@ -129,7 +129,7 @@ namespace X
 			{
 				return true;
 			}
-			virtual List* FlatPack(Runtime* rt, 
+			virtual List* FlatPack(XlangRuntime* rt, 
 				long long startIndex, long long count) override;
 
 		};

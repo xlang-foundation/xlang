@@ -4,7 +4,7 @@ print(x,"size=",x.size())
 x.remove(0)
 print(x)
 
-rint("test event system")
+print("test event system")
 on("event1",(x1,y,z){
 	print("event1 fire",x1,y,z);
 })

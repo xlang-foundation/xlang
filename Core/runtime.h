@@ -9,7 +9,7 @@ namespace AST
 	class Module;
 	class Scope;
 }
-class Runtime;
+class XlangRuntime;
 enum class TraceEvent
 {
 	None=-1,
@@ -24,14 +24,14 @@ enum class TraceEvent
 	HitBreakpoint =10,
 };
 typedef bool (*XTraceFunc)(
-	Runtime* rt,
+	XlangRuntime* rt,
 	XObj* pContext,
 	AST::StackFrame* frame,
 	TraceEvent traceEvent,
 	AST::Scope* pThisBlock,
 	AST::Expression* pCurrentObj);
 
-class Runtime:
+class XlangRuntime:
 	public XRuntime
 {
 	long long m_threadId = 0;
@@ -39,7 +39,7 @@ class Runtime:
 	AST::StackFrame* m_stackBottom = nullptr;
 	XTraceFunc m_tracefunc = nullptr;
 public:
-	Runtime()
+	XlangRuntime()
 	{
 		m_threadId = GetThreadID();
 	}
@@ -50,7 +50,7 @@ public:
 	virtual bool CreateEmptyModule() override;
 	inline XTraceFunc GetTrace() { return m_tracefunc; }
 	inline long long GetThreadId() { return m_threadId; }
-	inline void MirrorStacksFrom(Runtime* rt)
+	inline void MirrorStacksFrom(XlangRuntime* rt)
 	{
 		m_pModule = rt->m_pModule;
 		m_stackBottom = rt->m_stackBottom;

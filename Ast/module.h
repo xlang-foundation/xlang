@@ -25,7 +25,7 @@ struct BreakPointInfo
 };
 
 struct CommandInfo;
-typedef void (*CommandProcessProc)(Runtime* rt,
+typedef void (*CommandProcessProc)(XlangRuntime* rt,
 	XObj* pContextCurrent,
 	CommandInfo* pCommandInfo,
 	X::Value& retVal);
@@ -211,8 +211,8 @@ public:
 		return nullptr;
 	}
 	virtual void ScopeLayout() override;
-	void AddBuiltins(Runtime* rt);
-	inline void Add(Runtime* rt, std::string& name,
+	void AddBuiltins(XlangRuntime* rt);
+	inline void Add(XlangRuntime* rt, std::string& name,
 		XObj* pContext, Value& v)
 	{
 		int idx = AddOrGet(name, false);
@@ -227,23 +227,23 @@ public:
 		}
 	}
 	// Inherited via Scope
-	virtual void AddAndSet(Runtime* rt, XObj* pContext, std::string& name, Value& v) override
+	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
 	{
 		Add(rt,name, pContext,v);
 	}
-	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
+	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		m_stackFrame->Set(idx, v);
 		return true;
 	}
-	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
+	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override
 	{
 		m_stackFrame->Get(idx, v, lValue);
 		return true;
 	}
 
-	void SetDebug(bool b,Runtime* runtime);
+	void SetDebug(bool b,XlangRuntime* runtime);
 	inline bool IsInDebug()
 	{
 		return m_inDebug;

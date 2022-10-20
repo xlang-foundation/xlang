@@ -37,9 +37,9 @@ namespace X {
 			{
 				bases.push_back(GetClassObj());
 			}
-			virtual List* FlatPack(Runtime* rt,
+			virtual List* FlatPack(XlangRuntime* rt,
 				long long startIndex, long long count) override;
-			virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*>& callables) override
 			{
 				return m_obj ? m_obj->CalcCallables(rt, pContext, callables) : false;
@@ -60,7 +60,7 @@ namespace X {
 				KWARGS& kwParams,
 				X::Value& retValue)
 			{
-				return m_obj->Call((Runtime*)rt, this,
+				return m_obj->Call((XlangRuntime*)rt, this,
 					params, kwParams, retValue);
 			}
 		};

@@ -80,7 +80,7 @@ class ThruOp :
 {
 	std::string m_url;
 
-	std::string CalcUrl(Runtime* rt, XObj* pContext,Expression* l, Expression* r)
+	std::string CalcUrl(XlangRuntime* rt, XObj* pContext,Expression* l, Expression* r)
 	{
 		std::string l_name;
 		std::string r_name;
@@ -132,7 +132,7 @@ public:
 		m_type = ObType::Thru;
 	}
 	std::string GetUrl() { return m_url; }
-	bool Run(Runtime* rt, XObj* pContext,
+	bool Run(XlangRuntime* rt, XObj* pContext,
 		Value& v, LValue* lValue) override
 	{
 		//Calc Path
@@ -177,7 +177,7 @@ public:
 	{
 		return m_path;
 	}
-	bool Run(Runtime* rt, XObj* pContext,
+	bool Run(XlangRuntime* rt, XObj* pContext,
 		Value& v, LValue* lValue) override
 	{
 		//Calc Path
@@ -254,9 +254,9 @@ class Import :
 	std::string m_path;
 	std::string m_thruUrl;
 	std::vector<ImportInfo> m_importInfos;
-	bool FindAndLoadExtensions(Runtime* rt,
+	bool FindAndLoadExtensions(XlangRuntime* rt,
 		std::string& curModulePath, std::string& loadingModuleName);
-	bool FindAndLoadXModule(Runtime* rt,
+	bool FindAndLoadXModule(XlangRuntime* rt,
 		std::string& curModulePath, std::string& loadingModuleName,
 		Module** ppSubModule);
 public:
@@ -348,9 +348,9 @@ public:
 	}
 	std::string ConvertDotSeqToString(Expression* expr);
 	virtual void ScopeLayout() override;
-	virtual bool Run(Runtime* rt, XObj* pContext,
+	virtual bool Run(XlangRuntime* rt, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
 };
 }

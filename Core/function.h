@@ -19,7 +19,7 @@ namespace X
 			}
 			Function(AST::Func* p);
 			~Function();
-			virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
+			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 			{
 				AST::Expression exp;
 				exp.SaveToStream(rt, pContext, m_func, stream);
@@ -31,7 +31,7 @@ namespace X
 				m_func = exp.BuildFromStream<AST::Func>(stream);
 				return true;
 			}
-			virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*>& callables) override
 			{
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;

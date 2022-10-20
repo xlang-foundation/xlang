@@ -10,7 +10,7 @@
 
 namespace X 
 {
-class Runtime;
+class XlangRuntime;
 namespace AST
 {
 enum class ObType
@@ -90,7 +90,7 @@ public:
 		}
 		return pRetExp?dynamic_cast<T*>(pRetExp):nullptr;
 	}
-	bool SaveToStream(Runtime* rt, XObj* pContext,Expression* pExp, X::XLangStream& stream)
+	bool SaveToStream(XlangRuntime* rt, XObj* pContext,Expression* pExp, X::XLangStream& stream)
 	{
 		if (pExp)
 		{
@@ -162,13 +162,13 @@ public:
 	{
 		return m_parent;
 	}
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables)
 	{
 		return false;
 	}
-	virtual void Set(Runtime* rt,XObj* pContext, Value& v){}
-	virtual bool Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue=nullptr)
+	virtual void Set(XlangRuntime* rt,XObj* pContext, Value& v){}
+	virtual bool Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;
 	}
@@ -178,7 +178,7 @@ public:
 	}
 	virtual void ScopeLayout() {}
 	virtual int GetLeftMostCharPos() { return m_charPos; }
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream);
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream);
 	virtual bool FromBytes(X::XLangStream& stream);
 	virtual void ConvertIDToRealAddress(std::unordered_map<ExpId,void*>& addressMap)
 	{
@@ -228,7 +228,7 @@ public:
 			delete m_s;
 		}
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt, pContext,stream);
 		stream << m_haveFormat;
@@ -253,8 +253,8 @@ public:
 		}
 		return true;
 	}
-	bool RunWithFormat(Runtime* rt, XObj* pContext, Value& v, LValue* lValue);
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	bool RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (m_haveFormat)
 		{
@@ -281,7 +281,7 @@ public:
 		m_tokenIndex = t;
 		m_type = ObType::Const;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt,pContext,stream);
 		stream << m_tokenIndex;
@@ -293,7 +293,7 @@ public:
 		stream >> m_tokenIndex;
 		return true;
 	}
-	virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (m_tokenIndex == TokenIndex::Token_None)
 		{
@@ -325,7 +325,7 @@ public:
 		m_type = ObType::Number;
 		m_isBool = true;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt,pContext,stream);
 		stream << m_val<< m_digiNum<< m_isBool;
@@ -339,7 +339,7 @@ public:
 	}
 	inline long long GetVal() { return m_val; }
 	inline int GetDigiNum() { return m_digiNum; }
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		if (m_isBool)
@@ -368,7 +368,7 @@ public:
 		m_val = val;
 		m_type = ObType::Double;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt,pContext,stream);
 		stream << m_val;
@@ -399,7 +399,7 @@ public:
 			delete e;
 		}
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt,pContext,stream);
 		stream << (int)list.size();
@@ -421,7 +421,7 @@ public:
 		}
 		return true;
 	}
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		bool bHave = false;
@@ -517,7 +517,7 @@ public:
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		bool bHave = Name ? Name->CalcCallables(rt, pContext, callables) : false;

@@ -52,7 +52,7 @@ public:
 		AutoLock(m_lock);
 		return ObjRef::Release();
 	}
-	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream);
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream);
 	virtual bool FromBytes(X::XLangStream& stream);
 	inline int GetVarNum()
 	{
@@ -75,7 +75,7 @@ public:
 		}
 		return names;
 	}
-	virtual void EachVar(Runtime* rt,XObj* pContext,
+	virtual void EachVar(XlangRuntime* rt,XObj* pContext,
 		std::function<void(std::string,X::Value&)> const& f)
 	{
 		for (auto it : m_Vars)
@@ -85,14 +85,14 @@ public:
 			f(it.first, val);
 		}
 	}
-	virtual std::string GetModuleName(Runtime* rt);
+	virtual std::string GetModuleName(XlangRuntime* rt);
 	virtual bool isEqual(Scope* s) { return (this == s); };
 	virtual ScopeWaitingStatus IsWaitForCall() 
 	{ 
 		return ScopeWaitingStatus::NoWaiting;
 	};
 	virtual Scope* GetParentScope()= 0;
-	virtual void AddAndSet(Runtime* rt, XObj* pContext,std::string& name, Value& v)
+	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext,std::string& name, Value& v)
 	{
 		int idx = AddOrGet(name, false);
 		if (idx >= 0)
@@ -124,20 +124,20 @@ public:
 			return (int)ScopeVarIndex::INVALID;
 		}
 	}
-	inline virtual bool Get(Runtime* rt, XObj* pContext,
+	inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
 		std::string& name, X::Value& v, LValue* lValue = nullptr)
 	{
 		int idx = AddOrGet(name, true);
 		return (idx>=0)?rt->Get(this, pContext, idx, v, lValue):false;
 	}
-	inline virtual bool Set(Runtime* rt, XObj* pContext,
+	inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
 		int idx, X::Value& v)
 	{
 		assert(idx != -1);
 		return rt->Set(this, pContext, idx, v);
 	}
 
-	inline virtual bool Get(Runtime* rt, XObj* pContext,
+	inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
 		int idx, X::Value& v, LValue* lValue = nullptr)
 	{
 		return rt->Get(this, pContext, idx, v, lValue);

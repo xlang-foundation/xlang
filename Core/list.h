@@ -10,6 +10,7 @@ namespace X
 namespace Data
 {
 class List :
+	virtual public XList,
 	virtual public Object
 {
 protected:
@@ -139,7 +140,7 @@ public:
 
 		return *this;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		AutoLock(m_lock);
 		Object::ToBytes(rt,pContext,stream);
@@ -261,7 +262,7 @@ public:
 		AutoLock(m_lock);
 		m_data.erase(std::next(m_data.begin(), idx));
 	}
-	inline void Add(Runtime* rt, X::Value& v)
+	inline void Add(XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock(m_lock);
 		if (v.IsObject())
@@ -288,7 +289,7 @@ public:
 		}
 		m_data.push_back(v);
 	}
-	virtual List* FlatPack(Runtime* rt,long long startIndex, long long count) override;
+	virtual List* FlatPack(XlangRuntime* rt,long long startIndex, long long count) override;
 	inline bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{

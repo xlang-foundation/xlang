@@ -12,7 +12,7 @@ namespace X
 {
 namespace AST 
 {
-void Module::SetDebug(bool b,Runtime* runtime)
+void Module::SetDebug(bool b,XlangRuntime* runtime)
 {
 	m_inDebug = b;
 	if (b)
@@ -37,7 +37,7 @@ void Module::ScopeLayout()
 	}
 	Block::ScopeLayout();
 }
-void Module::AddBuiltins(Runtime* rt)
+void Module::AddBuiltins(XlangRuntime* rt)
 {
 	auto& funcs = Builtin::I().All();
 	m_stackFrame->SetVarCount(GetVarNum());

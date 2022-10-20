@@ -33,7 +33,7 @@ namespace X
 	}
 	XRuntime* XHost_Impl::CreateRuntime()
 	{
-		Runtime* rt = new Runtime();
+		XlangRuntime* rt = new XlangRuntime();
 		return dynamic_cast<XRuntime*>(rt);
 	}
 	XRuntime* XHost_Impl::GetCurrentRuntime()
@@ -70,7 +70,7 @@ namespace X
 			if (idx >= 0)
 			{
 				Value v0;
-				pScope->Get((Runtime*)rt, pRealObj, idx, v0);
+				pScope->Get((XlangRuntime*)rt, pRealObj, idx, v0);
 				pRetObj = (XObj*)v0;
 				//(XObj*) doesn't add refcount
 				//so add here
@@ -82,7 +82,7 @@ namespace X
 	bool XHost_Impl::QueryPackage(XRuntime* rt, const char* name, Value& objPackage)
 	{
 		std::string strName(name);
-		return X::Manager::I().QueryAndCreatePackage((Runtime*)rt,strName, objPackage);
+		return X::Manager::I().QueryAndCreatePackage((XlangRuntime*)rt,strName, objPackage);
 	}
 	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
@@ -99,7 +99,7 @@ namespace X
 	XEvent* XHost_Impl::CreateXEvent(const char* name)
 	{
 		std::string strName(name);
-		auto* pEvt = new X::Event(strName);
+		auto* pEvt = new X::ObjectEvent(strName);
 		pEvt->IncRef();
 		return dynamic_cast<XEvent*>(pEvt);
 	}
@@ -140,7 +140,7 @@ namespace X
 	{
 		return (XObj*)(X::Data::Object*)(pObjectPtr);
 	}
-	XObj* XHost_Impl::CreateList()
+	XList* XHost_Impl::CreateList()
 	{
 		auto* pList = new X::Data::List();
 		pList->IncRef();
@@ -207,7 +207,7 @@ namespace X
 		X::BlockStream stream(pBin->Data(), pBin->Size(),false);
 		if (pBin->GetContext())
 		{
-			stream.ScopeSpace().SetContext((Runtime*)pBin->GetContext()->rt,
+			stream.ScopeSpace().SetContext((XlangRuntime*)pBin->GetContext()->rt,
 				pBin->GetContext()->m_parent);
 		}
 		stream >> output;
@@ -323,7 +323,7 @@ namespace X
 	{
 		AST::Import* pImp = new AST::Import(moduleName, from, thru);
 		//todo: CHECK here if pImp will be released by out of scope
-		bool bOK = pImp->Run((Runtime*)rt, nullptr, objPackage);
+		bool bOK = pImp->Run((XlangRuntime*)rt, nullptr, objPackage);
 		if (objPackage.IsObject())
 		{
 			objPackage.GetObj()->SetContext(rt, nullptr);

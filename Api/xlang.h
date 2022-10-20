@@ -19,7 +19,7 @@ namespace X
 		MetaFunction,
 		XClassObject,
 		Prop,
-		Event,
+		ObjectEvent,
 		FuncCalls,
 		Package,
 		ModuleObject,
@@ -37,25 +37,26 @@ namespace X
 	{
 		XRuntime* rt = nullptr;
 		XObj* m_parent = nullptr;
-		XObj* m_this = nullptr;
 	};
 	class XObj
 	{
 	protected:
 		XObj_Context* m_cxt = nullptr;
-		inline XObj& SetRT(XRuntime* rt)
+		inline void SetRT(XRuntime* rt)
 		{
+			if (m_cxt == nullptr)
+			{
+				m_cxt = new XObj_Context;
+			}
 			m_cxt->rt = rt;
-			return *this;
 		}
-		inline XObj& SetParent(XObj* p)
+		inline void SetParent(XObj* p)
 		{
 			m_cxt->m_parent = p;
 			if (m_cxt->m_parent)
 			{
 				m_cxt->m_parent->IncRef();
 			}
-			return *this;
 		}
 		
 	public:
@@ -63,43 +64,10 @@ namespace X
 		{
 
 		}
-		XObj(X::Value& v0)
-		{
-			m_cxt = new XObj_Context;
-			XObj* pObj = (XObj*)v0;
-			m_cxt->m_this = pObj;
-			if (pObj->m_cxt)
-			{
-				m_cxt->rt = pObj->m_cxt->rt;
-				m_cxt->m_parent = pObj->m_cxt->m_parent;
-				if (m_cxt->m_parent)
-				{
-					m_cxt->m_parent->IncRef();
-				}
-			}
-		}
-		XObj(XObj* p)
-		{//callee need to addref for p
-			m_cxt = new XObj_Context;
-			m_cxt->m_this = p;
-			if (p->m_cxt)
-			{
-				m_cxt->rt = p->m_cxt->rt;
-				m_cxt->m_parent = p->m_cxt->m_parent;
-				if (m_cxt->m_parent)
-				{
-					m_cxt->m_parent->IncRef();
-				}
-			}
-		}
 		~XObj()
 		{
 			if (m_cxt)
 			{
-				if (m_cxt->m_this)
-				{
-					m_cxt->m_this->DecRef();
-				}
 				if (m_cxt->m_parent)
 				{
 					m_cxt->m_parent->DecRef();
@@ -111,10 +79,6 @@ namespace X
 		{
 			if (m_cxt)
 			{
-				if (m_cxt->m_this)
-				{
-					m_cxt->m_this->DecRef();
-				}
 				if (m_cxt->m_parent)
 				{
 					m_cxt->m_parent->DecRef();
@@ -129,33 +93,11 @@ namespace X
 				pa->IncRef();
 			}
 		}
-		XObj(const XObj& self)
-		{
-			if (self.m_cxt)
-			{
-				m_cxt = new XObj_Context;
-				m_cxt->rt = self.m_cxt->rt;
-				m_cxt->m_this = self.m_cxt->m_this;
-				if (m_cxt->m_this)
-				{
-					m_cxt->m_this->IncRef();
-				}
-				m_cxt->m_parent = self.m_cxt->m_parent;
-				if (m_cxt->m_parent)
-				{
-					m_cxt->m_parent->IncRef();
-				}
-			}
-		}
 		XObj_Context* GetContext() { return m_cxt; }
 		XObj& operator=(const XObj& o)
 		{
 			if (m_cxt)
 			{
-				if (m_cxt->m_this)
-				{
-					m_cxt->m_this->DecRef();
-				}
 				if (m_cxt->m_parent)
 				{
 					m_cxt->m_parent->DecRef();
@@ -166,11 +108,6 @@ namespace X
 			{
 				m_cxt = new XObj_Context;
 				m_cxt->rt = o.m_cxt->rt;
-				m_cxt->m_this = o.m_cxt->m_this;
-				if (m_cxt->m_this)
-				{
-					m_cxt->m_this->IncRef();
-				}
 				m_cxt->m_parent = o.m_cxt->m_parent;
 				if (m_cxt->m_parent)
 				{
@@ -180,37 +117,24 @@ namespace X
 			return *this;
 		}
 		inline bool WithContext() { return m_cxt != nullptr; }
-		inline XObj* This() { return m_cxt->m_this; }
-		virtual XObj* Clone() { return m_cxt ? m_cxt->m_this->Clone(): nullptr; }
-		inline operator XObj*() const
-		{
-			XObj* p = nullptr;
-			if (m_cxt)
-			{
-				if (m_cxt->m_this)
-				{
-					m_cxt->m_this->IncRef();
-					p = m_cxt->m_this;
-				}
-			}
-			return p;
-		}
-		virtual int IncRef() { return m_cxt ? m_cxt->m_this->IncRef() : 0; }
-		virtual int DecRef() { return m_cxt ? m_cxt->m_this->DecRef() : 0; }
-		virtual ObjType GetType() { return m_cxt ? m_cxt->m_this->GetType(): ObjType::Base; }
-		virtual std::string GetTypeString() { return m_cxt ? m_cxt->m_this->GetTypeString() : ""; }
-		virtual long long Size() { return m_cxt ? m_cxt->m_this->Size() : 0; }
-		virtual size_t Hash() { return m_cxt ? m_cxt->m_this->Hash() : 0; }
+		virtual XObj* Clone() { return nullptr; }
+
+		virtual int IncRef() { return 0; }
+		virtual int DecRef() { return 0; }
+		virtual ObjType GetType() { return ObjType::Base; }
+		virtual std::string GetTypeString() { return ""; }
+		virtual long long Size() { return 0; }
+		virtual size_t Hash() { return 0; }
 		virtual std::string ToString(bool WithFormat = false) 
 		{
-			return m_cxt ? m_cxt->m_this->ToString() : "";
+			return "";
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return WithContext() ? This()->Call(rt, pContext, params, kwParams, retValue) : false;
+			return false;
 		}
 		virtual bool CallEx(XRuntime* rt, XObj* pContext,
 			ARGS& params,
@@ -218,7 +142,7 @@ namespace X
 			X::Value& trailer,
 			X::Value& retValue)
 		{
-			return WithContext() ? This()->CallEx(rt, pContext, params, kwParams, trailer,retValue) : false;
+			return false;
 		}
 
 		virtual XObj& operator +=(Value& r)
@@ -242,10 +166,18 @@ namespace X
 			return 0;
 		}
 		//API Wrapper
-		inline XObj Member(XRuntime* rt,const char* name)
+		inline XObj* Member(XRuntime* rt,const char* name)
 		{
-			return XObj(g_pXHost->QueryMember(rt, m_cxt ? m_cxt->m_this : this, name))
-				.SetRT(rt).SetParent(m_cxt->m_this);
+			XObj* pObj = g_pXHost->QueryMember(rt,this, name);
+			if (pObj)
+			{
+				pObj->SetContext(rt, this);
+			}
+			return pObj;
+		}
+		inline XObj* Member(const char* name)
+		{
+			return Member(m_cxt->rt, name);
 		}
 		template<typename... VarList>
 		X::Value operator()(VarList... args)
@@ -278,34 +210,32 @@ namespace X
 			}
 			return v0;
 		}
-		inline XObj operator[](const char* key)
-		{
-			return Member(m_cxt->rt,key);
-		}
+	};
+	class XRuntime :
+		virtual public XObj
+	{
+	public:
+		virtual bool CreateEmptyModule() = 0;
 	};
 	class XStr :
 		virtual public XObj
 	{
 	public:
 		Internal_Reserve(XStr)
-		XStr(const char* data, int size):
-			XObj(g_pXHost->CreateStr(data, size))
-		{
-		}
-		virtual char* Buffer() { return WithContext() ? dynamic_cast<XStr*>(This())->Buffer() : nullptr; }
+		virtual char* Buffer() = 0;
+	};
+	class XList :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XList)
 	};
 	class XDict :
 		virtual public XObj
 	{
 	public:
 		Internal_Reserve(XDict)
-		XDict():
-			XObj(g_pXHost->CreateDict())
-		{
-		}
-		virtual void Set(X::Value& key, X::Value& val) {
-			if (WithContext()) dynamic_cast<XDict*>(This())->Set(key, val);
-		}
+		virtual void Set(X::Value& key, X::Value& val) = 0;
 		inline void Set(const char* key, X::Value val)
 		{
 			X::Value k(key);
@@ -317,11 +247,7 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XBin)
-		XBin(char* data, size_t size):
-			XObj(g_pXHost->CreateBin(data, size))
-		{
-		}
-		virtual char* Data() { return WithContext() ? dynamic_cast<XBin*>(This())->Data() : nullptr; }
+		virtual char* Data() = 0;
 	};
 	class XProp :
 		virtual public XObj
@@ -436,6 +362,14 @@ namespace X
 			return *m_obj;
 		}
 	};
+	using Str = V<XStr>;
+	using Dict = V<XDict>;
+	using List = V<XList>;
+	using Bin = V<XBin>;
+	using Package = V<XPackage>;
+	using Event = V<XEvent>;
+	using Func = V<XFunc>;
+	using Runtime = V<XRuntime>;
 }
 
 #endif

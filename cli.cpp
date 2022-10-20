@@ -2,6 +2,7 @@
 #include <string>
 #include "xhost.h"
 
+
 namespace X
 {
 	void CLI::MainLoop()

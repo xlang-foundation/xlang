@@ -10,7 +10,7 @@
 namespace X 
 {
     namespace AST { class Scope; }
-    class Runtime;
+    class XlangRuntime;
     class XLangStreamException
         : public std::exception
     {
@@ -35,19 +35,19 @@ namespace X
         friend class XLangStream;
         std::unordered_map<unsigned long long, void*> m_map;
         AST::Scope* m_curScope = nullptr;
-        Runtime* m_rt = nullptr;
+        XlangRuntime* m_rt = nullptr;
         XObj* m_pContext = nullptr;
     public:
         void SetCurrentScope(AST::Scope* p)
         {
             m_curScope = p;
         }
-        void SetContext(Runtime* rt, XObj* pContext)
+        void SetContext(XlangRuntime* rt, XObj* pContext)
         {
             m_rt = rt;
             m_pContext = pContext;
         }
-        Runtime* RT() { return m_rt; }
+        XlangRuntime* RT() { return m_rt; }
         XObj* Context() { return m_pContext; }
         AST::Scope* GetCurrentScope()
         {

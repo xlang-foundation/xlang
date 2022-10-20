@@ -9,7 +9,7 @@ namespace X
 			virtual public UnaryOp
 		{
 			Expression* m_client = nullptr;
-			bool GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
+			bool GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
 		public:
 			Decorator() :
 				Operator(),
@@ -25,7 +25,7 @@ namespace X
 			}
 			inline Expression* Client() { return m_client; }
 			inline void SetClient(Expression* e) { m_client = e; }
-			virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+			virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 		};
 	}
 }

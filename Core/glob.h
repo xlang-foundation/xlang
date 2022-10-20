@@ -11,13 +11,13 @@
 namespace X {
 	namespace Data { class Object; }
 	class OpRegistry;
-	class Runtime;
+	class XlangRuntime;
 	class G:
 		public Singleton<G>
 	{
-		std::unordered_map<long long, Runtime*> m_rtMap;//for multiple threads
+		std::unordered_map<long long, XlangRuntime*> m_rtMap;//for multiple threads
 		void* m_lockRTMap = nullptr;
-		Runtime* MakeThreadRuntime(long long curTId, Runtime* rt);
+		XlangRuntime* MakeThreadRuntime(long long curTId, XlangRuntime* rt);
 		std::unordered_map<Data::Object*, int> Objects;
 		void* m_lock = nullptr;
 		OpRegistry* m_reg = nullptr;
@@ -39,7 +39,7 @@ namespace X {
 			((Locker*)m_lockRTMap)->Unlock();
 			return pRet;
 		}
-		inline Runtime* Threading(Runtime* fromRt)
+		inline XlangRuntime* Threading(XlangRuntime* fromRt)
 		{
 			long long curTId = GetThreadID();
 			if (fromRt == nullptr || fromRt->GetThreadId() != curTId)

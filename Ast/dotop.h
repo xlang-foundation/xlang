@@ -12,11 +12,11 @@ class DotOp :
 {
 	int m_dotNum = 1;
 protected:
-	void QueryBases(Runtime* rt, Data::Object* pObj,
+	void QueryBases(XlangRuntime* rt, Data::Object* pObj,
 		std::vector<Scope*>& bases);
 	void RunScopeLayoutWithScopes(Expression* pExpr, 
 		std::vector<Scope*>& scopes);
-	bool DotProcess(Runtime* rt, XObj* pContext, 
+	bool DotProcess(XlangRuntime* rt, XObj* pContext, 
 		Value& v_l, Expression* r,
 		Value& v, LValue* lValue = nullptr);
 public:
@@ -38,7 +38,7 @@ public:
 		m_type = ObType::Dot;
 		m_dotNum = dotNum;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		BinaryOp::ToBytes(rt,pContext,stream);
 		stream << m_dotNum;
@@ -50,9 +50,9 @@ public:
 		stream >> m_dotNum;
 		return true;
 	}
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
 };
 }

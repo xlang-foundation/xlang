@@ -57,7 +57,7 @@ public:
 		}
 		Body.clear();
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		UnaryOp::ToBytes(rt,pContext,stream);
 		stream << NoIndentCheck << IndentCount 
@@ -126,7 +126,7 @@ public:
 	{
 		m_type = ObType::For;
 	}
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class While :
 	virtual public Block
@@ -145,7 +145,7 @@ public:
 		m_type = ObType::While;
 	}
 
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class If :
@@ -168,7 +168,7 @@ public:
 	{
 		if (m_next) delete m_next;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		Block::ToBytes(rt,pContext,stream);
 		SaveToStream(rt, pContext,m_next, stream);
@@ -181,7 +181,7 @@ public:
 		return true;
 	}
 	virtual bool EatMe(Expression* other) override;
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 }
 }

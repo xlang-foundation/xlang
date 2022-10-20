@@ -22,12 +22,12 @@ namespace X
 			{
 				return m_customScope->Query(name);
 			}
-			virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
+			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 			{
 				m_customScope->Set(idx, v);
 				return true;
 			}
-			virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
+			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 				LValue* lValue = nullptr) override
 			{
 				return m_customScope->Get(idx, v);

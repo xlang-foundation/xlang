@@ -17,35 +17,35 @@ namespace X {
 void RegisterOps(OpRegistry* reg)
 {
 	RegOP("+")
-	.SetUnaryop([](Runtime* rt,AST::UnaryOp* op,X::Value& R, X::Value& v) {
+	.SetUnaryop([](XlangRuntime* rt,AST::UnaryOp* op,X::Value& R, X::Value& v) {
 		v = R;//just keep as + does
 		return true;
 	})
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
 		v = L;
 		v.Clone();
 		v += R;
 		return true;
 	});
 	RegOP("-")
-	.SetUnaryop([](Runtime* rt, AST::UnaryOp* op,X::Value& R, X::Value& v) {
+	.SetUnaryop([](XlangRuntime* rt, AST::UnaryOp* op,X::Value& R, X::Value& v) {
 		v = X::Value((long long)0);//set to 0
 		v -= R;
 		return true;
 	})
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
 		v = L;
 		v -= R;
 		return true;
 	});
 	RegOP("*")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 			v = L;
 			v *= R;
 			return true;
 	});
 	RegOP(".")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		int cnt = R.GetF();
 		double d = (double)R.GetLongLong();
 		for (int i = 0; i < cnt; i++)
@@ -57,7 +57,7 @@ void RegisterOps(OpRegistry* reg)
 		return true;
 	});
 	RegOP("/")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		if (!R.IsZero())
 		{
 			v = L;
@@ -70,52 +70,52 @@ void RegisterOps(OpRegistry* reg)
 		}
 	});
 	RegOP("==")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L == R);
 		return true;
 	});
 	RegOP("!=")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L != R);
 		return true;
 	});
 	RegOP(">")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L > R);
 		return true;
 	});
 	RegOP("<")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L < R);
 		return true;
 	});
 	RegOP(">=")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L >= R);
 		return true;
 	});
 	RegOP("<=")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L <= R);
 		return true;
 	});
 	RegOP("and")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L.IsTrue() && R.IsTrue());
 		return true;
 	});
 	RegOP("or")
-	.SetBinaryop([](Runtime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L.IsTrue() || R.IsTrue());
 		return true;
 	});
 	RegOP("not")
-	.SetUnaryop([](Runtime* rt, AST::UnaryOp* op,X::Value& R, X::Value& v) {
+	.SetUnaryop([](XlangRuntime* rt, AST::UnaryOp* op,X::Value& R, X::Value& v) {
 		v = X::Value(R.IsZero());
 		return true;
 	});
 	RegOP("return")
-	.SetUnaryop([](Runtime* rt, AST::UnaryOp* op,
+	.SetUnaryop([](XlangRuntime* rt, AST::UnaryOp* op,
 		X::Value& R, X::Value& v) {
 		rt->SetReturn(R);
 		v = R;

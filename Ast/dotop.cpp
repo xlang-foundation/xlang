@@ -19,7 +19,7 @@ void DotOp::ScopeLayout()
 	if (L) L->ScopeLayout();
 	//R will be decided in run stage
 }
-void DotOp::QueryBases(Runtime* rt, Data::Object* pObj,
+void DotOp::QueryBases(XlangRuntime* rt, Data::Object* pObj,
 	std::vector<Scope*>& bases)
 {
 	pObj->GetBaseScopes(bases);
@@ -57,7 +57,7 @@ void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
 		var->ScopeLayout(scopes);
 	}
 }
-bool DotOp::DotProcess(Runtime* rt, XObj* pContext, 
+bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext, 
 	Value& v_l, Expression* R,
 	Value& v, LValue* lValue)
 {
@@ -209,7 +209,7 @@ bool DotOp::DotProcess(Runtime* rt, XObj* pContext,
 	}
 	return true;
 }
-bool DotOp::Run(Runtime* rt,XObj* pContext,Value& v, LValue* lValue)
+bool DotOp::Run(XlangRuntime* rt,XObj* pContext,Value& v, LValue* lValue)
 {
 	if (!L || !R)
 	{
@@ -270,7 +270,7 @@ bool DotOp::Run(Runtime* rt,XObj* pContext,Value& v, LValue* lValue)
 	DotProcess(rt, pContext,v_l, r,v, lValue);
 	return true;
 }
-bool DotOp::CalcCallables(Runtime* rt, XObj* pContext,
+bool DotOp::CalcCallables(XlangRuntime* rt, XObj* pContext,
 	std::vector<Scope*>& callables)
 {
 	Value val;

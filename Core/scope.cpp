@@ -6,7 +6,7 @@ namespace X
 {
 	namespace AST
 	{
-		bool Scope::ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream)
+		bool Scope::ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 		{
 			stream << (int)m_Vars.size();
 			for (auto& it : m_Vars)
@@ -47,7 +47,7 @@ namespace X
 			}
 			return true;
 		}
-		std::string Scope::GetModuleName(Runtime* rt)
+		std::string Scope::GetModuleName(XlangRuntime* rt)
 		{
 			return rt->M()->GetModuleName();
 		}

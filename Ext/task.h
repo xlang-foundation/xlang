@@ -8,12 +8,12 @@
 
 namespace X
 {
-	class Runtime;
+	class XlangRuntime;
 	class Task :
 		public GThread
 	{
 		AST::Func* m_pFunc = nil;
-		Runtime* m_rt = nil;
+		XlangRuntime* m_rt = nil;
 		XObj* m_pContext = nil;
 		ARGS m_params;
 		KWARGS m_kwParams;
@@ -23,7 +23,7 @@ namespace X
 		virtual void run() override;
 	public:
 		bool Call(AST::Func* pFunc,
-			Runtime* rt, XObj* pContext,
+			XlangRuntime* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams)
 		{
@@ -33,7 +33,7 @@ namespace X
 			m_kwParams = kwParams;
 
 			//copy stacks into new thread
-			X::Runtime* pRuntime = new X::Runtime();
+			X::XlangRuntime* pRuntime = new X::XlangRuntime();
 			pRuntime->MirrorStacksFrom(rt);
 			m_rt = pRuntime;
 			Start();

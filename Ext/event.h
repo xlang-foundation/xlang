@@ -19,7 +19,7 @@
 
 namespace X
 {
-	class Event;
+	class ObjectEvent;
 	class XObj;
 	class XPackage;
 	struct HandlerInfo
@@ -30,12 +30,12 @@ namespace X
 		long cookie = 0;
 	};
 
-	class Event :
+	class ObjectEvent :
 		public virtual Data::Object,
 		public virtual XEvent
 	{
 		friend class EventSystem;
-		Data::ObjectScope<Event> m_APIs;
+		Data::ObjectScope<ObjectEvent> m_APIs;
 		std::string m_name;
 		Locker m_lockHandlers;
 		long m_lastCookie = 0;
@@ -47,15 +47,15 @@ namespace X
 			return m_APIs.Fire(evtIndex,params,kwargs);
 		}
 
-		Event() :Data::Object(), XObj(), ObjRef(), XEvent()
+		ObjectEvent() :Data::Object(), XObj(), ObjRef(), XEvent()
 		{
-			m_t = ObjType::Event;
+			m_t = ObjType::ObjectEvent;
 			//auto x0 = typeid(this).name();
-			//auto x = typeid(&Event::wait).name();
-			m_APIs.AddFunc<2>("wait", &Event::wait);
+			//auto x = typeid(&ObjectEvent::wait).name();
+			m_APIs.AddFunc<2>("wait", &ObjectEvent::wait);
 			m_APIs.Create();
 		}
-		Event(std::string& name) :Event()
+		ObjectEvent(std::string& name) :ObjectEvent()
 		{
 			m_name = name;
 		}
@@ -73,7 +73,7 @@ namespace X
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams, X::Value& retValue) override;
-		virtual Event& operator +=(X::Value& r) override
+		virtual ObjectEvent& operator +=(X::Value& r) override
 		{
 			AutoLock(m_lock);
 			if (r.IsObject())
@@ -236,7 +236,7 @@ namespace X
 	{
 		struct EventFireInfo
 		{
-			Event* pEvtObj;
+			ObjectEvent* pEvtObj;
 			X::XRuntime* rt;
 			X::Value valContext;
 			ARGS params;
@@ -248,14 +248,14 @@ namespace X
 
 		XWait m_wait;
 		Locker m_lockEventMap;
-		std::unordered_map<std::string, Event*> m_eventMap;
+		std::unordered_map<std::string, ObjectEvent*> m_eventMap;
 	public:
 		void Shutdown()
 		{
 			m_run = false;
 			m_wait.Release();
 		}
-		inline void FireInMain(Event* pEvt, XRuntime* rt, XObj* pContext,
+		inline void FireInMain(ObjectEvent* pEvt, XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams)
 		{
 			ARGS params0 = params;//for copy
@@ -266,14 +266,14 @@ namespace X
 			m_lockEventOnFire.Unlock();
 			m_wait.Release();
 		}
-		inline Event* Query(const char* name)
+		inline ObjectEvent* Query(const char* name)
 		{
 			std::string strName(name);
 			return Query(strName);
 		}
-		inline Event* Query(std::string& name)
+		inline ObjectEvent* Query(std::string& name)
 		{
-			Event* pEvt = nullptr;
+			ObjectEvent* pEvt = nullptr;
 			m_lockEventMap.Lock();
 			auto it = m_eventMap.find(name);
 			if (it != m_eventMap.end())
@@ -297,7 +297,7 @@ namespace X
 				{
 					auto fireInfo = m_eventsOnFire[0];
 					m_eventsOnFire.erase(m_eventsOnFire.begin());
-					Event* pEvtToRun = fireInfo.pEvtObj;
+					ObjectEvent* pEvtToRun = fireInfo.pEvtObj;
 					m_lockEventOnFire.Unlock();
 					pEvtToRun->DecRef();//for m_eventsOnFire
 					//todo:
@@ -311,7 +311,7 @@ namespace X
 		inline void Fire(X::XRuntime* rt, XObj* pContext,
 			std::string& name, ARGS& params, KWARGS& kwargs, bool inMain = false)
 		{
-			Event* pEvt = Query(name);
+			ObjectEvent* pEvt = Query(name);
 			if (pEvt)
 			{
 				pEvt->Fire(rt, pContext, params, kwargs, inMain);
@@ -325,7 +325,7 @@ namespace X
 		}
 		inline bool Unregister(std::string& name)
 		{
-			Event* pEvt = nullptr;
+			ObjectEvent* pEvt = nullptr;
 			m_lockEventMap.Lock();
 			auto it = m_eventMap.find(name);
 			if (it != m_eventMap.end())
@@ -340,14 +340,14 @@ namespace X
 			}
 			return true;
 		}
-		inline Event* Register(const char* name)
+		inline ObjectEvent* Register(const char* name)
 		{
 			std::string strName(name);
 			return Register(strName);
 		}
-		Event* Register(std::string& name)
+		ObjectEvent* Register(std::string& name)
 		{
-			Event* pEvt = nullptr;
+			ObjectEvent* pEvt = nullptr;
 			m_lockEventMap.Lock();
 			auto it = m_eventMap.find(name);
 			if (it != m_eventMap.end())
@@ -356,7 +356,7 @@ namespace X
 			}
 			else
 			{
-				pEvt = new Event();
+				pEvt = new ObjectEvent();
 				pEvt->IncRef();
 				pEvt->m_name = name;
 				m_eventMap.emplace(std::make_pair(name, pEvt));

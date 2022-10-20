@@ -149,30 +149,30 @@ namespace X
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		auto& headers = pReq->headers;
-		XDict dict;
+		X::Dict dict;
 		for (auto it = headers.begin(); it != headers.end(); ++it)
 		{
 			const auto& x = *it;
-			X::Value key(XStr(x.first.c_str(), (int)x.first.size()));
-			X::Value val(XStr(x.second.c_str(), (int)x.second.size()));
-			dict.Set(key, val);
+			X::Str key(x.first.c_str(), (int)x.first.size());
+			X::Str val(x.second.c_str(), (int)x.second.size());
+			dict->Set(key, val);
 		}
-		return X::Value(dict);
+		return dict;
 	}
 	X::Value  HttpRequest::GetParams()
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		auto& req_params = pReq->params;
-		XDict dict;
+		X::Dict dict;
 		for (auto it = req_params.begin();
 			it != req_params.end(); ++it)
 		{
 			const auto& x = *it;
-			X::Value key(XStr(x.first.c_str(), (int)x.first.size()));
-			X::Value val(XStr(x.second.c_str(), (int)x.second.size()));
-			dict.Set(key, val);
+			X::Str key(x.first.c_str(), (int)x.first.size());
+			X::Str val(x.second.c_str(), (int)x.second.size());
+			dict->Set(key, val);
 		}
-		return X::Value(dict);
+		return dict;
 	}
 }
 

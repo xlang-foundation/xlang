@@ -16,14 +16,14 @@ namespace X
 		class DebugService
 		{
 			bool BuildStackInfo(
-				Runtime* rt,
+				XlangRuntime* rt,
 				XObj* pContextCurrent,
 				AST::CommandInfo* pCommandInfo,
 				X::Value& valStackInfo);
-			bool BuildLocals(Runtime* rt,
+			bool BuildLocals(XlangRuntime* rt,
 				XObj* pContextCurrent,int frameId,
 				X::Value& valLocals);
-			bool BuildObjectContent(Runtime* rt,
+			bool BuildObjectContent(XlangRuntime* rt,
 				XObj* pContextCurrent, int frameId, X::Value& valParam,
 				X::Value& valObject);
 			XPackageAPISet<DebugService> m_Apis;

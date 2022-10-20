@@ -4,7 +4,7 @@
 namespace X
 {
 	bool Dbg::xTraceFunc(
-		Runtime* rt,
+		XlangRuntime* rt,
 		XObj* pContext,
 		AST::StackFrame* frame,
 		TraceEvent traceEvent,
@@ -54,7 +54,7 @@ namespace X
 		}
 
 		PyEng::Object objRuntimeHandle(self, true);
-		Runtime* rt = (Runtime*)(unsigned long long)objRuntimeHandle;
+		XlangRuntime* rt = (XlangRuntime*)(unsigned long long)objRuntimeHandle;
 		TraceEvent te = (TraceEvent)event;
 		if (te == TraceEvent::Call)
 		{//check if there is a scope which was from Command StepIn

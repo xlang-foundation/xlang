@@ -34,7 +34,7 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 	{
 		return false;
 	}
-	Runtime* rt = (Runtime*)rt0;
+	XlangRuntime* rt = (XlangRuntime*)rt0;
 	bool bOk = true;
 	m_bRunning = true;
 	if (rt->GetTrace() 
@@ -100,14 +100,14 @@ bool Block::RunLast(XRuntime* rt0, XObj* pContext, Value& v, LValue* lValue)
 	}
 	auto last = Body[Body.size() - 1];
 	Value v0;
-	bool bOk = last->Run((Runtime*)rt0, pContext, v0);
+	bool bOk = last->Run((XlangRuntime*)rt0, pContext, v0);
 	if (bOk)
 	{
 		v = v0;
 	}
 	return bOk;
 }
-bool While::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
+bool While::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	if (R == nil)
 	{
@@ -129,7 +129,7 @@ bool While::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
 	}
 	return true;
 }
-bool For::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
+bool For::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	Value v0;
 	while (true)
@@ -165,7 +165,7 @@ bool If::EatMe(Expression* other)
 		return false;
 	}
 }
-bool If::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
+bool If::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	bool bRet = true;
 	bool bCanRun = false;

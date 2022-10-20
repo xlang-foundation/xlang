@@ -13,7 +13,7 @@ class Var :
 	bool m_needRelease = false;//Name.s is created by this Var,then = true
 	int Index = -1;//index for this Var,set by compiling
 
-	bool GetPropValue(Runtime* rt, XObj* pContext,XObj* pObj,Value& val);
+	bool GetPropValue(XlangRuntime* rt, XObj* pContext,XObj* pObj,Value& val);
 public:
 	Var()
 	{
@@ -31,20 +31,20 @@ public:
 			delete Name.s;
 		}
 	}
-	void EncodeExtern(Runtime* rt, XObj* pContext, X::XLangStream& stream);
-	void DecodeExtern(Runtime* rt, XObj* pContext, X::XLangStream& stream);
+	void EncodeExtern(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream);
+	void DecodeExtern(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream);
 	virtual void SetScope(Scope* p) override
 	{
 		Expression::SetScope(p);
 		Index = -1;
 	}
-	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream);
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream);
 	virtual bool FromBytes(X::XLangStream& stream);
 	void ScopeLayout(std::vector<Scope*>& candidates);
 	virtual void ScopeLayout() override;
 	String& GetName() { return Name; }
 	std::string GetNameString() { return std::string(Name.s, Name.size); }
-	inline virtual void Set(Runtime* rt, XObj* pContext, Value& v) override
+	inline virtual void Set(XlangRuntime* rt, XObj* pContext, Value& v) override
 	{
 		if (Index == -1)
 		{
@@ -53,9 +53,9 @@ public:
 		}
 		m_scope->Set(rt, pContext, Index, v);
 	}
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
-	inline virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (Index == -1 || m_scope == nullptr || rt == nullptr)
 		{//case 1:RunExpression in XHost will call with rt is null,

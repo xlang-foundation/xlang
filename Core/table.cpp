@@ -8,7 +8,7 @@ namespace X
 		{
 			return m_table->GetColNum();
 		}
-		List* TableRow::FlatPack(Runtime* rt,
+		List* TableRow::FlatPack(XlangRuntime* rt,
 			long long startIndex, long long count)
 		{
 			if (startIndex < 0 || startIndex >= Size())
@@ -55,7 +55,7 @@ namespace X
 			}
 			return pOutList;
 		}
-		List* Table::FlatPack(Runtime* rt, 
+		List* Table::FlatPack(XlangRuntime* rt, 
 			long long startIndex, long long count)
 		{
 			if (startIndex < 0 || startIndex >= Size())

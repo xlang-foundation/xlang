@@ -82,7 +82,7 @@ namespace X
 			Func,
 			FuncEx,
 			Prop,
-			Event,
+			ObjectEvent,
 			Class,
 			ClassInstance,
 		};
@@ -123,7 +123,7 @@ namespace X
 		}
 		void AddEvent(const char* name)
 		{
-			m_members.push_back(MemberInfo{ MemberType::Event,name });
+			m_members.push_back(MemberInfo{ MemberType::ObjectEvent,name });
 		}
 		template<std::size_t Parameter_Num, class Class_T>
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr)
@@ -387,7 +387,7 @@ namespace X
 					v0 = dynamic_cast<X::XObj*>(pPropObj);
 				}
 				break;
-				case MemberType::Event:
+				case MemberType::ObjectEvent:
 				{
 					auto* pEvtObj = X::g_pXHost->CreateXEvent(m.name.c_str());
 					v0 = dynamic_cast<X::XObj*>(pEvtObj);

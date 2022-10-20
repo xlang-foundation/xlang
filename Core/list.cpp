@@ -84,12 +84,12 @@ namespace X
 			{
 				return nullptr;
 			}
-			virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override
+			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 			{
 				m_stackFrame->Set(idx, v);
 				return true;
 			}
-			virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
+			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 				LValue* lValue = nullptr) override
 			{
 				m_stackFrame->Get(idx, v, lValue);
@@ -102,6 +102,7 @@ namespace X
 			_listScope.clean();
 		}
 		List::List() :
+			XList(0),
 			Object()
 		{
 			m_t = ObjType::List;
@@ -158,7 +159,7 @@ namespace X
 			retValue = X::Value(this);
 			return true;
 		}
-		List* List::FlatPack(Runtime* rt,long long startIndex, long long count)
+		List* List::FlatPack(XlangRuntime* rt,long long startIndex, long long count)
 		{
 			AutoLock(m_lock);
 			if (startIndex < 0 || startIndex >= Size())

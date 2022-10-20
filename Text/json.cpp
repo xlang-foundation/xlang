@@ -20,7 +20,7 @@ namespace X
 	{
 		if (!IsAbsPath(fileName))
 		{
-			X::Runtime* pRt = (X::Runtime*)rt;
+			X::XlangRuntime* pRt = (X::XlangRuntime*)rt;
 			std::string curPath = pRt->M()->GetModulePath();
 			fileName = curPath + Path_Sep_S + fileName;
 		}

@@ -23,7 +23,7 @@ class XClass
 	AST::StackFrame* m_stackFrame = nullptr;//to hold non-instance properties
 	std::vector<XClass*> m_bases;
 	std::vector<MemberInfo> m_tempMemberList;
-	XClass* FindBase(Runtime* rt, std::string& strName);
+	XClass* FindBase(XlangRuntime* rt, std::string& strName);
 public:
 	XClass() :
 		Func()
@@ -41,7 +41,7 @@ public:
 	{
 		return m_stackFrame;
 	}
-	virtual void AddAndSet(Runtime* rt, XObj* pContext, std::string& name, Value& v) override
+	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
 	{
 		int idx = AddOrGet(name, false);
 		if (idx >= 0)
@@ -54,19 +54,19 @@ public:
 			Set(rt, pContext, idx, v);
 		}
 	}
-	virtual bool Set(Runtime* rt, XObj* pContext, int idx, Value& v) override;
-	virtual bool Get(Runtime* rt, XObj* pContext, int idx, Value& v,
+	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override;
+	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override;
 	inline std::vector<XClass*>& GetBases() { return m_bases; }
-	virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
-	virtual bool Call(Runtime* rt,
+	virtual bool Call(XlangRuntime* rt,
 		XObj* pContext,
 		std::vector<Value>& params,
 		KWARGS& kwParams,
 		Value& retValue);
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		bool bHave = false;

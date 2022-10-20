@@ -15,6 +15,140 @@ namespace X
 	COMPARE_OP_IMPL(>= )
 	COMPARE_OP_IMPL(<= )
 
+	template<>
+	void V<XRuntime>::Create()
+	{
+		SetObj(g_pXHost->CreateRuntime());
+	}
+	template<>
+	void V<XDict>::Create()
+	{
+		SetObj(g_pXHost->CreateDict());
+	}
+	template<>
+	void V<XList>::Create()
+	{
+		SetObj(g_pXHost->CreateList());
+	}
+	template<>
+	template<>
+	void V<XStr>::Create(int size)
+	{
+		SetObj(g_pXHost->CreateStr(nullptr, size));
+	}
+	template<>
+	template<>
+	void V<XStr>::Create(const char* s,int size)
+	{
+		SetObj(g_pXHost->CreateStr(s,size));
+	}
+	template<>
+	template<>
+	void V<XBin>::Create(char* s, int size)
+	{
+		SetObj(g_pXHost->CreateBin(s,size));
+	}
+	template<>
+	template<>
+	void V<XPackage>::Create(void* pRealObj)
+	{
+		SetObj(g_pXHost->CreatePackage(pRealObj));
+	}
+	template<>
+	template<>
+	void V<XPackage>::Create(V<XPackage> package, void* pRealObj)
+	{
+		SetObj(g_pXHost->CreatePackageProxy(package, pRealObj));
+	}
+	template<>
+	template<>
+	void V<XEvent>::Create(const char* name)
+	{
+		SetObj(g_pXHost->CreateXEvent(name));
+	}
+	template<>
+	template<>
+	void V<XFunc>::Create(const char* name, U_FUNC func, X::XObj* pContext)
+	{
+		SetObj(g_pXHost->CreateFunction(name, func, pContext));
+	}
+	template<>
+	template<>
+	void V<XFunc>::Create(const char* name, U_FUNC func)
+	{
+		SetObj(g_pXHost->CreateFunction(name, func));
+	}
+	template<>
+	template<>
+	void V<XFunc>::Create(const char* name, U_FUNC_EX func, X::XObj* pContext)
+	{
+		SetObj(g_pXHost->CreateFunctionEx(name, func, pContext));
+	}
+	template<>
+	template<>
+	void V<XFunc>::Create(const char* name, U_FUNC_EX func)
+	{
+		SetObj(g_pXHost->CreateFunctionEx(name, func));
+	}
+	template<>
+	template<>
+	void V<XPackage>::Create(XRuntime* rt, const char* moduleName,
+		const char* from, const char* thru)
+	{
+		Value v0;
+		if (g_pXHost->Import(rt, moduleName, from, thru, v0))
+		{
+			SetObj(v0);
+		}
+	}
+	template<>
+	template<>
+	void V<XPackage>::Create(XRuntime* rt, const char* moduleName)
+	{
+		Value v0;
+		if (g_pXHost->Import(rt, moduleName, nullptr,nullptr, v0))
+		{
+			SetObj(v0);
+		}
+	}
+	template<>
+	template<>
+	void V<XPackage>::Create(XRuntime* rt, const char* moduleName,
+		const char* from)
+	{
+		Value v0;
+		if (g_pXHost->Import(rt, moduleName, from, nullptr, v0))
+		{
+			SetObj(v0);
+		}
+	}
+	Value Value::ObjCall(std::vector<X::Value>& params)
+	{
+		auto* pObj = GetObj();
+		if (pObj == nullptr || pObj->GetContext() == nullptr)
+		{
+			return Value();
+		}
+		KWARGS kwargs;
+		Value v0;
+		pObj->Call(pObj->GetContext()->rt, pObj->GetContext()->m_parent, params, kwargs, v0);
+		if (v0.IsObject())
+		{
+			v0.GetObj()->SetContext(pObj->GetContext()->rt, pObj->GetContext()->m_parent);
+		}
+		return v0;
+	}
+	Value Value::QueryMember(const char* key)
+	{
+		if (IsObject())
+		{
+			return GetObj()->Member(key);
+		}
+		else
+		{
+			return Value();
+		}
+	}
 	bool Value::Clone()
 	{
 		if (t == ValueType::Object)

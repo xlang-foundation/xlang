@@ -21,7 +21,7 @@ namespace X
 				m_data = data;
 				m_size = size;
 			}
-			virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 			{
 				Object::ToBytes(rt, pContext,stream);
 				stream << m_size;

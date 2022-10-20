@@ -143,7 +143,7 @@ bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	X::Event* pEvt = X::EventSystem::I().Query("RunModule");
+	X::ObjectEvent* pEvt = X::EventSystem::I().Query("RunModule");
 	if (pEvt == nullptr)
 	{
 		pEvt = X::EventSystem::I().Register("RunModule");
@@ -296,7 +296,7 @@ bool U_BreakPoint(X::XRuntime* rt, XObj* pContext,
 	KWARGS& kwParams,
 	X::Value& retValue)
 {
-	((X::Runtime*)rt)->M()->SetDbgType(AST::dbg::Step,
+	((X::XlangRuntime*)rt)->M()->SetDbgType(AST::dbg::Step,
 		AST::dbg::Step);
 	retValue = X::Value(true);
 	return true;
@@ -349,17 +349,17 @@ bool U_TaskRun(X::XRuntime* rt, XObj* pContext,
 			{
 				pFutureList = new Data::List();
 				X::Value vTask(pFuture);
-				pFutureList->Add((X::Runtime*)rt, vTask);
+				pFutureList->Add((X::XlangRuntime*)rt, vTask);
 				pFuture = nil;
 			}
 			X::Value vTask(f);
-			pFutureList->Add((X::Runtime*)rt, vTask);
+			pFutureList->Add((X::XlangRuntime*)rt, vTask);
 		}
 		else
 		{
 			pFuture = f;
 		}
-		bool bRet = tsk->Call(pFunc, (X::Runtime*)rt, pContext, params, kwParams);
+		bool bRet = tsk->Call(pFunc, (X::XlangRuntime*)rt, pContext, params, kwParams);
 		return bRet;
 	};
 	bool bOK = true;
@@ -444,7 +444,7 @@ bool U_AddPath(X::XRuntime* rt, XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	X::Runtime* pRt = (X::Runtime*)rt;
+	X::XlangRuntime* pRt = (X::XlangRuntime*)rt;
 	for (auto& p : params)
 	{
 		std::string strPath = p.ToString();
@@ -462,7 +462,7 @@ bool U_RemovePath(X::XRuntime* rt, XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	X::Runtime* pRt = (X::Runtime*)rt;
+	X::XlangRuntime* pRt = (X::XlangRuntime*)rt;
 	for (auto& p : params)
 	{
 		std::string strPath = p.ToString();

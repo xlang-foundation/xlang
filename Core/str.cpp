@@ -150,13 +150,13 @@ namespace X
 			{
 				return nullptr;
 			}
-			inline virtual bool Set(Runtime* rt, XObj* pContext,
+			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v)
 			{
 				return false;
 			}
 
-			inline virtual bool Get(Runtime* rt, XObj* pContext,
+			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, X::LValue* lValue = nullptr)
 			{
 				Str* pStrObj = dynamic_cast<Str*>(pContext);

@@ -13,14 +13,14 @@ namespace X {
 		delete (Locker*)m_lock;
 	}
 	
-	Runtime* G::MakeThreadRuntime(long long curTId, Runtime* rt)
+	XlangRuntime* G::MakeThreadRuntime(long long curTId, XlangRuntime* rt)
 	{
-		Runtime* pRet = nullptr;
+		XlangRuntime* pRet = nullptr;
 		((Locker*)m_lockRTMap)->Lock();
 		auto it = m_rtMap.find(curTId);
 		if (it == m_rtMap.end())
 		{
-			X::Runtime* pRuntime = new X::Runtime();
+			X::XlangRuntime* pRuntime = new X::XlangRuntime();
 			if (rt)
 			{
 				pRuntime->MirrorStacksFrom(rt);

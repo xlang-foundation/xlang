@@ -16,14 +16,14 @@ X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
 {
 	return nullptr;
 }
-bool X::AST::Import::CalcCallables(Runtime* rt, XObj* pContext,
+bool X::AST::Import::CalcCallables(XlangRuntime* rt, XObj* pContext,
 	std::vector<Scope*>& callables)
 {
 	ScopeProxy* pProxy = new ScopeProxy();
 	callables.push_back(pProxy);
 	return true;
 }
-bool X::AST::Import::FindAndLoadExtensions(Runtime* rt,
+bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	std::string& curModulePath,
 	std::string& loadingModuleName)
 {
@@ -90,7 +90,7 @@ bool X::AST::Import::FindAndLoadExtensions(Runtime* rt,
 	}
 	return bOK;
 }
-bool X::AST::Import::FindAndLoadXModule(Runtime* rt,
+bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	std::string& curModulePath,
 	std::string& loadingModuleName,
 	Module** ppSubModule)
@@ -151,7 +151,7 @@ bool X::AST::Import::FindAndLoadXModule(Runtime* rt,
 	}
 	return bOK;
 }
-bool X::AST::Import::Run(Runtime* rt, XObj* pContext, 
+bool X::AST::Import::Run(XlangRuntime* rt, XObj* pContext, 
 	Value& v, LValue* lValue)
 {
 	if (m_from)

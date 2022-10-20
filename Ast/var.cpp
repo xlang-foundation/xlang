@@ -16,7 +16,7 @@ namespace AST
 		Class,
 		Func
 	};
-	void Var::EncodeExtern(Runtime* rt, XObj* pContext, X::XLangStream& stream)
+	void Var::EncodeExtern(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 	{
 		Value v0;
 		if (!Run(rt, pContext, v0))
@@ -93,7 +93,7 @@ namespace AST
 			}
 		}
 	}
-	void Var::DecodeExtern(Runtime* rt, XObj* pContext, X::XLangStream& stream)
+	void Var::DecodeExtern(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 	{
 		ScopeType st;
 		stream >> st;
@@ -177,7 +177,7 @@ namespace AST
 		}
 		m_scope = pCurScope;
 	}
-	bool Var::ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream)
+	bool Var::ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt, pContext, stream);
 		stream << Name.size;
@@ -226,7 +226,7 @@ namespace AST
 		}
 		return true;
 	}
-	bool Var::GetPropValue(Runtime* rt, XObj* pContext,XObj* pObj, Value& val)
+	bool Var::GetPropValue(XlangRuntime* rt, XObj* pContext,XObj* pObj, Value& val)
 	{
 		bool bOK = false;
 		auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
@@ -236,7 +236,7 @@ namespace AST
 		}
 		return bOK;
 	}
-bool Var::CalcCallables(Runtime* rt, XObj* pContext,
+bool Var::CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables)
 {
 	Value val;

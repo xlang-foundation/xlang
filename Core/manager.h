@@ -11,7 +11,7 @@
 
 namespace X 
 {
-	class Runtime;
+	class XlangRuntime;
 	class XProxy;
 	class Manager :
 		public Singleton<Manager>
@@ -99,7 +99,7 @@ namespace X
 			}
 			return bHave;
 		}
-		bool QueryAndCreatePackage(Runtime* rt,std::string& name,
+		bool QueryAndCreatePackage(XlangRuntime* rt,std::string& name,
 			Value& valPack)
 		{
 			bool bCreated = false;

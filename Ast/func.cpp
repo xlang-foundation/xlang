@@ -66,7 +66,7 @@ void Func::ScopeLayout()
 		}
 	}
 }
-bool Func::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
+bool Func::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);
 	Value v0(f);//hold one refcount
@@ -102,7 +102,7 @@ bool Func::Call(XRuntime* rt0,
 	KWARGS& kwParams,
 	Value& retValue)
 {
-	Runtime* rt = G::I().Threading((Runtime*)rt0);
+	XlangRuntime* rt = G::I().Threading((XlangRuntime*)rt0);
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
 	StackFrame* frame = new StackFrame(this);
 	for (auto& kw : kwParams)

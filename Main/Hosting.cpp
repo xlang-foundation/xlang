@@ -106,7 +106,7 @@ namespace X
 	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
 			bool stopOnEntry)
 	{
-		Runtime* pRuntime = new Runtime();
+		XlangRuntime* pRuntime = new XlangRuntime();
 		pRuntime->SetM(pTopModule);
 		if (stopOnEntry)
 		{
@@ -144,7 +144,7 @@ namespace X
 		{
 			auto* pTopModule = new AST::Module();
 			pTopModule->ScopeLayout();
-			Runtime* pRuntime = new Runtime();
+			XlangRuntime* pRuntime = new XlangRuntime();
 			pRuntime->SetM(pTopModule);
 			AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 			pModuleFrame->SetLine(pTopModule->GetStartLine());

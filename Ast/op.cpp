@@ -12,7 +12,7 @@ namespace X
 {
 namespace AST
 {
-	bool Assign::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
+	bool Assign::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 	{
 		if (!L || !R)
 		{
@@ -123,7 +123,7 @@ namespace AST
 		return true;
 	}
 
-	bool Operator::GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
+	bool Operator::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
 	{
 		auto proc = [&](Expression* i)
 		{
@@ -173,7 +173,7 @@ namespace AST
 		return bOK;
 	}
 
-bool UnaryOp::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
+bool UnaryOp::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
 {
 	Value v_r;
 	if (!R->Run(rt,pContext,v_r))
@@ -184,7 +184,7 @@ bool UnaryOp::Run(Runtime* rt,XObj* pContext,Value& v,LValue* lValue)
 	return func ? func(rt,this, v_r, v) : false;
 }
 
-bool Range::Eval(Runtime* rt)
+bool Range::Eval(XlangRuntime* rt)
 {
 	if (R && R->m_type == ObType::Pair)
 	{
@@ -211,7 +211,7 @@ bool Range::Eval(Runtime* rt)
 	m_evaluated = true;
 	return true;
 }
-bool Range::Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
+bool Range::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	if (!m_evaluated)
 	{

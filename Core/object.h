@@ -19,7 +19,7 @@ namespace X {
 	typedef X::Value(*IterateProc)(
 		X::XRuntime* rt, XObj* pContext,
 		X::Value& keyOrIdx,X::Value& val,ARGS& params,KWARGS& kwParams);
-class Runtime;
+class XlangRuntime;
 namespace Data {
 	class List;
 	class AttributeBag;
@@ -75,7 +75,7 @@ namespace Data {
 		{
 			return (m_t == ObjType::Str);
 		}
-		virtual List* FlatPack(Runtime* rt,long long startIndex,long long count)
+		virtual List* FlatPack(XlangRuntime* rt,long long startIndex,long long count)
 		{ 
 			return nullptr; 
 		}
@@ -84,7 +84,7 @@ namespace Data {
 		{
 			return true;
 		}
-		virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+		virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
 			return false;
@@ -141,7 +141,7 @@ namespace Data {
 		{
 			return 0;
 		}
-		virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream)
+		virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 		{ 
 			return true; 
 		}
@@ -195,7 +195,7 @@ namespace Data {
 		{
 			return true;
 		}
-		virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream)
+		virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 		{
 			AST::Expression exp;
 			exp.SaveToStream(rt, pContext, m_expr, stream);

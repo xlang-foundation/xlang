@@ -85,7 +85,7 @@ public:
 			delete m_Name.s;
 		}
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		std::string code;
 		for (auto* decor : m_decors)
@@ -167,7 +167,7 @@ public:
 	{
 		return std::string(m_Name.s, m_Name.size);
 	}
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		if (Params)
@@ -234,7 +234,7 @@ public:
 		KWARGS& kwParams,
 		X::Value& trailer,
 		X::Value& retValue);
-	virtual bool Run(Runtime* rt, XObj* pContext,
+	virtual bool Run(XlangRuntime* rt, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
 };
 class ExternFunc
@@ -278,7 +278,7 @@ public:
 			m_pContext->DecRef();
 		}
 	}
-	virtual bool ToBytes(Runtime* rt, XObj* pContext, X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 	{
 		Expression::ToBytes(rt, pContext, stream);
 		stream << m_funcName;

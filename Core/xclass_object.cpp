@@ -6,7 +6,7 @@ namespace X
 {
 	namespace Data
 	{
-		List* XClassObject::FlatPack(Runtime* rt,
+		List* XClassObject::FlatPack(XlangRuntime* rt,
 			long long startIndex, long long count)
 		{
 			List* pOutList = new List();

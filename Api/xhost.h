@@ -16,15 +16,12 @@ namespace X
 	class XProp;
 	class XEvent;
 	class XDict;
+	class XList;
 	class XBin;
 	class XRemoteObject;
 	class XProxy;
 	class XCustomScope;
-	class XRuntime
-	{
-	public:
-		virtual bool CreateEmptyModule() = 0;
-	};
+	class XRuntime;
 	typedef XPackage* (*PackageCreator)();
 	typedef void (*PackageCleanup)(void* pContextObj);
 	typedef XProxy* (*XProxyCreator)(std::string& url);
@@ -52,7 +49,7 @@ namespace X
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;
 		virtual XDict* CreateDict() = 0;
-		virtual XObj* CreateList() = 0;
+		virtual XList* CreateList() = 0;
 		virtual XPackage* CreatePackage(void* pRealObj) = 0;
 		virtual XPackage* CreatePackageProxy(XPackage* pPackage,void* pRealObj) = 0;
 		virtual XEvent* CreateXEvent(const char* name) = 0;

@@ -23,7 +23,7 @@ public:
 	{
 		Op = op;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		Expression::ToBytes(rt,pContext,stream);
 		stream << Op;
@@ -37,7 +37,7 @@ public:
 		stream >> opId;
 		return true;
 	}
-	bool GetParamList(Runtime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
+	bool GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
 	inline void SetId(OP_ID id) { opId = id; }
 	inline OP_ID GetId() { return opId; }
 	inline short getOp(){return Op;}
@@ -71,7 +71,7 @@ public:
 		if (L) delete L;
 		if (R) delete R;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		Operator::ToBytes(rt,pContext,stream);
 		SaveToStream(rt, pContext,L, stream);
@@ -91,7 +91,7 @@ public:
 		if (L) L->SetScope(p);
 		if (R) R->SetScope(p);
 	}
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
 		bool bHave = false;
@@ -171,7 +171,7 @@ public:
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
 
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
@@ -213,7 +213,7 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 };
 class ColonOP :
 	virtual public Operator
@@ -284,7 +284,7 @@ public:
 	{
 		if (R) delete R;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		Operator::ToBytes(rt,pContext,stream);
 		SaveToStream(rt, pContext,R, stream);
@@ -344,7 +344,7 @@ public:
 	}
 	Expression* GetR() { return R; }
 
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
 	virtual public UnaryOp
@@ -354,7 +354,7 @@ class Range :
 	long long m_stop =0;
 	long long m_step = 1;
 
-	bool Eval(Runtime* rt);
+	bool Eval(XlangRuntime* rt);
 public:
 	Range() :
 		Operator(),
@@ -368,7 +368,7 @@ public:
 	{
 		m_type = ObType::Range;
 	}
-	virtual bool ToBytes(Runtime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		UnaryOp::ToBytes(rt,pContext,stream);
 		SaveToStream(rt, pContext,R, stream);
@@ -382,7 +382,7 @@ public:
 		stream >> m_evaluated >> m_start >> m_stop >> m_step;
 		return true;
 	}
-	virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class InOp :
 	virtual public BinaryOp
@@ -400,7 +400,7 @@ public:
 	{
 		m_type = ObType::In;
 	}
-	inline virtual bool Run(Runtime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		bool bIn = R->Run(rt,pContext, v);
 		if(bIn)
@@ -435,7 +435,7 @@ public:
 		m_type = ObType::ExternDecl;
 	}
 	virtual void ScopeLayout() override;
-	inline virtual bool Run(Runtime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		return true;//dont' run Base class's Run
 	}

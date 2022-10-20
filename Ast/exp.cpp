@@ -163,7 +163,7 @@ Scope* Expression::FindScope()
 	}
 	return pMyScope;
 }
-bool Expression::ToBytes(Runtime* rt, XObj* pContext,X::XLangStream& stream)
+bool Expression::ToBytes(XlangRuntime* rt, XObj* pContext,X::XLangStream& stream)
 {
 	stream << m_type;
 	ExpId parentId = 0;
@@ -227,7 +227,7 @@ bool Param::Parse(std::string& strVarName,
 	}
 	return true;
 }
-bool Str::RunWithFormat(Runtime* rt, XObj* pContext, Value& v, LValue* lValue)
+bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	std::string str0;
 	bool bMeetSlash = false;

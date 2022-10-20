@@ -27,7 +27,7 @@ public:
 	{
 		return m_list;
 	}
-	virtual bool CalcCallables(Runtime* rt, XObj* pContext,
+	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<AST::Scope*>& callables) override
 	{
 		bool bHave = false;
@@ -77,7 +77,7 @@ public:
 				params, kwParams, trailer, v0);
 			if (bOK)
 			{
-				pValueList->Add((Runtime*)rt, v0);
+				pValueList->Add((XlangRuntime*)rt, v0);
 			}
 			else
 			{
@@ -116,7 +116,7 @@ public:
 				params, kwParams, v0);
 			if (bOK)
 			{
-				pValueList->Add((Runtime*)rt, v0);
+				pValueList->Add((XlangRuntime*)rt, v0);
 			}
 			else
 			{

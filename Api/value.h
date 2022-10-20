@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace X 
 {
@@ -107,6 +108,8 @@ class Value
 		char* str;
 		XObj* obj;
 	}x;
+	Value ObjCall(std::vector<X::Value>& params);
+	Value QueryMember(const char* key);
 public:
 	inline bool IsInvalid()
 	{
@@ -198,14 +201,17 @@ public:
 		flags = size;
 		x.str = s;
 	}
-	inline Value(XObj* p)
+	inline Value(XObj* p,bool AddRef = true)
 	{
 		t = ValueType::Object;
 		x.obj = nullptr;
 		AssignObject(p);
 	}
 	Value(std::string& s);
-
+	void SetObj(XObj* p)
+	{
+		x.obj = p;
+	}
 	bool Clone();
 	bool ChangeToStrObject();
 	void AssignObject(XObj* p);
@@ -361,6 +367,35 @@ public:
 			break;
 		}
 	}
+	template<typename... VarList>
+	Value operator()(VarList... args)
+	{
+		if (!IsObject())
+		{
+			return Value();
+		}
+		const int size = sizeof...(args);
+		Value vals[size] = { args... };
+		std::vector<X::Value> params;
+		for (int i = 0; i < size; i++)
+		{
+			params.push_back(vals[i]);
+		}
+		return ObjCall(params);
+	}
+	Value operator()()
+	{
+		if (!IsObject())
+		{
+			return Value();
+		}
+		std::vector<X::Value> params;
+		return ObjCall(params);
+	}
+	inline Value operator[](const char* key)
+	{
+		return QueryMember(key);
+	}
 	ARITH_OP(+= );
 	ARITH_OP(-= );
 	ARITH_OP(*= );
@@ -378,6 +413,43 @@ public:
 	Value getattr(const char* attrName) const;
 	void setattr(const char* attrName, X::Value& attrVal) const;
 	long long Size();
+};
+template<typename T>
+class V:
+	public Value
+{
+	template<typename... VarList>
+	void Create(VarList... args);
+	void Create();
+public:
+	V()
+	{
+		Create();
+	}
+	template<typename... VarList>
+	V(VarList... args)
+	{
+		Create(args...);
+	}
+	V(const Value& v):
+		Value(v)
+	{
+
+	}
+	V(T* obj):
+		Value(obj)
+	{
+
+	}
+	operator T* ()
+	{
+		XObj* pObj = this->GetObj();
+		return  dynamic_cast<T*>(pObj);
+	}
+	T* operator->()
+	{
+		return dynamic_cast<T*>(GetObj());
+	}
 };
 }
 

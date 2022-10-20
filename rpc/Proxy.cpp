@@ -112,7 +112,7 @@ namespace X
 		}
 		X::ROBJ_ID oId = nullptr;
 		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call);
-		stream.ScopeSpace().SetContext((Runtime*)rt, pContext);
+		stream.ScopeSpace().SetContext((XlangRuntime*)rt, pContext);
 
 		stream << parent_id;
 		stream << id;
