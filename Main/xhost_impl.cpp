@@ -31,6 +31,10 @@ namespace X
 			delete g_pXHost;
 		}
 	}
+	void XHost_Impl::AddSysCleanupFunc(CLEANUP f)
+	{
+		Manager::I().AddCleanupFunc(f);
+	}
 	XRuntime* XHost_Impl::CreateRuntime()
 	{
 		XlangRuntime* rt = new XlangRuntime();
@@ -107,7 +111,7 @@ namespace X
 	{
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
-		auto* pFuncObj = new X::Data::Function(extFunc);
+		auto* pFuncObj = new X::Data::Function(extFunc,true);
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
@@ -115,7 +119,7 @@ namespace X
 	{
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
-		auto* pFuncObj = new X::Data::Function(extFunc);
+		auto* pFuncObj = new X::Data::Function(extFunc,true);
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}

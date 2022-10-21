@@ -7,6 +7,7 @@ namespace X
 		public XHost
 	{
 	public:
+		virtual void AddSysCleanupFunc(CLEANUP f) override;
 		virtual XRuntime* CreateRuntime() override;
 		virtual XRuntime* GetCurrentRuntime() override;
 		virtual XStr* CreateStr(const char* data, int size) override;

@@ -92,7 +92,7 @@ namespace X
 	}
 	template<>
 	template<>
-	void V<XPackage>::Create(XRuntime* rt, const char* moduleName,
+	void V<XPackage>::Create(Runtime rt, const char* moduleName,
 		const char* from, const char* thru)
 	{
 		Value v0;
@@ -103,7 +103,7 @@ namespace X
 	}
 	template<>
 	template<>
-	void V<XPackage>::Create(XRuntime* rt, const char* moduleName)
+	void V<XPackage>::Create(Runtime rt, const char* moduleName)
 	{
 		Value v0;
 		if (g_pXHost->Import(rt, moduleName, nullptr,nullptr, v0))
@@ -113,7 +113,7 @@ namespace X
 	}
 	template<>
 	template<>
-	void V<XPackage>::Create(XRuntime* rt, const char* moduleName,
+	void V<XPackage>::Create(Runtime rt, const char* moduleName,
 		const char* from)
 	{
 		Value v0;
@@ -161,9 +161,9 @@ namespace X
 		}
 		return true;
 	}
-	void Value::AssignObject(XObj* p)
+	void Value::AssignObject(XObj* p, bool bAddRef)
 	{
-		if (p)
+		if (p && bAddRef)
 		{
 			p->IncRef();
 		}

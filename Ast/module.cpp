@@ -47,8 +47,7 @@ void Module::AddBuiltins(XlangRuntime* rt)
 		int idx = AddOrGet(name, true);
 		if (idx >= 0)
 		{
-			auto* pFuncObj = new Data::Function(it.second);
-			Value v0(pFuncObj);
+			Value v0(it.second);
 			Set(rt,nullptr,idx, v0);
 		}
 	}

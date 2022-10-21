@@ -259,6 +259,7 @@ void XLangUnload()
 			EventLoopThread::I().Stop();
 		}
 	}
+	Hosting::I().Cleanup();
 	G::I().Check();
 	DestoryXHost();
 }

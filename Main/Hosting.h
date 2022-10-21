@@ -50,6 +50,14 @@ namespace X
 			m_lock.Unlock();
 		}
 	public:
+		void Cleanup()
+		{
+			if (m_pInteractiveModule)
+			{
+				m_pInteractiveModule->DecRef();
+				m_pInteractiveModule = nullptr;
+			}
+		}
 		AST::Module* QueryModule(unsigned long long key)
 		{
 			AST::Module* pModule = nullptr;

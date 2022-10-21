@@ -91,6 +91,7 @@ namespace X
 		}
 		//prepare top module for this code
 		AST::Module* pTopModule = new AST::Module();
+		pTopModule->IncRef();
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);
 		pTopModule->SetModuleName(moduleName);
@@ -100,7 +101,7 @@ namespace X
 	bool Hosting::Unload(AST::Module* pTopModule)
 	{
 		RemoveModule(pTopModule);
-		delete pTopModule;
+		pTopModule->DecRef();
 		return true;
 	}
 	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
@@ -151,6 +152,7 @@ namespace X
 			pTopModule->AddBuiltins(pRuntime);
 			pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
 			m_pInteractiveModule = pTopModule;
+			m_pInteractiveModule->IncRef();
 			m_pInteractiveRuntime = pRuntime;
 		}
 		Parser parser;

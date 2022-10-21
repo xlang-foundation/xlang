@@ -30,6 +30,7 @@ namespace X
 	//todo: evaluate performace change to use std::function
 	typedef bool (*U_FUNC_bak) (XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, Value& retValue);
+	typedef void(*CLEANUP)();
 	using U_FUNC = std::function<bool(XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, Value& retValue)>;
 	using U_FUNC_EX = std::function<bool(XRuntime* rt, XObj* pContext,
@@ -40,6 +41,7 @@ namespace X
 	class XHost
 	{
 	public:
+		virtual void AddSysCleanupFunc(CLEANUP f) = 0;
 		virtual XRuntime* CreateRuntime() = 0;
 		virtual XRuntime* GetCurrentRuntime() = 0;
 		virtual bool RegisterPackage(const char* name, PackageCreator creator) = 0;

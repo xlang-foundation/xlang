@@ -42,7 +42,7 @@ namespace X
 						retValue = X::Value((long long)pos);
 						return true;
 					}));
-					auto* pFuncObj = new Data::Function(extFunc);
+					auto* pFuncObj = new Data::Function(extFunc,true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				{
@@ -65,7 +65,7 @@ namespace X
 								retValue = X::Value((long long)pos);
 								return true;
 							}));
-					auto* pFuncObj = new Data::Function(extFunc);
+					auto* pFuncObj = new Data::Function(extFunc,true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				{
@@ -94,7 +94,7 @@ namespace X
 								retValue = X::Value(pNewStr);
 								return true;
 							}));
-					auto* pFuncObj = new Data::Function(extFunc);
+					auto* pFuncObj = new Data::Function(extFunc,true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				{
@@ -111,7 +111,7 @@ namespace X
 								retValue = X::Value((long long)size);
 								return true;
 							}));
-					auto* pFuncObj = new Data::Function(extFunc);
+					auto* pFuncObj = new Data::Function(extFunc,true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				{
@@ -135,7 +135,7 @@ namespace X
 								retValue = X::Value(pList);
 								return true;
 							}));
-					auto* pFuncObj = new Data::Function(extFunc);
+					auto* pFuncObj = new Data::Function(extFunc,true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
 			}

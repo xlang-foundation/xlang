@@ -10,7 +10,7 @@ namespace X
 	public:
 		BEGIN_PACKAGE(JsonWrapper)
 			APISET().AddFunc<1>("loads", &JsonWrapper::LoadFromString);
-			APISET().AddRTFunc<1>("loads", &JsonWrapper::LoadFromFile);
+			APISET().AddRTFunc<1>("load", &JsonWrapper::LoadFromFile);
 		END_PACKAGE
 	public:
 		JsonWrapper()

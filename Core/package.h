@@ -41,6 +41,14 @@ public:
 			Cleanup(m_pObject);
 		}
 	}
+	virtual void RemoveALl() override
+	{
+		if (m_stackFrame)
+		{
+			delete m_stackFrame;
+			m_stackFrame = nullptr;
+		}
+	}
 	inline void Cleanup(void* pObj)
 	{
 		if (m_funcPackageCleanup)
@@ -176,6 +184,10 @@ public:
 		{
 			m_pPackage->Scope::DecRef();
 		}
+	}
+	virtual void RemoveALl() override
+	{
+		m_pPackage->RemoveALl();
 	}
 	inline virtual int AddMethod(const char* name, bool keepRawParams = false) override
 	{

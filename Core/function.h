@@ -11,13 +11,14 @@ namespace X
 			virtual public Object
 		{
 		protected:
+			bool m_ownFunc = false;//m_func owned by this object or just a reference
 			AST::Func* m_func = nullptr;
 		public:
 			Function() :XFunc(), Object()
 			{
 
 			}
-			Function(AST::Func* p);
+			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 			{

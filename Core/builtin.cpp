@@ -256,18 +256,15 @@ bool U_Time(X::XRuntime* rt, X::XObj* pContext,
 
 
 namespace X {
-	void Builtin::Cleanup()
+void Builtin::Cleanup()
+{
+	for (auto it : m_mapFuncs)
 	{
-		for (auto& it : m_mapFuncs)
-		{
-			if (it.second)
-			{
-				delete it.second;
-			}
-		}
-		m_mapFuncs.clear();
+		it.second->DecRef();
 	}
-	AST::ExternFunc* Builtin::Find(std::string& name)
+	m_mapFuncs.clear();
+}
+Data::Function* Builtin::Find(std::string& name)
 {
 	auto it = m_mapFuncs.find(name);
 	return (it!= m_mapFuncs.end())?it->second:nil;
@@ -280,11 +277,12 @@ bool Builtin::Register(const char* name, X::U_FUNC func,
 	AST::ExternFunc* extFunc = new AST::ExternFunc(
 		strName,
 		(X::U_FUNC)func);
-	m_mapFuncs.emplace(std::make_pair(name,extFunc));
+	auto* pFuncObj = new Data::Function(extFunc,true);
+	pFuncObj->IncRef();
+	m_mapFuncs.emplace(std::make_pair(name, pFuncObj));
 	if (regToMeta)
 	{
 		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);
-		auto* pFuncObj = new Data::Function(extFunc);
 		X::Value vFunc(pFuncObj);
 		X::AST::MetaScope::I().Set(nullptr, nullptr, idx,vFunc);
 	}

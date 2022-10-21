@@ -205,16 +205,17 @@ public:
 	{
 		t = ValueType::Object;
 		x.obj = nullptr;
-		AssignObject(p);
+		AssignObject(p, AddRef);
 	}
 	Value(std::string& s);
 	void SetObj(XObj* p)
 	{
+		t = ValueType::Object;
 		x.obj = p;
 	}
 	bool Clone();
 	bool ChangeToStrObject();
-	void AssignObject(XObj* p);
+	void AssignObject(XObj* p,bool bAddRef = true);
 	void ReleaseObject(XObj* p);
 	inline Value(const Value& v)
 	{

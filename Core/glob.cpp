@@ -1,5 +1,6 @@
 #include "glob.h"
 #include "Locker.h"
+#include "object.h"
 
 namespace X {
 	G::G()
@@ -12,7 +13,7 @@ namespace X {
 		delete (Locker*)m_lockRTMap;
 		delete (Locker*)m_lock;
 	}
-	
+
 	XlangRuntime* G::MakeThreadRuntime(long long curTId, XlangRuntime* rt)
 	{
 		XlangRuntime* pRet = nullptr;

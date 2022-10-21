@@ -29,11 +29,21 @@ namespace X
 		std::unordered_map<std::string, PackageInfo> m_mapPackage;
 		Locker m_proxyMapLock;
 		std::unordered_map<std::string, XProxyInfo> m_mapXProxy;
+		std::vector<CLEANUP> m_cleanups;
 	public:
 		void Cleanup()
 		{
 			m_mapPackage.clear();
 			m_mapXProxy.clear();
+			for (auto f : m_cleanups)
+			{
+				f();
+			}
+			m_cleanups.clear();
+		}
+		void AddCleanupFunc(CLEANUP f)
+		{
+			m_cleanups.push_back(f);
 		}
 		bool RegisterProxy(const char* name, XProxyCreator creator)
 		{

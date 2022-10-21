@@ -69,6 +69,7 @@ void Func::ScopeLayout()
 bool Func::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);
+	//owned by Block
 	Value v0(f);//hold one refcount
 	XObj* pPassContext = f;
 	for(auto it = m_decors.rbegin(); it != m_decors.rend(); ++it)

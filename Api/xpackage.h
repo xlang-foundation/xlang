@@ -5,12 +5,14 @@
 namespace X
 {
 	template<class impl_pack_class>
-	void RegisterPackage(const char* pack_name, impl_pack_class* instance =nullptr)
+	XPackage* RegisterPackage(const char* pack_name, impl_pack_class* instance =nullptr)
 	{
 		auto& apiset = impl_pack_class::APISET();
 		impl_pack_class::BuildAPI();
 		apiset.Create(nullptr);
-
+		X::g_pXHost->AddSysCleanupFunc([]() {
+			impl_pack_class::APISET().Cleanup();
+			});
 		if (instance == nullptr)
 		{
 			X::g_pXHost->RegisterPackage(pack_name, []()
@@ -25,6 +27,7 @@ namespace X
 			X::Value v0(dynamic_cast<X::XObj*>(pXPack));
 			X::g_pXHost->RegisterPackage(pack_name, v0);
 		}
+		return apiset.GetPack();
 	}
 
 	namespace HelpFuncs
@@ -105,6 +108,15 @@ namespace X
 			return g_pXHost->CreatePackageProxy(m_xPack, pRealObj);
 		}
 		X::XEvent* GetEvent(int idx) { return __events[idx]; }
+		void Cleanup()
+		{
+			if (m_xPack)
+			{
+				m_xPack->RemoveALl();
+				m_xPack->DecRef();
+				m_xPack = nullptr;
+			}
+		}
 		~XPackageAPISet()
 		{
 			if (m_xPack)
@@ -371,26 +383,26 @@ namespace X
 				{
 					auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
 					auto* pFuncObj = X::g_pXHost->CreateFunction(m.name.c_str(), m.func, pObjFun);
-					v0 = dynamic_cast<X::XObj*>(pFuncObj);
+					v0 = X::Value(pFuncObj,false);
 				}
 				break;
 				case MemberType::FuncEx:
 				{
 					auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
 					auto* pFuncObj = X::g_pXHost->CreateFunctionEx(m.name.c_str(), m.func_ex, pObjFun);
-					v0 = dynamic_cast<X::XObj*>(pFuncObj);
+					v0 = X::Value(pFuncObj, false);
 				}
 				break;
 				case MemberType::Prop:
 				{
 					auto* pPropObj = X::g_pXHost->CreateProp(m.name.c_str(), m.func, m.func2);
-					v0 = dynamic_cast<X::XObj*>(pPropObj);
+					v0 = X::Value(pPropObj, false);
 				}
 				break;
 				case MemberType::ObjectEvent:
 				{
 					auto* pEvtObj = X::g_pXHost->CreateXEvent(m.name.c_str());
-					v0 = dynamic_cast<X::XObj*>(pEvtObj);
+					v0 = X::Value(pEvtObj, false);
 					__events.push_back(pEvtObj);
 				}
 				default:

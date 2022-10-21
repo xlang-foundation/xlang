@@ -4,13 +4,18 @@ namespace X
 {
 	namespace Data 
 	{
-		Function::Function(AST::Func* p)
+		Function::Function(AST::Func* p, bool bOwnIt)
 		{
+			m_ownFunc = bOwnIt;
 			m_t = ObjType::Function;
 			m_func = p;
 		}
 		Function::~Function()
 		{
+			if (m_ownFunc && m_func)
+			{
+				delete m_func;
+			}
 		}
 		bool Function::Call(XRuntime* rt, XObj* pContext,
 			ARGS& params,
