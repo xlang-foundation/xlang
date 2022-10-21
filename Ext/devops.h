@@ -26,7 +26,6 @@ namespace X
 			bool BuildObjectContent(XlangRuntime* rt,
 				XObj* pContextCurrent, int frameId, X::Value& valParam,
 				X::Value& valObject);
-			XPackageAPISet<DebugService> m_Apis;
 		public:
 			BEGIN_PACKAGE(DebugService)
 				APISET().AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);

@@ -35,6 +35,7 @@ void Module::ScopeLayout()
 		auto name = it.first;
 		int idx = AddOrGet(name, false);
 	}
+	Builtin::I().ReturnMap();
 	Block::ScopeLayout();
 }
 void Module::AddBuiltins(XlangRuntime* rt)
@@ -51,6 +52,7 @@ void Module::AddBuiltins(XlangRuntime* rt)
 			Set(rt,nullptr,idx, v0);
 		}
 	}
+	Builtin::I().ReturnMap();
 }
 void Module::ClearBreakpoints()
 {

@@ -258,14 +258,17 @@ bool U_Time(X::XRuntime* rt, X::XObj* pContext,
 namespace X {
 void Builtin::Cleanup()
 {
+	m_lock.Lock();
 	for (auto it : m_mapFuncs)
 	{
 		it.second->DecRef();
 	}
 	m_mapFuncs.clear();
+	m_lock.Unlock();
 }
 Data::Function* Builtin::Find(std::string& name)
 {
+	AutoLock(m_lock);
 	auto it = m_mapFuncs.find(name);
 	return (it!= m_mapFuncs.end())?it->second:nil;
 }
@@ -279,7 +282,9 @@ bool Builtin::Register(const char* name, X::U_FUNC func,
 		(X::U_FUNC)func);
 	auto* pFuncObj = new Data::Function(extFunc,true);
 	pFuncObj->IncRef();
+	m_lock.Lock();
 	m_mapFuncs.emplace(std::make_pair(name, pFuncObj));
+	m_lock.Unlock();
 	if (regToMeta)
 	{
 		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);

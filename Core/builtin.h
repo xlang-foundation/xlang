@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "exp.h"
 #include <vector>
+#include "Locker.h"
 #include "singleton.h"
 
 namespace X {
@@ -13,11 +14,17 @@ namespace X {
 	class Builtin :
 		public Singleton<Builtin>
 	{
+		Locker m_lock;
 		std::unordered_map<std::string, Data::Function*> m_mapFuncs;
 	public:
 		std::unordered_map<std::string, Data::Function*>& All()
 		{
+			m_lock.Lock();
 			return m_mapFuncs;
+		}
+		void ReturnMap()
+		{
+			m_lock.Unlock();
 		}
 		void Cleanup();
 		Data::Function* Find(std::string& name);

@@ -142,7 +142,7 @@ namespace X
 	{
 		if (IsObject())
 		{
-			return GetObj()->Member(key);
+			return Value(GetObj()->Member(key),false);
 		}
 		else
 		{
