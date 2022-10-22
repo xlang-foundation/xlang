@@ -12,12 +12,14 @@ namespace X
 		{
 		protected:
 			char* m_data = nullptr;
+			bool m_OwnData = true;
 			size_t m_size;
 		public:
-			Binary(char* data, size_t size):
+			Binary(char* data, size_t size,bool bOwnData):
 				XBin(0)
 			{//new copy
 				m_t = ObjType::Binary;
+				m_OwnData = bOwnData;
 				m_data = data;
 				m_size = size;
 			}
@@ -36,6 +38,7 @@ namespace X
 					delete m_data;
 				}
 				m_data = new char[m_size];
+				m_OwnData = true;
 				stream.CopyTo(m_data, m_size);
 				return true;
 			}
@@ -66,7 +69,7 @@ namespace X
 			inline virtual long long  Size()  override { return m_size; }
 			~Binary()
 			{
-				if (m_data)
+				if (m_OwnData && m_data!=nullptr)
 				{
 					delete m_data;
 				}

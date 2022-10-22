@@ -44,9 +44,9 @@ namespace X
 	}
 	template<>
 	template<>
-	void V<XBin>::Create(char* s, int size)
+	void V<XBin>::Create(char* s, int size,bool bOwnData)
 	{
-		SetObj(g_pXHost->CreateBin(s,size));
+		SetObj(g_pXHost->CreateBin(s,size, bOwnData));
 	}
 	template<>
 	template<>

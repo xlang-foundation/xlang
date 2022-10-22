@@ -160,9 +160,9 @@ namespace X
 	{
 		return ::StringifyString(str);
 	}
-	XBin* XHost_Impl::CreateBin(char* data, size_t size)
+	XBin* XHost_Impl::CreateBin(char* data, size_t size, bool bOwnData)
 	{
-		auto* pObjBin = new Data::Binary(data, size);
+		auto* pObjBin = new Data::Binary(data, size, bOwnData);
 		pObjBin->IncRef();
 		return pObjBin;
 	}
@@ -197,7 +197,7 @@ namespace X
 		auto size = stream.Size();
 		char* pData = new char[size];
 		stream.FullCopyTo(pData, size);
-		X::Data::Binary* pBinOut = new X::Data::Binary(pData, size);
+		X::Data::Binary* pBinOut = new X::Data::Binary(pData, size,true);
 		output = X::Value(pBinOut);
 		return true;
 	}

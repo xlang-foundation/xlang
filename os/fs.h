@@ -46,7 +46,7 @@ namespace X
 			{
 				char* data = new char[size];
 				m_stream.read(data, size);
-				return X::Value(g_pXHost->CreateBin(data, size));
+				return X::Value(g_pXHost->CreateBin(data, size,true));
 			}
 			else
 			{

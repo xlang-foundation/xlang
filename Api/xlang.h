@@ -53,10 +53,12 @@ namespace X
 		inline void SetParent(XObj* p)
 		{
 			m_cxt->m_parent = p;
+#if PARENT_REF_CHANGE
 			if (m_cxt->m_parent)
 			{
 				m_cxt->m_parent->IncRef();
 			}
+#endif
 		}
 		
 	public:
@@ -68,10 +70,12 @@ namespace X
 		{
 			if (m_cxt)
 			{
+#if PARENT_REF_CHANGE
 				if (m_cxt->m_parent)
 				{
 					m_cxt->m_parent->DecRef();
 				}
+#endif
 				delete m_cxt;
 			}
 		}
@@ -79,29 +83,35 @@ namespace X
 		{
 			if (m_cxt)
 			{
+#if PARENT_REF_CHANGE
 				if (m_cxt->m_parent)
 				{
 					m_cxt->m_parent->DecRef();
 				}
+#endif
 				delete m_cxt;
 			}
 			m_cxt = new XObj_Context();
 			m_cxt->rt = rt;
 			m_cxt->m_parent = pa;
+#if PARENT_REF_CHANGE
 			if (pa)
 			{
 				pa->IncRef();
 			}
+#endif
 		}
 		XObj_Context* GetContext() { return m_cxt; }
 		XObj& operator=(const XObj& o)
 		{
 			if (m_cxt)
 			{
+#if PARENT_REF_CHANGE
 				if (m_cxt->m_parent)
 				{
 					m_cxt->m_parent->DecRef();
 				}
+#endif
 				delete m_cxt;
 			}
 			if (o.m_cxt)
@@ -109,10 +119,12 @@ namespace X
 				m_cxt = new XObj_Context;
 				m_cxt->rt = o.m_cxt->rt;
 				m_cxt->m_parent = o.m_cxt->m_parent;
+#if PARENT_REF_CHANGE
 				if (m_cxt->m_parent)
 				{
 					m_cxt->m_parent->IncRef();
 				}
+#endif
 			}
 			return *this;
 		}
@@ -347,7 +359,7 @@ namespace X
 			if (m_obj)
 			{
 				X::XPackage* pPackage = m_obj->APISET().GetProxy(m_obj);
-				return dynamic_cast<X::XObj*>(pPackage);
+				return Value(dynamic_cast<X::XObj*>(pPackage),false);
 			}
 			else
 			{

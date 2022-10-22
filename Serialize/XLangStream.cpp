@@ -330,7 +330,7 @@ namespace X
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Str());
 				break;
 			case X::ObjType::Binary:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Binary(nullptr,0));
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Binary(nullptr,0,true));
 				break;
 			case X::ObjType::Expr:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Expr(nullptr));

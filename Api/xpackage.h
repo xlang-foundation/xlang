@@ -158,7 +158,7 @@ namespace X
 						{
 							cls = class_inst;
 						}
-						retValue = X::Value(Class_T::APISET().GetProxy(cls));
+						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
 						return true;
 					}),nullptr });
 		}

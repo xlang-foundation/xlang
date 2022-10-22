@@ -59,7 +59,7 @@ namespace X
 		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext = nullptr) = 0;
 		virtual XProp* CreateProp(const char* name, U_FUNC setter, U_FUNC getter) = 0;
 		virtual std::string StringifyString(const std::string& str) = 0;
-		virtual XBin* CreateBin(char* data, size_t size) = 0;
+		virtual XBin* CreateBin(char* data, size_t size,bool bOwnData) = 0;
 		virtual X::XLStream* CreateStream(const char* buf=nullptr,long long size=0) = 0;
 		virtual void ReleaseStream(X::XLStream* pStream) = 0;
 		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) = 0;

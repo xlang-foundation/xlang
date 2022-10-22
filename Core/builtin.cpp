@@ -331,7 +331,7 @@ bool U_ToBytes(X::XRuntime* rt, XObj* pContext,
 	auto size = stream.Size();
 	char* pData = new char[size];
 	stream.FullCopyTo(pData, size);
-	X::Data::Binary* pBinOut = new X::Data::Binary(pData, size);
+	X::Data::Binary* pBinOut = new X::Data::Binary(pData, size,true);
 	retValue = X::Value(pBinOut);
 	return true;
 }

@@ -29,6 +29,7 @@ namespace X
 			virtual bool FromBytes(X::XLangStream& stream)
 			{
 				AST::Expression exp;
+				m_ownFunc = true;
 				m_func = exp.BuildFromStream<AST::Func>(stream);
 				return true;
 			}

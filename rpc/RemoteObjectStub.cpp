@@ -183,7 +183,7 @@ namespace X
 			auto trailerSize = size1 - size0;
 			char* pBinBuf = new char[trailerSize];
 			stream.CopyTo(pBinBuf, trailerSize);
-			Data::Binary* pTrailerBin = new Data::Binary(pBinBuf, trailerSize);
+			Data::Binary* pTrailerBin = new Data::Binary(pBinBuf, trailerSize,true);
 			trailer = pTrailerBin;
 		}
 		pProc->NotifyBeforeCall(channel, stream);
