@@ -205,7 +205,7 @@ namespace X
 			return -1;
 		}
 		STREAM_SIZE size = 0;
-		for (int i = 0; i < pos.blockIndex - 1; i++)
+		for (int i = 0; i < pos.blockIndex; i++)
 		{
 			blockInfo& curBlock = GetBlockInfo(i);
 			size += curBlock.data_size;
