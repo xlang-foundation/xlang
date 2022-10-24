@@ -10,6 +10,7 @@
 #include "xlang.h"
 #include "def.h"
 
+#define _pack_decor_ 0
 namespace X
 {
 namespace AST
@@ -84,6 +85,11 @@ public:
 		{
 			delete m_Name.s;
 		}
+		for (auto* d : m_decors)
+		{
+			delete d;
+		}
+		m_decors.clear();
 	}
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
@@ -97,11 +103,13 @@ public:
 		Scope* pOldScope = stream.ScopeSpace().GetCurrentScope();
 		stream.ScopeSpace().SetCurrentScope(dynamic_cast<Scope*>(this));
 		Block::ToBytes(rt,pContext,stream);
+#if _pack_decor_
 		stream << (int)m_decors.size();
 		for (auto* decor : m_decors)
 		{
 			SaveToStream(rt, pContext,decor, stream);
 		}
+#endif
 		SaveToStream(rt, pContext, Params, stream);
 		SaveToStream(rt, pContext, RetType, stream);
 		//restore old scope
@@ -122,6 +130,7 @@ public:
 	virtual bool FromBytes(X::XLangStream& stream) override
 	{
 		Block::FromBytes(stream);
+#if _pack_decor_
 		int size = 0;
 		stream >> size;
 		for (int i = 0; i < size; i++)
@@ -132,6 +141,7 @@ public:
 				m_decors.push_back(decor);
 			}
 		}
+#endif
 		Params = BuildFromStream<List>(stream);
 		if (Params)
 		{
