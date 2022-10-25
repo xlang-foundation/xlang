@@ -49,6 +49,37 @@ namespace XWin
         UpdateWindow((HWND)m_hwnd);
         return true;
     }
+    TextEditBox::TextEditBox(Window* parent,int x, int y, int w, int h)
+    {
+        auto hinstance = GetModuleHandle(NULL);
+        auto hwndEdit = CreateWindowEx(
+            0, "EDIT",   // predefined class 
+            NULL,         // no window title 
+            WS_CHILD | WS_VISIBLE | WS_VSCROLL |
+            ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
+            x, y, w, h, 
+            (HWND)parent->GetWnd(),         // parent window 
+            (HMENU)0,   // edit control ID 
+            hinstance,
+            NULL);        // pointer not needed 
+        SetWindowLongPtr(hwndEdit, GWLP_USERDATA, (LONG_PTR)this);
+        m_hwnd = hwndEdit;
+    }
+    bool TextEditBox::SetText(std::string text)
+    {
+        SetWindowText((HWND)m_hwnd, text.c_str());
+        return true;
+    }
+    bool TextEditBox::Show(bool visible)
+    {
+        if (m_hwnd == nullptr)
+        {
+            return false;
+        }
+        ShowWindow((HWND)m_hwnd, visible ? SW_SHOW : SW_HIDE);
+        UpdateWindow((HWND)m_hwnd);
+        return true;
+    }
     LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         Window* pWindow = (Window*)GetWindowLongPtr(hWnd,GWLP_USERDATA);

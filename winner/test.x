@@ -1,17 +1,20 @@
-from xlang_win import WinApp
-w = WinApp.Window("test")
+from xlang_win import App
+w = App.Window("test")
 w.OnDraw+= (){
 	print("event fired")
 }
-btn = w.Button("Click Me",10,10,100,100)
-btn.click+= (){
+txt = w.TextEditBox(220,10,400,350)
+btn = w.Button("Click Me",10,400,100,40)
+btn.Click+= (){
+	txt.SetText("Button 1 clicked");
 	print("button clicked")
 }
-btn2 = w.Button("Click Me-2",200,10,200,100)
-btn2.click+= (){
+btn2 = w.Button("Click Me-2",200,400,200,40)
+btn2.Click+= (){
+	txt.SetText("Button 2 clicked");
 	print("button2 clicked")
 }
 w.Show(True)
 btn.Show(True)
-WinApp.Loop()
+App.Loop()
 print("end")

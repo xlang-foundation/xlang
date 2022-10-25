@@ -16,7 +16,7 @@ namespace X
 extern "C"  X_EXPORT void Load(void* pHost)
 {
 	X::g_pXHost = (X::XHost*)pHost;
-	X::RegisterPackage<XWin::App>("WinApp",&XWin::App::I());
+	X::RegisterPackage<XWin::App>("App",&XWin::App::I());
 }
 extern "C"  X_EXPORT void Unload()
 {
