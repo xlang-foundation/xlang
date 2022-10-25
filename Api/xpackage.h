@@ -8,8 +8,13 @@ namespace X
 	XPackage* RegisterPackage(const char* pack_name, impl_pack_class* instance =nullptr)
 	{
 		auto& apiset = impl_pack_class::APISET();
+		if (apiset.IsCreated())
+		{
+			return apiset.GetPack();
+		}
 		impl_pack_class::BuildAPI();
 		apiset.Create(nullptr);
+
 		X::g_pXHost->AddSysCleanupFunc([]() {
 			impl_pack_class::APISET().Cleanup();
 			});
@@ -75,9 +80,27 @@ namespace X
 		{
 			return NewClass_impl<class_T>(a, Indices{});
 		}
+		template<typename FirstT,class class_T, typename Array, std::size_t... I>
+		inline auto NewClass_impl(FirstT first,Array& a, std::index_sequence<I...>)
+		{
+			return new class_T(first,a[I]...);
+		}
+		template<typename FirstT,std::size_t N, class class_T, typename T, typename Indices = std::make_index_sequence<N>>
+		inline auto NewClass(FirstT first,T& a)
+		{
+			return NewClass_impl<FirstT,class_T>(first,a, Indices{});
+		}
 	}
+
+	class APISetBase
+	{
+	public:
+		virtual XPackage* GetPack() = 0;
+		virtual XPackage* GetProxy(void* pRealObj) = 0;
+	};
 	template<class T>
-	class XPackageAPISet
+	class XPackageAPISet:
+		public APISetBase
 	{
 	protected:
 		enum MemberType
@@ -99,15 +122,25 @@ namespace X
 			bool keepRawParams = false;
 		};
 		std::vector<MemberInfo> m_members;
-		std::vector<X::XEvent*> __events;
+		std::vector<int> __events;//index no
+		std::vector<APISetBase*> m_bases;
 		XPackage* m_xPack = nullptr;
+		bool m_alreadyCallBuild = false;
+
 	public:
-		inline XPackage* GetPack() { return m_xPack; }
-		inline XPackage* GetProxy(void* pRealObj)
+		bool IsCreated() { return m_alreadyCallBuild; }
+		inline virtual XPackage* GetPack() override { return m_xPack; }
+		inline virtual XPackage* GetProxy(void* pRealObj) override
 		{
-			return g_pXHost->CreatePackageProxy(m_xPack, pRealObj);
+			T* pTObj = (T*)pRealObj;
+			if (pTObj->__pPack_)
+			{
+				return pTObj->__pPack_;
+			}
+			auto* pPack =  g_pXHost->CreatePackageProxy(m_xPack, pRealObj);
+			pTObj->__pPack_ = pPack;
+			return pPack;
 		}
-		X::XEvent* GetEvent(int idx) { return __events[idx]; }
 		void Cleanup()
 		{
 			if (m_xPack)
@@ -124,13 +157,20 @@ namespace X
 				m_xPack->DecRef();
 			}
 		}
-		inline void Fire(int evtIndex,
+		inline void AddBase(APISetBase* pBase)
+		{
+			m_bases.push_back(pBase);
+		}
+		inline void Fire(XPackage* pPack,int evtIndex,
 			X::ARGS& params, X::KWARGS& kwargs)
 		{
 			if (evtIndex >= 0 && evtIndex < (int)__events.size())
 			{
 				auto* rt = X::g_pXHost->GetCurrentRuntime();
-				__events[evtIndex]->DoFire(rt, nullptr, params, kwargs);
+				X::Value vEvt;
+				pPack->GetIndexValue(__events[evtIndex], vEvt);
+				X::XEvent* pEvt = dynamic_cast<X::XEvent*>(vEvt.GetObj());
+				pEvt->DoFire(rt, nullptr, params, kwargs);
 			}
 		}
 		void AddEvent(const char* name)
@@ -162,7 +202,41 @@ namespace X
 						return true;
 					}),nullptr });
 		}
+		template<std::size_t Parameter_Num, class Class_T, class Parent_T>
+		void AddClass(const char* class_name, Class_T* class_inst = nullptr)
+		{
+			auto& apiset = Class_T::APISET();
+			Class_T::BuildAPI();
+			apiset.Create(class_inst);
 
+			m_members.push_back(MemberInfo{
+				MemberType::Class,class_name,
+				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						Class_T* cls = nullptr;
+						if (class_inst == nullptr)
+						{
+							Parent_T* pParentObj = nullptr;
+							if (pContext != nullptr)
+							{
+								XPackage* pParentPack = dynamic_cast<XPackage*>(pContext);
+								if (pParentPack)
+								{
+									pParentObj = (Parent_T*)pParentPack->GetEmbedObj();
+									//cls->SetParent(pParentObj);
+								}
+							}
+							cls = HelpFuncs::NewClass<Parent_T*,Parameter_Num, Class_T>(pParentObj,params);
+						}
+						else
+						{
+							cls = class_inst;
+						}
+						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
+						return true;
+					}),nullptr });
+		}
 		template<std::size_t Parameter_Num, typename F>
 		void AddFunc(const char* func_name, F f)
 		{
@@ -367,6 +441,10 @@ namespace X
 		}
 		bool Create(T* thisObj)
 		{
+			if (m_alreadyCallBuild)
+			{
+				return true;
+			}
 			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
 			pPackage->SetPackageCleanupFunc([](void* pObj) {
 				delete (T*)pObj;
@@ -403,7 +481,7 @@ namespace X
 				{
 					auto* pEvtObj = X::g_pXHost->CreateXEvent(m.name.c_str());
 					v0 = X::Value(pEvtObj, false);
-					__events.push_back(pEvtObj);
+					__events.push_back(idx);
 				}
 				default:
 					break;
@@ -412,6 +490,7 @@ namespace X
 			}
 			m_members.clear();//save memory
 			m_xPack = pPackage;
+			m_alreadyCallBuild = true;
 			return true;
 		}
 	};
@@ -431,4 +510,9 @@ public:\
 #define ADD_EVENT(name) APISET().AddEvent(#name);
 
 #define END_PACKAGE\
-	}
+	}\
+X::XPackage* __pPack_ = nullptr;\
+void Fire(int evtIndex, X::ARGS& params, X::KWARGS& kwargs)\
+{\
+	APISET().Fire(__pPack_,evtIndex, params, kwargs);\
+}

@@ -49,6 +49,7 @@ public:
 			m_stackFrame = nullptr;
 		}
 	}
+	StackFrame* GetStack() { return m_stackFrame; }
 	inline void Cleanup(void* pObj)
 	{
 		if (m_funcPackageCleanup)
@@ -79,7 +80,7 @@ public:
 	{
 		std::string strName(name);
 		int idx =  Scope::AddOrGet(strName, true);
-		if (pKeepRawParams)
+		if (idx>=0 && pKeepRawParams)
 		{
 			*pKeepRawParams = m_memberInfos[idx].KeepRawParams;
 		}
@@ -149,6 +150,11 @@ class PackageProxy :
 	virtual public Scope
 {
 	void* m_pObject = nullptr;
+	//for functions, just addref
+	//for event, need to clone a new event
+	//for prop, TODO:
+	//all add into m_stackFrame
+	StackFrame* m_stackFrame = nullptr;
 	Package* m_pPackage = nullptr;
 	PackageCleanup m_funcPackageCleanup = nullptr;
 	virtual void SetPackageCleanupFunc(PackageCleanup func) override
@@ -163,6 +169,20 @@ public:
 		if (m_pPackage)
 		{
 			m_pPackage->Scope::IncRef();
+			m_stackFrame = new StackFrame(this);
+			auto* pBaseStack = m_pPackage->GetStack();
+			int cnt = pBaseStack->GetVarCount();
+			m_stackFrame->SetVarCount(cnt);
+			for (int i = 0; i < cnt; i++)
+			{
+				X::Value v0;
+				pBaseStack->Get(i, v0);
+				if (v0.IsObject() && v0.GetObj()->GetType() == ObjType::ObjectEvent)
+				{
+					v0.Clone();
+				}
+				m_stackFrame->Set(i, v0);
+			}
 		}
 		m_pObject = pObj;
 		m_t = X::ObjType::Package;
@@ -184,10 +204,24 @@ public:
 		{
 			m_pPackage->Scope::DecRef();
 		}
+		if (m_stackFrame)
+		{
+			delete m_stackFrame;
+			m_stackFrame = nullptr;
+		}
+	}
+	virtual int AddOrGet(std::string& name, bool bGetOnly)
+	{
+		return m_pPackage->AddOrGet(name, bGetOnly);
 	}
 	virtual void RemoveALl() override
 	{
 		m_pPackage->RemoveALl();
+		if (m_stackFrame)
+		{
+			delete m_stackFrame;
+			m_stackFrame = nullptr;
+		}
 	}
 	inline virtual int AddMethod(const char* name, bool keepRawParams = false) override
 	{
@@ -203,29 +237,33 @@ public:
 	}
 	inline virtual AST::Scope* GetScope()
 	{
-		return m_pPackage->GetScope();
+		return this;
 	}
 	virtual void* GetEmbedObj() override
 	{
 		return m_pObject;
 	}
 	// Inherited via Scope
-	inline virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
+	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 	{
-		return m_pPackage->Set(rt,pContext,idx,v);
+		m_stackFrame->Set(idx, v);
+		return true;
 	}
-	inline virtual bool SetIndexValue(int idx, Value& v) override
+	virtual bool SetIndexValue(int idx, Value& v) override
 	{
-		return m_pPackage->SetIndexValue(idx,v);
+		m_stackFrame->Set(idx, v);
+		return true;
 	}
-	inline virtual bool GetIndexValue(int idx, Value& v)
+	virtual bool GetIndexValue(int idx, Value& v)
 	{
-		return m_pPackage->GetIndexValue(idx,v);
+		m_stackFrame->Get(idx, v);
+		return true;
 	}
-	inline virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
+	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override
 	{
-		return m_pPackage->Get(rt,pContext,idx,v,lValue);
+		m_stackFrame->Get(idx, v, lValue);
+		return true;
 	}
 	inline virtual Scope* GetParentScope() override
 	{
@@ -233,7 +271,7 @@ public:
 	}
 	inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{
-		m_pPackage->GetBaseScopes(bases);
+		bases.push_back(dynamic_cast<Scope*>(this));
 	}
 	virtual bool Init(int varNum) override
 	{

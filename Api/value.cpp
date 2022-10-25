@@ -155,8 +155,9 @@ namespace X
 		{
 			if (x.obj)
 			{
+				auto* pNewObj = x.obj->Clone();
 				x.obj->DecRef();
-				x.obj = x.obj->Clone();
+				x.obj = pNewObj;
 			}
 		}
 		return true;

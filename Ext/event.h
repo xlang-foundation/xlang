@@ -59,6 +59,12 @@ namespace X
 		{
 			m_name = name;
 		}
+		virtual XObj* Clone() override
+		{
+			ObjectEvent* pNewEvent = new ObjectEvent(m_name);
+			pNewEvent->IncRef();
+			return pNewEvent;
+		}
 		virtual void SetChangeHandler(OnEventHandlerChanged ch) override
 		{
 			m_changeHandler = ch;
