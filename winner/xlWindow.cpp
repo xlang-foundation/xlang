@@ -3,6 +3,8 @@
 
 namespace XWin
 {
+#define   XL_WIN_CLS_NAME "XL_WIN_CLASS"
+
     Button::Button(Window* parent,std::string caption)
     {
         auto hinstance = GetModuleHandle(NULL);
@@ -105,19 +107,29 @@ namespace XWin
             }
         }
         break;
+        case WM_SIZE:
+        {
+            if (pWindow)
+            {
+                X::ARGS params;
+                X::KWARGS kwargs;
+                pWindow->Fire(1, params, kwargs);
+            }
+        }
+        break;
         case WM_PAINT:
         {
             X::ARGS params;
             X::KWARGS kwargs;
+#if 0
+            pWindow->Fire(0, params, kwargs);
+            ValidateRect(hWnd, NULL);
+#else
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             pWindow->Fire(0, params, kwargs);
-            auto hPen = CreatePen(PS_SOLID, 1, RGB(255,0, 0));
-            SelectObject(hdc, hPen);
-            SetBkColor(hdc, RGB(0, 0, 0));
-            Rectangle(hdc, 10, 10, 200, 200);
-            DeleteObject(hPen);
             EndPaint(hWnd, &ps);
+#endif
         }
         break;
         case WM_DESTROY:
@@ -149,7 +161,7 @@ namespace XWin
         wcx.hbrBackground = (HBRUSH)GetStockObject(
             WHITE_BRUSH);                  // white background brush 
         wcx.lpszMenuName = nullptr;// "MainMenu";    // name of menu resource 
-        wcx.lpszClassName = "MainWClass";  // name of window class 
+        wcx.lpszClassName = XL_WIN_CLS_NAME;  // name of window class 
         wcx.hIconSm = nullptr;
 #if 0
         wcx.hIconSm = LoadImage(hinstance, // small class icon 
@@ -163,15 +175,44 @@ namespace XWin
 
         return RegisterClassEx(&wcx);
     }
-	Window::Window(std::string name)
-	{
+#if 1
+    Window::Window(Window* pParent, int x, int y, int w, int h)
+    {
+        DWORD dwStyle = WS_CHILD | WS_VISIBLE;;
+        HWND hParent = NULL;
+        if (pParent)
+        {
+            hParent = (HWND)pParent->m_hwnd;
+        }
         auto hinstance = GetModuleHandle(NULL);
         BOOL bOK = InitApplication(hinstance);
         DWORD error = GetLastError();
         auto hwnd = CreateWindow(
-            "MainWClass",       
+            XL_WIN_CLS_NAME,
+            "",
+            dwStyle,
+            x,
+            y,
+            w,
+            h,
+            hParent,
+            (HMENU)NULL,
+            hinstance,
+            (LPVOID)this);
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
+        m_hwnd = hwnd;
+    }
+#endif
+	Window::Window(std::string name)
+	{
+        DWORD dwStyle = WS_OVERLAPPEDWINDOW;
+        auto hinstance = GetModuleHandle(NULL);
+        BOOL bOK = InitApplication(hinstance);
+        DWORD error = GetLastError();
+        auto hwnd = CreateWindow(
+            XL_WIN_CLS_NAME,
             name.c_str(),
-            WS_OVERLAPPEDWINDOW,
+            dwStyle,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
@@ -192,5 +233,20 @@ namespace XWin
         ShowWindow((HWND)m_hwnd, visible?SW_SHOW:SW_HIDE);
         UpdateWindow((HWND)m_hwnd);
         return true;
+    }
+    bool Window::Repaint()
+    {
+        if (m_hwnd == nullptr)
+        {
+            return false;
+        }
+        InvalidateRect((HWND)m_hwnd, NULL, TRUE);
+        UpdateWindow((HWND)m_hwnd);
+        return true;
+    }
+    X::Value Window::CreateChildWindow(int x, int y, int w, int h)
+    {
+        Window* pWin = new Window(this,x,y,w,h);
+        return X::Value(APISET().GetProxy(pWin), false);
     }
 }

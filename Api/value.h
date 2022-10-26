@@ -272,11 +272,10 @@ public:
 	{
 		return ToString();
 	}
-	operator XObj* () const
-	{
-		return x.obj;
-	}
+	template<typename toT>
+	operator toT* () const;
 	size_t Hash();
+
 	inline double GetDouble()
 	{
 		return x.d;

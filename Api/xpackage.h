@@ -164,7 +164,7 @@ namespace X
 		inline void Fire(XPackage* pPack,int evtIndex,
 			X::ARGS& params, X::KWARGS& kwargs)
 		{
-			if (evtIndex >= 0 && evtIndex < (int)__events.size())
+			if (pPack && evtIndex >= 0 && evtIndex < (int)__events.size())
 			{
 				auto* rt = X::g_pXHost->GetCurrentRuntime();
 				X::Value vEvt;
@@ -224,7 +224,6 @@ namespace X
 								if (pParentPack)
 								{
 									pParentObj = (Parent_T*)pParentPack->GetEmbedObj();
-									//cls->SetParent(pParentObj);
 								}
 							}
 							cls = HelpFuncs::NewClass<Parent_T*,Parameter_Num, Class_T>(pParentObj,params);
@@ -361,7 +360,8 @@ namespace X
 					{
 						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
 						auto* pThis = (T*)pPackage->GetEmbedObj();
-						(pThis->*var) = (VAR_TYPE)params[0];
+						VAR_TYPE _v = params[0];
+						(pThis->*var) = _v;
 						retValue = X::Value(true);
 						return true;
 					}),

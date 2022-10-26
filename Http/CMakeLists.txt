@@ -15,4 +15,3 @@ add_library(${PROJECT_NAME}
 	${API_SRC}
 	${Main_SRC}
 )
-

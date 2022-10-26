@@ -15,6 +15,19 @@ namespace X
 	COMPARE_OP_IMPL(>= )
 	COMPARE_OP_IMPL(<= )
 
+	template<typename toT>
+	Value::operator toT* () const
+	{
+		if (x.obj->GetType() == ObjType::Package)
+		{
+			XPackage* pPack = dynamic_cast<XPackage*>(x.obj);
+			return (toT*)pPack->GetEmbedObj();
+		}
+		else
+		{
+			return (toT*)x.obj;
+		}
+	}
 	template<>
 	void V<XRuntime>::Create()
 	{

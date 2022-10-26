@@ -15,3 +15,7 @@ add_library(${PROJECT_NAME}
 	${Main_SRC}
 )
 
+
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME} d2d1)
+endif()
