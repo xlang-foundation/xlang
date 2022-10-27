@@ -28,6 +28,10 @@ namespace X
 			return (toT*)x.obj;
 		}
 	}
+	X::Value::operator void* ()const
+	{
+		return (void*)x.obj;
+	}
 	template<>
 	void V<XRuntime>::Create()
 	{

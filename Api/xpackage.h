@@ -183,6 +183,19 @@ namespace X
 				pEvt->DoFire(rt, nullptr, params, kwargs);
 			}
 		}
+		inline X::XEvent* GetEvent(XPackage* pPack, int evtIndex)
+		{
+			X::XEvent* pEvt = nullptr;
+			if (pPack && evtIndex >= 0 && evtIndex < (int)__events.size())
+			{
+				auto* rt = X::g_pXHost->GetCurrentRuntime();
+				X::Value vEvt;
+				pPack->GetIndexValue(__events[evtIndex], vEvt);
+				pEvt = dynamic_cast<X::XEvent*>(vEvt.GetObj());
+				pEvt->IncRef();
+			}
+			return pEvt;
+		}
 		void AddEvent(const char* name)
 		{
 			m_members.push_back(MemberInfo{ MemberType::ObjectEvent,name });
@@ -541,4 +554,8 @@ X::XPackage* __pPack_ = nullptr;\
 void Fire(int evtIndex, X::ARGS& params, X::KWARGS& kwargs)\
 {\
 	APISET().Fire(__pPack_,evtIndex, params, kwargs);\
+}\
+X::XEvent* GetEvent(int evtIndex)\
+{\
+	return APISET().GetEvent(__pPack_, evtIndex);\
 }
