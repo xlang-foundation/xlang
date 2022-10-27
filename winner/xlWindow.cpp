@@ -5,6 +5,31 @@ namespace XWin
 {
 #define   XL_WIN_CLS_NAME "XL_WIN_CLASS"
 
+    void ControlBase::onAreaChanged()
+    {
+        MoveWindow((HWND)m_hwnd,m_rc.left, m_rc.top, 
+            m_rc.right - m_rc.left, m_rc.bottom - m_rc.top, TRUE);
+    }
+    bool ControlBase::Show(bool visible)
+    {
+        if (m_hwnd == nullptr)
+        {
+            return false;
+        }
+        ShowWindow((HWND)m_hwnd, visible ? SW_SHOW : SW_HIDE);
+        UpdateWindow((HWND)m_hwnd);
+        return true;
+    }
+    bool ControlBase::Repaint()
+    {
+        if (m_hwnd == nullptr)
+        {
+            return false;
+        }
+        InvalidateRect((HWND)m_hwnd, NULL, TRUE);
+        UpdateWindow((HWND)m_hwnd);
+        return true;
+    }
     Button::Button(Window* parent,std::string caption)
     {
         auto hinstance = GetModuleHandle(NULL);
@@ -39,18 +64,10 @@ namespace XWin
             hinstance,
             NULL);
         SetWindowLongPtr(hwndButton, GWLP_USERDATA, (LONG_PTR)this);
+        m_rc = { x,y,x + w,y + h };
         m_hwnd = hwndButton;
     }
-    bool Button::Show(bool visible)
-    {
-        if (m_hwnd == nullptr)
-        {
-            return false;
-        }
-        ShowWindow((HWND)m_hwnd, visible ? SW_SHOW : SW_HIDE);
-        UpdateWindow((HWND)m_hwnd);
-        return true;
-    }
+
     TextEditBox::TextEditBox(Window* parent,int x, int y, int w, int h)
     {
         auto hinstance = GetModuleHandle(NULL);
@@ -70,16 +87,6 @@ namespace XWin
     bool TextEditBox::SetText(std::string text)
     {
         SetWindowText((HWND)m_hwnd, text.c_str());
-        return true;
-    }
-    bool TextEditBox::Show(bool visible)
-    {
-        if (m_hwnd == nullptr)
-        {
-            return false;
-        }
-        ShowWindow((HWND)m_hwnd, visible ? SW_SHOW : SW_HIDE);
-        UpdateWindow((HWND)m_hwnd);
         return true;
     }
     LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -224,26 +231,7 @@ namespace XWin
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
         m_hwnd = hwnd;
 	}
-    bool Window::Show(bool visible)
-    {
-        if (m_hwnd == nullptr)
-        {
-            return false;
-        }
-        ShowWindow((HWND)m_hwnd, visible?SW_SHOW:SW_HIDE);
-        UpdateWindow((HWND)m_hwnd);
-        return true;
-    }
-    bool Window::Repaint()
-    {
-        if (m_hwnd == nullptr)
-        {
-            return false;
-        }
-        InvalidateRect((HWND)m_hwnd, NULL, TRUE);
-        UpdateWindow((HWND)m_hwnd);
-        return true;
-    }
+
     X::Value Window::CreateChildWindow(int x, int y, int w, int h)
     {
         Window* pWin = new Window(this,x,y,w,h);

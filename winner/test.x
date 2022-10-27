@@ -7,6 +7,7 @@ bot_line = 520
 c = w.CreateChildWindow(10,20,800,bot_line-20)
 draw = c.Draw()
 img = draw.Image("C:\\Data\\2.jpg")
+img2 = draw.Image("C:\\Dev\\Cantor\\factory\\bg2.jpg")
 brush = draw.Brush("Cyan")
 brush2 = [draw.Brush("DarkMagenta"),
 	draw.Brush("Coral"),
@@ -29,7 +30,8 @@ c.OnDraw+= (){
 	size = 11;
 	for i in range(size):
 		draw.DrawRectangle(pos+40,70+i*20,pos+200,140+i*20,brush2[i])
-	draw.DrawImage(img,400-pos,100,700-pos,400);
+	draw.DrawImage(img2,100-pos,100,700-pos,400);
+	draw.DrawImage(img,100-pos,400,700-pos,800);
 	draw.End();
 }
 
@@ -40,9 +42,12 @@ btn.Click+= (){
 	pos =1;
 	c.Repaint();
 	txt.SetText("Button Reset clicked");
+	btn2.Left =btn2.Left+30;
 	print("button clicked")
 }
 btn2 = w.Button("Move",200,bot_line,200,40)
+print("btn.rect={",btn.Left,",",btn.Top,",",btn.Right,",",btn.Bottom,"}")
+print("btn2.rect={",btn2.Left,",",btn2.Top,",",btn2.Right,",",btn2.Bottom,"}")
 btn2.Click+= (){
 	global pos;
 	pos +=5;

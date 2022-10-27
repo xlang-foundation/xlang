@@ -94,14 +94,6 @@ namespace X
 
 	class APISetBase
 	{
-	public:
-		virtual XPackage* GetPack() = 0;
-		virtual XPackage* GetProxy(void* pRealObj) = 0;
-	};
-	template<class T>
-	class XPackageAPISet:
-		public APISetBase
-	{
 	protected:
 		enum MemberType
 		{
@@ -127,6 +119,24 @@ namespace X
 		XPackage* m_xPack = nullptr;
 		bool m_alreadyCallBuild = false;
 
+		void CollectBases(std::vector<APISetBase*>& bases)
+		{
+			for (auto* p : m_bases)
+			{
+				p->CollectBases(bases);
+			}
+			//derived class's same name member will override base's
+			bases.push_back(this);
+		}
+	public:
+		inline auto& Members() { return m_members; }
+		virtual XPackage* GetPack() = 0;
+		virtual XPackage* GetProxy(void* pRealObj) = 0;
+	};
+	template<class T>
+	class XPackageAPISet:
+		public APISetBase
+	{
 	public:
 		bool IsCreated() { return m_alreadyCallBuild; }
 		inline virtual XPackage* GetPack() override { return m_xPack; }
@@ -445,56 +455,70 @@ namespace X
 			{
 				return true;
 			}
+			std::vector<APISetBase*> bases;
+			CollectBases(bases);//include this class also
+			int memberNum = 0;
+			for (auto* b : bases)
+			{
+				memberNum += (int)b->Members().size();;
+			}
+
 			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
 			pPackage->SetPackageCleanupFunc([](void* pObj) {
 				delete (T*)pObj;
 				});
-			pPackage->Init((int)m_members.size());
-			for (auto& m : m_members)
+			pPackage->Init(memberNum);
+			for (auto* b : bases) 
 			{
-				int idx = pPackage->AddMethod(m.name.c_str(),m.keepRawParams);
-				X::Value v0;
-				switch (m.type)
+				for (auto& m : b->Members())
 				{
-				case MemberType::Class:
-				case MemberType::Func:
-				{
-					auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
-					auto* pFuncObj = X::g_pXHost->CreateFunction(m.name.c_str(), m.func, pObjFun);
-					v0 = X::Value(pFuncObj,false);
-				}
-				break;
-				case MemberType::FuncEx:
-				{
-					auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
-					auto* pFuncObj = X::g_pXHost->CreateFunctionEx(m.name.c_str(), m.func_ex, pObjFun);
-					v0 = X::Value(pFuncObj, false);
-				}
-				break;
-				case MemberType::Prop:
-				{
-					auto* pPropObj = X::g_pXHost->CreateProp(m.name.c_str(), m.func, m.func2);
-					v0 = X::Value(pPropObj, false);
-				}
-				break;
-				case MemberType::ObjectEvent:
-				{
-					auto* pEvtObj = X::g_pXHost->CreateXEvent(m.name.c_str());
-					v0 = X::Value(pEvtObj, false);
-					__events.push_back(idx);
-				}
-				default:
+					int idx = pPackage->AddMethod(m.name.c_str(), m.keepRawParams);
+					X::Value v0;
+					switch (m.type)
+					{
+					case MemberType::Class:
+					case MemberType::Func:
+					{
+						auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
+						auto* pFuncObj = X::g_pXHost->CreateFunction(m.name.c_str(), m.func, pObjFun);
+						v0 = X::Value(pFuncObj, false);
+					}
 					break;
+					case MemberType::FuncEx:
+					{
+						auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
+						auto* pFuncObj = X::g_pXHost->CreateFunctionEx(m.name.c_str(), m.func_ex, pObjFun);
+						v0 = X::Value(pFuncObj, false);
+					}
+					break;
+					case MemberType::Prop:
+					{
+						auto* pPropObj = X::g_pXHost->CreateProp(m.name.c_str(), m.func, m.func2);
+						v0 = X::Value(pPropObj, false);
+					}
+					break;
+					case MemberType::ObjectEvent:
+					{
+						auto* pEvtObj = X::g_pXHost->CreateXEvent(m.name.c_str());
+						v0 = X::Value(pEvtObj, false);
+						__events.push_back(idx);
+					}
+					default:
+						break;
+					}
+					pPackage->SetIndexValue(idx, v0);
 				}
-				pPackage->SetIndexValue(idx, v0);
 			}
-			m_members.clear();//save memory
 			m_xPack = pPackage;
 			m_alreadyCallBuild = true;
 			return true;
 		}
 	};
 }
+
+#define ADD_BASE(CLS_T)\
+	CLS_T::BuildAPI();\
+	APISET().AddBase(&CLS_T::APISET());
 #define BEGIN_PACKAGE(class_name)\
 public:\
 	static X::XPackageAPISet<class_name>& APISET()\
@@ -503,8 +527,10 @@ public:\
 		return _Apis;\
 	}\
 	static void BuildAPI()\
-	{
-
+	{\
+		static bool __called_ = false;\
+		if(__called_) return;\
+		__called_ = true;
 #define ADD_FUNC(parameter_num,name,Func)\
 	APISET().AddFunc<parameter_num>(name,Func);
 #define ADD_EVENT(name) APISET().AddEvent(#name);
