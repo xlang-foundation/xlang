@@ -312,7 +312,7 @@ namespace X
 		void* GetScope() { return m_embedScope; }
 		virtual int Query(std::string& name) = 0;
 		virtual bool Get(int idx, X::Value& v) = 0;
-		virtual void Set(int idx, X::Value& v) = 0;
+		virtual bool Set(int idx, X::Value& v) = 0;
 	};
 	class XPackage:
 		virtual public XObj

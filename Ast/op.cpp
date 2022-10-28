@@ -16,6 +16,7 @@ namespace AST
 	{
 		if (!L || !R)
 		{
+			v = Value(false);
 			return false;
 		}
 		Value v_l;
@@ -24,20 +25,26 @@ namespace AST
 		Value v_r;
 		if (!R->Run(rt, pContext, v_r))
 		{
+			v = Value(false);
 			return false;
 		}
+		bool bOK = true;
 		if (v_l.IsObject())
 		{
 			auto* pObj = v_l.GetObj();
 			if (pObj->GetType() == X::ObjType::FuncCalls)
 			{
 				auto* pCalls = dynamic_cast<Data::FuncCalls*>(pObj);
-				return pCalls->SetValue(v_r);
+				bOK =  pCalls->SetValue(v_r);
+				v = Value(bOK);
+				return bOK;
 			}
 			else if (pObj->GetType() == X::ObjType::Prop)
 			{
 				auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
-				return pPropObj->SetProp(rt, lValue_L.GetContext(), v_r);
+				bOK = pPropObj->SetProp(rt, lValue_L.GetContext(), v_r);
+				v = Value(bOK);
+				return bOK;
 			}
 		}
 		if (lValue_L)
@@ -86,7 +93,7 @@ namespace AST
 			switch (opId)
 			{
 			case X::OP_ID::Equ:
-				L->Set(rt, pContext, v_r);
+				bOK = L->Set(rt, pContext, v_r);
 				break;
 			case X::OP_ID::AddEqu:
 				v_l.Clone();
@@ -120,7 +127,8 @@ namespace AST
 				break;
 			}
 		}
-		return true;
+		v = Value(bOK);
+		return bOK;
 	}
 
 	bool Operator::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams)

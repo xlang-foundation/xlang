@@ -24,7 +24,7 @@
       "args_DD": [ "-event_loop", "-dbg", "-enable_python" ],
       "args_cli": [ "-cli"],
       "argsaa": [ "C:\\Dev\\X\\test\\remote_test.x" ],
-      "args": [ "C:\\Dev\\X\\winner\\test.x" ],
+      "args": [ "C:\\Dev\\Cantor\\test\\client\\test_task.x" ],
       "name": "xlang.exe"
     }
   ]

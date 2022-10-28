@@ -167,7 +167,7 @@ public:
 	{
 		return false;
 	}
-	virtual void Set(XlangRuntime* rt,XObj* pContext, Value& v){}
+	virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) { return true; }
 	virtual bool Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;

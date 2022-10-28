@@ -44,14 +44,14 @@ public:
 	virtual void ScopeLayout() override;
 	String& GetName() { return Name; }
 	std::string GetNameString() { return std::string(Name.s, Name.size); }
-	inline virtual void Set(XlangRuntime* rt, XObj* pContext, Value& v) override
+	inline virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override
 	{
 		if (Index == -1)
 		{
 			ScopeLayout();
 			assert(Index != -1 && m_scope != nullptr);
 		}
-		m_scope->Set(rt, pContext, Index, v);
+		return m_scope->Set(rt, pContext, Index, v);
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;

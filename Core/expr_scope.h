@@ -24,8 +24,7 @@ namespace X
 			}
 			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 			{
-				m_customScope->Set(idx, v);
-				return true;
+				return m_customScope->Set(idx, v);
 			}
 			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 				LValue* lValue = nullptr) override
