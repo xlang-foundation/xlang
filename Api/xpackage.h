@@ -479,13 +479,18 @@ namespace X
 			}
 
 			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
-			if (cleanFunc == nullptr)
+			//if object created by outside,thisObj will not be NULL
+			//then don't need to be deleted by XPackage
+			if (thisObj == nullptr)
 			{
-				cleanFunc = [](void* pObj) {
-					delete (T*)pObj;
-				};
+				if (cleanFunc == nullptr)
+				{
+					cleanFunc = [](void* pObj) {
+						delete (T*)pObj;
+					};
+				}
+				pPackage->SetPackageCleanupFunc(cleanFunc);
 			}
-			pPackage->SetPackageCleanupFunc(cleanFunc);
 			pPackage->Init(memberNum);
 			for (auto* b : bases) 
 			{

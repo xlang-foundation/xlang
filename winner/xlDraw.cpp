@@ -2,6 +2,7 @@
 #include <d2d1.h>
 #include "singleton.h"
 #include "xlWindow.h"
+#include "xlImage.h"
 #include "const_data.h"
 #include <wincodec.h>
 #include "utility.h"
@@ -37,10 +38,8 @@ namespace XWin
 		public Singleton<D2DFactory>
 	{
 		ID2D1Factory* m_pD2DFactory = NULL;
-		IWICImagingFactory* m_pIWICFactory = NULL;
 		bool Create()
 		{
-			CoInitializeEx(NULL, COINIT_MULTITHREADED);
 			HRESULT hr = D2D1CreateFactory(
 				D2D1_FACTORY_TYPE_SINGLE_THREADED,
 				&m_pD2DFactory
@@ -49,13 +48,6 @@ namespace XWin
 			{
 				return false;
 			}
-			// Create WIC factory
-			hr = CoCreateInstance(
-				CLSID_WICImagingFactory,
-				NULL,
-				CLSCTX_INPROC_SERVER,
-				IID_PPV_ARGS(&m_pIWICFactory)
-			);
 			return (hr == S_OK);
 		}
 	public:
@@ -63,20 +55,13 @@ namespace XWin
 		{
 			return m_pD2DFactory;
 		}
-		IWICImagingFactory* WIC()
-		{
-			return m_pIWICFactory;
-		}
+
 		D2DFactory()
 		{
 			Create();
 		}
 		~D2DFactory()
 		{
-			if (m_pIWICFactory)
-			{
-				m_pIWICFactory->Release();
-			}
 			if (m_pD2DFactory)
 			{
 				m_pD2DFactory->Release();
@@ -157,7 +142,41 @@ namespace XWin
 	bool Draw::DrawImage(Image* pImg, int left, int top, int right, int bottom)
 	{
 		DrawInfo* pDrawInfo = (DrawInfo*)m_pDrawInfo;
-		auto* pBmp = pImg->Obj<ID2D1Bitmap>();
+		void* pTargetObj = pImg->GetTargetObj();
+		ID2D1Bitmap* pBmp = nullptr;
+		if (pTargetObj == nullptr)
+		{
+			IWICFormatConverter* pConvertedSourceBitmap;
+			HRESULT hr = WICFactory::I().WIC<IWICImagingFactory>()->CreateFormatConverter(&pConvertedSourceBitmap);
+			if (SUCCEEDED(hr))
+			{
+				hr = pConvertedSourceBitmap->Initialize(
+					pImg->Obj<IWICBitmapFrameDecode>(),
+					GUID_WICPixelFormat32bppPBGRA,
+					WICBitmapDitherTypeNone,
+					NULL,
+					0.f,
+					WICBitmapPaletteTypeCustom
+				);
+			}
+			ID2D1Bitmap* pD2DBitmap;
+			hr = pDrawInfo->RT()->CreateBitmapFromWicBitmap(pConvertedSourceBitmap, NULL, &pD2DBitmap);
+			if (pConvertedSourceBitmap)
+			{
+				pConvertedSourceBitmap->Release();
+			}
+			if (SUCCEEDED(hr))
+			{
+				pImg->SetTargetObj(pD2DBitmap,[](void* pObj) {
+						((ID2D1Bitmap*)pObj)->Release();
+					});
+			}
+			pBmp = pD2DBitmap;
+		}
+		else
+		{
+			pBmp = (ID2D1Bitmap*)pTargetObj;
+		}
 		D2D1_RECT_F rectangle = D2D1::RectF(left, top, right, bottom);
 		pDrawInfo->RT()->DrawBitmap(pBmp, rectangle);
 		return true;
@@ -195,79 +214,4 @@ namespace XWin
 	{
 		delete (D2D1::ColorF*)m_pObj;
 	}
-
-	Image::Image(Draw* pDraw,std::string url)
-	{
-		HRESULT hr = S_OK;
-		std::wstring wurl = s2ws(url);
-		IWICBitmapDecoder* pIDecoder = NULL;
-		IWICBitmapFrameDecode* pIDecoderFrame = NULL;
-		UINT nFrameCount = 0;
-		UINT uiWidth, uiHeight;
-		DrawInfo* pDrawInfo = (DrawInfo*)pDraw->GetDrawInfo();
-
-		// Create decoder for an image.
-		hr = D2DFactory::I().WIC()->CreateDecoderFromFilename(
-			wurl.c_str(),NULL,GENERIC_READ,WICDecodeMetadataCacheOnDemand,
-			&pIDecoder
-		);
-		if (SUCCEEDED(hr))
-		{
-			hr = pIDecoder->GetFrameCount(&nFrameCount);
-		}
-		// Process each frame in the image.
-		for (UINT i = 0; i < nFrameCount; i++)
-		{
-			// Retrieve the next bitmap frame.
-			if (SUCCEEDED(hr))
-			{
-				hr = pIDecoder->GetFrame(i, &pIDecoderFrame);
-			}
-
-			// Retrieve the size of the bitmap frame.
-			if (SUCCEEDED(hr))
-			{
-				hr = pIDecoderFrame->GetSize(&uiWidth, &uiHeight);
-			}
-			IWICFormatConverter* pConvertedSourceBitmap;
-			hr = D2DFactory::I().WIC()->CreateFormatConverter(&pConvertedSourceBitmap);
-			if (SUCCEEDED(hr))
-			{
-				hr = pConvertedSourceBitmap->Initialize(
-					pIDecoderFrame,                          // Input bitmap to convert
-					GUID_WICPixelFormat32bppPBGRA,   // Destination pixel format
-					WICBitmapDitherTypeNone,         // Specified dither pattern
-					NULL,                            // Specify a particular palette 
-					0.f,                             // Alpha threshold
-					WICBitmapPaletteTypeCustom       // Palette translation type
-				);
-			}
-			ID2D1Bitmap* pD2DBitmap;
-			hr = pDrawInfo->RT()->CreateBitmapFromWicBitmap(pConvertedSourceBitmap, NULL, &pD2DBitmap);
-			if (SUCCEEDED(hr))
-			{
-				m_pObj = (void*)pD2DBitmap;
-			}
-			if (pConvertedSourceBitmap)
-			{
-				pConvertedSourceBitmap->Release();
-			}
-			if (pIDecoderFrame)
-			{
-				pIDecoderFrame->Release();
-			}
-		}
-		if (pIDecoder)
-		{
-			pIDecoder->Release();
-		}
-	}
-	Image::~Image()
-	{
-		if (m_pObj)
-		{
-			Obj<ID2D1Bitmap>()->Release();
-		}
-	}
-
 }

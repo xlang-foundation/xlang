@@ -6,8 +6,8 @@ w.OnSize+=(){
 bot_line = 520
 c = w.CreateChildWindow(10,20,800,bot_line-20)
 draw = c.Draw()
-img = draw.Image("C:\\Data\\2.jpg")
-img2 = draw.Image("C:\\Dev\\Cantor\\factory\\bg2.jpg")
+img = App.Image("C:\\Data\\2.jpg")
+img2 = App.Image("C:\\Dev\\Cantor\\factory\\bg2.jpg")
 brush = draw.Brush("Cyan")
 brush2 = [draw.Brush("DarkMagenta"),
 	draw.Brush("Coral"),

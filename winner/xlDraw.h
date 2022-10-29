@@ -7,6 +7,7 @@ namespace XWin
 	class Window;
 	class Draw;
 	class Color;
+	class Image;
 	class Brush
 	{
 		void* m_pObj = nullptr;
@@ -30,24 +31,12 @@ namespace XWin
 		Color(std::string color);
 		~Color();
 	};
-	class Image
-	{
-		void* m_pObj = nullptr;
-	public:
-		template<typename T>
-		T* Obj() { return (T*)m_pObj; }
-		BEGIN_PACKAGE(Image)
-		END_PACKAGE
-		Image(Draw* pDraw,std::string url);
-		~Image();
-	};
 	class Draw
 	{
 		void* m_pDrawInfo = nullptr;
 	public:
 		BEGIN_PACKAGE(Draw)
 			APISET().AddClass<1, Brush, Draw>("Brush");
-			APISET().AddClass<1, Image, Draw>("Image");
 			APISET().AddClass<2, Color>("Color");
 			APISET().AddFunc<0>("Begin", &Draw::Begin);
 			APISET().AddFunc<0>("End", &Draw::End);
