@@ -85,10 +85,13 @@ public:
 		{
 			delete m_Name.s;
 		}
+		//m_decors's item deleted from Block
+#if 0 
 		for (auto* d : m_decors)
 		{
 			delete d;
 		}
+#endif
 		m_decors.clear();
 	}
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override

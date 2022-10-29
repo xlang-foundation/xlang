@@ -13,7 +13,7 @@ namespace X
 			return apiset.GetPack();
 		}
 		impl_pack_class::BuildAPI();
-		apiset.Create(nullptr);
+		apiset.Create(instance);
 
 		X::g_pXHost->AddSysCleanupFunc([]() {
 			impl_pack_class::APISET().Cleanup();
@@ -201,11 +201,12 @@ namespace X
 			m_members.push_back(MemberInfo{ MemberType::ObjectEvent,name });
 		}
 		template<std::size_t Parameter_Num, class Class_T>
-		void AddClass(const char* class_name, Class_T* class_inst = nullptr)
+		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
+			PackageCleanup cleanFunc = nullptr)
 		{
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
-			apiset.Create(class_inst);
+			apiset.Create(class_inst, cleanFunc);
 
 			m_members.push_back(MemberInfo{
 				MemberType::Class,class_name,
@@ -226,11 +227,12 @@ namespace X
 					}),nullptr });
 		}
 		template<std::size_t Parameter_Num, class Class_T, class Parent_T>
-		void AddClass(const char* class_name, Class_T* class_inst = nullptr)
+		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
+			PackageCleanup cleanFunc = nullptr)
 		{
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
-			apiset.Create(class_inst);
+			apiset.Create(class_inst, cleanFunc);
 
 			m_members.push_back(MemberInfo{
 				MemberType::Class,class_name,
@@ -462,7 +464,7 @@ namespace X
 					})
 				});
 		}
-		bool Create(T* thisObj)
+		bool Create(T* thisObj, PackageCleanup cleanFunc = nullptr)
 		{
 			if (m_alreadyCallBuild)
 			{
@@ -477,9 +479,13 @@ namespace X
 			}
 
 			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
-			pPackage->SetPackageCleanupFunc([](void* pObj) {
-				delete (T*)pObj;
-				});
+			if (cleanFunc == nullptr)
+			{
+				cleanFunc = [](void* pObj) {
+					delete (T*)pObj;
+				};
+			}
+			pPackage->SetPackageCleanupFunc(cleanFunc);
 			pPackage->Init(memberNum);
 			for (auto* b : bases) 
 			{
