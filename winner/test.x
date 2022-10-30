@@ -5,10 +5,29 @@ w.Create()
 w.OnSize+=(){
 	print("w.OnSize");
 }
+
+#Menu
+main_menu = w.Menu()
+file_menu = w.Menu()
+file_menu.Insert(0,"New")
+file_menu.Insert(1,"Open")
+main_menu.InsertSubMenu(0,file_menu,"File")
+edit_menu = w.Menu()
+edit_menu.Insert(0,"Go to")
+edit_menu.Insert(1,"Find")
+edit_menu.Insert(2,"Search")
+main_menu.InsertSubMenu(1,edit_menu,"Edit")
+
+w.SetMenu(main_menu)
+
 bot_line = 520
 toolbar_img = App.Image("C:\\Dev\\X\\winner\\test.jpg")
 toolbar = w.Toolbar()
-toolbar.SetImageList(toolbar_img,6,58,58)
+toolbar.SetImageList(toolbar_img,8,58,58)
+toolbar.SetButtonText(0,"File")
+toolbar.SetButtonText(1,"Edit")
+toolbar.SetButtonText(2,"View")
+
 toolbar.Create()
 c = w.CreateChildWindow(10,100,700,bot_line-120)
 draw = c.Draw()

@@ -2,6 +2,7 @@
 #include <windows.h> 
 #include "xlImage.h"
 #include "xlApp.h"
+#include "utility.h"
 
 X::Value::operator XWin::Window* ()const
 {
@@ -15,6 +16,19 @@ X::Value::operator XWin::Window* ()const
         return nullptr;
     }
 }
+X::Value::operator XWin::Menu* ()const
+{
+    if (x.obj->GetType() == ObjType::Package)
+    {
+        XPackage* pPack = dynamic_cast<XPackage*>(x.obj);
+        return (XWin::Menu*)pPack->GetEmbedObj();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
 namespace XWin
 {
 #define   XL_WIN_CLS_NAME "XL_WIN_CLASS"
@@ -247,31 +261,19 @@ namespace XWin
         ImageList_Add(m_hImageList, m_pImgeList->ToHBITMAP(), nullptr);
         // Load the button images.
         //SendMessage(hWndToolbar, TB_LOADIMAGES,(WPARAM)IDB_STD_LARGE_COLOR,(LPARAM)HINST_COMMCTRL);
-#define IDM_NEW 10021
-#define IDM_OPEN 10031
-#define IDM_SAVE 10041
-        // Initialize button info.
-        // IDM_NEW, IDM_OPEN, and IDM_SAVE are application-defined command constants.
-#define numButtons 6
-        TBBUTTON tbButtons[numButtons] =
-        {
-            { MAKELONG(STD_FILENEW,  ImageListID), IDM_NEW,  TBSTATE_ENABLED, buttonStyles, {0}, 0, (INT_PTR)L"New" },
-            { MAKELONG(STD_FILEOPEN, ImageListID), IDM_OPEN, TBSTATE_ENABLED, buttonStyles, {0}, 0, (INT_PTR)L"Open"},
-            { MAKELONG(STD_FILESAVE, ImageListID), IDM_SAVE, TBSTATE_ENABLED,               buttonStyles, {0}, 0, (INT_PTR)L"Save"},
-            { MAKELONG(STD_FILENEW,  ImageListID), IDM_NEW,  TBSTATE_ENABLED | TBSTATE_ELLIPSES, buttonStyles, {0}, 0, (INT_PTR)L"New" },
-            { MAKELONG(STD_FILEOPEN, ImageListID), IDM_OPEN, TBSTATE_ENABLED, buttonStyles, {0}, 0, (INT_PTR)L"Open"},
-            { MAKELONG(STD_FILESAVE, ImageListID), IDM_SAVE, TBSTATE_ENABLED,               buttonStyles, {0}, 0, (INT_PTR)L"Save"}
-        };
-#if 0
-        std::vector<TBBUTTON> tbButtons;
-        for (int i = 0; i < numButtons; i++)
-        {
 
+        std::vector<TBBUTTON> tbButtons;
+        for (int i = 0; i < m_numButtons; i++)
+        {
+            int idCommand = WinManager::I().GetNewCommandId();
+            ButtonInfo& info = m_ButtonInfos[i];
+            tbButtons.push_back({ MAKELONG(i,  ImageListID), 
+                idCommand,TBSTATE_ENABLED, 
+                buttonStyles, {0}, 0, (INT_PTR)info.name.c_str() });
         }
-#endif
         // Add buttons.
         SendMessage(hWndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
-        SendMessage(hWndToolbar, TB_ADDBUTTONS, (WPARAM)numButtons, (LPARAM)&tbButtons);
+        SendMessage(hWndToolbar, TB_ADDBUTTONS, (WPARAM)m_numButtons, (LPARAM)tbButtons.data());
 
         // Resize the toolbar, and then show it.
         SendMessage(hWndToolbar, TB_AUTOSIZE, 0, 0);
@@ -285,5 +287,30 @@ namespace XWin
         pWin->SetRect(x, y, w, h);
         pWin->Create();
         return X::Value(APISET().GetProxy(pWin), false);
+    }
+    bool Menu::Insert(int idx, std::string txt)
+    {
+        MENUITEMINFO menuItemInfo;
+        menuItemInfo.cbSize = sizeof(MENUITEMINFO);
+        menuItemInfo.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA | MIIM_STATE;
+        menuItemInfo.fType = MFT_STRING;
+        menuItemInfo.dwTypeData = (LPTSTR)txt.c_str();
+        menuItemInfo.cch = txt.size() + 1;
+        menuItemInfo.dwItemData = (ULONG_PTR)WinManager::I().GetNewCommandId();
+        menuItemInfo.fState = 0;
+
+        InsertMenuItem(m_hMenu, idx, TRUE, &menuItemInfo);
+        DWORD e = GetLastError();
+        return true;
+    }
+    bool Menu::InsertSubMenu(int idx, Menu* pSubMenu, std::string txt)
+    {
+        InsertMenu(m_hMenu, idx,MF_POPUP, (UINT_PTR)pSubMenu->Get(), txt.c_str());
+        return true;
+    }
+    bool Window::SetMenu(Menu* pMenu)
+    {
+        ::SetMenu((HWND)m_hwnd, pMenu->Get());
+        return true;
     }
 }

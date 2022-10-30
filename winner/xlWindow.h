@@ -1,4 +1,5 @@
 #pragma once
+#include "singleton.h"
 #include "xpackage.h"
 #include "xlang.h"
 #include "xlDraw.h"
@@ -13,6 +14,13 @@ namespace XWin
 	{
 		int left, top;
 		int right, bottom;
+	};
+	class WinManager :
+		public Singleton<WinManager>
+	{
+		int m_lastCommandId = 10000;
+	public:
+		int GetNewCommandId() { return m_lastCommandId++; }
 	};
 	class ControlBase
 	{
@@ -76,15 +84,21 @@ namespace XWin
 	class Toolbar :
 		public ControlBase
 	{
+		struct ButtonInfo
+		{
+			std::string name;
+		};
 		HIMAGELIST m_hImageList = nullptr;
 		Image* m_pImgeList = nullptr;
 		int m_numButtons = 0;
 		int m_cx = 16;
 		int m_cy = 16;
+		std::vector<ButtonInfo> m_ButtonInfos;
 	public:
 		BEGIN_PACKAGE(Toolbar)
 			ADD_BASE(ControlBase);
 			APISET().AddFunc<4>("SetImageList", &Toolbar::SetImageList);
+			APISET().AddFunc<2>("SetButtonText", &Toolbar::SetButtonText);
 		END_PACKAGE
 		Toolbar(Window* parent) :
 			ControlBase(parent)
@@ -97,6 +111,16 @@ namespace XWin
 			m_numButtons = numButtons;
 			m_cx = cx;
 			m_cy = cy;
+			m_ButtonInfos.resize(m_numButtons);
+			return true;
+		}
+		bool SetButtonText(int idx, std::string text)
+		{
+			if (idx >= m_ButtonInfos.size())
+			{
+				return false;
+			}
+			m_ButtonInfos[idx].name = text;
 			return true;
 		}
 	};
@@ -114,6 +138,21 @@ namespace XWin
 		}
 		bool Create();
 	};
+	class Menu
+	{
+		HMENU m_hMenu = nullptr;
+		BEGIN_PACKAGE(Menu)
+			APISET().AddFunc<2>("Insert", &Menu::Insert);
+			APISET().AddFunc<3>("InsertSubMenu", &Menu::InsertSubMenu);
+		END_PACKAGE
+		Menu()
+		{
+			m_hMenu = CreateMenu();
+		}
+		HMENU Get() { return m_hMenu; }
+		bool Insert(int idx, std::string txt);
+		bool InsertSubMenu(int idx,Menu* pSubMenu, std::string txt);
+	};
 	class Window :
 		public ControlBase
 	{
@@ -122,18 +161,21 @@ namespace XWin
 			ADD_BASE(ControlBase);
 			APISET().AddEvent("OnDraw");
 			APISET().AddEvent("OnSize");
+			APISET().AddClass<0, Menu>("Menu");
 			APISET().AddClass<0, Toolbar, Window>("Toolbar");
 			APISET().AddClass<0, Button, Window>("Button");
 			APISET().AddClass<0, Draw, Window>("Draw");
 			APISET().AddClass<0, TextEditBox, Window>("TextEditBox");
 			APISET().AddFunc<4>("CreateChildWindow", &Window::CreateChildWindow);
-		END_PACKAGE
+			APISET().AddFunc<1>("SetMenu", &Window::SetMenu);
+			END_PACKAGE
 		Window(Window* parent):ControlBase(parent)
 		{
 		}
 		Window() :ControlBase(nullptr)
 		{
 		}
+		bool SetMenu(Menu* pMenu);
 		X::Value CreateChildWindow(int x, int y, int w, int h);
 		bool Create();
 	};
