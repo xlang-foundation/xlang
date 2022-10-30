@@ -2,6 +2,7 @@
 #include "singleton.h"
 #include "xpackage.h"
 #include "xlang.h"
+#include <Windows.h>
 
 namespace XWin
 {
@@ -42,6 +43,7 @@ namespace XWin
 			m_cleanFunc = cleanFunc;
 		}
 		void* GetTargetObj() { return m_pTargetObj; }
+		HBITMAP ToHBITMAP();
 	};
 
 }

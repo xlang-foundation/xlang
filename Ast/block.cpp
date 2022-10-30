@@ -74,6 +74,7 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 		bOk = i->Run(rt,pContext, v0);
 		if (!bOk)
 		{//TODO: error process here
+			std::cout << "Error Occurs in line:" << line << std::endl;
 			break;
 		}
 		if (v0.IsValid() && (i == last))

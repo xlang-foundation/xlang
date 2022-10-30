@@ -27,7 +27,7 @@ namespace XWin
 		{
 			((IWICImagingFactory*)m_pObj)->Release();
 		}
-	}	
+	}
 	Image::Image(std::string url)
 	{
 		HRESULT hr = S_OK;
@@ -81,5 +81,33 @@ namespace XWin
 		{
 			m_cleanFunc(m_pTargetObj);
 		}
+	}
+	HBITMAP Image::ToHBITMAP()
+	{
+		IWICFormatConverter* pConverter = nullptr;
+		HRESULT hr = WICFactory::I().WIC<IWICImagingFactory>()->CreateFormatConverter(&pConverter);
+		if (SUCCEEDED(hr))
+		{
+			hr = pConverter->Initialize(
+				Obj<IWICBitmapFrameDecode>(),
+				GUID_WICPixelFormat32bppPBGRA,
+				WICBitmapDitherTypeNone,
+				NULL,
+				0.f,
+				WICBitmapPaletteTypeCustom
+			);
+		}
+		HBITMAP bitmap = nullptr;
+		if (pConverter)
+		{
+			UINT height=0;
+			UINT width=0;
+			hr = pConverter->GetSize(&width, &height);
+			std::vector<BYTE> buffer(width * height * 4);
+			pConverter->CopyPixels(0, width * 4, buffer.size(), buffer.data());
+			bitmap = CreateBitmap(width, height, 1, 32, buffer.data());
+			pConverter->Release();
+		}
+		return bitmap;
 	}
 }

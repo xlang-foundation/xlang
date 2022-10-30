@@ -1,10 +1,16 @@
 from xlang_win import App
-w = App.Window("test")
+w = App.Window()
+w.SetText("Test")
+w.Create()
 w.OnSize+=(){
 	print("w.OnSize");
 }
 bot_line = 520
-c = w.CreateChildWindow(10,20,800,bot_line-20)
+toolbar_img = App.Image("C:\\Dev\\X\\winner\\test.jpg")
+toolbar = w.Toolbar()
+toolbar.SetImageList(toolbar_img,6,58,58)
+toolbar.Create()
+c = w.CreateChildWindow(10,100,700,bot_line-120)
 draw = c.Draw()
 img = App.Image("C:\\Data\\2.jpg")
 img2 = App.Image("C:\\Dev\\Cantor\\factory\\bg2.jpg")
@@ -35,8 +41,12 @@ c.OnDraw+= (){
 	draw.End();
 }
 
-txt = w.TextEditBox(410,bot_line,200,30)
-btn = w.Button("Reset",10,bot_line,100,40)
+txt = w.TextEditBox()
+txt.SetRect(410,bot_line,200,30)
+txt.Create()
+btn = w.Button()
+btn.SetText("Reset")
+btn.SetRect(10,bot_line,100,40)
 btn.Click+= (){
 	global pos;
 	pos =1;
@@ -45,7 +55,10 @@ btn.Click+= (){
 	btn2.Left =btn2.Left+30;
 	print("button clicked")
 }
-btn2 = w.Button("Move",200,bot_line,200,40)
+btn.Create()
+btn2 = w.Button()
+btn2.SetText("Move")
+btn2.SetRect(200,bot_line,200,40)
 print("btn.rect={",btn.Left,",",btn.Top,",",btn.Right,",",btn.Bottom,"}")
 print("btn2.rect={",btn2.Left,",",btn2.Top,",",btn2.Right,",",btn2.Bottom,"}")
 btn2.Click+= (){
@@ -55,6 +68,7 @@ btn2.Click+= (){
 	txt.SetText("Button Move clicked");
 	print("button2 clicked")
 }
+btn2.Create()
 w.Show(True)
 btn.Show(True)
 App.Loop()

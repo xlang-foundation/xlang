@@ -1,14 +1,40 @@
 #include "xlWindow.h"
 #include <windows.h> 
+#include "xlImage.h"
+#include "xlApp.h"
 
+X::Value::operator XWin::Window* ()const
+{
+    if (x.obj->GetType() == ObjType::Package)
+    {
+        XPackage* pPack = dynamic_cast<XPackage*>(x.obj);
+        return (XWin::Window*)pPack->GetEmbedObj();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
 namespace XWin
 {
 #define   XL_WIN_CLS_NAME "XL_WIN_CLASS"
 
+    bool ControlBase::SetText(std::string text)
+    {
+        m_text = text;
+        if (m_hwnd)
+        {
+            SetWindowText((HWND)m_hwnd, m_text.c_str());
+        }
+        return true;
+    }
     void ControlBase::onAreaChanged()
     {
-        MoveWindow((HWND)m_hwnd,m_rc.left, m_rc.top, 
-            m_rc.right - m_rc.left, m_rc.bottom - m_rc.top, TRUE);
+        if (m_hwnd)
+        {
+            MoveWindow((HWND)m_hwnd, m_rc.left, m_rc.top,
+                m_rc.right - m_rc.left, m_rc.bottom - m_rc.top, TRUE);
+        }
     }
     bool ControlBase::Show(bool visible)
     {
@@ -30,45 +56,27 @@ namespace XWin
         UpdateWindow((HWND)m_hwnd);
         return true;
     }
-    Button::Button(Window* parent,std::string caption)
+    bool Button::Create()
     {
         auto hinstance = GetModuleHandle(NULL);
         auto hwndButton = CreateWindow(
-            "BUTTON",  // Predefined class; Unicode assumed 
-            caption.c_str(),      // Button text 
-            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
-            10,         // x position 
-            10,         // y position 
-            100,        // Button width
-            100,        // Button height
-            (HWND)parent->GetWnd(),     // Parent window
+            "BUTTON",
+            m_text.c_str(),
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+            m_rc.left,         // x position 
+            m_rc.top,         // y position 
+            m_rc.right-m_rc.left,        // Button width
+            m_rc.bottom-m_rc.top,        // Button height
+            (HWND)m_parent->GetWnd(),     // Parent window
             NULL,       // No menu.
             hinstance,
             NULL);
         SetWindowLongPtr(hwndButton, GWLP_USERDATA, (LONG_PTR)this);
         m_hwnd = hwndButton;
-    }
-    Button::Button(Window* parent, std::string caption, int x, int y, int w, int h)
-    {
-        auto hinstance = GetModuleHandle(NULL);
-        auto hwndButton = CreateWindow(
-            "BUTTON",  // Predefined class; Unicode assumed 
-            caption.c_str(),      // Button text 
-            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
-            x,         // x position 
-            y,         // y position 
-            w,        // Button width
-            h,        // Button height
-            (HWND)parent->GetWnd(),     // Parent window
-            NULL,       // No menu.
-            hinstance,
-            NULL);
-        SetWindowLongPtr(hwndButton, GWLP_USERDATA, (LONG_PTR)this);
-        m_rc = { x,y,x + w,y + h };
-        m_hwnd = hwndButton;
+        return true;
     }
 
-    TextEditBox::TextEditBox(Window* parent,int x, int y, int w, int h)
+    bool TextEditBox::Create()
     {
         auto hinstance = GetModuleHandle(NULL);
         auto hwndEdit = CreateWindowEx(
@@ -76,17 +84,13 @@ namespace XWin
             NULL,         // no window title 
             WS_CHILD | WS_VISIBLE | WS_VSCROLL |
             ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
-            x, y, w, h, 
-            (HWND)parent->GetWnd(),         // parent window 
+            m_rc.left, m_rc.top, m_rc.right - m_rc.left, m_rc.bottom - m_rc.top,
+            (HWND)m_parent->GetWnd(),         // parent window 
             (HMENU)0,   // edit control ID 
             hinstance,
             NULL);        // pointer not needed 
         SetWindowLongPtr(hwndEdit, GWLP_USERDATA, (LONG_PTR)this);
         m_hwnd = hwndEdit;
-    }
-    bool TextEditBox::SetText(std::string text)
-    {
-        SetWindowText((HWND)m_hwnd, text.c_str());
         return true;
     }
     LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -104,7 +108,10 @@ namespace XWin
                 Button* pButton = (Button*)GetWindowLongPtr(childWnd, GWLP_USERDATA);
                 X::ARGS params;
                 X::KWARGS kwargs;
-                pButton->Fire(0, params, kwargs);
+                if (pButton)
+                {
+                    pButton->Fire(0, params, kwargs);
+                }
             }
             // Parse the menu selections:
             switch (wmId)
@@ -182,59 +189,101 @@ namespace XWin
 
         return RegisterClassEx(&wcx);
     }
-#if 1
-    Window::Window(Window* pParent, int x, int y, int w, int h)
+    bool Window::Create()
     {
-        DWORD dwStyle = WS_CHILD | WS_VISIBLE;;
+        DWORD dwStyle = WS_OVERLAPPEDWINDOW;
         HWND hParent = NULL;
-        if (pParent)
+        int x = m_rc.left;
+        int y = m_rc.top;
+        int w = m_rc.right - m_rc.left;
+        int h = m_rc.bottom - m_rc.top;
+        if (x == 0 && y == 0 && w == 0 && h == 0)
         {
-            hParent = (HWND)pParent->m_hwnd;
+            x = y = w = h = CW_USEDEFAULT;
+        }
+        if (m_parent)
+        {
+            hParent = (HWND)m_parent->m_hwnd;
+            if (hParent)
+            {
+                dwStyle = WS_CHILD | WS_VISIBLE;
+            }
         }
         auto hinstance = GetModuleHandle(NULL);
         BOOL bOK = InitApplication(hinstance);
         DWORD error = GetLastError();
         auto hwnd = CreateWindow(
             XL_WIN_CLS_NAME,
-            "",
-            dwStyle,
-            x,
-            y,
-            w,
-            h,
+            m_text.c_str(),
+            dwStyle,x,y,w,h,
             hParent,
             (HMENU)NULL,
             hinstance,
             (LPVOID)this);
+        error = GetLastError();
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
         m_hwnd = hwnd;
+        return true;
     }
-#endif
-	Window::Window(std::string name)
-	{
-        DWORD dwStyle = WS_OVERLAPPEDWINDOW;
-        auto hinstance = GetModuleHandle(NULL);
-        BOOL bOK = InitApplication(hinstance);
-        DWORD error = GetLastError();
-        auto hwnd = CreateWindow(
-            XL_WIN_CLS_NAME,
-            name.c_str(),
-            dwStyle,
-            CW_USEDEFAULT,
-            CW_USEDEFAULT,
-            CW_USEDEFAULT,
-            CW_USEDEFAULT,
-            (HWND)NULL,
-            (HMENU)NULL,
-            hinstance,
-            (LPVOID)this);
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
-        m_hwnd = hwnd;
-	}
 
+    bool Toolbar::Create()
+    {
+        auto hinstance = GetModuleHandle(NULL);
+        const int ImageListID = 0;
+        const DWORD buttonStyles = BTNS_AUTOSIZE| BTNS_SHOWTEXT;
+        // Create the toolbar.
+        HWND hWndToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
+            WS_CHILD | TBSTYLE_WRAPABLE| TBSTYLE_FLAT| TBSTYLE_TOOLTIPS, 0, 0, 0, 0,
+            (HWND)m_parent->GetWnd(), NULL, hinstance, NULL);
+        if (hWndToolbar == NULL)
+        {
+            return false;
+        }
+        // Create the image list.
+        m_hImageList = ImageList_Create(m_cx, m_cy,ILC_COLOR32 | ILC_MASK,m_numButtons, 0);
+
+        // Set the image list.
+        SendMessage(hWndToolbar, TB_SETIMAGELIST,(WPARAM)ImageListID,(LPARAM)m_hImageList);
+        ImageList_Add(m_hImageList, m_pImgeList->ToHBITMAP(), nullptr);
+        // Load the button images.
+        //SendMessage(hWndToolbar, TB_LOADIMAGES,(WPARAM)IDB_STD_LARGE_COLOR,(LPARAM)HINST_COMMCTRL);
+#define IDM_NEW 10021
+#define IDM_OPEN 10031
+#define IDM_SAVE 10041
+        // Initialize button info.
+        // IDM_NEW, IDM_OPEN, and IDM_SAVE are application-defined command constants.
+#define numButtons 6
+        TBBUTTON tbButtons[numButtons] =
+        {
+            { MAKELONG(STD_FILENEW,  ImageListID), IDM_NEW,  TBSTATE_ENABLED, buttonStyles, {0}, 0, (INT_PTR)L"New" },
+            { MAKELONG(STD_FILEOPEN, ImageListID), IDM_OPEN, TBSTATE_ENABLED, buttonStyles, {0}, 0, (INT_PTR)L"Open"},
+            { MAKELONG(STD_FILESAVE, ImageListID), IDM_SAVE, TBSTATE_ENABLED,               buttonStyles, {0}, 0, (INT_PTR)L"Save"},
+            { MAKELONG(STD_FILENEW,  ImageListID), IDM_NEW,  TBSTATE_ENABLED | TBSTATE_ELLIPSES, buttonStyles, {0}, 0, (INT_PTR)L"New" },
+            { MAKELONG(STD_FILEOPEN, ImageListID), IDM_OPEN, TBSTATE_ENABLED, buttonStyles, {0}, 0, (INT_PTR)L"Open"},
+            { MAKELONG(STD_FILESAVE, ImageListID), IDM_SAVE, TBSTATE_ENABLED,               buttonStyles, {0}, 0, (INT_PTR)L"Save"}
+        };
+#if 0
+        std::vector<TBBUTTON> tbButtons;
+        for (int i = 0; i < numButtons; i++)
+        {
+
+        }
+#endif
+        // Add buttons.
+        SendMessage(hWndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+        SendMessage(hWndToolbar, TB_ADDBUTTONS, (WPARAM)numButtons, (LPARAM)&tbButtons);
+
+        // Resize the toolbar, and then show it.
+        SendMessage(hWndToolbar, TB_AUTOSIZE, 0, 0);
+        ShowWindow(hWndToolbar, TRUE);
+        m_hwnd = hWndToolbar;
+        return true;
+    }
     X::Value Window::CreateChildWindow(int x, int y, int w, int h)
     {
-        Window* pWin = new Window(this,x,y,w,h);
+        Window* pWin = new Window(this);
+        pWin->SetRect(x, y, w, h);
+        pWin->Create();
         return X::Value(APISET().GetProxy(pWin), false);
     }
 }

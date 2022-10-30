@@ -17,5 +17,5 @@ add_library(${PROJECT_NAME}
 
 
 if (WIN32)
-    target_link_libraries(${PROJECT_NAME} d2d1)
+    target_link_libraries(${PROJECT_NAME} d2d1 Comctl32)
 endif()
