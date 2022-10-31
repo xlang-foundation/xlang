@@ -4,6 +4,18 @@
 #include "xlApp.h"
 #include "utility.h"
 
+X::Value::operator XWin::Box* ()const
+{
+    if (x.obj->GetType() == ObjType::Package)
+    {
+        XPackage* pPack = dynamic_cast<XPackage*>(x.obj);
+        return (XWin::Box*)pPack->GetEmbedObj();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
 X::Value::operator XWin::Window* ()const
 {
     if (x.obj->GetType() == ObjType::Package)
@@ -33,6 +45,22 @@ namespace XWin
 {
 #define   XL_WIN_CLS_NAME "XL_WIN_CLASS"
 
+    LBox::LBox(Window* parent)
+    {
+        if (parent)
+        {
+            parent->AddLayoutBox(this);
+            m_parent = parent;
+        }
+    }
+    ControlBase::ControlBase(Window* parent)
+    {
+        m_parent = parent;
+        if (m_parent)
+        {
+            m_parent->AddLayoutBox(this);
+        }
+    }
     bool ControlBase::SetText(std::string text)
     {
         m_text = text;
@@ -139,6 +167,7 @@ namespace XWin
         {
             if (pWindow)
             {
+                pWindow->OnSize();
                 X::ARGS params;
                 X::KWARGS kwargs;
                 pWindow->Fire(1, params, kwargs);
@@ -203,6 +232,98 @@ namespace XWin
 
         return RegisterClassEx(&wcx);
     }
+    void Window::OnSize()
+    {
+        for (auto* box : m_Boxes)
+        {
+            box->StartVisiting();
+        }
+        bool HaveMore = true;
+        int loopNum = (int)m_Boxes.size();
+        int loopNo = 0;
+        while (HaveMore && (loopNo < loopNum))
+        {
+            HaveMore = false;
+            for (auto* box : m_Boxes)
+            {
+                if (box->IsVisited())
+                {
+                    continue;
+                }
+                if (!box->HaveConstraint())
+                {
+                    box->EndVisiting();
+                }
+                Rect newRect = { -1,-1,-1,-1 };
+                //Left
+                Coord* pRefCoord = &box->GetCoordRect().left;
+;               Box* pRefBox = pRefCoord->ancorBox;
+                if (pRefBox)
+                {
+                    if (pRefBox->IsVisited())
+                    {
+                        newRect.left = pRefBox->GetSide(this,pRefCoord->side,pRefCoord->Offset);
+                    }
+                    else
+                    {
+                        HaveMore = true;
+                        continue;
+                    }
+                }
+                //Top
+                pRefCoord = &box->GetCoordRect().top;
+                pRefBox = pRefCoord->ancorBox;
+                if (pRefBox)
+                {
+                    if (pRefBox->IsVisited())
+                    {
+                        newRect.top = pRefBox->GetSide(this, pRefCoord->side, pRefCoord->Offset);
+                    }
+                    else
+                    {
+                        HaveMore = true;
+                        continue;
+                    }
+                }
+                //Right
+                pRefCoord = &box->GetCoordRect().right;
+                pRefBox = pRefCoord->ancorBox;
+                if (pRefBox)
+                {
+                    if (pRefBox->IsVisited())
+                    {
+                        newRect.right = pRefBox->GetSide(this, pRefCoord->side, pRefCoord->Offset);
+                    }
+                    else
+                    {
+                        HaveMore = true;
+                        continue;
+                    }
+                }
+                //Bottom
+                pRefCoord = &box->GetCoordRect().bottom;
+                pRefBox = pRefCoord->ancorBox;
+                if (pRefBox)
+                {
+                    if (pRefBox->IsVisited())
+                    {
+                        newRect.bottom = pRefBox->GetSide(this, pRefCoord->side, pRefCoord->Offset);
+                    }
+                    else
+                    {
+                        HaveMore = true;
+                        continue;
+                    }
+                }
+                if (newRect.left != -1 || newRect.top != -1 
+                    || newRect.right != -1 || newRect.bottom != -1)
+                {//if at least one side set,then pass to this box
+                    box->SetRect(newRect);
+                }
+            }
+            loopNo++;
+        }
+    }
     bool Window::Create()
     {
         DWORD dwStyle = WS_OVERLAPPEDWINDOW;
@@ -247,7 +368,7 @@ namespace XWin
         const DWORD buttonStyles = BTNS_AUTOSIZE| BTNS_SHOWTEXT;
         // Create the toolbar.
         HWND hWndToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
-            WS_CHILD | TBSTYLE_WRAPABLE| TBSTYLE_FLAT| TBSTYLE_TOOLTIPS, 0, 0, 0, 0,
+            WS_CHILD | TBSTYLE_WRAPABLE| /*TBSTYLE_FLAT |*/ TBSTYLE_TOOLTIPS, 0, 0, 0, 0,
             (HWND)m_parent->GetWnd(), NULL, hinstance, NULL);
         if (hWndToolbar == NULL)
         {
@@ -295,7 +416,7 @@ namespace XWin
         menuItemInfo.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_DATA | MIIM_STATE;
         menuItemInfo.fType = MFT_STRING;
         menuItemInfo.dwTypeData = (LPTSTR)txt.c_str();
-        menuItemInfo.cch = txt.size() + 1;
+        menuItemInfo.cch = (int)txt.size() + 1;
         menuItemInfo.dwItemData = (ULONG_PTR)WinManager::I().GetNewCommandId();
         menuItemInfo.fState = 0;
 

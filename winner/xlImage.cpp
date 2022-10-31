@@ -2,6 +2,8 @@
 #include <wincodec.h>
 #include "utility.h"
 #include "singleton.h"
+#include "xlApp.h"
+
 
 //ref
 //http://www.nuonsoft.com/blog/2011/10/17/introduction-to-wic-how-to-use-wic-to-load-an-image-and-draw-it-with-gdi/
@@ -30,6 +32,17 @@ namespace XWin
 	}
 	Image::Image(std::string url)
 	{
+		if (url.find('\\') == url.npos || url.find('/') == url.npos)
+		{
+			auto m = App::I().GetModule();
+			X::XModule* pModule = dynamic_cast<X::XModule*>(m.GetObj());
+			if (pModule)
+			{
+				auto path = pModule->GetPath();
+				url = path + "\\" + url;
+			}
+		}
+		m_url = url;
 		HRESULT hr = S_OK;
 		std::wstring wurl = s2ws(url);
 		IWICBitmapDecoder* pIDecoder = NULL;

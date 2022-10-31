@@ -30,6 +30,7 @@ namespace XWin
 		void* m_pObj = nullptr;
 		void* m_pTargetObj = nullptr;
 		ImageCleanFunc m_cleanFunc = nullptr;
+		std::string m_url;
 	public:
 		template<typename T>
 		T* Obj() { return (T*)m_pObj; }

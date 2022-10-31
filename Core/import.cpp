@@ -76,14 +76,16 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	bool bOK = false;
 	if (bHaveDll)
 	{
-		typedef void (*LOAD)(void* pHost);
+		typedef void (*LOAD)(void* pHost,X::Value module);
 		void* libHandle = LOADLIB(loadDllName.c_str());
 		if (libHandle)
 		{
 			LOAD load = (LOAD)GetProc(libHandle, "Load");
 			if (load)
 			{
-				load((void*)g_pXHost);
+				ModuleObject* pModuleObj = new ModuleObject(rt->M());
+				Value curModule = Value(pModuleObj);
+				load((void*)g_pXHost, curModule);
 			}
 			bOK = true;
 		}

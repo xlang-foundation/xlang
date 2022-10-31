@@ -43,7 +43,7 @@ namespace XWin
 			APISET().AddFunc<1>("Clear", &Draw::Clear);
 			APISET().AddFunc<5>("DrawRectangle", &Draw::DrawRectangle);
 			APISET().AddFunc<5>("DrawImage", &Draw::DrawImage);
-			END_PACKAGE
+		END_PACKAGE
 		void* GetDrawInfo() { return m_pDrawInfo; }
 		Draw(Window* pWin);
 		~Draw();

@@ -6,6 +6,12 @@ w.OnSize+=(){
 	print("w.OnSize");
 }
 
+box = w.Box()
+box.SetLeft(w,0,10)
+box.SetTop(w,3,-50)
+box.SetRight(w,2,10)
+box.SetBottom(w,3,-10)
+
 #Menu
 main_menu = w.Menu()
 file_menu = w.Menu()
@@ -21,18 +27,35 @@ main_menu.InsertSubMenu(1,edit_menu,"Edit")
 w.SetMenu(main_menu)
 
 bot_line = 520
-toolbar_img = App.Image("C:\\Dev\\X\\winner\\test.jpg")
+toolbar_img = App.Image("bg2.jpg")
 toolbar = w.Toolbar()
-toolbar.SetImageList(toolbar_img,8,58,58)
+toolbar.SetLeft(w,0,0)
+toolbar.SetTop(w,1,0)
+toolbar.SetRight(w,2,0)
+toolbar.SetBottom(w,1,50)
+toolbar.SetImageList(toolbar_img,12,64,64)
 toolbar.SetButtonText(0,"File")
 toolbar.SetButtonText(1,"Edit")
 toolbar.SetButtonText(2,"View")
-
 toolbar.Create()
+
+r_txt = w.TextEditBox()
+r_txt.SetLeft(w,2,-300)
+r_txt.SetTop(w,1,100)
+r_txt.SetRight(w,2,-10)
+r_txt.SetBottom(box,1,-10)
+
+r_txt.Create()
 c = w.CreateChildWindow(10,100,700,bot_line-120)
+c.SetLeft(w,0,10)
+c.SetTop(w,1,100)
+c.SetRight(r_txt,0,-5)
+c.SetBottom(w,3,-70)
+
+
 draw = c.Draw()
-img = App.Image("C:\\Data\\2.jpg")
-img2 = App.Image("C:\\Dev\\Cantor\\factory\\bg2.jpg")
+img = App.Image("bg.jpg")
+img2 = App.Image("bg2.jpg")
 brush = draw.Brush("Cyan")
 brush2 = [draw.Brush("DarkMagenta"),
 	draw.Brush("Coral"),
@@ -55,23 +78,27 @@ c.OnDraw+= (){
 	size = 11;
 	for i in range(size):
 		draw.DrawRectangle(pos+40,70+i*20,pos+200,140+i*20,brush2[i])
-	draw.DrawImage(img2,100-pos,100,700-pos,400);
-	draw.DrawImage(img,100-pos,400,700-pos,800);
+	if pos ==1:
+		draw.DrawImage(img2,100-pos,100,700-pos,400);
+	else:
+		draw.DrawImage(img,100-pos,100,700-pos,400);
 	draw.End();
 }
 
 txt = w.TextEditBox()
 txt.SetRect(410,bot_line,200,30)
+txt.SetTop(box,1,0)
+txt.SetRight(box,2,-100)
 txt.Create()
 btn = w.Button()
 btn.SetText("Reset")
 btn.SetRect(10,bot_line,100,40)
+btn.SetTop(box,1,0)
 btn.Click+= (){
 	global pos;
 	pos =1;
 	c.Repaint();
 	txt.SetText("Button Reset clicked");
-	btn2.Left =btn2.Left+30;
 	print("button clicked")
 }
 btn.Create()
@@ -80,6 +107,9 @@ btn2.SetText("Move")
 btn2.SetRect(200,bot_line,200,40)
 print("btn.rect={",btn.Left,",",btn.Top,",",btn.Right,",",btn.Bottom,"}")
 print("btn2.rect={",btn2.Left,",",btn2.Top,",",btn2.Right,",",btn2.Bottom,"}")
+btn2.SetTop(box,1,0)
+txt.SetLeft(btn2,2,10)
+
 btn2.Click+= (){
 	global pos;
 	pos +=5;
@@ -88,6 +118,7 @@ btn2.Click+= (){
 	print("button2 clicked")
 }
 btn2.Create()
+
 w.Show(True)
 btn.Show(True)
 App.Loop()

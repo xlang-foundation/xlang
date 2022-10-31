@@ -229,6 +229,13 @@ namespace X
 	public:
 		virtual bool CreateEmptyModule() = 0;
 	};
+	class XModule :
+		virtual public XObj
+	{
+	public:
+		virtual std::string GetFileName() = 0;
+		virtual std::string GetPath() = 0;
+	};
 	class XStr :
 		virtual public XObj
 	{

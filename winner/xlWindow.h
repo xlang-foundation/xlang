@@ -10,10 +10,103 @@ namespace XWin
 {
 	class Window;
 	class Image;
+	class Box;
+	class LBox;
 	struct Rect
 	{
 		int left, top;
 		int right, bottom;
+	};
+	enum class BoxSide
+	{
+		Left,Top,Right,Bottom
+	};
+	struct Coord
+	{
+		Box* ancorBox = nullptr;//ref pointer to Box,not own this Box
+		BoxSide side = BoxSide::Left;
+		int Offset = 0;
+	};
+	struct CoordRect
+	{
+		Coord left, top;
+		Coord right, bottom;
+	};
+	class Box
+	{
+		bool m_visited = true;
+	protected:
+		CoordRect m_coordRect;
+		BEGIN_PACKAGE(Box)
+			APISET().AddFunc<3>("SetLeft", &Box::SetLeft);
+			APISET().AddFunc<3>("SetTop", &Box::SetTop);
+			APISET().AddFunc<3>("SetRight", &Box::SetRight);
+			APISET().AddFunc<3>("SetBottom", &Box::SetBottom);
+		END_PACKAGE
+	public:
+		CoordRect& GetCoordRect() { return m_coordRect; }
+		void StartVisiting()
+		{
+			m_visited = false;
+		}
+		void EndVisiting()
+		{
+			m_visited = true;
+		}
+		bool HaveConstraint()
+		{
+			return m_coordRect.left.ancorBox != nullptr ||
+				m_coordRect.top.ancorBox != nullptr ||
+				m_coordRect.right.ancorBox != nullptr ||
+				m_coordRect.bottom.ancorBox != nullptr;
+		}
+		void SetRect(Rect rc)
+		{
+			Set(rc);
+			m_visited = true;
+		}
+		int GetSide(Box* pCurContainer,BoxSide side,int offset)
+		{
+			Rect rc = GetContainRect(pCurContainer);
+			switch (side)
+			{
+			case XWin::BoxSide::Left:
+				return rc.left + offset;
+			case XWin::BoxSide::Top:
+				return rc.top + offset;
+			case XWin::BoxSide::Right:
+				return rc.right + offset;
+			case XWin::BoxSide::Bottom:
+				return rc.bottom + offset;
+			default:
+				break;
+			}
+			return 0;
+		}
+		bool IsVisited() { return m_visited; }
+		bool SetLeft(Box* pAncor, int side, int offset)
+		{
+			m_coordRect.left = Coord{ pAncor,(BoxSide)side,offset };
+			return true;
+		}
+		bool SetTop(Box* pAncor, int side, int offset)
+		{
+			m_coordRect.top = Coord{ pAncor,(BoxSide)side,offset };
+			return true;
+		}
+		bool SetRight(Box* pAncor, int side, int offset)
+		{
+			m_coordRect.right = Coord{ pAncor,(BoxSide)side,offset };
+			return true;
+		}
+		bool SetBottom(Box* pAncor, int side, int offset)
+		{
+			m_coordRect.bottom = Coord{ pAncor,(BoxSide)side,offset };
+			return true;
+		}
+		virtual Rect Get() = 0;
+		virtual Rect GetContainRect(Box* pCurContainer) = 0;
+		virtual void Set(Rect rc) = 0;
 	};
 	class WinManager :
 		public Singleton<WinManager>
@@ -22,7 +115,32 @@ namespace XWin
 	public:
 		int GetNewCommandId() { return m_lastCommandId++; }
 	};
-	class ControlBase
+	//Windowless Box for layout
+	class LBox :
+		public Box
+	{
+		Window* m_parent = nullptr;
+		Rect m_rc = { 0,0,0,0 };
+		BEGIN_PACKAGE(LBox)
+			ADD_BASE(Box);
+		END_PACKAGE
+	public:
+		LBox(Window* parent);
+		virtual Rect GetContainRect(Box* pCurContainer) override
+		{
+			return m_rc;//for windowless, same as m_rc
+		}
+		virtual Rect Get() override
+		{
+			return m_rc;
+		}
+		virtual void Set(Rect rc)
+		{
+			m_rc = rc;
+		}
+	};
+	class ControlBase:
+		public Box
 	{
 	protected:
 		void* m_hwnd = nullptr;
@@ -30,9 +148,56 @@ namespace XWin
 		Rect m_rc={0,0,0,0};
 		std::string m_text;
 		virtual void onAreaChanged();
+		virtual Rect GetContainRect(Box* pCurContainer) override
+		{
+			return m_rc;
+		}
+		virtual Rect Get() override
+		{
+			return m_rc;
+		}
+		virtual void Set(Rect rc)
+		{
+			if (rc.left != -1)
+			{
+				if (rc.right == -1)
+				{
+					m_rc.right = (m_rc.right - m_rc.left) + rc.left;
+				}
+				m_rc .left= rc.left;
+			}
+			if (rc.top != -1)
+			{
+				if (rc.bottom == -1)
+				{
+					m_rc.bottom = (m_rc.bottom - m_rc.top) + rc.top;
+				}
+				m_rc.top = rc.top;
+			}
+			if (rc.right != -1)
+			{
+				if (rc.left == -1)
+				{
+					m_rc.left = rc.right - (m_rc.right - m_rc.left);
+				}
+				m_rc.right = rc.right;
+			}
+			if (rc.bottom != -1)
+			{
+				if (rc.top == -1)
+				{
+					m_rc.top = rc.bottom - (m_rc.bottom - m_rc.top);
+				}
+				m_rc.bottom = rc.bottom;
+			}
+			MoveWindow((HWND)m_hwnd, m_rc.left, m_rc.top,
+				m_rc.right - m_rc.left, m_rc.bottom - m_rc.top, TRUE);
+			InvalidateRect((HWND)m_hwnd, nullptr, TRUE);
+		}
 	public:
 		void* GetWnd() { return m_hwnd; }
 		BEGIN_PACKAGE(ControlBase)
+			ADD_BASE(Box);
 			APISET().AddPropL("Left",
 				[](auto* pThis, X::Value v) {pThis->m_rc.left = v; pThis->onAreaChanged(); },
 				[](auto* pThis) {return pThis->m_rc.left; });
@@ -51,10 +216,7 @@ namespace XWin
 			APISET().AddFunc<1>("SetText", &ControlBase::SetText);
 			APISET().AddFunc<0>("Create", &ControlBase::Create);
 		END_PACKAGE
-		ControlBase(Window* parent)
-		{
-			m_parent = parent;
-		}
+		ControlBase(Window* parent);
 		virtual bool Create() = 0;
 		bool SetRect(int x, int y, int w, int h)
 		{
@@ -156,11 +318,14 @@ namespace XWin
 	class Window :
 		public ControlBase
 	{
+		//for layout
+		std::vector<Box*> m_Boxes;
 	public:
 		BEGIN_PACKAGE(Window)
 			ADD_BASE(ControlBase);
 			APISET().AddEvent("OnDraw");
 			APISET().AddEvent("OnSize");
+			APISET().AddClass<0, LBox, Window>("Box");
 			APISET().AddClass<0, Menu>("Menu");
 			APISET().AddClass<0, Toolbar, Window>("Toolbar");
 			APISET().AddClass<0, Button, Window>("Button");
@@ -175,6 +340,26 @@ namespace XWin
 		Window() :ControlBase(nullptr)
 		{
 		}
+		virtual Rect GetContainRect(Box* pCurContainer) override
+		{
+			Rect rc;
+			if (pCurContainer == this)
+			{
+				RECT rect;
+				GetClientRect((HWND)m_hwnd, &rect);
+				rc = { rect.left,rect.top,rect.right,rect.bottom };
+			}
+			else
+			{
+				rc = Get();
+			}
+			return rc;
+		}
+		void AddLayoutBox(Box* p)
+		{
+			m_Boxes.push_back(p);
+		}
+		void OnSize();
 		bool SetMenu(Menu* pMenu);
 		X::Value CreateChildWindow(int x, int y, int w, int h);
 		bool Create();

@@ -13,10 +13,11 @@ namespace X
 {
 	XHost* g_pXHost = nullptr;
 }
-extern "C"  X_EXPORT void Load(void* pHost)
+extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 {
 	X::g_pXHost = (X::XHost*)pHost;
 	X::RegisterPackage<XWin::App>("App",&XWin::App::I());
+	XWin::App::I().SetModule(curModule);
 }
 extern "C"  X_EXPORT void Unload()
 {
