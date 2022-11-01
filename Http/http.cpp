@@ -174,5 +174,62 @@ namespace X
 		}
 		return dict;
 	}
+	HttpClient::HttpClient(std::string scheme_host_port)
+	{
+		m_pClient = new httplib::Client(scheme_host_port);
+	}
+	HttpClient::~HttpClient()
+	{
+		delete (httplib::Client*)m_pClient;
+	}
+
+	bool HttpClient::Get(std::string path)
+	{
+		X::XBin* pBinBuf = nullptr;
+		char* pBuf = nullptr;
+		httplib::Headers headers;
+		auto res = ((httplib::Client*)m_pClient)->Get(
+			path, headers,
+			[&](const httplib::Response& response) {
+				int len = 0;
+				auto it = response.headers.find("Content-Length");
+				if (it != response.headers.end())
+				{
+					len = std::stoi(it->second);
+				}
+				pBinBuf = X::g_pXHost->CreateBin(nullptr, len, true);
+				pBuf = pBinBuf->Data();
+				return true;
+				// return 'false' if you want to cancel the request.
+			},
+			[&](const char* data, size_t data_length) {
+				if (data_length)
+				{
+					memcpy(pBuf, data, data_length);
+					pBuf += data_length;
+				}
+				return true; 
+				// return 'false' if you want to cancel the request.
+			});
+
+		m_status = res->status;
+		if (m_status == 200)
+		{
+			m_body = X::Value(pBinBuf,false);
+		}
+		else if (pBinBuf)
+		{
+			pBinBuf->DecRef();
+		}
+		return true;
+	}
+	X::Value HttpClient::GetStatus()
+	{
+		return m_status;
+	}
+	X::Value HttpClient::GetBody()
+	{
+		return m_body;
+	}
 }
 

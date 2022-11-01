@@ -20,7 +20,15 @@ namespace X
 			{//new copy
 				m_t = ObjType::Binary;
 				m_OwnData = bOwnData;
-				m_data = data;
+				if (data == nullptr)
+				{
+					m_data = new char[size];
+					m_OwnData = true;
+				}
+				else
+				{
+					m_data = data;
+				}
 				m_size = size;
 			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override

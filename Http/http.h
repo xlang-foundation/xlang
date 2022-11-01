@@ -76,7 +76,25 @@ namespace X
 		}
 		bool SetContent(X::Value& valContent, std::string contentType);
 	};
-
+	class HttpClient
+	{
+		void* m_pClient = nullptr;
+		int m_status = 0;
+		X::Value m_body;
+	public:
+		BEGIN_PACKAGE(HttpClient)
+			APISET().AddFunc<1>("get", &HttpClient::Get);
+			APISET().AddPropL("status",[](auto* pThis, X::Value v) {},
+				[](auto* pThis){return pThis->GetStatus(); });
+			APISET().AddPropL("body", [](auto* pThis, X::Value v) {},
+				[](auto* pThis) {return pThis->GetBody(); });
+		END_PACKAGE
+		HttpClient(std::string scheme_host_port);
+		~HttpClient();
+		bool Get(std::string path);
+		X::Value GetStatus();
+		X::Value GetBody();
+	};
 	class Http
 	{
 	public:
@@ -84,6 +102,7 @@ namespace X
 			APISET().AddClass<0, HttpServer>("Server");
 			APISET().AddClass<0, HttpResponse>("Response");
 			APISET().AddClass<0, HttpRequest>("Request");
+			APISET().AddClass<1, HttpClient>("Client");
 		END_PACKAGE
 	};
 }

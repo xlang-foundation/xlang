@@ -16,7 +16,9 @@ namespace X
 		inline LValue(Value& v)
 		{
 			val = v;
-			valptr = &val;
+			//todo: CHANGE TO NULL, because v maybe in stack, 
+			//as temp var
+			valptr = nullptr;// &val;
 		}
 		inline LValue(Value* pVal)
 		{
@@ -24,9 +26,9 @@ namespace X
 		}
 		inline void SetContext(XObj* p) { context = p; }
 		inline XObj* GetContext() { return context; }
-		inline operator bool() const
+		inline operator bool()
 		{
-			return (valptr != 0);
+			return (valptr != 0) || val.IsValid();
 		}
 		inline Value& operator *() const
 		{

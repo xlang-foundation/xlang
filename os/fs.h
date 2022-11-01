@@ -1,4 +1,5 @@
 #pragma once
+#include "singleton.h"
 #include "xpackage.h"
 #include "xlang.h"
 #include <iostream>
@@ -9,31 +10,30 @@ namespace X
 	class File
 	{
 		std::ifstream m_stream;
+		std::ofstream m_wstream;
 		std::string m_fileName;
 		bool m_IsBinary = true;
+		bool m_IsWrite = false;
 	public:
 		BEGIN_PACKAGE(File)
 			APISET().AddFunc<1>("read", &File::read);
+			APISET().AddFunc<1>("write", &File::write);
 			APISET().AddFunc<0>("close", &File::close);
 			APISET().AddProp("size", &File::get_size);
 		END_PACKAGE
 		File()
 		{
 		}
-		File(std::string fileName, std::string mode):
-			File()
-		{
-			m_fileName = fileName;
-			m_IsBinary = (std::string::npos != mode.find_first_of('b'));
-			m_stream.open(m_fileName.c_str(),
-				m_IsBinary? (std::ios_base::in
-				| std::ios_base::binary): std::ios_base::in);
-		}
+		File(std::string fileName, std::string mode);
 		~File()
 		{
 			if (m_stream.is_open())
 			{
 				m_stream.close();
+			}
+			if (m_wstream.is_open())
+			{
+				m_wstream.close();
 			}
 		}
 		X::Value read(long long size)
@@ -56,16 +56,25 @@ namespace X
 				return X::Value(pStr);
 			}
 		}
-		bool write(void* rt, XObj* pContext,
-			ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue)
+		bool write(X::Value p)
 		{
+			if (p.IsObject() && p.GetObj()->GetType() == X::ObjType::Binary)
+			{
+				XBin* pBin = dynamic_cast<XBin*>(p.GetObj());
+				m_wstream.write(pBin->Data(), pBin->Size());
+			}
 			return true;
 		}
 		bool close()
 		{
-			m_stream.close();
+			if (m_stream.is_open())
+			{
+				m_stream.close();
+			}
+			if (m_wstream.is_open())
+			{
+				m_wstream.close();
+			}
 			return true;
 		}
 		X::Value get_size()
@@ -80,9 +89,16 @@ namespace X
 			return X::Value((long long)size);
 		}
 	};
-	class FileSystem
+	class FileSystem:
+		public Singleton<FileSystem>
 	{
+		X::Value m_curModule;
 	public:
+		void SetModule(X::Value curModule)
+		{
+			m_curModule = curModule;
+		}
+		X::Value& GetModule() { return m_curModule; }
 		BEGIN_PACKAGE(FileSystem)
 			APISET().AddClass<2, File>("File");
 		END_PACKAGE
