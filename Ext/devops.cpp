@@ -229,7 +229,6 @@ namespace X
 			{
 				valParam = it->second;
 			}
-			AST::CommandInfo cmdInfo;
 			if (strCmd == "Stack")
 			{
 				auto stackTracePack = [](XlangRuntime* rt,
@@ -242,11 +241,14 @@ namespace X
 					pDebugService->BuildStackInfo(rt, pContextCurrent,
 						pCommandInfo, retVal);
 				};
-				cmdInfo.m_callContext = this;
-				cmdInfo.m_process = stackTracePack;
-				cmdInfo.m_retValueHolder = &retValue;
-				cmdInfo.dbgType = AST::dbg::StackTrace;
-				pModule->AddCommand(cmdInfo, true);
+				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				pCmdInfo->m_callContext = this;
+				pCmdInfo->m_process = stackTracePack;
+				pCmdInfo->m_needRetValue = true;
+				pCmdInfo->dbgType = AST::dbg::StackTrace;
+				pModule->AddCommand(pCmdInfo, true);
+				retValue = pCmdInfo->m_retValueHolder;
+				delete pCmdInfo;
 			}
 			else if (strCmd == "Locals" || strCmd=="Object")
 			{
@@ -256,8 +258,9 @@ namespace X
 				{
 					frameId = (int)it2->second.GetLongLong();
 				}
-				cmdInfo.m_frameId = frameId;
-				cmdInfo.dbgType = AST::dbg::GetRuntime;
+				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				pCmdInfo->m_frameId = frameId;
+				pCmdInfo->dbgType = AST::dbg::GetRuntime;
 				auto localPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
@@ -282,39 +285,49 @@ namespace X
 				};
 				if (strCmd == "Locals")
 				{
-					cmdInfo.m_process = localPack;
+					pCmdInfo->m_process = localPack;
 				}
 				else if (strCmd == "Object")
 				{
-					cmdInfo.m_process = objPack;
+					pCmdInfo->m_process = objPack;
 				}
-				cmdInfo.m_varParam = valParam;
-				cmdInfo.m_callContext = this;
-				cmdInfo.m_retValueHolder = &retValue;
-				pModule->AddCommand(cmdInfo, true);
+				pCmdInfo->m_varParam = valParam;
+				pCmdInfo->m_callContext = this;
+				pCmdInfo->m_needRetValue =true;
+				pModule->AddCommand(pCmdInfo, true);
+				retValue = pCmdInfo->m_retValueHolder;
+				delete pCmdInfo;
 			}
 			if (strCmd == "Step")
 			{
-				cmdInfo.dbgType = AST::dbg::Step;
-				pModule->AddCommand(cmdInfo, false);
+				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				pCmdInfo->m_downstreamDelete = true;
+				pCmdInfo->dbgType = AST::dbg::Step;
+				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
 			else if (strCmd == "Continue")
 			{
-				cmdInfo.dbgType = AST::dbg::Continue;
-				pModule->AddCommand(cmdInfo, false);
+				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				pCmdInfo->m_downstreamDelete = true;
+				pCmdInfo->dbgType = AST::dbg::Continue;
+				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
 			else if (strCmd == "StepIn")
 			{
-				cmdInfo.dbgType = AST::dbg::StepIn;
-				pModule->AddCommand(cmdInfo, false);
+				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				pCmdInfo->m_downstreamDelete = true;
+				pCmdInfo->dbgType = AST::dbg::StepIn;
+				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
 			else if (strCmd == "StepOut")
 			{
-				cmdInfo.dbgType = AST::dbg::StepOut;
-				pModule->AddCommand(cmdInfo, false);
+				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				pCmdInfo->m_downstreamDelete = true;
+				pCmdInfo->dbgType = AST::dbg::StepOut;
+				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
 			return true;

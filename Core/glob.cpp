@@ -13,7 +13,32 @@ namespace X {
 		delete (Locker*)m_lockRTMap;
 		delete (Locker*)m_lock;
 	}
-
+	void G::BindRuntimeToThread(XlangRuntime* rt)
+	{
+		long long curTId = rt->GetThreadId();
+		((Locker*)m_lockRTMap)->Lock();
+		auto it = m_rtMap.find(curTId);
+		if (it == m_rtMap.end())
+		{
+			m_rtMap.emplace(std::make_pair(curTId,rt));
+		}
+		else
+		{
+			it->second = rt;
+		}
+		((Locker*)m_lockRTMap)->Unlock();
+	}
+	void G::UnbindRuntimeToThread(XlangRuntime* rt)
+	{
+		long long curTId = rt->GetThreadId();
+		((Locker*)m_lockRTMap)->Lock();
+		auto it = m_rtMap.find(curTId);
+		if (it != m_rtMap.end())
+		{
+			m_rtMap.erase(it);
+		}
+		((Locker*)m_lockRTMap)->Unlock();
+	}
 	XlangRuntime* G::MakeThreadRuntime(long long curTId, XlangRuntime* rt)
 	{
 		XlangRuntime* pRet = nullptr;

@@ -97,25 +97,29 @@ public:
 		AST::Expression* exp, XObj* pContext)
 	{
 		auto* pModule = rt->M();
-		AST::CommandInfo cmdInfo;
+		AST::CommandInfo* pCmdInfo;
 		bool mLoop = true;
 		while (mLoop)
 		{
-			pModule->PopCommand(cmdInfo);
-			switch (cmdInfo.dbgType)
+			pCmdInfo = pModule->PopCommand();
+			if (pCmdInfo == nullptr)
+			{
+				break;
+			}
+			switch (pCmdInfo->dbgType)
 			{
 			case AST::dbg::GetRuntime:
 			case AST::dbg::StackTrace:
 				//just get back the current exp, then
 				//will calcluate out stack frames
 				//by call AddCommand
-				if (cmdInfo.m_process)
+				if (pCmdInfo->m_process)
 				{
 					X::Value retVal;
-					cmdInfo.m_process(rt, pContext, &cmdInfo, retVal);
-					if (cmdInfo.m_retValueHolder)
+					pCmdInfo->m_process(rt, pContext, pCmdInfo, retVal);
+					if (pCmdInfo->m_needRetValue)
 					{
-						*cmdInfo.m_retValueHolder = retVal;
+						pCmdInfo->m_retValueHolder = retVal.ToString(true);
 					}
 				}
 				break;
@@ -153,9 +157,13 @@ public:
 			default:
 				break;
 			}
-			if (cmdInfo.m_wait)
+			if (pCmdInfo->m_wait)
 			{
-				cmdInfo.m_wait->Release();
+				pCmdInfo->m_wait->Release();
+			}
+			if (pCmdInfo->m_downstreamDelete)
+			{
+				delete pCmdInfo;
 			}
 		}
 	}

@@ -38,6 +38,7 @@ namespace X
 	XRuntime* XHost_Impl::CreateRuntime()
 	{
 		XlangRuntime* rt = new XlangRuntime();
+		G::I().BindRuntimeToThread(rt);
 		return dynamic_cast<XRuntime*>(rt);
 	}
 	XRuntime* XHost_Impl::GetCurrentRuntime()

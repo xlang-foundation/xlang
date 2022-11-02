@@ -2,9 +2,14 @@
 #include "stackframe.h"
 #include "exp.h"
 #include "module.h"
+#include "glob.h"
 
 namespace X 
 {
+	XlangRuntime::~XlangRuntime()
+	{
+		G::I().UnbindRuntimeToThread(this);
+	}
 	bool XlangRuntime::CreateEmptyModule()
 	{
 		if (m_pModule)

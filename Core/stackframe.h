@@ -2,6 +2,7 @@
 #include "def.h"
 #include "value.h"
 #include "lvalue.h"
+#include <iostream>
 
 namespace X {namespace AST {
 class Scope;
@@ -79,7 +80,7 @@ public:
 	{
 		if (idx < 0 && idx >= m_varCnt)
 		{
-			idx = idx;
+			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		m_Values[idx] = v;
 	}
@@ -89,6 +90,10 @@ public:
 	}
 	inline void Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
 	{
+		if (idx < 0 && idx >= m_varCnt)
+		{
+			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
+		}
 		X::Value& v0 = m_Values[idx];
 		v = v0;
 		if (lValue) *lValue = &v0;

@@ -43,6 +43,7 @@ public:
 	{
 		m_threadId = GetThreadID();
 	}
+	~XlangRuntime();
 	inline void SetTrace(XTraceFunc f)
 	{
 		m_tracefunc = f;

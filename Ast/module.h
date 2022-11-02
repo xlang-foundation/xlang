@@ -39,10 +39,13 @@ struct CommandInfo
 	int m_frameId;
 	AST::Expression* m_pExpToRun = nullptr;
 	X::Value m_varParam;//for input when add command
-	X::Value* m_retValueHolder = nullptr;//for command output
+	bool m_needRetValue = false;
+	std::string m_retValueHolder;//for command output
 
 	CommandProcessProc m_process = nullptr;
 	XWait* m_wait = nullptr;
+	bool m_downstreamDelete = false;//when the downstream get this command
+	//need to delete this pointer
 };
 
 class Module :
@@ -63,7 +66,7 @@ class Module :
 	std::vector<Scope*> m_dbgScopes;
 	XWait m_commandWait;
 	Locker m_lockCommands;
-	std::vector<CommandInfo> m_commands;
+	std::vector<CommandInfo*> m_commands;
 	Locker m_lockBreakpoints;
 	std::vector<BreakPointInfo> m_breakpoints;
 
@@ -144,25 +147,26 @@ public:
 	{
 		return m_moduleName;
 	}
-	inline void AddCommand(CommandInfo& cmdInfo,bool bWaitFinish)
+	inline void AddCommand(CommandInfo* pCmdInfo,bool bWaitFinish)
 	{
 		if (bWaitFinish)
 		{
-			cmdInfo.m_wait = new XWait();
+			pCmdInfo->m_wait = new XWait();
 		}
 		m_lockCommands.Lock();
-		m_commands.push_back(cmdInfo);
+		m_commands.push_back(pCmdInfo);
 		m_lockCommands.Unlock();
 		m_commandWait.Release();
 		if (bWaitFinish)
 		{
-			cmdInfo.m_wait->Wait(-1);
-			delete cmdInfo.m_wait;
+			pCmdInfo->m_wait->Wait(-1);
+			delete pCmdInfo->m_wait;
 		}
 	}
-	inline bool PopCommand(CommandInfo& cmdInfo)
+	inline CommandInfo* PopCommand()
 	{
 		bool bRet = true;
+		CommandInfo* pCommandInfo = nullptr;
 		m_lockCommands.Lock();
 		if (m_commands.size() == 0)
 		{
@@ -173,11 +177,11 @@ public:
 		}
 		if (bRet && m_commands.size()>0)
 		{
-			cmdInfo = m_commands[0];
+			pCommandInfo = m_commands[0];
 			m_commands.erase(m_commands.begin());
 		}
 		m_lockCommands.Unlock();
-		return bRet;
+		return pCommandInfo;
 	}
 	inline char* SetCode(char* code, int size)
 	{
@@ -197,9 +201,9 @@ public:
 		m_lockCommands.Lock();
 		for (auto& it : m_commands)
 		{
-			if (it.m_wait)
+			if (it->m_wait)
 			{
-				it.m_wait->Release();
+				it->m_wait->Release();
 			}
 		}
 		m_lockCommands.Unlock();

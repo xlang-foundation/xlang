@@ -185,8 +185,12 @@ namespace X
 
 	bool HttpClient::Get(std::string path)
 	{
-		X::XBin* pBinBuf = nullptr;
+		char* pDataHead = nullptr;
 		char* pBuf = nullptr;
+		int buf_size = 0;
+		int data_cur_size = 0;
+		//if has content length,allocate one time
+		//if not, allocated  when data receiving
 		httplib::Headers headers;
 		auto res = ((httplib::Client*)m_pClient)->Get(
 			path, headers,
@@ -197,29 +201,47 @@ namespace X
 				{
 					len = std::stoi(it->second);
 				}
-				pBinBuf = X::g_pXHost->CreateBin(nullptr, len, true);
-				pBuf = pBinBuf->Data();
+				if (len > 0)
+				{
+					pBuf = new char[len];
+					pDataHead = pBuf;
+					buf_size = len;
+				}
 				return true;
 				// return 'false' if you want to cancel the request.
 			},
 			[&](const char* data, size_t data_length) {
 				if (data_length)
 				{
+					if (pBuf == nullptr)
+					{
+						pBuf = new char[data_length];
+						pDataHead = pBuf;
+						buf_size = data_length;
+					}
+					else if((data_cur_size + data_length)> buf_size)
+					{
+						pBuf = new char[data_cur_size + data_length];
+						buf_size = data_cur_size + data_length;
+						memcpy(pBuf, pDataHead, data_cur_size);
+						delete pDataHead;
+						pDataHead = pBuf;
+						data_cur_size += data_length;
+						pBuf += data_length;
+					}
 					memcpy(pBuf, data, data_length);
 					pBuf += data_length;
+					data_cur_size += data_length;
 				}
 				return true; 
 				// return 'false' if you want to cancel the request.
 			});
 
 		m_status = res->status;
-		if (m_status == 200)
+		if (data_cur_size >0)
 		{
+			auto* pBinBuf = X::g_pXHost->CreateBin(pDataHead, data_cur_size, true);
 			m_body = X::Value(pBinBuf,false);
-		}
-		else if (pBinBuf)
-		{
-			pBinBuf->DecRef();
 		}
 		return true;
 	}

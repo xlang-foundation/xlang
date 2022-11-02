@@ -24,6 +24,8 @@ namespace X {
 	public:
 		G();
 		~G();
+		void BindRuntimeToThread(XlangRuntime* rt);
+		void UnbindRuntimeToThread(XlangRuntime* rt);
 		inline OpRegistry& R() { return *m_reg;}
 		inline void SetReg(OpRegistry* r) { m_reg = r; }
 		inline XRuntime* GetCurrentRuntime()

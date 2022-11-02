@@ -862,6 +862,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.type = 'Function';
 				dapVariable.value = `"func:${v.Val}"`;
 				break;
+			case 'Package':
+				v.reference = this._runtime.createScopeRef(
+					v.Type, v.FrameId, v.Val);
+				dapVariable.value = 'Package(Size:' + v.Size.toString() + ")";
+				dapVariable.type = "Package";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.namedVariables = v.Size;
+				break;				
 			case 'Class':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val);

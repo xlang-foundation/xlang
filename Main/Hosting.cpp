@@ -109,6 +109,7 @@ namespace X
 	{
 		XlangRuntime* pRuntime = new XlangRuntime();
 		pRuntime->SetM(pTopModule);
+		G::I().BindRuntimeToThread(pRuntime);
 		if (stopOnEntry)
 		{
 			pTopModule->SetDebug(true,pRuntime);
@@ -147,6 +148,7 @@ namespace X
 			pTopModule->ScopeLayout();
 			XlangRuntime* pRuntime = new XlangRuntime();
 			pRuntime->SetM(pTopModule);
+			G::I().BindRuntimeToThread(pRuntime);
 			AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 			pModuleFrame->SetLine(pTopModule->GetStartLine());
 			pTopModule->AddBuiltins(pRuntime);

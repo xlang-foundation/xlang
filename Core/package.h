@@ -28,6 +28,7 @@ class Package :
 		m_funcPackageCleanup = func;
 	}
 public:
+	std::vector<MemberInfo>& MemberInfos() { return m_memberInfos; }
 	Package(void* pObj):
 		Data::Object(), Scope()
 	{
@@ -40,6 +41,12 @@ public:
 		{
 			Cleanup(m_pObject);
 		}
+	}
+	virtual X::Data::List* FlatPack(XlangRuntime* rt,
+		long long startIndex, long long count) override;
+	virtual long long Size()
+	{
+		return (long long)m_memberInfos.size();
 	}
 	virtual void RemoveALl() override
 	{
@@ -209,6 +216,12 @@ public:
 			delete m_stackFrame;
 			m_stackFrame = nullptr;
 		}
+	}
+	virtual X::Data::List* FlatPack(XlangRuntime* rt,
+		long long startIndex, long long count) override;
+	virtual long long Size()
+	{
+		return m_pPackage->Size();
 	}
 	virtual int AddOrGet(std::string& name, bool bGetOnly)
 	{
