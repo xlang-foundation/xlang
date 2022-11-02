@@ -1,10 +1,10 @@
 from xlang_win import App
 w = App.Window()
 w.SetText("Test")
-w.Create()
 w.OnSize+=(){
 	print("w.OnSize");
 }
+w.Create()
 
 box = w.Box()
 box.SetLeft(w,0,10)

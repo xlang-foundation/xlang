@@ -158,13 +158,14 @@ export class XLangRuntime extends EventEmitter {
 	{
 		const https = require('http');
 		const options = {
-		hostname: 'localhost',
-		port: 3141,
-		path: '/devops/getnotify',
-		method: 'GET'
+			hostname: 'localhost',
+			port: 3141,
+			path: '/devops/getnotify',
+			method: 'GET'
 		};
+		console.log(`fetchNotify request started`);
 		const req = https.request(options, res => {
-		console.log(`statusCode: ${res.statusCode}`);	
+		console.log(`fetchNotify->statusCode: ${res.statusCode}`);	
 		res.on('data', d => {
 			var strData = new TextDecoder().decode(d);
 			console.log(strData);
@@ -195,7 +196,7 @@ export class XLangRuntime extends EventEmitter {
 		});
 	
 		req.on('error', error => {
-			console.error(error);
+			console.error("fetchNotify->",error);
 			if(this._sessionRunning )
 			{
 				var thisObj = this;
@@ -204,8 +205,7 @@ export class XLangRuntime extends EventEmitter {
 				}, 100);
 			}
 		});
-	
-		req.end();		
+		req.end();
 	}
 	/**
 	 * Start executing the given program.
