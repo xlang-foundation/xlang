@@ -6,9 +6,10 @@
 
 namespace X
 {
+	class APISetBase;
 namespace AST
 {
-	struct MemberInfo
+	struct MemberIndexInfo
 	{
 		std::string name;
 		int Index = -1;
@@ -19,16 +20,17 @@ class Package :
 	virtual public Data::Object,
 	virtual public Scope
 {
+	APISetBase* m_pAPISet = nullptr;
 	void* m_pObject = nullptr;
 	StackFrame* m_stackFrame = nullptr;
-	std::vector<MemberInfo> m_memberInfos;
+	std::vector<MemberIndexInfo> m_memberInfos;
 	PackageCleanup m_funcPackageCleanup = nullptr;
 	virtual void SetPackageCleanupFunc(PackageCleanup func) override
 	{
 		m_funcPackageCleanup = func;
 	}
 public:
-	std::vector<MemberInfo>& MemberInfos() { return m_memberInfos; }
+	APISetBase* GetAPISet() { return m_pAPISet; }
 	Package(void* pObj):
 		Data::Object(), Scope()
 	{
@@ -41,6 +43,10 @@ public:
 		{
 			Cleanup(m_pObject);
 		}
+	}
+	void SetAPISet(APISetBase* p)
+	{
+		m_pAPISet = p;
 	}
 	virtual X::Data::List* FlatPack(XlangRuntime* rt,
 		long long startIndex, long long count) override;
@@ -93,7 +99,7 @@ public:
 		}
 		return idx;
 	}
-	inline virtual MemberInfo QueryMethod(std::string name)
+	inline virtual MemberIndexInfo QueryMethod(std::string name)
 	{
 		int idx =  Scope::AddOrGet(name, true);
 		return m_memberInfos[idx];
@@ -244,7 +250,7 @@ public:
 	{
 		return m_pPackage->QueryMethod(name, pKeepRawParams);
 	}
-	inline virtual MemberInfo QueryMethod(std::string name)
+	inline virtual MemberIndexInfo QueryMethod(std::string name)
 	{
 		return m_pPackage->QueryMethod(name);
 	}

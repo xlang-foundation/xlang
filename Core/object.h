@@ -111,6 +111,8 @@ namespace Data {
 				return "FuncCalls";
 			case X::ObjType::Package:
 				return "Package";
+			case X::ObjType::Prop:
+				return "Prop";
 			case X::ObjType::Future:
 				return "Future";
 			case X::ObjType::List:

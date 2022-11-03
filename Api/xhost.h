@@ -22,6 +22,7 @@ namespace X
 	class XProxy;
 	class XCustomScope;
 	class XRuntime;
+	class APISetBase;
 	typedef XPackage* (*PackageCreator)();
 	typedef void (*PackageCleanup)(void* pContextObj);
 	typedef XProxy* (*XProxyCreator)(std::string& url);
@@ -44,15 +45,15 @@ namespace X
 		virtual void AddSysCleanupFunc(CLEANUP f) = 0;
 		virtual XRuntime* CreateRuntime() = 0;
 		virtual XRuntime* GetCurrentRuntime() = 0;
-		virtual bool RegisterPackage(const char* name, PackageCreator creator) = 0;
-		virtual bool RegisterPackage(const char* name, Value& objPackage) = 0;
+		virtual bool RegisterPackage(const char* name, APISetBase* pAPISet,PackageCreator creator) = 0;
+		virtual bool RegisterPackage(const char* name, APISetBase* pAPISet,Value& objPackage) = 0;
 		virtual XObj* QueryMember(XRuntime* rt, XObj* pObj, const char* name) = 0;
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;
 		virtual XDict* CreateDict() = 0;
 		virtual XList* CreateList() = 0;
-		virtual XPackage* CreatePackage(void* pRealObj) = 0;
+		virtual XPackage* CreatePackage(APISetBase* pAPISet,void* pRealObj) = 0;
 		virtual XPackage* CreatePackageProxy(XPackage* pPackage,void* pRealObj) = 0;
 		virtual XEvent* CreateXEvent(const char* name) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC func,X::XObj* pContext=nullptr) = 0;

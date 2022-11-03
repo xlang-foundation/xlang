@@ -4,6 +4,22 @@
 
 namespace X
 {
+	namespace MetaInfo
+	{
+		template <typename A>
+		void process_one_type(std::vector<std::string>& list) {
+			list.push_back(typeid(A).name());
+		}
+		template<typename type, typename...args>
+		std::vector<std::string> BuildFuncInfo(type(*func)(args...))
+		{
+			std::vector<std::string> list;
+			list.push_back(typeid(type).name());
+			int placeholder[] = { 0, (process_one_type<args>(list), 0)... };
+			(void)placeholder;
+			return list;
+		}
+	}
 	template<class impl_pack_class>
 	XPackage* RegisterPackage(const char* pack_name, impl_pack_class* instance =nullptr)
 	{
@@ -20,7 +36,7 @@ namespace X
 			});
 		if (instance == nullptr)
 		{
-			X::g_pXHost->RegisterPackage(pack_name, []()
+			X::g_pXHost->RegisterPackage(pack_name, &apiset,[]()
 				{
 					impl_pack_class* pPackImpl = new impl_pack_class();
 					return impl_pack_class::APISET().GetPack();
@@ -30,7 +46,7 @@ namespace X
 		{
 			auto* pXPack = impl_pack_class::APISET().GetPack();
 			X::Value v0(dynamic_cast<X::XObj*>(pXPack));
-			X::g_pXHost->RegisterPackage(pack_name, v0);
+			X::g_pXHost->RegisterPackage(pack_name,&apiset,v0);
 		}
 		return apiset.GetPack();
 	}
@@ -94,7 +110,7 @@ namespace X
 
 	class APISetBase
 	{
-	protected:
+	public:
 		enum MemberType
 		{
 			Func,
@@ -113,6 +129,7 @@ namespace X
 			X::U_FUNC_EX func_ex;
 			bool keepRawParams = false;
 		};
+	protected:
 		std::vector<MemberInfo> m_members;
 		std::vector<int> __events;//index no
 		std::vector<APISetBase*> m_bases;
@@ -204,6 +221,7 @@ namespace X
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
 			PackageCleanup cleanFunc = nullptr)
 		{
+			auto metainfo = typeid(Class_T).name();
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc);
@@ -230,6 +248,7 @@ namespace X
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
 			PackageCleanup cleanFunc = nullptr)
 		{
+			auto metainfo = typeid(Class_T).name();
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc);
@@ -264,6 +283,7 @@ namespace X
 		template<std::size_t Parameter_Num, typename F>
 		void AddFunc(const char* func_name, F f)
 		{
+			auto metainfo = typeid(F).name();
 			m_members.push_back(MemberInfo{
 				MemberType::Func,func_name,
 				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
@@ -279,6 +299,7 @@ namespace X
 		template<std::size_t Parameter_Num, typename F>
 		void AddFuncEx(const char* func_name, F f)
 		{
+			auto metainfo = typeid(F).name();
 			m_members.push_back(MemberInfo{
 				MemberType::FuncEx,func_name,nullptr,nullptr,
 				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
@@ -478,7 +499,7 @@ namespace X
 				memberNum += (int)b->Members().size();;
 			}
 
-			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
+			auto* pPackage = X::g_pXHost->CreatePackage(this,thisObj);
 			//if object created by outside,thisObj will not be NULL
 			//then don't need to be deleted by XPackage
 			if (thisObj == nullptr)
