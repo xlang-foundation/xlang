@@ -3,6 +3,7 @@
 #include "dict.h"
 #include "prop.h"
 #include "xpackage.h"
+#include "event.h"
 
 namespace X
 {
@@ -57,6 +58,7 @@ namespace X
 					if (pPropObj)
 					{
 						pPropObj->GetProp(rt, this, val);
+						valType = val.GetValueType();
 					}
 				}
 
@@ -66,6 +68,11 @@ namespace X
 					&& dynamic_cast<Object*>(val.GetObj())->IsStr()))
 				{
 					dict->Set("Value", val);
+				}
+				else if (it.type == APISetBase::MemberType::Func ||
+					it.type == APISetBase::MemberType::FuncEx)
+				{
+					dict->Set("Value", it.doc);
 				}
 				else if (val.IsObject())
 				{
@@ -88,41 +95,63 @@ namespace X
 			{
 				return pOutList;
 			}
-			auto& members = pAPISet->Members();
-			for (auto& it : members)
+			std::vector<APISetBase*> api_list;
+			pAPISet->CollectBases(api_list);
+			for (auto apiSet : api_list) 
 			{
-				X::Data::Dict* dict = new X::Data::Dict();
-				Data::Str* pStrName = new Data::Str(it.name);
-				dict->Set("Name", X::Value(pStrName));
-				int idx = AddOrGet(it.name, true);
-				X::Value val;
-				GetIndexValue(idx, val);
-				if (val.IsObject() && val.GetObj()->GetType() 
-					== X::ObjType::Prop)
+				auto& members = apiSet->Members();
+				for (auto& it : members)
 				{
-					auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
-					if (pPropObj)
+					X::Data::Dict* dict = new X::Data::Dict();
+					Data::Str* pStrName = new Data::Str(it.name);
+					dict->Set("Name", X::Value(pStrName));
+					int idx = AddOrGet(it.name, true);
+					auto valType = GetMemberType(it.type);
+					X::Value val;
+					GetIndexValue(idx, val);
+					if (val.IsObject())
 					{
-						pPropObj->GetProp(rt, this, val);
+						if (val.GetObj()->GetType() == X::ObjType::Prop) 
+						{
+							auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
+							if (pPropObj)
+							{
+								pPropObj->GetProp(rt, this, val);
+								valType = val.GetValueType();
+							}
+						}
+						else if (val.GetObj()->GetType() == X::ObjType::ObjectEvent)
+						{
+							auto* pEvtObj = dynamic_cast<X::ObjectEvent*>(val.GetObj());
+							if (pEvtObj)
+							{
+								std::string strVal = pEvtObj->ToString();
+								val = strVal;
+							}
+						}
 					}
+					Data::Str* pStrType = new Data::Str(valType);
+					dict->Set("Type", X::Value(pStrType));
+					if (!val.IsObject() || (val.IsObject()
+						&& dynamic_cast<Object*>(val.GetObj())->IsStr()))
+					{
+						dict->Set("Value", val);
+					}
+					else if (it.type == APISetBase::MemberType::Func ||
+						it.type == APISetBase::MemberType::FuncEx)
+					{
+						dict->Set("Value", it.doc);
+					}
+					else if (val.IsObject())
+					{
+						X::Value objId((unsigned long long)val.GetObj());
+						dict->Set("Value", objId);
+						X::Value valSize(val.GetObj()->Size());
+						dict->Set("Size", valSize);
+					}
+					X::Value valDict(dict);
+					pOutList->Add(rt, valDict);
 				}
-				auto valType = GetMemberType(it.type);
-				Data::Str* pStrType = new Data::Str(valType);
-				dict->Set("Type", X::Value(pStrType));
-				if (!val.IsObject() || (val.IsObject()
-					&& dynamic_cast<Object*>(val.GetObj())->IsStr()))
-				{
-					dict->Set("Value", val);
-				}
-				else if (val.IsObject())
-				{
-					X::Value objId((unsigned long long)val.GetObj());
-					dict->Set("Value", objId);
-					X::Value valSize(val.GetObj()->Size());
-					dict->Set("Size", valSize);
-				}
-				X::Value valDict(dict);
-				pOutList->Add(rt, valDict);
 			}
 			return pOutList;
 		}

@@ -38,10 +38,10 @@ namespace XWin
 	protected:
 		CoordRect m_coordRect;
 		BEGIN_PACKAGE(Box)
-			APISET().AddFunc<3>("SetLeft", &Box::SetLeft);
-			APISET().AddFunc<3>("SetTop", &Box::SetTop);
-			APISET().AddFunc<3>("SetRight", &Box::SetRight);
-			APISET().AddFunc<3>("SetBottom", &Box::SetBottom);
+			APISET().AddFunc<3>("SetLeft", &Box::SetLeft,"obj.SetLeft(int)");
+			APISET().AddFunc<3>("SetTop", &Box::SetTop, "obj.SetTop(int)");
+			APISET().AddFunc<3>("SetRight", &Box::SetRight, "obj.SetRight(int)");
+			APISET().AddFunc<3>("SetBottom", &Box::SetBottom, "obj.SetBottom(int)");
 		END_PACKAGE
 	public:
 		CoordRect& GetCoordRect() { return m_coordRect; }
@@ -210,11 +210,16 @@ namespace XWin
 			APISET().AddPropL("Bottom",
 				[](auto* pThis, X::Value v) {pThis->m_rc.bottom = v; pThis->onAreaChanged(); },
 				[](auto* pThis) {return pThis->m_rc.bottom; });
-			APISET().AddFunc<4>("SetRect", &ControlBase::SetRect);
-			APISET().AddFunc<1>("Show", &ControlBase::Show);
-			APISET().AddFunc<0>("Repaint", &ControlBase::Repaint);
-			APISET().AddFunc<1>("SetText", &ControlBase::SetText);
-			APISET().AddFunc<0>("Create", &ControlBase::Create);
+			APISET().AddFunc<4>("SetRect", &ControlBase::SetRect,
+				"SetRect(int x, int y, int w, int h)");
+			APISET().AddFunc<1>("Show", &ControlBase::Show,
+				"Show(bool visible)");
+			APISET().AddFunc<0>("Repaint", &ControlBase::Repaint,
+				"Repaint()");
+			APISET().AddFunc<1>("SetText", &ControlBase::SetText,
+				"SetText(std::string text)");
+			APISET().AddFunc<0>("Create", &ControlBase::Create,
+				"bool Create()");
 		END_PACKAGE
 		ControlBase(Window* parent);
 		virtual bool Create() = 0;

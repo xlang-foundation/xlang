@@ -11,6 +11,11 @@ namespace X
 			list.push_back(typeid(A).name());
 		}
 		template<typename type, typename...args>
+		int GetFuncParamCount(type(*func)(args...))
+		{
+			return sizeof...(args);
+		}
+		template<typename type, typename...args>
 		std::vector<std::string> BuildFuncInfo(type(*func)(args...))
 		{
 			std::vector<std::string> list;
@@ -128,6 +133,7 @@ namespace X
 			X::U_FUNC func2;
 			X::U_FUNC_EX func_ex;
 			bool keepRawParams = false;
+			std::string doc;
 		};
 	protected:
 		std::vector<MemberInfo> m_members;
@@ -135,7 +141,7 @@ namespace X
 		std::vector<APISetBase*> m_bases;
 		XPackage* m_xPack = nullptr;
 		bool m_alreadyCallBuild = false;
-
+	public:
 		void CollectBases(std::vector<APISetBase*>& bases)
 		{
 			for (auto* p : m_bases)
@@ -145,7 +151,6 @@ namespace X
 			//derived class's same name member will override base's
 			bases.push_back(this);
 		}
-	public:
 		inline auto& Members() { return m_members; }
 		virtual XPackage* GetPack() = 0;
 		virtual XPackage* GetProxy(void* pRealObj) = 0;
@@ -221,7 +226,6 @@ namespace X
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
 			PackageCleanup cleanFunc = nullptr)
 		{
-			auto metainfo = typeid(Class_T).name();
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc);
@@ -248,7 +252,6 @@ namespace X
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
 			PackageCleanup cleanFunc = nullptr)
 		{
-			auto metainfo = typeid(Class_T).name();
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc);
@@ -281,9 +284,8 @@ namespace X
 					}),nullptr });
 		}
 		template<std::size_t Parameter_Num, typename F>
-		void AddFunc(const char* func_name, F f)
+		void AddFunc(const char* func_name, F f,const char* doc = "")
 		{
-			auto metainfo = typeid(F).name();
 			m_members.push_back(MemberInfo{
 				MemberType::Func,func_name,
 				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
@@ -294,12 +296,11 @@ namespace X
 						auto _retVal = HelpFuncs::VarCall<Parameter_Num>(pThis,f,params);
 						retValue = X::Value(_retVal);
 						return true;
-					}),nullptr });
+					}),nullptr,nullptr,false,std::string(doc)});
 		}
 		template<std::size_t Parameter_Num, typename F>
-		void AddFuncEx(const char* func_name, F f)
+		void AddFuncEx(const char* func_name, F f, const char* doc = "")
 		{
-			auto metainfo = typeid(F).name();
 			m_members.push_back(MemberInfo{
 				MemberType::FuncEx,func_name,nullptr,nullptr,
 				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
@@ -310,10 +311,10 @@ namespace X
 						auto _retVal = HelpFuncs::VarCallEx<Parameter_Num>(pThis,f, trailer,params);
 						retValue = X::Value(_retVal);
 						return true;
-					})});
+					}),nullptr,nullptr,false,std::string(doc)});
 		}
 		template<std::size_t Parameter_Num, typename F>
-		void AddRTFunc(const char* func_name, F f)
+		void AddRTFunc(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
 				MemberType::Func,func_name,
@@ -325,10 +326,10 @@ namespace X
 						auto _retVal = HelpFuncs::VarCall_Extra<Parameter_Num>(rt, pContext,pThis,f,params);
 						retValue = X::Value(_retVal);
 						return true;
-					}),nullptr });
+					}),nullptr,nullptr,false,std::string(doc) });
 		}
 		template<typename F>
-		void AddVarFuncEx(const char* func_name, F f)
+		void AddVarFuncEx(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
 				MemberType::FuncEx,func_name,nullptr,nullptr,
@@ -339,10 +340,10 @@ namespace X
 						auto* pThis = (T*)pPackage->GetEmbedObj();
 						(pThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
 						return true;
-					})});
+					}),nullptr,nullptr,false,std::string(doc) });
 		}
 		template<typename F>
-		void AddRawParamFunc(const char* func_name, F f)
+		void AddRawParamFunc(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
 				MemberType::FuncEx,func_name,nullptr,nullptr,
@@ -353,10 +354,10 @@ namespace X
 						auto* pThis = (T*)pPackage->GetEmbedObj();
 						(pThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
 						return true;
-					}),true});
+					}),true,std::string(doc) });
 		}
 		template<typename F>
-		void AddVarFunc(const char* func_name, F f)
+		void AddVarFunc(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
 				MemberType::Func,func_name,
@@ -367,7 +368,7 @@ namespace X
 						auto* pThis = (T*)pPackage->GetEmbedObj();
 						(pThis->*f)(rt, pContext, params, kwParams, retValue);
 						return true;
-					}),nullptr });
+					}),nullptr,nullptr,false,std::string(doc) });
 		}
 		template<typename PTMV>
 		void AddProp0(const char* func_name, PTMV var)

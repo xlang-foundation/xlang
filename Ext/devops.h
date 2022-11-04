@@ -20,8 +20,11 @@ namespace X
 				XObj* pContextCurrent,
 				AST::CommandInfo* pCommandInfo,
 				X::Value& valStackInfo);
+			bool BuildGlobals(XlangRuntime* rt,
+				XObj* pContextCurrent,
+				X::Value& valGlobals);
 			bool BuildLocals(XlangRuntime* rt,
-				XObj* pContextCurrent,int frameId,
+				XObj* pContextCurrent, int frameId,
 				X::Value& valLocals);
 			bool BuildObjectContent(XlangRuntime* rt,
 				XObj* pContextCurrent, int frameId, X::Value& valParam,

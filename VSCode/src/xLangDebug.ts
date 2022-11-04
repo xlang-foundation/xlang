@@ -42,7 +42,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 	// a XLang runtime (or debugger)
 	private _runtime: XLangRuntime;
 
-	private _variableHandles = new Handles<'locals' | 'globals' | RuntimeVariable>();
+	private _variableHandles = new Handles<'locals' | 'globals'| RuntimeVariable>();
 
 	private _configurationDone = new Subject();
 
@@ -451,14 +451,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		if (varType === 'locals') {
 			this._runtime.getLocalVariables(frameId,cb);
 		} else if (varType === 'globals') {
-			let vs: RuntimeVariable[] = [];
-			if (request) {
-				this._cancellationTokens.set(request.seq, false);
-				vs = await this._runtime.getGlobalVariables(() => !!this._cancellationTokens.get(request.seq));
-				this._cancellationTokens.delete(request.seq);
-			} else {
-				vs = await this._runtime.getGlobalVariables();
-			}
+			this._runtime.getGlobalVariables(cb);
 		} else {
 			this._runtime.getObject(frameId,v[2],
 				args.start==undefined?0:args.start,
@@ -860,8 +853,12 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'Function':
 				dapVariable.type = 'Function';
-				dapVariable.value = `"func:${v.Val}"`;
+				dapVariable.value = `ƒ ${v.Val}`;
 				break;
+			case 'Event':
+				dapVariable.type = 'Event';
+				dapVariable.value = `e ${v.Val}`;
+				break;				
 			case 'Package':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val);

@@ -44,8 +44,8 @@ namespace X
 				if (strRet.empty())
 				{
 					char v[1000];
-					snprintf(v, sizeof(v), "f[%llx]",
-						(unsigned long long)this);
+					snprintf(v, sizeof(v), "lambda:line%d-%d",
+						m_func->GetStartLine(), m_func->GetEndLine());
 					strRet = v;
 				}
 				if (WithFormat)

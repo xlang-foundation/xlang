@@ -13,7 +13,7 @@ namespace XWin
 		X::Value m_curModule;
 	public:
 		BEGIN_PACKAGE(App)
-			APISET().AddFunc<0>("Loop", &App::Loop);
+			APISET().AddFunc<0>("Loop", &App::Loop,"App.Loop()");
 			APISET().AddClass<0, Window>("Window");
 			APISET().AddClass<1, Image>("Image");
 		END_PACKAGE

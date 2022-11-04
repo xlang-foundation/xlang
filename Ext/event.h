@@ -59,6 +59,19 @@ namespace X
 		{
 			m_name = name;
 		}
+		virtual std::string ToString(bool WithFormat = false)
+		{
+			std::string retVal;
+			for (auto& handleInfo : m_handlers)
+			{
+				if (handleInfo.FuncHandler)
+				{
+					retVal+=handleInfo.FuncHandler->ToString();
+					retVal += "\r\n";
+				}
+			}
+			return retVal;
+		}
 		virtual XObj* Clone() override
 		{
 			ObjectEvent* pNewEvent = new ObjectEvent(m_name);

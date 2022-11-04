@@ -406,21 +406,23 @@ export class XLangRuntime extends EventEmitter {
 		this.instructionBreakpoints.clear();
 	}
 
-	public async getGlobalVariables(cancellationToken?: () => boolean ): Promise<RuntimeVariable[]> {
-
-		let a: RuntimeVariable[] = [];
-
-		for (let i = 0; i < 10; i++) {
-			//todo:a.push(new RuntimeVariable(`global_${i}`, i));
-			if (cancellationToken && cancellationToken()) {
-				break;
-			}
-			await timeout(1000);
-		}
-
-		return a;
+	public getGlobalVariables(cb){
+		let code = "import xdb\nreturn xdb.command(" 
+			+ this._moduleKey.toString() +",cmd='Globals')";
+		this.Call(code, (retVal) => {
+			console.log(retVal);
+			var retObj = JSON.parse(retVal);
+			console.log(retObj);
+			let vars = Array.from(retObj, (x: Map<string, any>) =>
+				new RuntimeVariable(
+					x["Name"],
+					x["Value"],
+					x["Type"],
+					x["Size"],
+					0));
+			cb(vars);
+        });
 	}
-
 	public getLocalVariables(frameId,cb){
 		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() +
 			",frameId=" + frameId.toString()+",cmd='Locals')";

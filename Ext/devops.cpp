@@ -78,6 +78,42 @@ namespace X
 			valLocals = X::Value(pList);
 			return true;
 		}
+		bool DebugService::BuildGlobals(XlangRuntime* rt,
+			XObj* pContextCurrent,
+			X::Value& valGlobals)
+		{
+			Data::List* pList = new Data::List();
+			AST::Scope* pCurScope = rt->M();
+			pCurScope->EachVar(rt, pContextCurrent, [rt, pList](
+				std::string name,
+				X::Value& val)
+				{
+					Data::Dict* dict = new Data::Dict();
+					Data::Str* pStrName = new Data::Str(name);
+					dict->Set("Name", X::Value(pStrName));
+
+					auto valType = val.GetValueType();
+					Data::Str* pStrType = new Data::Str(valType);
+					dict->Set("Type", X::Value(pStrType));
+					if (!val.IsObject()
+						|| (val.IsObject() &&
+							dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
+					{
+						dict->Set("Value", val);
+					}
+					else if (val.IsObject())
+					{
+						X::Value objId((unsigned long long)val.GetObj());
+						dict->Set("Value", objId);
+						X::Value valSize(val.GetObj()->Size());
+						dict->Set("Size", valSize);
+					}
+					X::Value valDict(dict);
+					pList->Add(rt, valDict);
+				});
+			valGlobals = X::Value(pList);
+			return true;
+		}
 		bool DebugService::BuildObjectContent(XlangRuntime* rt,
 			XObj* pContextCurrent, int frameId,X::Value& valParam,
 			X::Value& valObject)
@@ -250,7 +286,9 @@ namespace X
 				retValue = pCmdInfo->m_retValueHolder;
 				delete pCmdInfo;
 			}
-			else if (strCmd == "Locals" || strCmd=="Object")
+			else if (strCmd == "Globals" 
+					|| strCmd == "Locals" 
+					|| strCmd=="Object")
 			{
 				int frameId = 0;
 				auto it2 = kwParams.find("frameId");
@@ -261,6 +299,15 @@ namespace X
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				pCmdInfo->m_frameId = frameId;
 				pCmdInfo->dbgType = AST::dbg::GetRuntime;
+				auto globalPack = [](XlangRuntime* rt,
+					XObj* pContextCurrent,
+					AST::CommandInfo* pCommandInfo,
+					X::Value& retVal)
+				{
+					DebugService* pDebugService = (DebugService*)
+						pCommandInfo->m_callContext;
+					pDebugService->BuildGlobals(rt, pContextCurrent,retVal);
+				};
 				auto localPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
@@ -286,6 +333,10 @@ namespace X
 				if (strCmd == "Locals")
 				{
 					pCmdInfo->m_process = localPack;
+				}
+				if (strCmd == "Globals")
+				{
+					pCmdInfo->m_process = globalPack;
 				}
 				else if (strCmd == "Object")
 				{
