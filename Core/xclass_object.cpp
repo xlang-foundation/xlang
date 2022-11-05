@@ -6,10 +6,11 @@ namespace X
 {
 	namespace Data
 	{
-		List* XClassObject::FlatPack(XlangRuntime* rt,
+		List* XClassObject::FlatPack(XlangRuntime* rt, XObj* pContext,
 			long long startIndex, long long count)
 		{
 			List* pOutList = new List();
+			pOutList->IncRef();
 			AST::Scope* pMyScope = dynamic_cast<AST::Scope*>(m_obj);
 			auto vars = pMyScope->GetVarMap();
 			for (auto& it : vars)

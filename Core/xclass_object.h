@@ -37,7 +37,7 @@ namespace X {
 			{
 				bases.push_back(GetClassObj());
 			}
-			virtual List* FlatPack(XlangRuntime* rt,
+			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				long long startIndex, long long count) override;
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*>& callables) override

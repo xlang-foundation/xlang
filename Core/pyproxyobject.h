@@ -203,7 +203,7 @@ namespace X
 				return (std::string)m_obj;
 			}
 			virtual long long Size() override;
-			virtual List* FlatPack(XlangRuntime* rt,
+			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				long long startIndex, long long count) override;
 		};
 	}

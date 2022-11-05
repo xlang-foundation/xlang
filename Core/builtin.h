@@ -30,6 +30,7 @@ namespace X {
 		Data::Function* Find(std::string& name);
 		bool Register(const char* name, X::U_FUNC func,
 			std::vector<std::pair<std::string, std::string>>& params,
+			const char* doc = "",
 			bool regToMeta=false);
 		bool RegisterInternals();
 	};

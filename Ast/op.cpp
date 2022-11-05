@@ -7,6 +7,7 @@
 #include "prop.h"
 #include "funclist.h"
 #include "op_registry.h"
+#include "remote_object.h"
 
 namespace X
 {
@@ -43,6 +44,13 @@ namespace AST
 			{
 				auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
 				bOK = pPropObj->SetProp(rt, lValue_L.GetContext(), v_r);
+				v = Value(bOK);
+				return bOK;
+			}
+			else if (pObj->GetType() == X::ObjType::RemoteObject)
+			{
+				auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObj);
+				bOK = pRemoteObj->SetValue(rt, pContext,v_r);
 				v = Value(bOK);
 				return bOK;
 			}

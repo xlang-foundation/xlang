@@ -20,6 +20,8 @@ namespace X
 				m_setter = setter;
 				m_getter = getter;
 			}
+			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext, 
+				long long startIndex, long long count) override;
 			bool SetProp(XRuntime* rt0,XObj* pContext,Value& v)
 			{
 				bool bOK = false;
@@ -31,6 +33,12 @@ namespace X
 					bOK = m_setter->Call(rt0, pContext, param, kwParam, retVal);
 				}
 				return bOK;
+			}
+			virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
+				KWARGS& kwParams,
+				X::Value& retValue) override
+			{
+				return SetProp(rt, pContext, params[0]);
 			}
 			bool GetProp(XRuntime* rt0, XObj* pContext, Value& v)
 			{

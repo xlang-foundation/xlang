@@ -54,7 +54,6 @@ namespace X
 					Data::Dict* dict = new Data::Dict();
 					Data::Str* pStrName = new Data::Str(name);
 					dict->Set("Name", X::Value(pStrName));
-
 					auto valType = val.GetValueType();
 					Data::Str* pStrType = new Data::Str(valType);
 					dict->Set("Type", X::Value(pStrType));
@@ -63,6 +62,13 @@ namespace X
 							dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
 					{
 						dict->Set("Value", val);
+					}
+					else if (val.IsObject() && 
+						val.GetObj()->GetType() == X::ObjType::Function)
+					{
+						auto* pFuncObj = dynamic_cast<X::Data::Function*>(val.GetObj());
+						std::string strDoc = pFuncObj->GetDoc();
+						val = strDoc;
 					}
 					else if (val.IsObject())
 					{
@@ -91,7 +97,6 @@ namespace X
 					Data::Dict* dict = new Data::Dict();
 					Data::Str* pStrName = new Data::Str(name);
 					dict->Set("Name", X::Value(pStrName));
-
 					auto valType = val.GetValueType();
 					Data::Str* pStrType = new Data::Str(valType);
 					dict->Set("Type", X::Value(pStrType));
@@ -99,6 +104,14 @@ namespace X
 						|| (val.IsObject() &&
 							dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
 					{
+						dict->Set("Value", val);
+					}
+					else if (val.IsObject() &&
+						val.GetObj()->GetType() == X::ObjType::Function)
+					{
+						auto* pFuncObj = dynamic_cast<X::Data::Function*>(val.GetObj());
+						std::string strDoc = pFuncObj->GetDoc();
+						val = strDoc;
 						dict->Set("Value", val);
 					}
 					else if (val.IsObject())
@@ -130,23 +143,28 @@ namespace X
 			}
 			X::Value valObjReq;
 			pParamObj->Get(0, valObjReq);
+			X::Value valContext;
+			pParamObj->Get(1, valContext);
+			X::XObj* pContextObj = (X::XObj*)(valContext.GetLongLong());
 			Data::Object* pObjReq = dynamic_cast<Data::Object*>((XObj*)valObjReq.GetLongLong());
 			long long startIdx = 0;
-			if (pParamObj->Size() >= 1)
+			if (pParamObj->Size() >= 2)
 			{
 				X::Value valStart;
-				pParamObj->Get(1, valStart);
+				pParamObj->Get(2, valStart);
 				startIdx = valStart.GetLongLong();
 			}
 			long long reqCount = -1;
-			if (pParamObj->Size() >= 2)
+			if (pParamObj->Size() >= 3)
 			{
 				X::Value valCount;
-				pParamObj->Get(2, valCount);
+				pParamObj->Get(3, valCount);
 				reqCount = valCount.GetLongLong();
 			}
-			Data::List* pList = pObjReq->FlatPack(rt,startIdx, reqCount);
-			valObject = X::Value(pList);
+			Data::List* pList = pObjReq->FlatPack(rt, pContextObj,startIdx, reqCount);
+			//pList already hold one refcount when return from FlatPack
+			//so don't need X::Value to add refcount
+			valObject = X::Value(pList,false);
 			return true;
 		}
 		bool DebugService::BuildStackInfo(

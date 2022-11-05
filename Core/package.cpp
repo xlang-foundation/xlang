@@ -33,10 +33,11 @@ namespace X
 			}
 			return valType;
 		}
-		X::Data::List* Package::FlatPack(XlangRuntime* rt,
+		X::Data::List* Package::FlatPack(XlangRuntime* rt, XObj* pContext,
 			long long startIndex, long long count)
 		{
 			X::Data::List* pOutList = new X::Data::List();
+			pOutList->IncRef();
 			if (m_pAPISet == nullptr)
 			{
 				return pOutList;
@@ -57,11 +58,19 @@ namespace X
 					auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
 					if (pPropObj)
 					{
-						pPropObj->GetProp(rt, this, val);
-						valType = val.GetValueType();
+						//if this Prop is an Object,can't hold this object
+						//because no chance to release it
+						//so keep as PropObject which has Refcount hold by its owner
+						//but for others, replace with this value
+						X::Value v0;
+						pPropObj->GetProp(rt, this, v0);
+						if (!v0.IsObject() || v0.GetObj()->GetType() == X::ObjType::Str)
+						{
+							val = v0;
+							valType = val.GetValueType();
+						}
 					}
 				}
-
 				Data::Str* pStrType = new Data::Str(valType);
 				dict->Set("Type", X::Value(pStrType));
 				if (!val.IsObject() || (val.IsObject()
@@ -78,7 +87,21 @@ namespace X
 				{
 					X::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
-					X::Value valSize(val.GetObj()->Size());
+					long long objSize = 0;
+					if (val.GetObj()->GetType() == X::ObjType::Prop)
+					{
+						//use this field to bind to PackageProxy 
+						dict->Set("Context", (unsigned long long)dynamic_cast<XObj*>(this));
+						auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
+						X::Value v0;
+						pPropObj->GetProp(rt, this, v0);
+						objSize = v0.Size();
+					}
+					else
+					{
+						objSize = val.Size();
+					}
+					X::Value valSize(objSize);
 					dict->Set("Size", valSize);
 				}
 				X::Value valDict(dict);
@@ -86,10 +109,11 @@ namespace X
 			}
 			return pOutList;
 		}
-		X::Data::List* PackageProxy::FlatPack(XlangRuntime* rt,
+		X::Data::List* PackageProxy::FlatPack(XlangRuntime* rt, XObj* pContext,
 			long long startIndex, long long count)
 		{
 			X::Data::List* pOutList = new X::Data::List();
+			pOutList->IncRef();
 			auto* pAPISet = m_pPackage->GetAPISet();
 			if (pAPISet == nullptr)
 			{
@@ -116,8 +140,17 @@ namespace X
 							auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
 							if (pPropObj)
 							{
-								pPropObj->GetProp(rt, this, val);
-								valType = val.GetValueType();
+								//if this Prop is an Object,can't hold this object
+								//because no chance to release it
+								//so keep as PropObject which has Refcount hold by its owner
+								//but for others, replace with this value
+								X::Value v0;
+								pPropObj->GetProp(rt, this, v0);
+								if (!v0.IsObject() || v0.GetObj()->GetType() == X::ObjType::Str)
+								{
+									val = v0;
+									valType = val.GetValueType();
+								}
 							}
 						}
 						else if (val.GetObj()->GetType() == X::ObjType::ObjectEvent)
@@ -146,7 +179,21 @@ namespace X
 					{
 						X::Value objId((unsigned long long)val.GetObj());
 						dict->Set("Value", objId);
-						X::Value valSize(val.GetObj()->Size());
+						long long objSize = 0;
+						if (val.GetObj()->GetType() == X::ObjType::Prop)
+						{
+							//use this field to bind to PackageProxy 
+							dict->Set("Context", (unsigned long long)dynamic_cast<XObj*>(this));
+							auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
+							X::Value v0;
+							pPropObj->GetProp(rt, this, v0);
+							objSize = v0.Size();
+						}
+						else
+						{
+							objSize = val.Size();
+						}
+						X::Value valSize(objSize);
 						dict->Set("Size", valSize);
 					}
 					X::Value valDict(dict);

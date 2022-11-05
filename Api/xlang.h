@@ -302,7 +302,7 @@ namespace X
 		virtual public XObj
 	{
 	public:
-		virtual void SetObjID(void* id) = 0;
+		virtual void SetObjID(unsigned long pid,void* objid) = 0;
 	};
 	class XCustomScope
 	{
@@ -357,8 +357,23 @@ namespace X
 		{
 			if (v.IsObject())
 			{
-				X::XPackage* pPack = dynamic_cast<X::XPackage*>(v.GetObj());
-				m_obj = (T*)pPack->GetEmbedObj();
+				if (v.GetObj()->GetType() == X::ObjType::RemoteObject)
+				{
+					X::Value nativeObj;
+					if (g_pXHost->ExtractNativeObjectFromRemoteObject(v, nativeObj))
+					{
+						X::XPackage* pPack = dynamic_cast<X::XPackage*>(nativeObj.GetObj());
+						if (pPack)
+						{
+							m_obj = (T*)pPack->GetEmbedObj();
+						}
+					}
+				}
+				else
+				{
+					X::XPackage* pPack = dynamic_cast<X::XPackage*>(v.GetObj());
+					m_obj = (T*)pPack->GetEmbedObj();
+				}
 			}
 		}
 		operator Value() const

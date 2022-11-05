@@ -108,6 +108,10 @@ namespace X
 					std::string strKey = key.ToString(WithFormat);
 					X::Value Val = it.second;
 					std::string strVal = Val.ToString(WithFormat);
+					if (strVal.empty())
+					{
+						strVal = "\"\"";
+					}
 					strOut += "\t" + strKey+ ":"+ strVal;
 					if (i < (cnt - 1))
 					{
@@ -129,7 +133,7 @@ namespace X
 			{
 				return true;
 			}
-			virtual List* FlatPack(XlangRuntime* rt, 
+			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				long long startIndex, long long count) override;
 
 		};

@@ -170,6 +170,10 @@ public:
 		Scope::FromBytes(stream);
 		return true;
 	}
+	virtual std::string GetDoc()
+	{
+		return "";
+	}
 	inline void AddDecor(Decorator* pDecor)
 	{
 		m_decors.push_back(pDecor);
@@ -254,6 +258,7 @@ class ExternFunc
 	:virtual public Func
 {
 	std::string m_funcName;
+	std::string m_doc;
 	U_FUNC m_func =nullptr;
 	U_FUNC_EX m_func_ex = nullptr;
 	XObj* m_pContext = nullptr;
@@ -262,9 +267,14 @@ public:
 	{
 
 	}
-	ExternFunc(std::string& funcName, U_FUNC func, XObj* pContext = nullptr)
+	ExternFunc(std::string& funcName, const char* doc,
+		U_FUNC func, XObj* pContext = nullptr)
 	{
 		m_funcName = funcName;
+		if (doc)
+		{
+			m_doc = doc;
+		}
 		m_func = func;
 		m_type = ObType::BuiltinFunc;
 		m_pContext = pContext;
@@ -290,6 +300,10 @@ public:
 		{
 			m_pContext->DecRef();
 		}
+	}
+	virtual std::string GetDoc() override
+	{
+		return m_doc;
 	}
 	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 	{

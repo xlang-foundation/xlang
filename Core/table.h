@@ -212,7 +212,8 @@ public:
 		return true;
 	}
 	virtual long long Size() override;
-	virtual List* FlatPack(XlangRuntime* rt, long long startIndex, long long count) override;
+	virtual List* FlatPack(XlangRuntime* rt, XObj* pContext, 
+		long long startIndex, long long count) override;
 };
 class Table
 	:virtual public Object
@@ -261,7 +262,8 @@ public:
 	{
 		return m_rowMap.size();
 	}
-	virtual List* FlatPack(XlangRuntime* rt, long long startIndex, long long count) override;
+	virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+		long long startIndex, long long count) override;
 	virtual Table& operator +=(X::Value& r)
 	{
 		if (r.IsObject())

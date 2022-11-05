@@ -340,7 +340,7 @@ namespace X
 						auto* pThis = (T*)pPackage->GetEmbedObj();
 						(pThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),false,std::string(doc) });
 		}
 		template<typename F>
 		void AddRawParamFunc(const char* func_name, F f, const char* doc = "")

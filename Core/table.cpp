@@ -8,7 +8,7 @@ namespace X
 		{
 			return m_table->GetColNum();
 		}
-		List* TableRow::FlatPack(XlangRuntime* rt,
+		List* TableRow::FlatPack(XlangRuntime* rt, XObj* pContext,
 			long long startIndex, long long count)
 		{
 			if (startIndex < 0 || startIndex >= Size())
@@ -24,6 +24,7 @@ namespace X
 				return nullptr;
 			}
 			List* pOutList = new List();
+			pOutList->IncRef();
 			for (long long i = 0; i < count; i++)
 			{
 				long long idx = startIndex + i;
@@ -55,7 +56,7 @@ namespace X
 			}
 			return pOutList;
 		}
-		List* Table::FlatPack(XlangRuntime* rt, 
+		List* Table::FlatPack(XlangRuntime* rt, XObj* pContext,
 			long long startIndex, long long count)
 		{
 			if (startIndex < 0 || startIndex >= Size())

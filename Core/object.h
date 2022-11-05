@@ -75,7 +75,8 @@ namespace Data {
 		{
 			return (m_t == ObjType::Str);
 		}
-		virtual List* FlatPack(XlangRuntime* rt,long long startIndex,long long count)
+		virtual List* FlatPack(XlangRuntime* rt, XObj* pContext, 
+			long long startIndex,long long count)
 		{ 
 			return nullptr; 
 		}
@@ -123,6 +124,8 @@ namespace Data {
 				return "TableRow";
 			case X::ObjType::Table:
 				return "Table";
+			case X::ObjType::RemoteObject:
+				return "RemoteObject";
 			case X::ObjType::PyProxyObject:
 				return "PyObject";
 			default:

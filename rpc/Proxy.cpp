@@ -30,9 +30,9 @@ namespace X
 	{
 		if (!CheckConnectReadyStatus())
 		{
-			return nullptr;
+			return {0,0};
 		}
-		X::ROBJ_ID oId = nullptr;
+		X::ROBJ_ID oId = {0,0};
 		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryRootObject);
 		stream << name;
 		auto& stream2 = CommitCall();
@@ -44,6 +44,28 @@ namespace X
 		}
 		FinishCall();
 		return oId;
+	}
+	bool XLangProxy::FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
+		long long startIndex, long long count, Value& retList)
+	{
+		if (!CheckConnectReadyStatus())
+		{
+			return false;
+		}
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack);
+		stream << parentObjId;
+		stream << id;
+		stream << startIndex;
+		stream << count;
+		auto& stream2 = CommitCall();
+		bool bOK = false;
+		stream2 >> bOK;
+		if (bOK)
+		{
+			stream2 >> retList;
+		}
+		FinishCall();
+		return true;
 	}
 	X::ROBJ_MEMBER_ID XLangProxy::QueryMember(X::ROBJ_ID id, std::string& name,
 		bool& KeepRawParams)
@@ -67,6 +89,25 @@ namespace X
 		FinishCall();
 		return mId;
 	}
+	long long XLangProxy::QueryMemberCount(X::ROBJ_ID id)
+	{
+		if (!CheckConnectReadyStatus())
+		{
+			return -1;
+		}
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount);
+		stream << id;
+		auto& stream2 = CommitCall();
+		bool bOK = false;
+		stream2 >> bOK;
+		long long cnt = -1;
+		if (bOK)
+		{
+			stream2 >> cnt;
+		}
+		FinishCall();
+		return cnt;
+	}
 	bool XLangProxy::ReleaseObject(ROBJ_ID id)
 	{
 		if (!CheckConnectReadyStatus())
@@ -85,9 +126,9 @@ namespace X
 	{
 		if (!CheckConnectReadyStatus())
 		{
-			return nullptr;
+			return {0,0};
 		}
-		X::ROBJ_ID oId = nullptr;
+		X::ROBJ_ID oId = {0,0};
 		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject);
 		stream << objid;
 		stream << memId;
@@ -110,7 +151,7 @@ namespace X
 		{
 			return false;
 		}
-		X::ROBJ_ID oId = nullptr;
+		X::ROBJ_ID oId = {0,0};
 		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call);
 		stream.ScopeSpace().SetContext((XlangRuntime*)rt, pContext);
 
@@ -143,9 +184,9 @@ namespace X
 		stream2 >> bOK;
 		if (bOK)
 		{
-			X::ROBJ_ID retId = 0;
+			X::ROBJ_ID retId = {0,0};
 			stream2 >> retId;
-			if (retId == 0)
+			if (retId.objId ==0)
 			{//value
 				retValue.FromBytes(&stream2);
 			}
@@ -153,7 +194,7 @@ namespace X
 			{
 				X::XRemoteObject* pRetObj =
 					X::g_pXHost->CreateRemoteObject(this);
-				pRetObj->SetObjID(retId);
+				pRetObj->SetObjID((unsigned long)retId.pid,retId.objId);
 				retValue = (X::XObj*)pRetObj;
 				pRetObj->DecRef();
 			}

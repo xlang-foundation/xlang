@@ -15,6 +15,7 @@
 #include "msgthread.h"
 #include "import.h"
 #include "expr_scope.h"
+#include "RemoteObjectStub.h"
 
 namespace X 
 {
@@ -112,7 +113,7 @@ namespace X
 	XFunc* XHost_Impl::CreateFunction(const char* name,U_FUNC func, X::XObj* pContext)
 	{
 		std::string strName(name);
-		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
+		AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"",func, pContext);
 		auto* pFuncObj = new X::Data::Function(extFunc,true);
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
@@ -131,8 +132,8 @@ namespace X
 		std::string strSetName = "set_" + strName;
 		std::string strGetName = "get_" + strName;
 
-		AST::ExternFunc* extFunc_set = new AST::ExternFunc(strSetName, setter);
-		AST::ExternFunc* extFunc_get = new AST::ExternFunc(strGetName, getter);
+		AST::ExternFunc* extFunc_set = new AST::ExternFunc(strSetName,"", setter);
+		AST::ExternFunc* extFunc_get = new AST::ExternFunc(strGetName,"", getter);
 		auto* pPropObj = new X::Data::PropObject(extFunc_set, extFunc_get);
 		pPropObj->IncRef();
 		return dynamic_cast<XProp*>(pPropObj);
@@ -389,5 +390,10 @@ namespace X
 		}
 		bool bOK = pExpr->Run(nullptr, nullptr, result);
 		return bOK;
+	}
+	bool XHost_Impl::ExtractNativeObjectFromRemoteObject(X::Value& remoteObj,
+		X::Value& nativeObj)
+	{
+		return RemoteObjectStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
 	}
 }

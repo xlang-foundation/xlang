@@ -19,6 +19,9 @@ namespace X
 		RemoteObjectStub();
 		~RemoteObjectStub();
 		void Register();
+		bool ExtractNativeObjectFromRemoteObject(
+			X::Value& remoteObj,
+			X::Value& nativeObj);
 	private:
 		X::XRuntime* m_rt = nullptr;
 		void EnsureRT();
@@ -27,6 +30,8 @@ namespace X
 		X::ROBJ_ID ConvertXObjToId(X::XObj* obj);
 		bool QueryRootObject(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool QueryMember(int channel, SwapBufferStream& stream, RemotingProc* pProc);
+		bool QueryMemberCount(int channel, SwapBufferStream& stream, RemotingProc* pProc);
+		bool FlatPack(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool GetMemberObject(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool ReleaseObject(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool RCall(int channel, SwapBufferStream& stream, RemotingProc* pProc);

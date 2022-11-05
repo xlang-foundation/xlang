@@ -38,6 +38,10 @@ namespace X
 			{
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
 			}
+			std::string GetDoc()
+			{
+				return m_func ? m_func->GetDoc() : "";
+			}
 			virtual std::string ToString(bool WithFormat = false) override
 			{
 				std::string strRet= m_func->GetNameString();

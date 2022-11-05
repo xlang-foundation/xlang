@@ -1,3 +1,9 @@
+def test_sleep(x,y):
+    print("after sleep,x=",x,"y=",y)
+print("before call")
+test_sleep.sleep(100,200,time=1000)
+print("after call")
+
 from xlang_http import http
 from xlang_os import fs
 

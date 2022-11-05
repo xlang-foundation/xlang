@@ -5,9 +5,10 @@ namespace X
 {
 	namespace Data
 	{
-		List* Dict::FlatPack(XlangRuntime* rt, long long startIndex, long long count)
+		List* Dict::FlatPack(XlangRuntime* rt,XObj* pContext,long long startIndex, long long count)
 		{
 			List* pOutList = new List();
+			pOutList->IncRef();
 			for (auto& it: mMap)
 			{
 				Dict* dict = new Dict();

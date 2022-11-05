@@ -48,7 +48,7 @@ public:
 	{
 		m_pAPISet = p;
 	}
-	virtual X::Data::List* FlatPack(XlangRuntime* rt,
+	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		long long startIndex, long long count) override;
 	virtual long long Size()
 	{
@@ -223,7 +223,7 @@ public:
 			m_stackFrame = nullptr;
 		}
 	}
-	virtual X::Data::List* FlatPack(XlangRuntime* rt,
+	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		long long startIndex, long long count) override;
 	virtual long long Size()
 	{

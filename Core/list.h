@@ -289,7 +289,8 @@ public:
 		}
 		m_data.push_back(v);
 	}
-	virtual List* FlatPack(XlangRuntime* rt,long long startIndex, long long count) override;
+	virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+		long long startIndex, long long count) override;
 	inline bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{

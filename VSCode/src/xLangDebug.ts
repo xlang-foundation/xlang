@@ -453,9 +453,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 		} else if (varType === 'globals') {
 			this._runtime.getGlobalVariables(cb);
 		} else {
-			this._runtime.getObject(frameId,v[2],
-				args.start==undefined?0:args.start,
-				args.count==undefined?-1:args.count,
+			this._runtime.getObject(frameId,v[2],v[3],
+				args.start===undefined?0:args.start,
+				args.count===undefined?-1:args.count,
 				cb);
 		}
 	}
@@ -866,7 +866,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.type = "Package";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
-				break;				
+				break;
+			case 'RemoteObject':
+				v.reference = this._runtime.createScopeRef(
+					v.Type, v.FrameId, v.Val);
+				dapVariable.value = 'RemoteObject(Size:' + v.Size.toString() + ")";
+				dapVariable.type = "RemoteObject";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.namedVariables = v.Size;
+				break;							
 			case 'Class':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val);
@@ -888,6 +896,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 					v.Type,v.FrameId,v.Val);
 				dapVariable.value = 'List(Size:'+v.Size.toString()+")";
 				dapVariable.type = "List";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = v.Size;				
+			case 'Prop':
+				v.reference = this._runtime.createScopeRef(
+					v.Type,v.FrameId,v.Val,v.Context);//Prop needs add context, see xlang for details
+				dapVariable.value = 'Prop(Size:'+v.Size.toString()+")";
+				dapVariable.type = "Prop";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;

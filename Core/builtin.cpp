@@ -274,11 +274,12 @@ Data::Function* Builtin::Find(std::string& name)
 }
 bool Builtin::Register(const char* name, X::U_FUNC func,
 	std::vector<std::pair<std::string, std::string>>& params,
+	const char* doc,
 	bool regToMeta)
 {
 	std::string strName(name);
 	AST::ExternFunc* extFunc = new AST::ExternFunc(
-		strName,
+		strName, doc,
 		(X::U_FUNC)func);
 	auto* pFuncObj = new Data::Function(extFunc,true);
 	pFuncObj->IncRef();
@@ -648,17 +649,19 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::DevOps::DebugService>("xdb");
 
 	std::vector<std::pair<std::string, std::string>> params;
-	Register("print", (X::U_FUNC)U_Print, params);
-	Register("input", (X::U_FUNC)U_Input, params);
-	Register("load", (X::U_FUNC)U_Load, params);
-	Register("run", (X::U_FUNC)U_Run, params);
-	Register("runcode", (X::U_FUNC)U_RunCode, params);
-	Register("runbytecode", (X::U_FUNC)U_RunByteCode, params);
-	Register("rand", (X::U_FUNC)U_Rand, params);
-	Register("sleep", (X::U_FUNC)U_Sleep, params);
+	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
+	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
+	Register("load", (X::U_FUNC)U_Load, params,"moodule = load(filename)");
+	Register("run", (X::U_FUNC)U_Run, params,"run(module:loaded by call load func)");
+	Register("runcode", (X::U_FUNC)U_RunCode, params,"runcode(moduleName,code)");
+	Register("runbytecode", (X::U_FUNC)U_RunByteCode, params,"runbytecode(code_in_bytes)");
+	Register("rand", (X::U_FUNC)U_Rand, params,"rand() return an integer");
+	Register("sleep", (X::U_FUNC)U_Sleep, params,
+		"sleep(milliseconds|time=milliseconds) or a_func.sleep(time=milliseconds), \
+		after the sleep will call this function");
 	Register("time", (X::U_FUNC)U_Time, params);
 	Register("breakpoint", (X::U_FUNC)U_BreakPoint, params);
-	Register("taskrun", (X::U_FUNC)U_TaskRun, params, true);
+	Register("taskrun", (X::U_FUNC)U_TaskRun, params,"",true);
 	Register("threadid", (X::U_FUNC)U_ThreadId, params);
 	Register("pid", (X::U_FUNC)U_ProcessId, params);
 	Register("mainrun", (X::U_FUNC)U_RunInMain, params);
@@ -668,11 +671,11 @@ bool Builtin::RegisterInternals()
 	Register("removepath", (X::U_FUNC)U_RemovePath, params);
 	Register("tostring", (X::U_FUNC)U_ToString, params);
 	Register("bytes", (X::U_FUNC)U_ToBytes, params);
-	Register("setattr", (X::U_FUNC)U_SetAttribute, params,true);
-	Register("getattr", (X::U_FUNC)U_GetAttribute, params,true);
-	Register("delattr", (X::U_FUNC)U_DeleteAttribute, params, true);
-	Register("each", (X::U_FUNC)U_Each, params, true);
-	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, true);
+	Register("setattr", (X::U_FUNC)U_SetAttribute, params, "", true);
+	Register("getattr", (X::U_FUNC)U_GetAttribute, params, "", true);
+	Register("delattr", (X::U_FUNC)U_DeleteAttribute, params, "", true);
+	Register("each", (X::U_FUNC)U_Each, params, "", true);
+	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, "", true);
 	return true;
 }
 }

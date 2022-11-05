@@ -25,6 +25,7 @@ namespace X
 				{
 					std::string name("find");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+							"pos = find(search_string)",
 							(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 								ARGS& params,
 								KWARGS& kwParams,
@@ -48,6 +49,7 @@ namespace X
 				{
 					std::string name("rfind");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						"pos = rfind(search_string)",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
@@ -71,6 +73,7 @@ namespace X
 				{
 					std::string name("slice");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						"newStr = var_str.slice(startPos[,endPos])",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
@@ -100,6 +103,7 @@ namespace X
 				{
 					std::string name("size");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						"size()",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
@@ -117,6 +121,7 @@ namespace X
 				{
 					std::string name("split");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						"item_list = var_str.split(delimiter_str)",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,

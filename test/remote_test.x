@@ -9,6 +9,7 @@ df.data =d
 x = df.data
 host = cantor.Host()
 uid = host.generate_uid()
+df.sourceId =uid
 print(uid)
 host.PushFrame(df)
 print("end")

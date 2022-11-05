@@ -2,6 +2,10 @@
 #include "StubMgr.h"
 #include "bin.h"
 #include "package.h"
+#include "utility.h"
+#include "remote_object.h"
+#include "list.h"
+#include "prop.h"
 
 namespace X
 {
@@ -29,6 +33,20 @@ namespace X
 			std::string("QueryMember"),
 			std::vector<std::string>{},
 			std::string("bool")
+		);
+		RemotingManager::I().Register(
+			(unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount,
+			this,
+			std::string("QueryMemberCount"),
+			std::vector<std::string>{},
+			std::string("int")
+		);
+		RemotingManager::I().Register(
+			(unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack,
+			this,
+			std::string("FlatPack"),
+			std::vector<std::string>{},
+			std::string("int")
 		);
 		RemotingManager::I().Register(
 			(unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject,
@@ -73,14 +91,26 @@ namespace X
 	}
 	X::XObj* RemoteObjectStub::CovertIdToXObj(X::ROBJ_ID id)
 	{
-		X::XObj* pObjRet = (X::XObj*)id;
+		X::XObj* pObjRet = nullptr;
+		auto pid = GetPID();
+		if (pid != id.pid)
+		{
+			//todo:
+			assert(false);
+			//keep as RemoteObject
+		}
+		else
+		{
+			pObjRet = (X::XObj*)id.objId;
+		}
 		return pObjRet;
 	}
 
 	X::ROBJ_ID RemoteObjectStub::ConvertXObjToId(X::XObj* obj)
 	{
 		obj->IncRef();
-		return X::ROBJ_ID(obj);
+		auto pid = GetPID();
+		return X::ROBJ_ID{ pid,obj};
 	}
 	bool RemoteObjectStub::QueryRootObject(int channel,
 		SwapBufferStream& stream, RemotingProc* pProc)
@@ -115,7 +145,70 @@ namespace X
 		stream << keepRawParams;
 		return true;
 	}
-
+	bool RemoteObjectStub::QueryMemberCount(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	{
+		X::ROBJ_ID objId;
+		stream >> objId;
+		pProc->NotifyBeforeCall(channel, stream);
+		auto pXObj = CovertIdToXObj(objId);
+		long long size = 0;
+		bool bOK = false;
+		if (pXObj)
+		{
+			size = pXObj->Size();
+			bOK = true;
+		}
+		pProc->NotifyAfterCall(channel, stream, bOK);
+		if (bOK)
+		{
+			stream << size;
+		}
+		return true;
+	}
+	bool RemoteObjectStub::FlatPack(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	{
+		X::ROBJ_ID parent_ObjId;
+		X::ROBJ_ID objId;
+		long long startIndex;
+		long long count;
+		stream >> parent_ObjId;
+		stream >> objId;
+		stream >> startIndex;
+		stream >> count;
+		pProc->NotifyBeforeCall(channel, stream);
+		X::XObj* pParentObj = nullptr;
+		if (parent_ObjId.objId != nullptr)
+		{
+			pParentObj = CovertIdToXObj(parent_ObjId);
+		}
+		auto pXObj = CovertIdToXObj(objId);
+		X::Value valPackList;
+		bool bOK = (pXObj != nullptr);
+		if (bOK)
+		{
+			auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
+			if (pPackage != nullptr)
+			{
+				auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt, pParentObj,startIndex, count);
+				valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+			}
+			else
+			{
+				auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
+				if (pPackageProxy)
+				{
+					auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt, pParentObj,startIndex, count);
+					valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+				}
+			}
+		}
+		pProc->NotifyAfterCall(channel, stream, bOK);
+		if (bOK)
+		{
+			stream << valPackList;
+		}
+		return true;
+	}
 	bool RemoteObjectStub::GetMemberObject(int channel, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID objId;
@@ -188,7 +281,7 @@ namespace X
 		}
 		pProc->NotifyBeforeCall(channel, stream);
 		X::XObj* pParentObj = nullptr;
-		if (parent_ObjId != nullptr)
+		if (parent_ObjId.objId != nullptr)
 		{
 			pParentObj = CovertIdToXObj(parent_ObjId);
 		}
@@ -207,7 +300,7 @@ namespace X
 		pProc->NotifyAfterCall(channel, stream, bOK);
 		if (bOK)
 		{
-			X::ROBJ_ID retId = 0;
+			X::ROBJ_ID retId = {0,0};
 			if (valRet.IsObject())
 			{
 				auto pRetObj = valRet.GetObj();
@@ -217,7 +310,7 @@ namespace X
 				}
 			}
 			stream << retId;
-			if (retId == 0)
+			if (retId.objId == 0)
 			{//if not XPackage, return as value
 				valRet.ToBytes(&stream);
 			}
@@ -238,6 +331,12 @@ namespace X
 		case RPC_CALL_TYPE::CantorProxy_QueryMember:
 			bOK = QueryMember(channel, stream, pProc);
 			break;
+		case RPC_CALL_TYPE::CantorProxy_QueryMemberCount:
+			bOK = QueryMemberCount(channel, stream, pProc);
+			break;
+		case RPC_CALL_TYPE::CantorProxy_FlatPack:
+			bOK = FlatPack(channel, stream, pProc);
+			break;
 		case RPC_CALL_TYPE::CantorProxy_GetMemberObject:
 			bOK = GetMemberObject(channel, stream, pProc);
 			break;
@@ -251,6 +350,33 @@ namespace X
 			break;
 		}
 		return bOK;
-
+	}
+	bool RemoteObjectStub::ExtractNativeObjectFromRemoteObject(
+		X::Value& remoteObj,
+		X::Value& nativeObj)
+	{
+		if (!remoteObj.IsObject())
+		{
+			return false;
+		}
+		auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(remoteObj.GetObj());
+		if (pRemoteObj == nullptr)
+		{
+			return false;
+		}
+		auto pid = GetPID();
+		auto objId = pRemoteObj->GetObjId();
+		if (objId.pid == pid)
+		{
+			//this object's native object is in this process
+			auto pXObj = CovertIdToXObj(objId);
+			auto pXPack = dynamic_cast<X::XPackage*>(pXObj);
+			nativeObj = pXPack;
+		}
+		else
+		{
+			nativeObj = remoteObj;
+		}
+		return true;
 	}
 }

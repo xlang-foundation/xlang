@@ -32,8 +32,10 @@ namespace X
         ShakeHands,
         CantorProxy_QueryRootObject,
         CantorProxy_QueryMember,
+        CantorProxy_QueryMemberCount,
         CantorProxy_GetMemberObject,
         CantorProxy_ReleaseObject,
+        CantorProxy_FlatPack,
         CantorProxy_Call,
         //--------------
         PushFrame,

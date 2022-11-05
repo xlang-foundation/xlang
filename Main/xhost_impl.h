@@ -48,6 +48,7 @@ namespace X
 		virtual bool DeleteScopeWrapper(XCustomScope* pScope) override;
 		virtual bool SetExpressionScope(XCustomScope* pScope, X::Value& expr) override;
 		virtual bool RunExpression(X::Value& expr, X::Value& result) override;
+		virtual bool ExtractNativeObjectFromRemoteObject(X::Value& remoteObj, X::Value& nativeObj) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

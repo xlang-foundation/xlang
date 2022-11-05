@@ -6,6 +6,7 @@
 #include "dict.h"
 #include "bin.h"
 #include "function.h"
+#include "remote_object.h"
 
 namespace X 
 {
@@ -339,16 +340,22 @@ namespace X
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Function());
 				break;
 			case X::ObjType::MetaFunction:
+				assert(false);
 				break;
 			case X::ObjType::XClassObject:
+				assert(false);
 				break;
 			case X::ObjType::FuncCalls:
+				assert(false);
 				break;
 			case X::ObjType::Package:
+				assert(false);
 				break;
 			case X::ObjType::ModuleObject:
+				assert(false);
 				break;
 			case X::ObjType::Future:
+				assert(false);
 				break;
 			case X::ObjType::List:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::List());
@@ -357,12 +364,16 @@ namespace X
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Dict());
 				break;
 			case X::ObjType::TableRow:
+				assert(false);
 				break;
 			case X::ObjType::Table:
+				assert(false);
 				break;
 			case X::ObjType::RemoteObject:
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
 				break;
 			case X::ObjType::PyProxyObject:
+				assert(false);
 				break;
 			default:
 				break;

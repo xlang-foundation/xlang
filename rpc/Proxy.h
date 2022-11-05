@@ -25,6 +25,9 @@ namespace X
 		virtual ROBJ_ID QueryRootObject(std::string& name);
 		virtual X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
 			bool& KeepRawParams);
+		virtual long long QueryMemberCount(X::ROBJ_ID id);
+		virtual bool FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
+			long long startIndex, long long count, Value& retList);
 		virtual X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId);
 		virtual bool ReleaseObject(ROBJ_ID id) override;
 		virtual bool Call(XRuntime* rt, XObj* pContext,

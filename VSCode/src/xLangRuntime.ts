@@ -33,14 +33,16 @@ interface RuntimeDisassembledInstruction {
 export class RuntimeVariable {
 	private _name: string = "";
 	private _value: any = null;
+	private _context:any = null;//some value bind to its parent object, use this field to store it
 	private _size: number = 0;
 	private _type: string = "";
 	private _frameId: number = 0;
 	private _reference: number = 0;
-	constructor(name: string, value, type: string,size:number,frmId:number) {
+	constructor(name: string, value, context, type: string,size:number,frmId:number) {
 		this._name = name;
 		this._type = type;
 		this._value = value;
+		this._context = context;
 		this._size = size;
 		this._frameId = frmId;
 	}
@@ -72,7 +74,12 @@ export class RuntimeVariable {
 	public set Val(v) {
 		this._value = v;
 	}
-
+	public get Context() {
+		return this._context;
+	}
+	public set Context(v) {
+		this._context = v;
+	}
 }
 
 interface Word {
@@ -127,9 +134,9 @@ export class XLangRuntime extends EventEmitter {
 	}
 	private nextVarRef = 1;
 	private varRefMap = new Map<number,[]>();
-	public createScopeRef(varType, frameId,val) {
+	public createScopeRef(varType, frameId,val,context=null) {
 		let refId = this.nextVarRef++;
-		this.varRefMap[refId] = [varType, frameId,val];
+		this.varRefMap[refId] = [varType, frameId,val,context];
 		return refId;
 	}
 	public getScopeRef(refId) {
@@ -344,7 +351,7 @@ export class XLangRuntime extends EventEmitter {
 			for (let i in retObj) {
 				let frm = retObj[i];
 				let name = frm["name"];
-				if (name == "") {
+				if (name === "") {
 					name = "main";
 				}
 				const stackFrame: IRuntimeStackFrame = {
@@ -417,6 +424,7 @@ export class XLangRuntime extends EventEmitter {
 				new RuntimeVariable(
 					x["Name"],
 					x["Value"],
+					x["Context"],
 					x["Type"],
 					x["Size"],
 					0));
@@ -434,17 +442,24 @@ export class XLangRuntime extends EventEmitter {
 				new RuntimeVariable(
 					x["Name"],
 					x["Value"],
+					x["Context"],					
 					x["Type"],
 					x["Size"],
 					frameId));
 			cb(vars);
         });
 	}
-	public getObject(frameId,objId,start,count, cb) {
+	public getObject(frameId,objId,context,start,count, cb) {
+		var objContext ="0";
+		if(context !== null)
+		{
+			objContext = context.toString();
+		}
 		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() +
 			",frameId=" + frameId.toString()
 			+ ",cmd='Object'"
 			+ ",param=[" + objId.toString()
+			+ ","+ objContext
 			+ "," + start.toString()
 			+ "," + count.toString()+ "]"
 			+ ")";
@@ -460,10 +475,9 @@ export class XLangRuntime extends EventEmitter {
 			console.log(retObj);
 			let vars = Array.from(retObj, (x: Map<string, any>,idx) =>
 				new RuntimeVariable(
-					x["Name"] ==
-						undefined ? (start + idx).toString()
-						: x["Name"].toString(),
+					x["Name"] === undefined ? (start + idx).toString():x["Name"].toString(),
 					x["Value"],
+					x["Context"],	
 					x["Type"],
 					x["Size"],
 					frameId));

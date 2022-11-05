@@ -40,6 +40,7 @@ namespace X
 				{
 					strName = "remove";
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"remove(index)",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							X::ARGS& params,
 							X::KWARGS& kwParams,
@@ -60,6 +61,7 @@ namespace X
 				{
 					strName = "size";
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"size()",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							X::ARGS& params,
 							X::KWARGS& kwParams,
@@ -159,7 +161,8 @@ namespace X
 			retValue = X::Value(this);
 			return true;
 		}
-		List* List::FlatPack(XlangRuntime* rt,long long startIndex, long long count)
+		List* List::FlatPack(XlangRuntime* rt, XObj* pContext, 
+			long long startIndex, long long count)
 		{
 			AutoLock(m_lock);
 			if (startIndex < 0 || startIndex >= Size())
@@ -175,6 +178,7 @@ namespace X
 				return nullptr;
 			}
 			List* pOutList = new List();
+			pOutList->IncRef();
 			for (long long i = 0; i < count; i++)
 			{
 				long long idx = startIndex + i;

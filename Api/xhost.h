@@ -83,6 +83,7 @@ namespace X
 		virtual bool DeleteScopeWrapper(XCustomScope* pScope) = 0;
 		virtual bool SetExpressionScope(XCustomScope* pScope, X::Value& expr) = 0;
 		virtual bool RunExpression(X::Value& expr, X::Value& result) = 0;
+		virtual bool ExtractNativeObjectFromRemoteObject(X::Value& remoteObj, X::Value& nativeObj) = 0;
 	};
 	extern XHost* g_pXHost;
 }
