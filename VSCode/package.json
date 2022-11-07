@@ -2,10 +2,10 @@
   "name": "xlang",
   "displayName": "xlang",
   "version": "0.50.0",
-  "publisher": "Galaxy3DVision",
-  "description": "Starter extension for developing debug adapters for VS Code.",
+  "publisher": "cantorai",
+  "description": "xlang's debugger and more",
   "author": {
-    "name": "Galaxy 3D Vision Inc."
+    "name": "CantorAI Inc."
   },
   "license": "MIT",
   "keywords": [
@@ -14,7 +14,7 @@
   "engines": {
     "vscode": "^1.66.0"
   },
-  "icon": "images/xlang-icon.png",
+  "icon": "images/xLang-icon.png",
   "categories": [
     "Programming Languages",
     "Debuggers"
@@ -33,13 +33,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=node --outfile=dist/extension.js",
     "watch": "npm run -S esbuild-base -- --sourcemap --sources-content=false --watch",
-    "esbuild-web": "esbuild ./src/web-extension.ts --bundle --tsconfig=./tsconfig.json --external:vscode --format=cjs --platform=browser --outfile=dist/web-extension.js",
-    "watch-web": "npm run -S esbuild-web -- --sourcemap --sources-content=false --watch",
-    "build": "npm run -S esbuild-base -- --sourcemap --sources-content=false && npm run -S esbuild-web -- --sourcemap --sources-content=false",
+    "build": "npm run -S esbuild-base -- --sourcemap --sources-content=false",
     "package": "vsce package",
     "publish": "vsce publish",
     "publish-pre-release": "vsce publish --pre-release",
-    "vscode:prepublish": "rimraf dist && npm run -S esbuild-base -- --minify && npm run -S esbuild-web -- --minify",
+    "vscode:prepublish": "rimraf dist && npm run -S esbuild-base -- --minify",
     "test": "npm run typecheck"
   },
   "devDependencies": {
@@ -65,7 +63,6 @@
     "vsce": "^2.7.0"
   },
   "main": "./dist/extension.js",
-  "browser": "./dist/web-extension.js",
   "activationEvents": [
     "onLanguage:xlang",
     "onDebugResolve:xlang",
