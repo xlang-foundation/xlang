@@ -9,6 +9,7 @@ namespace X
 			return m_table->GetColNum();
 		}
 		List* TableRow::FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
 			if (startIndex < 0 || startIndex >= Size())
@@ -57,6 +58,7 @@ namespace X
 			return pOutList;
 		}
 		List* Table::FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
 			if (startIndex < 0 || startIndex >= Size())

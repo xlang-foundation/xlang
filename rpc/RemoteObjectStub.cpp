@@ -169,10 +169,21 @@ namespace X
 	{
 		X::ROBJ_ID parent_ObjId;
 		X::ROBJ_ID objId;
+		std::vector<std::string> IdList;
+		int id_offset = 0;
 		long long startIndex;
 		long long count;
 		stream >> parent_ObjId;
 		stream >> objId;
+		int idNum = 0;
+		stream >> idNum;
+		for (int i = 0; i < idNum; i++)
+		{
+			std::string s;
+			stream >> s;
+			IdList.push_back(s);
+		}
+		stream >> id_offset;
 		stream >> startIndex;
 		stream >> count;
 		pProc->NotifyBeforeCall(channel, stream);
@@ -189,7 +200,8 @@ namespace X
 			auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
 			if (pPackage != nullptr)
 			{
-				auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt, pParentObj,startIndex, count);
+				auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt, 
+					pParentObj, IdList, id_offset,startIndex, count);
 				valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
 			}
 			else
@@ -197,7 +209,8 @@ namespace X
 				auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
 				if (pPackageProxy)
 				{
-					auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt, pParentObj,startIndex, count);
+					auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt, 
+						pParentObj, IdList, id_offset,startIndex, count);
 					valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
 				}
 			}

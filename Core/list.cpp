@@ -161,10 +161,57 @@ namespace X
 			retValue = X::Value(this);
 			return true;
 		}
-		List* List::FlatPack(XlangRuntime* rt, XObj* pContext, 
+		X::Value List::UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
+			std::string itemName, X::Value& val)
+		{
+			AutoLock(m_lock);
+			if (id_offset < IdList.size())
+			{
+				unsigned long long index = 0;
+				SCANF(IdList[id_offset++].c_str(), "%llu", &index);
+				Value item;
+				Get(index, item);
+				if (item.IsObject())
+				{
+					Object* pChildObj = dynamic_cast<Object*>(item.GetObj());
+					if (pChildObj)
+					{
+						return pChildObj->UpdateItemValue(rt, pContext, 
+							IdList, id_offset, itemName, val);
+					}
+				}
+				return val;//all elses, no change
+			}
+			unsigned long long index = 0;
+			SCANF(itemName.c_str(), "%llu", &index);
+			Set(index, val);
+			return val;
+		}
+		List* List::FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
 			AutoLock(m_lock);
+			if (id_offset < IdList.size())
+			{
+				unsigned long long index = 0;
+				SCANF(IdList[id_offset++].c_str(), "%llu", &index);
+				Value item;
+				Get(index, item);
+				if (item.IsObject())
+				{
+					Object* pChildObj = dynamic_cast<Object*>(item.GetObj());
+					if (pChildObj)
+					{
+						return pChildObj->FlatPack(rt, pContext, IdList, id_offset, startIndex, count);
+					}
+				}
+				//all elses, return an empty list
+				List* pOutList = new List();
+				pOutList->IncRef();
+				return pOutList;
+			}
 			if (startIndex < 0 || startIndex >= Size())
 			{
 				return nullptr;
@@ -185,6 +232,8 @@ namespace X
 				X::Value val;
 				Get(idx, val);
 				Dict* dict = new Dict();
+				auto objIds = CombinObjectIds(IdList, (unsigned long long)idx);
+				dict->Set("Id", objIds);
 				//Data::Str* pStrName = new Data::Str(it.first);
 				//dict->Set("Name", X::Value(pStrName));
 				auto valType = val.GetValueType();

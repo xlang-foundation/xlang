@@ -33,16 +33,16 @@ interface RuntimeDisassembledInstruction {
 export class RuntimeVariable {
 	private _name: string = "";
 	private _value: any = null;
-	private _context:any = null;//some value bind to its parent object, use this field to store it
+	private _id:string = "";
 	private _size: number = 0;
 	private _type: string = "";
 	private _frameId: number = 0;
 	private _reference: number = 0;
-	constructor(name: string, value, context, type: string,size:number,frmId:number) {
+	constructor(name: string, value, id, type: string,size:number,frmId:number) {
 		this._name = name;
 		this._type = type;
 		this._value = value;
-		this._context = context;
+		this._id = id;
 		this._size = size;
 		this._frameId = frmId;
 	}
@@ -74,18 +74,12 @@ export class RuntimeVariable {
 	public set Val(v) {
 		this._value = v;
 	}
-	public get Context() {
-		return this._context;
+	public get Id() {
+		return this._id;
 	}
-	public set Context(v) {
-		this._context = v;
+	public set Id(v) {
+		this._id = v;
 	}
-}
-
-interface Word {
-	name: string;
-	line: number;
-	index: number;
 }
 
 export function timeout(ms: number) {
@@ -134,9 +128,9 @@ export class XLangRuntime extends EventEmitter {
 	}
 	private nextVarRef = 1;
 	private varRefMap = new Map<number,[]>();
-	public createScopeRef(varType, frameId,val,context=null) {
+	public createScopeRef(varType, frameId,val,id) {
 		let refId = this.nextVarRef++;
-		this.varRefMap[refId] = [varType, frameId,val,context];
+		this.varRefMap[refId] = [varType, frameId,val,id];
 		return refId;
 	}
 	public getScopeRef(refId) {
@@ -372,14 +366,6 @@ export class XLangRuntime extends EventEmitter {
         });
 	}
 
-	/*
-	 * Determine possible column breakpoint positions for the given line.
-	 * Here we return the start location of words with more than 8 characters.
-	 */
-	public getBreakpoints(path: string, line: number): number[] {
-		return this.getWords(line, this.getLine(line)).filter(w => w.name.length > 8).map(w => w.index);
-	}
-
 	public setDataBreakpoint(address: string, accessType: 'read' | 'write' | 'readWrite'): boolean {
 
 		const x = accessType === 'readWrite' ? 'read write' : accessType;
@@ -424,7 +410,7 @@ export class XLangRuntime extends EventEmitter {
 				new RuntimeVariable(
 					x["Name"],
 					x["Value"],
-					x["Context"],
+					x["Id"],
 					x["Type"],
 					x["Size"],
 					0));
@@ -442,24 +428,53 @@ export class XLangRuntime extends EventEmitter {
 				new RuntimeVariable(
 					x["Name"],
 					x["Value"],
-					x["Context"],					
+					x["Id"],					
 					x["Type"],
 					x["Size"],
 					frameId));
 			cb(vars);
         });
 	}
-	public getObject(frameId,objId,context,start,count, cb) {
-		var objContext ="0";
-		if(context !== null)
-		{
-			objContext = context.toString();
-		}
+	public getLocalVariable(name: string): RuntimeVariable | undefined {
+		//TODO: for Set Varible's value
+		return undefined;
+	}
+	public setObject(frameId,varType,objId,varName,newVal,cb)
+	{
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() +
+			",frameId=" + frameId.toString()
+			+ ",cmd='SetObjectValue'"
+			+ ",param=['" + objId+"'"
+			+",'"+varType.toString()+"'"
+			+ ",'" + varName+"'"
+			+ "," + newVal.toString()+ "]"
+			+ ")";
+		this.Call(code, (retVal) => {
+			console.log(retVal);
+			try {
+				var retObj = JSON.parse(retVal);
+			}
+			catch (err) {
+				console.log("Json Parse Error:", err);
+				return;
+			}
+			console.log(retObj);
+			let verifiedValue = 
+				new RuntimeVariable(
+					varName,
+					retObj["Value"],
+					retObj["Id"],	
+					retObj["Type"],
+					retObj["Size"],
+					frameId);
+			cb(verifiedValue);
+		});
+	}
+	public getObject(frameId,objId,start,count, cb) {
 		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() +
 			",frameId=" + frameId.toString()
 			+ ",cmd='Object'"
-			+ ",param=[" + objId.toString()
-			+ ","+ objContext
+			+ ",param=['" + objId+"'"
 			+ "," + start.toString()
 			+ "," + count.toString()+ "]"
 			+ ")";
@@ -477,17 +492,13 @@ export class XLangRuntime extends EventEmitter {
 				new RuntimeVariable(
 					x["Name"] === undefined ? (start + idx).toString():x["Name"].toString(),
 					x["Value"],
-					x["Context"],	
+					x["Id"],	
 					x["Type"],
 					x["Size"],
 					frameId));
 			cb(vars);
 		});
 	}
-	public getLocalVariable(name: string): RuntimeVariable | undefined {
-		return this.variables.get(name);
-	}
-
 	/**
 	 * Return words of the given address range as "instructions"
 	 */
@@ -517,18 +528,7 @@ export class XLangRuntime extends EventEmitter {
 
 	private getLine(line?: number): string {
 		//return this.sourceLines[line === undefined ? this.currentLine : line].trim();
-		return "print('sss')";
-	}
-
-	private getWords(l: number, line: string): Word[] {
-		// break line into words
-		const WORD_REGEXP = /[a-z]+/ig;
-		const words: Word[] = [];
-		let match: RegExpExecArray | null;
-		while (match = WORD_REGEXP.exec(line)) {
-			words.push({ name: match[0], line: l, index: match.index });
-		}
-		return words;
+		return "print('todo')";
 	}
 	private async GetStartLine(cb){
 		let code = "import xdb\nreturn xdb.get_startline("+this._moduleKey.toString()+")";

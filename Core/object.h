@@ -71,14 +71,31 @@ namespace Data {
 		{
 			return (m_t == ObjType::Function);
 		}
+		inline std::string CombinObjectIds(std::vector<std::string>& IdList,
+			std::string newId)
+		{
+			return concat(IdList, ".") + "." + newId;
+		}
+		inline std::string CombinObjectIds(std::vector<std::string>& IdList,
+			unsigned long long id)
+		{
+			return concat(IdList, ".") + "." + ::tostring(id);
+		}
 		inline bool IsStr()
 		{
 			return (m_t == ObjType::Str);
 		}
-		virtual List* FlatPack(XlangRuntime* rt, XObj* pContext, 
+		virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex,long long count)
 		{ 
 			return nullptr; 
+		}
+		virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
+			std::string itemName,X::Value& val)
+		{
+			return val;
 		}
 		virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
 			IterateProc proc,ARGS& params, KWARGS& kwParams)

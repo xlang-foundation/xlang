@@ -204,6 +204,7 @@ namespace X
 			}
 			virtual long long Size() override;
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+				std::vector<std::string>& IdList, int id_offset,
 				long long startIndex, long long count) override;
 		};
 	}

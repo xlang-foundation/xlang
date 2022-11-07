@@ -9,12 +9,13 @@
 #include <chrono>
 #include "port.h"
 #include "event.h"
+#include "utility.h"
 
 namespace X
 {
 	namespace DevOps
 	{
-		#define	dbg_evt_name "devops.dbg"
+#define	dbg_evt_name "devops.dbg"
 		DebugService::DebugService()
 		{
 			X::ObjectEvent* pEvt = X::EventSystem::I().Register(dbg_evt_name);
@@ -24,7 +25,7 @@ namespace X
 			}
 		}
 		bool DebugService::BuildLocals(XlangRuntime* rt,
-			XObj* pContextCurrent,int frameId,
+			XObj* pContextCurrent, int frameId,
 			X::Value& valLocals)
 		{
 			int index = 0;
@@ -38,97 +39,171 @@ namespace X
 				pCurStack = pCurStack->Prev();
 				index++;
 			}
-			Data::List* pList = new Data::List();
+			bool bOK = false;
 			if (pCurStack)
 			{
 				AST::Scope* pCurScope = pCurStack->GetScope();
-				pCurScope->EachVar(rt, pContextCurrent,[rt,pList](
-					std::string name, 
-					X::Value& val)
-				{
-					if (val.IsObject() && 
-						dynamic_cast<Data::Object*>(val.GetObj())->IsFunc())
-					{
-						return;
-					}
-					Data::Dict* dict = new Data::Dict();
-					Data::Str* pStrName = new Data::Str(name);
-					dict->Set("Name", X::Value(pStrName));
-					auto valType = val.GetValueType();
-					Data::Str* pStrType = new Data::Str(valType);
-					dict->Set("Type", X::Value(pStrType));
-					if (!val.IsObject()
-						|| (val.IsObject() && 
-							dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
-					{
-						dict->Set("Value", val);
-					}
-					else if (val.IsObject() && 
-						val.GetObj()->GetType() == X::ObjType::Function)
-					{
-						auto* pFuncObj = dynamic_cast<X::Data::Function*>(val.GetObj());
-						std::string strDoc = pFuncObj->GetDoc();
-						val = strDoc;
-					}
-					else if (val.IsObject())
-					{
-						X::Value objId((unsigned long long)val.GetObj());
-						dict->Set("Value", objId);
-						X::Value valSize(val.GetObj()->Size());
-						dict->Set("Size", valSize);
-					}
-					X::Value valDict(dict);
-					pList->Add(rt, valDict);
-				});
+				bOK = PackScopeVars(rt, pContextCurrent, pCurScope, valLocals);
 			}
-			valLocals = X::Value(pList);
-			return true;
+			return bOK;
 		}
 		bool DebugService::BuildGlobals(XlangRuntime* rt,
 			XObj* pContextCurrent,
 			X::Value& valGlobals)
 		{
-			Data::List* pList = new Data::List();
 			AST::Scope* pCurScope = rt->M();
-			pCurScope->EachVar(rt, pContextCurrent, [rt, pList](
+			return PackScopeVars(rt, pContextCurrent, pCurScope, valGlobals);
+		}
+		bool PackValueAsDict(Data::Dict* dict,std::string& name, X::Value& val)
+		{
+			Data::Str* pStrName = new Data::Str(name);
+			dict->Set("Name", X::Value(pStrName));
+			auto valType = val.GetValueType();
+			Data::Str* pStrType = new Data::Str(valType);
+			dict->Set("Type", X::Value(pStrType));
+			if (!val.IsObject() || (val.IsObject() &&
+				dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
+			{
+				dict->Set("Value", val);
+			}
+			else if (val.IsObject() &&
+				val.GetObj()->GetType() == X::ObjType::Function)
+			{
+				auto* pFuncObj = dynamic_cast<X::Data::Function*>(val.GetObj());
+				std::string strDoc = pFuncObj->GetDoc();
+				val = strDoc;
+				dict->Set("Value", val);
+			}
+			else if (val.IsObject())
+			{
+				unsigned long long llId = (unsigned long long)val.GetObj();
+				const int buf_len = 1000;
+				char strBuf[buf_len];
+				SPRINTF(strBuf, buf_len, "%llu", llId);
+				std::string strID(strBuf);
+				X::Value objId(strID);
+				dict->Set("Id", objId);
+				X::Value valSize(val.GetObj()->Size());
+				dict->Set("Size", valSize);
+			}
+			return true;
+		}
+		/*
+			output a list of dict
+			{
+				"Name": var name ->str
+				"Type": Value type->str
+				"Id": string with format  curObjId.parent.....
+				"Value": value
+				"Size": if it is not single value, such as list,dict etc
+
+			}
+		*/
+		bool DebugService::PackScopeVars(XlangRuntime* rt,
+			XObj* pContextCurrent, AST::Scope* pScope, X::Value& varPackList)
+		{
+			Data::List* pList = new Data::List();
+			pScope->EachVar(rt, pContextCurrent, [rt, pList](
 				std::string name,
 				X::Value& val)
 				{
 					Data::Dict* dict = new Data::Dict();
-					Data::Str* pStrName = new Data::Str(name);
-					dict->Set("Name", X::Value(pStrName));
-					auto valType = val.GetValueType();
-					Data::Str* pStrType = new Data::Str(valType);
-					dict->Set("Type", X::Value(pStrType));
-					if (!val.IsObject()
-						|| (val.IsObject() &&
-							dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
+					bool bOK = PackValueAsDict(dict,name, val);
+					if (bOK)
 					{
-						dict->Set("Value", val);
+						X::Value valDict = dict;
+						pList->Add(rt, valDict);
 					}
-					else if (val.IsObject() &&
-						val.GetObj()->GetType() == X::ObjType::Function)
-					{
-						auto* pFuncObj = dynamic_cast<X::Data::Function*>(val.GetObj());
-						std::string strDoc = pFuncObj->GetDoc();
-						val = strDoc;
-						dict->Set("Value", val);
-					}
-					else if (val.IsObject())
-					{
-						X::Value objId((unsigned long long)val.GetObj());
-						dict->Set("Value", objId);
-						X::Value valSize(val.GetObj()->Size());
-						dict->Set("Size", valSize);
-					}
-					X::Value valDict(dict);
-					pList->Add(rt, valDict);
 				});
-			valGlobals = X::Value(pList);
+			varPackList = X::Value(pList);
+			return true;
+		}
+		bool DebugService::ObjectSetValue(XlangRuntime* rt,
+			XObj* pContextCurrent, int frameId, X::Value& valParam,
+			X::Value& objRetValue)
+		{
+			if (!valParam.IsObject())
+			{
+				return false;
+			}
+			//[objid,start Index,count]
+			Data::List* pParamObj = dynamic_cast<Data::List*>(valParam.GetObj());
+			if (pParamObj == nullptr || pParamObj->Size() == 0)
+			{
+				return false;
+			}
+			X::Value val0;
+			pParamObj->Get(0, val0);
+			std::string objIds = val0;
+			pParamObj->Get(1, val0);
+			std::string objType = val0;
+			pParamObj->Get(2, val0);
+			std::string objName = val0;
+			X::Value newVal;
+			pParamObj->Get(3, newVal);
+			X::Value  correctedValue = newVal;
+			Data::Dict* retDict = new Data::Dict();
+			retDict->Set("Id", objIds);
+			//if null objId, means this var is just a value
+			//it is not a object, because all object will use 
+			//objId
+			if (objIds == "null")
+			{
+				if (objType == "locals")
+				{
+					int index = 0;
+					AST::StackFrame* pCurStack = rt->GetCurrentStack();
+					while (pCurStack != nil)
+					{
+						if (index == frameId)
+						{
+							break;
+						}
+						pCurStack = pCurStack->Prev();
+						index++;
+					}
+					if (pCurStack)
+					{
+						AST::Scope* pCurScope = pCurStack->GetScope();
+						int index = pCurScope->AddOrGet(objName, true);
+						if (index >= 0)
+						{
+							pCurStack->Set(index, newVal);
+						}
+					}
+				}
+				else if (objType == "globals")
+				{
+					auto* pTopModule = rt->M();
+					int index = pTopModule->AddOrGet(objName, true);
+					if (index >= 0)
+					{
+						pTopModule->Set(rt, nullptr, index, newVal);
+					}
+				}
+			}
+			else
+			{
+				auto idList = split(objIds, '.');
+				if (idList.size() <= 0)
+				{
+					return false;
+				}
+				auto rootId = idList[0];
+				unsigned long long ullRootId = 0;
+				SCANF(rootId.c_str(), "%llu", &ullRootId);
+				Data::Object* pObjRoot = dynamic_cast<Data::Object*>((XObj*)ullRootId);
+				if (pObjRoot)
+				{
+					correctedValue = pObjRoot->UpdateItemValue(rt, nullptr, idList, 1, objName, newVal);
+				}
+			}
+			PackValueAsDict(retDict, objName, correctedValue);
+			objRetValue = retDict;
 			return true;
 		}
 		bool DebugService::BuildObjectContent(XlangRuntime* rt,
-			XObj* pContextCurrent, int frameId,X::Value& valParam,
+			XObj* pContextCurrent, int frameId, X::Value& valParam,
 			X::Value& valObject)
 		{
 			if (!valParam.IsObject())
@@ -137,34 +212,50 @@ namespace X
 			}
 			//[objid,start Index,count]
 			Data::List* pParamObj = dynamic_cast<Data::List*>(valParam.GetObj());
-			if (pParamObj == nullptr || pParamObj->Size()==0)
+			if (pParamObj == nullptr || pParamObj->Size() == 0)
 			{
 				return false;
 			}
 			X::Value valObjReq;
 			pParamObj->Get(0, valObjReq);
-			X::Value valContext;
-			pParamObj->Get(1, valContext);
-			X::XObj* pContextObj = (X::XObj*)(valContext.GetLongLong());
-			Data::Object* pObjReq = dynamic_cast<Data::Object*>((XObj*)valObjReq.GetLongLong());
+			std::string objIds = valObjReq;
+			//format objId-context.childObjId-context.[repeat]
+			//objId maybe a pointer or a key(string) for dict, or a number for list
+			auto idList = split(objIds, '.');
+			if (idList.size() <= 0)
+			{
+				return false;
+			}
+			auto rootIdPair = split(idList[0], '-');
+			auto rootId = idList[0];
+			unsigned long long ullRootId = 0;
+			SCANF(rootId.c_str(), "%llu", &ullRootId);
+			Data::Object* pObjRoot = dynamic_cast<Data::Object*>((XObj*)ullRootId);
+			XObj* pContextObj = nullptr;
+			if (rootIdPair.size() >= 2)
+			{
+				unsigned long long contextId = 0;
+				SCANF(rootIdPair[1].c_str(), "%llu", &contextId);
+				pContextObj = (XObj*)contextId;
+			}
 			long long startIdx = 0;
-			if (pParamObj->Size() >= 2)
+			if (pParamObj->Size() >= 1)
 			{
 				X::Value valStart;
-				pParamObj->Get(2, valStart);
+				pParamObj->Get(1, valStart);
 				startIdx = valStart.GetLongLong();
 			}
 			long long reqCount = -1;
-			if (pParamObj->Size() >= 3)
+			if (pParamObj->Size() >= 2)
 			{
 				X::Value valCount;
-				pParamObj->Get(3, valCount);
+				pParamObj->Get(2, valCount);
 				reqCount = valCount.GetLongLong();
 			}
-			Data::List* pList = pObjReq->FlatPack(rt, pContextObj,startIdx, reqCount);
+			Data::List* pList = pObjRoot->FlatPack(rt, pContextObj, idList, 1, startIdx, reqCount);
 			//pList already hold one refcount when return from FlatPack
 			//so don't need X::Value to add refcount
-			valObject = X::Value(pList,false);
+			valObject = X::Value(pList, false);
 			return true;
 		}
 		bool DebugService::BuildStackInfo(
@@ -201,11 +292,11 @@ namespace X
 						}
 					}
 					Data::Str* pStrName = new Data::Str(name);
-					dict->Set("name",X::Value(pStrName));
+					dict->Set("name", X::Value(pStrName));
 					Data::Str* pStrFileName = new Data::Str(moduleFileName);
 					dict->Set("file", X::Value(pStrFileName));
-					dict->Set("line",X::Value(line));
-					dict->Set("column",X::Value(column));
+					dict->Set("line", X::Value(line));
+					dict->Set("column", X::Value(column));
 					X::Value valDict(dict);
 					pList->Add(rt, valDict);
 					index++;
@@ -241,17 +332,17 @@ namespace X
 			auto* pLineList = dynamic_cast<X::Data::List*>(varLines.GetObj());
 			auto lines = pLineList->Map<int>(
 				[](X::Value& elm, unsigned long long idx) {
-				return elm;}
+					return elm; }
 			);
 			pModule->ClearBreakpoints();
 			Data::List* pList = new Data::List();
 			for (auto l : lines)
 			{
-				l = pModule->SetBreakpoint(l,(int)GetThreadID());
+				l = pModule->SetBreakpoint(l, (int)GetThreadID());
 				if (l >= 0)
 				{
 					X::Value varL(l);
-					pList->Add((XlangRuntime*)rt,varL);
+					pList->Add((XlangRuntime*)rt, varL);
 				}
 			}
 			return X::Value(pList);
@@ -300,13 +391,15 @@ namespace X
 				pCmdInfo->m_process = stackTracePack;
 				pCmdInfo->m_needRetValue = true;
 				pCmdInfo->dbgType = AST::dbg::StackTrace;
+				pCmdInfo->m_downstreamDelete = false;
 				pModule->AddCommand(pCmdInfo, true);
 				retValue = pCmdInfo->m_retValueHolder;
 				delete pCmdInfo;
 			}
-			else if (strCmd == "Globals" 
-					|| strCmd == "Locals" 
-					|| strCmd=="Object")
+			else if (strCmd == "Globals"
+				|| strCmd == "Locals"
+				|| strCmd == "Object"
+				|| strCmd == "SetObjectValue")
 			{
 				int frameId = 0;
 				auto it2 = kwParams.find("frameId");
@@ -324,7 +417,7 @@ namespace X
 				{
 					DebugService* pDebugService = (DebugService*)
 						pCommandInfo->m_callContext;
-					pDebugService->BuildGlobals(rt, pContextCurrent,retVal);
+					pDebugService->BuildGlobals(rt, pContextCurrent, retVal);
 				};
 				auto localPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
@@ -348,6 +441,18 @@ namespace X
 						pCommandInfo->m_varParam,
 						retVal);
 				};
+				auto objSetValuePack = [](XlangRuntime* rt,
+					XObj* pContextCurrent,
+					AST::CommandInfo* pCommandInfo,
+					X::Value& retVal)
+				{
+					DebugService* pDebugService = (DebugService*)
+						pCommandInfo->m_callContext;
+					pDebugService->ObjectSetValue(rt, pContextCurrent,
+						pCommandInfo->m_frameId,
+						pCommandInfo->m_varParam,
+						retVal);
+				};
 				if (strCmd == "Locals")
 				{
 					pCmdInfo->m_process = localPack;
@@ -360,9 +465,14 @@ namespace X
 				{
 					pCmdInfo->m_process = objPack;
 				}
+				else if (strCmd == "SetObjectValue")
+				{
+					pCmdInfo->m_process = objSetValuePack;
+				}
 				pCmdInfo->m_varParam = valParam;
 				pCmdInfo->m_callContext = this;
-				pCmdInfo->m_needRetValue =true;
+				pCmdInfo->m_needRetValue = true;
+				pCmdInfo->m_downstreamDelete = false;
 				pModule->AddCommand(pCmdInfo, true);
 				retValue = pCmdInfo->m_retValueHolder;
 				delete pCmdInfo;

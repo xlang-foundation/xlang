@@ -290,7 +290,27 @@ public:
 		m_data.push_back(v);
 	}
 	virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;
+	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+		std::vector<std::string>& IdList, int id_offset,
+		std::string itemName, X::Value& val) override;
+	inline void Set(long long index, X::Value& v)
+	{
+		AutoLock(m_lock);
+		if (m_useLValue)
+		{
+			X::LValue l = m_ptrs[index];
+			if (l)
+			{
+				*l = v;
+			}
+		}
+		else
+		{
+			m_data[index] = v;
+		}
+	}
 	inline bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{

@@ -4,6 +4,8 @@
 #include "prop.h"
 #include "xpackage.h"
 #include "event.h"
+#include "port.h"
+#include "utility.h"
 
 namespace X
 {
@@ -34,8 +36,32 @@ namespace X
 			return valType;
 		}
 		X::Data::List* Package::FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
+			AutoLock(m_lock);
+			if (id_offset < IdList.size())
+			{
+				auto& key = IdList[id_offset++];
+				X::Value item;
+				int idx = Scope::AddOrGet(key, true);
+				if (idx>=0)
+				{
+					GetIndexValue(idx, item);
+					if (item.IsObject())
+					{
+						Object* pChildObj = dynamic_cast<Object*>(item.GetObj());
+						if (pChildObj)
+						{
+							return pChildObj->FlatPack(rt, pContext, IdList, id_offset, startIndex, count);
+						}
+					}
+				}
+				//all elses, return an empty list
+				X::Data::List* pOutList = new X::Data::List();
+				pOutList->IncRef();
+				return pOutList;
+			}
 			X::Data::List* pOutList = new X::Data::List();
 			pOutList->IncRef();
 			if (m_pAPISet == nullptr)
@@ -48,8 +74,10 @@ namespace X
 				X::Data::Dict* dict = new X::Data::Dict();
 				Data::Str* pStrName = new Data::Str(it.name);
 				dict->Set("Name", X::Value(pStrName));
+				//make object_ids
+				std::string myId = it.name;
 				auto valType = GetMemberType(it.type);
-				int idx = Scope::AddOrGet(it.name, true);
+				int idx = AddOrGet(it.name, true);
 				X::Value val;
 				GetIndexValue(idx, val);
 				if (val.IsObject() && val.GetObj()->GetType()
@@ -63,7 +91,7 @@ namespace X
 						//so keep as PropObject which has Refcount hold by its owner
 						//but for others, replace with this value
 						X::Value v0;
-						pPropObj->GetProp(rt, this, v0);
+						pPropObj->GetPropValue(rt, this, v0);
 						if (!v0.IsObject() || v0.GetObj()->GetType() == X::ObjType::Str)
 						{
 							val = v0;
@@ -71,6 +99,8 @@ namespace X
 						}
 					}
 				}
+				auto objIds = CombinObjectIds(IdList, myId);
+				dict->Set("Id", objIds);
 				Data::Str* pStrType = new Data::Str(valType);
 				dict->Set("Type", X::Value(pStrType));
 				if (!val.IsObject() || (val.IsObject()
@@ -90,11 +120,9 @@ namespace X
 					long long objSize = 0;
 					if (val.GetObj()->GetType() == X::ObjType::Prop)
 					{
-						//use this field to bind to PackageProxy 
-						dict->Set("Context", (unsigned long long)dynamic_cast<XObj*>(this));
 						auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
 						X::Value v0;
-						pPropObj->GetProp(rt, this, v0);
+						pPropObj->GetPropValue (rt, this, v0);
 						objSize = v0.Size();
 					}
 					else
@@ -110,8 +138,32 @@ namespace X
 			return pOutList;
 		}
 		X::Data::List* PackageProxy::FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
+			AutoLock(m_lock);
+			if (id_offset < IdList.size())
+			{
+				auto& strId = IdList[id_offset++];
+				X::Value item;
+				int idx = AddOrGet(strId, true);
+				if (idx >= 0)
+				{
+					GetIndexValue(idx, item);
+					if (item.IsObject())
+					{
+						Object* pChildObj = dynamic_cast<Object*>(item.GetObj());
+						if (pChildObj)
+						{
+							return pChildObj->FlatPack(rt, this, IdList, id_offset, startIndex, count);
+						}
+					}
+				}
+				//all elses, return an empty list
+				X::Data::List* pOutList = new X::Data::List();
+				pOutList->IncRef();
+				return pOutList;
+			}
 			X::Data::List* pOutList = new X::Data::List();
 			pOutList->IncRef();
 			auto* pAPISet = m_pPackage->GetAPISet();
@@ -129,6 +181,8 @@ namespace X
 					X::Data::Dict* dict = new X::Data::Dict();
 					Data::Str* pStrName = new Data::Str(it.name);
 					dict->Set("Name", X::Value(pStrName));
+					//make object_ids
+					std::string myId = it.name;
 					int idx = AddOrGet(it.name, true);
 					auto valType = GetMemberType(it.type);
 					X::Value val;
@@ -145,7 +199,7 @@ namespace X
 								//so keep as PropObject which has Refcount hold by its owner
 								//but for others, replace with this value
 								X::Value v0;
-								pPropObj->GetProp(rt, this, v0);
+								pPropObj->GetPropValue(rt, this, v0);
 								if (!v0.IsObject() || v0.GetObj()->GetType() == X::ObjType::Str)
 								{
 									val = v0;
@@ -163,6 +217,9 @@ namespace X
 							}
 						}
 					}
+					auto objIds = CombinObjectIds(IdList, myId);
+					dict->Set("Id", objIds);
+
 					Data::Str* pStrType = new Data::Str(valType);
 					dict->Set("Type", X::Value(pStrType));
 					if (!val.IsObject() || (val.IsObject()
@@ -182,11 +239,9 @@ namespace X
 						long long objSize = 0;
 						if (val.GetObj()->GetType() == X::ObjType::Prop)
 						{
-							//use this field to bind to PackageProxy 
-							dict->Set("Context", (unsigned long long)dynamic_cast<XObj*>(this));
 							auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
 							X::Value v0;
-							pPropObj->GetProp(rt, this, v0);
+							pPropObj->GetPropValue(rt, this, v0);
 							objSize = v0.Size();
 						}
 						else

@@ -7,6 +7,7 @@ namespace X
 	namespace Data
 	{
 		List* XClassObject::FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
 			List* pOutList = new List();

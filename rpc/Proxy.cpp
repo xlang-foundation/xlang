@@ -46,6 +46,7 @@ namespace X
 		return oId;
 	}
 	bool XLangProxy::FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
+		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count, Value& retList)
 	{
 		if (!CheckConnectReadyStatus())
@@ -55,6 +56,12 @@ namespace X
 		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack);
 		stream << parentObjId;
 		stream << id;
+		stream << (int)IdList.size();
+		for (auto& s : IdList)
+		{
+			stream << s;
+		}
+		stream << id_offset;
 		stream << startIndex;
 		stream << count;
 		auto& stream2 = CommitCall();

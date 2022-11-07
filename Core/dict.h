@@ -134,8 +134,11 @@ namespace X
 				return true;
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+				std::vector<std::string>& IdList, int id_offset,
 				long long startIndex, long long count) override;
-
+			virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+				std::vector<std::string>& IdList, int id_offset,
+				std::string itemName, X::Value& val) override;
 		};
 	}
 }

@@ -49,6 +49,7 @@ public:
 		m_pAPISet = p;
 	}
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
+		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;
 	virtual long long Size()
 	{
@@ -224,6 +225,7 @@ public:
 		}
 	}
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
+		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;
 	virtual long long Size()
 	{

@@ -43,7 +43,7 @@ namespace AST
 			else if (pObj->GetType() == X::ObjType::Prop)
 			{
 				auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
-				bOK = pPropObj->SetProp(rt, lValue_L.GetContext(), v_r);
+				bOK = pPropObj->SetPropValue(rt, lValue_L.GetContext(), v_r);
 				v = Value(bOK);
 				return bOK;
 			}

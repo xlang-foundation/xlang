@@ -272,18 +272,18 @@ namespace X
 		virtual public XObj
 	{
 	protected:
-		virtual bool SetProp(XRuntime* rt0, XObj* pContext, Value& v) = 0;
-		virtual bool GetProp(XRuntime* rt0, XObj* pContext, Value& v) = 0;
+		virtual bool SetPropValue(XRuntime* rt0, XObj* pContext, Value& v) = 0;
+		virtual bool GetPropValue(XRuntime* rt0, XObj* pContext, Value& v) = 0;
 	public:
 		Value Get()
 		{
 			Value v0;
-			GetProp(m_cxt->rt, m_cxt->m_parent, v0);
+			GetPropValue(m_cxt->rt, m_cxt->m_parent, v0);
 			return v0;
 		}
 		bool Set(Value& v)
 		{
-			return SetProp(m_cxt->rt, m_cxt->m_parent, v);
+			return SetPropValue(m_cxt->rt, m_cxt->m_parent, v);
 		}
 	};
 	class XEvent :

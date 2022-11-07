@@ -20,6 +20,8 @@ namespace X
 				XObj* pContextCurrent,
 				AST::CommandInfo* pCommandInfo,
 				X::Value& valStackInfo);
+			bool PackScopeVars(XlangRuntime* rt, 
+				XObj* pContextCurrent, AST::Scope* pScope,X::Value& varPackList);
 			bool BuildGlobals(XlangRuntime* rt,
 				XObj* pContextCurrent,
 				X::Value& valGlobals);
@@ -29,6 +31,9 @@ namespace X
 			bool BuildObjectContent(XlangRuntime* rt,
 				XObj* pContextCurrent, int frameId, X::Value& valParam,
 				X::Value& valObject);
+			bool ObjectSetValue(XlangRuntime* rt,
+				XObj* pContextCurrent, int frameId, X::Value& valParam,
+				X::Value& objRetValue);
 		public:
 			BEGIN_PACKAGE(DebugService)
 				APISET().AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);

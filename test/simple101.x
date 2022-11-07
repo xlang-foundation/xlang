@@ -1,3 +1,9 @@
+kk =10
+z = [](size=5,init='rand(1.0,100.0)')
+y={"a":"a1","b":10,"C":"c1","Z":z}
+x =["string_value",10.2,1,3,y]
+
+
 def test_sleep(x,y):
     print("after sleep,x=",x,"y=",y)
 print("before call")

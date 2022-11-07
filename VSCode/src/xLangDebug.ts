@@ -391,8 +391,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 		response.body = {
 			scopes: [
-				new Scope("Locals", this._runtime.createScopeRef('locals',args.frameId), false),
-				new Scope("Globals", this._runtime.createScopeRef('globals', args.frameId), true)
+				new Scope("Locals", this._runtime.createScopeRef('locals',args.frameId,null,null), false),
+				new Scope("Globals", this._runtime.createScopeRef('globals', args.frameId,null,null), true)
 			]
 		};
 		this.sendResponse(response);
@@ -402,7 +402,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const variable = this._variableHandles.get(Number(memoryReference));
 		if (typeof variable === 'object') {
 			const decoded = base64.toByteArray(data);
-			variable.setMemory(decoded, offset);
+			//TODO:variable.setMemory(decoded, offset);
 			response.body = { bytesWritten: decoded.length };
 		} else {
 			response.body = { bytesWritten: 0 };
@@ -448,12 +448,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const v = this._runtime.getScopeRef(args.variablesReference);
 		const varType = v[0];
 		const frameId = v[1];
+		const objId = v[3];
 		if (varType === 'locals') {
 			this._runtime.getLocalVariables(frameId,cb);
 		} else if (varType === 'globals') {
 			this._runtime.getGlobalVariables(cb);
 		} else {
-			this._runtime.getObject(frameId,v[2],v[3],
+			this._runtime.getObject(frameId,objId,
 				args.start===undefined?0:args.start,
 				args.count===undefined?-1:args.count,
 				cb);
@@ -461,23 +462,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
-		const container = this._variableHandles.get(args.variablesReference);
-		const rv = container === 'locals'
-			? this._runtime.getLocalVariable(args.name)
-			: container instanceof RuntimeVariable && container.value instanceof Array
-			? container.value.find(v => v.name === args.name)
-			: undefined;
-
-		if (rv) {
-			rv.value = this.convertToRuntime(args.value);
-			response.body = this.convertFromRuntime(rv);
-
-			if (rv.memory && rv.reference) {
-				this.sendEvent(new MemoryEvent(String(rv.reference), 0, rv.memory.length));
-			}
-		}
-
-		this.sendResponse(response);
+		let cb = (v: RuntimeVariable) => {
+			response.body = this.convertFromRuntime(v);
+			this.sendResponse(response);
+		};
+		const varInfo = this._runtime.getScopeRef(args.variablesReference);
+		const varType = varInfo[0];
+		const frameId = varInfo[1];
+		const objId = varInfo[3];	
+		this._runtime.setObject(frameId,varType,objId,args.name,args.value,cb);
 	}
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
@@ -861,7 +854,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;				
 			case 'Package':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val);
+					v.Type, v.FrameId, v.Val,v.Id);
 				dapVariable.value = 'Package(Size:' + v.Size.toString() + ")";
 				dapVariable.type = "Package";
 				dapVariable.variablesReference = v.reference;
@@ -869,7 +862,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'RemoteObject':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val);
+					v.Type, v.FrameId, v.Val,v.Id);
 				dapVariable.value = 'RemoteObject(Size:' + v.Size.toString() + ")";
 				dapVariable.type = "RemoteObject";
 				dapVariable.variablesReference = v.reference;
@@ -877,7 +870,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;							
 			case 'Class':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val);
+					v.Type, v.FrameId, v.Val,v.Id);
 				dapVariable.value = 'Class(Size:' + v.Size.toString() + ")";
 				dapVariable.type = "Class";
 				dapVariable.variablesReference = v.reference;
@@ -885,7 +878,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'Dict':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val);
+					v.Type, v.FrameId, v.Val,v.Id);
 				dapVariable.value = 'Dict(Size:' + v.Size.toString() + ")";
 				dapVariable.type = "Dict";
 				dapVariable.variablesReference = v.reference;
@@ -893,14 +886,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'List':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val);
+					v.Type,v.FrameId,v.Val,v.Id);
 				dapVariable.value = 'List(Size:'+v.Size.toString()+")";
 				dapVariable.type = "List";
 				dapVariable.variablesReference = v.reference;
-				dapVariable.indexedVariables = v.Size;				
+				dapVariable.indexedVariables = v.Size;
+				break;		
 			case 'Prop':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val,v.Context);//Prop needs add context, see xlang for details
+					v.Type,v.FrameId,v.Val,v.Id);
 				dapVariable.value = 'Prop(Size:'+v.Size.toString()+")";
 				dapVariable.type = "Prop";
 				dapVariable.variablesReference = v.reference;
@@ -908,7 +902,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'TableRow':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val);
+					v.Type, v.FrameId, v.Val,v.Id);
 				dapVariable.value = 'TableRow(ColNum:' + v.Size.toString() + ")";
 				dapVariable.type = "TableRow";
 				dapVariable.variablesReference = v.reference;
@@ -916,7 +910,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'Table':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val);
+					v.Type, v.FrameId, v.Val,v.Id);
 				dapVariable.value = 'Table(RowNum:' + v.Size.toString() + ")";
 				dapVariable.type = "Table";
 				dapVariable.variablesReference = v.reference;
@@ -924,7 +918,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'PyObject':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val);
+					v.Type,v.FrameId,v.Val,v.Id);
 				dapVariable.value = 'Python Object(Size:'+v.Size.toString()+")";
 				dapVariable.type = "PyObject";
 				dapVariable.variablesReference = v.reference;

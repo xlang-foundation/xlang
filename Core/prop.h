@@ -20,9 +20,10 @@ namespace X
 				m_setter = setter;
 				m_getter = getter;
 			}
-			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext, 
+			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+				std::vector<std::string>& IdList, int id_offset,
 				long long startIndex, long long count) override;
-			bool SetProp(XRuntime* rt0,XObj* pContext,Value& v)
+			bool SetPropValue (XRuntime* rt0, XObj* pContext, Value& v)
 			{
 				bool bOK = false;
 				if (m_setter)
@@ -38,9 +39,9 @@ namespace X
 				KWARGS& kwParams,
 				X::Value& retValue) override
 			{
-				return SetProp(rt, pContext, params[0]);
+				return SetPropValue(rt, pContext, params[0]);
 			}
-			bool GetProp(XRuntime* rt0, XObj* pContext, Value& v)
+			bool GetPropValue(XRuntime* rt0, XObj* pContext, Value& v)
 			{
 				bool bOK = false;
 				if (m_getter)

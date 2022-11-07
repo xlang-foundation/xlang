@@ -142,9 +142,9 @@ namespace X
 			}
 			return m_obj.GetCount();
 		}
-		List* PyProxyObject::FlatPack(XlangRuntime* rt, 
-			XObj* pContext, long long startIndex,
-			long long count)
+		List* PyProxyObject::FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
+			long long startIndex, long long count)
 		{
 			List* pOutList = nullptr;
 			if (m_obj.IsDict())

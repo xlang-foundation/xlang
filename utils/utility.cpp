@@ -118,6 +118,27 @@ double randDouble(double m0, double mx)
 	static std::uniform_real_distribution<double> dist(m0, mx);
 	return dist(e2);
 }
+std::string tostring(unsigned long long x)
+{
+	const int buf_len = 1000;
+	char strBuf[buf_len];
+	SPRINTF(strBuf, buf_len, "%llu", x);
+	return strBuf;
+}
+std::string concat(std::vector<std::string>& items, const char* delim)
+{
+	if (items.size() == 0)
+	{
+		return "";
+	}
+	std::string strDelim(delim);
+	std::string all = items[0];
+	for (int i = 1; i < items.size(); i++)
+	{
+		all += strDelim + items[i];
+	}
+	return all;
+}
 std::vector<std::string> split(const std::string& str, char delim)
 {
 	std::vector<std::string> list;

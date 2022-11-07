@@ -232,7 +232,7 @@ namespace AST
 		auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
 		if (pPropObj)
 		{
-			bOK = pPropObj->GetProp(rt, pContext, val);
+			bOK = pPropObj->GetPropValue(rt, pContext, val);
 		}
 		return bOK;
 	}

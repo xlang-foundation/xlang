@@ -27,6 +27,7 @@ namespace X
 			bool& KeepRawParams);
 		virtual long long QueryMemberCount(X::ROBJ_ID id);
 		virtual bool FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count, Value& retList);
 		virtual X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId);
 		virtual bool ReleaseObject(ROBJ_ID id) override;
