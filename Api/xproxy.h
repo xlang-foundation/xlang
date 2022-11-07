@@ -21,6 +21,9 @@ namespace X
 		virtual bool FlatPack(X::ROBJ_ID parentObjId,X::ROBJ_ID id,
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex,long long count, Value& retList) = 0;
+		virtual X::Value UpdateItemValue(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
+			std::vector<std::string>& IdList, int id_offset,
+			std::string itemName, X::Value& val) = 0;
 		virtual ROBJ_ID GetMemberObject(ROBJ_ID id, ROBJ_MEMBER_ID memId) = 0;
 		virtual bool ReleaseObject(ROBJ_ID id) = 0;
 		virtual bool Call(XRuntime* rt, XObj* pContext,

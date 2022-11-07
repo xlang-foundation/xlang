@@ -116,6 +116,9 @@ namespace X
 		virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count) override;
+		virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
+			std::string itemName, X::Value& val) override;
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue) override

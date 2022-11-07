@@ -36,6 +36,7 @@ namespace X
         CantorProxy_GetMemberObject,
         CantorProxy_ReleaseObject,
         CantorProxy_FlatPack,
+        CantorProxy_UpdateItemValue,
         CantorProxy_Call,
         //--------------
         PushFrame,

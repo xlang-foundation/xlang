@@ -32,6 +32,7 @@ namespace X
 		bool QueryMember(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool QueryMemberCount(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool FlatPack(int channel, SwapBufferStream& stream, RemotingProc* pProc);
+		bool UpdateItemValue(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool GetMemberObject(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool ReleaseObject(int channel, SwapBufferStream& stream, RemotingProc* pProc);
 		bool RCall(int channel, SwapBufferStream& stream, RemotingProc* pProc);

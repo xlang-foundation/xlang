@@ -35,6 +35,55 @@ namespace X
 			}
 			return valType;
 		}
+		X::Value Package::UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
+			std::string itemName, X::Value& val)
+		{
+			X::Value retVal = val;
+			AutoLock(m_lock);
+			if (id_offset < IdList.size())
+			{
+				auto& strId = IdList[id_offset++];
+				X::Value item;
+				int idx = Scope::AddOrGet(strId, true);
+				if (idx >= 0)
+				{
+					GetIndexValue(idx, item);
+					if (item.IsObject())
+					{
+						Object* pChildObj = dynamic_cast<Object*>(item.GetObj());
+						if (pChildObj)
+						{
+							return pChildObj->UpdateItemValue(rt, this,
+								IdList, id_offset, itemName, val);
+						}
+					}
+				}
+				//all elses, return value passed in
+				return val;
+			}
+			int index = AddOrGet(itemName, true);
+			if (index > 0)
+			{
+				X::Value valMember;
+				GetIndexValue(index, valMember);
+				//only change Prop's value
+				if (valMember.IsObject() &&
+					valMember.GetObj()->GetType() == X::ObjType::Prop)
+				{
+					auto* pPropObj = dynamic_cast<Data::PropObject*>(valMember.GetObj());
+					if (pPropObj)
+					{
+						if (!pPropObj->SetPropValue(rt, this, val))
+						{
+							//Failed, return the original value
+							pPropObj->GetPropValue(rt, this, retVal);
+						}
+					}
+				}
+			}
+			return retVal;
+		}
 		X::Data::List* Package::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
@@ -136,6 +185,55 @@ namespace X
 				pOutList->Add(rt, valDict);
 			}
 			return pOutList;
+		}
+		X::Value PackageProxy::UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
+			std::string itemName, X::Value& val)
+		{
+			X::Value retVal = val;
+			AutoLock(m_lock);
+			if (id_offset < IdList.size())
+			{
+				auto& strId = IdList[id_offset++];
+				X::Value item;
+				int idx = AddOrGet(strId, true);
+				if (idx >= 0)
+				{
+					GetIndexValue(idx, item);
+					if (item.IsObject())
+					{
+						Object* pChildObj = dynamic_cast<Object*>(item.GetObj());
+						if (pChildObj)
+						{
+							return pChildObj->UpdateItemValue(rt, this, 
+								IdList, id_offset, itemName, val);
+						}
+					}
+				}
+				//all elses, return value passed in
+				return val;
+			}
+			int index = AddOrGet(itemName, true);
+			if (index > 0)
+			{
+				X::Value valMember;
+				GetIndexValue(index, valMember);
+				//only change Prop's value
+				if (valMember.IsObject() &&
+					valMember.GetObj()->GetType() == X::ObjType::Prop)
+				{
+					auto* pPropObj = dynamic_cast<Data::PropObject*>(valMember.GetObj());
+					if (pPropObj)
+					{
+						if (!pPropObj->SetPropValue(rt, this, val))
+						{
+							//Failed, return the original value
+							pPropObj->GetPropValue(rt, this, retVal);
+						}
+					}
+				}
+			}
+			return retVal;
 		}
 		X::Data::List* PackageProxy::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,

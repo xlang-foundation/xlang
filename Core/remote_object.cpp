@@ -21,4 +21,11 @@ namespace X
 		}
 		return pPackList;
 	}
+	X::Value RemoteObject::UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+		std::vector<std::string>& IdList, int id_offset,
+		std::string itemName, X::Value& val)
+	{
+		return m_proxy->UpdateItemValue(m_remote_Parent_Obj_id,
+			m_remote_Obj_id, IdList, id_offset, itemName, val);
+	}
 }

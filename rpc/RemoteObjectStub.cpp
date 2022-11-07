@@ -49,6 +49,13 @@ namespace X
 			std::string("int")
 		);
 		RemotingManager::I().Register(
+			(unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue,
+			this,
+			std::string("UpdateItemValue"),
+			std::vector<std::string>{},
+			std::string("int")
+		);
+		RemotingManager::I().Register(
 			(unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject,
 			this,
 			std::string("GetMemberObject"),
@@ -222,6 +229,61 @@ namespace X
 		}
 		return true;
 	}
+	bool RemoteObjectStub::UpdateItemValue(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	{
+		X::ROBJ_ID parent_ObjId;
+		X::ROBJ_ID objId;
+		std::vector<std::string> IdList;
+		int id_offset = 0;
+		stream >> parent_ObjId;
+		stream >> objId;
+		int idNum = 0;
+		stream >> idNum;
+		for (int i = 0; i < idNum; i++)
+		{
+			std::string s;
+			stream >> s;
+			IdList.push_back(s);
+		}
+		stream >> id_offset;
+		std::string itemName;
+		stream >> itemName;
+		X::Value newVal;
+		stream >> newVal;
+		pProc->NotifyBeforeCall(channel, stream);
+		X::XObj* pParentObj = nullptr;
+		if (parent_ObjId.objId != nullptr)
+		{
+			pParentObj = CovertIdToXObj(parent_ObjId);
+		}
+		auto pXObj = CovertIdToXObj(objId);
+		X::Value retVal;
+		bool bOK = (pXObj != nullptr);
+		if (bOK)
+		{
+			auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
+			if (pPackage != nullptr)
+			{
+				retVal = pPackage->UpdateItemValue((XlangRuntime*)m_rt,
+					pParentObj, IdList, id_offset, itemName, newVal);
+			}
+			else
+			{
+				auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
+				if (pPackageProxy)
+				{
+					retVal = pPackageProxy->UpdateItemValue((XlangRuntime*)m_rt,
+						pParentObj, IdList, id_offset, itemName, newVal);
+				}
+			}
+		}
+		pProc->NotifyAfterCall(channel, stream, bOK);
+		if (bOK)
+		{
+			stream << retVal;
+		}
+		return true;
+	}
 	bool RemoteObjectStub::GetMemberObject(int channel, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID objId;
@@ -349,6 +411,9 @@ namespace X
 			break;
 		case RPC_CALL_TYPE::CantorProxy_FlatPack:
 			bOK = FlatPack(channel, stream, pProc);
+			break;
+		case RPC_CALL_TYPE::CantorProxy_UpdateItemValue:
+			bOK = UpdateItemValue(channel, stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_GetMemberObject:
 			bOK = GetMemberObject(channel, stream, pProc);

@@ -45,6 +45,36 @@ namespace X
 		FinishCall();
 		return oId;
 	}
+	X::Value XLangProxy::UpdateItemValue(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
+		std::vector<std::string>& IdList, int id_offset,
+		std::string itemName, X::Value& val)
+	{
+		if (!CheckConnectReadyStatus())
+		{
+			return X::Value();
+		}
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue);
+		stream << parentObjId;
+		stream << id;
+		stream << (int)IdList.size();
+		for (auto& s : IdList)
+		{
+			stream << s;
+		}
+		stream << id_offset;
+		stream << itemName;
+		stream << val;
+		auto& stream2 = CommitCall();
+		X::Value retVal;
+		bool bOK = false;
+		stream2 >> bOK;
+		if (bOK)
+		{
+			stream2 >> retVal;
+		}
+		FinishCall();
+		return retVal;
+	}
 	bool XLangProxy::FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
 		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count, Value& retList)

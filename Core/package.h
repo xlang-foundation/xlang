@@ -51,6 +51,9 @@ public:
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;
+	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+		std::vector<std::string>& IdList, int id_offset,
+		std::string itemName, X::Value& val) override;
 	virtual long long Size()
 	{
 		return (long long)m_memberInfos.size();
@@ -227,6 +230,9 @@ public:
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;
+	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+		std::vector<std::string>& IdList, int id_offset,
+		std::string itemName, X::Value& val) override;
 	virtual long long Size()
 	{
 		return m_pPackage->Size();
