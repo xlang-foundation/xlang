@@ -274,6 +274,11 @@ public:
 	}
 	template<typename toT>
 	operator toT* () const;
+
+	operator void* ()const
+	{
+		return (void*)x.obj;
+	}
 	size_t Hash();
 
 	inline double GetDouble()

@@ -20,4 +20,7 @@ add_library(${PROJECT_NAME}
 	${API_SRC}
 	${Main_SRC}
 )
-
+if (WIN32)
+else()
+    target_link_libraries(${PROJECT_NAME} pthread dl)
+endif()

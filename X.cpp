@@ -131,8 +131,18 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 	return true;
 }
 
+#include <thread>
+void func()
+{
+}
+void Workaround_WSLThread_Problem()
+{
+	static std::vector<std::thread> threads_;
+	threads_.emplace_back(func);
+}
 int main(int argc, char* argv[])
 {
+	Workaround_WSLThread_Problem();
 	std::vector<std::string> params(argv, argv+argc);
 	ParamConfig paramConfig;
 

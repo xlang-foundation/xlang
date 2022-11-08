@@ -10,6 +10,7 @@ namespace X
 	{
 		httplib::Server m_srv;
 		int m_port = 0;
+		int m_padding = 0;
 	public:
 		DevServer(int port);
 		~DevServer();

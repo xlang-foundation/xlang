@@ -24,4 +24,6 @@ add_library(${PROJECT_NAME}
 
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static)
+else()
+    target_link_libraries(${PROJECT_NAME} ssl)
 endif()

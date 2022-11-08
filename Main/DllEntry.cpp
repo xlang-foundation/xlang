@@ -61,7 +61,7 @@ bool LoadDevopsEngine(int port = 3141)
 	std::vector<std::string> candiateFiles;
 	std::string engName("xlang_devsrv");
 	bool bRet = file_search(g_pXload->GetConfig().appPath,
-		engName + ShareLibExt, candiateFiles);
+		LibPrefix+engName + ShareLibExt, candiateFiles);
 	if (bRet && candiateFiles.size() > 0)
 	{
 		loadDllName = candiateFiles[0];
@@ -72,7 +72,7 @@ bool LoadDevopsEngine(int port = 3141)
 		for (auto& pa : g_pXload->GetConfig().dllSearchPath)
 		{
 			bRet = file_search(pa,
-				engName + ShareLibExt, candiateFiles);
+				LibPrefix+engName + ShareLibExt, candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
 				loadDllName = candiateFiles[0];
@@ -111,7 +111,7 @@ bool LoadPythonEngine()
 	std::vector<std::string> candiateFiles;
 	std::string engName("pyeng");
 	bool bRet = file_search(g_pXload->GetConfig().appPath,
-		engName + ShareLibExt, candiateFiles);
+		LibPrefix+engName + ShareLibExt, candiateFiles);
 	if (bRet && candiateFiles.size() > 0)
 	{
 		loadDllName = candiateFiles[0];
@@ -122,7 +122,7 @@ bool LoadPythonEngine()
 		for (auto& pa : g_pXload->GetConfig().dllSearchPath)
 		{
 			bRet = file_search(pa,
-				engName + ShareLibExt, candiateFiles);
+				LibPrefix+engName + ShareLibExt, candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
 				loadDllName = candiateFiles[0];

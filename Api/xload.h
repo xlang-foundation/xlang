@@ -18,6 +18,9 @@ namespace X
 		bool runAsBackend = false;//-run_as_backend
 		bool enterEventLoop = false;//-event_loop
 		bool runEventLoopInThread = false;
+		bool padding1 = false;
+		bool padding2 = false;
+		bool padding3 = false;
 		std::string inlineCode;//-c "code"
 		std::string fileName;
 		std::vector<std::string> passInParams;

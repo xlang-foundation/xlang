@@ -5,6 +5,7 @@
 #include <Windows.h>
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
+#define LibPrefix ""
 #define ShareLibExt ".dll"
 #define LOADLIB(path) LoadLibraryEx(path,NULL,LOAD_WITH_ALTERED_SEARCH_PATH)
 #define GetProc(handle,funcName) GetProcAddress((HMODULE)handle, funcName)
@@ -18,6 +19,7 @@
 #include <dirent.h>
 #define Path_Sep_S "/"
 #define Path_Sep '/'
+#define LibPrefix "lib"
 #define ShareLibExt ".so"
 #define LOADLIB(path) dlopen(path, RTLD_LAZY)
 #define GetProc(handle,funcName) dlsym(handle, funcName)
@@ -138,7 +140,7 @@ namespace X
 		bool bHaveDll = false;
 		std::vector<std::string> candiateFiles;
 		bool bRet = file_search(searchPath,
-			dllMainName + ShareLibExt, candiateFiles,false);
+			LibPrefix+dllMainName + ShareLibExt, candiateFiles,false);
 		if (bRet && candiateFiles.size() > 0)
 		{
 			findFileName = candiateFiles[0];
@@ -163,11 +165,7 @@ namespace X
 	int XLoad::Load(Config* pCfg)
 	{
 		m_pConfig = pCfg;
-#if (WIN32)
 		std::string engName("xlang_eng");
-#else
-		std::string engName("libxlang_eng");
-#endif
 		std::string loadDllName;
 		bool bFound = SearchDll(engName, m_pConfig->appPath, loadDllName);
 		if (!bFound)

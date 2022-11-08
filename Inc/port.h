@@ -2,6 +2,7 @@
 #include <Windows.h>
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
+#define LibPrefix ""
 #define ShareLibExt ".dll"
 #define LOADLIB(path) LoadLibraryEx(path,NULL,LOAD_WITH_ALTERED_SEARCH_PATH)
 #define GetProc(handle,funcName) GetProcAddress((HMODULE)handle, funcName)
@@ -20,6 +21,7 @@
 #include <dlfcn.h>
 #define Path_Sep_S "/"
 #define Path_Sep '/'
+#define LibPrefix "lib"
 #define ShareLibExt ".so"
 #define LOADLIB(path) dlopen(path, RTLD_LAZY)
 #define GetProc(handle,funcName) dlsym(handle, funcName)

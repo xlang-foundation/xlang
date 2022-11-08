@@ -32,7 +32,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	//search xlang.app folder first
 	std::vector<std::string> candiateFiles;
 	bool bRet = file_search(g_pXload->GetConfig().appPath,
-		loadingModuleName + ShareLibExt, candiateFiles);
+		LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
 	if (bRet && candiateFiles.size() > 0)
 	{
 		loadDllName = candiateFiles[0];
@@ -42,7 +42,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	if (!bHaveDll)
 	{
 		bRet = file_search(g_pXload->GetConfig().xlangEnginePath,
-			loadingModuleName + ShareLibExt, candiateFiles);
+			LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
 		if (bRet && candiateFiles.size() > 0)
 		{
 			loadDllName = candiateFiles[0];
@@ -51,7 +51,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	}
 	if (!bHaveDll && !curModulePath.empty())
 	{
-		bRet = file_search(curModulePath, loadingModuleName + ShareLibExt, candiateFiles);
+		bRet = file_search(curModulePath, LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
 		if (bRet && candiateFiles.size() > 0)
 		{
 			loadDllName = candiateFiles[0];
@@ -64,7 +64,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 		rt->M()->GetSearchPaths(searchPaths);
 		for (auto& pa : searchPaths)
 		{
-			bRet = file_search(pa, loadingModuleName + ShareLibExt, candiateFiles);
+			bRet = file_search(pa, LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
 				loadDllName = candiateFiles[0];

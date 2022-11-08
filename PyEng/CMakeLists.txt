@@ -80,4 +80,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     "${Python3_LIBRARIES}" Ws2_32
 	)
 else()
+target_link_libraries(${PROJECT_NAME} PUBLIC 
+    "${Python3_LIBRARIES}"
+	)
 endif()

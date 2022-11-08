@@ -25,12 +25,13 @@ namespace X
 				X::Value& retValue)
 		{
 			auto action = kwParams["action"];
+			std::string strAction = action;
 			std::string notifyInfo;
-			if (action == "end")
+			if (strAction == "end")
 			{
 				notifyInfo = "end";
 			}
-			else if (action == "notify")
+			else if (strAction == "notify")
 			{
 				auto param = kwParams["param"];
 				notifyInfo = "$notify$" + param.ToString();

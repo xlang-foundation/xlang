@@ -11,7 +11,7 @@ namespace X
 {
 	namespace AST
 	{
-		std::string GetMemberType(auto type)
+		std::string GetMemberType(APISetBase::MemberType type)
 		{
 			std::string valType;
 			switch (type)
