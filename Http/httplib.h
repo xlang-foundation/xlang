@@ -7493,10 +7493,9 @@ namespace httplib {
                 SSL_CTX_set_default_passwd_cb_userdata(ctx_,
                     (char*)private_key_password);
             }
-
-            if (SSL_CTX_use_certificate_chain_file(ctx_, cert_path) != 1 ||
-                SSL_CTX_use_PrivateKey_file(ctx_, private_key_path, SSL_FILETYPE_PEM) !=
-                1) {
+            auto r1 = SSL_CTX_use_certificate_chain_file(ctx_, cert_path);
+            auto r2 = SSL_CTX_use_PrivateKey_file(ctx_, private_key_path, SSL_FILETYPE_PEM);
+            if (r1!= 1 ||r2!=1) {
                 SSL_CTX_free(ctx_);
                 ctx_ = nullptr;
             }

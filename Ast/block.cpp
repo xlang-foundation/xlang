@@ -53,7 +53,7 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 		int pos = i->GetCharPos();
 		rt->GetCurrentStack()->SetLine(line);
 		rt->GetCurrentStack()->SetCharPos(pos);
-		//std::cout << "Run Line:" << line <<std::endl;
+		std::cout << "Run Line:" << line <<std::endl;
 
 		if (rt->GetTrace())
 		{

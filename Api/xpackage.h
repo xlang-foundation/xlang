@@ -250,7 +250,7 @@ namespace X
 		}
 		template<std::size_t Parameter_Num, class Class_T, class Parent_T>
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
-			PackageCleanup cleanFunc = nullptr)
+			PackageCleanup cleanFunc = nullptr, const char* doc = "")
 		{
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
@@ -281,7 +281,50 @@ namespace X
 						}
 						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
 						return true;
-					}),nullptr });
+					}),nullptr,nullptr,false,std::string(doc) });
+		}
+		template<class Class_T, class Parent_T>
+		void AddVarClass(const char* class_name, const char* doc = "")
+		{
+			auto& apiset = Class_T::APISET();
+			Class_T::BuildAPI();
+			apiset.Create(nullptr);
+			m_members.push_back(MemberInfo{
+				MemberType::Class,class_name,
+				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						Class_T* cls = nullptr;
+						Parent_T* pParentObj = nullptr;
+						if (pContext != nullptr)
+						{
+							XPackage* pParentPack = dynamic_cast<XPackage*>(pContext);
+							if (pParentPack)
+							{
+								pParentObj = (Parent_T*)pParentPack->GetEmbedObj();
+							}
+						}
+						cls = new Class_T(pParentObj,params, kwParams);
+						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
+						return true;
+					}),nullptr,nullptr,false,std::string(doc) });
+		}
+		template<class Class_T>
+		void AddVarClass(const char* class_name,
+			const char* doc = "")
+		{
+			auto& apiset = Class_T::APISET();
+			Class_T::BuildAPI();
+			apiset.Create(nullptr);
+			m_members.push_back(MemberInfo{
+				MemberType::Class,class_name,
+				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						Class_T* cls = new Class_T(params, kwParams);
+						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
+						return true;
+					}),nullptr,nullptr,false,std::string(doc) });
 		}
 		template<std::size_t Parameter_Num, typename F>
 		void AddFunc(const char* func_name, F f,const char* doc = "")

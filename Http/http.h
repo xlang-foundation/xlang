@@ -2,33 +2,56 @@
 #include "xpackage.h"
 #include "xlang.h"
 #include <vector>
+#include <string>
 
 namespace X
 {
 	class HttpServer
 	{
 		void* m_pSrv = nullptr;
+		bool m_bAsHttps = false;
+		std::string m_cert_path;
+		std::string m_private_key_path;
+		std::string m_client_ca_cert_file_path;
+		std::string m_client_ca_cert_dir_path;
+		std::string m_private_key_password;
 		std::vector<void*> m_handlers;
 	public:
 		BEGIN_PACKAGE(HttpServer)
 			APISET().AddEvent("OnConnect");
-			APISET().AddPropWithType<std::string>("name", &HttpServer::name);
-			APISET().AddProp0("test", &HttpServer::test);
 			APISET().AddFunc<2>("listen", &HttpServer::Listen);
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
 		END_PACKAGE
 	public:
 
-		int test = 1234;
-		std::string name;
-
-		HttpServer()
+		HttpServer(X::ARGS& params, X::KWARGS& kwParams)
 		{
-			Init();
+			if (params.size() > 0)
+			{
+				m_bAsHttps = true;
+				m_cert_path = params[0].ToString();
+				if (params.size() > 1)
+				{
+					m_private_key_path = params[1].ToString();
+				}
+				if (params.size() > 2)
+				{
+					m_client_ca_cert_file_path = params[2].ToString();
+				}
+				if (params.size() > 3)
+				{
+					m_client_ca_cert_dir_path = params[3].ToString();
+				}
+				if (params.size() > 4)
+				{
+					m_private_key_password = params[4].ToString();
+				}
+			}
+			Init(m_bAsHttps);
 		}
 		~HttpServer();
-		void Init();
+		void Init(bool asHttps);
 		bool Listen(std::string srvName, int port);
 		bool Stop();
 		bool Get(std::string pattern, X::Value& valHandler);
@@ -99,7 +122,10 @@ namespace X
 	{
 	public:
 		BEGIN_PACKAGE(Http)
-			APISET().AddClass<0, HttpServer>("Server");
+			APISET().AddVarClass<HttpServer>("Server",
+				"for http server,no parameters,for https with ssl,"
+				"[cert_path,private_key_path,client_ca_cert_file_path,"
+				"client_ca_cert_dir_path,private_key_password]");
 			APISET().AddClass<0, HttpResponse>("Response");
 			APISET().AddClass<0, HttpRequest>("Request");
 			APISET().AddClass<1, HttpClient>("Client");

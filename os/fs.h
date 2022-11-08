@@ -46,14 +46,14 @@ namespace X
 			{
 				char* data = new char[size];
 				m_stream.read(data, size);
-				return X::Value(g_pXHost->CreateBin(data, size,true));
+				return X::Value(g_pXHost->CreateBin(data, size,true),false);
 			}
 			else
 			{
 				auto* pStr = g_pXHost->CreateStr(nullptr, size);
 				char* data = pStr->Buffer();
 				m_stream.read(data, size);
-				return X::Value(pStr);
+				return X::Value(pStr,false);
 			}
 		}
 		bool write(X::Value p)

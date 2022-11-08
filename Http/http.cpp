@@ -4,14 +4,31 @@
 
 namespace X
 {
-	void HttpServer::Init()
+	void HttpServer::Init(bool asHttps)
 	{
-		httplib::Server* pSrv = new httplib::Server();
-		if (!pSrv->is_valid())
+		if (asHttps)
 		{
-			printf("server has an error...\n");
+			httplib::SSLServer* pSrv = new httplib::SSLServer(
+				m_cert_path =="" ? nullptr:m_cert_path.c_str(),
+				m_private_key_path =="" ? nullptr:m_private_key_path.c_str(),
+				m_client_ca_cert_file_path =="" ?nullptr:m_client_ca_cert_file_path.c_str(),
+				m_client_ca_cert_dir_path == ""?nullptr: m_client_ca_cert_dir_path.c_str(),
+				m_private_key_password ==""?nullptr: m_private_key_password.c_str());
+			if (!pSrv->is_valid())
+			{
+				printf("server has an error...\n");
+			}
+			m_pSrv = (void*)pSrv;
 		}
-		m_pSrv = (void*)pSrv;
+		else
+		{
+			httplib::Server* pSrv = new httplib::Server();
+			if (!pSrv->is_valid())
+			{
+				printf("server has an error...\n");
+			}
+			m_pSrv = (void*)pSrv;
+		}
 	}
 	HttpServer::~HttpServer()
 	{
@@ -47,7 +64,7 @@ namespace X
 				m_handlers.push_back((void*)pHandler);
 			}
 		}
-		XPackage* pCurPack = APISET().GetPack();
+		XPackage* pCurPack = APISET().GetProxy(this);
 		((httplib::Server*)m_pSrv)->Get(pattern,
 			[pHandler, pCurPack](const httplib::Request& req,
 				httplib::Response& res)
@@ -56,10 +73,10 @@ namespace X
 				{
 					ARGS params0;
 					HttpRequest* pHttpReq = new HttpRequest((void*)&req);
-					params0.push_back(X::Value(pHttpReq->APISET().GetPack()));
+					params0.push_back(X::Value(pHttpReq->APISET().GetProxy(pHttpReq)));
 
 					HttpResponse* pHttpResp = new HttpResponse(&res);
-					params0.push_back(X::Value(pHttpReq->APISET().GetPack()));
+					params0.push_back(X::Value(pHttpResp->APISET().GetProxy(pHttpResp)));
 
 					KWARGS kwParams0;
 					X::Value retValue0;
@@ -124,8 +141,7 @@ namespace X
 	X::Value HttpRequest::GetMethod()
 	{
 		auto* pReq = (httplib::Request*)m_pRequest; 
-		std::string strVal = pReq->method;
-		return X::Value((char*)strVal.c_str(), (int)strVal.size()); 
+		return X::Value(pReq->method);
 	}
 	X::Value  HttpRequest::GetBody()
 	{
@@ -136,14 +152,13 @@ namespace X
 	X::Value  HttpRequest::GetPath()
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
-		std::string strVal = pReq->path;
-		return X::Value((char*)strVal.c_str(), (int)strVal.size());
+		return X::Value(pReq->path);
 	}
 	X::Value  HttpRequest::Get_remote_addr()
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		std::string strVal = pReq->remote_addr;
-		return X::Value((char*)strVal.c_str(), (int)strVal.size());
+		return X::Value(pReq->remote_addr);
 	}
 	X::Value  HttpRequest::GetAllHeaders()
 	{

@@ -171,9 +171,9 @@ namespace X
 		};
 
 		static StrOp _strop;
-		AST::Scope* Str::GetScope()
+		void Str::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
-			return &_strop;
+			bases.push_back(&_strop);
 		}
 		void Str::cleanup()
 		{

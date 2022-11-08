@@ -45,8 +45,9 @@ namespace Data
 			newObj->IncRef();
 			return newObj;
 		}
+		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
+
 		virtual char* Buffer() override { return (char*)m_s.c_str(); }
-		virtual AST::Scope* GetScope();
 		virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 		{
 			Object::ToBytes(rt,pContext,stream);
