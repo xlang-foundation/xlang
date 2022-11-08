@@ -91,6 +91,7 @@ export class XLangRuntime extends EventEmitter {
 	private _sourceFile: string = '';
 	private _moduleKey: number = 0;
 	private _sessionRunning: boolean = false;
+	private _srvaddress:string ="localhost";
 	public get sourceFile() {
 		return this._sourceFile;
 	}
@@ -159,7 +160,7 @@ export class XLangRuntime extends EventEmitter {
 	{
 		const https = require('http');
 		const options = {
-			hostname: 'localhost',
+			hostname: this._srvaddress,
 			port: 3141,
 			path: '/devops/getnotify',
 			method: 'GET'
@@ -248,7 +249,7 @@ export class XLangRuntime extends EventEmitter {
 		};
 		const requestargs = querystring.stringify(parameters);
 		const options = {
-		hostname: 'localhost',
+		hostname: this._srvaddress,
 		port: 3141,
 		path: '/devops/run?'+requestargs,
 		method: 'GET'
