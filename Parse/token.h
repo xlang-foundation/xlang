@@ -25,6 +25,9 @@ struct CoreContext
 	char* spos=nil;//source pos
 	short curNode=0;//offset in kwTree
 	int leadingSpaceCount = 0;
+	//count char( not space and not tab) per line start from first this kind char
+	//reset when meet \n
+	int lineCharCount = 0;
 	LastCharType lct = LastCharType::LCT_None;
 	char* token_start=0;
 	int token_startline = 0;
@@ -46,7 +49,8 @@ enum TokenIndex
 	TokenStrWithFormat = -102,
 	TokenEOS = -13,
 	TokenLineComment = -20,
-	TokenComment = -21
+	TokenComment = -21,
+	TokenFeedOp = -22
 };
 
 enum class TokenErrorType
@@ -85,6 +89,7 @@ class Token
 	bool InQuote = false;
 	char quoteBeginChar = 0;
 	bool InLineComment = false;
+	bool InFeedOp = false;//for %
 	bool InMatching = false;
 
 	int begin_quoteCnt = 0;
@@ -107,6 +112,7 @@ class Token
 	{
 		_context.lineNo++;
 		_context.charPos = 0;
+		_context.lineCharCount = 0;
 	}
 	inline void ResetToRoot()
 	{
@@ -123,7 +129,6 @@ class Token
 		return idx;
 	}
 	bool MatchInTree(char c);
-	void ScanLineComment(char& c);
 	void token_out(short idx,int offset =-1,bool callReset=true);
 	inline void ifnotstart_token_start()
 	{

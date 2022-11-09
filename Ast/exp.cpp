@@ -227,29 +227,30 @@ bool Param::Parse(std::string& strVarName,
 	}
 	return true;
 }
-bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
+bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
+	const char* s_in, int size,std::string& outStr)
 {
-	std::string str0;
+	std::string& str0 = outStr;
 	bool bMeetSlash = false;
 	bool IsOctal = false;
 	int ecsVal = 0;
 	int digitCount = 0;
 	bool IsHex = false;
 	int i = 0;
-	while(i<m_size)
+	while(i< size)
 	{
-		char c = m_s[i++];
+		char c = s_in[i++];
 		if (c == '$')
 		{
-			if(i < m_size)
+			if(i < size)
 			{
-				if (m_s[i] == '{')
+				if (s_in[i] == '{')
 				{//enter case $${var}
 					int j = i;
 					bool bMeetEnd = false;
-					while (j < m_size)
+					while (j < size)
 					{
-						if (m_s[j] == '}')
+						if (s_in[j] == '}')
 						{
 							bMeetEnd = true;
 							break;
@@ -263,7 +264,7 @@ bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 						Scope* pMyScope = GetScope();
 						if (pMyScope)
 						{
-							std::string varName(m_s + i + 1, j - i - 1);
+							std::string varName(s_in + i + 1, j - i - 1);
 							std::vector<std::string> listVars 
 								= split(varName, ',');
 							for (auto it : listVars)
@@ -447,9 +448,18 @@ bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 			bMeetSlash = false;
 		}
 	}
-	Data::Str* pStrObj = new Data::Str(str0);
-	v = Value(pStrObj);
 	return true;
+}
+bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v)
+{
+	std::string stOut;
+	bool bOK = RunStringExpWithFormat(rt, pContext, m_s, m_size, stOut);
+	if (bOK)
+	{
+		Data::Str* pStrObj = new Data::Str(stOut);
+		v = Value(pStrObj);
+	}
+	return bOK;
 }
 }
 }

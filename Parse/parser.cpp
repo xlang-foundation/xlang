@@ -5,6 +5,7 @@
 #include "module.h"
 #include "var.h"
 #include "func.h"
+#include "feedop.h"
 #include "manager.h"
 #include "op_registry.h"
 
@@ -365,6 +366,16 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		}
 		if (idx == TokenLineComment || idx == TokenComment)
 		{
+		}
+		else if (idx == TokenFeedOp)
+		{
+			AST::Operator* op = new AST::FeedOp(s.s, s.size);
+			op->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
+			m_curBlkState->ProcessPrecedenceOp(
+				get_last_token(), op);
+			m_curBlkState->PushOp(op);
+			push_preceding_token(idx);
+			NewLine();
 		}
 		else if (idx == TokenStr || idx == TokenStrWithFormat)
 		{

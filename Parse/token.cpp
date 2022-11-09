@@ -55,14 +55,7 @@ void Token::token_out(short idx,int offset,bool callReset)
 	}
 	ClearToken();
 }
-void Token::ScanLineComment(char& c)
-{
-	do
-	{
-		c = GetChar();
-	} while (c != '\n' && c != 0);
-	token_out(TokenLineComment);
-}
+
 void Token::Scan()
 {
 	static const char* ops = "~`!@#$%^&*()-+={}[]|:;<>,.?/\t\r\n \\'\"#";
@@ -80,6 +73,10 @@ void Token::Scan()
 			token_out(TokenEOS);
 			break;
 		}
+		if (c != ' ' && c != '\t')
+		{
+			_context.lineCharCount++;
+		}
 		//process case ${vars} inside string
 		if (c == '{')
 		{
@@ -92,7 +89,7 @@ void Token::Scan()
 		switch (c)
 		{
 		case ' ':
-			if (!InQuote && !InLineComment)
+			if (!InQuote && !InLineComment && !InFeedOp)
 			{
 				if (!InSpace)
 				{
@@ -143,6 +140,12 @@ void Token::Scan()
 				token_out(TokenLineComment);
 				InMatching = false;
 				InLineComment = false;
+			}
+			else if (InFeedOp)
+			{
+				token_out(TokenFeedOp);
+				InMatching = false;
+				InFeedOp = false;
 			}
 			else
 			{
@@ -223,7 +226,7 @@ void Token::Scan()
 					}
 				}
 			}//end if (InQuote)
-			else if (!InLineComment)
+			else if (!InLineComment && !InFeedOp)
 			{
 				InQuote = true;
 				quoteBeginChar = c;
@@ -274,7 +277,14 @@ void Token::Scan()
 					begin_quoteCnt = 0;//reset
 				}
 			}
-			else if (!InLineComment)
+			else if (c == '%' && _context.lineCharCount == 1)
+			{
+				token_out(GetLastMatchedNodeIndex());
+				InFeedOp = true;
+				InMatching = false;
+				new_token_start();
+			}
+			else if (!InLineComment && ! InFeedOp)
 			{
 				ifnotstart_token_start();
 				if (InMatching)

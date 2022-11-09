@@ -41,6 +41,7 @@ enum class ObType
 	ColonOp,
 	CommaOp,
 	SemicolonOp,
+	FeedOp,
 	As,
 	For,
 	While,
@@ -199,6 +200,8 @@ public:
 			}
 		}
 	}
+	bool RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
+		const char* s_in,int size,std::string& outStr);
 	ObType m_type = ObType::Base;
 };
 class Str :
@@ -253,12 +256,13 @@ public:
 		}
 		return true;
 	}
-	bool RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
+	bool RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v);
+
 	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (m_haveFormat)
 		{
-			return RunWithFormat(rt, pContext, v, lValue);
+			return RunWithFormat(rt, pContext, v);
 		}
 		else
 		{
