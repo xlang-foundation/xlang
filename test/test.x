@@ -1,6 +1,5 @@
 for i in range(2):
 	print("Table-----${i}------")
-	#SetTextRender(html)
 	%<H1>Pipeline</H1>
 	%<Table>
 	for k in range(2):

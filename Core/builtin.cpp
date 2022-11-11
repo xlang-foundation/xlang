@@ -29,6 +29,7 @@
 #include "attribute.h"
 #include "devops.h"
 #include "msgthread.h"
+#include "runtime.h"
 
 Locker _printLock;
 bool U_Print(X::XRuntime* rt,X::XObj* pContext,
@@ -643,6 +644,35 @@ bool U_LRpc_Listen(X::XRuntime* rt, XObj* pContext,
 	X::MsgThread::I().Start();
 	return true;
 }
+bool U_PushWritePad(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() < 1)
+	{
+		return false;
+	}
+	auto* pRuntime = dynamic_cast<XlangRuntime*>(rt);
+	std::string alais;
+	if (params.size() >= 2)
+	{
+		alais = params[1].ToString();
+	}
+	int padIndex = pRuntime->PushWritePad(params[0], alais);
+	retValue = X::Value(padIndex);
+	return true;
+}
+bool U_PopWritePad(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	auto* pRuntime = dynamic_cast<XlangRuntime*>(rt);
+	pRuntime->PopWritePad();
+	return true;
+}
+
 bool Builtin::RegisterInternals()
 {
 	X::RegisterPackage<X::JsonWrapper>("json");
@@ -661,6 +691,8 @@ bool Builtin::RegisterInternals()
 		after the sleep will call this function");
 	Register("time", (X::U_FUNC)U_Time, params);
 	Register("breakpoint", (X::U_FUNC)U_BreakPoint, params);
+	Register("pushWritepad", (X::U_FUNC)U_PushWritePad, params,"pushWritepad(obj which has WritePad(input) func)");
+	Register("popWritepad", (X::U_FUNC)U_PopWritePad, params,"popWritepad() pop up last WritePad");
 	Register("taskrun", (X::U_FUNC)U_TaskRun, params,"",true);
 	Register("threadid", (X::U_FUNC)U_ThreadId, params);
 	Register("pid", (X::U_FUNC)U_ProcessId, params);

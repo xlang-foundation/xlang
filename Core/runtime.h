@@ -2,6 +2,8 @@
 #include "stackframe.h"
 #include "utility.h"
 #include "xlang.h"
+#include <unordered_map>
+#include <vector>
 
 namespace X {
 namespace AST
@@ -31,6 +33,12 @@ typedef bool (*XTraceFunc)(
 	AST::Scope* pThisBlock,
 	AST::Expression* pCurrentObj);
 
+struct WritePadInfo
+{
+	X::Value obj;//has WritePad Function
+	X::Value writePadFunc;
+	std::string alias;
+};
 class XlangRuntime:
 	public XRuntime
 {
@@ -38,6 +46,9 @@ class XlangRuntime:
 	AST::Module* m_pModule = nullptr;
 	AST::StackFrame* m_stackBottom = nullptr;
 	XTraceFunc m_tracefunc = nullptr;
+
+	std::vector<WritePadInfo> m_WritePads;
+	std::unordered_map<std::string, int> m_WritePadMap;
 public:
 	XlangRuntime()
 	{
@@ -47,6 +58,23 @@ public:
 	inline void SetTrace(XTraceFunc f)
 	{
 		m_tracefunc = f;
+	}
+	bool CallWritePads(Value& input,Value& indexOrAlias);
+	int PushWritePad(X::Value valObj, std::string alias);
+	inline void PopWritePad()
+	{
+		int size = (int)m_WritePads.size();
+		if (size == 0)
+		{
+			return;
+		}
+		auto last = m_WritePads[size - 1];
+		if (!last.alias.empty())
+		{
+			auto it = m_WritePadMap.find(last.alias);
+			m_WritePadMap.erase(it);
+		}
+		m_WritePads.erase(m_WritePads.end()-1);
 	}
 	virtual bool CreateEmptyModule() override;
 	inline XTraceFunc GetTrace() { return m_tracefunc; }

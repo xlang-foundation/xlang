@@ -33,13 +33,7 @@ namespace X
 			{
 
 			}
-			virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
-			{
-				std::string info;
-				RunStringExpWithFormat(rt, pContext, m_s+1, m_size-1, info);
-				std::cout << info << std::endl;
-				return true;
-			}
+			virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 		};
 	}
 }

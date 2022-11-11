@@ -4,6 +4,12 @@
 
 namespace X
 {
+	X::Value Http::WritePad(X::Value& input)
+	{
+		std::string strInput = input.ToString();
+		std::cout << "http:" << input.ToString() << std::endl;
+		return input;
+	}
 	void HttpServer::Init(bool asHttps)
 	{
 		if (asHttps)

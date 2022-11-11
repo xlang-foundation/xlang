@@ -3,6 +3,7 @@
 #include "xlang.h"
 #include <vector>
 #include <string>
+#include <iostream>
 
 namespace X
 {
@@ -122,6 +123,7 @@ namespace X
 	{
 	public:
 		BEGIN_PACKAGE(Http)
+			APISET().AddFunc<1>("WritePad", &Http::WritePad);
 			APISET().AddVarClass<HttpServer>("Server",
 				"for http server,no parameters,for https with ssl,"
 				"[cert_path,private_key_path,client_ca_cert_file_path,"
@@ -130,5 +132,6 @@ namespace X
 			APISET().AddClass<0, HttpRequest>("Request");
 			APISET().AddClass<1, HttpClient>("Client");
 		END_PACKAGE
+		X::Value WritePad(X::Value& input);
 	};
 }
