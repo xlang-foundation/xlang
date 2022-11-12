@@ -248,6 +248,7 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XList)
+		virtual Value Get(long long idx) = 0;
 	};
 	class XDict :
 		virtual public XObj

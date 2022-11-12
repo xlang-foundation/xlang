@@ -26,3 +26,5 @@ add_subdirectory("DevSrv")
 if(WIN32)
 add_subdirectory("winner")
 endif()
+add_subdirectory("sqlite")
+

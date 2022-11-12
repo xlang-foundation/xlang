@@ -68,7 +68,15 @@ void Token::Scan()
 		char c = GetChar();
 		if (c == 0)
 		{
-			token_out(GetLastMatchedNodeIndex());
+			if (InFeedOp)
+			{
+				token_out(TokenFeedOp);
+				InFeedOp = false;
+			}
+			else
+			{
+				token_out(GetLastMatchedNodeIndex());
+			}
 			new_token_start();
 			token_out(TokenEOS);
 			break;
@@ -107,7 +115,7 @@ void Token::Scan()
 				InSpace = false;
 				ClearToken();
 			}
-			if (InQuote)
+			if (InQuote || InFeedOp)
 			{
 				meetSlash = true;
 			}
@@ -141,7 +149,7 @@ void Token::Scan()
 				InMatching = false;
 				InLineComment = false;
 			}
-			else if (InFeedOp)
+			else if (InFeedOp && !meetSlash)
 			{
 				token_out(TokenFeedOp);
 				InMatching = false;
@@ -152,14 +160,22 @@ void Token::Scan()
 				if (PrevChar() != '\\')
 				{//if not line continue case, out put line break also
 				//output previous token if have
-					token_out(GetLastMatchedNodeIndex());
+					if (InFeedOp)
+					{
+						token_out(TokenFeedOp);
+						InFeedOp = false;
+					}
+					else
+					{
+						token_out(GetLastMatchedNodeIndex());
+					}
 					new_token_start();
 					if (MatchInTree(c))
 					{
 						token_out(GetLastMatchedNodeIndex(),0);
 					}
 				}
-				else
+				else if(!InFeedOp)
 				{
 					//output previous token if have,but skip the last slash
 					token_out(GetLastMatchedNodeIndex(),-2);

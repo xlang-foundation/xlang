@@ -44,7 +44,7 @@ namespace X
 			X::g_pXHost->RegisterPackage(pack_name, &apiset,[]()
 				{
 					impl_pack_class* pPackImpl = new impl_pack_class();
-					return impl_pack_class::APISET().GetPack();
+					return impl_pack_class::APISET().GetProxy(pPackImpl);
 				});
 		}
 		else

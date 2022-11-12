@@ -201,7 +201,8 @@ public:
 		}
 	}
 	bool RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
-		const char* s_in,int size,std::string& outStr);
+		const char* s_in,int size,std::string& outStr,bool UseBindMode,
+		std::vector<X::Value>& bind_data_list);
 	ObType m_type = ObType::Base;
 };
 class Str :

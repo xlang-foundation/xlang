@@ -311,6 +311,12 @@ public:
 			m_data[index] = v;
 		}
 	}
+	virtual Value Get(long long idx) override
+	{
+		Value v0;
+		Get(idx, v0);
+		return v0;
+	}
 	inline bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{

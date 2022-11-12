@@ -37,6 +37,7 @@ struct WritePadInfo
 {
 	X::Value obj;//has WritePad Function
 	X::Value writePadFunc;
+	bool UsingDataBinding = false;
 	std::string alias;
 };
 class XlangRuntime:
@@ -59,23 +60,12 @@ public:
 	{
 		m_tracefunc = f;
 	}
-	bool CallWritePads(Value& input,Value& indexOrAlias);
+	bool GetWritePadNum(int& count, int& dataBindingCount);
+	bool CallWritePads(Value& fmtString,Value& bindingString,
+		Value& indexOrAlias,
+		std::vector<Value> Value_Bind_list);
 	int PushWritePad(X::Value valObj, std::string alias);
-	inline void PopWritePad()
-	{
-		int size = (int)m_WritePads.size();
-		if (size == 0)
-		{
-			return;
-		}
-		auto last = m_WritePads[size - 1];
-		if (!last.alias.empty())
-		{
-			auto it = m_WritePadMap.find(last.alias);
-			m_WritePadMap.erase(it);
-		}
-		m_WritePads.erase(m_WritePads.end()-1);
-	}
+	void PopWritePad();
 	virtual bool CreateEmptyModule() override;
 	inline XTraceFunc GetTrace() { return m_tracefunc; }
 	inline long long GetThreadId() { return m_threadId; }

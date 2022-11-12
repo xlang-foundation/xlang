@@ -10,7 +10,22 @@ namespace X
 	{
 		G::I().UnbindRuntimeToThread(this);
 	}
-	bool XlangRuntime::CallWritePads(Value& input, Value& indexOrAlias)
+	bool XlangRuntime::GetWritePadNum(int& count, int& dataBindingCount)
+	{
+		count = (int)m_WritePads.size();
+		dataBindingCount = 0;
+		for (int i = 0; i < count; i++)
+		{
+			if (m_WritePads[i].UsingDataBinding)
+			{
+				dataBindingCount++;
+			}
+		}
+		return true;
+	}
+	bool XlangRuntime::CallWritePads(Value& fmtString, Value& bindingString,
+		Value& indexOrAlias,
+		std::vector<Value> Value_Bind_list)
 	{
 		int padIndex = -1;
 		std::string alias;
@@ -23,6 +38,7 @@ namespace X
 		{
 			alias = indexOrAlias.ToString();
 		}
+		Value ValList;
 		for (int i=0;i<(int)m_WritePads.size();i++)
 		{
 			auto& pad = m_WritePads[i];
@@ -39,10 +55,28 @@ namespace X
 			}
 
 			ARGS params;
-			params.push_back(input);
+			if (pad.UsingDataBinding)
+			{
+				params.push_back(bindingString);
+				if (ValList.IsInvalid())
+				{
+					auto list = List();
+					for (auto idx : Value_Bind_list)
+					{
+						list += idx;
+					}
+					ValList = list;
+				}
+				params.push_back(ValList);
+			}
+			else
+			{
+				params.push_back(fmtString);
+			}
 			KWARGS kwargs;
 			Value retVal;
-			bool bOK = pad.writePadFunc.GetObj()->Call(this, pad.obj.GetObj(), params, kwargs, retVal);
+			bool bOK = pad.writePadFunc.GetObj()->Call(
+				this, pad.obj.GetObj(), params, kwargs, retVal);
 		}
 		return true;
 	}
@@ -57,8 +91,28 @@ namespace X
 		{
 			return -1;
 		}
+		static std::string WritePadBindingFuncName("WritePadUseDataBinding");
 		static std::string WritePadFuncName("WritePad");
-		int index = pScope->AddOrGet(WritePadFuncName, true);
+		bool UsingDataBinding = false;
+		int index = pScope->AddOrGet(WritePadBindingFuncName, true);
+		if (index >= 0)
+		{
+			X::Value varFunc;
+			if (!pScope->Get(this, nullptr, index, varFunc))
+			{
+				return -1;
+			}
+			ARGS params;
+			KWARGS kwargs;
+			Value retVal;
+			bool bOK = varFunc.GetObj()->Call(this, 
+				valObj.GetObj(), params, kwargs, retVal);
+			if (bOK && retVal.IsTrue())
+			{
+				UsingDataBinding = true;
+			}
+		}
+		index = pScope->AddOrGet(WritePadFuncName, true);
 		if (index < 0)
 		{
 			return -1;
@@ -68,13 +122,40 @@ namespace X
 		{
 			return -1;
 		}
-		m_WritePads.push_back(WritePadInfo{valObj,varFunc,alias});
+		m_WritePads.push_back(WritePadInfo{valObj,varFunc,
+			UsingDataBinding,alias});
 		int padIndex = (int)m_WritePads.size() - 1;
 		if (!alias.empty())
 		{
 			m_WritePadMap.emplace(std::make_pair(alias,padIndex));
 		}
 		return padIndex;
+	}
+	void XlangRuntime::PopWritePad()
+	{
+		int size = (int)m_WritePads.size();
+		if (size == 0)
+		{
+			return;
+		}
+		auto last = m_WritePads[size - 1];
+		ARGS params;
+		params.push_back(X::Value());//Invalid value means cleanup this pad
+		if (last.UsingDataBinding)
+		{
+			params.push_back(X::Value());
+		}
+		KWARGS kwargs;
+		Value retVal;
+		last.writePadFunc.GetObj()->Call(
+			this, last.obj.GetObj(), params, kwargs, retVal);
+
+		if (!last.alias.empty())
+		{
+			auto it = m_WritePadMap.find(last.alias);
+			m_WritePadMap.erase(it);
+		}
+		m_WritePads.erase(m_WritePads.end() - 1);
 	}
 	bool XlangRuntime::CreateEmptyModule()
 	{

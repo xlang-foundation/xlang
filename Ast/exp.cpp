@@ -228,7 +228,8 @@ bool Param::Parse(std::string& strVarName,
 	return true;
 }
 bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
-	const char* s_in, int size,std::string& outStr)
+	const char* s_in, int size,std::string& outStr,bool UseBindMode,
+	std::vector<X::Value>& bind_data_list)
 {
 	std::string& str0 = outStr;
 	bool bMeetSlash = false;
@@ -272,11 +273,25 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 								int idx = pMyScope->AddOrGet(it, true);
 								if (idx >= 0)
 								{
-									Value v0;
-									if (pMyScope->Get(rt, pContext, idx, v0))
+									if (UseBindMode)
 									{
-										strPart += v0.ToString();
+										strPart += " ? ";
+										Value v0;
+										if (pMyScope->Get(rt, pContext, idx, v0))
+										{
+											bind_data_list.push_back(v0);
+											bGotVal = true;
+										}
 										bGotVal = true;
+									}
+									else
+									{
+										Value v0;
+										if (pMyScope->Get(rt, pContext, idx, v0))
+										{
+											strPart += v0.ToString();
+											bGotVal = true;
+										}
 									}
 								}
 								else if (it == "&COMMA" || it == "&comma"
@@ -453,7 +468,9 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v)
 {
 	std::string stOut;
-	bool bOK = RunStringExpWithFormat(rt, pContext, m_s, m_size, stOut);
+	std::vector<Value> val_list;
+	bool bOK = RunStringExpWithFormat(rt, pContext, m_s, m_size, stOut,false,
+		val_list);
 	if (bOK)
 	{
 		Data::Str* pStrObj = new Data::Str(stOut);
