@@ -1,4 +1,3 @@
-#include "http.h"
 #include "xhost.h"
 #include "xpackage.h"
 #include "dbmgr.h"

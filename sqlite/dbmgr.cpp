@@ -92,7 +92,8 @@ namespace X
 					auto size = BindingDataList.Size();
 					for (int i = 0; i < size; i++)
 					{
-						dbsmt.bind(i+1, list->Get(i));
+						X::Value v0 = list->Get(i);
+						dbsmt.bind(i+1, v0);
 					}
 				}
 				int colNum = dbsmt.getcolnum();
