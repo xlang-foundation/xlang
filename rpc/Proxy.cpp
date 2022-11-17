@@ -356,7 +356,7 @@ namespace X
 			bool bOK = Connect();
 			if (!bOK)
 			{
-				std::cout << "CantorClient:Tried with fail, will try again"<<std::endl;
+				std::cout << "Client:Tried with fail, will try again" << std::endl;
 				MS_SLEEP(200);
 				continue;
 			}
@@ -367,6 +367,7 @@ namespace X
 			WaitToHostExit();
 			if (m_ExitOnHostExit)
 			{
+				std::cout << "Server Side Exited " << std::endl;
 				mRun = false;
 				m_Exited = true;
 				if (mSMSwapBuffer1)
@@ -379,7 +380,16 @@ namespace X
 				}
 				break;
 			}
+			std::cout << "Server Side Exited,wait to server run again " << std::endl;
 			m_ConnectLock.Lock();
+			if (mSMSwapBuffer1)
+			{
+				mSMSwapBuffer1->Close();
+			}
+			if (mSMSwapBuffer2)
+			{
+				mSMSwapBuffer2->Close();
+			}
 			m_bConnected = false;
 			m_ConnectLock.Unlock();
 		}

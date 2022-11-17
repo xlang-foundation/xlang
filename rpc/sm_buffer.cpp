@@ -218,7 +218,18 @@ namespace X
     {
         if (needSendMsg)
         {
-            SendMsg(key);
+            const int loopNum = 1000;
+            int loopNo = 0;
+            bool bSrvReady = false;
+            while (loopNo < loopNum)
+            {
+                if (SendMsg(key))
+                {
+                    break;
+                }
+                MS_SLEEP(100);
+                loopNo++;
+            }
         }
         m_user = SwapBufferUser::Client;
 
