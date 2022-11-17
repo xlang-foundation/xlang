@@ -236,11 +236,14 @@ bool X::AST::Import::Run(XlangRuntime* rt, XObj* pContext,
 			continue;
 		}
 		//then Python Module
-		auto* pProxyObj =
-			new Data::PyProxyObject(rt, pContext,
-				im.name,m_path, curPath);
-		v = Value(pProxyObj);
-		rt->M()->Add(rt, varName, nullptr, v);
+		if(g_pXload->GetConfig().enablePython)
+		{
+			auto* pProxyObj =
+				new Data::PyProxyObject(rt, pContext,
+					im.name, m_path, curPath);
+			v = Value(pProxyObj);
+			rt->M()->Add(rt, varName, nullptr, v);
+		}
 	}
 	return true;
 }
