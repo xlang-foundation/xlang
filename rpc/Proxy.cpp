@@ -368,6 +368,7 @@ namespace X
 			if (m_ExitOnHostExit)
 			{
 				std::cout << "Server Side Exited " << std::endl;
+				m_ConnectLock.Lock();
 				mRun = false;
 				m_Exited = true;
 				if (mSMSwapBuffer1)
@@ -378,6 +379,8 @@ namespace X
 				{
 					mSMSwapBuffer2->Close();
 				}
+				m_bConnected = false;
+				m_ConnectLock.Unlock();
 				break;
 			}
 			std::cout << "Server Side Exited,wait to server run again " << std::endl;

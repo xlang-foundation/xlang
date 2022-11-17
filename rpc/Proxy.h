@@ -45,7 +45,7 @@ namespace X
 	private:
 		unsigned long mHostProcessId = 0;
 		unsigned long long mSessionId = 0;
-		bool m_ExitOnHostExit = false;
+		bool m_ExitOnHostExit = true;
 		bool m_Exited = false;
 		void WaitToHostExit();
 

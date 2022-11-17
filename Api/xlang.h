@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <exception>
 #include "value.h"
 #include "xhost.h"
 
@@ -397,6 +398,17 @@ namespace X
 		{
 			return *m_obj;
 		}
+	};
+	class XLangException
+		: public std::exception
+	{
+	public:
+		int Code()
+		{
+			return m_code;
+		}
+	protected:
+		int m_code = 0;
 	};
 	using Str = V<XStr>;
 	using Dict = V<XDict>;

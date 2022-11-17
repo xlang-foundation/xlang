@@ -2,17 +2,17 @@
 
 #include <string>
 #include <unordered_map>
-#include <exception>
 #include <string.h>
 #include "xlstream.h"
 #include "value.h"
+#include "xlang.h"
 
 namespace X 
 {
     namespace AST { class Scope; }
     class XlangRuntime;
     class XLangStreamException
-        : public std::exception
+        : public XLangException
     {
     public:
         XLangStreamException(int code)
@@ -23,12 +23,6 @@ namespace X
         {
             return "XLangStream exception happened";
         }
-        int Code()
-        {
-            return m_code;
-        }
-    private:
-        int m_code = 0;
     };
     class XScopeSpace
     {

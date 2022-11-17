@@ -256,6 +256,7 @@ void XLangUnload()
 	{
 		if (g_pXload->GetConfig().runEventLoopInThread)
 		{
+			EventSystem::I().Shutdown();
 			EventLoopThread::I().Stop();
 		}
 	}
