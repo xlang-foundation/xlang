@@ -10,15 +10,22 @@
 
 namespace X {
 	namespace Data { class Object; }
+	namespace AST { class StackFrame; }
 	class OpRegistry;
 	class XlangRuntime;
 	class G:
 		public Singleton<G>
 	{
+		struct ObjInfo
+		{
+#if XLANG_ENG_DBG
+			std::vector<AST::StackFrame*> stacksOwn;
+#endif
+		};
 		std::unordered_map<long long, XlangRuntime*> m_rtMap;//for multiple threads
 		void* m_lockRTMap = nullptr;
 		XlangRuntime* MakeThreadRuntime(long long curTId, XlangRuntime* rt);
-		std::unordered_map<Data::Object*, int> Objects;
+		std::unordered_map<Data::Object*, ObjInfo> Objects;
 		void* m_lock = nullptr;
 		OpRegistry* m_reg = nullptr;
 	public:
@@ -60,10 +67,14 @@ namespace X {
 			UnLock();
 			std::cout << "Left Objects:" << size << std::endl;
 		}
+#if XLANG_ENG_DBG
+		void ObjBindToStack(XObj* pXObj, AST::StackFrame* pStack);
+		void ObjUnbindToStack(XObj* pXObj, AST::StackFrame* pStack);
+#endif
 		inline void AddObj(Data::Object* obj)
 		{
 			Lock();
-			Objects.emplace(std::make_pair(obj,1));
+			Objects.emplace(std::make_pair(obj,ObjInfo{}));
 			UnLock();
 		}
 		inline void RemoveObj(Data::Object* obj)
@@ -72,6 +83,13 @@ namespace X {
 			auto it = Objects.find(obj);
 			if (it != Objects.end())
 			{
+#if XLANG_ENG_DBG
+				if (it->second.stacksOwn.size() > 0)
+				{
+					std::cout << "Object still have ref in stack" 
+						<< it->second.stacksOwn.size() << std::endl;
+				}
+#endif
 				Objects.erase(it);
 			}
 			UnLock();

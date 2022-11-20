@@ -5,6 +5,8 @@ cmake_minimum_required (VERSION 3.8)
 
 project ("xlang_eng")
 
+add_compile_definitions(XLANG_ENG_DBG=1)
+
 include_directories("../Api")
 include_directories("../Inc")
 include_directories("../utils")

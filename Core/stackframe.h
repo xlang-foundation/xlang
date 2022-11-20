@@ -18,6 +18,10 @@ protected:
 	X::Value m_retVal;
 	int m_lineStart = -1;
 	int m_charPos = 0;
+#if XLANG_ENG_DBG
+	void ObjDbgSet(XObj* pObj);
+	void ObjDbgRemove(XObj* pObj);
+#endif
 public:
 	StackFrame()
 	{
@@ -30,6 +34,16 @@ public:
 	{
 		if (m_Values)
 		{
+#if XLANG_ENG_DBG
+			for (int i = 0; i < m_varCnt; i++)
+			{
+				auto& v = m_Values[i];
+				if (v.IsObject())
+				{
+					ObjDbgRemove(v.GetObj());
+				}
+			}
+#endif
 			delete[] m_Values;
 		}
 	}
@@ -83,6 +97,12 @@ public:
 			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		m_Values[idx] = v;
+#if XLANG_ENG_DBG
+		if (v.IsObject())
+		{
+			ObjDbgSet(v.GetObj());
+		}
+#endif
 	}
 	inline void SetReturn(X::Value& v)
 	{

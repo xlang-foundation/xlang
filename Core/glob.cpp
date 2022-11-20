@@ -13,6 +13,41 @@ namespace X {
 		delete (Locker*)m_lockRTMap;
 		delete (Locker*)m_lock;
 	}
+#if XLANG_ENG_DBG
+	void G::ObjBindToStack(XObj* pXObj, AST::StackFrame* pStack)
+	{
+		Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
+		Lock();
+		auto it = Objects.find(pObj);
+		if (it != Objects.end())
+		{
+			it->second.stacksOwn.push_back(pStack);
+		}
+		UnLock();
+	}
+	void G::ObjUnbindToStack(XObj* pXObj, AST::StackFrame* pStack)
+	{
+		Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
+		Lock();
+		auto it = Objects.find(pObj);
+		if (it != Objects.end())
+		{
+			auto& s_list = it->second.stacksOwn;
+			for (auto it2 = s_list.begin(); it2 != s_list.end();)
+			{
+				if (*it2 == pStack)
+				{
+					it2 = s_list.erase(it2);
+				}
+				else
+				{
+					++it2;
+				}
+			}
+		}
+		UnLock();
+	}
+#endif
 	void G::BindRuntimeToThread(XlangRuntime* rt)
 	{
 		long long curTId = rt->GetThreadId();
