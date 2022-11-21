@@ -19,8 +19,8 @@ namespace X
 			}
 			return ref;
 		}
-		inline int Ref() { return m_ref; }
 	public:
+		inline int Ref() { return m_ref; }
 		ObjRef() {}
 		//line below, need to use virtual
 		//for virtual inheritance from derived class

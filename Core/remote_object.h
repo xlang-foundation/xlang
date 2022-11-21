@@ -56,7 +56,7 @@ namespace X
 			}
 			Unlock();
 
-			return Data::Object::DecRef();;
+			return Data::Object::DecRef();
 		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{

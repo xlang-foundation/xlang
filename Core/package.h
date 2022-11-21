@@ -3,6 +3,7 @@
 #include "object.h"
 #include "stackframe.h"
 #include <functional>
+#include "Locker.h"
 
 namespace X
 {
@@ -29,6 +30,7 @@ class Package :
 	{
 		m_funcPackageCleanup = func;
 	}
+	Locker m_lock;
 public:
 	APISetBase* GetAPISet() { return m_pAPISet; }
 	Package(void* pObj):
@@ -43,6 +45,14 @@ public:
 		{
 			Cleanup(m_pObject);
 		}
+	}
+	void Lock()
+	{
+		m_lock.Lock();
+	}
+	void Unlock()
+	{
+		m_lock.Unlock();
 	}
 	void SetAPISet(APISetBase* p)
 	{
@@ -187,6 +197,9 @@ public:
 		{
 			m_pPackage->Scope::IncRef();
 			m_stackFrame = new StackFrame(this);
+			//? multiple threads will cause crash
+			//so lock here to try
+			//m_pPackage->Lock();
 			auto* pBaseStack = m_pPackage->GetStack();
 			int cnt = pBaseStack->GetVarCount();
 			m_stackFrame->SetVarCount(cnt);
@@ -194,12 +207,18 @@ public:
 			{
 				X::Value v0;
 				pBaseStack->Get(i, v0);
+				if (v0.IsObject() && v0.GetObj()->GetType() == ObjType::Prop)
+				{
+					//continue;
+					//v0.GetObj()->IncRef();
+				}
 				if (v0.IsObject() && v0.GetObj()->GetType() == ObjType::ObjectEvent)
 				{
 					v0.Clone();
 				}
 				m_stackFrame->Set(i, v0);
 			}
+			//m_pPackage->Unlock();
 		}
 		m_pObject = pObj;
 		m_t = X::ObjType::Package;
@@ -221,11 +240,13 @@ public:
 		{
 			m_pPackage->Scope::DecRef();
 		}
+		//m_pPackage->Lock();
 		if (m_stackFrame)
 		{
 			delete m_stackFrame;
 			m_stackFrame = nullptr;
 		}
+		//m_pPackage->Unlock();
 	}
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
@@ -244,11 +265,13 @@ public:
 	virtual void RemoveALl() override
 	{
 		m_pPackage->RemoveALl();
+		//m_pPackage->Lock();
 		if (m_stackFrame)
 		{
 			delete m_stackFrame;
 			m_stackFrame = nullptr;
 		}
+		//m_pPackage->Unlock();
 	}
 	inline virtual int AddMethod(const char* name, bool keepRawParams = false) override
 	{

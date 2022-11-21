@@ -309,6 +309,14 @@ namespace X
 		stream >> objId;
 		pProc->NotifyBeforeCall(channel, stream);
 		auto pXObj = CovertIdToXObj(objId);
+		if (pXObj->GetType() == ObjType::Function)
+		{
+			Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
+			if (pObj->Ref() <= 2)
+			{
+				int x = 1;
+			}
+		}
 		pXObj->DecRef();
 		pProc->NotifyAfterCall(channel, stream, true);
 		return true;
