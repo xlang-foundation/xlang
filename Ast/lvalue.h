@@ -11,8 +11,13 @@ namespace X
 		//can't keep when out of scope
 		//so add here,but it is enable when valptr is null
 		Value* valptr = nullptr;
+		bool releaseValPtr = false;
 		XObj* context = nullptr;
 	public:
+		void SetReleaseFlag(bool b)
+		{
+			releaseValPtr = b;
+		}
 		inline LValue(Value& v)
 		{
 			val = v;
@@ -23,6 +28,13 @@ namespace X
 		inline LValue(Value* pVal)
 		{
 			valptr = pVal;
+		}
+		inline ~LValue()
+		{
+			if (releaseValPtr && valptr)
+			{
+				delete valptr;
+			}
 		}
 		inline void SetContext(XObj* p) { context = p; }
 		inline XObj* GetContext() { return context; }

@@ -63,6 +63,8 @@ namespace Data
 		{
 			return m_s;
 		}
+		virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
+			IterateProc proc, ARGS& params, KWARGS& kwParams) override;
 		virtual int cmp(X::Value* r)
 		{
 			return m_s.compare(r->ToString());;
@@ -154,6 +156,12 @@ namespace Data
 			{
 				retList = split(m_s, delims.c_str());
 			}
+			return true;
+		}
+		inline bool SplitWithChars(std::string& delims,
+			std::vector<std::string>& retList)
+		{
+			retList = splitWithChars(m_s, delims.c_str());
 			return true;
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,

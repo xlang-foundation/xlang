@@ -163,6 +163,10 @@ namespace X
 			{
 				m_PyModule = pModule;
 			}
+			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+			{
+				bases.push_back(dynamic_cast<Scope*>(this));
+			}
 			void SetModuleFileName(std::string& fileName)
 			{
 				m_moduleFileName = fileName;

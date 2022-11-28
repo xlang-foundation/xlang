@@ -16,6 +16,7 @@ namespace X
 		Str,
 		Binary,
 		Expr,
+		ConstExpr, //simple expression can be translate into c++
 		Function,
 		MetaFunction,
 		XClassObject,
@@ -236,6 +237,12 @@ namespace X
 	public:
 		virtual std::string GetFileName() = 0;
 		virtual std::string GetPath() = 0;
+	};
+	class XConstExpr :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XConstExpr)
 	};
 	class XStr :
 		virtual public XObj

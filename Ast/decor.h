@@ -3,13 +3,16 @@
 
 namespace X
 {
+	class XlangRuntime;
 	namespace AST
 	{
+		class Expression;
 		class Decorator :
 			virtual public UnaryOp
 		{
 			Expression* m_client = nullptr;
 			bool GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
+			bool RunExp(XlangRuntime* rt,Value& v, LValue* lValue);
 		public:
 			Decorator() :
 				Operator(),

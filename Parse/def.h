@@ -27,6 +27,9 @@ enum class OP_ID
 	Equ,AddEqu,MinusEqu,MulEqu,DivEqu,ModEqu,FloorDivEqu,
 	//	"**=", "&=", "|=", "^=", ">>=", "<<="
 	PowerEqu,AndEqu,OrEqu,NotEqu,RightShiftEqu,LeftShitEqu,
+	//"==", "!=", ">", "<", ">=", "<="
+	Equal,NotEqual,Great,Less, GreatAndEqual,LessAndEqual,
+	And,Or,
 	Count
 };
 

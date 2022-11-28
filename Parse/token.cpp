@@ -82,7 +82,7 @@ void Token::Scan()
 			break;
 		}
 		if (c != ' ' && c != '\t')
-		{
+		{//todo: if inside quote, how to do?
 			_context.lineCharCount++;
 		}
 		//process case ${vars} inside string
@@ -96,19 +96,6 @@ void Token::Scan()
 		}
 		switch (c)
 		{
-		case ' ':
-			if (!InQuote && !InLineComment && !InFeedOp)
-			{
-				if (!InSpace)
-				{
-					token_out(GetLastMatchedNodeIndex());
-					_context.leadingSpaceCount = 0;
-					InSpace = true;
-					InMatching = false;
-				}
-				_context.leadingSpaceCount++;
-			}
-			break;
 		case '\\':
 			if (InSpace)
 			{
@@ -132,7 +119,9 @@ void Token::Scan()
 				if (begin_quoteCnt == 2)//empty string with ""  or ''
 				{
 					token_out((meetDollar || meetSlash)
-						? TokenStrWithFormat : TokenStr, 0);
+						? TokenStrWithFormat : 
+						(NotCharSequnce?TokenStr:TokenCharSequence), 0);
+					NotCharSequnce = false;
 					InQuote = false;
 					//also reset lines below for string
 					meetDollar = false;
@@ -187,6 +176,7 @@ void Token::Scan()
 			break;
 		case '\"':
 		case '\'':
+			NotCharSequnce = (c=='\"');
 			if (InSpace)
 			{
 				InSpace = false;
@@ -229,7 +219,9 @@ void Token::Scan()
 						if (c == quoteBeginChar)
 						{//meet end char
 							token_out((meetDollar|| meetSlash)
-								?TokenStrWithFormat:TokenStr,0);
+								?TokenStrWithFormat:
+								(NotCharSequnce ? TokenStr : TokenCharSequence), 0);
+							NotCharSequnce = false;
 							InQuote = false;
 							//also reset lines below for string
 							meetDollar = false;
@@ -271,6 +263,20 @@ void Token::Scan()
 				}
 			}
 			break;
+		case ' ':
+			if (!InQuote && !InLineComment && !InFeedOp)
+			{
+				if (!InSpace)
+				{
+					token_out(GetLastMatchedNodeIndex());
+					_context.leadingSpaceCount = 0;
+					InSpace = true;
+					InMatching = false;
+				}
+				_context.leadingSpaceCount++;
+				break;
+			}
+			//else not break, continue to default
 		default:
 			if (InSpace)
 			{
@@ -282,7 +288,9 @@ void Token::Scan()
 				if (begin_quoteCnt == 2)//empty string with ""  or ''
 				{
 					token_out((meetDollar || meetSlash)
-						? TokenStrWithFormat : TokenStr, 0);
+						? TokenStrWithFormat : 
+						(NotCharSequnce ? TokenStr : TokenCharSequence), 0);
+					NotCharSequnce = false;
 					InQuote = false;
 					//also reset lines below for string
 					meetDollar = false;

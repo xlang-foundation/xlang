@@ -15,6 +15,7 @@ long long rand64();
 double randDouble(double m0 = LDBL_MIN, double mx = LDBL_MAX);
 std::vector<std::string> split(const std::string& str, char delim);
 std::vector<std::string> split(const std::string& str, const char* delim);
+std::vector<std::string> splitWithChars(const std::string& str, const char* delim);
 std::string concat(std::vector<std::string>& items, const char* delim);
 std::string tostring(unsigned long long x);
 std::string& rtrim(std::string& s);

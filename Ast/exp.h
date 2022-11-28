@@ -212,6 +212,7 @@ class Str :
 	char* m_s = nil;
 	bool m_needRelease = false;//m_s is created by this Str,then = true
 	int m_size = 0;
+	bool m_isCharSequence = false;//'.....'
 public:
 	Str():Expression()
 	{
@@ -224,6 +225,13 @@ public:
 		m_s = s;
 		m_needRelease = false;
 		m_size = size;
+	}
+	inline bool IsCharSequence() { return m_isCharSequence; }
+	inline int Size() { return m_size; }
+	inline char* GetChars() { return m_s; }
+	void SetCharFlag(bool isChars)
+	{
+		m_isCharSequence = isChars;
 	}
 	~Str()
 	{
@@ -264,6 +272,13 @@ public:
 		if (m_haveFormat)
 		{
 			return RunWithFormat(rt, pContext, v);
+		}
+		else if (m_isCharSequence && m_size == 1)
+		{//for case: 'A', 'a'...., return a long long as its value
+		 //todo: check if it can be accept as +='s right value for example:
+		// str_x +='A'
+			long long lv = m_s[0];
+			v = Value(lv);
 		}
 		else
 		{
@@ -385,6 +400,7 @@ public:
 		stream >> m_val;
 		return true;
 	}
+	inline double GetVal() { return m_val; }
 };
 class List :
 	virtual public Expression

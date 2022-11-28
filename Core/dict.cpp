@@ -1,11 +1,89 @@
 #include "dict.h"
 #include "list.h"
 #include "port.h"
+#include "function.h"
 
 namespace X
 {
 	namespace Data
 	{
+		class DictScope :
+			virtual public AST::Scope
+		{
+			AST::StackFrame* m_stackFrame = nullptr;
+		public:
+			DictScope() :
+				Scope()
+			{
+				Init();
+			}
+			void clean()
+			{
+				if (m_stackFrame)
+				{
+					delete m_stackFrame;
+				}
+			}
+			~DictScope()
+			{
+				if (m_stackFrame)
+				{
+					delete m_stackFrame;
+				}
+			}
+			void Init()
+			{
+				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame->SetVarCount(1);
+
+				std::string strName;
+				{
+					strName = "has";
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"has(key)",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							X::ARGS& params,
+							X::KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								Dict* pObj = dynamic_cast<Dict*>(pContext);
+								retValue = Value(pObj->Has(params[0]));
+								return true;
+							}));
+					auto* pFuncObj = new Function(extFunc);
+					pFuncObj->IncRef();
+					int idx = AddOrGet(strName, false);
+					Value funcVal(pFuncObj);
+					m_stackFrame->Set(idx, funcVal);
+				}
+			}
+			// Inherited via Scope
+			virtual Scope* GetParentScope() override
+			{
+				return nullptr;
+			}
+			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
+			{
+				m_stackFrame->Set(idx, v);
+				return true;
+			}
+			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
+				LValue* lValue = nullptr) override
+			{
+				m_stackFrame->Get(idx, v, lValue);
+				return true;
+			}
+		};
+		static DictScope _dictScope;
+		void Dict::cleanup()
+		{
+			_dictScope.clean();
+		}
+		Dict::Dict() :XDict(0)
+		{
+			m_t = ObjType::Dict;
+			m_bases.push_back(&_dictScope);
+		}
 		List* Dict::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
@@ -109,6 +187,33 @@ namespace X
 			Set(itemKey, val);
 			return val;
 		}
-
+		class DictValue :
+			public Value
+		{
+			Dict* m_dict = nullptr;
+			Value m_key;
+		public:
+			DictValue(Dict* d, Value& k)
+			{
+				d->IncRef();
+				SetObj(d);
+				m_key = k;
+				m_dict = d;
+			}
+			inline void operator += (const Value& v)
+			{
+				m_dict->AddKeyValue(m_key, v);
+			}
+			virtual inline void operator = (const Value& v) override
+			{
+				m_dict->SetKV(m_key, v);
+			}
+		};
+		void Dict::HookLValue(X::Value& key,X::LValue* lValue)
+		{
+			auto* pDictVal = new DictValue(this, key);
+			*lValue = pDictVal;
+			lValue->SetReleaseFlag(true);
+		}
 	}
 }

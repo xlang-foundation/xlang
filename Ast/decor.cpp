@@ -1,6 +1,7 @@
 #include "decor.h"
 #include "pair.h"
 #include "object.h"
+#include "constexpr.h"
 
 namespace X
 {
@@ -22,12 +23,30 @@ namespace X
 			}
 			return true;
 		}
-
+		bool Decorator::RunExp(XlangRuntime* rt,Value& v, LValue* lValue)
+		{
+			if (!R || R->m_type != ObType::Pair)
+			{
+				return false;
+			}
+			auto* pR = dynamic_cast<BinaryOp*>(R);
+			if (pR->GetL() && pR->GetL()->m_type == ObType::Var)
+			{
+				auto* pVarL = dynamic_cast<Var*>(pR->GetL());
+				if (pVarL && pVarL->GetNameString() == "constexpr")
+				{
+					Data::ConstExpr* pExpr = new Data::ConstExpr();
+					pExpr->Set(rt, pR->GetR());
+					v = X::Value(pExpr);
+				}
+			}
+			return true;
+		}
 		bool Decorator::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 		{
 			if (pContext == nullptr)
 			{
-				return true;//not called from decorated objct
+				return RunExp(rt,v,lValue);//not called from decorated objct
 			}
 			bool bOK = true;
 			if (R->m_type == ObType::Pair)

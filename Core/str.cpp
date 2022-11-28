@@ -20,7 +20,8 @@ namespace X
 					{"rfind",1},
 					{"slice",2},
 					{"size",3},
-					{"split",4}
+					{"split",4},
+					{"splitWithChars",5}
 				};
 				{
 					std::string name("find");
@@ -137,10 +138,39 @@ namespace X
 								std::vector<std::string> li;
 								pStrObj->Split(delim, li);
 								auto* pList = new List(li);
-								retValue = X::Value(pList);
+								pList->IncRef();
+								XObj* pObjList = dynamic_cast<XObj*>(pList);
+								retValue = X::Value(pObjList,false);
 								return true;
 							}));
 					auto* pFuncObj = new Data::Function(extFunc,true);
+					m_funcs.push_back(X::Value(pFuncObj));
+				}
+				{
+					std::string name("splitWithChars");
+					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						"item_list = var_str.splitWithChars(delimiter_chars)",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							ARGS& params,
+							KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								std::string delim("\n");
+								if (params.size() >= 1)
+								{
+									delim = params[0].ToString();
+								}
+								auto* pObj = dynamic_cast<Object*>(pContext);
+								auto* pStrObj = dynamic_cast<Str*>(pObj);
+								std::vector<std::string> li;
+								pStrObj->SplitWithChars(delim, li);
+								auto* pList = new List(li);
+								pList->IncRef();
+								XObj* pObjList = dynamic_cast<XObj*>(pList);
+								retValue = X::Value(pObjList, false);
+								return true;
+							}));
+					auto* pFuncObj = new Data::Function(extFunc, true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
 			}
@@ -178,6 +208,11 @@ namespace X
 		void Str::cleanup()
 		{
 			_strop.clean();
+		}
+		bool Str::Iterate(X::XRuntime* rt, XObj* pContext,
+			IterateProc proc, ARGS& params, KWARGS& kwParams)
+		{
+			return true;
 		}
 	}
 }

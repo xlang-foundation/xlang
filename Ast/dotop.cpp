@@ -161,6 +161,7 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 	if (pLeftObj0)
 	{
 		Data::Object* pLeftObj = (Data::Object*)pLeftObj0;
+#if 0//use meta function instead
 		Data::List* pList = dynamic_cast<Data::List*>(pLeftObj);
 		if (pList)
 		{
@@ -183,8 +184,11 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 		}
 		else
 		{
+#endif
 			RunCallPerObj(R,pLeftObj);
-		}
+#if 0
+	}
+#endif
 	}
 	//Function call first
 	if (pCallList)

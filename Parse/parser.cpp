@@ -352,7 +352,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		short idx = mToken->Get(one);
 		int startLine = one.lineStart;
 		s = one.id;
-		//std::cout << startLine << ":" << std::string(s.s, s.size) << std::endl;
+		std::cout << startLine << ":" << std::string(s.s, s.size) << std::endl;
 		leadingSpaceCnt = one.leadingSpaceCnt;
 		if (m_curBlkState->m_NewLine_WillStart)
 		{
@@ -377,10 +377,12 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			push_preceding_token(idx);
 			NewLine();
 		}
-		else if (idx == TokenStr || idx == TokenStrWithFormat)
+		else if (idx == TokenStr || idx == TokenStrWithFormat 
+			|| idx == TokenCharSequence)
 		{
 			m_curBlkState->m_NewLine_WillStart = false;
 			AST::Str* v = new AST::Str(s.s, s.size, idx == TokenStrWithFormat);
+			v->SetCharFlag(idx == TokenCharSequence);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart,one.charEnd);
 			m_curBlkState->PushExp(v);
 			push_preceding_token(idx);

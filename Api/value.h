@@ -345,7 +345,7 @@ public:
 	inline ValueType GetType() { return t; }
 	inline void SetType(ValueType t0) { t = t0; }
 	inline int GetF() { return flags; }
-	inline void operator = (const Value& v)
+	virtual inline void operator = (const Value& v)
 	{
 		if (IsObject())
 		{
@@ -372,6 +372,7 @@ public:
 			break;
 		}
 	}
+	virtual void operator += (const Value& v);
 	template<typename... VarList>
 	Value operator()(VarList... args)
 	{
@@ -401,7 +402,6 @@ public:
 	{
 		return QueryMember(key);
 	}
-	ARITH_OP(+= );
 	ARITH_OP(-= );
 	ARITH_OP(*= );
 	ARITH_OP(/= );

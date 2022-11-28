@@ -20,16 +20,17 @@ namespace X
 			virtual public Object
 		{
 		protected:
+			std::vector<AST::Scope*> m_bases;
 			std::unordered_map<X::Value,
 				X::Value, ObjectHashFunction> mMap;
 		public:
-			Dict():XDict(0)
-			{
-				m_t = ObjType::Dict;
-			}
+			static void cleanup();
+			Dict();
 			~Dict()
 			{
+				AutoLock(m_lock);
 				mMap.clear();
+				m_bases.clear();
 			}
 			inline virtual long long Size() override
 			{
@@ -39,9 +40,32 @@ namespace X
 			{
 				mMap.emplace(std::make_pair(key, val));
 			}
+			void SetKV(X::Value& key,const X::Value& val)
+			{
+				mMap.emplace(std::make_pair(key, val));
+			}
+			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+			{
+				for (auto it : m_bases)
+				{
+					bases.push_back(it);
+				}
+			}
 			void Set(const char* key, X::Value val)
 			{
 				mMap.emplace(std::make_pair(X::Value(key), val));
+			}
+			void AddKeyValue(Value& key, const Value& v)
+			{
+				auto it = mMap.find(key);
+				if (it != mMap.end())
+				{
+					it->second += v;
+				}
+				else
+				{
+					mMap.emplace(std::make_pair(key, v));
+				}
 			}
 			virtual Dict& operator +=(X::Value& r)
 			{
@@ -59,6 +83,17 @@ namespace X
 				}
 				return *this;
 			}
+			bool Has(X::Value& key)
+			{
+				bool bOK = false;
+				auto it = mMap.find(key);
+				if (it != mMap.end())
+				{
+					bOK = true;
+				}
+				return bOK;
+			}
+			void HookLValue(X::Value& key,X::LValue* lValue);
 			bool Get(X::Value& key, X::Value& val,
 				X::LValue* lValue = nullptr)
 			{
@@ -69,6 +104,13 @@ namespace X
 					val = it->second;
 					if (lValue) *lValue = &it->second;
 					bOK = true;
+				}
+				else
+				{
+					if (lValue)
+					{
+						HookLValue(key, lValue);
+					}
 				}
 				return bOK;
 			}

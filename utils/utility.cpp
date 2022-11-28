@@ -151,6 +151,21 @@ std::vector<std::string> split(const std::string& str, char delim)
 	}
 	return list;
 }
+
+std::vector<std::string> splitWithChars(const std::string& str, const char* delim)
+{
+	std::vector<std::string> list;
+	std::size_t prev = 0,pos;
+	while ((pos = str.find_first_of(delim, prev)) != std::string::npos)
+	{
+		if (pos > prev)
+		{
+			list.push_back(str.substr(prev, pos - prev));
+		}
+		prev = pos + 1;
+	}
+	return list;
+}
 std::vector<std::string> split(const std::string& str, const char* delim)
 {
 	std::vector<std::string> list;

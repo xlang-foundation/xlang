@@ -234,6 +234,9 @@ void Register(OpRegistry* reg)
 			auto op = new AST::BinaryOp(opIndex);
 			return (AST::Operator*)op;
 		});
+	RegOP("==", "!=", ">", "<", ">=", "<=","and","or").SetIds(reg,
+		{ OP_ID::Equal,OP_ID::NotEqual,OP_ID::Great,OP_ID::Less,
+		OP_ID::GreatAndEqual,OP_ID::LessAndEqual,OP_ID::And,OP_ID::Or});
 
 	//Override for +-* which may be an unary Operator
 	RegOP("+", "-", "*")
@@ -369,8 +372,7 @@ void Register(OpRegistry* reg)
 
 	RegOP("as")
 		.SetPrecedence(Precedence_LOW2+1);
-	RegOP(",")//for example from . import XYZ as xyz,AWD as awd 
-		.SetPrecedence(Precedence_LOW2);
+
 	RegOP("thru")
 		.SetPrecedence(Precedence_LOW2-1);
 	RegOP("import")
@@ -380,7 +382,7 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_LOW2);
 	RegOP("and", "or")
 		.SetPrecedence(Precedence_LOW1);
-	RegOP("\n")
+	RegOP("\n",",",":")
 		.SetPrecedence(Precedence_VERYLOW);
 }
 

@@ -256,10 +256,14 @@ export class XLangRuntime extends EventEmitter {
 		method: 'GET'
 		};
 		const req = https.request(options, res => {
-		console.log(`statusCode: ${res.statusCode}`);	
+		console.log(`statusCode: ${res.statusCode}`);
+		var allData = "";
+		res.on('end', () => {
+			cb(allData);			
+		  });
 		res.on('data', d => {
 			var strData = new TextDecoder().decode(d);
-			cb(strData);
+			allData +=strData;
 		});
 		});
 	
@@ -340,7 +344,14 @@ export class XLangRuntime extends EventEmitter {
 		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Stack')";
 		this.Call(code, (retVal) => {
 			console.log(retVal);
-			var retObj = JSON.parse(retVal);
+			var retObj = null;
+			try {
+				retObj = JSON.parse(retVal);
+			}
+			catch (err) {
+				console.log("Json Parse Error:", err);
+				return;
+			}	
 			console.log(retObj);
 			const frames: IRuntimeStackFrame[] = [];
 			// every word of the current line becomes a stack frame.
@@ -424,7 +435,14 @@ export class XLangRuntime extends EventEmitter {
 			",frameId=" + frameId.toString()+",cmd='Locals')";
 		this.Call(code, (retVal) => {
 			console.log(retVal);
-			var retObj = JSON.parse(retVal);
+			var retObj = null;
+			try {
+				retObj = JSON.parse(retVal);
+			}
+			catch (err) {
+				console.log("Json Parse Error:", err);
+				return;
+			}				
 			console.log(retObj);
 			let vars = Array.from(retObj, (x: Map<string, any>) =>
 				new RuntimeVariable(

@@ -4,7 +4,6 @@
 
 namespace X 
 {
-	ARITH_OP_IMPL(+= )
 	ARITH_OP_IMPL(-= )
 	ARITH_OP_IMPL(*= )
 	ARITH_OP_IMPL(/= )
@@ -14,6 +13,38 @@ namespace X
 	COMPARE_OP_IMPL(< )
 	COMPARE_OP_IMPL(>= )
 	COMPARE_OP_IMPL(<= )
+
+	void Value::operator += (const Value& v)
+	{
+		if (IsObject())
+		{
+			ReleaseObject(x.obj);
+		}
+		flags = v.flags;
+		t = v.t;
+		switch (t)
+		{
+		case ValueType::Int64:
+			x.l += ToInt64(v);
+			break;
+		case ValueType::Double:
+			x.d += ToDouble(v);
+			break;
+		case ValueType::Str:
+			//TODO:
+			x.str = v.x.str;
+			ChangeToStrObject();
+			break;
+		case ValueType::Object:
+		{
+			Value v0 = v;
+			(*((XObj*)x.obj)) += v0;
+		}
+		break;
+		default:
+			break;
+		}
+	}
 
 	template<typename toT>
 	Value::operator toT* () const

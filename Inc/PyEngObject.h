@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include "PyEngHost.h"
 #include "value.h"
+#include "xlang.h"
 
 namespace PyEng{
 
@@ -182,6 +183,12 @@ public:
 			m_p = g_pPyHost->from_double(v);
 			break;
 		case X::ValueType::Object:
+		{
+			if (v.GetObj()->GetType() == X::ObjType::Str)
+			{
+				m_p = g_pPyHost->from_str(v.ToString().c_str());
+			}
+		}
 			break;
 		case X::ValueType::Str:
 			m_p = g_pPyHost->from_str(v.ToString().c_str());

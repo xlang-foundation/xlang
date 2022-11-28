@@ -185,7 +185,7 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 		std::string strKey = Key.ToString();
 		pDict->Set(Key, Val);
 	};
-	if (R->m_type == ObType::List)
+	if (R && R->m_type == ObType::List)
 	{
 		auto& list = (dynamic_cast<AST::List*>(R))->GetList();
 		for (auto& i : list)
@@ -193,7 +193,7 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 			SetKWProc(i,pDict);
 		}
 	}
-	else
+	else if(R)
 	{
 		SetKWProc(R, pDict);
 	}

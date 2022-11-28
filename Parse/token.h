@@ -46,7 +46,8 @@ enum TokenIndex
 	TokenID = -10,
 	TokenNum = -11,
 	TokenStr = -12,
-	TokenStrWithFormat = -102,
+	TokenStrWithFormat = -121,
+	TokenCharSequence = -122,
 	TokenEOS = -13,
 	TokenLineComment = -20,
 	TokenComment = -21,
@@ -86,6 +87,7 @@ class Token
 {
 	CoreContext _context;
 	bool InSpace = false;
+	bool NotCharSequnce = false; //it is "...." not '....'
 	bool InQuote = false;
 	char quoteBeginChar = 0;
 	bool InLineComment = false;
@@ -194,7 +196,9 @@ public:
 		{
 			one = m_tokens[0];
 			short retIdx =  one.index;
-			if (retIdx == TokenStr || retIdx == TokenStrWithFormat)
+			if (retIdx == TokenStr 
+				|| retIdx == TokenStrWithFormat
+				|| retIdx == TokenCharSequence)
 			{
 				one.id.s += 1;//skip " or '
 				one.id.size -= 2; //last " or '
