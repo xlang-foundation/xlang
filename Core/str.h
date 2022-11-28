@@ -64,7 +64,8 @@ namespace Data
 			return m_s;
 		}
 		virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
-			IterateProc proc, ARGS& params, KWARGS& kwParams) override;
+			IterateProc proc, ARGS& params, KWARGS& kwParams,
+			X::Value& retValue) override;
 		virtual int cmp(X::Value* r)
 		{
 			return m_s.compare(r->ToString());;
@@ -169,6 +170,30 @@ namespace Data
 			X::Value& retValue) override
 		{
 			return true;
+		}
+		inline virtual bool Get(long long idx, X::Value& val) override
+		{
+			if (idx >=0 && m_s.size() >= idx)
+			{
+				val = X::Value((long long)m_s[idx]);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		inline virtual bool Set(long long idx, X::Value& val) override
+		{
+			if (idx >= 0 && m_s.size() >= idx)
+			{
+				m_s[idx] = val.GetLongLong();
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	};
 }

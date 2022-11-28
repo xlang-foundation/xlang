@@ -98,7 +98,8 @@ namespace Data {
 			return val;
 		}
 		virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
-			IterateProc proc,ARGS& params, KWARGS& kwParams)
+			IterateProc proc,ARGS& params, KWARGS& kwParams, 
+			X::Value& retValue)
 		{
 			return true;
 		}
@@ -198,6 +199,8 @@ namespace Data {
 		{
 			return 0;
 		}
+		virtual bool Get(long long idx, X::Value& val) { return false; }
+		virtual bool Set(long long idx, X::Value& val) { return false; }
 	};
 	class Expr
 		: public virtual Object

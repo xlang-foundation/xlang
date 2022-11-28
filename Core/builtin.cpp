@@ -632,7 +632,7 @@ bool U_Each(X::XRuntime* rt, XObj* pContext,
 	}
 	if (pObj)
 	{
-		pObj->Iterate(rt, pContext,proc, params_proc, kwParams);
+		pObj->Iterate(rt, pContext,proc, params_proc, kwParams,retValue);
 	}
 	return true;
 }

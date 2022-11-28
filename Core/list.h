@@ -60,7 +60,8 @@ public:
 		return outs;
 	}
 	virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
-		IterateProc proc, ARGS& params, KWARGS& kwParams) override
+		IterateProc proc, ARGS& params, KWARGS& kwParams,
+		X::Value& retValue) override
 	{
 		AutoLock(m_lock);
 		if (m_useLValue)
@@ -295,7 +296,7 @@ public:
 	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val) override;
-	inline void Set(long long index, X::Value& v)
+	inline virtual bool Set(long long index, X::Value& v) override
 	{
 		AutoLock(m_lock);
 		if (m_useLValue)
@@ -310,6 +311,7 @@ public:
 		{
 			m_data[index] = v;
 		}
+		return true;
 	}
 	virtual Value Get(long long idx) override
 	{

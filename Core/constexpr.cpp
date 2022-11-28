@@ -37,24 +37,9 @@ namespace X
 				auto* pR_Expr = pAssign->GetR();
 				X::Value valRet;
 				pR_Expr->Run(rt, nullptr, valRet);
-				switch (valRet.GetType())
-				{
-				case ValueType::Int64:
-					one.valType = ExpValueType::_Long;
-					one.llval = valRet.GetLongLong();
-					break;
-				case ValueType::Double:
-					one.valType = ExpValueType::_Double;
-					one.dVal = valRet.GetDouble();
-					break;
-				case ValueType::Str:
-					one.valType = ExpValueType::_Str;
-					one.strVal = valRet.ToString();
-					break;
-				default:
-					break;
-				}
+				one.val = valRet;
 				m_exprs.push_back(one);
+				m_hasAction = true;
 			}
 			else if (exp->m_type == AST::ObType::List)
 			{
@@ -99,8 +84,7 @@ namespace X
 						auto* pNum = dynamic_cast<AST::Number*>(pExp_R);
 						if (pNum)
 						{
-							one.valType = ExpValueType::_Long;
-							one.llval = pNum->GetVal();
+							one.val = pNum->GetVal();
 						}
 					}
 					else if (pExp_R->m_type == AST::ObType::Double)
@@ -108,8 +92,7 @@ namespace X
 						auto* pDouble = dynamic_cast<AST::Double*>(pExp_R);
 						if (pDouble)
 						{
-							one.valType = ExpValueType::_Double;
-							one.dVal = pDouble->GetVal();
+							one.val = pDouble->GetVal();
 						}
 					}
 					else if (pExp_R->m_type == AST::ObType::Str)
@@ -117,13 +100,12 @@ namespace X
 						auto* pStr = dynamic_cast<AST::Str*>(pExp_R);
 						if (pStr->IsCharSequence() && pStr->Size() == 1)
 						{
-							one.valType = ExpValueType::_Long;
-							one.llval = pStr->GetChars()[0];
+							one.val = (long long)pStr->GetChars()[0];
 						}
 						else
 						{
-							one.valType = ExpValueType::_Str;
-							one.strVal = std::string(pStr->GetChars(), pStr->Size());
+							//todo: check memory
+							one.val = X::Value(pStr->GetChars(), pStr->Size());
 						}
 					}
 					m_exprs.push_back(one);

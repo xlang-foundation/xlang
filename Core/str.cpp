@@ -3,6 +3,7 @@
 #include "list.h"
 #include "function.h"
 #include <string>
+#include "constexpr.h"
 namespace X
 {
 	namespace Data
@@ -210,8 +211,21 @@ namespace X
 			_strop.clean();
 		}
 		bool Str::Iterate(X::XRuntime* rt, XObj* pContext,
-			IterateProc proc, ARGS& params, KWARGS& kwParams)
+			IterateProc proc, ARGS& params, KWARGS& kwParams,
+			X::Value& retValue)
 		{
+			ConstExpr* pFilter = dynamic_cast<ConstExpr*>(params[0].GetObj());
+			ConstExpr* pAction = dynamic_cast<ConstExpr*>(params[1].GetObj());
+			size_t size = m_s.size();
+			for (size_t i = 0; i < size; i++)
+			{
+				bool bEnable = false;
+				pFilter->Run(this, i, bEnable);
+				if (bEnable)
+				{
+					pAction->Run(this, i, bEnable);
+				}
+			}
 			return true;
 		}
 	}
