@@ -50,7 +50,7 @@ namespace X
 			}
 			else
 			{
-				auto* pStr = g_pXHost->CreateStr(nullptr, size);
+				auto* pStr = g_pXHost->CreateStr(nullptr, (int)size);
 				char* data = pStr->Buffer();
 				m_stream.read(data, size);
 				return X::Value(pStr,false);

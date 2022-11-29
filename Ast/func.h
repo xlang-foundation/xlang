@@ -24,11 +24,10 @@ protected:
 	String m_Name = { nil,0 };
 	bool m_NameNeedRelease = false;
 	int m_Index = -1;//index for this Var,set by compiling
-	int m_positionParamCnt = 0;
-	int m_paramStartIndex = 0;
 	int m_IndexOfThis = -1;//for THIS pointer
 	bool m_needSetHint = false;
 	List* Params = nil;
+	std::vector<int> m_IndexofParamList;//same size with input positional param
 	Expression* RetType = nil;
 	void SetName(Expression* n)
 	{
@@ -124,9 +123,12 @@ public:
 		{
 			stream.append(m_Name.s, m_Name.size);
 		}
-		stream << m_Index << m_positionParamCnt
-			<< m_paramStartIndex << m_IndexOfThis
-			<< m_needSetHint;
+		stream << (int)m_IndexofParamList.size();
+		for (auto idx : m_IndexofParamList)
+		{
+			stream << idx;
+		}
+		stream << m_Index << m_IndexOfThis<< m_needSetHint;
 		Scope::ToBytes(rt, pContext, stream);
 		return true;
 	}
@@ -164,9 +166,15 @@ public:
 			stream.CopyTo(m_Name.s, m_Name.size);
 			m_NameNeedRelease = true;
 		}
-		stream >> m_Index >> m_positionParamCnt
-			>> m_paramStartIndex >> m_IndexOfThis
-			>> m_needSetHint;
+		int paramCnt = 0;
+		stream >> paramCnt;
+		for (int i = 0; i < paramCnt; i++)
+		{
+			int idx;
+			stream >> idx;
+			m_IndexofParamList.push_back(idx);
+		}
+		stream >> m_Index >> m_IndexOfThis>> m_needSetHint;
 		Scope::FromBytes(stream);
 		return true;
 	}

@@ -3,6 +3,7 @@
 #include "exp.h"
 #include "module.h"
 #include "glob.h"
+#include "list.h"
 
 namespace X 
 {
@@ -60,12 +61,13 @@ namespace X
 				params.push_back(bindingString);
 				if (ValList.IsInvalid())
 				{
-					auto list = List();
+					Data::List* pOutList = new Data::List();
 					for (auto idx : Value_Bind_list)
 					{
-						list += idx;
+						(*pOutList) += idx;
 					}
-					ValList = list;
+					XObj* pObjList = dynamic_cast<XObj*>(pOutList);
+					ValList = X::Value(pObjList);
 				}
 				params.push_back(ValList);
 			}

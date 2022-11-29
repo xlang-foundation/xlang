@@ -9,8 +9,9 @@ namespace X
 #if (WIN32)
 		//format like c:\\ or c:/
 		//or \\ at the begin
-		if (fileName.find(':') >0 || fileName.find("\\\\") > 0
-			|| fileName.find("//") > 0)
+		if (fileName.find(':') !=std::string::npos
+			|| fileName.find("\\\\") == 0
+			|| fileName.find("/") == 0)
 		{
 			IsAbsPath = true;
 		}

@@ -27,8 +27,6 @@ void Func::ScopeLayout()
 	if (Params)
 	{
 		auto& list = Params->GetList();
-		m_positionParamCnt = (int)list.size();
-		m_paramStartIndex = Scope::GetVarNum();//if some vars already pushed
 		//this case happened in lambda function
 		for (auto i : list)
 		{
@@ -62,7 +60,8 @@ void Func::ScopeLayout()
 			}
 			break;
 			}
-			AddOrGet(strVarName, false);
+			int idx = AddOrGet(strVarName, false);
+			m_IndexofParamList.push_back(idx);
 		}
 	}
 }
@@ -118,11 +117,10 @@ bool Func::Call(XRuntime* rt0,
 		Value v0(dynamic_cast<Data::Object*>(pContext));
 		Scope::Set(rt, pContext, m_IndexOfThis, v0);
 	}
-	int num = m_positionParamCnt > (int)params.size() ?
-		(int)params.size() : m_positionParamCnt;
+	int num = (int)params.size();
 	for (int i = 0; i < num; i++)
 	{
-		Scope::Set(rt, pContext, m_paramStartIndex + i, params[i]);
+		Scope::Set(rt, pContext, m_IndexofParamList[i], params[i]);
 	}
 	for (auto& kw : kwParams)
 	{
