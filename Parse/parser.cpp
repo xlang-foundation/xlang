@@ -352,7 +352,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		short idx = mToken->Get(one);
 		int startLine = one.lineStart;
 		s = one.id;
-		std::cout << startLine << ":" << std::string(s.s, s.size) << std::endl;
+		//std::cout << startLine << ":" << std::string(s.s, s.size) << std::endl;
 		leadingSpaceCnt = one.leadingSpaceCnt;
 		if (m_curBlkState->m_NewLine_WillStart)
 		{

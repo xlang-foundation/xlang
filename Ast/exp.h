@@ -279,6 +279,7 @@ public:
 		// str_x +='A'
 			long long lv = m_s[0];
 			v = Value(lv);
+			return true;
 		}
 		else
 		{

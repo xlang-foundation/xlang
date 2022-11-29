@@ -3,6 +3,8 @@
 #include "list.h"
 #include "function.h"
 #include <string>
+#include <regex>
+#include <sstream>
 #include "constexpr.h"
 namespace X
 {
@@ -22,7 +24,10 @@ namespace X
 					{"slice",2},
 					{"size",3},
 					{"split",4},
-					{"splitWithChars",5}
+					{"splitWithChars",5},
+					{"toupper",6},
+					{"tolower",7},
+					{"regex_replace",8},
 				};
 				{
 					std::string name("find");
@@ -169,6 +174,75 @@ namespace X
 								pList->IncRef();
 								XObj* pObjList = dynamic_cast<XObj*>(pList);
 								retValue = X::Value(pObjList, false);
+								return true;
+							}));
+					auto* pFuncObj = new Data::Function(extFunc, true);
+					m_funcs.push_back(X::Value(pFuncObj));
+				}
+				{
+					std::string name("toupper");
+					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						"new_str = toupper()",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							ARGS& params,
+							KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								auto* pObj = dynamic_cast<Object*>(pContext);
+								auto* pStrObj = dynamic_cast<Str*>(pObj);
+								std::string strVal = pStrObj->ToString();
+								std::transform(strVal.begin(),
+									strVal.end(), strVal.begin(),
+									[](unsigned char c) { return std::toupper(c); });
+								auto* pNewStr = new Str(strVal);
+								retValue = X::Value(pNewStr);
+								return true;
+							}));
+					auto* pFuncObj = new Data::Function(extFunc, true);
+					m_funcs.push_back(X::Value(pFuncObj));
+				}
+				{
+					std::string name("tolower");
+					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						"new_str = tolower()",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							ARGS& params,
+							KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								auto* pObj = dynamic_cast<Object*>(pContext);
+								auto* pStrObj = dynamic_cast<Str*>(pObj);
+								std::string strVal = pStrObj->ToString();
+								std::transform(strVal.begin(),
+									strVal.end(), strVal.begin(),
+									[](unsigned char c) { return std::tolower(c); });
+								auto* pNewStr = new Str(strVal);
+								retValue = X::Value(pNewStr);
+								return true;
+							}));
+					auto* pFuncObj = new Data::Function(extFunc, true);
+					m_funcs.push_back(X::Value(pFuncObj));
+				}
+				{
+					std::string name("regex_replace");
+					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
+						"new_str = regex_replace(regex_expr,target_chars)",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							ARGS& params,
+							KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								auto* pObj = dynamic_cast<Object*>(pContext);
+								auto* pStrObj = dynamic_cast<Str*>(pObj);
+								std::string pattern = params[0].ToString();
+								const std::regex r(pattern);
+								std::string target = params[1].ToString();
+								std::string org_str = pStrObj->ToString();
+								std::stringstream result;
+								std::regex_replace(std::ostream_iterator<char>(result),
+									org_str.begin(), org_str.end(),r, target);
+								auto* pNewStr = new Str(result.str());
+								retValue = X::Value(pNewStr);
 								return true;
 							}));
 					auto* pFuncObj = new Data::Function(extFunc, true);

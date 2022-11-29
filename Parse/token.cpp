@@ -289,19 +289,30 @@ void Token::Scan()
 				{
 					token_out((meetDollar || meetSlash)
 						? TokenStrWithFormat : 
-						(NotCharSequnce ? TokenStr : TokenCharSequence), 0);
+						(NotCharSequnce ? TokenStr : TokenCharSequence));
 					NotCharSequnce = false;
 					InQuote = false;
 					//also reset lines below for string
 					meetDollar = false;
 					meetSlash = false;
+					//begin_quoteCnt = 0;//reset
+					//this string finished, continue run to check the current char
 				}
 				else if(begin_quoteCnt!=3)
 				{
+					//not begin with 3 " which means such pattern""" .... """
+					//so reset to 0 as regular string
 					begin_quoteCnt = 0;//reset
+					//go back to next char, because it is still inside string
+					continue;
+				}
+				else
+				{
+					//go back to next char, because it is still inside string
+					continue;
 				}
 			}
-			else if (c == '%' && _context.lineCharCount == 1)
+			if (c == '%' && _context.lineCharCount == 1)
 			{
 				token_out(GetLastMatchedNodeIndex());
 				InFeedOp = true;
