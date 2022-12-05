@@ -16,10 +16,10 @@ namespace X
 
 	void Value::operator += (const Value& v)
 	{
-		if (IsObject())
-		{
-			ReleaseObject(x.obj);
-		}
+		//if (IsObject())
+		//{
+		//	ReleaseObject(x.obj);
+		//}
 		flags = v.flags;
 		t = v.t;
 		switch (t)

@@ -25,6 +25,7 @@
 #include "BlockStream.h"
 #include "xpackage.h"
 #include "json.h"
+#include "html.h"
 #include "metascope.h"
 #include "attribute.h"
 #include "devops.h"
@@ -676,6 +677,7 @@ bool U_PopWritePad(X::XRuntime* rt, XObj* pContext,
 bool Builtin::RegisterInternals()
 {
 	X::RegisterPackage<X::JsonWrapper>("json");
+	X::RegisterPackage<X::HtmlWrapper>("html");
 	X::RegisterPackage<X::DevOps::DebugService>("xdb");
 
 	std::vector<std::pair<std::string, std::string>> params;

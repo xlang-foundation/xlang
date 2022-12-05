@@ -85,6 +85,7 @@ struct OneToken
 };
 class Token
 {
+	const char* OPS = "~`!@#$%^&*()-+={}[]|:;<>,.?/\t\r\n \\'\"#";
 	CoreContext _context;
 	bool InSpace = false;
 	bool NotCharSequnce = false; //it is "...." not '....'
@@ -96,7 +97,9 @@ class Token
 
 	int begin_quoteCnt = 0;
 	int end_quoteCnt = 0;
-
+	//2 lines below for HTML parser
+	bool SkipQuote = false;
+	bool SkipHash = false; //#
 	inline char GetChar()
 	{
 		if (_context.spos > _context.src_code)
@@ -180,11 +183,88 @@ public:
 		_context.curNode = 0;
 		_context.token_start = nil;
 	}
+	void set_ops(const char* ops)
+	{
+		OPS = ops;
+	}
+	void SetSkipQuote(bool b)
+	{
+		SkipQuote = b;
+	}
+	void SetSkipHash(bool b)
+	{
+		SkipHash = b;
+	}
 	void SetStream(char* code, int size)
 	{
 		_context.src_code = code;
 		_context.src_code_size = size;
 		_context.spos = _context.src_code;
+	}
+	//used by HTML Parser
+	short UntilGet(std::string& key,OneToken& one)
+	{
+		const char* seq = key.c_str();
+		int size = (int)key.size();
+		int curMatechedIndex = 0;
+		//matched part of exsited token( not take out)
+		int offset = 0;
+		if (_context.token_start != nil)
+		{
+			char* curCharPos = _context.token_start;
+			while (curCharPos < _context.spos)
+			{
+				offset++;
+				char c = *curCharPos++;
+				if (c == seq[curMatechedIndex])
+				{
+					curMatechedIndex++;
+					if (size == curMatechedIndex)
+					{
+						//todo: check this case
+						token_out(TokenStr,0);
+						break;
+					}
+				}
+				else
+				{//reset to beginning of key
+					curMatechedIndex = 0;
+				}
+			}
+		}
+		new_token_start(-offset+1);//+1, because new_token_start already minus one
+		while (true)
+		{
+			char c = GetChar();
+			if (c == 0)
+			{
+				break;
+			}
+			if (c == seq[curMatechedIndex])
+			{
+				curMatechedIndex++;
+				if (size == curMatechedIndex)
+				{
+					token_out(TokenStr,0);
+					break;
+				}
+			}
+			else
+			{//reset to beginning of key
+				curMatechedIndex = 0;
+			}
+		}
+		if (m_tokens.size() > 0)
+		{
+			one = m_tokens[0];
+			short retIdx = one.index;
+			m_tokens.erase(m_tokens.begin());
+			return retIdx;
+		}
+		else
+		{
+			return TokenEOS;
+		}
 	}
 	short Get(OneToken& one)
 	{

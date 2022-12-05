@@ -362,6 +362,10 @@ namespace X
 		{
 			m_obj = new T();
 		}
+		XPackageValue(T* p)
+		{
+			m_obj = p;
+		}
 		XPackageValue(X::Value& v)
 		{
 			if (v.IsObject())
