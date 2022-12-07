@@ -210,12 +210,21 @@ namespace X
 		char* pBuf = nullptr;
 		int buf_size = 0;
 		int data_cur_size = 0;
+		bool isText = false;
 		//if has content length,allocate one time
 		//if not, allocated  when data receiving
 		httplib::Headers headers;
 		auto res = ((httplib::Client*)m_pClient)->Get(
 			path, headers,
 			[&](const httplib::Response& response) {
+				auto it0 = response.headers.find("Content-Type");
+				if (it0 != response.headers.end())
+				{
+					if (it0->second.find("text/") != it0->second.npos)
+					{
+						isText = true;
+					}
+				}
 				int len = 0;
 				auto it = response.headers.find("Content-Length");
 				if (it != response.headers.end())
@@ -261,8 +270,17 @@ namespace X
 		m_status = res->status;
 		if (data_cur_size >0)
 		{
-			auto* pBinBuf = X::g_pXHost->CreateBin(pDataHead, data_cur_size, true);
-			m_body = X::Value(pBinBuf,false);
+			if (isText)
+			{
+				auto* pStr = X::g_pXHost->CreateStr(pDataHead, data_cur_size);
+				delete pDataHead;
+				m_body = X::Value(pStr, false);
+			}
+			else
+			{
+				auto* pBinBuf = X::g_pXHost->CreateBin(pDataHead, data_cur_size, true);
+				m_body = X::Value(pBinBuf, false);
+			}
 		}
 		return true;
 	}

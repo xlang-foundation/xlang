@@ -16,6 +16,29 @@ namespace X
 			HtmlNode* m_parent = nullptr;
 			std::vector<HtmlNode*> m_kids;
 			std::string m_content;//only for text content embeded into an object
+			bool NodeMatch(HtmlNode* pCurNode, HtmlNode* pExprNode);
+			bool DoMatch(HtmlNode* pCurNode, HtmlNode* pExprNode);
+			bool MatchExprKisdWithFilterSubItems(
+				std::vector<HtmlNode*>& kids, HtmlNode* pExprParentNode);
+			bool MatchExprSubItems(HtmlNode* pCurNode, HtmlNode* pExprParentNode);
+			bool MatchAttr(std::string key, std::string val)
+			{
+				auto it = m_attrs.find(key);
+				return (it != m_attrs.end() && it->second == val);
+			}
+			bool GetAttr(std::string key, std::string& val)
+			{
+				auto it = m_attrs.find(key);
+				if (it != m_attrs.end())
+				{
+					val = it->second;
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
 		public:
 			~HtmlNode()
 			{
@@ -24,6 +47,8 @@ namespace X
 					delete p;
 				}
 			}
+			bool MatchOneFilter(HtmlNode* pRootNode,HtmlNode* pFilterExpr);
+			bool Query(HtmlNode* pQueryExpr);
 			std::string& GetClass() { return m_class; }
 			std::string& GetContent() { return m_content; }
 			std::unordered_map<std::string, std::string>& GetAttrs()

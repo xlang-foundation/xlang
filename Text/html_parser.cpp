@@ -2,6 +2,11 @@
 #include "lex.h"
 #include <iostream>
 #include <stack>
+#include "port.h"
+
+#ifndef strcasecmp
+#define strcasecmp _stricmp
+#endif // strcasecmp
 
 namespace X
 {
@@ -66,7 +71,7 @@ namespace X
 		bool Html::LoadFromString(char* code, int size, HtmlNode** ppRootNode)
 		{
 			mToken->SetStream(code, size);
-			bool bOK =  Parse(ppRootNode);
+			bool bOK = Parse(ppRootNode);
 			return bOK;
 		}
 		bool Html::Parse(HtmlNode** ppRootNode)
@@ -82,10 +87,10 @@ namespace X
 			};
 			auto is_empty_tag = [](std::string& tagName)
 			{
-				static std::vector<std::string> tags = 
+				static std::vector<std::string> tags =
 				{ "area","base","br","col","embed","hr","img",
 					"input","keygen","link","meta","param",
-					"source","track","wbr"};
+					"source","track","wbr" };
 				bool bFind = false;
 				for (auto& s : tags)
 				{
@@ -96,7 +101,7 @@ namespace X
 					}
 				}
 				return bFind;
-				
+
 			};
 			auto set_content = [&](HtmlNode* pCurNode)
 			{
@@ -153,9 +158,9 @@ namespace X
 						operands.pop();
 						auto left = operands.top();
 						operands.pop();
-						ns.pNode->SetAttr(left.text,right.text);
+						ns.pNode->SetAttr(left.text, right.text);
 					}
-						break;
+					break;
 					default:
 						break;
 					}
@@ -208,10 +213,10 @@ namespace X
 							}
 						}
 					}
-						break;
+					break;
 					case htmlsymbol::TagBeginLeft:
 						mToken->SetSkipQuote(false);
-						if (pCurNode && operands.size()>0)
+						if (pCurNode && operands.size() > 0)
 						{
 							set_content(pCurNode);
 						}
@@ -223,7 +228,7 @@ namespace X
 						auto ns = do_TagBeginRight(sym);
 						if (ns.isCloseTag)
 						{
-							for (int i=(int)ns.contents.size()-1;i>=0;i--)
+							for (int i = (int)ns.contents.size() - 1; i >= 0; i--)
 							{
 								pCurNode->SetContent(ns.contents[i]);
 							}
@@ -246,11 +251,11 @@ namespace X
 							else if (ns.pNode && ns.pNode->GetClass() == "script")
 							{
 								std::string tag("</script>");
-								short idx2 = mToken->UntilGet(tag,one);
+								short idx2 = mToken->UntilGet(tag, one);
 								if (idx2 == TokenStr)
 								{
 									String s2 = one.id;
-									std::string txt2(s2.s, s2.size- (int)tag.size());
+									std::string txt2(s2.s, s2.size - (int)tag.size());
 									ns.pNode->SetContent(txt2);
 									if (pRootNode == nullptr)
 									{
@@ -296,7 +301,7 @@ namespace X
 							}
 						}
 					}
-						break;
+					break;
 					case htmlsymbol::TagEnd:
 					{
 						mToken->SetSkipQuote(true);
@@ -311,7 +316,7 @@ namespace X
 							//don't change Current Node,still as parent
 						}
 					}
-						break;
+					break;
 					case htmlsymbol::TagEndWithName:
 						mToken->SetSkipQuote(false);
 						ops.push(Operator{ sym });
@@ -330,12 +335,256 @@ namespace X
 					std::string txt(s.s, s.size);
 					operands.push(Operand{ txt });
 				}
-
+#if 0
 				std::string txt(s.s, s.size);
 				std::cout << "token{" << txt << "},idx:" << idx << ",line:"
 					<< one.lineStart << ",pos:" << one.charPos << std::endl;
+#endif
 			}
 			*ppRootNode = pRootNode;
+			return true;
+		}
+		bool HtmlNode::NodeMatch(HtmlNode* pCurNode, HtmlNode* pExprNode)
+		{
+			if (pCurNode->m_class != pExprNode->m_class)
+			{
+				return false;
+			}
+			bool bRet = true;
+			for (auto& it : pExprNode->m_attrs)
+			{
+				//find item with key
+				auto it2 = pCurNode->m_attrs.find(it.first);
+				if (it2 != pCurNode->m_attrs.end())
+				{
+					std::string& valToMatch = it.second;
+					if (valToMatch.starts_with("regex:"))
+					{//regular expression match
+						//todo:
+					}
+					else
+					{
+						if (valToMatch != it2->second)
+						{
+							bRet = false;
+							break;
+						}
+					}
+				}
+				else
+				{
+					bRet = false;
+					break;
+				}
+			}
+			return bRet;
+		}
+		bool HtmlNode::DoMatch(HtmlNode* pCurNode, HtmlNode* pExprNode)
+		{
+			if (NodeMatch(pCurNode, pExprNode))
+			{
+				//check children
+				if (pExprNode->m_kids.size() > 0)
+				{
+					auto* pFirstExprNode = pExprNode->m_kids[0];
+					if (pFirstExprNode->MatchAttr("${child_combinator}", "direct"))
+					{//only match direct child
+
+					}
+					else
+					{
+
+					}
+				}
+			}
+			return true;
+		}
+		//in filter if logical op is or, and no ${node_index} specified
+		//means, start matching from first child
+		//if it is and, means following the previous matched child node
+		//${node_index} define here
+		//if Negative value means offset such as -1,-2, means the kidIndex-number
+		//if +num, means offset of positive,
+		//if no sign there, means absoluate position in  kids array
+		//if it is 'last', means last kid
+
+		bool HtmlNode::MatchExprKisdWithFilterSubItems(
+			std::vector<HtmlNode*>& kids,
+			HtmlNode* pExprParentNode)
+		{
+			int kidCnt = (int)kids.size();
+			int kidIndex = 0;
+			int filterKidCnt = (int)pExprParentNode->m_kids.size();
+			int filtetKidIndex = 0;
+			bool bMatchAll = true;
+
+			while (filtetKidIndex < filterKidCnt)
+			{
+				auto* pCurFilterKid = pExprParentNode->m_kids[filtetKidIndex];
+				bool isLogical_Or = pCurFilterKid->MatchAttr("${logical}", "or");
+				std::string strIndex;
+				if (pCurFilterKid->GetAttr("${node_index}", strIndex))
+				{
+					if (strIndex.size() > 0)
+					{
+						if (strIndex[0] == '+')
+						{
+							int indexOffset = 0;
+							SCANF(strIndex.c_str()+1, "%d", &indexOffset);
+							kidIndex += indexOffset;
+							if (kidIndex >= kidCnt)
+							{
+								kidIndex = kidCnt - 1;
+							}
+						}
+						else if (strIndex[0] == '-')
+						{
+							int indexOffset = 0;
+							SCANF(strIndex.c_str() + 1, "%d", &indexOffset);
+							kidIndex -= indexOffset;
+							if (kidIndex < 0)
+							{
+								kidIndex = 0;
+							}
+						}
+						else if (strIndex == "last")
+						{
+							kidIndex = kidCnt - 1;
+						}
+						else
+						{
+							int index = 0;
+							SCANF(strIndex.c_str(), "%d", &index);
+							kidIndex = index;
+							if (kidIndex < 0)
+							{
+								kidIndex = 0;
+							}
+							else if (kidIndex >= kidCnt)
+							{
+								kidIndex = kidCnt - 1;
+							}
+						}
+					}
+				}
+				else
+				{
+					if (isLogical_Or)
+					{
+						//reset to first kid
+						kidIndex = 0;
+					}
+					else if (filtetKidIndex > 0)
+					{//if it is not first filter node, move matching node also
+						//if it is and ( default it is)
+						//move to next kid
+						kidIndex++;
+					}
+				}
+				if (isLogical_Or && bMatchAll)
+				{//it is or but bMatchAll is aready true, 
+				//don't need to calculate DoMatch
+					filtetKidIndex++;
+					continue;
+				}
+				else if (!isLogical_Or && (!bMatchAll))
+				{// it is and,but bMatchAll already false
+				//don't need to calculate DoMatch
+					filtetKidIndex++;
+					continue;
+				}
+				else
+				{
+					auto* pCurKid = kids[kidIndex];
+					bool bMatch = DoMatch(pCurKid, pCurFilterKid);
+					filtetKidIndex++;
+					if (isLogical_Or)
+					{
+						bMatchAll = bMatchAll || bMatch;
+					}
+					else
+					{
+						bMatchAll = bMatchAll && bMatch;
+					}
+				}
+			}
+			return bMatchAll;
+		}
+		bool HtmlNode::MatchExprSubItems(HtmlNode* pCurNode, HtmlNode* pExprParentNode)
+		{
+			bool bMatchAll = true;
+			bool bFirst = true;
+			for (auto* pFilterItem : pExprParentNode->m_kids)
+			{
+				bool IsAnd = true;
+				if (!bFirst)
+				{//start from second item, need to check logical operator
+					if (pFilterItem->MatchAttr("${logical}", "and"))
+					{
+						IsAnd = true;
+					}
+					else if (pFilterItem->MatchAttr("${logical}", "or"))
+					{
+						IsAnd = false;
+					}
+					if (!IsAnd && bMatchAll)
+					{//it is or but bMatchAll is aready true, 
+					//don't need to calculate DoMatch
+						continue;
+					}
+					else if (IsAnd && (!bMatchAll))
+					{// it is and,but bMatchAll already false
+					//don't need to calculate DoMatch
+						continue;
+					}
+				}
+				bool bMatch = DoMatch(pCurNode, pFilterItem);
+				if (bFirst)
+				{
+					bMatchAll = bMatch;
+					bFirst = false;
+					continue;
+				}
+				if (IsAnd)
+				{
+					bMatchAll = bMatchAll && bMatch;
+				}
+				else
+				{
+					bMatchAll = bMatchAll || bMatch;
+				}
+			}
+			return bMatchAll;
+		}
+		bool HtmlNode::MatchOneFilter(HtmlNode* pRootNode, HtmlNode* pFilterExpr)
+		{
+			if (pFilterExpr->m_kids.size() == 0)
+			{
+				return false;
+			}
+			std::vector<HtmlNode*> nodes;
+			nodes.push_back(pRootNode);
+			bool bMatched =  MatchExprKisdWithFilterSubItems(
+				nodes,pFilterExpr);
+			if (!bMatched)
+			{
+				//look into children and descendants
+				for (auto* pKid : pRootNode->m_kids)
+				{
+					bMatched |= MatchOneFilter(pKid, pFilterExpr);
+				}
+			}
+			return bMatched;
+		}
+		bool HtmlNode::Query(HtmlNode* pQueryExpr)
+		{
+			for (auto* pSubNode : pQueryExpr->m_kids)
+			{
+				if (strcasecmp(pSubNode->m_class.c_str(),"match")==0)
+				{
+					MatchOneFilter(this,pSubNode);
+				}
+			}
 			return true;
 		}
 	}

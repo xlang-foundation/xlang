@@ -187,7 +187,7 @@ namespace Data
 		{
 			if (idx >= 0 && m_s.size() >= idx)
 			{
-				m_s[idx] = val.GetLongLong();
+				m_s[idx] = (char)val.GetLongLong();
 				return true;
 			}
 			else

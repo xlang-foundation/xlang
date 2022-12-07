@@ -23,6 +23,7 @@ namespace X
 				[](auto* pThis) {return pThis->GetKids(); });
 			APISET().AddPropL("attrs", [](auto* pThis, X::Value v) {},
 				[](auto* pThis) {return pThis->GetAttrs(); });
+			APISET().AddFunc<1>("query", &HtmlNodeWrapper::Query);
 		END_PACKAGE
 	public:
 		HtmlNodeWrapper()
@@ -37,6 +38,7 @@ namespace X
 		X::Value GetParent();
 		X::Value GetKids();
 		X::Value GetAttrs();
+		X::Value Query(std::string queryString);
 	};
 	class HtmlWrapper
 	{
@@ -50,7 +52,7 @@ namespace X
 		HtmlWrapper()
 		{
 		}
-		X::Value LoadFromString(std::string jsonStr);
+		X::Value LoadFromString(std::string htmlStr);
 		X::Value  LoadFromFile(X::XRuntime* rt, X::XObj* pContext, std::string fileName);
 	};
 }

@@ -6,13 +6,16 @@
 
 namespace X
 {
-	X::Value HtmlWrapper::LoadFromString(std::string jsonStr)
+	X::Value HtmlWrapper::LoadFromString(std::string htmlStr)
 	{
-		std::string fileName = "inline_code";
-		X::Value retValue;
-		X::Hosting::I().Run(fileName, jsonStr.c_str(),
-			(int)jsonStr.size(), retValue);
-		return retValue;
+		Text::Html html;
+		html.Init();
+		Text::HtmlNode* pRootNode = nullptr;
+		html.LoadFromString((char*)htmlStr.c_str(), (int)htmlStr.size(),
+			&pRootNode);
+		X::XPackageValue<HtmlNodeWrapper> valNode;
+		(*valNode).SetNode(pRootNode);
+		return valNode;
 	}
 	X::Value  HtmlWrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,
 		std::string fileName)
@@ -77,5 +80,19 @@ namespace X
 			dict->Set(key,val);
 		}
 		return dict;
+	}
+	X::Value HtmlNodeWrapper::Query(std::string queryString)
+	{
+		if (m_pNode == nullptr)
+		{
+			return X::Value(false);
+		}
+		Text::Html html;
+		html.Init();
+		Text::HtmlNode* pFilterExprNode = nullptr;
+		html.LoadFromString((char*)queryString.c_str(), (int)queryString.size(),
+			&pFilterExprNode);
+		bool bOK = m_pNode->Query(pFilterExprNode);
+		return X::Value(bOK);
 	}
 }
