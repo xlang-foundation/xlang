@@ -383,19 +383,26 @@ namespace X
 		{
 			if (NodeMatch(pCurNode, pExprNode))
 			{
-				//check children
+				int levelOfChildRequired = 0;//any descendant
 				if (pExprNode->m_kids.size() > 0)
 				{
 					auto* pFirstExprNode = pExprNode->m_kids[0];
-					if (pFirstExprNode->MatchAttr("${child_combinator}", "direct"))
-					{//only match direct child
-
-					}
-					else
+					std::string strCombinator;
+					if (pFirstExprNode->GetAttr("${child_combinator}", strCombinator))
 					{
-
+						if (strCombinator == "*")
+						{
+							levelOfChildRequired = -1;
+						}
+						else
+						{
+							SCANF(strCombinator.c_str(), "%d", &levelOfChildRequired);
+						}
 					}
 				}
+				bool bMatched = MatchExprKisdWithFilterSubItems(
+					pCurNode->m_kids, pExprNode);
+
 			}
 			return true;
 		}
