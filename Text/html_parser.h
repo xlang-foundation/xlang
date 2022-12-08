@@ -18,7 +18,7 @@ namespace X
 			std::string m_content;//only for text content embeded into an object
 			bool NodeMatch(HtmlNode* pCurNode, HtmlNode* pExprNode);
 			bool DoMatch(HtmlNode* pCurNode, HtmlNode* pExprNode);
-			bool MatchExprKisdWithFilterSubItems(
+			bool MatchExprKidsWithFilterSubItems(
 				std::vector<HtmlNode*>& kids, HtmlNode* pExprParentNode);
 			bool MatchExprSubItems(HtmlNode* pCurNode, HtmlNode* pExprParentNode);
 			bool MatchAttr(std::string key, std::string val)

@@ -381,6 +381,7 @@ namespace X
 		}
 		bool HtmlNode::DoMatch(HtmlNode* pCurNode, HtmlNode* pExprNode)
 		{
+			bool bMatched = false;
 			if (NodeMatch(pCurNode, pExprNode))
 			{
 				int levelOfChildRequired = 0;//any descendant
@@ -400,11 +401,11 @@ namespace X
 						}
 					}
 				}
-				bool bMatched = MatchExprKisdWithFilterSubItems(
+				bMatched = MatchExprKidsWithFilterSubItems(
 					pCurNode->m_kids, pExprNode);
 
 			}
-			return true;
+			return bMatched;
 		}
 		//in filter if logical op is or, and no ${node_index} specified
 		//means, start matching from first child
@@ -415,13 +416,17 @@ namespace X
 		//if no sign there, means absoluate position in  kids array
 		//if it is 'last', means last kid
 
-		bool HtmlNode::MatchExprKisdWithFilterSubItems(
+		bool HtmlNode::MatchExprKidsWithFilterSubItems(
 			std::vector<HtmlNode*>& kids,
 			HtmlNode* pExprParentNode)
 		{
 			int kidCnt = (int)kids.size();
-			int kidIndex = 0;
 			int filterKidCnt = (int)pExprParentNode->m_kids.size();
+			if (kidCnt ==0 && filterKidCnt == 0)
+			{
+				return true;//both empty, return true
+			}
+			int kidIndex = 0;
 			int filtetKidIndex = 0;
 			bool bMatchAll = true;
 
@@ -571,7 +576,7 @@ namespace X
 			}
 			std::vector<HtmlNode*> nodes;
 			nodes.push_back(pRootNode);
-			bool bMatched =  MatchExprKisdWithFilterSubItems(
+			bool bMatched =  MatchExprKidsWithFilterSubItems(
 				nodes,pFilterExpr);
 			if (!bMatched)
 			{

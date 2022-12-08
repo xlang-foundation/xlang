@@ -4,8 +4,8 @@ y = x.query("
 	<query>
 		<match>
 			<filter>
-				<div ${child_combinator}='direct|any'>
-					<div style='color:aqua'></div>
+				<div ${child_combinator}='direct|any' ${node_index}='0-Last'>
+					<div style='color:aqua' ${output}="${0}.Content"></div>
 				</div>
 				<div ${sibling_combinator}='adjacent|any' ${logical}='and|or'>
 					<div style='color:aqua'></div>
