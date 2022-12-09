@@ -1,5 +1,5 @@
 import html
-x = html.load("test.html")
+x = html.load("test2.html")
 y = x.query("
 	<query>
 		<match>

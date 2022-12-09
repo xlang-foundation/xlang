@@ -1,12 +1,12 @@
 import html
-x = html.load("test.html")
-y = x.query("
+x = html.load("test.html") """xxxxx"""
+y = x.query("""
 	<query>
 		<match>
-			<div>
-				<div style='color:aqua'></div>
+			<div ${output}='${0}.attr("data-id")'>
+				<div style='color:aqua' ${output}='${0}.Content'></div>
 			</div>
 		</match>
 	</query>
-")
+""")
 print(x)

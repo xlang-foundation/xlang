@@ -245,11 +245,47 @@ bool Range::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 }
 bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
 {
-	auto operandR = operands.top();
-	operands.pop();
+	//for right operands, support multiple token
+	//for example: x: long int, the type is two-tokens word
+	//so pop up all operands which's tokenIndex>op's token index
+	AST::Expression* operandR = nullptr;
+	while (!operands.empty() 
+		&& operands.top()->GetTokenIndex() > m_tokenIndex)
+	{
+		auto r = operands.top();
+		operands.pop();
+		if (r->m_type != ObType::Var)
+		{//only accept Var, all other like """comment""" skiped
+			delete r;
+			continue;
+		}
+		if (r->m_type == ObType::Var
+			&& operandR!= nullptr 
+			&& operandR->m_type == ObType::Var)
+		{
+			dynamic_cast<AST::Var*>(operandR)->MergeWithPreviousToken(
+				dynamic_cast<AST::Var*>(r));
+			delete r;
+		}
+		else if (operandR == nullptr)
+		{//must be Var
+			operandR = r;
+		}
+	}
+	if (operandR == nullptr)
+	{
+		std::cout << "syntax error" << std::endl;
+		return false;
+	}
 	auto operandL = operands.top();
+	if (operandL == nullptr)
+	{
+		std::cout << "syntax error" << std::endl;
+		return false;
+	}
 	operands.pop();
 	auto param = new AST::Param(operandL, operandR);
+	param->SetTokenIndex(operandL->GetTokenIndex());
 	param->ReCalcHint(operandL);
 	param->ReCalcHint(operandR);
 	operands.push(param);
@@ -271,6 +307,7 @@ bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 		if (operandL->m_type != AST::ObType::List)
 		{
 			list = new AST::List(operandL);
+			list->SetTokenIndex(operandL->GetTokenIndex());
 		}
 		else
 		{
@@ -283,6 +320,10 @@ bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 	}
 	if (operandR->m_type != AST::ObType::List)
 	{
+		if (list->GetTokenIndex() == -1)
+		{
+			list->SetTokenIndex(operandR->GetTokenIndex());
+		}
 		*list += operandR;
 	}
 	else

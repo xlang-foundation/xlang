@@ -24,6 +24,17 @@ public:
 		Name = n;
 		m_type = ObType::Var;
 	}
+	void MergeWithPreviousToken(Var* pPreviousVar)
+	{
+		//pPreviousVar must be the previous tokoen
+		//so can keep the continues memory
+		Name.size = (Name.s + Name.size) - pPreviousVar->Name.s;
+		Name.s = pPreviousVar->Name.s;
+		m_lineStart = pPreviousVar->m_lineStart;
+		m_charStart = pPreviousVar->m_charStart;
+		m_charPos = pPreviousVar->m_charPos;
+		m_tokenIndex = pPreviousVar->m_tokenIndex;
+	}
 	~Var()
 	{
 		if (m_needRelease)

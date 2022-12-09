@@ -57,6 +57,7 @@ class Var;
 class Expression
 {
 protected:
+	int m_tokenIndex = -1;
 	Expression* m_parent = nil;
 	Scope* m_scope = nil;//set by compiling
 	bool m_isLeftValue = false;
@@ -70,6 +71,11 @@ public:
 	Expression()
 	{
 	}
+	inline void SetTokenIndex(int idx)
+	{
+		m_tokenIndex = idx;
+	}
+	inline int GetTokenIndex() { return m_tokenIndex; }
 	static Expression* CreateByType(ObType t);
 	template<typename T>
 	T* BuildFromStream(X::XLangStream& stream)
@@ -505,6 +511,10 @@ public:
 		return *this;
 	}
 };
+//use Param for this syntax
+// name:type for example in function define 
+// def func1(x:int)
+//but also can be some other meaning bases on the context
 class Param :
 	virtual public Expression
 {

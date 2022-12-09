@@ -21,24 +21,28 @@ namespace X
 		//	ReleaseObject(x.obj);
 		//}
 		flags = v.flags;
-		t = v.t;
 		switch (t)
 		{
 		case ValueType::Int64:
+			t = v.t;
 			x.l += ToInt64(v);
 			break;
 		case ValueType::Double:
+			t = v.t;
 			x.d += ToDouble(v);
 			break;
 		case ValueType::Str:
-			//TODO:
+			t = v.t;
 			x.str = v.x.str;
 			ChangeToStrObject();
 			break;
 		case ValueType::Object:
 		{
-			Value v0 = v;
-			(*((XObj*)x.obj)) += v0;
+			if (t == ValueType::Object)
+			{
+				Value v0 = v;
+				(*((XObj*)x.obj)) += v0;
+			}
 		}
 		break;
 		default:

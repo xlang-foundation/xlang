@@ -236,8 +236,26 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 		if (!m_curBlkState->IsOperandStackEmpty() 
 			&& pPair != nil)
 		{
-			pPair->SetR(m_curBlkState->OperandTop());
-			m_curBlkState->OperandPop();
+			//loop all operands which's tokenIndex>pPair's tokenIndex
+			//and only keep left-most
+			AST::Expression* operandR = nullptr;
+			while (!m_curBlkState->IsOperandStackEmpty()
+				&& m_curBlkState->OperandTop()->GetTokenIndex() 
+				> pPair->GetTokenIndex())
+			{
+				auto r = m_curBlkState->OperandTop();
+				m_curBlkState->OperandPop();
+				if (operandR == nullptr)
+				{
+					operandR = r;
+				}
+				else
+				{
+					delete operandR;
+					operandR = r;
+				}
+			}
+			pPair->SetR(operandR);
 		}
 	}
 	if (pPair)
@@ -344,6 +362,10 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 	BlockState* pBlockState = new BlockState(pModule);
 	m_stackBlocks.push(pBlockState);
 	m_curBlkState = pBlockState;
+	//each expresion or op will get a tokenindex
+	//which increased with the sequence come out from Token parser
+	//use this way to make sure each op just get right operands
+	int tokenIndex = 0;
 	while (true)
 	{
 		String s;
@@ -364,12 +386,13 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			m_curBlkState->m_NewLine_WillStart = false;
 			break;
 		}
-		if (idx == TokenLineComment || idx == TokenComment)
+		if (idx == TokenLineComment)
 		{
 		}
 		else if (idx == TokenFeedOp)
 		{
 			AST::Operator* op = new AST::FeedOp(s.s, s.size);
+			op->SetTokenIndex(tokenIndex++);
 			op->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
 			m_curBlkState->ProcessPrecedenceOp(
 				get_last_token(), op);
@@ -377,19 +400,32 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			push_preceding_token(idx);
 			NewLine();
 		}
-		else if (idx == TokenStr || idx == TokenStrWithFormat 
-			|| idx == TokenCharSequence)
+		else if (idx == TokenComment|| 
+				idx == TokenStr || 
+				idx == TokenStrWithFormat|| 
+				idx == TokenCharSequence)
 		{
 			m_curBlkState->m_NewLine_WillStart = false;
-			AST::Str* v = new AST::Str(s.s, s.size, idx == TokenStrWithFormat);
+			AST::Str* v = nullptr;
+			if (idx == TokenComment)
+			{//skip first """ and last """
+				v = new AST::Str(s.s+3, s.size-6, idx == TokenStrWithFormat);
+			}
+			else
+			{
+				v = new AST::Str(s.s, s.size, idx == TokenStrWithFormat);
+			}
+			v->SetTokenIndex(tokenIndex++);
 			v->SetCharFlag(idx == TokenCharSequence);
-			v->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart,one.charEnd);
+			v->SetHint(one.lineStart, one.lineEnd, 
+				one.charPos,one.charStart,one.charEnd);
 			m_curBlkState->PushExp(v);
 			push_preceding_token(idx);
 		}
 		else if (idx == Token_False || idx == Token_True)
 		{
 			AST::Expression* v = new AST::Number(idx== Token_True);
+			v->SetTokenIndex(tokenIndex++);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart,one.charEnd);
 			m_curBlkState->PushExp(v);
 			push_preceding_token(TokenNum);
@@ -397,6 +433,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		else if (idx == Token_None)
 		{
 			AST::Expression* v = new AST::XConst((TokenIndex)idx);
+			v->SetTokenIndex(tokenIndex++);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos,
 				one.charStart,one.charEnd);
 			m_curBlkState->PushExp(v);
@@ -425,6 +462,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 				v = new AST::Var(s);
 				break;
 			}
+			v->SetTokenIndex(tokenIndex++);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart, one.charEnd);
 			m_curBlkState->PushExp(v);
 			push_preceding_token(idx);
@@ -451,6 +489,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			}
 			if (op)
 			{
+				op->SetTokenIndex(tokenIndex++);
 				op->SetId(opAct.opId);
 				auto pBlockOp = dynamic_cast<AST::Block*>(op);
 				if (pBlockOp)

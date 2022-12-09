@@ -13,6 +13,10 @@
 
 namespace X 
 {
+	namespace AST
+	{
+		class Module;
+	}
 class OpRegistry;
 class Parser
 {

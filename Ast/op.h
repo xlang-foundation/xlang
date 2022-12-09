@@ -130,10 +130,27 @@ public:
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands)
 	{
-		if (!operands.empty())
+		//for BinaryOp eat all operands just keep left-most one
+		//as right operand
+		//also need to output syntax error info
+		AST::Expression* operandR = nullptr;
+		while (!operands.empty() && 
+			operands.top()->GetTokenIndex() > m_tokenIndex)
 		{
-			auto operandR = operands.top();
+			auto r = operands.top();
 			operands.pop();
+			if (operandR == nullptr)
+			{//must be Var
+				operandR = r;
+			}
+			else
+			{
+				delete operandR;
+				operandR = r;
+			}
+		}
+		if (operandR)
+		{
 			SetR(operandR);
 		}
 		if (!operands.empty())

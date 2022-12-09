@@ -382,8 +382,14 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_LOW2);
 	RegOP("and", "or")
 		.SetPrecedence(Precedence_LOW1);
+	//12/9/2022 todo: it was RegOP("\n",",",":")
+	//but for def func1(x:int,y:double) case
+	//need to make : at least has same Precedence as ','
 	RegOP("\n",",",":")
 		.SetPrecedence(Precedence_VERYLOW);
+	RegOP(":")
+		.SetPrecedence(Precedence_High);
+
 }
 
 std::vector<OpInfo> RegOP::OPList;
