@@ -29,7 +29,7 @@ void RegisterOps(OpRegistry* reg)
 	});
 	RegOP("-")
 	.SetUnaryop([](XlangRuntime* rt, AST::UnaryOp* op,X::Value& R, X::Value& v) {
-		v = X::Value((long long)0);//set to 0
+		v = X::Value(R.GetType() == ValueType::Double?0.0:(long long)0);//set to 0
 		v -= R;
 		return true;
 	})

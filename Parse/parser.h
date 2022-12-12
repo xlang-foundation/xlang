@@ -21,6 +21,7 @@ class OpRegistry;
 class Parser
 {
 	OpRegistry* m_reg = nullptr;
+	int m_tokenIndex = 0;
 	Token* mToken = nil;
 	AST::Block* m_lastComingBlock = nullptr;
 	std::stack<BlockState*> m_stackBlocks;

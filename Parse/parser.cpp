@@ -329,6 +329,7 @@ AST::Operator* Parser::PairLeft(short opIndex)
 	if (lastToken == TokenID && LastIsLambda())
 	{
 		auto op = new AST::Func();
+		op->SetTokenIndex(m_tokenIndex++);
 		//for code line inside this function, 
 		//we need to assign upper block as its parent
 		//it may be replaced 
@@ -348,6 +349,7 @@ AST::Operator* Parser::PairLeft(short opIndex)
 		m_curBlkState->StackPair().push(PairInfo{ 
 			opAct.opId,(int)opIndex,false });
 		auto op = new AST::PairOp(opIndex, lastToken);
+		//out caller will set TokenIndex if op is not NULL
 		return op;
 	}
 }
@@ -358,6 +360,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 	//keep memory to ref in AST tree
 	mToken->SetStream(szCode, size);
 	//mToken->Test();
+	m_tokenIndex = 0;
 	reset_preceding_token();
 	BlockState* pBlockState = new BlockState(pModule);
 	m_stackBlocks.push(pBlockState);
@@ -365,7 +368,6 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 	//each expresion or op will get a tokenindex
 	//which increased with the sequence come out from Token parser
 	//use this way to make sure each op just get right operands
-	int tokenIndex = 0;
 	while (true)
 	{
 		String s;
@@ -392,7 +394,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		else if (idx == TokenFeedOp)
 		{
 			AST::Operator* op = new AST::FeedOp(s.s, s.size);
-			op->SetTokenIndex(tokenIndex++);
+			op->SetTokenIndex(m_tokenIndex++);
 			op->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
 			m_curBlkState->ProcessPrecedenceOp(
 				get_last_token(), op);
@@ -415,7 +417,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			{
 				v = new AST::Str(s.s, s.size, idx == TokenStrWithFormat);
 			}
-			v->SetTokenIndex(tokenIndex++);
+			v->SetTokenIndex(m_tokenIndex++);
 			v->SetCharFlag(idx == TokenCharSequence);
 			v->SetHint(one.lineStart, one.lineEnd, 
 				one.charPos,one.charStart,one.charEnd);
@@ -425,7 +427,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		else if (idx == Token_False || idx == Token_True)
 		{
 			AST::Expression* v = new AST::Number(idx== Token_True);
-			v->SetTokenIndex(tokenIndex++);
+			v->SetTokenIndex(m_tokenIndex++);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart,one.charEnd);
 			m_curBlkState->PushExp(v);
 			push_preceding_token(TokenNum);
@@ -433,7 +435,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		else if (idx == Token_None)
 		{
 			AST::Expression* v = new AST::XConst((TokenIndex)idx);
-			v->SetTokenIndex(tokenIndex++);
+			v->SetTokenIndex(m_tokenIndex++);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos,
 				one.charStart,one.charEnd);
 			m_curBlkState->PushExp(v);
@@ -462,7 +464,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 				v = new AST::Var(s);
 				break;
 			}
-			v->SetTokenIndex(tokenIndex++);
+			v->SetTokenIndex(m_tokenIndex++);
 			v->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart, one.charEnd);
 			m_curBlkState->PushExp(v);
 			push_preceding_token(idx);
@@ -489,7 +491,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			}
 			if (op)
 			{
-				op->SetTokenIndex(tokenIndex++);
+				op->SetTokenIndex(m_tokenIndex++);
 				op->SetId(opAct.opId);
 				auto pBlockOp = dynamic_cast<AST::Block*>(op);
 				if (pBlockOp)

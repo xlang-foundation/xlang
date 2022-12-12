@@ -24,15 +24,12 @@ namespace X
 		switch (t)
 		{
 		case ValueType::Int64:
-			t = v.t;
 			x.l += ToInt64(v);
 			break;
 		case ValueType::Double:
-			t = v.t;
 			x.d += ToDouble(v);
 			break;
 		case ValueType::Str:
-			t = v.t;
 			x.str = v.x.str;
 			ChangeToStrObject();
 			break;
