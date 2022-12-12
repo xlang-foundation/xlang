@@ -9,4 +9,7 @@ y = x.query("""
 		</match>
 	</query>
 """)
+if y:
+	k = y[0].attrs["data-id"]
+	z = y[0].kids[0].content
 print(x)

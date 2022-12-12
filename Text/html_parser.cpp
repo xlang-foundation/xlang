@@ -353,6 +353,10 @@ namespace X
 			bool bRet = true;
 			for (auto& it : pExprNode->m_attrs)
 			{
+				if (it.first.starts_with("${"))
+				{
+					continue;
+				}
 				//find item with key
 				auto it2 = pCurNode->m_attrs.find(it.first);
 				if (it2 != pCurNode->m_attrs.end())
@@ -425,6 +429,10 @@ namespace X
 			if (kidCnt ==0 && filterKidCnt == 0)
 			{
 				return true;//both empty, return true
+			}
+			else if (kidCnt == 0)
+			{
+				return false;//filterKidCnt is not 0
 			}
 			int kidIndex = 0;
 			int filtetKidIndex = 0;
@@ -568,7 +576,8 @@ namespace X
 			}
 			return bMatchAll;
 		}
-		bool HtmlNode::MatchOneFilter(HtmlNode* pRootNode, HtmlNode* pFilterExpr)
+		bool HtmlNode::MatchOneFilter(HtmlNode* pRootNode, HtmlNode* pFilterExpr,
+			std::vector<HtmlNode*>& matchedNodes, bool needMatchAll)
 		{
 			if (pFilterExpr->m_kids.size() == 0)
 			{
@@ -578,26 +587,34 @@ namespace X
 			nodes.push_back(pRootNode);
 			bool bMatched =  MatchExprKidsWithFilterSubItems(
 				nodes,pFilterExpr);
-			if (!bMatched)
+			if (bMatched)
+			{
+				matchedNodes.push_back(pRootNode);
+			}
+			if(needMatchAll || !bMatched)
 			{
 				//look into children and descendants
 				for (auto* pKid : pRootNode->m_kids)
 				{
-					bMatched |= MatchOneFilter(pKid, pFilterExpr);
+					bMatched |= MatchOneFilter(pKid, pFilterExpr,
+						matchedNodes, needMatchAll);
 				}
 			}
 			return bMatched;
 		}
-		bool HtmlNode::Query(HtmlNode* pQueryExpr)
+		bool HtmlNode::Query(HtmlNode* pQueryExpr,
+			std::vector<HtmlNode*>& matchedNodes,
+			bool needMatchAll)
 		{
+			bool bOK = false;
 			for (auto* pSubNode : pQueryExpr->m_kids)
 			{
 				if (strcasecmp(pSubNode->m_class.c_str(),"match")==0)
 				{
-					MatchOneFilter(this,pSubNode);
+					bOK |= MatchOneFilter(this,pSubNode, matchedNodes, needMatchAll);
 				}
 			}
-			return true;
+			return bOK;
 		}
 	}
 }

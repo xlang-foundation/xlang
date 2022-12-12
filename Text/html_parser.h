@@ -47,8 +47,11 @@ namespace X
 					delete p;
 				}
 			}
-			bool MatchOneFilter(HtmlNode* pRootNode,HtmlNode* pFilterExpr);
-			bool Query(HtmlNode* pQueryExpr);
+			bool MatchOneFilter(HtmlNode* pRootNode,HtmlNode* pFilterExpr,
+				std::vector<HtmlNode*>& matchedNodes,bool needMatchAll = false);
+			bool Query(HtmlNode* pQueryExpr,
+				std::vector<HtmlNode*>& matchedNodes,
+				bool needMatchAll = false);
 			std::string& GetClass() { return m_class; }
 			std::string& GetContent() { return m_content; }
 			std::unordered_map<std::string, std::string>& GetAttrs()

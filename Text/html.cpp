@@ -92,7 +92,22 @@ namespace X
 		Text::HtmlNode* pFilterExprNode = nullptr;
 		html.LoadFromString((char*)queryString.c_str(), (int)queryString.size(),
 			&pFilterExprNode);
-		bool bOK = m_pNode->Query(pFilterExprNode);
-		return X::Value(bOK);
+		std::vector<Text::HtmlNode*> matchedNodes;
+		bool bOK = m_pNode->Query(pFilterExprNode, matchedNodes,true);
+		if (bOK)
+		{
+			X::List listNodes;
+			for (auto* pNode : matchedNodes)
+			{
+				X::XPackageValue<HtmlNodeWrapper> valNode;
+				(*valNode).SetNode(pNode);
+				listNodes += valNode;
+			}
+			return listNodes;
+		}
+		else
+		{
+			return X::Value(bOK);
+		}
 	}
 }
