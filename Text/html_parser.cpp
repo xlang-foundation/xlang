@@ -184,7 +184,6 @@ namespace X
 				if (idx >= 0)
 				{
 					htmlsymbol sym = (htmlsymbol)idx;
-					std::cout << (int)sym;
 					switch (sym)
 					{
 					case htmlsymbol::Comment_Begin:

@@ -40,6 +40,7 @@ namespace X
 			break;
 		}
 		return bOK;
+
 	}
 	int Dbg::PythonTraceFunc(
 		PyEngObjectPtr self,

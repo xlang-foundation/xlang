@@ -104,6 +104,10 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 	{//usage: x[1,2]
 		Value v0;
 		bOK = L->Run(rt, pContext, v0);
+		if (!v0.IsObject())
+		{
+			return false;
+		}
 		auto pDataObj = dynamic_cast<Data::Object*>(v0.GetObj());
 		switch (pDataObj->GetType())
 		{

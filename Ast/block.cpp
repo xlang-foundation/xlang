@@ -37,9 +37,32 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 	XlangRuntime* rt = (XlangRuntime*)rt0;
 	bool bOk = true;
 	m_bRunning = true;
-	if (rt->GetTrace() 
-		&& (m_type == ObType::Func
-		|| m_type == ObType::Module))
+
+	if (!rt->GetTrace())
+	{//just for debug easy,write same code here
+	// because dbg also run xlang code
+	//then easy to set breakpoint for xlang code in debug mode
+	//not for dbg xlang code
+		auto last = Body[Body.size() - 1];
+		for (auto& i : Body)
+		{
+			Value v0;
+			int line = i->GetStartLine();
+			bOk = i->Run(rt, pContext, v0);
+			if (!bOk)
+			{
+				std::cout << "Error Occurs in line:" << line << std::endl;
+			}
+			if (v0.IsValid() && (i == last))
+			{
+				v = v0;
+			}
+		}
+		m_bRunning = false;
+		return bOk;
+	}
+	//if being traced, go to here
+	if (m_type == ObType::Func || m_type == ObType::Module)
 	{
 		rt->GetTrace()(rt, pContext,rt->GetCurrentStack(),
 			TraceEvent::Call,
@@ -53,7 +76,7 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 		int pos = i->GetCharPos();
 		rt->GetCurrentStack()->SetLine(line);
 		rt->GetCurrentStack()->SetCharPos(pos);
-		//std::cout << "Run Line:" << line <<std::endl;
+		//std::cout << "Run Line(before check):" << line <<std::endl;
 
 		if (rt->GetTrace())
 		{
@@ -72,6 +95,7 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 		}
 		Value v0;
 		bOk = i->Run(rt,pContext, v0);
+		//std::cout << "after run line:" << line << std::endl;
 		if (!bOk)
 		{//TODO: error process here
 			std::cout << "Error Occurs in line:" << line << std::endl;

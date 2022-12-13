@@ -104,7 +104,9 @@ public:
 			pCmdInfo = pModule->PopCommand();
 			if (pCmdInfo == nullptr)
 			{
-				break;
+				//todo:
+				continue;
+				//break;
 			}
 			switch (pCmdInfo->dbgType)
 			{

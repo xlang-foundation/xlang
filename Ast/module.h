@@ -4,7 +4,8 @@
 #include "block.h"
 #include "Locker.h"
 #include "wait.h"
-
+#include "utility.h"
+#include <iostream>
 namespace X
 {
 namespace AST
@@ -60,6 +61,7 @@ class Module :
 	StackFrame* m_stackFrame = nullptr;
 
 	//for debug
+	//Locker m_addCommandLock;
 	bool m_inDebug = false;
 	dbg m_dbgLastRequest = dbg::Continue;
 	dbg m_dbg = dbg::Continue;
@@ -149,22 +151,31 @@ public:
 	}
 	inline void AddCommand(CommandInfo* pCmdInfo,bool bWaitFinish)
 	{
+		//m_addCommandLock.Lock();
 		if (bWaitFinish)
 		{
 			pCmdInfo->m_wait = new XWait();
 		}
+		//auto tid = GetThreadID();
+		//std::cout << "AddCommand,before add,bWaitFinish=" 
+		//	<< bWaitFinish<<"pCmdInfo="<< pCmdInfo <<"tid="<<tid << std::endl;
 		m_lockCommands.Lock();
 		m_commands.push_back(pCmdInfo);
 		m_lockCommands.Unlock();
 		m_commandWait.Release();
+		//std::cout << "AddCommand,after add,pCmdInfo="<< pCmdInfo << "tid=" << tid << std::endl;
 		if (bWaitFinish)
 		{
 			pCmdInfo->m_wait->Wait(-1);
 			delete pCmdInfo->m_wait;
 		}
+		//std::cout << "AddCommand,end,pCmdInfo = "<< pCmdInfo << "tid=" << tid << std::endl;
+		//m_addCommandLock.Unlock();
 	}
 	inline CommandInfo* PopCommand()
 	{
+		//auto tid = GetThreadID();
+		//std::cout << "PopCommand,Begin"<< "tid=" << tid << std::endl;
 		bool bRet = true;
 		CommandInfo* pCommandInfo = nullptr;
 		m_lockCommands.Lock();
@@ -181,6 +192,7 @@ public:
 			m_commands.erase(m_commands.begin());
 		}
 		m_lockCommands.Unlock();
+		//std::cout << "PopCommand,end,pCommandInfo=" << pCommandInfo << "tid=" << tid << std::endl;
 		return pCommandInfo;
 	}
 	inline char* SetCode(char* code, int size)

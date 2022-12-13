@@ -5,6 +5,7 @@ y = x.query("""
 		<match>
 			<div ${output}='${0}.attr("data-id")'>
 				<div style='color:aqua' ${output}='${0}.Content'></div>
+				<a href='test'></a>
 			</div>
 		</match>
 	</query>
