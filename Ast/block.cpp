@@ -62,8 +62,11 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 		return bOk;
 	}
 	//if being traced, go to here
-	if (m_type == ObType::Func || m_type == ObType::Module)
+	bool bEnterBlock = false;
+	if ((m_type == ObType::Func || m_type == ObType::Module) &&
+		rt->M()->GetDbgType() == X::AST::dbg::StepIn)
 	{
+		bEnterBlock = true;
 		rt->GetTrace()(rt, pContext,rt->GetCurrentStack(),
 			TraceEvent::Call,
 			dynamic_cast<Scope*>(this),nullptr);
@@ -107,7 +110,7 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 		}
 	}
 	m_bRunning = false;
-	if (rt->GetTrace() 
+	if (rt->GetTrace() && bEnterBlock
 		&& (m_type == ObType::Func
 		|| m_type == ObType::Module))
 	{
