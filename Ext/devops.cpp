@@ -16,6 +16,7 @@ namespace X
 	namespace DevOps
 	{
 #define	dbg_evt_name "devops.dbg"
+#define dbg_scope_special_type "Scope.Special"
 		DebugService::DebugService()
 		{
 			X::ObjectEvent* pEvt = X::EventSystem::I().Register(dbg_evt_name);
@@ -100,6 +101,62 @@ namespace X
 			}
 		*/
 		bool DebugService::PackScopeVars(XlangRuntime* rt,
+			XObj* pContextCurrent, AST::Scope* pScope,X::Value& varPackList)
+		{
+			Data::List* pList = new Data::List();
+			int nBuiltinFuncs = 0;
+			pScope->EachVar(rt, pContextCurrent, [rt, pList, &nBuiltinFuncs](
+				std::string name,
+				X::Value& val)
+				{
+					if (val.IsObject())
+					{
+						auto* pObjVal = val.GetObj();
+						if (pObjVal->GetType() == ObjType::Function)
+						{
+							auto* pDataFunc = dynamic_cast<Data::Function*>(pObjVal);
+							if (pDataFunc)
+							{
+								auto* pAstFunc = pDataFunc->GetFunc();
+								if (pAstFunc && pAstFunc->m_type == AST::ObType::BuiltinFunc)
+								{
+									nBuiltinFuncs++;
+									return;
+								}
+							}
+						}
+					}
+					Data::Dict* dict = new Data::Dict();
+					bool bOK = PackValueAsDict(dict,name, val);
+					if (bOK)
+					{
+						X::Value valDict = dict;
+						pList->Add(rt, valDict);
+					}
+				});
+			if (nBuiltinFuncs>0)
+			{
+				Data::Dict* dict = new Data::Dict();
+				Data::Str* pStrName = new Data::Str("special variables");
+				dict->Set("Name", X::Value(pStrName));
+				Data::Str* pStrType = new Data::Str(dbg_scope_special_type);
+				dict->Set("Type", X::Value(pStrType));
+				unsigned long long llId = (unsigned long long)pScope;
+				const int buf_len = 1000;
+				char strBuf[buf_len];
+				SPRINTF(strBuf, buf_len, "%llu", llId);
+				std::string strID(strBuf);
+				X::Value objId(strID);
+				dict->Set("Id", objId);
+				X::Value valSize(nBuiltinFuncs);
+				dict->Set("Size", valSize);
+				X::Value valDict = dict;
+				pList->Insert(0,rt, valDict);
+			}
+			varPackList = X::Value(pList);
+			return true;
+		}
+		bool DebugService::PackScopeSpecialVars(XlangRuntime* rt,
 			XObj* pContextCurrent, AST::Scope* pScope, X::Value& varPackList)
 		{
 			Data::List* pList = new Data::List();
@@ -107,12 +164,27 @@ namespace X
 				std::string name,
 				X::Value& val)
 				{
-					Data::Dict* dict = new Data::Dict();
-					bool bOK = PackValueAsDict(dict,name, val);
-					if (bOK)
+					if (val.IsObject())
 					{
-						X::Value valDict = dict;
-						pList->Add(rt, valDict);
+						auto* pObjVal = val.GetObj();
+						if (pObjVal->GetType() == ObjType::Function)
+						{
+							auto* pDataFunc = dynamic_cast<Data::Function*>(pObjVal);
+							if (pDataFunc)
+							{
+								auto* pAstFunc = pDataFunc->GetFunc();
+								if (pAstFunc && pAstFunc->m_type == AST::ObType::BuiltinFunc)
+								{
+									Data::Dict* dict = new Data::Dict();
+									bool bOK = PackValueAsDict(dict, name, val);
+									if (bOK)
+									{
+										X::Value valDict = dict;
+										pList->Add(rt, valDict);
+									}
+								}
+							}
+						}
 					}
 				});
 			varPackList = X::Value(pList);
@@ -216,8 +288,12 @@ namespace X
 			{
 				return false;
 			}
+			//first element is varType
+			X::Value valObjType;
+			pParamObj->Get(0, valObjType);
+			std::string varType = valObjType;
 			X::Value valObjReq;
-			pParamObj->Get(0, valObjReq);
+			pParamObj->Get(1, valObjReq);
 			std::string objIds = valObjReq;
 			//format objId-context.childObjId-context.[repeat]
 			//objId maybe a pointer or a key(string) for dict, or a number for list
@@ -230,6 +306,12 @@ namespace X
 			auto rootId = idList[0];
 			unsigned long long ullRootId = 0;
 			SCANF(rootId.c_str(), "%llu", &ullRootId);
+			if (varType == dbg_scope_special_type)
+			{
+				auto* pCurScope = (AST::Scope*)(ullRootId);
+				PackScopeSpecialVars(rt, pContextCurrent, pCurScope, valObject);
+				return true;
+			}
 			Data::Object* pObjRoot = dynamic_cast<Data::Object*>((XObj*)ullRootId);
 			XObj* pContextObj = nullptr;
 			if (rootIdPair.size() >= 2)
@@ -239,17 +321,17 @@ namespace X
 				pContextObj = (XObj*)contextId;
 			}
 			long long startIdx = 0;
-			if (pParamObj->Size() >= 1)
+			if (pParamObj->Size() >= 2)
 			{
 				X::Value valStart;
-				pParamObj->Get(1, valStart);
+				pParamObj->Get(2, valStart);
 				startIdx = valStart.GetLongLong();
 			}
 			long long reqCount = -1;
-			if (pParamObj->Size() >= 2)
+			if (pParamObj->Size() >= 3)
 			{
 				X::Value valCount;
-				pParamObj->Get(2, valCount);
+				pParamObj->Get(3, valCount);
 				reqCount = valCount.GetLongLong();
 			}
 			Data::List* pList = pObjRoot->FlatPack(rt, pContextObj, idList, 1, startIdx, reqCount);

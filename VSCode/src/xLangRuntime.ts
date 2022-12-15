@@ -490,11 +490,12 @@ export class XLangRuntime extends EventEmitter {
 			cb(verifiedValue);
 		});
 	}
-	public getObject(frameId,objId,start,count, cb) {
+	public getObject(frameId,varType,objId,start,count, cb) {
 		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() +
 			",frameId=" + frameId.toString()
 			+ ",cmd='Object'"
-			+ ",param=['" + objId+"'"
+			+ ",param=['"+varType+"'"
+			+",'" + objId+"'"
 			+ "," + start.toString()
 			+ "," + count.toString()+ "]"
 			+ ")";

@@ -21,7 +21,11 @@ namespace X
 				AST::CommandInfo* pCommandInfo,
 				X::Value& valStackInfo);
 			bool PackScopeVars(XlangRuntime* rt, 
-				XObj* pContextCurrent, AST::Scope* pScope,X::Value& varPackList);
+				XObj* pContextCurrent, AST::Scope* pScope,
+				X::Value& varPackList);
+			bool PackScopeSpecialVars(XlangRuntime* rt,
+				XObj* pContextCurrent, AST::Scope* pScope,
+				X::Value& varPackList);
 			bool BuildGlobals(XlangRuntime* rt,
 				XObj* pContextCurrent,
 				X::Value& valGlobals);

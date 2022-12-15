@@ -263,6 +263,33 @@ public:
 		AutoLock(m_lock);
 		m_data.erase(std::next(m_data.begin(), idx));
 	}
+	inline void Insert(long long idx,XlangRuntime* rt, X::Value& v)
+	{
+		AutoLock(m_lock);
+		if (v.IsObject())
+		{
+			Object* obj = dynamic_cast<Object*>(v.GetObj());
+			if (obj->GetType() == ObjType::XClassObject)
+			{
+				XClassObject* pClassObj = dynamic_cast<XClassObject*>(obj);
+				if (pClassObj)
+				{
+					AST::XClass* pXClass = pClassObj->GetClassObj();
+					if (pXClass)
+					{
+						auto& bases_0 = pXClass->GetBases();
+						MakeCommonBases(pXClass, bases_0);
+					}
+				}
+			}
+			else if (obj->GetType() == ObjType::Function)
+			{
+				std::vector<AST::XClass*> dummy;
+				MakeCommonBases(rt->M(), dummy);
+			}
+		}
+		m_data.insert(m_data.begin()+ idx,v);
+	}
 	inline void Add(XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock(m_lock);

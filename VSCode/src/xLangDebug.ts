@@ -454,7 +454,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		} else if (varType === 'globals') {
 			this._runtime.getGlobalVariables(cb);
 		} else {
-			this._runtime.getObject(frameId,objId,
+			this._runtime.getObject(frameId,varType,objId,
 				args.start===undefined?0:args.start,
 				args.count===undefined?-1:args.count,
 				cb);
@@ -884,6 +884,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
 				break;
+			case 'Scope.Special':
+				v.reference = this._runtime.createScopeRef(
+					v.Type,v.FrameId,v.Val,v.Id);
+				dapVariable.value = "("+v.Size.toString()+")";
+				dapVariable.type = "Scope.Special";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = v.Size;
+				break;				
 			case 'List':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
