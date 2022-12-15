@@ -137,7 +137,7 @@ namespace X
 			if (nBuiltinFuncs>0)
 			{
 				Data::Dict* dict = new Data::Dict();
-				Data::Str* pStrName = new Data::Str("special variables");
+				Data::Str* pStrName = new Data::Str("builtins");
 				dict->Set("Name", X::Value(pStrName));
 				Data::Str* pStrType = new Data::Str(dbg_scope_special_type);
 				dict->Set("Type", X::Value(pStrType));
