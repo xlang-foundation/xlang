@@ -126,6 +126,7 @@ namespace X
 			{
 				m_myScope = s;
 			}
+			bool ToValue(X::Value& val);
 			bool PyObjectToValue(PyEng::Object& pyObj, X::Value& val);
 			virtual std::string GetNameString() override
 			{

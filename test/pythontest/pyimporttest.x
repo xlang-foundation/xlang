@@ -1,6 +1,7 @@
 import os
 x = os.getcwd()
+x0 = to_xlang(x)
 import simple_module
 pid = simple_module.print_func("check into python function")
-x_pid = xlang.to_xlang(pid)
+x_pid = to_xlang(pid)
 print("end")

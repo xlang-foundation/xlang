@@ -52,6 +52,10 @@ namespace X
 				PyObjectCache::I().RemoveModule(strFileName);
 			}
 		}
+		bool PyProxyObject::ToValue(X::Value& val)
+		{
+			return PyObjectToValue(m_obj, val);
+		}
 		bool PyProxyObject::PyObjectToValue(PyEng::Object& pyObj, X::Value& val)
 		{
 			if (pyObj.IsBool())

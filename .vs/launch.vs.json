@@ -14,7 +14,7 @@
       "argssss": [ "C:\\Dev\\X\\test\\testimport.x" ],
       "args_yaml": [ "C:\\Dev\\X\\test\\yaml_data.yml" ],
       "argsXXXXX": [ "C:\\Dev\\X\\test\\objcount_test.x" ],
-      "args_simple": [ "C:\\Dev\\X\\test\\simple.x" ],
+      "args__": [ "C:\\Dev\\X\\test\\misc\\simple.x" ],
       "argsssss_": [ "C:\\Dev\\Cantor\\test\\client\\test_task.x" ],
       "args_decor": [ "C:\\Dev\\X\\test\\decor_test.x" ],
       "arg_sss": [ "C:\\Dev\\Cantor\\test\\client\\simple_test.x" ],
