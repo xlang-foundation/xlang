@@ -167,6 +167,16 @@ PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, int idx)
 		pRetOb = PyDict_GetItem(pOb, pObKey);
 		Py_DecRef(pObKey);
 	}
+	else
+	{
+		//call 
+		auto func = Get(pOb, "__getitem__");
+		PyObject* pObIndex = PyLong_FromLong(idx);
+		auto retOb = Call(func, 1, (PyEngObjectPtr*)& pObIndex);
+		Py_DecRef(pObIndex);
+		Py_DecRef((PyObject*)func);
+		pRetOb = (PyObject*)retOb;
+	}
 	//all come from Borrowed reference,so add one
 	Py_IncRef(pRetOb);
 	return (PyEngObjectPtr)pRetOb;
@@ -373,7 +383,20 @@ void GrusPyEngHost::SetTrace(Python_TraceFunc func,
 }
 PyEngObjectPtr GrusPyEngHost::Import(const char* key)
 {
-	return (PyEngObjectPtr)PyImport_ImportModule(key);
+	auto* pOb = PyImport_ImportModule(key);
+	return (PyEngObjectPtr)pOb;
+}
+PyEngObjectPtr GrusPyEngHost::ImportFrom(const char* moduleName, const char* from)
+{
+	auto* pFromOb = PyUnicode_FromString(from);
+	PyObject* pFromArgs = PyTuple_New(1);
+	PyTuple_SetItem(pFromArgs, 0, pFromOb);
+	auto* pNameOb = PyUnicode_FromString(moduleName);
+	auto* pOb = PyImport_ImportModuleLevel(moduleName,
+		Py_None, Py_None, pFromArgs,0);
+	Py_DecRef(pFromArgs);
+	Py_DecRef(pNameOb);
+	return (PyEngObjectPtr)pOb;
 }
 
 void GrusPyEngHost::Release(PyEngObjectPtr obj)

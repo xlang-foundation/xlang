@@ -26,6 +26,7 @@ namespace X
 		Package,
 		ModuleObject,
 		Future,
+		Iterator,
 		List,
 		Dict,
 		TableRow,
@@ -250,6 +251,12 @@ namespace X
 	public:
 		Internal_Reserve(XStr)
 		virtual char* Buffer() = 0;
+	};
+	class XIterator :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XIterator)
 	};
 	class XList :
 		virtual public XObj

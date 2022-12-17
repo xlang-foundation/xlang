@@ -57,7 +57,7 @@ public:
 	virtual PyEngObjectPtr NewDict() override;
 	virtual PyEngObjectPtr NewArray(int nd, unsigned long long* dims, int itemDataType) override;
 	virtual PyEngObjectPtr Import(const char* key) override;
-
+	virtual PyEngObjectPtr ImportFrom(const char* moduleName, const char* from) override;
 	virtual void Release(PyEngObjectPtr obj) override;
 
 	virtual int AddRef(PyEngObjectPtr obj) override;

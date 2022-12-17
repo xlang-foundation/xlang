@@ -4,6 +4,7 @@
 #include "dict.h"
 #include "list.h"
 #include "table.h"
+#include "pyproxyobject.h"
 
 namespace X
 {
@@ -119,6 +120,17 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 			bOK = GetItemFromDict(rt, pContext, dynamic_cast<Data::Dict*>(pDataObj), R, v, lValue);
 			break;
 		case X::ObjType::Table:
+			break;
+		case X::ObjType::PyProxyObject:
+		{
+			auto* pPyObj = dynamic_cast<Data::PyProxyObject*>(pDataObj);
+			if (pPyObj)
+			{
+				Value vIdx;
+				bOK = R->Run(rt, pContext, vIdx);
+				pPyObj->GetItem(vIdx.GetLongLong(),v);
+			}
+		}
 			break;
 		default:
 			break;

@@ -30,19 +30,26 @@ namespace X
 			m_proxyType = PyProxyType::Module;
 			m_name = name;
 			m_path = curPath;
-			std::string strFileName = GetModuleFileName();
 			//need to addRef()??
 			AddRef();
-			PyObjectCache::I().AddModule(strFileName, this);
-			auto sys = PyEng::Object::Import("sys");
-			sys["path.insert"](0, m_path);
 			if (rt->GetTrace())
 			{
 				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
 					TraceEvent::Call, this, this);
 			}
-			m_obj = g_pPyHost->Import(name.c_str());
-			sys["path.remove"](m_path);
+			if (fromPath.empty())
+			{
+				std::string strFileName = GetModuleFileName();
+				PyObjectCache::I().AddModule(strFileName, this);
+				auto sys = PyEng::Object::Import("sys");
+				sys["path.insert"](0, m_path);
+				m_obj = g_pPyHost->Import(name.c_str());
+				sys["path.remove"](m_path);
+			}
+			else
+			{
+				m_obj = g_pPyHost->ImportFrom(name.c_str(), fromPath.c_str());
+			}
 		}
 		PyProxyObject::~PyProxyObject()
 		{
@@ -55,6 +62,15 @@ namespace X
 		bool PyProxyObject::ToValue(X::Value& val)
 		{
 			return PyObjectToValue(m_obj, val);
+		}
+		bool PyProxyObject::GetItem(long long index, X::Value& val)
+		{
+			PyEng::Object subObj = m_obj[index];
+			PyProxyObject* pProxyObj = new PyProxyObject(subObj);
+			//todo: when to call release
+			pProxyObj->AddRef();
+			val = X::Value(pProxyObj);
+			return true;
 		}
 		bool PyProxyObject::PyObjectToValue(PyEng::Object& pyObj, X::Value& val)
 		{

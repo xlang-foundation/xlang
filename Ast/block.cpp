@@ -146,7 +146,7 @@ bool While::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
 	{
 		Value v0;
 		bool bOK = R->Run(rt,pContext,v0);
-		if (bOK && v0 == Value(true))
+		if (bOK && v0.IsTrue())
 		{
 			Block::Run(rt,pContext,v);
 		}
@@ -162,12 +162,35 @@ bool For::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
 	Value v0;
 	while (true)
 	{
+		bool bContinue = false;
 		bool bC0 = R->Run(rt,pContext,v0);
-		if (!bC0)
+		if (bC0)
+		{
+			if (v0.IsObject())
+			{
+				ARGS params;
+				KWARGS kwParams;
+				X::Value retBoolValue;
+				if (v0.GetObj()->Call(rt, pContext, 
+					params, kwParams, retBoolValue) 
+					&& retBoolValue.IsTrue())
+				{
+					bContinue = true;
+				}
+			}
+			else if(v0.IsTrue())
+			{
+				bContinue = true;
+			}
+		}
+		if (bContinue)
+		{
+			Block::Run(rt, pContext, v);
+		}
+		else
 		{
 			break;
 		}
-		Block::Run(rt,pContext,v);
 	}
 	return true;
 }

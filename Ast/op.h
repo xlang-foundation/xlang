@@ -417,15 +417,7 @@ public:
 	{
 		m_type = ObType::In;
 	}
-	inline virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
-	{
-		bool bIn = R->Run(rt,pContext, v);
-		if(bIn)
-		{
-			L->Set(rt,pContext, v);
-		}
-		return bIn;
-	}
+	virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void SetL(Expression* l) override
 	{
 		BinaryOp::SetL(l);

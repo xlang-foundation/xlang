@@ -2,6 +2,8 @@
 #include "exp.h"
 #include "object.h"
 #include "stackframe.h"
+#include "dotop.h"
+#include "var.h"
 
 namespace X 
 { 
@@ -193,9 +195,49 @@ public:
 				m_path = CalcPath((dynamic_cast<BinaryOp*>(R))->GetL(),
 					(dynamic_cast<BinaryOp*>(R))->GetR());
 			}
+			else if (R->m_type == ObType::Dot)
+			{
+				m_path = CalcPathFromDotOp(R);
+			}
 		}
 		v = Value(m_path);
 		return true;
+	}
+	std::string CalcPathFromDotOp(Expression* dotExpr)
+	{//for python case: folder.subfolder.module
+		auto* pDotOp = dynamic_cast<AST::DotOp*>(dotExpr);
+		auto* l = pDotOp->GetL();
+		auto* r = pDotOp->GetR();
+		std::string path;
+		if (l)
+		{
+			std::string strL;
+			if (l->m_type == ObType::Var)
+			{
+				strL = dynamic_cast<AST::Var*>(l)->GetNameString();
+				path = strL;
+			}
+			else if (l->m_type == ObType::Dot)
+			{
+				strL = CalcPathFromDotOp(l);
+				path = strL;
+			}
+		}
+		if (r)
+		{
+			std::string strR;
+			if (r->m_type == ObType::Var)
+			{
+				strR = dynamic_cast<AST::Var*>(r)->GetNameString();
+				path = path + "." + strR;
+			}
+			else if (r->m_type == ObType::Dot)
+			{
+				strR = CalcPathFromDotOp(r);
+				path = path + "." + strR;
+			}
+		}
+		return path;
 	}
 	std::string CalcPath(Expression* l, Expression* r)
 	{

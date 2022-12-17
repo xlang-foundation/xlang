@@ -238,9 +238,14 @@ bool X::AST::Import::Run(XlangRuntime* rt, XObj* pContext,
 		//then Python Module
 		if(g_pXload->GetConfig().enablePython)
 		{
+			std::string moduleName = im.name;
+			if (!m_path.empty())
+			{
+				moduleName = m_path + "." + moduleName;
+			}
 			auto* pProxyObj =
 				new Data::PyProxyObject(rt, pContext,
-					im.name, m_path, curPath);
+					moduleName,"", curPath);
 			v = Value(pProxyObj);
 			rt->M()->Add(rt, varName, nullptr, v);
 		}

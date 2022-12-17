@@ -49,6 +49,7 @@ public:
 		std::vector<unsigned long long>& dims,
 		std::vector<unsigned long long>& strides) = 0;
 	virtual PyEngObjectPtr Import(const char* key) = 0;
+	virtual PyEngObjectPtr ImportFrom(const char* moduleName,const char* from) = 0;
 	virtual bool IsNone(PyEngObjectPtr obj) = 0;
 	virtual bool IsBool(PyEngObjectPtr obj) = 0;
 	virtual bool IsLong(PyEngObjectPtr obj) = 0;

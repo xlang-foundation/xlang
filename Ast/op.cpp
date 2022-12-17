@@ -8,6 +8,7 @@
 #include "funclist.h"
 #include "op_registry.h"
 #include "remote_object.h"
+#include "iterator.h"
 
 namespace X
 {
@@ -242,6 +243,26 @@ bool Range::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 		v += m_step;
 	}
 	return (v.GetLongLong() < m_stop);
+}
+bool InOp::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
+{
+	if (v.IsInvalid())
+	{
+		//todo: deal with range()
+		auto* pIt = new Data::Iterator();
+		Value  varContainer;
+		bool bOK = R->Run(rt, pContext, varContainer);
+		if (bOK)
+		{
+			pIt->SetContainer(varContainer);
+			if (L && L->m_type == ObType::Var)
+			{
+				pIt->SetImpactVar(dynamic_cast<Var*>(L));
+			}
+		}
+		v = X::Value(dynamic_cast<XObj*>(pIt));
+	}
+	return true;
 }
 bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
 {

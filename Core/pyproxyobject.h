@@ -113,6 +113,7 @@ namespace X
 			{
 				m_pyFrameObject = objFrame;
 			}
+			bool GetItem(long long index, X::Value& val);
 			inline bool MatchPyFrame(PyEngObjectPtr pyFrame)
 			{
 				return (m_pyFrameObject.ref() == pyFrame);

@@ -340,6 +340,33 @@ public:
 		}
 		return true;
 	}
+	inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, X::Value& val) override
+	{
+		long long it = (long long)pos;
+		AutoLock(m_lock);
+		if (m_useLValue)
+		{
+			if (it >= (long long)m_ptrs.size())
+			{
+				return false;
+			}
+			X::LValue l = m_ptrs[it++];
+			if (l)
+			{
+				val = *l;
+			}
+		}
+		else
+		{
+			if (it >= (long long)m_data.size())
+			{
+				return false;
+			}
+			val = m_data[it++];
+		}
+		pos = (Iterator_Pos)it;
+		return true;
+	}
 	virtual Value Get(long long idx) override
 	{
 		Value v0;

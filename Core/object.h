@@ -23,6 +23,7 @@ class XlangRuntime;
 namespace Data {
 	class List;
 	class AttributeBag;
+	typedef void* Iterator_Pos;
 	class Object :
 		virtual public XObj,
 		virtual public ObjRef
@@ -50,6 +51,10 @@ namespace Data {
 		{
 			IncRef();
 			return this;
+		}
+		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, X::Value& val)
+		{
+			return true;
 		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases){}
 		AttributeBag* GetAttrBag();
