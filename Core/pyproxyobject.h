@@ -133,6 +133,47 @@ namespace X
 			{
 				return m_name;
 			}
+			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, ARGS& vals) override
+			{
+				long long it = (long long)pos;
+				if (it >= m_obj.GetCount())
+				{
+					return false;
+				}
+				if (m_obj.IsDict())
+				{
+					PyEngObjectPtr ptrKey = nullptr;
+					PyEngObjectPtr ptrVal = nullptr;
+					long long curIt = it;
+					bool bOK = g_pPyHost->EnumDictItem(m_obj,it,ptrKey, ptrVal);
+					if (bOK)
+					{
+						X::Value key, Val;
+						PyEng::Object pyObjKey(ptrKey);
+						PyEng::Object pyObjVal(ptrVal);
+						PyObjectToValue(pyObjKey, key);
+						PyObjectToValue(pyObjVal, Val);
+						vals.push_back(key);
+						vals.push_back(Val);
+						vals.push_back(X::Value(curIt));
+						pos = (Iterator_Pos)it;
+					}
+					else
+					{
+						return false;
+					}
+				}
+				else
+				{
+					PyEng::Object itemObj = m_obj[it];
+					X::Value itemVal;
+					PyObjectToValue(itemObj, itemVal);
+					vals.push_back(itemVal);
+					vals.push_back(X::Value(it));
+					pos = (Iterator_Pos)(it + 1);
+				}
+				return true;
+			}
 			virtual void EachVar(XlangRuntime* rt, XObj* pContext,
 				std::function<void(std::string, X::Value&)> const& f) override;
 			virtual std::string GetModuleName(XlangRuntime* rt) override
