@@ -11,7 +11,7 @@ namespace X
 			virtual public XIterator,
 			virtual public Object
 		{
-			AST::Var* m_varToImpack = nullptr;
+			AST::Expression* m_varToImpack = nullptr;
 			X::Value m_container;
 			Iterator_Pos m_pos = nullptr;
 		public:
@@ -20,7 +20,7 @@ namespace X
 			{
 				m_t = ObjType::Iterator;
 			}
-			inline void SetImpactVar(AST::Var* pVar)
+			inline void SetImpactVar(AST::Expression* pVar)
 			{
 				m_varToImpack = pVar;
 			}
@@ -36,10 +36,11 @@ namespace X
 				if (m_container.IsObject())
 				{
 					auto* pDataObj = dynamic_cast<Data::Object*>(m_container.GetObj());
-					X::Value newVal;
-					if (pDataObj->GetAndUpdatePos(m_pos, newVal))
+					X::ARGS vals;
+					if (pDataObj->GetAndUpdatePos(m_pos, vals))
 					{
-						m_varToImpack->Set(dynamic_cast<XlangRuntime*>(rt), pContext, newVal);
+						m_varToImpack->SetArry(dynamic_cast<XlangRuntime*>(rt), 
+							pContext, vals);
 						retValue = X::Value(true);
 					}
 					else

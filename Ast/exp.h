@@ -143,7 +143,7 @@ public:
 	inline int GetCharPos() { return m_charPos; }
 	inline int GetCharStart() { return m_charStart; }
 	inline int GetCharEnd() { return m_charEnd; }
-	inline void SetIsLeftValue(bool b)
+	inline virtual void SetIsLeftValue(bool b)
 	{
 		m_isLeftValue = b;
 	}
@@ -175,6 +175,7 @@ public:
 		return false;
 	}
 	virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) { return true; }
+	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, ARGS& ary) { return true; }
 	virtual bool Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;

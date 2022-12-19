@@ -177,7 +177,20 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 {
 	bool bOK = true;
 	Data::Dict* pDict = new Data::Dict();
-
+	auto KeyProc = [=](Expression* keyExpr)
+	{
+		X::Value retVal;
+		if (keyExpr->m_type == ObType::Var)
+		{
+			auto name = dynamic_cast<Var*>(keyExpr)->GetNameString();
+			retVal = X::Value(name);
+		}
+		else
+		{
+			keyExpr->Run(rt, pContext, retVal);
+		}
+		return retVal;
+	};
 	auto SetKWProc = [=](Expression* i, Data::Dict* pDict)
 	{
 		Value Key;
@@ -185,7 +198,7 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 		switch (i->m_type)
 		{
 		case ObType::Param:
-			(dynamic_cast<Param*>(i))->GetName()->Run(rt, pContext, Key);
+			Key = KeyProc((dynamic_cast<Param*>(i))->GetName());
 			(dynamic_cast<Param*>(i))->GetType()->Run(rt, pContext, Val);
 			break;
 		case ObType::Assign:
@@ -193,7 +206,7 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 			(dynamic_cast<Assign*>(i))->GetL()->Run(rt, pContext, Val);
 			break;
 		case ObType::Var:
-			(dynamic_cast<Var*>(i))->Run(rt, pContext, Key);
+			Key = KeyProc((dynamic_cast<Param*>(i))->GetName());
 			break;
 		default:
 			break;

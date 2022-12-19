@@ -178,7 +178,7 @@ bool For::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
 					bContinue = true;
 				}
 			}
-			else if(v0.IsTrue())
+			else//range case
 			{
 				bContinue = true;
 			}

@@ -340,9 +340,11 @@ public:
 		}
 		return true;
 	}
-	inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, X::Value& val) override
+	inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, ARGS& vals) override
 	{
 		long long it = (long long)pos;
+		X::Value val0;
+		long long nPos = it;
 		AutoLock(m_lock);
 		if (m_useLValue)
 		{
@@ -353,7 +355,7 @@ public:
 			X::LValue l = m_ptrs[it++];
 			if (l)
 			{
-				val = *l;
+				val0 = *l;
 			}
 		}
 		else
@@ -362,9 +364,11 @@ public:
 			{
 				return false;
 			}
-			val = m_data[it++];
+			val0 = m_data[it++];
 		}
 		pos = (Iterator_Pos)it;
+		vals.push_back(val0);
+		vals.push_back(X::Value(nPos));
 		return true;
 	}
 	virtual Value Get(long long idx) override

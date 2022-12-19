@@ -64,6 +64,20 @@ public:
 		}
 		return m_scope->Set(rt, pContext, Index, v);
 	}
+	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, ARGS& ary) override
+	{
+		//only take the first one 
+		if (ary.size() == 0)
+		{
+			return false;
+		}
+		if (Index == -1)
+		{
+			ScopeLayout();
+			assert(Index != -1 && m_scope != nullptr);
+		}
+		return m_scope->Set(rt, pContext, Index, ary[0]);
+	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
 	inline virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override

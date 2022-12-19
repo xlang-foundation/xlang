@@ -246,23 +246,39 @@ bool Range::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 }
 bool InOp::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
+	bool bOK = true;
 	if (v.IsInvalid())
 	{
-		//todo: deal with range()
-		auto* pIt = new Data::Iterator();
-		Value  varContainer;
-		bool bOK = R->Run(rt, pContext, varContainer);
+		Value  var0;
+		bOK = R->Run(rt, pContext, var0);
 		if (bOK)
 		{
-			pIt->SetContainer(varContainer);
-			if (L && L->m_type == ObType::Var)
+			if (var0.IsObject())
 			{
-				pIt->SetImpactVar(dynamic_cast<Var*>(L));
+				auto* pIt = new Data::Iterator();
+				pIt->SetContainer(var0);
+				if (L)
+				{
+					pIt->SetImpactVar(L);
+				}
+				v = X::Value(dynamic_cast<XObj*>(pIt));
+			}
+			else
+			{//such as range which return integer(64)
+				L->Set(rt, pContext, var0);
+				v = var0;
 			}
 		}
-		v = X::Value(dynamic_cast<XObj*>(pIt));
 	}
-	return true;
+	else if (!v.IsObject())
+	{//for range case after first run
+		bOK = R->Run(rt, pContext, v);
+		if (bOK)
+		{
+			L->Set(rt, pContext, v);
+		}
+	}
+	return bOK;
 }
 bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
 {
@@ -275,23 +291,7 @@ bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
 	{
 		auto r = operands.top();
 		operands.pop();
-		if (r->m_type != ObType::Var)
-		{//only accept Var, all other like """comment""" skiped
-			delete r;
-			continue;
-		}
-		if (r->m_type == ObType::Var
-			&& operandR!= nullptr 
-			&& operandR->m_type == ObType::Var)
-		{
-			dynamic_cast<AST::Var*>(operandR)->MergeWithPreviousToken(
-				dynamic_cast<AST::Var*>(r));
-			delete r;
-		}
-		else if (operandR == nullptr)
-		{//must be Var
-			operandR = r;
-		}
+		operandR = r;
 	}
 	if (operandR == nullptr)
 	{

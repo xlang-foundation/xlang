@@ -52,7 +52,7 @@ namespace Data {
 			IncRef();
 			return this;
 		}
-		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, X::Value& val)
+		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos,ARGS& vals)
 		{
 			return true;
 		}

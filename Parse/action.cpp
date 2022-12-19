@@ -369,7 +369,6 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_High1);
 	RegOP("*", "/", "%", "**", "//")
 		.SetPrecedence(Precedence_Reqular + 1);
-
 	RegOP("as")
 		.SetPrecedence(Precedence_LOW2+1);
 

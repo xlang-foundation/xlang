@@ -19,10 +19,11 @@ namespace X
 			virtual public XDict,
 			virtual public Object
 		{
+			using Dict_MAP = std::unordered_map<X::Value,
+				X::Value, ObjectHashFunction>;
 		protected:
 			std::vector<AST::Scope*> m_bases;
-			std::unordered_map<X::Value,
-				X::Value, ObjectHashFunction> mMap;
+			Dict_MAP mMap;
 		public:
 			static void cleanup();
 			Dict();
@@ -173,6 +174,22 @@ namespace X
 				KWARGS& kwParams,
 				X::Value& retValue) override
 			{
+				return true;
+			}
+			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, ARGS& vals) override
+			{
+				long long offset = (long long)pos;
+				if (offset >= mMap.size())
+				{
+					return false;
+				}
+				auto it = mMap.begin();
+				std::advance(it, offset);
+				bool retVal = false;
+				vals.push_back(it->first);
+				vals.push_back(it->second);
+				vals.push_back(offset);
+				pos = Iterator_Pos(offset + 1);
 				return true;
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,

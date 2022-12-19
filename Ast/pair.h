@@ -39,6 +39,58 @@ namespace AST
 		{
 			return m_preceding_token;
 		}
+		inline virtual void SetIsLeftValue(bool b) override
+		{
+			if (R && R->m_type == AST::ObType::List)
+			{
+				auto* pList = dynamic_cast<AST::List*>(R);
+				if (pList)
+				{
+					auto& list = pList->GetList();
+					for (auto* l : list)
+					{
+						l->SetIsLeftValue(b);
+					}
+				}
+			}
+			else
+			{
+				R->SetIsLeftValue(b);
+			}
+		}
+		inline virtual bool SetArry(XlangRuntime* rt, XObj* pContext, ARGS& ary) override
+		{
+			if (ary.size() == 0)
+			{
+				return false;
+			}
+			if (R && R->m_type == AST::ObType::List)
+			{
+				auto* pList = dynamic_cast<AST::List*>(R);
+				if (pList)
+				{
+					auto& list = pList->GetList();
+					int size_list = (int)list.size();
+					int size_ary = (int)ary.size();
+					for (int i=0;i< size_list;i++)
+					{
+						if (i < size_ary)
+						{
+							list[i]->Set(rt, pContext, ary[i]);
+						}
+					}
+				}
+			}
+			else if (R && R->m_type == AST::ObType::Var)
+			{
+				R->Set(rt, pContext, ary[0]);
+			}
+			else
+			{
+				R->SetArry(rt, pContext, ary);
+			}
+			return true;
+		}
 		virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	};
 }

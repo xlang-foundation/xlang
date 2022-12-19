@@ -18,6 +18,7 @@
       "argsssss_": [ "C:\\Dev\\Cantor\\test\\client\\test_task.x" ],
       "args_decor": [ "C:\\Dev\\X\\test\\decor_test.x" ],
       "arg_sss": [ "C:\\Dev\\Cantor\\test\\client\\simple_test.x" ],
+      "args_ssxc": [ "C:\\Dev\\Shakespeare\\src\\simpletest.x" ],
       "args_html": [ "C:\\Dev\\X\\Text\\test\\html_test.x" ],
       "args-sax": [ "-enable_python", "C:\\Dev\\Shakespeare\\src\\main.x" ],
       "args4": [ "C:\\Dev\\Cantor\\test\\xlang\\cantor_client_test.x" ],
