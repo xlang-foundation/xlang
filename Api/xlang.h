@@ -314,6 +314,13 @@ namespace X
 	{
 
 	};
+	class XPyObject :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XPyObject);
+		virtual bool GetObj(void** ppObjPtr) = 0;
+	};
 	class XRemoteObject :
 		virtual public XObj
 	{

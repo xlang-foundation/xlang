@@ -28,6 +28,14 @@ namespace X
 			{
 				m_container = v;
 			}
+			inline ~Iterator()
+			{
+				if (m_container.IsObject())
+				{
+					auto* pDataObj = dynamic_cast<Data::Object*>(m_container.GetObj());
+					pDataObj->CloseIterator(m_pos);
+				}
+			}
 			virtual bool Call(XRuntime* rt, XObj* pContext,
 				ARGS& params,
 				KWARGS& kwParams,

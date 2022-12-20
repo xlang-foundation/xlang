@@ -52,9 +52,15 @@ namespace X
 			}
 			PyProxyObject* QueryModule(std::string& fileName);
 		};
+		struct iterator_info
+		{
+			PyEngObjectPtr iterator = nullptr;
+			long long pos = 0;
+		};
 		//wrap for Python PyObject through PyEng::Object
 		class PyProxyObject :
 			public virtual Object,
+			public virtual XPyObject,
 			public virtual AST::Scope,
 			public virtual AST::Expression
 		{
@@ -70,7 +76,8 @@ namespace X
 			PyEng::Dict m_locals;
 			PyEng::Dict m_globals;
 		public:
-			PyProxyObject()
+			PyProxyObject():
+				XPyObject(0), Object(), AST::Scope(), AST::Expression()
 			{
 				m_t = ObjType::PyProxyObject;
 				m_stackFrame = new AST::StackFrame(this);
@@ -87,17 +94,20 @@ namespace X
 				m_proxyType = PyProxyType::Func;
 				m_obj = obj;
 			}
-			PyProxyObject(std::string ScopeName)
+			PyProxyObject(std::string ScopeName):
+				PyProxyObject()
 			{
 				m_name = ScopeName;
 				m_proxyType = PyProxyType::Func;
 			}
-			PyProxyObject(int line)
+			PyProxyObject(int line):
+				PyProxyObject()
 			{
 				m_lineStart = line;
 				m_proxyType = PyProxyType::Line;
 			}
-			PyProxyObject(std::string name, std::string path)
+			PyProxyObject(std::string name, std::string path):
+				PyProxyObject()
 			{
 				m_proxyType = PyProxyType::Module;
 				m_name = name;
@@ -109,6 +119,11 @@ namespace X
 			PyProxyObject(XlangRuntime* rt, XObj* pContext,
 				std::string name,std::string fromPath,
 				std::string curPath);
+			virtual bool GetObj(void** ppObjPtr) override
+			{
+				*ppObjPtr = (PyEngObjectPtr)m_obj;
+				return true;
+			}
 			void SetPyFrame(PyEng::Object objFrame)
 			{
 				m_pyFrameObject = objFrame;
@@ -133,15 +148,36 @@ namespace X
 			{
 				return m_name;
 			}
+			inline virtual void CloseIterator(Iterator_Pos pos) override
+			{
+				iterator_info* pIterator_info = (iterator_info*)pos;
+				if (pIterator_info)
+				{
+					if (pIterator_info->iterator)
+					{
+						g_pPyHost->Release(pIterator_info->iterator);
+					}
+					delete pIterator_info;
+				}
+
+			}
 			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, ARGS& vals) override
 			{
-				long long it = (long long)pos;
-				if (it >= m_obj.GetCount())
+				iterator_info* pIterator_info = nullptr;
+				if (pos == nullptr)
 				{
-					return false;
+					//pIterator_info will be closed by call CloseIterator
+					//from outsite
+					pIterator_info = new iterator_info({ nullptr,0 });
+					pos = (Iterator_Pos)pIterator_info;
+				}
+				else
+				{
+					pIterator_info = (iterator_info*)pos;
 				}
 				if (m_obj.IsDict())
 				{
+					long long it = pIterator_info->pos;
 					PyEngObjectPtr ptrKey = nullptr;
 					PyEngObjectPtr ptrVal = nullptr;
 					long long curIt = it;
@@ -156,7 +192,7 @@ namespace X
 						vals.push_back(key);
 						vals.push_back(Val);
 						vals.push_back(X::Value(curIt));
-						pos = (Iterator_Pos)it;
+						pIterator_info->pos = it;
 					}
 					else
 					{
@@ -165,12 +201,28 @@ namespace X
 				}
 				else
 				{
-					PyEng::Object itemObj = m_obj[it];
+					//https://docs.python.org/3/c-api/iter.html#c.PyIter_Next
+					PyEngObjectPtr iterator = nullptr;
+					if (pIterator_info->iterator == nullptr)
+					{
+						iterator = g_pPyHost->GetIter(m_obj);
+						pIterator_info->iterator = iterator;
+					}
+					else
+					{
+						iterator = pIterator_info->iterator;
+					}
+					PyEngObjectPtr pNext = g_pPyHost->GetIterNext(iterator);
+					if (pNext == nullptr)
+					{
+						return false;
+					}
+					PyEng::Object itemObj = pNext;
 					X::Value itemVal;
 					PyObjectToValue(itemObj, itemVal);
 					vals.push_back(itemVal);
-					vals.push_back(X::Value(it));
-					pos = (Iterator_Pos)(it + 1);
+					vals.push_back(X::Value(pIterator_info->pos));
+					pIterator_info->pos++;
 				}
 				return true;
 			}

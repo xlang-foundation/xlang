@@ -49,7 +49,8 @@ public:
 		std::vector<unsigned long long>& dims,
 		std::vector<unsigned long long>& strides) = 0;
 	virtual PyEngObjectPtr Import(const char* key) = 0;
-	virtual PyEngObjectPtr ImportFrom(const char* moduleName,const char* from) = 0;
+	virtual bool ImportWithFromList(const char* moduleName,
+		std::vector<std::string>& fromList,std::vector<PyEngObjectPtr>& subs) = 0;
 	virtual bool IsNone(PyEngObjectPtr obj) = 0;
 	virtual bool IsBool(PyEngObjectPtr obj) = 0;
 	virtual bool IsLong(PyEngObjectPtr obj) = 0;
@@ -65,6 +66,8 @@ public:
 	virtual PyEngObjectPtr GetDictItems(PyEngObjectPtr dict) = 0;
 	virtual bool EnumDictItem(PyEngObjectPtr dict,long long& pos, PyEngObjectPtr& key, PyEngObjectPtr& val) = 0;
 	virtual bool DictContain(PyEngObjectPtr dict,std::string& strKey) = 0;
+	virtual PyEngObjectPtr GetIter(PyEngObjectPtr obj) = 0;
+	virtual PyEngObjectPtr GetIterNext(PyEngObjectPtr iterator) = 0;
 	virtual PyEngObjectPtr GetPyNone() = 0;
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) = 0;
 	virtual PyEngObjectPtr GetGlobals() = 0;

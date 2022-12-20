@@ -188,6 +188,14 @@ public:
 			{
 				m_p = g_pPyHost->from_str(v.ToString().c_str());
 			}
+			else if (v.GetObj()->GetType() == X::ObjType::PyProxyObject)
+			{
+				auto* pPyObj = dynamic_cast<X::XPyObject*>(v.GetObj());
+				if (pPyObj)
+				{
+					pPyObj->GetObj(&m_p);
+				}
+			}
 		}
 			break;
 		case X::ValueType::Str:

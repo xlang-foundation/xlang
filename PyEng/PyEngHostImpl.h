@@ -57,7 +57,9 @@ public:
 	virtual PyEngObjectPtr NewDict() override;
 	virtual PyEngObjectPtr NewArray(int nd, unsigned long long* dims, int itemDataType) override;
 	virtual PyEngObjectPtr Import(const char* key) override;
-	virtual PyEngObjectPtr ImportFrom(const char* moduleName, const char* from) override;
+	virtual bool ImportWithFromList(const char* moduleName,
+		std::vector<std::string>& fromList, 
+		std::vector<PyEngObjectPtr>& subs) override;
 	virtual void Release(PyEngObjectPtr obj) override;
 
 	virtual int AddRef(PyEngObjectPtr obj) override;
@@ -78,6 +80,8 @@ public:
 	virtual bool IsNone(PyEngObjectPtr obj) override;
 	virtual bool IsDict(PyEngObjectPtr obj) override;
 	virtual bool DictContain(PyEngObjectPtr dict,std::string& strKey) override;
+	virtual PyEngObjectPtr GetIter(PyEngObjectPtr obj) override;
+	virtual PyEngObjectPtr GetIterNext(PyEngObjectPtr iterator) override;
 	virtual bool IsArray(PyEngObjectPtr obj) override;
 	virtual bool IsList(PyEngObjectPtr obj) override;
 	virtual PyEngObjectPtr GetDictKeys(PyEngObjectPtr obj) override;

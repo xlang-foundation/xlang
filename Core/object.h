@@ -56,6 +56,7 @@ namespace Data {
 		{
 			return true;
 		}
+		inline virtual void CloseIterator(Iterator_Pos pos) {}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases){}
 		AttributeBag* GetAttrBag();
 		void DeleteAttrBag();

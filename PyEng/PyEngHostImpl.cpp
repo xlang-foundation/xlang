@@ -211,16 +211,21 @@ void GrusPyEngHost::Free(const char* sz)
 PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, const char* key)
 {
 	PyObject* pOb = (PyObject*)objs;
-	PyObject* pRetOb = Py_None;
+	PyObject* pRetOb = nullptr;
 	if (pOb != nullptr && PyDict_Check(pOb))
 	{
 		PyObject* pObKey = PyUnicode_FromString(key);
 		pRetOb = PyDict_GetItem(pOb, pObKey);//Borrowed reference
-		Py_IncRef(pRetOb);
+		if (pRetOb)
+		{
+			Py_IncRef(pRetOb);
+		}
 		Py_DecRef(pObKey);
 	}
-	else
+	//try again if key is an attribute
+	if(pRetOb == nullptr)
 	{
+		pRetOb = Py_None;
 		if (strchr(key,'.') == nullptr)
 		{
 			if (pOb == nullptr)
@@ -386,17 +391,36 @@ PyEngObjectPtr GrusPyEngHost::Import(const char* key)
 	auto* pOb = PyImport_ImportModule(key);
 	return (PyEngObjectPtr)pOb;
 }
-PyEngObjectPtr GrusPyEngHost::ImportFrom(const char* moduleName, const char* from)
+//for this use case
+//from moduleName import sub1,sub2....
+//in fact, sub1,sub2... are the from list
+//and the from part above is the module name
+bool GrusPyEngHost::ImportWithFromList(
+	const char* moduleName,
+	std::vector<std::string>& fromList,
+	std::vector<PyEngObjectPtr>& subs)
 {
-	auto* pFromOb = PyUnicode_FromString(from);
-	PyObject* pFromArgs = PyTuple_New(1);
-	PyTuple_SetItem(pFromArgs, 0, pFromOb);
-	auto* pNameOb = PyUnicode_FromString(moduleName);
-	auto* pOb = PyImport_ImportModuleLevel(moduleName,
+	PyObject* pFromArgs = PyTuple_New(fromList.size());
+	for (auto& from : fromList)
+	{
+		auto* pFromOb = PyUnicode_FromString(from.c_str());
+		PyTuple_SetItem(pFromArgs, 0, pFromOb);
+	}
+	auto* pModule = PyImport_ImportModuleLevel(moduleName,
 		Py_None, Py_None, pFromArgs,0);
 	Py_DecRef(pFromArgs);
-	Py_DecRef(pNameOb);
-	return (PyEngObjectPtr)pOb;
+	bool bOK = false;
+	if (pModule)
+	{
+		bOK = true;
+		for (auto& from : fromList)
+		{
+			auto* pSubOb = PyObject_GetAttrString(pModule, from.c_str());//New reference
+			subs.push_back(pSubOb);//if it is null, also pust into list for caller
+		}
+	}
+	Py_DecRef(pModule);
+	return bOK;
 }
 
 void GrusPyEngHost::Release(PyEngObjectPtr obj)
@@ -540,7 +564,14 @@ bool GrusPyEngHost::IsSet(PyEngObjectPtr obj)
 {
 	return PySet_Check((PyObject*)obj);
 }
-
+PyEngObjectPtr GrusPyEngHost::GetIter(PyEngObjectPtr obj)
+{
+	return (PyEngObjectPtr)PyObject_GetIter((PyObject*)obj);
+}
+PyEngObjectPtr GrusPyEngHost::GetIterNext(PyEngObjectPtr iterator)
+{
+	return (PyEngObjectPtr)PyIter_Next((PyObject*)iterator);
+}
 bool GrusPyEngHost::EnumDictItem(PyEngObjectPtr dict, long long& pos,
 	PyEngObjectPtr& key, PyEngObjectPtr& val)
 {

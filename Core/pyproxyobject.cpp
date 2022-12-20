@@ -48,7 +48,18 @@ namespace X
 			}
 			else
 			{
-				m_obj = g_pPyHost->ImportFrom(name.c_str(), fromPath.c_str());
+				//here we need to change
+				//for python: from module_name_here import sub1, sub2...
+				//from part is the module, and import parts are subs inside
+				//this module
+				std::vector<PyEngObjectPtr> subs;
+				std::vector<std::string> fromList({ name });
+				bool bOK = g_pPyHost->ImportWithFromList(fromPath.c_str(),
+					fromList, subs);
+				if (bOK && subs.size()>0)
+				{
+					m_obj = subs[0];
+				}
 			}
 		}
 		PyProxyObject::~PyProxyObject()

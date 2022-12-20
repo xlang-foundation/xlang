@@ -10,6 +10,8 @@
 namespace X
 {
 	extern XLoad* g_pXload;
+	extern bool LoadPythonEngine();
+
 }
 
 X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
@@ -235,17 +237,27 @@ bool X::AST::Import::Run(XlangRuntime* rt, XObj* pContext,
 			rt->M()->Add(rt, varName, nullptr, v);
 			continue;
 		}
-		//then Python Module
+		//then try Python Module
+		//reserved import for python builtins, such as open, close etc
+		//import python
+		//if get this import, if enablePython is false, 
+		//change to true and Load Python engine
+		std::string moduleName = im.name;
+		if (m_path.empty() && moduleName == "python")
+		{
+			if (!g_pXload->GetConfig().enablePython)
+			{
+				g_pXload->GetConfig().enablePython = true;
+				LoadPythonEngine();
+			}
+			moduleName = "builtins";
+			varName = "python";
+		}
 		if(g_pXload->GetConfig().enablePython)
 		{
-			std::string moduleName = im.name;
-			if (!m_path.empty())
-			{
-				moduleName = m_path + "." + moduleName;
-			}
 			auto* pProxyObj =
 				new Data::PyProxyObject(rt, pContext,
-					moduleName,"", curPath);
+					moduleName, m_path, curPath);
 			v = Value(pProxyObj);
 			rt->M()->Add(rt, varName, nullptr, v);
 		}
