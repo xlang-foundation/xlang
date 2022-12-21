@@ -160,6 +160,16 @@ namespace X {
 				token_out(TokenEOS);
 				break;
 			}
+			//to cover case after slash, there are some spaces or tabs
+			//if not, turn off this flag
+			//and in newline meets, just check this flag
+			if (meetSlash)
+			{
+				if (c != '\n' && c != ' ' && c != '\t')
+				{
+					meetSlash = false;
+				}
+			}
 			if (c != ' ' && c != '\t')
 			{//todo: if inside quote, how to do?
 				_context.lineCharCount++;
@@ -225,7 +235,8 @@ namespace X {
 				}
 				else
 				{
-					if (PrevChar() != '\\')
+					//old:if (PrevChar() != '\\')
+					if (!meetSlash)
 					{//if not line continue case, out put line break also
 					//output previous token if have
 						if (InFeedOp)
@@ -251,6 +262,7 @@ namespace X {
 					}
 					InMatching = false;
 				}
+				meetSlash = false;//reset
 				IncLine();
 				break;
 			case '\"':
