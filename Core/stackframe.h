@@ -47,6 +47,7 @@ public:
 			delete[] m_Values;
 		}
 	}
+	bool AddVar(XlangRuntime* rt,std::string& name, X::Value& val);
 	inline virtual int GetStartLine() { return m_lineStart; }
 	inline void SetLine(int l) { m_lineStart = l; }
 	inline void SetCharPos(int c) { m_charPos = c; }

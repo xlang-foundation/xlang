@@ -37,6 +37,7 @@ namespace X
 			bool blob2text(const void* blob, int size, std::wstring& val);
 			std::string getColName(int idx);
 			int getValue(int idx);
+			bool getValue(int idx, X::Value& val);
 			long long getInt64Value(int idx);
 			double getDouble(int idx);
 			bool isNull(int idx);

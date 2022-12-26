@@ -231,6 +231,7 @@ namespace X
 	{
 	public:
 		virtual bool CreateEmptyModule() = 0;
+		virtual bool AddVar(std::string& name, X::Value& val) = 0;
 	};
 	class XModule :
 		virtual public XObj

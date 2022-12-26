@@ -4,6 +4,7 @@
 #include "dbop.h"
 #include <iostream>
 #include "port.h"
+#include <regex>
 
 namespace X
 {
@@ -16,7 +17,132 @@ namespace X
 		SqliteDB::~SqliteDB()
 		{
 		}
-		X::Value Manager::WritePad(X::Value& input, X::Value& BindingDataList)
+		Cursor::~Cursor()
+		{
+			if (m_stmt)
+			{
+				delete m_stmt;
+				m_stmt = nullptr;
+			}
+		}
+		bool Cursor::Open()
+		{
+			if (m_stmt == nullptr)
+			{
+				m_stmt = new DBStatement(m_db, m_sql.c_str());
+				if (m_stmt->SC() != (int)DBState::Ok)
+				{
+					return X::Value(false);
+				}
+				if (m_BindingDataList.IsList())
+				{
+					XList* list = dynamic_cast<XList*>(m_BindingDataList.GetObj());
+					auto size = m_BindingDataList.Size();
+					for (int i = 0; i < size; i++)
+					{
+						X::Value v0 = list->Get(i);
+						m_stmt->bind(i + 1, v0);
+					}
+				}
+				m_colNum = m_stmt->getcolnum();
+			}
+			return true;
+		}
+		X::Value  Cursor::GetCols()
+		{
+			if (!Open())
+			{
+				return X::Value(false);
+			}
+			X::List list;
+			for (int i = 0; i < m_colNum; i++)
+			{
+				auto name = m_stmt->getColName(i);
+				list += name;
+			}
+			return list;
+		}
+		X::Value Cursor::fetch()
+		{
+			if (!Open())
+			{
+				return X::Value(false);
+			}
+			if(m_stmt->step() == DBState::Row)
+			{
+				X::List list;
+				for (int i = 0; i < m_colNum; i++)
+				{
+					X::Value colVal;
+					m_stmt->getValue(i, colVal);
+					list += colVal;
+				}
+				return list;
+			}
+			else
+			{
+				return X::Value();//None
+			}
+		}
+		bool Manager::LiteParseStatement(std::string& strSql,
+			std::string& varName,std::string& outSql)
+		{
+			bool bHaveVar = false;
+			std::regex var_regex("(\\w+)[\t ]*=");
+			std::smatch matches;
+			if (std::regex_search(strSql, matches, var_regex))
+			{
+				if (matches.size() > 1)
+				{
+					int matchedSize = (int)matches[0].str().size();
+					outSql = strSql.substr(matchedSize);
+					varName = matches[1].str();
+					bHaveVar = true;
+				}
+			}
+			return bHaveVar;
+		}
+		bool Manager::RunSQLStatement(X::XRuntime* rt, X::XObj* pContext,
+			std::string& strSql,X::Value& BindingDataList)
+		{
+			DBStatement dbsmt(&m_db, strSql.c_str());
+			if (dbsmt.SC() != (int)DBState::Ok)
+			{
+				std::cout << "Error code:" << dbsmt.SC() << std::endl;
+				return false;
+			}
+			if (BindingDataList.IsList())
+			{
+				XList* list = dynamic_cast<XList*>(BindingDataList.GetObj());
+				auto size = BindingDataList.Size();
+				for (int i = 0; i < size; i++)
+				{
+					X::Value v0 = list->Get(i);
+					dbsmt.bind(i + 1, v0);
+				}
+			}
+			int colNum = dbsmt.getcolnum();
+			std::cout << "Col:" << colNum << std::endl;
+			for (int i = 0; i < colNum; i++)
+			{
+				auto name = dbsmt.getColName(i);
+				std::cout << name << '\t';
+			}
+			std::cout << std::endl;
+			while (dbsmt.step() == DBState::Row)
+			{
+				for (int i = 0; i < colNum; i++)
+				{
+					std::string v0;
+					dbsmt.getValue(i, v0);
+					std::cout << v0 << '\t';
+				}
+				std::cout << std::endl;
+			}
+			return true;
+		}
+		X::Value Manager::WritePad(X::XRuntime* rt, X::XObj* pContext,
+			X::Value& input, X::Value& BindingDataList)
 		{
 			if (input.IsInvalid())
 			{
@@ -80,39 +206,23 @@ namespace X
 			else
 			{
 				//regular sql statement
-				DBStatement dbsmt(&m_db, strSql.c_str());
-				if (dbsmt.SC() != (int)DBState::Ok)
+				//but we suppport this syntax
+				//% var1 = SEELCT ....
+				std::string varName;
+				std::string outSql;
+				bool bHaveAssign = LiteParseStatement(strSql, varName, outSql);
+				if (bHaveAssign)
 				{
-					std::cout << "Error code:" << dbsmt.SC() << std::endl;
-					return X::Value(false);
+					Cursor* pCursor = new Cursor(outSql);
+					pCursor->SetDb(&m_db);
+					pCursor->SetBindings(BindingDataList);
+					X::Value val = X::Value(pCursor->APISET().GetProxy(pCursor),false);
+					rt->AddVar(varName, val);
+					m_cursors.push_back(pCursor);
 				}
-				if (BindingDataList.IsList())
+				else
 				{
-					XList* list = dynamic_cast<XList*>(BindingDataList.GetObj());
-					auto size = BindingDataList.Size();
-					for (int i = 0; i < size; i++)
-					{
-						X::Value v0 = list->Get(i);
-						dbsmt.bind(i+1, v0);
-					}
-				}
-				int colNum = dbsmt.getcolnum();
-				std::cout << "Col:" << colNum << std::endl;
-				for (int i = 0; i < colNum; i++)
-				{
-					auto name = dbsmt.getColName(i);
-					std::cout << name << '\t';
-				}
-				std::cout << std::endl;
-				while (dbsmt.step() == DBState::Row)
-				{
-					for (int i = 0; i < colNum; i++)
-					{
-						std::string v0;
-						dbsmt.getValue(i, v0);
-						std::cout << v0 << '\t';
-					}
-					std::cout << std::endl;
+					bOK = RunSQLStatement(rt, pContext, strSql, BindingDataList);
 				}
 			}
 			return X::Value(bOK);

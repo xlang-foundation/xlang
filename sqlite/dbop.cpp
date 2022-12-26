@@ -197,7 +197,37 @@ namespace X
 		{
 			sqlite3_reset(stmt);
 		}
-
+		bool DBStatement::getValue(int idx, X::Value& val)
+		{//SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, or SQLITE_NULL
+			int iType = sqlite3_column_type(stmt, idx);
+			switch (iType)
+			{
+			case SQLITE_INTEGER:
+				val = sqlite3_column_int64(stmt, idx);
+				break;
+			case SQLITE_FLOAT:
+				val = sqlite3_column_double(stmt, idx);
+				break;
+			case SQLITE_TEXT:
+			{
+				const char* retstr = NULL;
+				retstr = (const char*)sqlite3_column_text(stmt, idx);
+				if (retstr == NULL)
+				{
+					return false;
+				}
+				val = retstr;
+			}
+				break;
+			case SQLITE_BLOB:
+				break;			
+			case SQLITE_NULL:
+				break;	
+			default:
+				break;
+			}
+			return true;
+		}
 		bool DBStatement::getValue(int idx, std::wstring& val)
 		{
 			const char* retstr = NULL;
