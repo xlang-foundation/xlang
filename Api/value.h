@@ -66,10 +66,10 @@ bool Value::operator op (const Value& r) const\
 	switch (t)\
 	{\
 	case ValueType::Invalid:\
-		bRet = (r.t == ValueType::None);\
+		bRet = (r.t op ValueType::None);\
 		break;\
 	case ValueType::None:\
-		bRet = (r.t == ValueType::None);\
+		bRet = (r.t op ValueType::None);\
 		break;\
 	case ValueType::Int64:\
 		bRet = (x.l op ToInt64(r));\

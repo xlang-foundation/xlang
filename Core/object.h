@@ -201,8 +201,14 @@ namespace Data {
 		{
 			return *this;
 		}
+		//if it is equal, return 0
 		virtual int cmp(X::Value* r)
 		{
+			if (r->GetType() == ValueType::None ||
+				r->GetType() == ValueType::Invalid)
+			{
+				return 1;//object is nor None,
+			}
 			return 0;
 		}
 		virtual bool Get(long long idx, X::Value& val) { return false; }
