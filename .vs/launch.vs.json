@@ -24,7 +24,7 @@
       "args4": [ "C:\\Dev\\Cantor\\test\\xlang\\cantor_client_test.x" ],
       "args": [ "-event_loop", "-dbg", "-enable_python" ],
       "args_CLI": [ "-cli" ],
-      "args_test": [ "C:\\Dev\\X\\winner\\test\\test.x" ],
+      "args_simple": [ "C:\\Dev\\X\\test\\misc\\simple.x" ],
       "argsaa": [ "C:\\Dev\\X\\test\\remote_test.x" ],
       "args_task": [ "C:\\Dev\\Cantor\\test\\client\\test_task.x" ],
       "name": "xlang.exe"

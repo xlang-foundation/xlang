@@ -1,2 +1,2 @@
-from py_pdf_parser.loaders import load_file
-
+x = "1234\t\nnew line\tafter tab"
+print(x)

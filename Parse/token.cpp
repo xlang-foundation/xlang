@@ -61,6 +61,7 @@ namespace X {
 		//also flag if inside Quote, find \x or ${ for var inside string case
 		bool meetDollar = false;
 		bool meetSlash = false;
+		bool haveEscapeCode = false;//like \n,\r...
 
 		auto default_proc = [&](char c)
 		{
@@ -73,7 +74,7 @@ namespace X {
 			{//meet other, break the 3-quotes rules like """ or '''
 				if (begin_quoteCnt == 2)//empty string with ""  or ''
 				{
-					token_out((meetDollar || meetSlash)
+					token_out((meetDollar || meetSlash || haveEscapeCode)
 						? TokenStrWithFormat :
 						(NotCharSequnce ? TokenStr : TokenCharSequence));
 					NotCharSequnce = false;
@@ -81,6 +82,7 @@ namespace X {
 					//also reset lines below for string
 					meetDollar = false;
 					meetSlash = false;
+					haveEscapeCode = false;
 					//begin_quoteCnt = 0;//reset
 					//this string finished, continue run to check the current char
 				}
@@ -165,7 +167,15 @@ namespace X {
 			//and in newline meets, just check this flag
 			if (meetSlash)
 			{
-				if (c != '\n' && c != ' ' && c != '\t')
+				if ((c == 'n' || c == 't' || c == 'r') && PrevChar() == '\\')
+				{
+					if (InQuote)
+					{
+						haveEscapeCode = true;
+					}
+					meetSlash = false;
+				}
+				else if (c != '\n' && c != ' ' && c != '\t')
 				{
 					meetSlash = false;
 				}
@@ -207,7 +217,7 @@ namespace X {
 				{//meet other, break the 3-quotes rules like """ or '''
 					if (begin_quoteCnt == 2)//empty string with ""  or ''
 					{
-						token_out((meetDollar || meetSlash)
+						token_out((meetDollar || meetSlash|| haveEscapeCode)
 							? TokenStrWithFormat :
 							(NotCharSequnce ? TokenStr : TokenCharSequence), 0);
 						NotCharSequnce = false;
@@ -215,6 +225,7 @@ namespace X {
 						//also reset lines below for string
 						meetDollar = false;
 						meetSlash = false;
+						haveEscapeCode = false;
 					}
 					else if (begin_quoteCnt != 3)
 					{
@@ -296,6 +307,7 @@ namespace X {
 								//also reset lines below for string
 								meetDollar = false;
 								meetSlash = false;
+								haveEscapeCode = false;
 							}
 						}
 						else
@@ -313,7 +325,7 @@ namespace X {
 						{//break, don't count again
 							if (c == quoteBeginChar)
 							{//meet end char
-								token_out((meetDollar || meetSlash)
+								token_out((meetDollar || meetSlash || haveEscapeCode)
 									? TokenStrWithFormat :
 									(NotCharSequnce ? TokenStr : TokenCharSequence), 0);
 								NotCharSequnce = false;
@@ -321,6 +333,7 @@ namespace X {
 								//also reset lines below for string
 								meetDollar = false;
 								meetSlash = false;
+								haveEscapeCode = false;
 							}
 							else
 							{
