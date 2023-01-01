@@ -219,9 +219,14 @@ namespace X {
 					{
 						token_out((meetDollar || meetSlash|| haveEscapeCode)
 							? TokenStrWithFormat :
-							(NotCharSequnce ? TokenStr : TokenCharSequence), 0);
+							(NotCharSequnce ? TokenStr : TokenCharSequence), -1);
 						NotCharSequnce = false;
 						InQuote = false;
+						new_token_start();
+						if (MatchInTree(c))
+						{
+							token_out(GetLastMatchedNodeIndex(), 0);
+						}
 						//also reset lines below for string
 						meetDollar = false;
 						meetSlash = false;
@@ -248,7 +253,7 @@ namespace X {
 				{
 					//old:if (PrevChar() != '\\')
 					if (!meetSlash)
-					{//if not line continue case, out put line break also
+					{//if not line continue case, output line break also
 					//output previous token if have
 						if (InFeedOp)
 						{

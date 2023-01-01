@@ -164,6 +164,10 @@ std::vector<std::string> splitWithChars(const std::string& str, const char* deli
 		}
 		prev = pos + 1;
 	}
+	if (prev != std::string::npos)
+	{
+		list.push_back(str.substr(prev));
+	}
 	return list;
 }
 std::vector<std::string> split(const std::string& str, const char* delim)

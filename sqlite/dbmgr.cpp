@@ -88,7 +88,7 @@ namespace X
 			std::string& varName,std::string& outSql)
 		{
 			bool bHaveVar = false;
-			std::regex var_regex("(\\w+)[\t ]*=");
+			std::regex var_regex("^[\t ]*(\\w+)[\t ]*=");
 			std::smatch matches;
 			if (std::regex_search(strSql, matches, var_regex))
 			{
