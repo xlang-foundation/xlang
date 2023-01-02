@@ -237,6 +237,15 @@ namespace X
 					pDataHead = pBuf;
 					buf_size = len;
 				}
+				X::Dict dict;
+				//dump response headers
+				for (auto& kv : response.headers)
+				{
+					X::Str key(kv.first.c_str(), (int)kv.first.size());
+					X::Str val(kv.second.c_str(), (int)kv.second.size());
+					dict->Set(key, val);
+				}
+				m_headers = dict;
 				return true;
 				// return 'false' if you want to cancel the request.
 			},

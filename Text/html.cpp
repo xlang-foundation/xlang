@@ -44,14 +44,32 @@ namespace X
 	}
 	X::Value HtmlNodeWrapper::GetClass()
 	{
-		return X::Value(m_pNode->GetClass());
+		if (m_pNode == nullptr)
+		{
+			return X::Value();
+		}
+		else
+		{
+			return X::Value(m_pNode->GetClass());
+		}
 	}
 	X::Value HtmlNodeWrapper::GetContent()
 	{
-		return X::Value(m_pNode->GetContent());
+		if (m_pNode == nullptr)
+		{
+			return X::Value();
+		}
+		else
+		{
+			return X::Value(m_pNode->GetContent());
+		}
 	}
 	X::Value HtmlNodeWrapper::GetParent()
 	{
+		if (m_pNode == nullptr)
+		{
+			return X::Value();
+		}
 		X::XPackageValue<HtmlNodeWrapper> valNode;
 		(*valNode).SetNode(m_pNode->GetParent());
 		return valNode;
