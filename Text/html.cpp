@@ -61,7 +61,20 @@ namespace X
 		}
 		else
 		{
-			return X::Value(m_pNode->GetContent());
+			std::string cnt = m_pNode->GetContent();
+			return X::Value(cnt);
+		}
+	}
+	X::Value HtmlNodeWrapper::GetInnerText()
+	{
+		if (m_pNode == nullptr)
+		{
+			return X::Value();
+		}
+		else
+		{
+			std::string cnt = m_pNode->GetInnerText();
+			return X::Value(cnt);
 		}
 	}
 	X::Value HtmlNodeWrapper::GetParent()

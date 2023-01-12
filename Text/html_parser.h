@@ -11,11 +11,18 @@ namespace X
 	{
 		class HtmlNode
 		{
+			//vars below used for calculate outerHtml, innerHtml
+			char* m_nodeStartPtr = nullptr;
+			char* m_nodeEndPtr = nullptr;
+			char* m_nodeInnerStartPtr = nullptr;
+			char* m_nodeInnerEndPtr = nullptr;
+
 			std::string m_class;
 			std::unordered_map<std::string, std::string> m_attrs;
 			HtmlNode* m_parent = nullptr;
 			std::vector<HtmlNode*> m_kids;
-			std::string m_content;//only for text content embeded into an object
+			//place content in order, if meet node, insert one space string
+			std::vector< std::string> m_contents;
 			bool NodeMatch(HtmlNode* pCurNode, HtmlNode* pExprNode);
 			bool DoMatch(HtmlNode* pCurNode, HtmlNode* pExprNode);
 			bool MatchExprKidsWithFilterSubItems(
@@ -47,13 +54,74 @@ namespace X
 					delete p;
 				}
 			}
+			void SetStreamPos(char* pOuterStart, char* pOuterEnd,
+				char* pInnerStart, char* pInnterEnd)
+			{
+				m_nodeStartPtr = (pOuterStart != nullptr) ? pOuterStart : m_nodeStartPtr;
+				m_nodeEndPtr = (pOuterEnd != nullptr) ? pOuterEnd : m_nodeEndPtr;
+				m_nodeInnerStartPtr = (pInnerStart != nullptr) ? pInnerStart : m_nodeInnerStartPtr;
+				m_nodeInnerEndPtr = (pInnterEnd != nullptr) ? pInnterEnd : m_nodeInnerEndPtr;
+
+			}
 			bool MatchOneFilter(HtmlNode* pRootNode,HtmlNode* pFilterExpr,
 				std::vector<HtmlNode*>& matchedNodes,bool needMatchAll = false);
 			bool Query(HtmlNode* pQueryExpr,
 				std::vector<HtmlNode*>& matchedNodes,
 				bool needMatchAll = false);
 			std::string& GetClass() { return m_class; }
-			std::string& GetContent() { return m_content; }
+			std::string GetInnerText()
+			{
+				std::string content;
+				int nodeIndex = 0;
+				int partIndex = 0;
+				for (auto& str : m_contents)
+				{
+					if (str == "")//it is a node
+					{
+						if (nodeIndex < (int)m_kids.size())
+						{
+							std::string txt = m_kids[nodeIndex]->GetInnerText();
+							if (partIndex == 0)
+							{
+								content = txt;
+							}
+							else
+							{
+								content += " " + txt;
+							}
+						}
+						nodeIndex++;
+					}
+					else
+					{
+						if (partIndex == 0)
+						{
+							content = str;
+						}
+						else
+						{
+							content += " " + str;
+						}
+					}
+					partIndex++;
+				}
+				return content;
+			}
+			std::string GetContent() 
+			{ 
+				std::string content;
+				int size = (int)m_contents.size();
+				if (size == 0)
+				{
+					return content;
+				}
+				content = m_contents[0];
+				for (int i=1;i<size;i++)
+				{
+					content += " "+ m_contents[i];
+				}
+				return content;
+			}
 			std::unordered_map<std::string, std::string>& GetAttrs()
 			{
 				return m_attrs;
@@ -72,17 +140,11 @@ namespace X
 			{
 				pChildNode->m_parent = this;
 				m_kids.push_back(pChildNode);
+				m_contents.push_back("");
 			}
 			void SetContent(std::string& txt)
 			{
-				if (m_content.empty())
-				{
-					m_content = txt;
-				}
-				else
-				{
-					m_content = m_content+' '+txt;
-				}
+				m_contents.push_back(txt);
 			}
 			HtmlNode* Parent() { return m_parent; }
 		};

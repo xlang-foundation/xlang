@@ -41,6 +41,7 @@ namespace X
 		struct Operator
 		{
 			htmlsymbol op;
+			char* str_ptr = nullptr;
 			std::string name;
 		};
 
@@ -121,7 +122,7 @@ namespace X
 				}
 				pCurNode->SetContent(txt);
 			};
-			auto do_TagBeginRight = [&](htmlsymbol sym)
+			auto do_TagBeginRight = [&](htmlsymbol sym,char* str_ptr)
 			{
 				NodeStatus ns;
 				while (!ops.empty())
@@ -135,6 +136,7 @@ namespace X
 						{
 							ns.pNode = new HtmlNode();
 						}
+						ns.pNode->SetStreamPos(opInfo.str_ptr, nullptr, nullptr, nullptr);
 						ns.pNode->SetClass(operands.top().text);
 						operands.pop();
 						break;
@@ -164,6 +166,11 @@ namespace X
 					default:
 						break;
 					}
+				}
+				//update inner start 
+				if (ns.pNode)
+				{
+					ns.pNode->SetStreamPos(nullptr,nullptr, str_ptr+1, nullptr);
 				}
 				return ns;
 			};
@@ -213,20 +220,21 @@ namespace X
 						}
 					}
 					break;
-					case htmlsymbol::TagBeginLeft:
+					case htmlsymbol::TagBeginLeft: //like <
 						mToken->SetSkipQuote(false);
 						if (pCurNode && operands.size() > 0)
 						{
 							set_content(pCurNode);
 						}
-						ops.push(Operator{ sym });
+						ops.push(Operator{ sym,s.s});
 						break;
-					case htmlsymbol::TagBeginRight:
+					case htmlsymbol::TagBeginRight://like >
 					{
 						mToken->SetSkipQuote(true);
-						auto ns = do_TagBeginRight(sym);
+						auto ns = do_TagBeginRight(sym,s.s);
 						if (ns.isCloseTag)
 						{
+							pCurNode->SetStreamPos(nullptr, s.s, nullptr, nullptr);
 							for (int i = (int)ns.contents.size() - 1; i >= 0; i--)
 							{
 								pCurNode->SetContent(ns.contents[i]);
@@ -301,10 +309,10 @@ namespace X
 						}
 					}
 					break;
-					case htmlsymbol::TagEnd:
+					case htmlsymbol::TagEnd: //line />
 					{
 						mToken->SetSkipQuote(true);
-						auto ns = do_TagBeginRight(sym);
+						auto ns = do_TagBeginRight(sym,s.s);
 						if (ns.isCloseTag)
 						{
 							pCurNode = pCurNode->Parent();
@@ -316,9 +324,13 @@ namespace X
 						}
 					}
 					break;
-					case htmlsymbol::TagEndWithName:
+					case htmlsymbol::TagEndWithName://like </tagName>
 						mToken->SetSkipQuote(false);
-						ops.push(Operator{ sym });
+						if (pCurNode)
+						{
+							pCurNode->SetStreamPos(nullptr, nullptr, nullptr, s.s);
+						}
+						ops.push(Operator{ sym,s.s });
 						break;
 					case htmlsymbol::DocTagBegin:
 						break;

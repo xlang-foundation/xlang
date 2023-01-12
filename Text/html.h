@@ -17,6 +17,8 @@ namespace X
 				[](auto* pThis) {return pThis->GetClass(); });
 			APISET().AddPropL("content", [](auto* pThis, X::Value v) {},
 				[](auto* pThis) {return pThis->GetContent(); });
+			APISET().AddPropL("innerText", [](auto* pThis, X::Value v) {},
+				[](auto* pThis) {return pThis->GetInnerText(); });
 			APISET().AddPropL("parent", [](auto* pThis, X::Value v) {},
 				[](auto* pThis) {return pThis->GetParent(); });
 			APISET().AddPropL("kids", [](auto* pThis, X::Value v) {},
@@ -35,6 +37,7 @@ namespace X
 		}
 		X::Value GetClass();
 		X::Value GetContent();
+		X::Value GetInnerText();
 		X::Value GetParent();
 		X::Value GetKids();
 		X::Value GetAttrs();
