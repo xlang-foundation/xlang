@@ -4,10 +4,6 @@
 #include <stack>
 #include "port.h"
 
-#ifndef strcasecmp
-#define strcasecmp _stricmp
-#endif // strcasecmp
-
 namespace X
 {
 	namespace Text

@@ -12,13 +12,17 @@
 #define SCANF sscanf_s
 #define MS_SLEEP(t) Sleep(t)
 #define US_SLEEP(t) Sleep(t/1000)
-
+#ifndef strcasecmp
+#define strcasecmp _stricmp
+#endif // strcasecmp
 #else
 #include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/wait.h>
 #include <dlfcn.h>
+#include <strings.h>
+
 #define Path_Sep_S "/"
 #define Path_Sep '/'
 #define LibPrefix "lib"

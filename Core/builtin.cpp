@@ -43,7 +43,9 @@ bool U_Print(X::XRuntime* rt,X::XObj* pContext,
 	for (auto& v : params)
 	{
 		//todo: for linux, may need to change
+#ifdef _WIN32
 		SetConsoleOutputCP(CP_UTF8);
+#endif
 		std::string str = v.ToString();
 		std::cout << str;
 	}
