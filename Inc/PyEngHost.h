@@ -12,9 +12,17 @@ typedef int (*Python_TraceFunc)(
 	int event,
 	PyEngObjectPtr args);
 
+typedef PyEngObjectPtr (*Xlang_CallFunc)(
+	void* realFuncObj,
+	void* pContext,
+	PyEngObjectPtr args,
+	PyEngObjectPtr kwargs);
+
 class PyEngHost
 {
 public:
+	virtual void SetXlangCallFunc(Xlang_CallFunc xlangCall) = 0;
+	virtual PyEngObjectPtr CreatePythonFuncProxy(void* realFuncObj,void* pContext) = 0;
 	virtual void SetTrace(Python_TraceFunc func,PyEngObjectPtr args) = 0;
 	virtual int to_int(PyEngObjectPtr pVar) = 0;
 	virtual PyEngObjectPtr from_int(int val) = 0;

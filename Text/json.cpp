@@ -11,8 +11,9 @@ namespace X
 	{
 		std::string fileName = "inline_code";
 		X::Value retValue;
+		std::vector<std::string> passInParams;
 		X::Hosting::I().Run(fileName, jsonStr.c_str(),
-			(int)jsonStr.size(), retValue);
+			(int)jsonStr.size(), passInParams,retValue);
 		return retValue;
 	}
 	X::Value  JsonWrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,
@@ -31,8 +32,9 @@ namespace X
 		{
 			retValue = X::Value(false);
 		}
+		std::vector<std::string> passInParams;
 		X::Hosting::I().Run(fileName, jsonStr.c_str(),
-			(int)jsonStr.size(), retValue);
+			(int)jsonStr.size(), passInParams,retValue);
 		return retValue;
 	}
 }

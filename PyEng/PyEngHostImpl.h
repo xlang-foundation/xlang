@@ -23,11 +23,23 @@ class GrusPyEngHost :
 	public PyEngHost,
 	public Singleton<GrusPyEngHost>
 {
+	Xlang_CallFunc m_xlang_call_func = nullptr;
 public:
 	GrusPyEngHost();
 	~GrusPyEngHost();
+	inline Xlang_CallFunc GetXlangCallFunc()
+	{
+		return m_xlang_call_func;
+	}
 	// Inherited via PyEngHost
-	virtual void SetTrace(Python_TraceFunc func,PyEngObjectPtr args) override;
+	virtual void SetXlangCallFunc(Xlang_CallFunc xlangCall) override
+	{
+		m_xlang_call_func = xlangCall;
+	}
+	virtual PyEngObjectPtr CreatePythonFuncProxy(
+		void* realFuncObj, void* pContext) override;
+	virtual void SetTrace(Python_TraceFunc func,
+		PyEngObjectPtr args) override;
 
 	virtual int to_int(PyEngObjectPtr pVar) override;
 

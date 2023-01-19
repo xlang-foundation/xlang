@@ -175,6 +175,7 @@ public:
 		switch (v.GetType())
 		{
 		case X::ValueType::None:
+			m_p = g_pPyHost->GetPyNone();
 			break;
 		case X::ValueType::Int64:
 			m_p = g_pPyHost->from_longlong(v);
@@ -196,12 +197,17 @@ public:
 					pPyObj->GetObj(&m_p);
 				}
 			}
+			else if (v.GetObj()->GetType() == X::ObjType::Function)
+			{
+				m_p = g_pPyHost->CreatePythonFuncProxy(v.GetObj(), nullptr);
+			}
 		}
 			break;
 		case X::ValueType::Str:
 			m_p = g_pPyHost->from_str(v.ToString().c_str());
 			break;
 		default:
+			m_p = g_pPyHost->GetPyNone();
 			break;
 		}
 	}

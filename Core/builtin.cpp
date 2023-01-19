@@ -142,7 +142,9 @@ bool U_RunCode(X::XRuntime* rt, X::XObj* pContext,
 	}
 	std::string moduleName = params[0].ToString();
 	std::string code = params[1].ToString();
-	return X::Hosting::I().Run(moduleName, code.c_str(), (int)code.size(), retValue);
+	std::vector<std::string> passInParams;
+	return X::Hosting::I().Run(moduleName, code.c_str(), 
+		(int)code.size(), passInParams,retValue);
 }
 
 bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
@@ -703,7 +705,21 @@ bool U_To_XObj(X::XRuntime* rt, XObj* pContext,
 	}
 	return true;
 }
-
+bool U_GetArgs(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	XlangRuntime* xlRt = dynamic_cast<XlangRuntime*>(rt);
+	auto& args = xlRt->M()->GetArgs();
+	X::List li_args;
+	for (auto& s : args)
+	{
+		li_args += s;
+	}
+	retValue = li_args;
+	return true;
+}
 bool Builtin::RegisterInternals()
 {
 	X::RegisterPackage<X::JsonWrapper>("json");
@@ -741,6 +757,7 @@ bool Builtin::RegisterInternals()
 	Register("each", (X::U_FUNC)U_Each, params, "", true);
 	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, "", true);
 	Register("to_xlang", (X::U_FUNC)U_To_XObj, params, "to_xlang", true);
+	Register("get_args", (X::U_FUNC)U_GetArgs, params);
 	return true;
 }
 }

@@ -148,7 +148,8 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 			if (pSubModule)
 			{
 				X::Value v0;
-				bOK = Hosting::I().Run(pSubModule, v0);
+				std::vector<std::string> passInParams;
+				bOK = Hosting::I().Run(pSubModule, v0, passInParams);
 			}
 			*ppSubModule = pSubModule;
 		}

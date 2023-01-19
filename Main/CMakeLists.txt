@@ -54,3 +54,26 @@ endif()
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 endif()
+
+#[[
+add_library(${PROJECT_NAME}.mini SHARED 
+	${Api_SRC}
+	${Utils_SRC}
+	${Core_SRC}
+	${Ast_SRC}
+	${Parse_SRC}
+	${Main_SRC}
+)
+
+if (WIN32)
+	#Inheritance via dominance warning
+	target_compile_options(${PROJECT_NAME}.mini PRIVATE "/wd4250;")
+else()
+    target_link_libraries(${PROJECT_NAME}.mini pthread dl)
+endif()
+
+if (CMAKE_VERSION VERSION_GREATER 3.12)
+  set_property(TARGET ${PROJECT_NAME}.mini PROPERTY CXX_STANDARD 20)
+endif()
+]]
+

@@ -13,8 +13,9 @@ namespace X
 		virtual void run() override
 		{
 			X::Value retVal;
+			std::vector<std::string> passInParams;
 			Hosting::I().Run(m_moduleName,m_code.c_str(),
-				(int)m_code.size(), retVal);
+				(int)m_code.size(), passInParams,retVal);
 		}
 	public:
 		Backend(std::string& moduleName,std::string& code)
@@ -24,7 +25,8 @@ namespace X
 		}
 
 	};
-	bool Hosting::RunAsBackend(std::string& moduleName, std::string& code)
+	bool Hosting::RunAsBackend(std::string& moduleName, std::string& code,
+		std::vector<std::string>& passInParams)
 	{
 		Backend* pBackend = new Backend(moduleName,code);
 		pBackend->Start();
@@ -105,8 +107,10 @@ namespace X
 		return true;
 	}
 	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
-			bool stopOnEntry)
+		std::vector<std::string>& passInParams,
+		bool stopOnEntry)
 	{
+		pTopModule->SetArgs(passInParams);
 		XlangRuntime* pRuntime = new XlangRuntime();
 		pRuntime->SetM(pTopModule);
 		G::I().BindRuntimeToThread(pRuntime);
@@ -181,7 +185,9 @@ namespace X
 		return (m_pInteractiveModule !=nullptr);
 	}
 	bool Hosting::Run(std::string& moduleName,
-		const char* code, int size, X::Value& retVal)
+		const char* code, int size, 
+		std::vector<std::string>& passInParams,
+		X::Value& retVal)
 	{
 		unsigned long long moduleKey = 0;
 		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
@@ -189,7 +195,7 @@ namespace X
 		{
 			return false;
 		}
-		bool bOK =  Run(pTopModule, retVal);
+		bool bOK =  Run(pTopModule,retVal, passInParams);
 		Unload(pTopModule);
 		return bOK;
 	}
@@ -216,13 +222,15 @@ namespace X
 			retVal = X::Value(false);
 			return false;
 		}
-		bool bOK = Run(pTopModule, retVal,stopOnEntry);
+		std::vector<std::string> passInParams;
+		bool bOK = Run(pTopModule, retVal, passInParams,stopOnEntry);
 		Unload(pTopModule);
 		if (!onFinishExpr.empty())
 		{
 			std::string moduleName("Cleanup.x");
 			X::Value valRet0;
-			Run(moduleName, onFinishExpr.c_str(), (int)onFinishExpr.size(), valRet0);
+			std::vector<std::string> passInParams;
+			Run(moduleName, onFinishExpr.c_str(), (int)onFinishExpr.size(), passInParams,valRet0);
 		}
 		return bOK;
 	}

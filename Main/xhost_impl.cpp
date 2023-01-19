@@ -248,7 +248,9 @@ namespace X
 	}
 	bool XHost_Impl::RunCode(std::string& moduleName, std::string& code, X::Value& retVal)
 	{
-		return X::Hosting::I().Run(moduleName, code.c_str(), (int)code.size(), retVal);
+		std::vector<std::string> passInParams;
+		return X::Hosting::I().Run(moduleName, code.c_str(),
+			(int)code.size(), passInParams,retVal);
 	}
 	bool XHost_Impl::RunCodeLine(std::string& codeLine, X::Value& retVal)
 	{

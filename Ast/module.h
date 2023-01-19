@@ -59,7 +59,8 @@ class Module :
 	std::string m_path;
 	std::string m_code;
 	StackFrame* m_stackFrame = nullptr;
-
+	//Parameters
+	std::vector<std::string> m_args;
 	//for debug
 	//Locker m_addCommandLock;
 	bool m_inDebug = false;
@@ -84,6 +85,14 @@ public:
 	StackFrame* GetStack()
 	{
 		return m_stackFrame;
+	}
+	void SetArgs(std::vector<std::string>& args)
+	{
+		m_args = args;
+	}
+	std::vector<std::string>& GetArgs()
+	{
+		return m_args;
 	}
 	void GetSearchPaths(std::vector<std::string>& searchPaths)
 	{

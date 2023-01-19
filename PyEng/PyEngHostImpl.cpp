@@ -1,6 +1,7 @@
 #include "PyEngHostImpl.h"
 #include "utility.h"
 #include "PyEngObject.h"
+#include "PyFunc.h"
 #include <iostream>
 
 //each cpp file has to call this line
@@ -28,7 +29,12 @@ GrusPyEngHost::~GrusPyEngHost()
 {
 
 }
-
+PyEngObjectPtr GrusPyEngHost::CreatePythonFuncProxy(
+	void* realFuncObj, void* pContext)
+{
+	PyObject* pRetObj = CreateFuncWrapper(this, realFuncObj, pContext);
+	return (PyEngObjectPtr)pRetObj;
+}
 int GrusPyEngHost::to_int(PyEngObjectPtr pVar)
 {
 	return (int)PyLong_AsLong((PyObject*)pVar);

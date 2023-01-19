@@ -19,6 +19,7 @@
 #include "str.h"
 #include "list.h"
 #include "metascope.h"
+#include "pyproxyobject.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -102,6 +103,31 @@ bool LoadDevopsEngine(int port = 3142)
 		return false;
 	}
 }
+
+PyEngObjectPtr Xlang_CallFunc_Impl(
+	void* realFuncObj,
+	void* pContext,
+	PyEngObjectPtr args,
+	PyEngObjectPtr kwargs)
+{
+	X::ARGS xArgs;
+	X::KWARGS xKwArgs;
+	PyEng::Object pyArgs(args,true);
+	long long cnt = pyArgs.GetCount();
+	for (long long i = 0; i < cnt; i++)
+	{
+		X::Value xVal;
+		PyEng::Object pyObjArg = pyArgs[i];
+		X::Data::PyProxyObject::PyObjectToValue(pyObjArg, xVal);
+		xArgs.push_back(xVal);
+	}
+	XObj* pFuncObj = (XObj*)realFuncObj;
+	auto* rt = X::g_pXHost->GetCurrentRuntime();
+	X::Value retVal;
+	pFuncObj->Call(rt, (XObj*)pContext, xArgs, xKwArgs, retVal);
+	PyEng::Object retObj(retVal);
+	return retObj;
+}
 bool LoadPythonEngine()
 {
 	typedef void (*LOAD)(void** ppHost);
@@ -148,6 +174,10 @@ bool LoadPythonEngine()
 			load((void**)&g_pPyHost);
 		}
 		g_pXload->SetPythonLibHandler(libHandle);
+		if (g_pPyHost)
+		{
+			g_pPyHost->SetXlangCallFunc(Xlang_CallFunc_Impl);
+		}
 		return true;
 	}
 	else
@@ -189,7 +219,9 @@ void XLangRun()
 		ReplaceAll(code, "\\n", "\n");
 		ReplaceAll(code, "\\t", "\t");
 		Hosting::I().Run(fileName, inlineCode.c_str(),
-			(int)inlineCode.size(), retVal);
+			(int)inlineCode.size(), 
+			g_pXload->GetConfig().passInParams,
+			retVal);
 	}
 	else if (!fileName.empty())
 	{
@@ -208,7 +240,8 @@ void XLangRun()
 	{
 		if (g_pXload->GetConfig().runAsBackend)
 		{
-			Hosting::I().RunAsBackend(fileName, code);
+			Hosting::I().RunAsBackend(fileName, code,
+				g_pXload->GetConfig().passInParams);
 			std::cout << "Running in background" << std::endl;
 			EventSystem::I().Loop();
 			enterEventLoop = false;
@@ -216,7 +249,9 @@ void XLangRun()
 		else
 		{
 			Value retVal;
-			Hosting::I().Run(fileName, code.c_str(), (int)code.size(), retVal);
+			std::vector<std::string> passInParams;
+			Hosting::I().Run(fileName, code.c_str(), (int)code.size(), 
+				g_pXload->GetConfig().passInParams,retVal);
 			if (retVal.IsValid())
 			{
 				std::cout << retVal.ToString() << std::endl;
