@@ -1,6 +1,7 @@
 #include "Hosting.h"
 #include "parser.h"
 #include "gthread.h"
+#include "moduleobject.h"
 
 namespace X
 {
@@ -83,6 +84,27 @@ namespace X
 		}
 		return AppEventCode::Continue;
 	}
+	X::Value Hosting::NewModule()
+	{
+		AST::Module* pTopModule = new AST::Module();
+		pTopModule->IncRef();
+		pTopModule->ScopeLayout();
+
+		XlangRuntime* pRuntime = new XlangRuntime();
+		pRuntime->SetM(pTopModule);
+		pTopModule->SetRT(pRuntime);
+		//todo: same thread run multiple top module?
+		//deal with line below
+		//G::I().BindRuntimeToThread(pRuntime);
+
+		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
+		pModuleFrame->SetLine(pTopModule->GetStartLine());
+		pTopModule->AddBuiltins(pRuntime);
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+
+		auto* pModuleObj = new X::AST::ModuleObject(pTopModule);
+		return X::Value(pModuleObj);
+	}
 	AST::Module* Hosting::Load(std::string& moduleName,
 		const char* code, int size, unsigned long long& moduleKey)
 	{
@@ -138,6 +160,31 @@ namespace X
 			retVal = v;
 		}
 		delete pRuntime;
+		return bOK;
+	}
+	bool Hosting::RunFragmentInModule(
+		AST::ModuleObject* pModuleObj,
+		const char* code, int size, X::Value& retVal)
+	{
+		AST::Module* pModule = pModuleObj->M();
+		long long lineCntBeforeAdd = pModule->GetBodySize();
+		Parser parser;
+		if (!parser.Init())
+		{
+			return false;
+		}
+		bool bOK = parser.Compile(pModule, (char*)code, size);
+		if (!bOK)
+		{
+			//todo:syntax error
+			return false;
+		}
+		auto* rt = pModule->GetRT();
+		if (rt)
+		{
+			rt->AdjustStack(pModule->GetVarNum());
+		}
+		bOK = pModule->RunFromLine(rt, pModuleObj, lineCntBeforeAdd,retVal);
 		return bOK;
 	}
 	/*

@@ -32,25 +32,47 @@
 #include "msgthread.h"
 #include "runtime.h"
 #include "pyproxyobject.h"
+#include "moduleobject.h"
 
 Locker _printLock;
-bool U_Print(X::XRuntime* rt,X::XObj* pContext,
+bool U_Print(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	_printLock.Lock();
+	std::string allOut;
+	//_printLock.Lock();
 	for (auto& v : params)
 	{
 		//todo: for linux, may need to change
-#ifdef _WIN32
-		SetConsoleOutputCP(CP_UTF8);
-#endif
-		std::string str = v.ToString();
-		std::cout << str;
+		allOut += v.ToString();
 	}
-	std::cout << std::endl;
-	_printLock.Unlock();
+	allOut += '\n';
+	auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(pContext);
+	bool IsRenderByPrimtive = false;
+	if (pModuleObj)
+	{
+		X::Value& outputPrimitive = pModuleObj->GetPrimitive(X::AST::module_primitive::Output);
+		if (outputPrimitive.IsObject())
+		{
+			X::XObj* pObj = outputPrimitive.GetObj();
+			if (pObj)
+			{
+				X::ARGS params_p;
+				X::KWARGS kwargs_p;
+				params_p.push_back(allOut);
+				IsRenderByPrimtive = pObj->Call(rt, nullptr, params_p, kwargs_p, retValue);
+			}
+		}
+	}
+	//_printLock.Unlock();
+	if (!IsRenderByPrimtive)
+	{
+		#ifdef _WIN32
+		SetConsoleOutputCP(CP_UTF8);
+		#endif
+		std::cout << allOut;
+	}
 	return true;
 }
 bool U_Input(X::XRuntime* rt, X::XObj* pContext,
@@ -146,7 +168,21 @@ bool U_RunCode(X::XRuntime* rt, X::XObj* pContext,
 	return X::Hosting::I().Run(moduleName, code.c_str(), 
 		(int)code.size(), passInParams,retValue);
 }
-
+bool U_RunFragmentCode(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() < 1)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	std::string code = params[0].ToString();
+	std::vector<std::string> passInParams;
+	return X::Hosting::I().RunCodeLine(code.c_str(),
+		(int)code.size(), retValue);
+}
 bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -262,7 +298,14 @@ bool U_Time(X::XRuntime* rt, X::XObj* pContext,
 	retValue = X::Value(t);
 	return true;
 }
-
+bool U_NewModule(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	retValue =  X::Hosting::I().NewModule();
+	return true;
+}
 
 namespace X {
 void Builtin::Cleanup()
@@ -732,6 +775,7 @@ bool Builtin::RegisterInternals()
 	Register("load", (X::U_FUNC)U_Load, params,"moodule = load(filename)");
 	Register("run", (X::U_FUNC)U_Run, params,"run(module:loaded by call load func)");
 	Register("runcode", (X::U_FUNC)U_RunCode, params,"runcode(moduleName,code)");
+	Register("runfragmentcode", (X::U_FUNC)U_RunFragmentCode, params, "runfragmentcode(code)");
 	Register("runbytecode", (X::U_FUNC)U_RunByteCode, params,"runbytecode(code_in_bytes)");
 	Register("rand", (X::U_FUNC)U_Rand, params,"rand() return an integer");
 	Register("sleep", (X::U_FUNC)U_Sleep, params,
@@ -758,6 +802,7 @@ bool Builtin::RegisterInternals()
 	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, "", true);
 	Register("to_xlang", (X::U_FUNC)U_To_XObj, params, "to_xlang", true);
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
+	Register("new_module", (X::U_FUNC)U_NewModule, params);
 	return true;
 }
 }

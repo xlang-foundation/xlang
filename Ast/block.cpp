@@ -120,6 +120,27 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 	}
 	return bOk;
 }
+bool Block::RunFromLine(XRuntime* rt, XObj* pContext,
+	long long lineNo, Value& v, LValue* lValue)
+{
+	bool bOK = false;
+	auto lineCnt = Body.size();
+	for (long long i = lineNo; i < lineCnt; i++)
+	{
+		auto line = Body[i];
+		Value v0;
+		bOK = line->Run((XlangRuntime*)rt, pContext, v0);
+		if (!bOK)
+		{
+			break;
+		}
+		if (i == (lineCnt - 1))
+		{
+			v = v0;
+		}
+	}
+	return bOK;
+}
 bool Block::RunLast(XRuntime* rt0, XObj* pContext, Value& v, LValue* lValue)
 {
 	if (Body.size() == 0)
@@ -128,6 +149,7 @@ bool Block::RunLast(XRuntime* rt0, XObj* pContext, Value& v, LValue* lValue)
 	}
 	auto last = Body[Body.size() - 1];
 	Value v0;
+
 	bool bOk = last->Run((XlangRuntime*)rt0, pContext, v0);
 	if (bOk)
 	{

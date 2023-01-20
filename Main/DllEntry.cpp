@@ -20,6 +20,7 @@
 #include "list.h"
 #include "metascope.h"
 #include "pyproxyobject.h"
+#include "moduleobject.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -275,6 +276,7 @@ void XLangUnload()
 {
 	Builtin::I().Cleanup();
 	Manager::I().Cleanup();
+	X::AST::ModuleObject::cleanup();
 	X::Data::Str::cleanup();
 	X::Data::List::cleanup();
 	X::AST::MetaScope().I().Cleanup();

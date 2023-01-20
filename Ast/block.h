@@ -57,6 +57,10 @@ public:
 		}
 		Body.clear();
 	}
+	long long GetBodySize()
+	{
+		return Body.size();
+	}
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		UnaryOp::ToBytes(rt,pContext,stream);
@@ -108,6 +112,7 @@ public:
 	inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
 	bool RunLast(XRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr);
+	bool RunFromLine(XRuntime* rt, XObj* pContext,long long lineNo,Value& v, LValue* lValue = nullptr);
 	virtual bool Run(XRuntime* rt,XObj* pContext, Value& v, LValue* lValue = nullptr);
 };
 class For :

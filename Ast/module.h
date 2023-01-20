@@ -53,6 +53,8 @@ class Module :
 	virtual public Block,
 	virtual public Scope
 {
+	XlangRuntime* m_pRuntime;//for top module, we need it
+
 	Locker m_lockSearchPath;
 	std::vector<std::string> m_searchPaths;
 	std::string m_moduleName;
@@ -81,6 +83,14 @@ public:
 		m_type = ObType::Module;
 		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	void SetRT(XlangRuntime* rt)
+	{
+		m_pRuntime = rt;
+	}
+	XlangRuntime* GetRT()
+	{
+		return m_pRuntime;
 	}
 	StackFrame* GetStack()
 	{
