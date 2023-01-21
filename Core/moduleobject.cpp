@@ -58,7 +58,7 @@ namespace X
 								{
 									std::string name = params[0].ToString();
 									auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
-									pModuleObj->SetPrimitive(name, params[1]);
+									pModuleObj->M()->SetPrimitive(name, params[1],rt);
 								}
 								return true;
 							}));

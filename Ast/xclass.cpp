@@ -63,16 +63,22 @@ XClass* XClass::FindBase(XlangRuntime* rt, std::string& strName)
 }
 bool XClass::Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v)
 {
+	bool bSet = false;
 	if (pContext)
 	{
 		Data::XClassObject* pObj = dynamic_cast<Data::XClassObject*>(pContext);
-		pObj->GetStack()->Set(idx, v);
+		if (pObj)
+		{
+			pObj->GetStack()->Set(idx, v);
+			bSet = true;
+		}
 	}
-	else if (m_stackFrame)
+	if(!bSet && m_stackFrame)
 	{
 		m_stackFrame->Set(idx, v);
+		bSet = true;
 	}
-	return true;
+	return bSet;
 }
 bool XClass::Get(XlangRuntime* rt,XObj* pContext, int idx, Value& v, LValue* lValue)
 {

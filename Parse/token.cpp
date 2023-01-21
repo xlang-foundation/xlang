@@ -193,6 +193,11 @@ namespace X {
 					continue;
 				}
 			}
+			//also reset end_quoteCnt if c is not quoteBeginChar
+			if (end_quoteCnt > 0 && c != quoteBeginChar)
+			{
+				end_quoteCnt = 0;
+			}
 			switch (c)
 			{
 			case '\\':

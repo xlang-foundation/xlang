@@ -6,6 +6,11 @@
 #include <iostream>
 #include "utility.h"
 
+extern bool U_Print(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue);
+
 namespace X
 {
 namespace AST
@@ -120,14 +125,48 @@ bool Block::Run(XRuntime* rt0,XObj* pContext, Value& v, LValue* lValue)
 	}
 	return bOk;
 }
+
 bool Block::RunFromLine(XRuntime* rt, XObj* pContext,
 	long long lineNo, Value& v, LValue* lValue)
 {
+	auto print_var = [](XRuntime* rt, XObj* pContext,Expression* exp)
+	{
+		if (exp->m_type == ObType::Var)
+		{
+			//just print out
+			Value v0;
+			bool bOK = exp->Run((XlangRuntime*)rt, pContext, v0);
+			if (bOK)
+			{
+				X::ARGS args_p;
+				args_p.push_back(v0);
+				X::KWARGS kwArgs_p;
+				X::Value retValue_p;
+				U_Print(rt, pContext, args_p, kwArgs_p, retValue_p);
+			}
+			return bOK;
+		}
+	};
 	bool bOK = false;
 	auto lineCnt = Body.size();
 	for (long long i = lineNo; i < lineCnt; i++)
 	{
 		auto line = Body[i];
+		if (line->m_type == ObType::Var)
+		{
+			print_var(rt, pContext, line);
+			continue;
+		}
+		else if (line->m_type == ObType::List)
+		{
+			List* pList = dynamic_cast<List*>(line);
+			auto& list = pList->GetList();
+			for (auto& p : list)
+			{
+				print_var(rt, pContext, p);
+			}
+			continue;
+		}
 		Value v0;
 		bOK = line->Run((XlangRuntime*)rt, pContext, v0);
 		if (!bOK)

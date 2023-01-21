@@ -6,6 +6,7 @@
 #include "wait.h"
 #include "utility.h"
 #include <iostream>
+#include "value.h"
 namespace X
 {
 namespace AST
@@ -48,18 +49,37 @@ struct CommandInfo
 	bool m_downstreamDelete = false;//when the downstream get this command
 	//need to delete this pointer
 };
+enum class module_primitive
+{
+	Output,
+	Count,
+};
 
+struct PrimitiveInfo
+{
+	Value primitive;
+	XlangRuntime* rt;
+};
 class Module :
 	virtual public Block,
 	virtual public Scope
 {
 	XlangRuntime* m_pRuntime;//for top module, we need it
-
+	PrimitiveInfo m_primitives[(int)module_primitive::Count];
 	Locker m_lockSearchPath;
 	std::vector<std::string> m_searchPaths;
 	std::string m_moduleName;
 	std::string m_path;
-	std::string m_code;
+	// for var name and value with str
+	// we keep string pointer not copy from the source code memory
+	// when pass entire code once per call, this method works well
+	// but we work with code fragments for example: interactive mode
+	// or work with iPyKernel mode, code added multiple times
+	//and parsed multiple time, so the memory is not linear
+	//so we keep code as a list of string
+	//and each parse use its own code fragment
+	//then this way will work fine for multiple parsing times
+	std::vector<std::string> m_allCode;
 	StackFrame* m_stackFrame = nullptr;
 	//Parameters
 	std::vector<std::string> m_args;
@@ -83,6 +103,18 @@ public:
 		m_type = ObType::Module;
 		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	void SetPrimitive(std::string& name, Value& valObj,XRuntime* rt)
+	{
+		if (name == "Output")
+		{
+			m_primitives[(int)module_primitive::Output] = { valObj,
+				dynamic_cast<XlangRuntime*>(rt) };
+		}
+	}
+	auto& GetPrimitive(module_primitive idx)
+	{
+		return m_primitives[(int)idx];
 	}
 	void SetRT(XlangRuntime* rt)
 	{
@@ -112,13 +144,14 @@ public:
 	}
 	std::string GetCodeFragment(int startPos, int endPos)
 	{
-		if (endPos >= m_code.size())
+		std::string code = GetCode();
+		if (endPos >= code.size())
 		{
-			return m_code.substr(startPos);
+			return code.substr(startPos);
 		}
 		else
 		{
-			return m_code.substr(startPos, endPos - startPos+1);
+			return code.substr(startPos, endPos - startPos+1);
 		}
 	}
 	void AddSearchPath(std::string& strPath)
@@ -216,17 +249,25 @@ public:
 	}
 	inline char* SetCode(char* code, int size)
 	{
-		int pos = (int)m_code.size();
-		if (pos > 0)
-		{
-			m_code += "\n";
-			pos++;//skip the new added char
-		}
-		m_code += code;
-		char* szCode = (char*)m_code.c_str();
-		return  szCode + pos;
+		std::string strCode(code, size);
+		m_allCode.push_back(strCode);
+		char* szCode = (char*)m_allCode[m_allCode.size()-1].c_str();
+		return  szCode;
 	}
-	std::string& GetCode() { return m_code; }
+	//combine all code fragments and insert newline between fragments
+	std::string GetCode() 
+	{ 
+		if (m_allCode.size() == 0)
+		{
+			return "";
+		}
+		std::string code = m_allCode[0];
+		for (int i=1;i<(int)m_allCode.size();i++)
+		{
+			code += "\n"+ m_allCode[i];
+		}
+		return code; 
+	}
 	~Module()
 	{
 		m_lockCommands.Lock();

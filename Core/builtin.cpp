@@ -33,6 +33,7 @@
 #include "runtime.h"
 #include "pyproxyobject.h"
 #include "moduleobject.h"
+#include "runtime.h"
 
 Locker _printLock;
 bool U_Print(X::XRuntime* rt, X::XObj* pContext,
@@ -48,20 +49,23 @@ bool U_Print(X::XRuntime* rt, X::XObj* pContext,
 		allOut += v.ToString();
 	}
 	allOut += '\n';
-	auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(pContext);
+
+	X::XlangRuntime* pRT = dynamic_cast<X::XlangRuntime*>(rt);
+	auto* pModule = pRT->M();
 	bool IsRenderByPrimtive = false;
-	if (pModuleObj)
+	if (pModule)
 	{
-		X::Value& outputPrimitive = pModuleObj->GetPrimitive(X::AST::module_primitive::Output);
-		if (outputPrimitive.IsObject())
+		auto& outputPrimitive = pModule->GetPrimitive(X::AST::module_primitive::Output);
+		if (outputPrimitive.primitive.IsObject())
 		{
-			X::XObj* pObj = outputPrimitive.GetObj();
+			X::XObj* pObj = outputPrimitive.primitive.GetObj();
 			if (pObj)
 			{
 				X::ARGS params_p;
 				X::KWARGS kwargs_p;
 				params_p.push_back(allOut);
-				IsRenderByPrimtive = pObj->Call(rt, nullptr, params_p, kwargs_p, retValue);
+				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,
+					nullptr, params_p, kwargs_p, retValue);
 			}
 		}
 	}
