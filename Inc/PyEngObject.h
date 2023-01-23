@@ -201,6 +201,24 @@ public:
 			{
 				m_p = g_pPyHost->CreatePythonFuncProxy(v.GetObj(), nullptr);
 			}
+			else if (v.GetObj()->GetType() == X::ObjType::List)
+			{
+				X::XList* list = dynamic_cast<X::XList*>(v.GetObj());
+				auto size = list->Size();
+				m_p = g_pPyHost->NewList(size);
+				for (int i = 0; i < size; i++)
+				{
+					X::Value vi = list->Get(i);
+					g_pPyHost->Set(m_p, i, (Object)vi);
+				}
+			}
+			else if (v.GetObj()->GetType() == X::ObjType::Dict)
+			{
+				X::XDict* dict = dynamic_cast<X::XDict*>(v.GetObj());
+				auto size = dict->Size();
+				m_p = g_pPyHost->NewDict();
+				//todo: add code to finish
+			}
 		}
 			break;
 		case X::ValueType::Str:
