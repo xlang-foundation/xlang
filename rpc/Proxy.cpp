@@ -13,6 +13,7 @@ namespace X
 	{
 		Manager::I().RegisterProxy("lrpc",[](std::string& url) {
 			XLangProxy* pProxy = new XLangProxy();
+			pProxy->SetUrl(url);
 			pProxy->Start();
 			return dynamic_cast<XProxy*>(pProxy);
 			});
@@ -21,7 +22,10 @@ namespace X
 	{
 		m_pConnectWait = new XWait(false);
 	}
-
+	void XLangProxy::SetUrl(std::string& url)
+	{
+		SCANF(url.c_str(), "%d", &m_port);
+	}
 	XLangProxy::~XLangProxy()
 	{
 		delete m_pConnectWait;
@@ -429,10 +433,10 @@ namespace X
 		mSMSwapBuffer1 = new SMSwapBuffer();
 		mSMSwapBuffer2 = new SMSwapBuffer();
 
-		bool bOK = mSMSwapBuffer1->ClientConnect(shmKey, SM_BUF_SIZE, timeoutMS);
+		bool bOK = mSMSwapBuffer1->ClientConnect(m_port,shmKey,SM_BUF_SIZE, timeoutMS);
 		if (bOK)
 		{
-			bOK = mSMSwapBuffer2->ClientConnect(shmKey + 1, SM_BUF_SIZE, timeoutMS, false);
+			bOK = mSMSwapBuffer2->ClientConnect(m_port, shmKey+1,SM_BUF_SIZE, timeoutMS, false);
 			if (bOK)
 			{
 				ShapeHandsToServer();

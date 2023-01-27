@@ -49,11 +49,14 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 {
 	//first one is exe file name with path
 	std::string& progName = params[0];
+	paramCfg.config.appFullName = progName;
 	auto pos = progName.rfind(Path_Sep);
 	if (pos != progName.npos)
 	{
 		paramCfg.config.appPath = progName.substr(0, pos);
 	}
+	paramCfg.config.appFullName = progName;
+
 	if (params.size() == 1)
 	{
 		paramCfg.print_usage = true;

@@ -317,6 +317,7 @@ namespace X
 	bool XHost_Impl::Lrpc_Listen(int port, bool blockMode)
 	{
 		bool bOK = true;
+		MsgThread::I().SetPort(port);
 		if (blockMode)
 		{
 			MsgThread::I().run();

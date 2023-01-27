@@ -7,6 +7,7 @@
 #include "bin.h"
 #include "function.h"
 #include "remote_object.h"
+#include "moduleobject.h"
 
 namespace X 
 {

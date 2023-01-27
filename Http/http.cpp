@@ -105,6 +105,12 @@ namespace X
 			});
 		return true;
 	}
+	bool HttpResponse::AddHeader(std::string headName, X::Value& headValue)
+	{
+		auto* pResp = (httplib::Response*)m_pResponse;
+		pResp->headers.emplace(std::make_pair(headName,headValue.ToString()));
+		return true;
+	}
 	bool HttpResponse::SetContent(X::Value& valContent,std::string contentType)
 	{
 		auto* pResp = (httplib::Response*)m_pResponse;

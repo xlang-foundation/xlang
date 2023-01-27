@@ -25,7 +25,7 @@ namespace X
         virtual ~SMSwapBuffer();
 
         bool HostCreate(unsigned long long key, int bufSize);
-        bool ClientConnect(unsigned long long key, int bufSize,
+        bool ClientConnect(long port, unsigned long long shKey,int bufSize,
             int timeoutMS, bool needSendMsg = true);
 
         void BeginWrite();
@@ -48,7 +48,7 @@ namespace X
         void ReleaseEvents();
         void Close();
     private:
-        bool SendMsg(unsigned long long key);
+        bool SendMsg(long port,unsigned long long shKey);
         bool mClosed = false;
 #if (WIN32)
         HANDLE mShmID = 0;

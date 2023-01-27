@@ -186,11 +186,6 @@ bool X::AST::Import::Run(XlangRuntime* rt, XObj* pContext,
 		{
 			varName = im.alias;
 		}
-		if (Manager::I().QueryAndCreatePackage(rt,im.name, v))
-		{
-			rt->M()->Add(rt, varName, nullptr, v);
-			continue;
-		}
 		if (!m_thruUrl.empty())
 		{
 			XProxy* proxy = Manager::I().QueryProxy(m_thruUrl);
@@ -199,6 +194,14 @@ bool X::AST::Import::Run(XlangRuntime* rt, XObj* pContext,
 				auto* remoteObj = new RemoteObject(proxy);
 				remoteObj->SetObjName(im.name);
 				v = Value(dynamic_cast<XObj*>(remoteObj));
+				rt->M()->Add(rt, varName, nullptr, v);
+				continue;
+			}
+		}
+		else
+		{
+			if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
+			{
 				rt->M()->Add(rt, varName, nullptr, v);
 				continue;
 			}

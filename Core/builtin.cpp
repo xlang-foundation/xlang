@@ -34,6 +34,12 @@
 #include "pyproxyobject.h"
 #include "moduleobject.h"
 #include "runtime.h"
+#include "manager.h"
+
+namespace X
+{
+	extern XLoad* g_pXload;
+}
 
 Locker _printLock;
 bool U_Print(X::XRuntime* rt, X::XObj* pContext,
@@ -315,18 +321,26 @@ namespace X {
 void Builtin::Cleanup()
 {
 	m_lock.Lock();
-	for (auto it : m_mapFuncs)
+	for (auto it : m_Funcs)
 	{
-		it.second->DecRef();
+		it.funcObj->DecRef();
 	}
-	m_mapFuncs.clear();
+	m_Funcs.clear();
+	m_mapNameToIndex.clear();
 	m_lock.Unlock();
 }
 Data::Function* Builtin::Find(std::string& name)
 {
 	AutoLock(m_lock);
-	auto it = m_mapFuncs.find(name);
-	return (it!= m_mapFuncs.end())?it->second:nil;
+	auto it = m_mapNameToIndex.find(name);
+	if (it != m_mapNameToIndex.end())
+	{
+		return m_Funcs[it->second].funcObj;
+	}
+	else
+	{
+		return nil;
+	}
 }
 bool Builtin::Register(const char* name, X::U_FUNC func,
 	std::vector<std::pair<std::string, std::string>>& params,
@@ -340,7 +354,9 @@ bool Builtin::Register(const char* name, X::U_FUNC func,
 	auto* pFuncObj = new Data::Function(extFunc,true);
 	pFuncObj->IncRef();
 	m_lock.Lock();
-	m_mapFuncs.emplace(std::make_pair(name, pFuncObj));
+	int id = (int)m_Funcs.size();
+	m_Funcs.push_back({ name ,pFuncObj});
+	m_mapNameToIndex.emplace(std::make_pair(name, id));
 	m_lock.Unlock();
 	if (regToMeta)
 	{
@@ -696,7 +712,23 @@ bool U_LRpc_Listen(X::XRuntime* rt, XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	X::MsgThread::I().Start();
+	long port = 0;
+	if (params.size() > 0)
+	{
+		port = (long)(int)params[0];
+	}
+	if (port != 0)
+	{
+		MsgThread::I().SetPort(port);
+	}
+	if (params.size() > 1 && params[1].IsTrue())
+	{//block mode
+		MsgThread::I().run();
+	}
+	else
+	{
+		X::MsgThread::I().Start();
+	}
 	return true;
 }
 bool U_PushWritePad(X::XRuntime* rt, XObj* pContext,
@@ -767,8 +799,32 @@ bool U_GetArgs(X::XRuntime* rt, XObj* pContext,
 	retValue = li_args;
 	return true;
 }
+bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	XlangRuntime* xlRt = dynamic_cast<XlangRuntime*>(rt);
+	auto& appPath = X::g_pXload->GetConfig().appPath;
+	auto& appFullName = X::g_pXload->GetConfig().appFullName;
+	std::string cmd;
+	if (params.size() > 0)
+	{
+		cmd = appFullName + " " + params[0].ToString();
+	}
+	unsigned long procId = 0;
+	bool bOK = RunProcess(cmd, appPath, false, procId);
+	if (bOK)
+	{
+		retValue = X::Value((long)procId);
+	}
+	return bOK;
+}
 bool Builtin::RegisterInternals()
 {
+	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
+	X::Value valBuiltinPack(pBuiltinPack);
+	X::Manager::I().Register("builtin", valBuiltinPack);
 	X::RegisterPackage<X::JsonWrapper>("json");
 	X::RegisterPackage<X::HtmlWrapper>("html");
 	X::RegisterPackage<X::DevOps::DebugService>("xdb");
@@ -807,6 +863,48 @@ bool Builtin::RegisterInternals()
 	Register("to_xlang", (X::U_FUNC)U_To_XObj, params, "to_xlang", true);
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
+	Register("run_new_instance", (X::U_FUNC)U_RunNewInstance, params);
 	return true;
+}
+void Builtin::SetPackageCleanupFunc(PackageCleanup func)
+{
+}
+int Builtin::AddMethod(const char* name, bool keepRawParams)
+{
+	return 0;
+}
+int Builtin::QueryMethod(const char* name, bool* pKeepRawParams)
+{
+	AutoLock(m_lock);
+	auto it = m_mapNameToIndex.find(name);
+	if (it != m_mapNameToIndex.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return -1;
+	}
+}
+void* Builtin::GetEmbedObj()
+{
+	return nullptr;
+}
+bool Builtin::Init(int varNum)
+{
+	return false;
+}
+bool Builtin::SetIndexValue(int idx, Value& v)
+{
+	return false;
+}
+bool Builtin::GetIndexValue(int idx, Value& v)
+{
+	AutoLock(m_lock);
+	v = X::Value(m_Funcs[idx].funcObj);
+	return true;
+}
+void Builtin::RemoveALl()
+{
 }
 }

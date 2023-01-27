@@ -3,6 +3,7 @@
 #include "utility.h"
 #include "port.h"
 #include <iostream>
+#include "msgthread.h"
 
 #if (WIN32)
 #include <Windows.h>
@@ -24,6 +25,9 @@
 
 namespace X
 {
+#if (WIN32)
+    BOOL ReadSlot(HANDLE hSlot, std::vector<X::pas_mesg_buffer>& msgs);
+#endif
     SMSwapBuffer::SMSwapBuffer()
     {
 
@@ -176,16 +180,21 @@ namespace X
         m_BufferSize = bufferSize;
         return true;
     }
-    bool SMSwapBuffer::SendMsg(unsigned long long key)
+    bool SMSwapBuffer::SendMsg(long port, unsigned long long shKey)
     {
         pas_mesg_buffer message;
         // msgget creates a message queue
         // and returns identifier
         message.mesg_type = (unsigned long long)PAS_MSG_TYPE::CreateSharedMem;
-        message.shmKey = key;
+        message.shmKey = shKey;
 
 #if (WIN32)
-        HANDLE hFileMailSlot = CreateFile(PAS_MSG_KEY,
+        std::string msgKey(PAS_MSG_KEY);
+        if (port != 0)
+        {
+            msgKey += tostring(port);
+        }
+        HANDLE hFileMailSlot = CreateFile(msgKey.c_str(),
             GENERIC_WRITE,
             FILE_SHARE_READ,
             (LPSECURITY_ATTRIBUTES)NULL,
@@ -202,6 +211,9 @@ namespace X
             sizeof(message),
             &cbWritten,
             (LPOVERLAPPED)NULL);
+        if (fResult)
+        {
+        }
         CloseHandle(hFileMailSlot);
 #else
         // ftok to generate unique key
@@ -210,11 +222,15 @@ namespace X
         int msgid = msgget(msgkey, 0666);
         //msgsnd to send message
         msgsnd(msgid, &message, sizeof(message), 0);
+        auto size = msgrcv(msgid, &message, sizeof(message), 0, 0);
+        if (size > 0)
+        {
+        }
 #endif
         return true;
     }
-    bool SMSwapBuffer::ClientConnect(unsigned long long key, int bufSize,
-        int timeoutMS, bool needSendMsg)
+    bool SMSwapBuffer::ClientConnect(long port, unsigned long long shKey,
+        int bufSize,int timeoutMS, bool needSendMsg)
     {
         if (needSendMsg)
         {
@@ -223,7 +239,7 @@ namespace X
             bool bSrvReady = false;
             while (loopNo < loopNum)
             {
-                if (SendMsg(key))
+                if (SendMsg(port, shKey))
                 {
                     break;
                 }
@@ -235,13 +251,13 @@ namespace X
 
         const int Key_Len = 100;
         char szKey_s[Key_Len];
-        SPRINTF(szKey_s, Key_Len, "Galaxy_SM_Notify_Server_%llu", key);
+        SPRINTF(szKey_s, Key_Len, "Galaxy_SM_Notify_Server_%llu", shKey);
         char szKey_c[Key_Len];
-        SPRINTF(szKey_c, Key_Len, "Galaxy_SM_Notify_Client_%llu", key);
+        SPRINTF(szKey_c, Key_Len, "Galaxy_SM_Notify_Client_%llu", shKey);
 
 #if (WIN32)
         char mappingName[MAX_PATH];
-        sprintf_s(mappingName, "Galaxy_FileMappingObject_%llu", key);
+        sprintf_s(mappingName, "Galaxy_FileMappingObject_%llu", shKey);
         const int loopNum = 1000;
         int loopNo = 0;
         bool bSrvReady = false;
@@ -305,7 +321,7 @@ namespace X
         int permission = 0666;
         while (loopNo < loopNum)
         {
-            mShmID = shmget(key, (size_t)bufSize, permission);
+            mShmID = shmget(shKey, (size_t)bufSize, permission);
             if (mShmID != -1)
             {
                 mShmPtr = (char*)shmat(mShmID, NULL, 0);
@@ -340,7 +356,7 @@ namespace X
             }
             MS_SLEEP(100);
             loopNo++;
-            printf("sem_open:%llu,Loop:%d\n", key, loopNo);
+            printf("sem_open:%llu,Loop:%d\n", shKey, loopNo);
         }
         loopNo = 0;
         bSrvReady = false;
@@ -354,7 +370,7 @@ namespace X
             }
             MS_SLEEP(100);
             loopNo++;
-            printf("sem_open:0x%llu,Loop:%d\n", key, loopNo);
+            printf("sem_open:0x%llu,Loop:%d\n", shKey, loopNo);
         }
         if (!bSrvReady)
         {

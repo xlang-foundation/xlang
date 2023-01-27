@@ -25,6 +25,7 @@ namespace X
 		std::string fileName;
 		std::vector<std::string> passInParams;
 		std::string appPath;
+		std::string appFullName;//include path and exe name
 		std::string xlangEnginePath;//for XLang engine dll path
 		std::vector<std::string> dllSearchPath;
 	};

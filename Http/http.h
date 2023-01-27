@@ -90,6 +90,7 @@ namespace X
 	public:
 		BEGIN_PACKAGE(HttpResponse)
 			APISET().AddFunc<2>("set_content", &HttpResponse::SetContent);
+			APISET().AddFunc<2>("add_header", &HttpResponse::AddHeader);
 		END_PACKAGE
 		HttpResponse()
 		{
@@ -99,6 +100,7 @@ namespace X
 			m_pResponse = pResp;
 		}
 		bool SetContent(X::Value& valContent, std::string contentType);
+		bool AddHeader(std::string headName,X::Value& headValue);
 	};
 	class HttpClient
 	{

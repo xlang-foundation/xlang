@@ -22,6 +22,7 @@ namespace X
 	public:
 		XLangProxy();
 		~XLangProxy();
+		void SetUrl(std::string& url);
 		virtual ROBJ_ID QueryRootObject(std::string& name);
 		virtual X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
 			bool& KeepRawParams);
@@ -43,6 +44,7 @@ namespace X
 		virtual void run() override;
 		virtual void run2() override;
 	private:
+		long m_port = 0;
 		unsigned long mHostProcessId = 0;
 		unsigned long long mSessionId = 0;
 		bool m_ExitOnHostExit = true;

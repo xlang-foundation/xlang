@@ -77,7 +77,7 @@ namespace X
 				auto it2 = proxyInfo.Instances.find(url);
 				if (it2 == proxyInfo.Instances.end())
 				{
-					pProxy = proxyInfo.creator(url);
+					pProxy = proxyInfo.creator(endpoint_url);
 					proxyInfo.Instances.emplace(std::make_pair(url,pProxy));
 				}
 				else
@@ -96,6 +96,11 @@ namespace X
 		bool Register(const char* name, APISetBase* pAPISet,Value& objPackage)
 		{
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,pAPISet,objPackage }));
+			return true;
+		}
+		bool Register(const char* name,Value& objPackage)
+		{
+			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,nullptr,objPackage }));
 			return true;
 		}
 		bool QueryPackage(std::string& name,Value& valPack)

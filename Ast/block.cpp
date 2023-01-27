@@ -146,6 +146,10 @@ bool Block::RunFromLine(XRuntime* rt, XObj* pContext,
 			}
 			return bOK;
 		}
+		else
+		{
+			return false;
+		}
 	};
 	bool bOK = false;
 	auto lineCnt = Body.size();

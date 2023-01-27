@@ -32,8 +32,7 @@ void Module::ScopeLayout()
 	auto& funcs = Builtin::I().All();
 	for (auto it : funcs)
 	{
-		auto name = it.first;
-		int idx = AddOrGet(name, false);
+		int idx = AddOrGet(it.name, false);
 	}
 	Builtin::I().ReturnMap();
 	Block::ScopeLayout();
@@ -44,11 +43,10 @@ void Module::AddBuiltins(XlangRuntime* rt)
 	m_stackFrame->SetVarCount(GetVarNum());
 	for (auto it : funcs)
 	{
-		auto name = it.first;
-		int idx = AddOrGet(name, true);
+		int idx = AddOrGet(it.name, true);
 		if (idx >= 0)
 		{
-			Value v0(it.second);
+			Value v0(it.funcObj);
 			Set(rt,nullptr,idx, v0);
 		}
 	}

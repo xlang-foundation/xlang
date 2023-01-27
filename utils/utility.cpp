@@ -125,6 +125,13 @@ std::string tostring(unsigned long long x)
 	SPRINTF(strBuf, buf_len, "%llu", x);
 	return strBuf;
 }
+std::string tostring(long x)
+{
+	const int buf_len = 1000;
+	char strBuf[buf_len];
+	SPRINTF(strBuf, buf_len, "%d", x);
+	return strBuf;
+}
 std::string concat(std::vector<std::string>& items, const char* delim)
 {
 	if (items.size() == 0)

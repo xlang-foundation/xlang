@@ -23,7 +23,12 @@ namespace X
             m_namespace = strNM;
         }
         void run();
+        void SetPort(long port)
+        {
+            mPort = port;
+        }
     private:
+        long mPort = 0;
         void RemoveMsgId();
         bool mRun = true;
         Locker mMsgLock;

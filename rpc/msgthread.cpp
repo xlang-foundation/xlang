@@ -1,6 +1,7 @@
 #include "msgthread.h"
 #include "service_def.h"
 #include "StubMgr.h"
+#include "utility.h"
 
 #if (WIN32)
 #include <windows.h>
@@ -16,10 +17,6 @@
 
 namespace X
 {
-    MsgThread::MsgThread()
-    {
-        RemoteObjectStub::I().Register();
-    }
 #if (WIN32)
     BOOL ReadSlot(HANDLE hSlot, std::vector<pas_mesg_buffer>& msgs)
     {
@@ -94,7 +91,10 @@ namespace X
         return TRUE;
     }
 #endif
-
+    MsgThread::MsgThread()
+    {
+        RemoteObjectStub::I().Register();
+    }
     void MsgThread::Stop()
     {
         mRun = false;
@@ -107,8 +107,13 @@ namespace X
     void MsgThread::run()
     {
 #if (WIN32)
+        std::string msgKey(PAS_MSG_KEY);
+        if (mPort != 0)
+        {
+            msgKey += tostring(mPort);
+        }
         HANDLE hSlot = CreateMailslot(
-            PAS_MSG_KEY,
+            msgKey.c_str(),
             0,
             MAILSLOT_WAIT_FOREVER,
             (LPSECURITY_ATTRIBUTES)NULL);
@@ -134,7 +139,7 @@ namespace X
         }
         CloseHandle(hSlot);
 #else
-        key_t key = PAS_MSG_KEY;
+        key_t key = (mPort !=0)?PAS_MSG_KEY:mPort;
         int msgid;
         msgid = msgget(key, 0666 | IPC_CREAT);
         mMsgLock.Lock();
