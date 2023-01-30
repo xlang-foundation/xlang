@@ -93,6 +93,7 @@ public:
 #endif
 		m_decors.clear();
 	}
+	std::string getcode(bool includeHead = false);
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		std::string code;

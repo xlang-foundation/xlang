@@ -30,7 +30,19 @@ namespace X
 							{
 								if (params.size() > 0)
 								{
-									std::string code = params[0].ToString();
+									std::string code;
+									auto& v0 = params[0];
+									std::string codePack;
+									if (v0.IsObject()
+										&& v0.GetObj()->GetType() == ObjType::Function)
+									{
+										auto* pFuncObj = dynamic_cast<X::Data::Function*>(v0.GetObj());
+										code = pFuncObj->GetFunc()->GetCode();
+									}
+									else
+									{
+										code = v0.ToString();
+									}
 									auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
 									return Hosting::I().RunFragmentInModule(pModuleObj,
 										code.c_str(), code.size(), retValue);
@@ -79,7 +91,18 @@ namespace X
 			{
 				return false;
 			}
-
+			int QueryMethod(const char* name)
+			{
+				auto it = m_Vars.find(name);
+				if (it != m_Vars.end())
+				{
+					return it->second;
+				}
+				else
+				{
+					return -1;
+				}
+			}
 			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, X::LValue* lValue = nullptr)
 			{
@@ -92,6 +115,30 @@ namespace X
 		{
 			bases.push_back(&_module_op);
 			bases.push_back(m_pModule);
+		}
+		int ModuleObject::QueryMethod(const char* name, bool* pKeepRawParams)
+		{
+			int idx = _module_op.QueryMethod(name);
+			if (idx >= 0)
+			{
+				return -2-idx;//start from -2,then -3...
+			}
+			else
+			{
+				std::string strName(name);
+				return m_pModule->AddOrGet(strName, true);
+			}
+		}
+		bool ModuleObject::GetIndexValue(int idx, Value& v)
+		{
+			if (idx <= -2)
+			{
+				return _module_op.Get(nullptr, nullptr, -idx-2, v);
+			}
+			else
+			{
+				return m_pModule->Get(nullptr, this, idx, v);
+			}
 		}
 		void ModuleObject::cleanup()
 		{

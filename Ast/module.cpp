@@ -7,6 +7,7 @@
 #include "PyEngObject.h"
 #include "dbg.h"
 #include "port.h"
+#include "moduleobject.h"
 
 namespace X 
 {
@@ -29,6 +30,8 @@ void Module::SetDebug(bool b,XlangRuntime* runtime)
 }
 void Module::ScopeLayout()
 {
+	std::string self("self");
+	AddOrGet(self,false);
 	auto& funcs = Builtin::I().All();
 	for (auto it : funcs)
 	{
@@ -41,6 +44,17 @@ void Module::AddBuiltins(XlangRuntime* rt)
 {
 	auto& funcs = Builtin::I().All();
 	m_stackFrame->SetVarCount(GetVarNum());
+	//add self as this module
+	{
+		std::string selfName("self");
+		int idx = AddOrGet(selfName, true);
+		if (idx >= 0)
+		{
+			auto* pModuleObj = new ModuleObject(this);
+			Value v0(pModuleObj);
+			Set(rt, nullptr, idx, v0);
+		}
+	}
 	for (auto it : funcs)
 	{
 		int idx = AddOrGet(it.name, true);

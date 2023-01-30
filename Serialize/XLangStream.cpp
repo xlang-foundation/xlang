@@ -353,7 +353,7 @@ namespace X
 				assert(false);
 				break;
 			case X::ObjType::ModuleObject:
-				assert(false);
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
 				break;
 			case X::ObjType::Future:
 				assert(false);

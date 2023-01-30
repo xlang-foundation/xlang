@@ -33,6 +33,7 @@ struct Indent
 class Block:
 	virtual public UnaryOp
 {
+protected:
 	bool NoIndentCheck = false;//just for lambda block
 	Indent IndentCount = { 0,-1,-1 };
 	Indent ChildIndentCount = { 0,-1,-1 };

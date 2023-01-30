@@ -134,6 +134,9 @@ namespace X
 		inline bool WithContext() { return m_cxt != nullptr; }
 		virtual XObj* Clone() { return nullptr; }
 
+		virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) { return -1; };
+		virtual bool GetIndexValue(int idx, Value& v) { return false; };
+
 		virtual int IncRef() { return 0; }
 		virtual int DecRef() { return 0; }
 		virtual ObjType GetType() { return ObjType::Base; }
@@ -143,6 +146,10 @@ namespace X
 		virtual std::string ToString(bool WithFormat = false) 
 		{
 			return "";
+		}
+		virtual bool FromString(std::string& strCoded)
+		{
+			return true;
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext,
 			ARGS& params,
@@ -351,12 +358,9 @@ namespace X
 	public:
 		virtual void SetPackageCleanupFunc(PackageCleanup func) = 0;
 		virtual int AddMethod(const char* name,bool keepRawParams =false) = 0;
-		virtual int QueryMethod(const char* name,bool* pKeepRawParams = nullptr) = 0;
-
 		virtual void* GetEmbedObj() = 0;
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(int idx, Value& v) = 0;
-		virtual bool GetIndexValue(int idx, Value& v) = 0;
 		virtual void RemoveALl() = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)

@@ -146,14 +146,14 @@ std::string concat(std::vector<std::string>& items, const char* delim)
 	}
 	return all;
 }
-std::vector<std::string> split(const std::string& str, char delim)
+std::vector<std::string> split(const std::string& str, char delim, bool trimSpace)
 {
 	std::vector<std::string> list;
 	std::string temp;
 	std::stringstream ss(str);
 	while (std::getline(ss, temp, delim))
 	{
-		trim(temp);
+		if(trimSpace) trim(temp);
 		list.push_back(temp);
 	}
 	return list;

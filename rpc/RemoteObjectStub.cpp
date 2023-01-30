@@ -144,9 +144,8 @@ namespace X
 		stream >> name;
 		pProc->NotifyBeforeCall(channel, stream);
 		auto pXObj = CovertIdToXObj(objId);
-		auto pXPack = dynamic_cast<X::XPackage*>(pXObj);
 		bool keepRawParams = false;
-		int idx = pXPack->QueryMethod(name.c_str(),&keepRawParams);
+		int idx = pXObj->QueryMethod(name.c_str(),&keepRawParams);
 		pProc->NotifyAfterCall(channel, stream, true);
 		stream << idx;
 		stream << keepRawParams;
@@ -292,9 +291,8 @@ namespace X
 		stream >> memId;
 		pProc->NotifyBeforeCall(channel, stream);
 		auto pXObj = CovertIdToXObj(objId);
-		auto pXPack = dynamic_cast<X::XPackage*>(pXObj);
 		X::Value valObj;
-		bool bOK = pXPack->GetIndexValue(memId, valObj);
+		bool bOK = pXObj->GetIndexValue(memId, valObj);
 		pProc->NotifyAfterCall(channel, stream, bOK);
 		if (bOK)
 		{
@@ -387,10 +385,7 @@ namespace X
 			if (valRet.IsObject())
 			{
 				auto pRetObj = valRet.GetObj();
-				if (pRetObj->GetType() == X::ObjType::Package)
-				{
-					retId = ConvertXObjToId(pRetObj);
-				}
+				retId = ConvertXObjToId(pRetObj);
 			}
 			stream << retId;
 			if (retId.objId == 0)

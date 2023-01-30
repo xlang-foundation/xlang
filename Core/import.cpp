@@ -299,6 +299,7 @@ void X::AST::Import::ScopeLayout()
 	Operator::ScopeLayout();
 	if (m_from)
 	{
+		m_from->SetParent(m_parent);
 		m_from->ScopeLayout();
 	}
 	auto proc_AsOP = [&](Expression* expr)
@@ -373,6 +374,7 @@ void X::AST::Import::ScopeLayout()
 	}
 	if (m_thru)
 	{
+		m_thru->SetParent(m_parent);
 		m_thru->ScopeLayout();
 	}
 }

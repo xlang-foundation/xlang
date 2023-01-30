@@ -65,6 +65,49 @@ void Func::ScopeLayout()
 		}
 	}
 }
+std::string Func::getcode(bool includeHead)
+{
+	int startPos = m_charStart;
+	int endPos = m_charEnd;
+	int firstLineCharOff = 0;
+	if (!includeHead && Body.size() >0)
+	{
+		auto& firstLine = Body[0];
+		startPos = firstLine->GetCharStart();
+		firstLineCharOff = firstLine->GetCharPos();
+	}
+	std::string code;
+	Module* pMyModule = nil;
+	Expression* pa = m_parent;
+	while (pa != nil)
+	{
+		if (pa->m_type == ObType::Module)
+		{
+			pMyModule = dynamic_cast<Module*>(pa);
+			break;
+		}
+		pa = pa->GetParent();
+	}
+	if (pMyModule)
+	{
+		code =  pMyModule->GetCodeFragment(startPos, endPos);
+		if (!includeHead)
+		{
+			auto lines = split(code, '\n',false);
+			code = "";
+			if (lines.size() > 0)
+			{
+				code = lines[0];
+			}
+			for (int i=1;i<lines.size();i++)
+			{
+				auto& l = lines[i];
+				code += '\n'+l.substr(firstLineCharOff);
+			}
+		}
+	}
+	return code;
+}
 bool Func::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);

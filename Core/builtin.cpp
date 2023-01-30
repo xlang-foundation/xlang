@@ -810,7 +810,32 @@ bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 	std::string cmd;
 	if (params.size() > 0)
 	{
-		cmd = appFullName + " " + params[0].ToString();
+		X::Value p1 = params[0];
+#if 0
+		std::string codePack;
+		if (p1.IsObject() && p1.GetObj()->GetType() == ObjType::Function)
+		{
+			X::BlockStream stream;
+			for (auto& v : params)
+			{
+				stream << v;
+			}
+			auto size = stream.Size();
+			char* pData = new char[size];
+			stream.FullCopyTo(pData, size);
+			X::Data::Binary* pBinOut = new X::Data::Binary(pData, size, true);
+			pBinOut->IncRef();
+			codePack = pBinOut->ToString();
+			std::cout << codePack << std::endl;
+			pBinOut->DecRef();
+		}
+		else
+		{
+			codePack = p1.ToString();
+		}
+		cmd = appFullName + " -c " + codePack;
+#endif
+		cmd = appFullName + " " + p1.ToString();
 	}
 	unsigned long procId = 0;
 	bool bOK = RunProcess(cmd, appPath, false, procId);

@@ -18,6 +18,7 @@ namespace X
 			{
 
 			}
+			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
@@ -38,6 +39,10 @@ namespace X
 			{
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
 			}
+			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
+			virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override;
+			virtual bool GetIndexValue(int idx, Value& v) override;
+
 			std::string GetDoc()
 			{
 				return m_func ? m_func->GetDoc() : "";
