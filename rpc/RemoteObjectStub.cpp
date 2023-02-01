@@ -384,8 +384,15 @@ namespace X
 			X::ROBJ_ID retId = {0,0};
 			if (valRet.IsObject())
 			{
-				auto pRetObj = valRet.GetObj();
-				retId = ConvertXObjToId(pRetObj);
+				if (valRet.GetObj()->GetType() == ObjType::Str)
+				{
+
+				}
+				else
+				{
+					auto pRetObj = valRet.GetObj();
+					retId = ConvertXObjToId(pRetObj);
+				}
 			}
 			stream << retId;
 			if (retId.objId == 0)

@@ -58,6 +58,16 @@ bool U_Print(X::XRuntime* rt, X::XObj* pContext,
 
 	X::XlangRuntime* pRT = dynamic_cast<X::XlangRuntime*>(rt);
 	auto* pModule = pRT->M();
+	//todo: this is a temp solution for remote call with module
+	//need to consider a right soltution for runtime assign
+	if (pModule == nullptr)
+	{
+		auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(pContext);
+		if (pModuleObj)
+		{
+			pModule = pModuleObj->M();
+		}
+	}
 	bool IsRenderByPrimtive = false;
 	if (pModule)
 	{
@@ -118,6 +128,23 @@ bool U_Load(X::XRuntime* rt, X::XObj* pContext,
 	moduleFile.close();
 	unsigned long long moduleKey = 0;
 	X::Hosting::I().Load(fileName, code.c_str(), (int)code.size(), moduleKey);
+	retValue = X::Value(moduleKey);
+	return true;
+}
+bool U_LoadS(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	std::string code = params[0].ToString();
+	std::string moduleName = "default";
+	unsigned long long moduleKey = 0;
+	X::Hosting::I().Load(moduleName, code.c_str(), (int)code.size(), moduleKey);
 	retValue = X::Value(moduleKey);
 	return true;
 }
@@ -290,8 +317,11 @@ bool U_Sleep(X::XRuntime* rt, X::XObj* pContext,
 	if (pContext)
 	{//with a function, means after sleep, call this function
 		X::Data::Function* pFuncObj = dynamic_cast<X::Data::Function*>(pContext);
-		X::AST::Func* pFunc = pFuncObj->GetFunc();
-		bOK = pFunc->Call(rt, nullptr,params, kwParams, retValue);
+		if (pFuncObj)
+		{
+			X::AST::Func* pFunc = pFuncObj->GetFunc();
+			bOK = pFunc->Call(rt, nullptr, params, kwParams, retValue);
+		}
 	}
 	else
 	{
@@ -316,7 +346,91 @@ bool U_NewModule(X::XRuntime* rt, X::XObj* pContext,
 	retValue =  X::Hosting::I().NewModule();
 	return true;
 }
-
+bool U_GetModuleFromKey(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	unsigned long long key = 0;
+	if (params.size() > 0)
+	{
+		key = params[0].GetLongLong();
+		X::Value valKey(key);
+		kwParams.emplace(std::make_pair("ModuleKey", valKey));
+	}
+	if (key == 0)
+	{
+		return false;
+	}
+	auto* pModule = X::Hosting::I().QueryModule(key);
+	if (pModule == nullptr)
+	{
+		return false;
+	}
+	auto* pModuleObj = new X::AST::ModuleObject(pModule);
+	retValue =  X::Value(pModuleObj);
+	return true;
+}
+bool U_ObjectLock(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		if (pContext)
+		{
+			auto* pDataObj = dynamic_cast<X::Data::Object*>(pContext);
+			if (pDataObj)
+			{
+				pDataObj->ExternLock();
+			}
+		}
+	}
+	else
+	{
+		auto& v = params[0];
+		if (v.IsObject())
+		{
+			auto* pDataObj = dynamic_cast<X::Data::Object*>(v.GetObj());
+			if (pDataObj)
+			{
+				pDataObj->ExternLock();
+			}
+		}
+	}
+	return true;
+}
+bool U_ObjectUnlock(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		if (pContext)
+		{
+			auto* pDataObj = dynamic_cast<X::Data::Object*>(pContext);
+			if (pDataObj)
+			{
+				pDataObj->ExternUnlock();
+			}
+		}
+	}
+	else
+	{
+		auto& v = params[0];
+		if (v.IsObject())
+		{
+			auto* pDataObj = dynamic_cast<X::Data::Object*>(v.GetObj());
+			if (pDataObj)
+			{
+				pDataObj->ExternUnlock();
+			}
+		}
+	}
+	return true;
+}
 namespace X {
 void Builtin::Cleanup()
 {
@@ -506,12 +620,18 @@ bool U_FireEvent(X::XRuntime* rt, XObj* pContext,
 	}
 	std::string name = params[0].ToString();
 	params.erase(params.begin());
+	bool inMain = false;
 	if (kwParams.find("tid") == kwParams.end())
 	{
 		int tid = (int)GetThreadID();
 		kwParams.emplace(std::make_pair("tid", tid));
 	}
-	X::EventSystem::I().Fire(rt,pContext,name, params,kwParams);
+	auto it = kwParams.find("mainthread");
+	if (it != kwParams.end())
+	{
+		inMain = it->second.IsTrue();
+	}
+	X::EventSystem::I().Fire(rt,pContext,name, params,kwParams, inMain);
 	retValue = X::Value(true);
 	return true;
 }
@@ -858,6 +978,7 @@ bool Builtin::RegisterInternals()
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
 	Register("load", (X::U_FUNC)U_Load, params,"moodule = load(filename)");
+	Register("loads", (X::U_FUNC)U_LoadS, params, "moodule = loads(code)");
 	Register("run", (X::U_FUNC)U_Run, params,"run(module:loaded by call load func)");
 	Register("runcode", (X::U_FUNC)U_RunCode, params,"runcode(moduleName,code)");
 	Register("runfragmentcode", (X::U_FUNC)U_RunFragmentCode, params, "runfragmentcode(code)");
@@ -882,12 +1003,15 @@ bool Builtin::RegisterInternals()
 	Register("bytes", (X::U_FUNC)U_ToBytes, params);
 	Register("setattr", (X::U_FUNC)U_SetAttribute, params, "", true);
 	Register("getattr", (X::U_FUNC)U_GetAttribute, params, "", true);
+	Register("lock", (X::U_FUNC)U_ObjectLock, params, "", true);
+	Register("unlock", (X::U_FUNC)U_ObjectUnlock, params, "", true);
 	Register("delattr", (X::U_FUNC)U_DeleteAttribute, params, "", true);
 	Register("each", (X::U_FUNC)U_Each, params, "", true);
 	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, "", true);
 	Register("to_xlang", (X::U_FUNC)U_To_XObj, params, "to_xlang", true);
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
+	Register("get_modulebykey", (X::U_FUNC)U_GetModuleFromKey, params);
 	Register("run_new_instance", (X::U_FUNC)U_RunNewInstance, params);
 	return true;
 }

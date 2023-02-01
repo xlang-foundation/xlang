@@ -216,18 +216,6 @@ void XLangRun()
 	if (!inlineCode.empty())
 	{
 		MessageBox(NULL, "OK", "OK", MB_OK);
-		if (inlineCode.size() > 2
-			&& inlineCode[0] == 'b'
-			&& inlineCode[1] == '\'')
-		{
-			X::Data::Binary* pBin = new X::Data::Binary(nullptr,0,false);
-			pBin->IncRef();
-			pBin->FromString(inlineCode);
-			X::BlockStream stream(pBin->Data(), pBin->Size(), false);
-			X::Value valCallable;
-			valCallable.FromBytes(&stream);
-			pBin->DecRef();
-		}
 		Value retVal;
 		fileName = "inline_code";
 		HasCode = true;

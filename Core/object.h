@@ -32,6 +32,7 @@ namespace Data {
 		ObjType m_t = ObjType::Base;
 		AttributeBag* m_aBag = nullptr;
 		Locker m_lock;
+		Locker m_external_lock;
 	public:
 		Object():XObj(), ObjRef()
 		{
@@ -64,6 +65,14 @@ namespace Data {
 		{
 			AutoLock(m_lock);
 			return ObjRef::Release();
+		}
+		inline void ExternLock()
+		{
+			m_external_lock.Lock();
+		}
+		inline void ExternUnlock()
+		{
+			m_external_lock.Unlock();
 		}
 		inline void Lock()
 		{
