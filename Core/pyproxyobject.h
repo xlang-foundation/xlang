@@ -113,7 +113,7 @@ namespace X
 				m_name = name;
 				m_path = path;
 				std::string strFileName = GetModuleFileName();
-				AddRef();
+				Object::IncRef();
 				PyObjectCache::I().AddModule(strFileName, this);
 			}
 			PyProxyObject(XlangRuntime* rt, XObj* pContext,

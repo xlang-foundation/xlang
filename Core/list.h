@@ -196,6 +196,13 @@ public:
 		AutoLock(m_lock);
 		return m_useLValue ? m_ptrs.size() : m_data.size();
 	}
+	inline void Clear()
+	{
+		AutoLock(m_lock);
+		m_bases.clear();
+		m_ptrs.clear();
+		m_data.clear();
+	}
 	ARGS& Data()
 	{
 		return m_data;

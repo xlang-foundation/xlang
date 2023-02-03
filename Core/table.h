@@ -328,7 +328,7 @@ public:
 				}
 			}
 			TableRow* rObj = new TableRow(this,rowID,r);
-			rObj->AddRef();
+			rObj->IncRef();
 			m_rowMap.emplace(std::make_pair(rowID, rObj));
 		}
 		return true;
@@ -430,7 +430,7 @@ public:
 			return -1;
 		}
 		TableRow* rObj = new TableRow(this, rowID, r);
-		rObj->AddRef();
+		rObj->IncRef();
 		m_rowMap.emplace(std::make_pair(rowID, rObj));
 		return rowID;
 	}

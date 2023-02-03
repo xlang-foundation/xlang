@@ -16,6 +16,7 @@ namespace X
 			ListScope() :
 				Scope()
 			{
+				Init();
 			}
 			void clean()
 			{
@@ -34,7 +35,7 @@ namespace X
 			void Init()
 			{
 				m_stackFrame = new AST::StackFrame(this);
-				m_stackFrame->SetVarCount(2);
+				m_stackFrame->SetVarCount(3);
 
 				std::string strName;
 				{
@@ -49,6 +50,26 @@ namespace X
 								List* pObj = dynamic_cast<List*>(pContext);
 								long long idx = params[0];
 								pObj->Remove(idx);
+								retValue = Value(true);
+								return true;
+							}));
+					auto* pFuncObj = new Function(extFunc);
+					pFuncObj->IncRef();
+					int idx = AddOrGet(strName, false);
+					Value funcVal(pFuncObj);
+					m_stackFrame->Set(idx, funcVal);
+				}
+				{
+					strName = "clear";
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"clear()",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							X::ARGS& params,
+							X::KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								List* pObj = dynamic_cast<List*>(pContext);
+								pObj->Clear();
 								retValue = Value(true);
 								return true;
 							}));

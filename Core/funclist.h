@@ -9,9 +9,10 @@ namespace Data
 {
 struct VectorCall
 {
-	XObj* m_context = nil;
+	X::Value contextObj;
 	AST::Func* m_func = nil;
 	X::LValue m_lVal = nil;
+	X::XObj* GetContext() { return contextObj.GetObj(); }
 };
 class FuncCalls :
 	public Object
@@ -34,7 +35,7 @@ public:
 		for (auto& it : m_list)
 		{
 			bHave |= it.m_func?
-				it.m_func->CalcCallables(rt, it.m_context, callables)
+				it.m_func->CalcCallables(rt, it.GetContext(), callables)
 				: false;
 		}
 		return bHave;
@@ -64,7 +65,7 @@ public:
 		{
 			auto& fc = m_list[0];
 			return fc.m_func->CallEx(rt,
-				fc.m_context,
+				fc.GetContext(),
 				params, kwParams, trailer,retValue);
 		}
 		List* pValueList = new List();
@@ -73,7 +74,7 @@ public:
 		{
 			X::Value v0;
 			bool bOK = fc.m_func->CallEx(rt,
-				fc.m_context,
+				fc.GetContext(),
 				params, kwParams, trailer, v0);
 			if (bOK)
 			{
@@ -103,7 +104,7 @@ public:
 		{
 			auto& fc = m_list[0];
 			return fc.m_func->Call(rt,
-				fc.m_context,
+				fc.GetContext(),
 				params, kwParams, retValue);
 		}
 		List* pValueList = new List();
@@ -112,7 +113,7 @@ public:
 		{
 			X::Value v0;
 			bool bOK = fc.m_func->Call(rt,
-				fc.m_context,
+				fc.GetContext(),
 				params, kwParams, v0);
 			if (bOK)
 			{

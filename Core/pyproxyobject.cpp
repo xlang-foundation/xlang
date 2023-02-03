@@ -31,7 +31,8 @@ namespace X
 			m_name = name;
 			m_path = curPath;
 			//need to addRef()??
-			AddRef();
+			//changed to IncRef for lock?? 2/2/2023
+			Object::IncRef();
 			if (rt->GetTrace())
 			{
 				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
@@ -79,7 +80,7 @@ namespace X
 			PyEng::Object subObj = m_obj[index];
 			PyProxyObject* pProxyObj = new PyProxyObject(subObj);
 			//todo: when to call release
-			pProxyObj->AddRef();
+			pProxyObj->Object::IncRef();
 			val = X::Value(pProxyObj);
 			return true;
 		}
@@ -107,7 +108,7 @@ namespace X
 			{
 				PyProxyObject* pProxyObj = new PyProxyObject(pyObj);
 				//todo: when to call release
-				pProxyObj->AddRef();
+				pProxyObj->Object::IncRef();
 				val = X::Value(pProxyObj);
 			}
 			return true;
