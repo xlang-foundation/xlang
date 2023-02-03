@@ -138,6 +138,8 @@ namespace X
             }
         }
         CloseHandle(hSlot);
+#elif __ANDROID__
+
 #else
         key_t key = (mPort !=0)?PAS_MSG_KEY:mPort;
         int msgid;
@@ -174,7 +176,11 @@ namespace X
 
     void MsgThread::RemoveMsgId()
     {
-#if !(WIN32)
+#if (WIN32)
+
+#elif __ANDROID__
+
+#else
         mMsgLock.Lock();
         if (mMsgId != 0)
         {

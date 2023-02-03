@@ -112,7 +112,7 @@ public:
 				dynamic_cast<XlangRuntime*>(rt) };
 		}
 	}
-	auto& GetPrimitive(module_primitive idx)
+	PrimitiveInfo& GetPrimitive(module_primitive idx)
 	{
 		return m_primitives[(int)idx];
 	}

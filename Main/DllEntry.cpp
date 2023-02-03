@@ -1,3 +1,4 @@
+
 #include "builtin.h"
 #include "manager.h"
 #include "xpackage.h"
@@ -215,7 +216,6 @@ void XLangRun()
 	std::string& inlineCode = g_pXload->GetConfig().inlineCode;
 	if (!inlineCode.empty())
 	{
-		MessageBox(NULL, "OK", "OK", MB_OK);
 		Value retVal;
 		fileName = "inline_code";
 		HasCode = true;

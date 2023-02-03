@@ -11,6 +11,12 @@ struct Indent
 	int charPos = 0;
 	int tab_cnt =0;
 	int space_cnt =0;
+	Indent(int cp,int tab,int space)
+	{
+		charPos = cp;
+		tab_cnt = tab;
+		space_cnt =space;
+	}
 	bool operator>=(const Indent& other)
 	{
 		return (charPos>=other.charPos)

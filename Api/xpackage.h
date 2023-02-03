@@ -354,7 +354,7 @@ namespace X
 						auto _retVal = HelpFuncs::VarCallEx<Parameter_Num>(pThis,f, trailer,params);
 						retValue = X::Value(_retVal);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc)});
+					}),false,std::string(doc)});
 		}
 		template<std::size_t Parameter_Num, typename F>
 		void AddRTFunc(const char* func_name, F f, const char* doc = "")
@@ -438,7 +438,7 @@ namespace X
 				});
 		}
 		//in gcc, id PTMV is std::string will make error
-		//with ambiguous overload for ‘operator=’ 
+		//with ambiguous overload for ï¿½operator=ï¿½ 
 		//so use this way to add type
 		template<typename VAR_TYPE,typename PTMV>
 		void AddPropWithType(const char* func_name, PTMV var)

@@ -770,7 +770,7 @@ Object Extract(PyEngObjectPtr self,const char* class_name,Native_Class* pNativeO
 	}
 	else
 	{
-		return nullptr;// g_pPyHost->QueryOrCreate(self, class_name, pNativeObj);
+		return Object();// g_pPyHost->QueryOrCreate(self, class_name, pNativeObj);
 	}
 }
 

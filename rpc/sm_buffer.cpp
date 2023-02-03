@@ -116,6 +116,8 @@ namespace X
         {
 #if (WIN32)
             UnmapViewOfFile(mShmPtr);
+#elif __ANDROID__
+
 #else
             shmdt(&mShmPtr);
 #endif
@@ -126,6 +128,8 @@ namespace X
 #if (WIN32)
             CloseHandle(mShmID);
             mShmID = nullptr;
+#elif __ANDROID__
+
 #else
             shmctl(mShmID, IPC_RMID, 0);
             mShmID = 0;
@@ -170,6 +174,8 @@ namespace X
             DWORD error = GetLastError();
             return false;
         }
+#elif __ANDROID__
+
 #else
         mShmID = shmget(key, (size_t)(bufferSize), IPC_CREAT | 0666);
         mShmPtr = (char*)shmat(mShmID, 0, 0);
@@ -215,6 +221,8 @@ namespace X
         {
         }
         CloseHandle(hFileMailSlot);
+#elif __ANDROID__
+
 #else
         // ftok to generate unique key
         key_t msgkey = PAS_MSG_KEY;
@@ -314,6 +322,8 @@ namespace X
         {
             return false;
         }
+#elif __ANDROID__
+
 #else
         const int loopNum = 1000;
         int loopNo = 0;

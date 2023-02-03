@@ -360,7 +360,8 @@ namespace X
 			bool bRet = true;
 			for (auto& it : pExprNode->m_attrs)
 			{
-				if (it.first.starts_with("${"))
+				auto& key = it.first;
+				if (key.size()>=2 &&key[0] =='$' && key[1] =='${')//to replace .starts_with("${"))
 				{
 					continue;
 				}
@@ -369,7 +370,7 @@ namespace X
 				if (it2 != pCurNode->m_attrs.end())
 				{
 					std::string& valToMatch = it.second;
-					if (valToMatch.starts_with("regex:"))
+					if (valToMatch.find("regex:")==0)
 					{//regular expression match
 						//todo:
 					}
