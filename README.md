@@ -13,7 +13,7 @@
  todo:
 
 # How to Run
-- go to conole window, cd to xlang executable file folder
+- go to console window, cd to xlang executable file folder
 - xlang
 
 # How to use vscode to debug on xlang code  
