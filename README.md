@@ -21,7 +21,7 @@
 2. start xlang with parameter: -event_loop -dbg -enable_python  
     xlang -event_loop -dbg -enable_python
 3. open or new a file with .x extension name  
-	click on vs code menu run/start debuging then vscode will automatcilly connect with xlang to run  
+    click on vs code menu run/start debuging then vscode will automatcilly connect with xlang to run  
 
 
 
