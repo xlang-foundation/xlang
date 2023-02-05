@@ -12,13 +12,17 @@ android {
         targetSdk 33
         versionCode 1
         versionName "1.0"
-
+        defaultPublishConfig "debug"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            debuggable true
+        }
         release {
             minifyEnabled false
+            debuggable true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

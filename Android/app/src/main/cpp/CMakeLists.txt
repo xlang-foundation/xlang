@@ -6,8 +6,11 @@
 cmake_minimum_required(VERSION 3.22.1)
 
 # Declares and names the project.
-
-project("xlang_eng")
+# todo: change the name to xlang_eng to keep same as in other os build
+# xlang was the original name when generated this android studio project
+# maybe some where it keep this name, so if changed,
+# debug can't find the natvie module's symbols
+project("xlang")
 set(CMAKE_CXX_STANDARD 17)
 
 add_compile_definitions(XLANG_ENG_DBG=1)

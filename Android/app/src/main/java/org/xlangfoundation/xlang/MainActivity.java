@@ -25,12 +25,13 @@ public class MainActivity extends AppCompatActivity {
 
         // Example of a call to a native method
         TextView tv = binding.sampleText;
-        tv.setText(loadJNI());
+        boolean retVal = loadJNI();
+        runJNI("print('from java')");
+        unloadJNI();
+        tv.setText("loadJNI OK");
     }
 
-    /**
-     * A native method that is implemented by the 'xlang' native library,
-     * which is packaged with this application.
-     */
-    public native String loadJNI();
+    public native boolean loadJNI();
+    public native boolean runJNI(String code);
+    public native boolean unloadJNI();
 }

@@ -194,6 +194,38 @@ bool LoadPythonEngine()
 	}
 }
 
+void XLangStaticLoad()
+{
+	X::CreatXHost();
+	Builtin::I().RegisterInternals();
+	BuildOps();
+	ScriptsManager::I().Load();
+	ScriptsManager::I().Run();
+	XLangProxyManager::I().Register();
+
+}
+void XLangStaticRun(std::string code)
+{
+	X::Value retVal;
+	std::vector<std::string> passInParams;
+	std::string moduleName("default");
+	Hosting::I().Run(moduleName, code.c_str(),
+		(int)code.size(),
+		passInParams,
+		retVal);
+}
+void XLangStaticUnload()
+{
+	Builtin::I().Cleanup();
+	Manager::I().Cleanup();
+	X::AST::ModuleObject::cleanup();
+	X::Data::Str::cleanup();
+	X::Data::List::cleanup();
+	X::AST::MetaScope().I().Cleanup();
+	Hosting::I().Cleanup();
+	G::I().Check();
+	DestoryXHost();
+}
 void XLangRun()
 {
 	if (g_pXload->GetConfig().enablePython)
