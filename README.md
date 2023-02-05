@@ -23,6 +23,10 @@
 3. open or new a file with .x extension name  
     click on vs code menu run/start debuging then vscode will automatcilly connect with xlang to run  
 
+# How to build for Android
+1. in Windows, install Android Stduio
+2. open project from folder xlang\Android
+3. then build from Android Stduio menu: Build/Make Project
 
 
 
