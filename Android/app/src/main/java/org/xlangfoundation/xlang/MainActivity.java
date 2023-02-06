@@ -26,12 +26,23 @@ public class MainActivity extends AppCompatActivity {
         // Example of a call to a native method
         TextView tv = binding.sampleText;
         boolean retVal = loadJNI();
-        runJNI("print('from java')");
-        unloadJNI();
-        tv.setText("loadJNI OK");
-    }
+        String code =
+                "import android\n"+
+                "def test(info):\n" +
+                "   android.print('from test func:${info}')\n" +
+                "test('first call')";
 
+        runJNI(code);
+        //unloadJNI();
+        //tv.setText("loadJNI OK");
+    }
+    public void print(String text)
+    {
+        TextView tv = binding.sampleText;
+        tv.setText(text);
+    }
     public native boolean loadJNI();
+    public native long loadModuleJNI(String code);
     public native boolean runJNI(String code);
     public native boolean unloadJNI();
 }

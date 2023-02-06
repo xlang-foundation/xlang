@@ -40,6 +40,7 @@ FILE(GLOB Ext_SRC "${XLANG_ROOT}/Ext/*.cpp")
 FILE(GLOB Text_SRC "${XLANG_ROOT}/Text/*.cpp")
 FILE(GLOB Rpc_SRC "${XLANG_ROOT}/rpc/*.cpp")
 FILE(GLOB Main_SRC "${XLANG_ROOT}/Main/*.cpp")
+FILE(GLOB Android_SRC "*.cpp")
 
 add_library(${PROJECT_NAME} SHARED
         ${Api_SRC}
@@ -52,7 +53,7 @@ add_library(${PROJECT_NAME} SHARED
         ${Text_SRC}
         ${Rpc_SRC}
         ${Main_SRC}
-        xlang.cpp
+        ${Android_SRC}
         )
 
 
