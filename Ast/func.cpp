@@ -161,6 +161,11 @@ bool Func::Call(XRuntime* rt0,
 		Scope::Set(rt, pContext, m_IndexOfThis, v0);
 	}
 	int num = (int)params.size();
+	int indexNum = (int)m_IndexofParamList.size();
+	if (num > indexNum)
+	{
+		num = indexNum;
+	}
 	for (int i = 0; i < num; i++)
 	{
 		Scope::Set(rt, pContext, m_IndexofParamList[i], params[i]);
