@@ -272,8 +272,16 @@ public:
 	{
 		return ToString();
 	}
+#if 0
 	template<typename toT>
 	operator toT* () const;
+#endif
+	template<typename toT>
+	operator toT* () const
+	{
+		return (toT*)CastObjectToPointer();
+	}
+	void* CastObjectToPointer() const;
 
 	operator void* ()const
 	{

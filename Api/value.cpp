@@ -46,7 +46,7 @@ namespace X
 			break;
 		}
 	}
-
+#if 0
 	template<typename toT>
 	Value::operator toT* () const
 	{
@@ -58,6 +58,20 @@ namespace X
 		else
 		{
 			return (toT*)x.obj;
+		}
+	}
+#endif
+
+	void* Value::CastObjectToPointer() const
+	{
+		if (x.obj->GetType() == ObjType::Package)
+		{
+			XPackage* pPack = dynamic_cast<XPackage*>(x.obj);
+			return pPack->GetEmbedObj();
+		}
+		else
+		{
+			return x.obj;
 		}
 	}
 	template<>
@@ -143,7 +157,7 @@ namespace X
 		Value v0;
 		if (g_pXHost->Import(rt, moduleName, from, thru, v0))
 		{
-			SetObj(v0);
+			SetObj(v0.GetObj());
 		}
 	}
 	template<>
@@ -153,7 +167,7 @@ namespace X
 		Value v0;
 		if (g_pXHost->Import(rt, moduleName, nullptr,nullptr, v0))
 		{
-			SetObj(v0);
+			SetObj(v0.GetObj());
 		}
 	}
 	template<>
@@ -164,7 +178,7 @@ namespace X
 		Value v0;
 		if (g_pXHost->Import(rt, moduleName, from, nullptr, v0))
 		{
-			SetObj(v0);
+			SetObj(v0.GetObj());
 		}
 	}
 	Value Value::ObjCall(std::vector<X::Value>& params)

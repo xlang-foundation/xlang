@@ -4,6 +4,7 @@
 #include "xlApp.h"
 #include "utility.h"
 
+#if 0
 X::Value::operator XWin::Box* ()const
 {
     if (x.obj->GetType() == ObjType::Package)
@@ -40,7 +41,7 @@ X::Value::operator XWin::Menu* ()const
         return nullptr;
     }
 }
-
+#endif
 namespace XWin
 {
 #define   XL_WIN_CLS_NAME "XL_WIN_CLASS"

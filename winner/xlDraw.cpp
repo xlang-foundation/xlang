@@ -7,6 +7,7 @@
 #include <wincodec.h>
 #include "utility.h"
 
+#if 0
 X::Value::operator XWin::Brush* ()const
 {
 	if (x.obj->GetType() == ObjType::Package)
@@ -31,7 +32,7 @@ X::Value::operator XWin::Image* ()const
 		return nullptr;
 	}
 }
-
+#endif
 namespace XWin
 {
 	class D2DFactory :
