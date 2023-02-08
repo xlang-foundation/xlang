@@ -8,9 +8,9 @@
 1. git clone https://github.com/xlang-foundation/xlang.git  
 2. use Visual Studio to open this xlang folder  
 3. choose configuration for example Local Machine/x64-Debug, WSL:Ubuntu/WSL-GCC-Debug  
-4. build ( click on Visual Studio's menu: build/build all)  
+4. build ( click on Visual Studio's menu: build/build all) 
 - build from Linux(Ubuntu)  
- todo:
+ TODO:
 
 # How to Run
 - go to console window, cd to xlang executable file folder
@@ -28,6 +28,6 @@
 2. open project from folder xlang\Android
 3. then build from Android Stduio menu: Build/Make Project
 
-
+#
 
 
