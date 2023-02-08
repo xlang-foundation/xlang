@@ -97,8 +97,14 @@ unsigned long GetThreadID()
 #if (WIN32)
 	tid = ::GetCurrentThreadId();
 #else
+
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ < 30
+#include <sys/syscall.h>
+#define gettid() syscall(SYS_gettid)
+#else
 #include <sys/types.h>
 #include <unistd.h>
+#endif
 	tid = gettid();
 #endif
 	return tid;
