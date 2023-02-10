@@ -28,7 +28,7 @@ public:
 	{
 		//pPreviousVar must be the previous tokoen
 		//so can keep the continues memory
-		Name.size = (Name.s + Name.size) - pPreviousVar->Name.s;
+		Name.size =int( (Name.s + Name.size) - pPreviousVar->Name.s);
 		Name.s = pPreviousVar->Name.s;
 		m_lineStart = pPreviousVar->m_lineStart;
 		m_charStart = pPreviousVar->m_charStart;

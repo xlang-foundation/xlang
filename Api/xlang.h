@@ -13,6 +13,7 @@ namespace X
 	enum class ObjType
 	{
 		Base,
+		Type,
 		Str,
 		Binary,
 		Expr,
