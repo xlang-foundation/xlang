@@ -16,9 +16,11 @@ public class xlang {
     {
 
     }
-    public Object createPage(String title)
+    public boolean createPage(String title)
     {
-        return ((MainActivity)_activity).CreateFragment();
+        ((MainActivity)_activity).CreateFragment();
+        //return new Object();
+        return true;
     }
     public native boolean loadJNI();
     public native long loadModuleJNI(String code);

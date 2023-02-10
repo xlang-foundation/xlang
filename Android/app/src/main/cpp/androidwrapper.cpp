@@ -41,13 +41,24 @@ namespace X
             auto* env = aw->GetEnv();
             auto* host = aw->GetHost();
             jclass objClass = env->GetObjectClass(host);
+            //jmethodID mId = env->GetMethodID(
+            //        objClass,"createPage", "(Ljava/lang/String;)Ljava/lang/Object;");
             jmethodID mId = env->GetMethodID(
-                    objClass,"createPage", "(Ljava/lang/String;)Ljava/lang/Object;");
+                    objClass,"createPage", "(Ljava/lang/String;)Z");
             jstring jstr = env->NewStringUTF(title.c_str());
-            jobject result = env->CallObjectMethod(host, mId, jstr);
+            try
+            {
+                jobject result = env->CallObjectMethod(host, mId, jstr);
+            }
+            catch(std::exception ex)
+            {
+                ex = ex;
+            }
+            //env->CallVoidMethod(host, mId, jstr);
             //env->DeleteLocalRef(objClass);
             //env->DeleteLocalRef(result);
-            env->DeleteLocalRef(jstr);
+            //const char *strReturn = env->GetStringUTFChars(env, rv, 0);
+            //env->DeleteLocalRef(jstr);
         }
         bool AndroidWrapper::Print(std::string info)
         {
