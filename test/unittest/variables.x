@@ -23,6 +23,9 @@ x = 5
 y = "John"
 print(type(x))
 print(type(y))
+z=type(x)
+print(z)
+print(type(z))
 
 #Single or Double Quotes?
 x = "John"
