@@ -35,6 +35,8 @@
 #include "moduleobject.h"
 #include "runtime.h"
 #include "manager.h"
+#include "typeobject.h"
+
 
 namespace X
 {
@@ -522,7 +524,76 @@ bool U_ToBytes(X::XRuntime* rt, XObj* pContext,
 	retValue = X::Value(pBinOut);
 	return true;
 }
-
+bool U_GetType(X::XRuntime* rt, XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		return false;
+	}
+	X::Data::TypeObject* pTypeObj = new X::Data::TypeObject(params[0]);
+	retValue = X::Value(pTypeObj);
+	return true;
+}
+bool U_ToInt(X::XRuntime* rt, XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 1)
+	{
+		auto& v = params[0];
+		auto t = v.GetType();
+		if (t == X::ValueType::Str || 
+			(t == X::ValueType::Object 
+			&& v.GetObj()->GetType() == X::ObjType::Str))
+		{
+			std::string strVal = v.ToString();
+			int nVal = 0;
+			SCANF(strVal.c_str(), "%d", &nVal);
+			retValue = X::Value(nVal);
+		}
+		else
+		{
+			retValue = X::Value((int)v);
+		}
+		return true;
+	}
+	else
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+}
+bool U_ToFloat(X::XRuntime* rt, XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 1)
+	{
+		auto& v = params[0];
+		auto t = v.GetType();
+		if (t == X::ValueType::Str ||
+			(t == X::ValueType::Object
+				&& v.GetObj()->GetType() == X::ObjType::Str))
+		{
+			std::string strVal = v.ToString();
+			double dVal = 0;
+			SCANF(strVal.c_str(), "%lf", &dVal);
+			retValue = X::Value(dVal);
+		}
+		else
+		{
+			retValue = X::Value((float)v);
+		}
+		return true;
+	}
+	else
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+}
 bool U_TaskRun(X::XRuntime* rt, XObj* pContext,
 	ARGS& params,KWARGS& kwParams,
 	X::Value& retValue)
@@ -919,6 +990,16 @@ bool U_GetArgs(X::XRuntime* rt, XObj* pContext,
 	retValue = li_args;
 	return true;
 }
+
+bool U_CreateBaseObject(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::Data::Object* pBaseObj = new X::Data::Object();
+	retValue = X::Value(pBaseObj);
+	return true;
+}
 bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1013,6 +1094,11 @@ bool Builtin::RegisterInternals()
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
 	Register("get_modulebykey", (X::U_FUNC)U_GetModuleFromKey, params);
 	Register("run_new_instance", (X::U_FUNC)U_RunNewInstance, params);
+	Register("int", (X::U_FUNC)U_ToInt, params);
+	Register("float", (X::U_FUNC)U_ToFloat, params);
+	Register("str", (X::U_FUNC)U_ToString, params);
+	Register("type", (X::U_FUNC)U_GetType, params);
+	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
 	return true;
 }
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)
