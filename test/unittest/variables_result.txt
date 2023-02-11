@@ -1,0 +1,35 @@
+Python output
+=======================================
+5
+John
+4
+Sally
+3
+3
+3.0
+<class 'int'>
+<class 'str'>
+<class 'int'>
+<class 'type'>
+John
+John
+4
+Sally
+
+xlang output
+=======================================
+5
+John
+John
+
+<class 'int'>
+<class 'str'>
+<class 'int'>
+<class 'type'>
+John
+John
+4
+Sally
+Left Objects:13
+
+
