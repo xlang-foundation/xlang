@@ -56,7 +56,8 @@ namespace X
 				bool bRet = true;
 				Value v_r;
 				LValue lValue_R = nullptr;
-				if (!expR->Run(rt, pContext, v_r, &lValue_R))
+				X::AST::ExecAction action;
+				if (!expR->Exec(rt,action, pContext, v_r, &lValue_R))
 				{
 					return false;
 				}
@@ -101,7 +102,8 @@ namespace X
 					if (pairL == nullptr)
 					{
 						auto* pairR = pPair0->GetR();
-						bOK = pairR->Run(rt, pContext, v, lValue);
+						X::AST::ExecAction action;
+						bOK = pairR->Exec(rt,action, pContext, v, lValue);
 						return bOK;
 					}
 					Value callList;
@@ -159,14 +161,14 @@ namespace X
 				}
 				return bOK;
 			}
-			virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+			virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 			{
 				if (!L || !R)
 				{
 					return false;
 				}
 				Value v_l;
-				if (!L->Run(rt, pContext, v_l))
+				if (!L->Exec(rt,action, pContext, v_l))
 				{
 					return false;
 				}

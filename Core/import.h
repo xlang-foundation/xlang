@@ -91,7 +91,8 @@ class ThruOp :
 			if (l->m_type == ObType::Var || l->m_type == ObType::Str)
 			{
 				Value v0;
-				if (l->Run(rt, pContext, v0, nullptr))
+				ExecAction action;
+				if (l->Exec(rt,action, pContext, v0, nullptr))
 				{
 					l_name = v0.ToString();
 				}
@@ -107,7 +108,8 @@ class ThruOp :
 			if (r->m_type == ObType::Var)
 			{
 				Value v0;
-				if (r->Run(rt, pContext, v0, nullptr))
+				ExecAction action;
+				if (r->Exec(rt,action, pContext, v0, nullptr))
 				{
 					r_name = v0.ToString();
 				}
@@ -134,7 +136,7 @@ public:
 		m_type = ObType::Thru;
 	}
 	std::string GetUrl() { return m_url; }
-	bool Run(XlangRuntime* rt, XObj* pContext,
+	bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		Value& v, LValue* lValue) override
 	{
 		//Calc Path
@@ -143,7 +145,7 @@ public:
 			if (R->m_type == ObType::Str || R->m_type == ObType::Var)
 			{
 				Value v0;
-				if (R->Run(rt, pContext, v0, nullptr))
+				if (R->Exec(rt,action, pContext, v0, nullptr))
 				{
 					m_url = v0.ToString();
 				}
@@ -179,7 +181,7 @@ public:
 	{
 		return m_path;
 	}
-	bool Run(XlangRuntime* rt, XObj* pContext,
+	bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		Value& v, LValue* lValue) override
 	{
 		//Calc Path
@@ -390,7 +392,7 @@ public:
 	}
 	std::string ConvertDotSeqToString(Expression* expr);
 	virtual void ScopeLayout() override;
-	virtual bool Run(XlangRuntime* rt, XObj* pContext,
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;

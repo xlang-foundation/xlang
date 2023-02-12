@@ -32,7 +32,7 @@ namespace X
 			}
 			inline Expression* Client() { return m_client; }
 			inline void SetClient(Expression* e) { m_client = e; }
-			virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+			virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 		};
 	}
 }

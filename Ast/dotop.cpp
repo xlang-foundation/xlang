@@ -135,7 +135,8 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 						Var* var = dynamic_cast<Var*>(it);
 						Value v0;
 						LValue lVal = nil;
-						var->Run(rt, pContext, v0, &lVal);
+						ExecAction action;
+						var->Exec(rt,action,pContext, v0, &lVal);
 						AddFunc(v0, lVal,pContext);
 					}
 				}
@@ -145,7 +146,8 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 				Var* var = dynamic_cast<Var*>(pair_r);
 				Value v0;
 				LValue lVal = nil;
-				var->Run(rt, pContext, v0, &lVal);
+				ExecAction action;
+				var->Exec(rt, action,pContext, v0, &lVal);
 				AddFunc(v0, lVal,pContext);
 			}
 		}
@@ -154,7 +156,8 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 			Var* var = dynamic_cast<Var*>(pExpr);
 			Value v0;
 			LValue lValue = nil;
-			var->Run(rt, pContext, v0, &lValue);
+			ExecAction action;
+			var->Exec(rt, action,pContext, v0, &lValue);
 			AddFunc(v0, lValue,pContext);
 		}
 	};
@@ -213,7 +216,7 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 	}
 	return true;
 }
-bool DotOp::Run(XlangRuntime* rt,XObj* pContext,Value& v, LValue* lValue)
+bool DotOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LValue* lValue)
 {
 	if (!L || !R)
 	{
@@ -257,7 +260,7 @@ bool DotOp::Run(XlangRuntime* rt,XObj* pContext,Value& v, LValue* lValue)
 		return true;
 	}
 	Value v_l;
-	if (!L->Run(rt, pContext, v_l) || !v_l.IsObject())
+	if (!L->Exec(rt,action, pContext, v_l) || !v_l.IsObject())
 	{
 		return false;
 	}
@@ -278,7 +281,8 @@ bool DotOp::CalcCallables(XlangRuntime* rt, XObj* pContext,
 	std::vector<Scope*>& callables)
 {
 	Value val;
-	bool bOK = Run(rt, pContext, val);
+	ExecAction action;
+	bool bOK = Exec(rt, action,pContext, val);
 	if (bOK && val.IsObject())
 	{
 		bOK = dynamic_cast<Data::Object*>(val.GetObj())->CalcCallables(rt, pContext, callables);

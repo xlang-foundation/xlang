@@ -139,7 +139,8 @@ namespace X
 		pTopModule->AddBuiltins(pRuntime);
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
 		X::Value v;
-		bool bOK = pTopModule->Run(pRuntime, nullptr, v);
+		X::AST::ExecAction action;
+		bool bOK = pTopModule->Exec(pRuntime, action,nullptr, v);
 		X::Value v1 = pModuleFrame->GetReturnValue();
 		if (v1.IsValid())
 		{
@@ -172,7 +173,8 @@ namespace X
 		pTopModule->AddBuiltins(pRuntime);
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
 		X::Value v;
-		bool bOK = pTopModule->Run(pRuntime, nullptr, v);
+		X::AST::ExecAction action;
+		bool bOK = pTopModule->Exec(pRuntime,action,nullptr, v);
 		pRuntime->PopFrame();
 		X::Value v1 = pModuleFrame->GetReturnValue();
 		if (v1.IsValid())

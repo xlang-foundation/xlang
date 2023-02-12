@@ -80,7 +80,7 @@ public:
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
-	inline virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (Index == -1 || m_scope == nullptr || rt == nullptr)
 		{//case 1:RunExpression in XHost will call with rt is null,

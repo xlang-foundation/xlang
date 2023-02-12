@@ -19,6 +19,7 @@
 #include "Proxy.h"
 #include "str.h"
 #include "list.h"
+#include "dict.h"
 #include "bin.h"
 #include "metascope.h"
 #include "pyproxyobject.h"
@@ -214,18 +215,7 @@ void XLangStaticRun(std::string code)
 		passInParams,
 		retVal);
 }
-void XLangStaticUnload()
-{
-	Builtin::I().Cleanup();
-	Manager::I().Cleanup();
-	X::AST::ModuleObject::cleanup();
-	X::Data::Str::cleanup();
-	X::Data::List::cleanup();
-	X::AST::MetaScope().I().Cleanup();
-	Hosting::I().Cleanup();
-	G::I().Check();
-	DestoryXHost();
-}
+
 void XLangRun()
 {
 	if (g_pXload->GetConfig().enablePython)
@@ -306,7 +296,19 @@ void XLangRun()
 		}
 	}
 }
-
+void XLangStaticUnload()
+{
+	Builtin::I().Cleanup();
+	Manager::I().Cleanup();
+	X::AST::ModuleObject::cleanup();
+	X::Data::Str::cleanup();
+	X::Data::List::cleanup();
+	X::Data::Dict::cleanup();
+	X::AST::MetaScope().I().Cleanup();
+	Hosting::I().Cleanup();
+	G::I().Check();
+	DestoryXHost();
+}
 void XLangUnload()
 {
 	Builtin::I().Cleanup();
@@ -314,6 +316,7 @@ void XLangUnload()
 	X::AST::ModuleObject::cleanup();
 	X::Data::Str::cleanup();
 	X::Data::List::cleanup();
+	X::Data::Dict::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 
 	if (g_pXload->GetConfig().enablePython)

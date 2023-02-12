@@ -146,6 +146,11 @@ void Register(OpRegistry* reg)
 				auto op = new AST::Range(opIndex);
 				return (AST::Operator*)op;
 			});
+	RegOP("break","continue","pass")
+		.SetProcess([](Parser* p, short opIndex) {
+			auto op = new AST::ActionOperator(opIndex);
+			return (AST::Operator*)op;
+			});
 	RegOP("return")
 		.SetProcess([](Parser* p, short opIndex) {
 			auto op = new AST::UnaryOp(opIndex);
@@ -355,6 +360,9 @@ void Register(OpRegistry* reg)
 	RegOP(":").SetId(reg, OP_ID::Colon);
 	RegOP(",").SetId(reg, OP_ID::Comma);
 	RegOP("\t").SetId(reg, OP_ID::Tab);
+	RegOP("break").SetId(reg, OP_ID::Break);
+	RegOP("continue").SetId(reg, OP_ID::Continue);
+	RegOP("pass").SetId(reg, OP_ID::Pass);
 
 	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(reg,
 		{ OP_ID::Equ,OP_ID::AddEqu,OP_ID::MinusEqu,OP_ID::MulEqu,

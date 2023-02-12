@@ -156,13 +156,13 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	}
 	return bOK;
 }
-bool X::AST::Import::Run(XlangRuntime* rt, XObj* pContext, 
+bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, 
 	Value& v, LValue* lValue)
 {
 	if (m_from)
 	{
 		Value v0;
-		if (m_from->Run(rt, pContext, v0, nullptr))
+		if (m_from->Exec(rt,action, pContext, v0, nullptr))
 		{
 			m_path = v0.ToString();
 		}
@@ -170,7 +170,7 @@ bool X::AST::Import::Run(XlangRuntime* rt, XObj* pContext,
 	if (m_thru)
 	{
 		Value v0;
-		if (m_thru->Run(rt, pContext, v0, nullptr))
+		if (m_thru->Exec(rt,action, pContext, v0, nullptr))
 		{
 			m_thruUrl = v0.ToString();
 		}

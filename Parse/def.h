@@ -30,6 +30,7 @@ enum class OP_ID
 	//"==", "!=", ">", "<", ">=", "<="
 	Equal,NotEqual,Great,Less, GreatAndEqual,LessAndEqual,
 	And,Or,
+	Break,Continue,Pass,
 	Count
 };
 

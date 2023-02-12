@@ -93,7 +93,7 @@ bool XClass::Get(XlangRuntime* rt,XObj* pContext, int idx, Value& v, LValue* lVa
 	}
 	return true;
 }
-bool XClass::Run(XlangRuntime* rt,XObj* pContext,Value& v, LValue* lValue)
+bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LValue* lValue)
 {
 	m_stackFrame = new StackFrame(this);
 	m_stackFrame->SetVarCount((int)m_Vars.size());
@@ -120,7 +120,7 @@ bool XClass::Run(XlangRuntime* rt,XObj* pContext,Value& v, LValue* lValue)
 					if (pExpression)
 					{
 						Value v1;
-						if (pExpression->Run(rt,pContext,v1))
+						if (pExpression->Exec(rt,action,pContext,v1))
 						{
 							Set(rt,pContext,it.index, v1);
 							bSet = true;

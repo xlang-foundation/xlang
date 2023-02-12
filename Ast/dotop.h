@@ -50,7 +50,7 @@ public:
 		stream >> m_dotNum;
 		return true;
 	}
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;

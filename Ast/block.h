@@ -36,6 +36,32 @@ struct Indent
 				|| (tab_cnt < other.tab_cnt&& space_cnt <= other.space_cnt));
 	}
 };
+
+class ActionOperator :
+	virtual public Operator
+{
+public:
+	ActionOperator() :Operator()
+	{
+		m_type = ObType::ActionOp;
+	}
+	ActionOperator(short op) :
+		Operator(op)
+	{
+		m_type = ObType::ActionOp;
+	}
+	virtual bool OpWithOperands(
+		std::stack<AST::Expression*>& operands)
+	{
+		operands.push(this);
+		return true;
+	}
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, 
+		Value& v, LValue* lValue = nullptr)
+	{
+		return true;
+	}
+};
 class Block:
 	virtual public UnaryOp
 {
@@ -120,7 +146,7 @@ public:
 	inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
 	bool RunLast(XRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr);
 	bool RunFromLine(XRuntime* rt, XObj* pContext,long long lineNo,Value& v, LValue* lValue = nullptr);
-	virtual bool Run(XRuntime* rt,XObj* pContext, Value& v, LValue* lValue = nullptr);
+	virtual bool Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 };
 class For :
 	virtual public Block
@@ -138,7 +164,7 @@ public:
 	{
 		m_type = ObType::For;
 	}
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class While :
 	virtual public Block
@@ -157,7 +183,7 @@ public:
 		m_type = ObType::While;
 	}
 
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
 class If :
@@ -193,7 +219,7 @@ public:
 		return true;
 	}
 	virtual bool EatMe(Expression* other) override;
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 }
 }

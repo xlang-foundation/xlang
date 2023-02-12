@@ -22,6 +22,7 @@ namespace X
 				if (m_stackFrame)
 				{
 					delete m_stackFrame;
+					m_stackFrame = nullptr;
 				}
 			}
 			~DictScope()

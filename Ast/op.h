@@ -188,19 +188,19 @@ public:
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
 
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
 			return false;
 		}
 		Value v_l;
-		if (!L->Run(rt,pContext,v_l))
+		if (!L->Exec(rt,action,pContext,v_l))
 		{
 			return false;
 		}
 		Value v_r;
-		if (!R->Run(rt,pContext, v_r))
+		if (!R->Exec(rt,action,pContext, v_r))
 		{
 			return false;
 		}
@@ -230,7 +230,7 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 };
 class ColonOP :
 	virtual public Operator
@@ -361,7 +361,7 @@ public:
 	}
 	Expression* GetR() { return R; }
 
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
 	virtual public UnaryOp
@@ -399,7 +399,7 @@ public:
 		stream >> m_evaluated >> m_start >> m_stop >> m_step;
 		return true;
 	}
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class InOp :
 	virtual public BinaryOp
@@ -417,7 +417,7 @@ public:
 	{
 		m_type = ObType::In;
 	}
-	virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void SetL(Expression* l) override
 	{
 		BinaryOp::SetL(l);
@@ -444,7 +444,7 @@ public:
 		m_type = ObType::ExternDecl;
 	}
 	virtual void ScopeLayout() override;
-	inline virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		return true;//dont' run Base class's Run
 	}
