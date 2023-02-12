@@ -480,18 +480,207 @@ print(txt.rindex("q"))
 
 
 #rindex()	Searches the string for a specified value and returns the last position of where it was found
+#last occurrence of a string
+txt = "Mi casa, su casa."
+x = txt.rindex("casa")
+print(x) 
+
+#Where in the text is the last occurrence of the letter "e"?:
+txt = "Hello, welcome to my world."
+x = txt.rindex("e")
+print(x) 
+
+#Where in the text is the last occurrence of the letter "e" when you only search between position 5 and 10?
+txt = "Hello, welcome to my world."
+x = txt.rindex("e", 5, 10)
+print(x) 
+
+#If the value is not found, the rfind() method returns -1, but the rindex() method will raise an exception
+txt = "Hello, welcome to my world."
+print(txt.rfind("q"))
+print(txt.rindex("q"))
+
+
 #rjust()	Returns a right justified version of the string
+#Return a 20 characters long, right justified version of the word "banana"
+txt = "banana"
+x = txt.rjust(20)
+print(x, "is my favorite fruit.") 
+
+#Using the letter "O" as the padding character
+txt = "banana"
+x = txt.rjust(20, "O")
+print(x)
+
+
 #rpartition()	Returns a tuple where the string is parted into three parts
+#Search for the last occurrence of the word "bananas", and return a tuple with three elements
+txt = "I could eat bananas all day, bananas are my favorite fruit"
+x = txt.rpartition("bananas")
+print(x) 
+
+#If the specified value is not found, the rpartition() method returns a tuple containing: 
+#1 - an empty string, 2 - an empty string, 3 - the whole string
+txt = "I could eat bananas all day, bananas are my favorite fruit"
+x = txt.rpartition("apples")
+print(x)
+
 #rsplit()	Splits the string at the specified separator, and returns a list
+#Split a string into a list, using comma, followed by a space (, ) as the separator
+txt = "apple, banana, cherry"
+x = txt.rsplit(", ")
+print(x) 
+
+#Split the string into a list with maximum 2 items:
+txt = "apple, banana, cherry"
+
+# setting the maxsplit parameter to 1, will return a list with 2 elements!
+x = txt.rsplit(", ", 1)
+print(x) 
+
+
 #rstrip()	Returns a right trim version of the string
+#Remove any white spaces at the end of the string
+txt = "     banana     "
+x = txt.rstrip()
+print("of all fruits", x, "is my favorite") 
+
+#Remove the trailing characters if they are commas, periods, s, q, or w.
+txt = "banana,,,,,ssqqqww....."
+x = txt.rstrip(",.qsw")
+print(x) 
+
+
 #split()	Splits the string at the specified separator, and returns a list
+#Split a string into a list where each word is a list item
+txt = "welcome to the jungle"
+x = txt.split()
+print(x) 
+
+#Split the string, using comma, followed by a space, as a separator
+txt = "hello, my name is Peter, I am 26 years old"
+x = txt.split(", ")
+print(x) 
+
+#Use a hash character as a separator
+txt = "apple#banana#cherry#orange"
+x = txt.split("#")
+print(x) 
+
+#Split the string into a list with max 2 items:
+txt = "apple#banana#cherry#orange"
+# setting the maxsplit parameter to 1, will return a list with 2 elements!
+x = txt.split("#", 1)
+print(x)
+
 #splitlines()	Splits the string at line breaks and returns a list
+#Split a string into a list where each line is a list item
+txt = "Thank you for the music\nWelcome to the jungle"
+x = txt.splitlines()
+print(x)
+
+#Split the string, but keep the line breaks:
+txt = "Thank you for the music\nWelcome to the jungle"
+x = txt.splitlines(True)
+print(x) 
+
 #startswith()	Returns true if the string starts with the specified value
+#Check if the string starts with "Hello":
+txt = "Hello, welcome to my world."
+x = txt.startswith("Hello")
+print(x) 
+
+#Check if position 7 to 20 starts with the characters "wel":
+txt = "Hello, welcome to my world."
+x = txt.startswith("wel", 7, 20)
+print(x) 
+
 #strip()	Returns a trimmed version of the string
+#Remove spaces at the beginning and at the end of the string
+txt = "     banana     "
+x = txt.strip()
+print("of all fruits", x, "is my favorite") 
+
+#Remove the leading and trailing characters:
+txt = ",,,,,rrttgg.....banana....rrr"
+x = txt.strip(",.grt")
+print(x) 
+
 #swapcase()	Swaps cases, lower case becomes upper case and vice versa
+#Make the lower case letters upper case and the upper case letters lower case:
+txt = "Hello My Name Is PETER"
+x = txt.swapcase()
+print(x)
+
 #title()	Converts the first character of each word to upper case
+#Make the first letter in each word upper case
+txt = "Welcome to my world"
+x = txt.title()
+print(x) 
+
+#Make the first letter in each word upper case:
+txt = "Welcome to my 2nd world"
+x = txt.title()
+print(x) 
+
+#Note that the first letter after a non-alphabet letter is converted into a upper case letter:
+txt = "hello b2b2b2 and 3g3g3g"
+x = txt.title()
+print(x) 
+
+
 #translate()	Returns a translated string
+#eplace any "S" characters with a "P" character:
+#use a dictionary with ascii codes to replace 83 (S) with 80 (P):
+mydict = {83:  80}
+txt = "Hello Sam!"
+print(txt.translate(mydict))
+
+#Use a mapping table to replace "S" with "P":
+txt = "Hello Sam!"
+mytable = str.maketrans("S", "P")
+print(txt.translate(mytable)) 
+
+#Use a mapping table to replace many characters:
+txt = "Hi Sam!"
+x = "mSa"
+y = "eJo"
+mytable = str.maketrans(x, y)
+print(txt.translate(mytable)) 
+
+#The third parameter in the mapping table describes characters that you want to remove from the string:
+txt = "Good night Sam!"
+x = "mSa"
+y = "eJo"
+z = "odnght"
+mytable = str.maketrans(x, y, z)
+print(txt.translate(mytable)) 
+
+#The same example as above, but using a dictionary instead of a mapping table:
+txt = "Good night Sam!"
+mydict = {109: 101, 83: 74, 97: 111, 111: None, 100: None, 110: None, 103: None, 104: None, 116: None}
+print(txt.translate(mydict)) 
+
 #upper()	Converts a string into upper case
+#Upper case the string:
+txt = "Hello my friends"
+x = txt.upper()
+print(x) 
+
 #zfill()	Fills the string with a specified number of 0 values at the beginning
+#Fill the string with zeros until it is 10 characters long:
+txt = "50"
+x = txt.zfill(10)
+print(x) 
+
+#Fill the strings with zeros until they are 10 characters long:
+a = "hello"
+b = "welcome to the jungle"
+c = "10.000"
+
+print(a.zfill(10))
+print(b.zfill(10))
+print(c.zfill(10)) 
+
 
 
