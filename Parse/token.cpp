@@ -247,6 +247,13 @@ namespace X {
 					token_out(TokenLineComment);
 					InMatching = false;
 					InLineComment = false;
+					//and push this car(\n) to tree match
+					//will gerenate a operator (new line op)
+					new_token_start();
+					if (MatchInTree(c))
+					{
+						token_out(GetLastMatchedNodeIndex(), 0);
+					}
 				}
 				else if (InFeedOp && !meetSlash)
 				{
@@ -269,6 +276,8 @@ namespace X {
 						{
 							token_out(GetLastMatchedNodeIndex());
 						}
+						//and push this car(\n) to tree match
+						//will gerenate a operator (new line op)
 						new_token_start();
 						if (MatchInTree(c))
 						{

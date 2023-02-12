@@ -1,6 +1,8 @@
 package org.xlangfoundation.playground;
 
 import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 
@@ -20,6 +22,9 @@ import org.xlangfoundation.playground.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
 import  org.xlangfoundation.playground.xlang;
 
 import java.io.FileReader;
@@ -91,14 +96,29 @@ public class MainActivity extends AppCompatActivity {
 
         }
         boolean retVal = _xlang.loadJNI();
-        _xlang.runJNI(code);
+        long moduleKey = _xlang.loadModuleJNI(code);
+        _xlang.setCurrentModuleKey(moduleKey);
         //_xlang.unloadJNI();
+        /*
+        LinearLayout rowLayout = new LinearLayout(this);
+        rowLayout.setId(100010);
+        TextView tx = new TextView(this);
+        tx.setText("test test \n test \n test");
+        rowLayout.addView(tx);
+        */
+        //FragmentManager fragMan = getFragmentManager();
+        //FragmentTransaction fragTransaction = fragMan.beginTransaction();
+
+        //Fragment myFrag = new Fragment();
+        //fragTransaction.add(rowLayout.getId(), myFrag , "fragment" + 1);
+        //fragTransaction.commit();
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        //setContentView(binding.getRoot());
+        setContentView(_xlang.GetCurrentPage());
 
         setSupportActionBar(binding.toolbar);
-
+        /*
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
@@ -110,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+        */
     }
 
     @Override

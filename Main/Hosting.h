@@ -79,6 +79,7 @@ namespace X
 			const char* code, int size,unsigned long long& moduleKey);
 		X::Value NewModule();
 		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,X::Value& retVal);
+		bool InitRun(AST::Module* pTopModule,X::Value& retVal);
 		bool RunFragmentInModule(AST::ModuleObject* pModuleObj,
 			const char* code, int size, X::Value& retVal);
 		bool RunCodeLine(const char* code, int size, X::Value& retVal);
