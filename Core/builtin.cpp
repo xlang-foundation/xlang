@@ -51,11 +51,21 @@ bool U_Print(X::XRuntime* rt, X::XObj* pContext,
 {
 	std::string allOut;
 	//_printLock.Lock();
-	for (auto& v : params)
+	int p_cnt = (int)params.size();
+	for (int i=0;i<p_cnt;i++)
 	{
 		//todo: for linux, may need to change
-		allOut += v.ToString();
+		auto& v = params[i];
+		if (i == 0)
+		{
+			allOut = v.ToString();
+		}
+		else
+		{
+			allOut += " "+v.ToString();//add space between two items
+		}
 	}
+	//add new line per print
 	allOut += '\n';
 
 	X::XlangRuntime* pRT = dynamic_cast<X::XlangRuntime*>(rt);

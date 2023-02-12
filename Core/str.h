@@ -165,6 +165,22 @@ namespace Data
 			retList = splitWithChars(m_s, delims.c_str());
 			return true;
 		}
+		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, ARGS& vals) override
+		{
+			long long it = (long long)pos;
+			X::Value val0;
+			long long nPos = it;
+			AutoLock(m_lock);
+			if (it >= (long long)m_s.size())
+			{
+				return false;
+			}
+			val0 = m_s[it++];
+			pos = (Iterator_Pos)it;
+			vals.push_back(val0);
+			vals.push_back(X::Value(nPos));
+			return true;
+		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue) override
