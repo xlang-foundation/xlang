@@ -19,7 +19,8 @@ if b > a:
 #a = 33
 #b = 200
 #if b > a:
-#print("b is greater than a") # you will get an error
+# you will get an error
+#print("b is greater than a") 
 
 #The elif keyword 
 a = 33
@@ -43,7 +44,7 @@ else:
 #Short Hand If
 a = 200
 b = 33
-if a > b: print("a is greater than b")
+if a > b: print("a is greater than b");print("second print")
 
 #Short Hand If ... Else
 a = 2

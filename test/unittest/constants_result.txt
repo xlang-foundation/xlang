@@ -1,0 +1,18 @@
+python
+===============================
+start printing constants
+10
+-12.34
+ABCDEFG
+pppGG123*)3
+
+xlang
+===============================
+start printing constants
+10
+-12.340000
+ABCDEFG
+pppGG123*)3
+Left Objects:13
+
+

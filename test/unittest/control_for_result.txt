@@ -1,0 +1,50 @@
+python
+===============================
+apple
+banana
+cherry
+b
+a
+n
+a
+n
+a
+apple
+banana
+apple
+apple
+cherry
+0
+1
+2
+3
+4
+5
+2
+3
+4
+5
+0
+1
+2
+3
+4
+5
+Finally finished!
+0
+1
+2
+red apple
+red banana
+red cherry
+big apple
+big banana
+big cherry
+tasty apple
+tasty banana
+tasty cherry
+
+
+xlang 
+=====================
+
