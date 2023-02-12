@@ -15,10 +15,19 @@ namespace X
 
 		class UIBase
 		{
+		protected:
+			Page* m_page = nullptr;
+			jobject m_object = nullptr;
 			UIBase* m_parent = nullptr;
             BEGIN_PACKAGE(UIBase)
             END_PACKAGE
 		public:
+            inline jobject GetObject() {return m_object;}
+			UIBase(Page* page)
+			{
+				m_page = page;
+			}
+			~UIBase();
 			void SetParent(UIBase* p)
 			{
 				m_parent =p;
@@ -27,31 +36,22 @@ namespace X
 		class ViewGroup:
 				public UIBase
 		{
-			Page* m_page = nullptr;
-			ViewGroup* m_parent = nullptr;
+        protected:
 			std::vector<UIBase*> m_kids;
 			BEGIN_PACKAGE(ViewGroup)
 				APISET().AddFunc<1>("add", &ViewGroup::Add);
 			END_PACKAGE
-			ViewGroup(Page* page)
+			ViewGroup(Page* page):
+					UIBase(page)
 			{
-				m_page = page;
 			}
-			bool Add(UIBase* pElement)
-			{
-				m_kids.push_back(pElement);
-				pElement->SetParent(this);
-				return true;
-			}
+			bool Add(UIBase* pElement);
 		};
 		class LinearLayout: public ViewGroup{
 			BEGIN_PACKAGE(LinearLayout)
 				ADD_BASE(ViewGroup);
 			END_PACKAGE
-			LinearLayout(Page* page):
-					ViewGroup(page)
-			{
-			}
+			LinearLayout(Page* page);
 		};
 
 		class ConstraintLayout: public ViewGroup{
@@ -61,20 +61,64 @@ namespace X
 			ConstraintLayout(Page* page):
 				ViewGroup(page)
 			{
+
 			}
+		};
+
+		//UI Element
+		class UIElement:
+				public UIBase
+		{
+		    BEGIN_PACKAGE(UIElement)
+				ADD_BASE(UIBase);
+				APISET().AddFunc<1>("setText", &UIElement::setText);
+                APISET().AddFunc<1>("setOnClickListener", &UIElement::setOnClickListener);
+			END_PACKAGE
+			UIElement(Page* page):
+					UIBase(page)
+			{
+
+			}
+			bool setText(std::string txt);
+            bool setOnClickListener(X::Value handler);
+		};
+
+		class TextView: public UIElement
+		{
+		BEGIN_PACKAGE(UIElement)
+				ADD_BASE(UIElement);
+			END_PACKAGE
+			TextView(Page* page);
+		};
+
+		class Button: public UIElement
+		{
+			BEGIN_PACKAGE(Button)
+				ADD_BASE(UIElement);
+			END_PACKAGE
+			Button(Page* page);
 		};
 		class Page: public ViewGroup {
 			App* m_app = nullptr;
-			jobject m_objPage = nullptr;
 			BEGIN_PACKAGE(Page)
 				ADD_BASE(ViewGroup);
 				APISET().AddClass<0, LinearLayout,Page>("LinearLayout");
 				APISET().AddClass<0, ConstraintLayout,Page>("ConstraintLayout");
+				APISET().AddClass<0, TextView,Page>("TextView");
+				APISET().AddClass<0, Button,Page>("Button");
 			END_PACKAGE
 			bool Create();
+			App* GetApp()
+			{
+				return m_app;
+			}
+			jobject CreateLinearLayout();
+			jobject CreateTextView(std::string txt);
+			jobject CreateButton(std::string txt);
 			Page(App* pParent): ViewGroup(nullptr)
 			{
 				m_app = pParent;
+				m_page = this;//point to self
                 Create();
 			}
 		};
@@ -97,18 +141,6 @@ namespace X
 			}
 		};
 
-		//UI Element
-		class UIElement {
-
-		};
-
-		class TextView {
-
-		};
-
-		class Button {
-
-		};
 
 		class AndroidWrapper {
 			JNIEnv *m_env = nullptr;
