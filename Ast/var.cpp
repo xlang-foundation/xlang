@@ -19,7 +19,8 @@ namespace AST
 	void Var::EncodeExtern(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 	{
 		Value v0;
-		if (!Run(rt, pContext, v0))
+		ExecAction action;
+		if (!Exec(rt,action, pContext, v0))
 		{
 			return;
 		}
@@ -240,7 +241,8 @@ bool Var::CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables)
 {
 	Value val;
-	bool bOK = Run(rt, pContext, val);
+	ExecAction action;
+	bool bOK = Exec(rt,action, pContext, val);
 	if (bOK && val.IsObject())
 	{
 		Data::Object* pObj = dynamic_cast<Data::Object*>(val.GetObj());

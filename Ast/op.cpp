@@ -14,7 +14,7 @@ namespace X
 {
 namespace AST
 {
-	bool Assign::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
+	bool Assign::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 	{
 		if (!L || !R)
 		{
@@ -23,9 +23,9 @@ namespace AST
 		}
 		Value v_l;
 		LValue lValue_L = nullptr;
-		L->Run(rt, pContext, v_l, &lValue_L);
+		L->Exec(rt, action,pContext, v_l, &lValue_L);
 		Value v_r;
-		if (!R->Run(rt, pContext, v_r))
+		if (!R->Exec(rt, action,pContext, v_r))
 		{
 			v = Value(false);
 			return false;
@@ -153,7 +153,8 @@ namespace AST
 				std::string strVarName = std::string(szName.s, szName.size);
 				Expression* valExpr = assign->GetR();
 				Value v0;
-				bOK = valExpr->Run(rt, nullptr, v0);
+				ExecAction action;
+				bOK = valExpr->Exec(rt,action,nullptr, v0);
 				if (bOK)
 				{
 					kwParams.emplace(std::make_pair(strVarName, v0));
@@ -162,7 +163,8 @@ namespace AST
 			else
 			{
 				Value v0;
-				bOK = i->Run(rt, nullptr, v0);
+				ExecAction action;
+				bOK = i->Exec(rt,action,nullptr, v0);
 				if (bOK)
 				{
 					params.push_back(v0);
@@ -190,10 +192,10 @@ namespace AST
 		return bOK;
 	}
 
-bool UnaryOp::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
+bool UnaryOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	Value v_r;
-	if (!R->Run(rt,pContext,v_r))
+	if (!R->Exec(rt,action,pContext,v_r))
 	{
 		return false;
 	}
@@ -216,7 +218,8 @@ bool Range::Eval(XlangRuntime* rt)
 			else
 			{//only one parameter, means stop
 				Value vStop;
-				param->Run(rt, nullptr, vStop);
+				ExecAction action;
+				param->Exec(rt, action,nullptr, vStop);
 				if (vStop.GetType() == ValueType::Int64)
 				{
 					m_stop = vStop.GetLongLong();
@@ -228,7 +231,7 @@ bool Range::Eval(XlangRuntime* rt)
 	m_evaluated = true;
 	return true;
 }
-bool Range::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
+bool Range::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
 	if (!m_evaluated)
 	{
@@ -244,13 +247,14 @@ bool Range::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 	}
 	return (v.GetLongLong() < m_stop);
 }
-bool InOp::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
+bool InOp::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = true;
 	if (v.IsInvalid())
 	{
 		Value  var0;
-		bOK = R->Run(rt, pContext, var0);
+		ExecAction action;
+		bOK = R->Exec(rt, action,pContext, var0);
 		if (bOK)
 		{
 			if (var0.IsObject())
@@ -272,7 +276,8 @@ bool InOp::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 	}
 	else if (!v.IsObject())
 	{//for range case after first run
-		bOK = R->Run(rt, pContext, v);
+		ExecAction action;
+		bOK = R->Exec(rt,action,pContext, v);
 		if (bOK)
 		{
 			L->Set(rt, pContext, v);

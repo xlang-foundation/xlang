@@ -58,7 +58,7 @@ public:
 	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override;
 	inline std::vector<XClass*>& GetBases() { return m_bases; }
-	virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
 	virtual bool Call(XlangRuntime* rt,

@@ -108,7 +108,7 @@ std::string Func::getcode(bool includeHead)
 	}
 	return code;
 }
-bool Func::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
+bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
 	Data::Function* f = new Data::Function(this);
 	//owned by Block
@@ -117,7 +117,8 @@ bool Func::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 	for(auto it = m_decors.rbegin(); it != m_decors.rend(); ++it)
 	{
 		X::Value retVal;
-		(*it)->Run(rt, pPassContext, retVal);
+		ExecAction action;
+		(*it)->Exec(rt, action,pPassContext, retVal);
 		if (retVal.IsObject())
 		{
 			pPassContext = retVal.GetObj();
@@ -179,7 +180,8 @@ bool Func::Call(XRuntime* rt0,
 		}
 	}
 	Value v0;
-	Block::Run(rt, pContext, v0);
+	ExecAction action;
+	Block::Exec(rt,action,pContext, v0);
 	rt->PopFrame();
 	retValue = frame->GetReturnValue();
 	delete frame;

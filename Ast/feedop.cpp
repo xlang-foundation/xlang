@@ -5,7 +5,7 @@ namespace X
 {
 	namespace AST
 	{
-		bool FeedOp::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
+		bool FeedOp::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 		{
 			int padCount = 0;
 			int padUsingDataBindingCount = 0;
