@@ -217,21 +217,183 @@ print(txt.format(0.25))
 #==================================================================================
 
 #format_map()	Formats specified values in a string
+
 #index()	Searches the string for a specified value and returns the position of where it was found
+txt = "Hello, welcome to my world."
+x = txt.index("welcome")
+print(x) 
+
+#Where in the text is the first occurrence of the letter "e" when you only search between position 5 and 10?
+txt = "Hello, welcome to my world."
+x = txt.index("e", 5, 10)
+print(x) 
+
+#If the value is not found, the find() method returns -1, but the index() method will raise an exception
+txt = "Hello, welcome to my world."
+print(txt.find("q"))
+print(txt.index("q")) 
+
 #isalnum()	Returns True if all characters in the string are alphanumeric
+txt = "Company12"
+x = txt.isalnum()
+print(x) 
+
+txt = "Company 12"
+x = txt.isalnum()
+print(x) 
+
 #isalpha()	Returns True if all characters in the string are in the alphabet
+txt = "CompanyX"
+x = txt.isalpha()
+print(x) 
+
+txt = "Company10"
+x = txt.isalpha()
+print(x) 
+
 #isdecimal()	Returns True if all characters in the string are decimals
+txt = "\u0033" #unicode for 3
+x = txt.isdecimal()
+print(x) 
+
+#Check if all the characters in the unicode are decimals
+a = "\u0030" #unicode for 0
+b = "\u0047" #unicode for G
+print(a.isdecimal())
+print(b.isdecimal()) 
+
 #isdigit()	Returns True if all characters in the string are digits
+txt = "50800"
+x = txt.isdigit()
+print(x) 
+
+#Check if all the characters in the text are digits
+a = "\u0030" #unicode for 0
+b = "\u00B2" #unicode for ²
+print(a.isdigit())
+print(b.isdigit()
+
 #isidentifier()	Returns True if the string is an identifier
+
+#Check if the string is a valid identifier
+txt = "Demo"
+x = txt.isidentifier()
+print(x) 
+
+#Check if the strings are valid identifiers:
+a = "MyFolder"
+b = "Demo002"
+c = "2bring"
+d = "my demo"
+
+print(a.isidentifier())
+print(b.isidentifier())
+print(c.isidentifier())
+print(d.isidentifier())
+
+
 #islower()	Returns True if all characters in the string are lower case
+txt = "hello world!"
+x = txt.islower()
+print(x) 
+
+#Check if all the characters in the texts are in lower case
+a = "Hello world!"
+b = "hello 123"
+c = "mynameisPeter"
+
+print(a.islower())
+print(b.islower())
+print(c.islower()) 
+
 #isnumeric()	Returns True if all characters in the string are numeric
+txt = "565543"
+x = txt.isnumeric()
+print(x) 
+
+a = "\u0030" #unicode for 0
+b = "\u00B2" #unicode for &sup2;
+c = "10km2"
+d = "-1"
+e = "1.5"
+
+print(a.isnumeric())
+print(b.isnumeric())
+print(c.isnumeric())
+print(d.isnumeric())
+print(e.isnumeric()) 
+
 #isprintable()	Returns True if all characters in the string are printable
+txt = "Hello! Are you #1?"
+x = txt.isprintable()
+print(x) 
+
+txt = "Hello!\nAre you #1?"
+x = txt.isprintable()
+print(x) 
+
 #isspace()	Returns True if all characters in the string are whitespaces
+txt = "   "
+x = txt.isspace()
+print(x) 
+
+txt = "   s   "
+x = txt.isspace()
+print(x) 
+
 #istitle() 	Returns True if the string follows the rules of a title
+#Check if each word start with an upper case letter:
+txt = "Hello, And Welcome To My World!"
+x = txt.istitle()
+print(x) 
+
+a = "HELLO, AND WELCOME TO MY WORLD"
+b = "Hello"
+c = "22 Names"
+d = "This Is %'!?"
+
+print(a.istitle())
+print(b.istitle())
+print(c.istitle())
+print(d.istitle())
+
 #isupper()	Returns True if all characters in the string are upper case
+txt = "THIS IS NOW!"
+x = txt.isupper()
+print(x)
+
+a = "Hello World!"
+b = "hello 123"
+c = "MY NAME IS PETER"
+print(a.isupper())
+print(b.isupper())
+print(c.isupper()) 
+
 #join()	Joins the elements of an iterable to the end of the string
+#Join all items in a tuple into a string, using a hash character as separator:
+myTuple = ("John", "Peter", "Vicky")
+x = "#".join(myTuple)
+print(x) 
+
+#Join all items in a dictionary into a string, using the word "TEST" as separator:
+myDict = {"name": "John", "country": "Norway"}
+mySeparator = "TEST"
+x = mySeparator.join(myDict)
+print(x)
+
 #ljust()	Returns a left justified version of the string
+#Return a 20 characters long, left justified version of the word "banana"
+txt = "banana"
+x = txt.ljust(20)
+print(x, "is my favorite fruit.")
+
+#Using the letter "O" as the padding character:
+txt = "banana"
+x = txt.ljust(20, "O")
+print(x) 
+
 #lower()	Converts a string into lower case
+
 #lstrip()	Returns a left trim version of the string
 #maketrans()	Returns a translation table to be used in translations
 #partition()	Returns a tuple where the string is parted into three parts
