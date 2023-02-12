@@ -393,12 +393,92 @@ x = txt.ljust(20, "O")
 print(x) 
 
 #lower()	Converts a string into lower case
+txt = "Hello my FRIENDS"
+x = txt.lower()
+print(x)
+
 
 #lstrip()	Returns a left trim version of the string
+txt = "     banana     "
+x = txt.lstrip()
+print("of all fruits", x, "is my favorite") 
+
+txt = ",,,,,ssaaww.....banana"
+x = txt.lstrip(",.asw")
+print(x) 
+
 #maketrans()	Returns a translation table to be used in translations
+#Create a mapping table, and use it in the translate() method to replace any "S" characters with a "P" character
+txt = "Hello Sam!"
+mytable = str.maketrans("S", "P")
+print(txt.translate(mytable))
+
+#Use a mapping table to replace many characters
+txt = "Hi Sam!"
+x = "mSa"
+y = "eJo"
+mytable = str.maketrans(x, y)
+print(txt.translate(mytable)) 
+
+#The third parameter in the mapping table describes characters that you want to remove from the string
+txt = "Good night Sam!"
+x = "mSa"
+y = "eJo"
+z = "odnght"
+mytable = str.maketrans(x, y, z)
+print(txt.translate(mytable)) 
+
+#The maketrans() method itself returns a dictionary describing each replacement, in unicode
+txt = "Good night Sam!"
+x = "mSa"
+y = "eJo"
+z = "odnght"
+print(str.maketrans(x, y, z)) 
+
 #partition()	Returns a tuple where the string is parted into three parts
+#Search for the word "bananas", and return a tuple with three elements:
+txt = "I could eat bananas all day"
+x = txt.partition("bananas")
+print(x) 
+
+#If the specified value is not found, the partition() method returns a tuple containing: 1 - the whole string, 2 - an empty string, 3 - an empty string
+txt = "I could eat bananas all day"
+x = txt.partition("apples")
+print(x) 
+
 #replace()	Returns a string where a specified value is replaced with a specified value
+#Replace all occurrence of the word "one":
+txt = "one one was a race horse, two two was one too."
+x = txt.replace("one", "three")
+print(x) 
+
+#Replace the two first occurrence of the word "one"
+txt = "one one was a race horse, two two was one too."
+x = txt.replace("one", "three", 2)
+print(x) 
+
 #rfind()	Searches the string for a specified value and returns the last position of where it was found
+#string
+txt = "Mi casa, su casa."
+x = txt.rfind("casa")
+print(x) 
+
+#letter
+txt = "Hello, welcome to my world."
+x = txt.rfind("e")
+print(x)
+
+#Where in the text is the last occurrence of the letter "e" when you only search between position 5 and 10
+txt = "Hello, welcome to my world."
+x = txt.rfind("e", 5, 10)
+print(x) 
+
+#If the value is not found, the rfind() method returns -1, but the rindex() method will raise an exception
+txt = "Hello, welcome to my world."
+print(txt.rfind("q"))
+print(txt.rindex("q")) 
+
+
 #rindex()	Searches the string for a specified value and returns the last position of where it was found
 #rjust()	Returns a right justified version of the string
 #rpartition()	Returns a tuple where the string is parted into three parts
