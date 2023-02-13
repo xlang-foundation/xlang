@@ -1,0 +1,102 @@
+python
+=================================
+<class 'int'>
+Hello World
+20
+20.5
+1j
+['apple', 'banana', 'cherry']
+('apple', 'banana', 'cherry')
+range(0, 6)
+{'name': 'John', 'age': 36}
+{'apple', 'banana', 'cherry'}
+frozenset({'apple', 'banana', 'cherry'})
+True
+b'Hello'
+bytearray(b'\x00\x00\x00\x00\x00')
+<memory at 0x7f08c58c1cc0>
+None
+Hello World
+20
+20.5
+1j
+['apple', 'banana', 'cherry']
+('apple', 'banana', 'cherry')
+range(0, 6)
+{'name': 'John', 'age': 36}
+{'apple', 'banana', 'cherry'}
+frozenset({'apple', 'banana', 'cherry'})
+True
+b'\x00\x00\x00\x00\x00'
+bytearray(b'\x00\x00\x00\x00\x00')
+<memory at 0x7f08c58c1cc0>
+
+xlang
+=================================
+<class 'int'>
+Hello World
+20
+20.500000
+Error Occurs in line:29
+20.500000
+[
+	apple,
+	banana,
+	cherry
+]
+Error Occurs in line:35
+[
+	apple,
+	banana,
+	cherry
+]
+0
+{
+	age:36,
+	name:John
+}
+{
+	:"",
+	:"",
+	:""
+}
+Error Occurs in line:47
+{
+	:"",
+	:"",
+	:""
+}
+True
+Error Occurs in line:53
+True
+Error Occurs in line:56
+True
+Error Occurs in line:59
+True
+
+"Hello World"
+20
+20.500000
+Error Occurs in line:76
+20.500000
+Error Occurs in line:79
+20.500000
+Error Occurs in line:82
+20.500000
+0
+Error Occurs in line:88
+0
+Error Occurs in line:91
+0
+Error Occurs in line:94
+0
+Error Occurs in line:97
+0
+b'\x02\x05\x00\x00\x00\x00\x00\x00\x00'
+Error Occurs in line:103
+b'\x02\x05\x00\x00\x00\x00\x00\x00\x00'
+Error Occurs in line:106
+b'\x02\x05\x00\x00\x00\x00\x00\x00\x00'
+Left Objects:13
+
+
