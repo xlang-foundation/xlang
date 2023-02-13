@@ -97,6 +97,7 @@ bool Value::operator op (const Value& r) const\
 }
 
 #define BOOL_FLAG -10
+#define CHAR_FLAG -20
 class Value
 {
 	int flags = 0;
@@ -152,6 +153,12 @@ public:
 	{
 		flags = BOOL_FLAG;
 		x.l = x.l>0?1 : 0;
+	}
+	inline Value(char c)
+	{
+		t = ValueType::Int64;
+		flags = CHAR_FLAG;
+		x.l = c;
 	}
 	inline Value(int l)
 	{
