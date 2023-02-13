@@ -42,7 +42,7 @@ namespace X
 			}
 			return true;
 		}
-		bool Decorator::Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
+		bool Decorator::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 		{
 			if (pContext == nullptr)
 			{
@@ -56,7 +56,8 @@ namespace X
 				if (pairL)
 				{//Call Func
 					Value lVal;
-					bOK = pairL->Run(rt, pContext, lVal, lValue);
+					ExecAction action;
+					bOK = pairL->Exec(rt, action,pContext, lVal, lValue);
 					if (!bOK || !lVal.IsObject())
 					{
 						return bOK;

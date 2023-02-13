@@ -10,7 +10,12 @@
 3. choose configuration for example Local Machine/x64-Debug, WSL:Ubuntu/WSL-GCC-Debug  
 4. build ( click on Visual Studio's menu: build/build all) 
 - build from Linux(Ubuntu)  
- TODO:
+1. git clone https://github.com/xlang-foundation/xlang.git
+2. cd xlang
+3. mkdir out
+4. cd out
+5. cmake ..
+6. make
 
 # How to Run
 - go to console window, cd to xlang executable file folder

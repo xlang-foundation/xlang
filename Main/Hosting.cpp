@@ -128,6 +128,31 @@ namespace X
 		pTopModule->DecRef();
 		return true;
 	}
+	bool Hosting::InitRun(AST::Module* pTopModule,X::Value& retVal)
+	{
+		XlangRuntime* pRuntime = new XlangRuntime();
+		pRuntime->SetM(pTopModule);
+		G::I().BindRuntimeToThread(pRuntime);
+
+		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
+		pModuleFrame->SetLine(pTopModule->GetStartLine());
+		pTopModule->AddBuiltins(pRuntime);
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+		X::Value v;
+		X::AST::ExecAction action;
+		bool bOK = pTopModule->Exec(pRuntime, action,nullptr, v);
+		X::Value v1 = pModuleFrame->GetReturnValue();
+		if (v1.IsValid())
+		{
+			retVal = v1;
+		}
+		else
+		{
+			retVal = v;
+		}
+		return bOK;
+
+	}
 	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
 		std::vector<std::string>& passInParams,
 		bool stopOnEntry)
@@ -148,7 +173,8 @@ namespace X
 		pTopModule->AddBuiltins(pRuntime);
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
 		X::Value v;
-		bool bOK = pTopModule->Run(pRuntime, nullptr, v);
+		X::AST::ExecAction action;
+		bool bOK = pTopModule->Exec(pRuntime,action,nullptr, v);
 		pRuntime->PopFrame();
 		X::Value v1 = pModuleFrame->GetReturnValue();
 		if (v1.IsValid())

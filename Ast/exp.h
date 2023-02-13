@@ -42,6 +42,7 @@ enum class ObType
 	CommaOp,
 	SemicolonOp,
 	FeedOp,
+	ActionOp,//for break,continue and pass
 	As,
 	For,
 	While,
@@ -49,6 +50,17 @@ enum class ObType
 	ExternDecl,
 	Thru,
 	Import
+};
+enum class ExecActionType
+{
+	None,
+	Break,
+	Continue,
+};
+
+struct ExecAction
+{
+	ExecActionType type = ExecActionType::None;
 };
 class Func;
 class Scope;
@@ -176,7 +188,7 @@ public:
 	}
 	virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) { return true; }
 	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, ARGS& ary) { return true; }
-	virtual bool Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue=nullptr)
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;
 	}
@@ -274,7 +286,7 @@ public:
 	}
 	bool RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v);
 
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (m_haveFormat)
 		{
@@ -321,7 +333,7 @@ public:
 		stream >> m_tokenIndex;
 		return true;
 	}
-	virtual bool Run(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (m_tokenIndex == TokenIndex::Token_None)
 		{
@@ -367,7 +379,7 @@ public:
 	}
 	inline long long GetVal() { return m_val; }
 	inline int GetDigiNum() { return m_digiNum; }
-	virtual bool Run(XlangRuntime* rt,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		if (m_isBool)

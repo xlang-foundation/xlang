@@ -16,7 +16,8 @@ bool PairOp::ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValu
 	if (L)
 	{//Call Func
 		Value lVal;
-		bOK = L->Run(rt, pContext, lVal, lValue);
+		ExecAction action;
+		bOK = L->Exec(rt,action, pContext, lVal, lValue);
 		if (!bOK || !lVal.IsObject())
 		{
 			return bOK;
@@ -41,7 +42,8 @@ bool PairOp::ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValu
 	{
 		if (R && R->m_type != ObType::List)
 		{
-			bOK = R->Run(rt, pContext, v, lValue);
+			ExecAction action;
+			bOK = R->Exec(rt,action, pContext, v, lValue);
 		}
 	}
 	return bOK;
@@ -52,7 +54,8 @@ bool PairOp::GetItemFromDict(XlangRuntime* rt, XObj* pContext,
 {
 	bool bOK = true;
 	Value key;
-	bOK = r->Run(rt, pContext, key);
+	ExecAction action;
+	bOK = r->Exec(rt,action, pContext, key);
 	if (bOK)
 	{
 		bOK = pDataDict->Get(key, v, lValue);
@@ -72,7 +75,8 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 		for (auto e : list)
 		{
 			Value v1;
-			if (e->Run(rt, pContext, v1))
+			ExecAction action;
+			if (e->Exec(rt,action, pContext, v1))
 			{
 				IdxAry.push_back(v1.GetLongLong());
 			}
@@ -86,7 +90,8 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 	else
 	{
 		Value vIdx;
-		bOK = R->Run(rt, pContext, vIdx);
+		ExecAction action;
+		bOK = R->Exec(rt,action, pContext, vIdx);
 		IdxAry.push_back(vIdx.GetLongLong());
 	}
 	if (bOK)
@@ -104,7 +109,8 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 	if (L)
 	{//usage: x[1,2]
 		Value v0;
-		bOK = L->Run(rt, pContext, v0);
+		ExecAction action;
+		bOK = L->Exec(rt,action, pContext, v0);
 		if (!v0.IsObject())
 		{
 			return false;
@@ -127,7 +133,8 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 			if (pPyObj)
 			{
 				Value vIdx;
-				bOK = R->Run(rt, pContext, vIdx);
+				ExecAction action;
+				bOK = R->Exec(rt,action, pContext, vIdx);
 				pPyObj->GetItem(vIdx.GetLongLong(),v);
 			}
 		}
@@ -146,7 +153,8 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 			for (auto e : list)
 			{
 				Value v;
-				if (e->Run(rt, pContext, v))
+				ExecAction action;
+				if (e->Exec(rt,action, pContext, v))
 				{
 					pDataList->Add(rt, v);
 				}
@@ -160,7 +168,8 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 		else if (R)
 		{
 			Value v;
-			if (R->Run(rt, pContext, v))
+			ExecAction action;
+			if (R->Exec(rt,action, pContext, v))
 			{
 				pDataList->Add(rt, v);
 			}
@@ -187,7 +196,8 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 		}
 		else
 		{
-			keyExpr->Run(rt, pContext, retVal);
+			ExecAction action;
+			keyExpr->Exec(rt,action, pContext, retVal);
 		}
 		return retVal;
 	};
@@ -195,15 +205,16 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 	{
 		Value Key;
 		Value Val;
+		ExecAction action;
 		switch (i->m_type)
 		{
 		case ObType::Param:
 			Key = KeyProc((dynamic_cast<Param*>(i))->GetName());
-			(dynamic_cast<Param*>(i))->GetType()->Run(rt, pContext, Val);
+			(dynamic_cast<Param*>(i))->GetType()->Exec(rt,action, pContext, Val);
 			break;
 		case ObType::Assign:
-			(dynamic_cast<Assign*>(i))->GetL()->Run(rt, pContext, Key);
-			(dynamic_cast<Assign*>(i))->GetL()->Run(rt, pContext, Val);
+			(dynamic_cast<Assign*>(i))->GetL()->Exec(rt,action, pContext, Key);
+			(dynamic_cast<Assign*>(i))->GetL()->Exec(rt,action, pContext, Val);
 			break;
 		case ObType::Var:
 			Key = KeyProc((dynamic_cast<Param*>(i))->GetName());
@@ -269,7 +280,8 @@ bool PairOp::TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 				}
 				auto type1 = assign0->GetL();
 				auto r = assign0->GetR();
-				r->Run(rt, pContext, valDefaultValue);
+				ExecAction action;
+				r->Exec(rt,action, pContext, valDefaultValue);
 			}
 			else if (type0->m_type == ObType::Var)
 			{
@@ -310,7 +322,7 @@ bool PairOp::TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 	v = Value(pDataTable);
 	return true;
 }
-bool PairOp::Run(XlangRuntime* rt,XObj* pContext,Value& v,LValue* lValue)
+bool PairOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	bool bOK = false;
 	switch (opId)

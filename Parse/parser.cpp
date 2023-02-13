@@ -389,123 +389,132 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			m_curBlkState->m_NewLine_WillStart = false;
 			break;
 		}
-		if (idx == TokenLineComment)
+		switch (idx)
 		{
-		}
-		else if (idx == TokenFeedOp)
-		{
-			AST::Operator* op = new AST::FeedOp(s.s, s.size);
-			op->SetTokenIndex(m_tokenIndex++);
-			op->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
-			m_curBlkState->ProcessPrecedenceOp(
-				get_last_token(), op);
-			m_curBlkState->PushOp(op);
-			push_preceding_token(idx);
-			NewLine();
-		}
-		else if (idx == TokenComment|| 
-				idx == TokenStr || 
-				idx == TokenStrWithFormat|| 
-				idx == TokenCharSequence)
-		{
-			m_curBlkState->m_NewLine_WillStart = false;
-			AST::Str* v = nullptr;
-			if (idx == TokenComment)
-			{//skip first """ and last """
-				v = new AST::Str(s.s+3, s.size-6, idx == TokenStrWithFormat);
-			}
-			else
+		case TokenLineComment:
+			break;
+		case TokenFeedOp:
 			{
-				v = new AST::Str(s.s, s.size, idx == TokenStrWithFormat);
-			}
-			v->SetTokenIndex(m_tokenIndex++);
-			v->SetCharFlag(idx == TokenCharSequence);
-			v->SetHint(one.lineStart, one.lineEnd, 
-				one.charPos,one.charStart,one.charEnd);
-			m_curBlkState->PushExp(v);
-			push_preceding_token(idx);
-		}
-		else if (idx == Token_False || idx == Token_True)
-		{
-			AST::Expression* v = new AST::Number(idx== Token_True);
-			v->SetTokenIndex(m_tokenIndex++);
-			v->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart,one.charEnd);
-			m_curBlkState->PushExp(v);
-			push_preceding_token(TokenNum);
-		}
-		else if (idx == Token_None)
-		{
-			AST::Expression* v = new AST::XConst((TokenIndex)idx);
-			v->SetTokenIndex(m_tokenIndex++);
-			v->SetHint(one.lineStart, one.lineEnd, one.charPos,
-				one.charStart,one.charEnd);
-			m_curBlkState->PushExp(v);
-			push_preceding_token(Token_None);
-		}
-		else if (idx == TokenID)
-		{
-			m_curBlkState->m_NewLine_WillStart = false;
-
-			double dVal = 0;
-			long long llVal = 0;
-			ParseState st = ParseNumber(s, dVal, llVal);
-			AST::Expression* v = nil;
-			switch (st)
-			{
-			case X::ParseState::Double:
-				idx = TokenNum;
-				v = new AST::Double(dVal);
-				break;
-			case X::ParseState::Long_Long:
-				idx = TokenNum;
-				v = new AST::Number(llVal, s.size);
-				break;
-			default:
-				//Construct AST::Var
-				v = new AST::Var(s);
-				break;
-			}
-			v->SetTokenIndex(m_tokenIndex++);
-			v->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart, one.charEnd);
-			m_curBlkState->PushExp(v);
-			push_preceding_token(idx);
-		}
-		else
-		{//Operator
-			OpAction opAct = OpAct(idx);
-			if (m_curBlkState->m_NewLine_WillStart)
-			{
-				if (opAct.opId == OP_ID::Tab)
-				{
-					m_curBlkState->m_TabCountAtLineBegin++;
-					continue;
-				}
-				else
-				{
-					m_curBlkState->m_NewLine_WillStart = false;
-				}
-			}
-			AST::Operator* op = nil;
-			if (opAct.process)
-			{
-				op = opAct.process(this, idx);
-			}
-			if (op)
-			{
+				AST::Operator* op = new AST::FeedOp(s.s, s.size);
 				op->SetTokenIndex(m_tokenIndex++);
-				op->SetId(opAct.opId);
-				auto pBlockOp = dynamic_cast<AST::Block*>(op);
-				if (pBlockOp)
-				{//will be used in NewLine function
-					m_lastComingBlock = pBlockOp;
-				}
-				op->SetHint(one.lineStart, one.lineEnd, one.charPos,one.charStart, one.charEnd);
+				op->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
 				m_curBlkState->ProcessPrecedenceOp(
 					get_last_token(), op);
 				m_curBlkState->PushOp(op);
 				push_preceding_token(idx);
+				NewLine();
 			}
-		}
+			break;
+		case TokenComment:
+		case TokenStr:
+		case TokenStrWithFormat:
+		case TokenCharSequence:
+			{
+				m_curBlkState->m_NewLine_WillStart = false;
+				AST::Str* v = nullptr;
+				if (idx == TokenComment)
+				{//skip first """ and last """
+					v = new AST::Str(s.s + 3, s.size - 6, idx == TokenStrWithFormat);
+				}
+				else
+				{
+					v = new AST::Str(s.s, s.size, idx == TokenStrWithFormat);
+				}
+				v->SetTokenIndex(m_tokenIndex++);
+				v->SetCharFlag(idx == TokenCharSequence);
+				v->SetHint(one.lineStart, one.lineEnd,
+					one.charPos, one.charStart, one.charEnd);
+				m_curBlkState->PushExp(v);
+				push_preceding_token(idx);
+			}
+			break;
+		case Token_False:
+		case Token_True:
+			{
+				AST::Expression* v = new AST::Number(idx == Token_True);
+				v->SetTokenIndex(m_tokenIndex++);
+				v->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
+				m_curBlkState->PushExp(v);
+				push_preceding_token(TokenNum);
+			}
+			break;
+		case Token_None:
+			{
+				AST::Expression* v = new AST::XConst((TokenIndex)idx);
+				v->SetTokenIndex(m_tokenIndex++);
+				v->SetHint(one.lineStart, one.lineEnd, one.charPos,
+					one.charStart, one.charEnd);
+				m_curBlkState->PushExp(v);
+				push_preceding_token(Token_None);
+			}
+			break;
+		case TokenID:
+			{
+				m_curBlkState->m_NewLine_WillStart = false;
+
+				double dVal = 0;
+				long long llVal = 0;
+				ParseState st = ParseNumber(s, dVal, llVal);
+				AST::Expression* v = nil;
+				switch (st)
+				{
+				case X::ParseState::Double:
+					idx = TokenNum;
+					v = new AST::Double(dVal);
+					break;
+				case X::ParseState::Long_Long:
+					idx = TokenNum;
+					v = new AST::Number(llVal, s.size);
+					break;
+				default:
+					//Construct AST::Var
+					v = new AST::Var(s);
+					break;
+				}
+				v->SetTokenIndex(m_tokenIndex++);
+				v->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
+				m_curBlkState->PushExp(v);
+				push_preceding_token(idx);
+			}
+			break;
+		default:
+			{//Operator
+				OpAction opAct = OpAct(idx);
+				if (m_curBlkState->m_NewLine_WillStart)
+				{
+					if (opAct.opId == OP_ID::Tab)
+					{
+						m_curBlkState->m_TabCountAtLineBegin++;
+						continue;// while's continue
+					}
+					else
+					{
+						m_curBlkState->m_NewLine_WillStart = false;
+					}
+				}
+				AST::Operator* op = nil;
+				if (opAct.process)
+				{
+					op = opAct.process(this, idx);
+				}
+				if (op)
+				{
+					op->SetTokenIndex(m_tokenIndex++);
+					op->SetId(opAct.opId);
+					auto pBlockOp = dynamic_cast<AST::Block*>(op);
+					if (pBlockOp)
+					{//will be used in NewLine function
+						m_lastComingBlock = pBlockOp;
+					}
+					op->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
+					m_curBlkState->ProcessPrecedenceOp(
+						get_last_token(), op);
+					m_curBlkState->PushOp(op);
+					push_preceding_token(idx);
+				}
+			}//end default
+			break;
+		}//end switch
 	}
 	NewLine();//just call it to process the last line
 	while (m_stackBlocks.size() > 1)

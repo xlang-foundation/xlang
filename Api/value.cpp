@@ -303,6 +303,10 @@ namespace X
 				if(WithFormat) str = (x.l == 1) ? "true" : "false";//Json likes it
 				else str = (x.l == 1) ? "True" : "False";
 			}
+			else if (flags == CHAR_FLAG)
+			{
+				str = (char)x.l;
+			}
 			else
 			{
 				char v[1000];

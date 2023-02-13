@@ -260,7 +260,7 @@ public:
 		KWARGS& kwParams,
 		X::Value& trailer,
 		X::Value& retValue);
-	virtual bool Run(XlangRuntime* rt, XObj* pContext,
+	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
 };
 class ExternFunc
