@@ -2,9 +2,12 @@
 
 #include <jni.h>
 #include <vector>
+#include <unordered_map>
 #include "value.h"
 #include "xpackage.h"
 #include "xlang.h"
+#include "utility.h"
+#include "Locker.h"
 
 namespace X
 {
@@ -72,6 +75,7 @@ namespace X
 		    BEGIN_PACKAGE(UIElement)
 				ADD_BASE(UIBase);
 				APISET().AddFunc<1>("setText", &UIElement::setText);
+                APISET().AddFunc<0>("getText", &UIElement::getText);
                 APISET().AddFunc<1>("setOnClickListener", &UIElement::setOnClickListener);
 			END_PACKAGE
 			UIElement(Page* page):
@@ -80,6 +84,7 @@ namespace X
 
 			}
 			bool setText(std::string txt);
+            std::string getText();
             bool setOnClickListener(X::Value handler);
 		};
 
@@ -90,7 +95,13 @@ namespace X
 			END_PACKAGE
 			TextView(Page* page);
 		};
-
+        class EditText: public UIElement
+        {
+            BEGIN_PACKAGE(UIElement)
+                ADD_BASE(UIElement);
+            END_PACKAGE
+            EditText(Page* page);
+        };
 		class Button: public UIElement
 		{
 			BEGIN_PACKAGE(Button)
@@ -105,6 +116,7 @@ namespace X
 				APISET().AddClass<0, LinearLayout,Page>("LinearLayout");
 				APISET().AddClass<0, ConstraintLayout,Page>("ConstraintLayout");
 				APISET().AddClass<0, TextView,Page>("TextView");
+                APISET().AddClass<0, EditText,Page>("EditText");
 				APISET().AddClass<0, Button,Page>("Button");
 			END_PACKAGE
 			bool Create();
@@ -114,6 +126,7 @@ namespace X
 			}
 			jobject CreateLinearLayout();
 			jobject CreateTextView(std::string txt);
+            jobject CreateEditText(std::string txt);
 			jobject CreateButton(std::string txt);
 			Page(App* pParent): ViewGroup(nullptr)
 			{
@@ -144,7 +157,9 @@ namespace X
 
 		class AndroidWrapper {
 			JNIEnv *m_env = nullptr;
-			jobject m_objHost = nullptr;
+			Locker m_mapLock;
+            jobject m_objHost = nullptr;
+			std::unordered_map<unsigned  int,jobject> m_objHostMap;
 			App* m_app;
 		public:
 		BEGIN_PACKAGE(AndroidWrapper)
@@ -161,25 +176,53 @@ namespace X
 			AndroidWrapper(JNIEnv *env, jobject objHost):
 					AndroidWrapper(){
 				m_env = env;
-				m_objHost = objHost;
+				SetHostPerThread(objHost);
 			}
 
 			~AndroidWrapper() {
-				if (m_env != nullptr && m_objHost != nullptr) {
-					m_env->DeleteGlobalRef(m_objHost);
+				if (m_env != nullptr){
+					for(auto& it:m_objHostMap) {
+						m_env->DeleteGlobalRef(it.second);
+					}
 				}
-				if(m_app)
-				{
+				if(m_app){
 					delete m_app;
 				}
 			}
-
+			void SetHostPerThread(jobject h)
+			{
+                m_objHost = m_env->NewGlobalRef(h);
+                return;
+				AutoLock(m_mapLock);
+				unsigned long tid = GetThreadID();
+				auto it = m_objHostMap.find(tid);
+				if(it !=m_objHostMap.end())
+				{
+					m_env->DeleteGlobalRef(it->second);
+				}
+				jobject newRef = m_env->NewGlobalRef(h);
+				m_objHostMap.emplace(std::make_pair(tid,newRef));
+			}
 			X::Value GetApp() {
 				X::XPackageValue<App> valApp(m_app);
 				return valApp;
 			}
 			JNIEnv* GetEnv() {return m_env;}
-			jobject GetHost() {return m_objHost;}
+			jobject GetHost()
+			{
+                return m_objHost;
+				AutoLock(m_mapLock);
+				unsigned long tid = GetThreadID();
+				auto it = m_objHostMap.find(tid);
+				if(it !=m_objHostMap.end())
+				{
+					return it->second;
+				}
+				else
+				{
+					return nullptr;
+				}
+			}
 			bool Print(std::string info);
 		};
 	}

@@ -2,9 +2,11 @@ package org.xlangfoundation.playground;
 
 import android.app.Fragment;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -30,7 +32,7 @@ public class xlang {
     }
     public  void print(String info)
     {
-
+        Log.v("xlangPrint", info);
     }
     public  void setCurrentModuleKey(long k)
     {
@@ -52,6 +54,12 @@ public class xlang {
         tv.setText(txt);
         return (Object) tv;
     }
+    public  Object createEditText(String txt)
+    {
+        EditText tv =  new EditText(_activity);
+        tv.setText(txt);
+        return (Object) tv;
+    }
     public  Object createButton(String txt)
     {
         Button btn =  new Button(_activity);
@@ -61,7 +69,14 @@ public class xlang {
     }
     public  void setText(Object obj,String txt)
     {
-        ((TextView)obj).setText(txt);
+        if(obj != null)
+        {
+            ((TextView)obj).setText(txt);
+        }
+    }
+    public  String getText(Object obj)
+    {
+        return ((TextView)obj).getText().toString();
     }
     public  void setOnClickListener(Object obj,long handler)
     {
