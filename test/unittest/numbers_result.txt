@@ -1,0 +1,31 @@
+#python
+============================
+<class 'int'>
+<class 'float'>
+<class 'complex'>
+<class 'int'>
+<class 'int'>
+<class 'int'>
+<class 'float'>
+<class 'float'>
+<class 'float'>
+<class 'float'>
+<class 'float'>
+<class 'float'>
+<class 'complex'>
+<class 'complex'>
+<class 'complex'>
+1.0
+2
+(1+0j)
+<class 'float'>
+<class 'int'>
+<class 'complex'>
+3
+
+#xlang
+============================
+errors on line 37, 38, 46, 47, 48, 66
+
+
+

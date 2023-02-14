@@ -1,0 +1,17 @@
+from python
+=======================
+Hello, World0!
+Hello, World1!
+Hello, World2!
+Hello, World4!
+
+
+from xlang
+=======================
+
+Hello, World0!
+Hello, World1!
+Hello, World2!
+Hello, World4!
+Left Objects:13
+
