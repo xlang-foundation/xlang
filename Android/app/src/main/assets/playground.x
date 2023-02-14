@@ -1,11 +1,18 @@
 import android
 app = android.app
+color = app.Color("Red")
+color2 =app.Color([0.3,0.3,0.5,0.6])
 page = app.Page()
+page.setBackgroundColor(app.Color("Yellow"))
 l1 = page.LinearLayout()
 tv = page.TextView()
 tv.setText("Please Input:")
 input1 = page.EditText()
+input1.setTextColor(color2)
+input1.setBackgroundColor(app.Color("Gray"))
 tv2 = page.TextView()
+tv2.setTextColor(color)
+tv.setBackgroundColor(color2)
 tv2.setText("......")
 btn1  = page.Button();
 btn1.setText("Click Me")
