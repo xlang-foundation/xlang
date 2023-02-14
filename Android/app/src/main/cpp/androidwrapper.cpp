@@ -40,8 +40,25 @@ namespace X
             auto* env = aw->GetEnv();
             if(m_object)
             {
-                env->DeleteLocalRef(m_object);
+                env->DeleteGlobalRef(m_object);
             }
+        }
+        std::string UIElement::getText()
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"getText",
+                    "(Ljava/lang/Object;)Ljava/lang/String;");
+            jstring retObj= (jstring)env->CallObjectMethod(host, mId,m_object);
+            const char* szStr = env->GetStringUTFChars( retObj, nullptr );
+            std::string retStr(szStr);
+            env->ReleaseStringUTFChars(retObj,szStr);
+            env->DeleteLocalRef(objClass);
+            env->DeleteLocalRef(retObj);
+            return retStr;
         }
         bool UIElement::setText(std::string txt)
         {
@@ -99,6 +116,10 @@ namespace X
         {
             m_object = m_page->CreateTextView("text view");
         }
+        EditText::EditText(Page* page):UIElement(page)
+        {
+            m_object = m_page->CreateEditText("text view");
+        }
         Button::Button(Page* page):UIElement(page)
         {
             m_object = m_page->CreateButton("click me");
@@ -114,9 +135,26 @@ namespace X
                     "(Ljava/lang/String;)Ljava/lang/Object;");
             jstring jstr = env->NewStringUTF(txt.c_str());
             jobject obj= env->CallObjectMethod(host, mId,jstr);
+            jobject objRef = env->NewGlobalRef(obj);
             env->DeleteLocalRef(objClass);
             env->DeleteLocalRef(jstr);
-            return obj;
+            return objRef;
+        }
+        jobject Page::CreateEditText(std::string txt)
+        {
+            AndroidWrapper* aw = m_app->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"createEditText",
+                    "(Ljava/lang/String;)Ljava/lang/Object;");
+            jstring jstr = env->NewStringUTF(txt.c_str());
+            jobject obj= env->CallObjectMethod(host, mId,jstr);
+            jobject objRef = env->NewGlobalRef(obj);
+            env->DeleteLocalRef(objClass);
+            env->DeleteLocalRef(jstr);
+            return objRef;
         }
         jobject Page::CreateButton(std::string txt) {
             AndroidWrapper* aw = m_app->GetParent();
@@ -128,9 +166,10 @@ namespace X
                     "(Ljava/lang/String;)Ljava/lang/Object;");
             jstring jstr = env->NewStringUTF(txt.c_str());
             jobject obj= env->CallObjectMethod(host, mId,jstr);
+            jobject objRef = env->NewGlobalRef(obj);
             env->DeleteLocalRef(objClass);
             env->DeleteLocalRef(jstr);
-            return obj;
+            return objRef;
         }
         jobject Page::CreateLinearLayout()
         {
@@ -142,8 +181,9 @@ namespace X
                     objClass,"createLinearLayout",
                     "()Ljava/lang/Object;");
             jobject obj= env->CallObjectMethod(host, mId);
+            jobject objRef = env->NewGlobalRef(obj);
             env->DeleteLocalRef(objClass);
-            return obj;
+            return objRef;
         }
 
         bool Page::Create()
@@ -157,7 +197,8 @@ namespace X
                     objClass,"createPage",
                     "(Ljava/lang/String;)Ljava/lang/Object;");
             jstring jstr = env->NewStringUTF(info.c_str());
-            m_object = env->CallObjectMethod(host, mId,jstr);
+            jobject obj = env->CallObjectMethod(host, mId,jstr);
+            m_object = env->NewGlobalRef(obj);
             //env->CallVoidMethod(host, mId, jstr);
             env->DeleteLocalRef(objClass);
             env->DeleteLocalRef(jstr);
@@ -168,7 +209,7 @@ namespace X
         bool AndroidWrapper::Print(std::string info)
         {
             __android_log_print(ANDROID_LOG_INFO, "xlang", "%s", info.c_str());
-#if 0
+#if 1
             jclass objClass = m_env->GetObjectClass(m_objHost);
             jmethodID printId = m_env->GetMethodID(
                     objClass,"print", "(Ljava/lang/String;)V");
@@ -176,6 +217,7 @@ namespace X
             //jobject result = m_env->CallObjectMethod(m_objHost, printId, jstr);
             m_env->CallVoidMethod(m_objHost, printId, jstr);
             m_env->DeleteLocalRef(jstr);
+            m_env->DeleteLocalRef(objClass);
 #endif
             return true;
         }
