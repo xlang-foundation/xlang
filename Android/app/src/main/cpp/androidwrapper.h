@@ -15,6 +15,7 @@ namespace X
 		class AndroidWrapper;
 		class App;
 		class Page;
+		class Color;
 
 		class UIBase
 		{
@@ -23,6 +24,7 @@ namespace X
 			jobject m_object = nullptr;
 			UIBase* m_parent = nullptr;
             BEGIN_PACKAGE(UIBase)
+                APISET().AddFunc<1>("setBackgroundColor", &UIBase::setBackgroundColor);
             END_PACKAGE
 		public:
             inline jobject GetObject() {return m_object;}
@@ -35,13 +37,15 @@ namespace X
 			{
 				m_parent =p;
 			}
-		};
+            bool setBackgroundColor(Color* objColor);
+        };
 		class ViewGroup:
 				public UIBase
 		{
         protected:
 			std::vector<UIBase*> m_kids;
 			BEGIN_PACKAGE(ViewGroup)
+                ADD_BASE(UIBase);
 				APISET().AddFunc<1>("add", &ViewGroup::Add);
 			END_PACKAGE
 			ViewGroup(Page* page):
@@ -75,6 +79,7 @@ namespace X
 		    BEGIN_PACKAGE(UIElement)
 				ADD_BASE(UIBase);
 				APISET().AddFunc<1>("setText", &UIElement::setText);
+				APISET().AddFunc<1>("setTextColor", &UIElement::setTextColor);
                 APISET().AddFunc<0>("getText", &UIElement::getText);
                 APISET().AddFunc<1>("setOnClickListener", &UIElement::setOnClickListener);
 			END_PACKAGE
@@ -84,6 +89,7 @@ namespace X
 
 			}
 			bool setText(std::string txt);
+			bool setTextColor(Color* objColor);
             std::string getText();
             bool setOnClickListener(X::Value handler);
 		};
@@ -109,6 +115,42 @@ namespace X
 			END_PACKAGE
 			Button(Page* page);
 		};
+        class Color
+        {
+		protected:
+			int _color=0;
+            BEGIN_PACKAGE(Color)
+            END_PACKAGE
+            Color(X::ARGS& params, X::KWARGS& kwParams);
+            int getColor(std::string& name)
+            {
+                if(name =="BLACK") return 16777216;
+                else if(name =="BLUE") return -16776961;
+                else if(name =="CYAN") return -16711681;
+                else if(name =="GRAY") return -7829368;
+                else if(name =="GREEN") return -16711936;
+                else if(name =="LTGRAY") return -3355444;
+                else if(name =="MAGENTA") return -65281;
+                else if(name =="RED") return -65536;
+                else if(name =="TRANSPARENT") return 0;
+                else if(name =="WHITE") return -1;
+                else if(name =="YELLOW") return -256;
+                else return -16777216;//black
+            }
+            int getColor(float R,float G,float B,float A)
+            {
+                int r = int(255*R);
+                int g = int(255*G);
+                int b = int(255*B);
+                int a = int(255*A);
+                //argb
+                return (a<<24)|(r<<16)|(g<<8)|b;
+            }
+			int getColor()
+			{
+				return _color;
+			}
+        };
 		class Page: public ViewGroup {
 			App* m_app = nullptr;
 			BEGIN_PACKAGE(Page)
@@ -138,6 +180,7 @@ namespace X
 		class App {
 			AndroidWrapper* m_parent = nullptr;
 			BEGIN_PACKAGE(App)
+				APISET().AddVarClass<Color>("Color","Color");
 				APISET().AddClass<0, Page,App>("Page");
 			END_PACKAGE
 			AndroidWrapper* GetParent()

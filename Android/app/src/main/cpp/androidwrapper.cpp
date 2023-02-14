@@ -1,5 +1,6 @@
 #include "androidwrapper.h"
 #include <android/log.h>
+#include "list.h"
 
 #if 0
 X::Value::operator X::Android::UIBase* () const
@@ -34,6 +35,57 @@ namespace X
 {
     namespace  Android
     {
+        Color::Color(X::ARGS& params, X::KWARGS& kwParams)
+        {
+            if(params.size() ==1 && params[0].IsObject())
+            {
+                auto& p0 = params[0];
+                auto* pObj = p0.GetObj();
+                if(pObj->GetType() == ObjType::Str)
+                {
+                    std::string name = pObj->ToString();
+                    std::transform(name.begin(),
+                                   name.end(), name.begin(),
+                                   [](unsigned char c) { return std::toupper(c); });
+                    _color = getColor(name);
+                }
+                else if(pObj->GetType() == ObjType::List)
+                {
+                    float R =0;
+                    float G =0;
+                    float B =0;
+                    float A =255;
+                    auto* pList = dynamic_cast<X::Data::List*>(pObj);
+                    if(pList->Size()>=3)
+                    {
+                        R = (float)pList->Get(0);
+                        G = (float)pList->Get(1);
+                        B = (float)pList->Get(2);
+                    }
+                    if(pList->Size()>=3)
+                    {
+                        A = (float)pList->Get(3);
+                    }
+                    _color = getColor(R,G,B,A);
+                }
+                else if(pObj->GetType() == ObjType::Dict)
+                {
+
+                }
+            }
+            else if(params.size()>=3)
+            {
+                float R = (float)params[0];
+                float G = (float)params[1];
+                float B = (float)params[2];
+                float A =255;
+                if(params.size()>=4)
+                {
+                    A = (float)params[3];
+                }
+                _color = getColor(R,G,B,A);
+            }
+        }
         UIBase::~UIBase()
         {
             AndroidWrapper* aw = m_page->GetApp()->GetParent();
@@ -59,6 +111,32 @@ namespace X
             env->DeleteLocalRef(objClass);
             env->DeleteLocalRef(retObj);
             return retStr;
+        }
+        bool UIElement::setTextColor(Color* objColor)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"setTextColor",
+                    "(Ljava/lang/Object;I)V");
+            env->CallVoidMethod(host, mId,m_object,objColor->getColor());
+            env->DeleteLocalRef(objClass);
+            return true;
+        }
+        bool UIBase::setBackgroundColor(Color* objColor)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"setBackgroundColor",
+                    "(Ljava/lang/Object;I)V");
+            env->CallVoidMethod(host, mId,m_object,objColor->getColor());
+            env->DeleteLocalRef(objClass);
+            return true;
         }
         bool UIElement::setText(std::string txt)
         {
