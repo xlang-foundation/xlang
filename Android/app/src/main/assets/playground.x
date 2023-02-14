@@ -3,12 +3,12 @@ app = android.app
 page = app.Page()
 l1 = page.LinearLayout()
 tv = page.TextView()
-tv.setText("This is first TextView\nLine2\nLine 3\n------")
+tv.setText("Please Input:")
 input1 = page.EditText()
 tv2 = page.TextView()
-tv2.setText("Sure you are")
+tv2.setText("......")
 btn1  = page.Button();
-btn1.setText("Click me\n click me")
+btn1.setText("Click Me")
 def btn1_onclick():
     info = input1.getText()
     tv2.setText(info)
