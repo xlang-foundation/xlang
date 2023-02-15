@@ -78,9 +78,6 @@ namespace X
 		{
 		    BEGIN_PACKAGE(UIElement)
 				ADD_BASE(UIBase);
-				APISET().AddFunc<1>("setText", &UIElement::setText);
-				APISET().AddFunc<1>("setTextColor", &UIElement::setTextColor);
-                APISET().AddFunc<0>("getText", &UIElement::getText);
                 APISET().AddFunc<1>("setOnClickListener", &UIElement::setOnClickListener);
 			END_PACKAGE
 			UIElement(Page* page):
@@ -88,23 +85,28 @@ namespace X
 			{
 
 			}
-			bool setText(std::string txt);
-			bool setTextColor(Color* objColor);
-            std::string getText();
             bool setOnClickListener(X::Value handler);
 		};
 
 		class TextView: public UIElement
 		{
-		BEGIN_PACKAGE(UIElement)
+		    BEGIN_PACKAGE(TextView)
 				ADD_BASE(UIElement);
+                APISET().AddFunc<1>("setText", &TextView::setText);
+                APISET().AddFunc<1>("setTextColor", &TextView::setTextColor);
+                APISET().AddFunc<0>("getText", &TextView::getText);
+                APISET().AddFunc<2>("setTextSize", &TextView::setTextSize);
 			END_PACKAGE
 			TextView(Page* page);
+            bool setText(std::string txt);
+            bool setTextColor(Color* objColor);
+            std::string getText();
+            bool setTextSize(int unit,float size);
 		};
         class EditText: public UIElement
         {
             BEGIN_PACKAGE(UIElement)
-                ADD_BASE(UIElement);
+                ADD_BASE(TextView);
             END_PACKAGE
             EditText(Page* page);
         };
@@ -115,6 +117,11 @@ namespace X
 			END_PACKAGE
 			Button(Page* page);
 		};
+        class LayoutParams
+        {
+            BEGIN_PACKAGE(LayoutParams)
+            END_PACKAGE
+        };
         class Color
         {
 		protected:

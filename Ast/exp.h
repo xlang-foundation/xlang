@@ -49,7 +49,8 @@ enum class ObType
 	If,
 	ExternDecl,
 	Thru,
-	Import
+	Import,
+	NamespaceVar,
 };
 enum class ExecActionType
 {
@@ -307,6 +308,10 @@ public:
 		}
 	}
 };
+
+//deal with built-in constants such as None
+//But True and False deal by Number not XConst
+
 class XConst :
 	virtual public Expression
 {
@@ -333,7 +338,7 @@ public:
 		stream >> m_tokenIndex;
 		return true;
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (m_tokenIndex == TokenIndex::Token_None)
 		{
@@ -379,7 +384,7 @@ public:
 	}
 	inline long long GetVal() { return m_val; }
 	inline int GetDigiNum() { return m_digiNum; }
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		if (m_isBool)

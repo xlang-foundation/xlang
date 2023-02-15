@@ -7,6 +7,7 @@ page.setBackgroundColor(app.Color("Yellow"))
 l1 = page.LinearLayout()
 tv = page.TextView()
 tv.setText("Please Input:")
+tv.setTextSize(2,30);
 input1 = page.EditText()
 input1.setTextColor(color2)
 input1.setBackgroundColor(app.Color("Gray"))
