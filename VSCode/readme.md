@@ -3,7 +3,7 @@
 * A super glue to easily integrating with other languages such as c++/c, python and javascript and any framework cross operation system barriers.  
 * Running faster than python about 3x-5x  
 
-# start xlang engine
+# Start xlang engine
 - go to https://github.com/xlang-foundation/xlang.bin
 - choose the latest version
 - download to a local folder for example: xlang
@@ -17,7 +17,7 @@
 - will break on the first line
 
 # Example Code
-```xlang
+```python
 
 def test():
     x = "Hello Xlang"
