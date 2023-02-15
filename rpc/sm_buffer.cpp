@@ -347,7 +347,7 @@ namespace X
             }
             MS_SLEEP(100);
             loopNo++;
-            printf("shmget:%llu,Loop:%d\n", key, loopNo);
+            printf("shmget:%llu,Loop:%d\n", shKey, loopNo);
         }
         if (!bSrvReady)
         {
