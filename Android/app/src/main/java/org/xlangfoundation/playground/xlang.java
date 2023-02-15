@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -79,9 +80,20 @@ public class xlang {
             ((TextView)obj).setText(txt);
         }
     }
+    public Object getLayoutParams(Object obj)
+    {
+        //ViewGroup.LayoutParams
+        //LinearLayout.LayoutParams
+        //ConstraintLayout.LayoutParams
+        return ((View)obj).getLayoutParams();
+    }
     public  void setTextColor(Object obj,int color)
     {
         ((TextView)obj).setTextColor(color);
+    }
+    public  void setTextSize(Object obj,int unit, float size)
+    {
+        ((TextView)obj).setTextSize(unit,size);
     }
     public  void setBackgroundColor(Object obj,int color)
     {

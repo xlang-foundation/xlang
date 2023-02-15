@@ -95,7 +95,7 @@ namespace X
                 env->DeleteGlobalRef(m_object);
             }
         }
-        std::string UIElement::getText()
+        std::string TextView::getText()
         {
             AndroidWrapper* aw = m_page->GetApp()->GetParent();
             auto* env = aw->GetEnv();
@@ -112,7 +112,7 @@ namespace X
             env->DeleteLocalRef(retObj);
             return retStr;
         }
-        bool UIElement::setTextColor(Color* objColor)
+        bool TextView::setTextColor(Color* objColor)
         {
             AndroidWrapper* aw = m_page->GetApp()->GetParent();
             auto* env = aw->GetEnv();
@@ -127,6 +127,7 @@ namespace X
         }
         bool UIBase::setBackgroundColor(Color* objColor)
         {
+
             AndroidWrapper* aw = m_page->GetApp()->GetParent();
             auto* env = aw->GetEnv();
             auto* host = aw->GetHost();
@@ -138,7 +139,7 @@ namespace X
             env->DeleteLocalRef(objClass);
             return true;
         }
-        bool UIElement::setText(std::string txt)
+        bool TextView::setText(std::string txt)
         {
             AndroidWrapper* aw = m_page->GetApp()->GetParent();
             auto* env = aw->GetEnv();
@@ -151,6 +152,19 @@ namespace X
             env->CallVoidMethod(host, mId,m_object,jstr);
             env->DeleteLocalRef(objClass);
             env->DeleteLocalRef(jstr);
+            return true;
+        }
+        bool TextView::setTextSize(int unit,float size)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"setTextSize",
+                    "(Ljava/lang/Object;IF)V");
+            env->CallVoidMethod(host, mId,m_object,unit,size);
+            env->DeleteLocalRef(objClass);
             return true;
         }
         bool UIElement::setOnClickListener(X::Value handler)
