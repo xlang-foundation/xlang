@@ -12,7 +12,7 @@
   xlang -dbg -event_loop -enable_python
 
 # In vscode
-- new or open a .x file which use same syntax like python
+- new or open a .x file which uses same syntax like python
 - Click on menu Run/Start Debugging
 - will break on the first line
 
