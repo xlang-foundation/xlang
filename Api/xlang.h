@@ -30,6 +30,7 @@ namespace X
 		Iterator,
 		List,
 		Dict,
+		Complex,
 		TableRow,
 		Table,
 		RemoteObject,
@@ -286,6 +287,12 @@ namespace X
 			Set(k,val);
 		}
 	};
+	class XComplex :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XComplex)
+	};
 	class XBin :
 		virtual public XObj
 	{
@@ -444,6 +451,7 @@ namespace X
 	using Str = V<XStr>;
 	using Dict = V<XDict>;
 	using List = V<XList>;
+	using Complex = V<XComplex>;
 	using Bin = V<XBin>;
 	using Package = V<XPackage>;
 	using Event = V<XEvent>;

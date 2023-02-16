@@ -7,6 +7,7 @@
 #include "package.h"
 #include "dict.h"
 #include "list.h"
+#include "complex.h"
 #include "bin.h"
 #include "BlockStream.h"
 #include "Hosting.h"
@@ -158,6 +159,12 @@ namespace X
 		auto* pDict =  new X::Data::Dict();
 		pDict->IncRef();
 		return pDict;
+	}
+	XComplex* XHost_Impl::CreateComplex()
+	{
+		auto* pComplex =  new X::Data::Complex();
+		pComplex->IncRef();
+		return pComplex;
 	}
 	std::string XHost_Impl::StringifyString(const std::string& str)
 	{
