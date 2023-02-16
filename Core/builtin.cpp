@@ -36,7 +36,7 @@
 #include "runtime.h"
 #include "manager.h"
 #include "typeobject.h"
-
+#include "complex.h"
 
 namespace X
 {
@@ -1010,6 +1010,27 @@ bool U_CreateBaseObject(X::XRuntime* rt, XObj* pContext,
 	retValue = X::Value(pBaseObj);
 	return true;
 }
+
+bool U_CreateComplexObject(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	double real = 0;
+	double imaginary = 0;
+
+	if (params.size() == 1) {
+		real = (double)params[0];	
+	}
+	else if (params.size() >= 2) {
+		real = (double)params[0];
+		imaginary = (double)params[1];
+	}
+	X::Data::Complex* pComplexObj = new X::Data::Complex(real, imaginary);
+	retValue = X::Value(pComplexObj);
+	return true;
+}
+
 bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1109,6 +1130,7 @@ bool Builtin::RegisterInternals()
 	Register("str", (X::U_FUNC)U_ToString, params);
 	Register("type", (X::U_FUNC)U_GetType, params);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
+	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
 	return true;
 }
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)
