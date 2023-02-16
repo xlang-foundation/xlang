@@ -1,19 +1,23 @@
 from xlang_sqlite import sqlite
 
-x ="san jose"
-y ="usa"
+xlang_addr ="some where in usa"
+cantor_addr ="cantor way in usa"
 pushWritepad(sqlite)
-%USE test3;
-%CREATE TABLE COMPANY(\
+#create a database:example and a table: commpany
+
+%USE example;
+%CREATE TABLE company(\
    ID INT PRIMARY KEY     NOT NULL,\
    NAME           TEXT    NOT NULL,\
    AGE            INT     NOT NULL,\
    ADDRESS        CHAR(50),\
-   SALARY         REAL\
+   Score          REAL\
 );
-for i in range(1000):
-	%insert into COMPANY values(${i},'shawn',40,'4797 voltaire',100);
-%Select * from COMPANY;
+%INSERT INTO company VALUES(1,'XLang',2,${xlang_addr},100);
+%INSERT INTO company VALUES(2,'CantorAI',1,${cantor_addr},99.9);
+%SELECT * FROM company;
+%DROP TABLE company;
+
 popWritepad()
 print("end")
 
