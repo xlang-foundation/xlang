@@ -90,6 +90,11 @@ namespace X
 		SetObj(g_pXHost->CreateList());
 	}
 	template<>
+	void V<XComplex>::Create()
+	{
+		SetObj(g_pXHost->CreateComplex());
+	}
+	template<>
 	template<>
 	void V<XStr>::Create(int size)
 	{
