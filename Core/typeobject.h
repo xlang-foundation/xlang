@@ -101,6 +101,9 @@ namespace X
 					case X::ObjType::Dict:
 						strType = "<class 'dict'>";
 						break;
+					case X::ObjType::Complex:
+						strType = "<class 'complex'>";
+						break;
 					case X::ObjType::TableRow:
 						strType = "<class 'tablerow'>";
 						break;
