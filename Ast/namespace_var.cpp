@@ -1,5 +1,5 @@
 #include "namespace_var.h"
-#include "namespacevar_object.h"
+#include "dotop.h"
 
 namespace X
 {
@@ -7,7 +7,53 @@ namespace X
 	{
 		void NamespaceVar::Add(Expression* item)
 		{
-			Scope* pMyScope = GetScope();
+			Block::Add(item);//hold this item into block for releasing this item
+			switch (item->m_type)
+			{
+			case ObType::Assign:
+			{
+				auto* op = dynamic_cast<BinaryOp*>(item);
+				auto* left = op->GetL();
+				if (left->m_type == ObType::Var)
+				{
+					std::string name = (dynamic_cast<Var*>(left))->GetNameString();
+					int index = AddOrGet(name, false);
+					auto* right = op->GetR();
+					if (right)
+					{
+						ExecAction action;
+						X::Value valRight;
+						bool bOK = right->Exec(nullptr, action, nullptr, valRight);
+						if (bOK)
+						{
+							Obj()->Set(index, valRight);
+						}
+					}
+				}
+			}//ObType::Assign
+				break;
+			case ObType::NamespaceVar:
+			{
+				auto* pItem = dynamic_cast<NamespaceVar*>(item);
+				std::string itemName = pItem->GetName();
+				int index = AddOrGet(itemName, false);
+				X::Value valRight = pItem->GetVal();
+				Obj()->Set(index, valRight);
+			}//ObType::NamespaceVar
+				break;
+			default:
+				break;
+			}
+		}
+		void NamespaceVar::AddHhierarchy(Expression* item)
+		{
+			if (item->m_type == ObType::Var)
+			{
+				std::string itemName = dynamic_cast<Var*>(item)->GetNameString();
+				int index = AddOrGet(itemName, false);
+				X::Value valRight;
+				Obj()->Set(index, valRight);
+			}
 		}
 		void NamespaceVar::ScopeLayout()
 		{
@@ -19,6 +65,11 @@ namespace X
 				if (R->m_type == ObType::Var)
 				{
 					strName = dynamic_cast<Var*>(R)->GetNameString();
+				}
+				else if (R->m_type == ObType::Dot)
+				{
+					auto* dotOp = dynamic_cast<DotOp*>(R);
+					strName = dynamic_cast<Var*>(dotOp->GetL())->GetNameString();
 				}
 			}
 			while (pMyScope != nullptr && idx < 0)
@@ -37,9 +88,41 @@ namespace X
 			ExecAction& action, XObj* pContext,
 			Value& v, LValue* lValue)
 		{
-			auto* pObj = new X::Data::NamespaceVarObject();
-			v = X::Value(pObj);
-			return true;
+			bool bOK = true;
+			Set(rt, pContext, m_valObj);//Set Scope Value with m_Index
+			//for Hhierarchy, need to change v;
+			if(R->m_type == ObType::Dot)
+			{
+				auto* dotOp = dynamic_cast<DotOp*>(R);
+				auto* r0 = dotOp->GetR();
+				if (r0->m_type == ObType::Var)
+				{
+					auto* ro_var = dynamic_cast<Var*>(r0);
+					ro_var->SetScope(dynamic_cast<Scope*>(this));
+					ro_var->SetIsLeftValue(true);
+					X::Value defVal;
+					//take a place
+					ro_var->Set(rt, pContext, defVal);
+					ExecAction action0;
+					bOK = r0->Exec(rt, action0,pContext, v, lValue);
+				}
+				else if (r0->m_type == ObType::Dot)
+				{
+					auto* r0_dot = dynamic_cast<DotOp*>(r0);
+					auto* pChildNamespaceVar = new NamespaceVar(getOp());
+					pChildNamespaceVar->SetR(r0);
+					pChildNamespaceVar->SetScope(this);
+					Block::Add(pChildNamespaceVar);//hold this item into block for releasing this item
+					ExecAction action0;
+					bOK = pChildNamespaceVar->Exec(rt, action0, pContext, v, lValue);
+					pChildNamespaceVar->SetR(nullptr); // don't let be deleted twice
+				}
+			}
+			else
+			{
+				v = m_valObj;
+			}
+			return bOK;
 		}
 	}
 }
