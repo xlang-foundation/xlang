@@ -36,14 +36,16 @@ void RegisterOps(OpRegistry* reg)
 	})
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
 		v = L;
+		v.Clone();
 		v -= R;
 		return true;
 	});
 	RegOP("*")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
-			v = L;
-			v *= R;
-			return true;
+		v = L;
+		v.Clone();
+		v *= R;
+		return true;
 	});
 	RegOP(".")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
@@ -62,6 +64,7 @@ void RegisterOps(OpRegistry* reg)
 		if (!R.IsZero())
 		{
 			v = L;
+			v.Clone();
 			v /= R;
 			return true;
 		}
