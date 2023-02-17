@@ -12,6 +12,7 @@
 #include "pipeop.h"
 #include "import.h"
 #include "module.h"
+#include "complex.h"
 
 namespace X 
 {
@@ -463,6 +464,14 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 			bMeetSlash = false;
 		}
 	}
+	return true;
+}
+
+bool ImaginaryNumber::Exec(XlangRuntime* rt, ExecAction& action,
+	XObj* pContext, Value& v, LValue* lValue)
+{
+	X::Data::Complex* pComplexObj = new X::Data::Complex(0, m_val);
+	v = X::Value(pComplexObj);
 	return true;
 }
 bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v)

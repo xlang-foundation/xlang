@@ -9,7 +9,8 @@ namespace X
 		Null,
 		Non_Number,
 		Double,
-		Long_Long
+		Long_Long,
+		Complex
 	};
 	ParseState ParseHexBinOctNumber(String& str);
 	ParseState ParseNumber(String& str,

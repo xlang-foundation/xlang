@@ -830,6 +830,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 			evaluateName: '$' + v.Name
 		};
 		switch (v.Type) {
+			case 'None':
+				dapVariable.value = "None";
+				dapVariable.type = 'None';
+				break;
 			case 'Int64':
 				dapVariable.value = v.Val.toString();
 				dapVariable.type = 'integer';

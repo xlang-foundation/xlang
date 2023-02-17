@@ -49,7 +49,8 @@ enum class ObType
 	If,
 	ExternDecl,
 	Thru,
-	Import
+	Import,
+	NamespaceVar,
 };
 enum class ExecActionType
 {
@@ -307,6 +308,10 @@ public:
 		}
 	}
 };
+
+//deal with built-in constants such as None
+//But True and False deal by Number not XConst
+
 class XConst :
 	virtual public Expression
 {
@@ -333,7 +338,7 @@ public:
 		stream >> m_tokenIndex;
 		return true;
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (m_tokenIndex == TokenIndex::Token_None)
 		{
@@ -379,7 +384,7 @@ public:
 	}
 	inline long long GetVal() { return m_val; }
 	inline int GetDigiNum() { return m_digiNum; }
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		if (m_isBool)
@@ -422,6 +427,36 @@ public:
 	}
 	inline double GetVal() { return m_val; }
 };
+//Only the imaginary  part for Complex
+class ImaginaryNumber :
+	virtual public Expression
+{
+	double m_val = 0;
+public:
+	ImaginaryNumber()
+	{
+		m_type = ObType::Double;
+	}
+	ImaginaryNumber(double val)
+	{
+		m_val = val;
+		m_type = ObType::Double;
+	}
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
+	{
+		Expression::ToBytes(rt, pContext, stream);
+		stream << m_val;
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream)
+	{
+		Expression::FromBytes(stream);
+		stream >> m_val;
+		return true;
+	}
+	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+};
+
 class List :
 	virtual public Expression
 {

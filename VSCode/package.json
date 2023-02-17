@@ -1,11 +1,11 @@
 {
   "name": "xlang",
   "displayName": "xlang",
-  "version": "0.50.0",
+  "version": "0.65.0",
   "publisher": "cantorai",
   "description": "xlang's debugger and more",
   "author": {
-    "name": "CantorAI Inc."
+    "name": "The XLang Foundation"
   },
   "license": "MIT",
   "keywords": [
@@ -22,10 +22,10 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-xlang.git"
+    "url": "https://github.com/xlang-foundation/xlang.git"
   },
   "bugs": {
-    "url": "https://github.com/Microsoft/vscode-xlang/issues"
+    "url": "https://github.com/xlang-foundation/xlang/issues"
   },
   "scripts": {
     "compile": "tsc -p ./",

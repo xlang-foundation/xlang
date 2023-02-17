@@ -11,6 +11,7 @@
 #include "lex.h"
 #include "decor.h"
 #include "op_registry.h"
+#include "namespace_var.h"
 
 namespace X {
 
@@ -132,6 +133,7 @@ void Register(OpRegistry* reg)
 		"except", "finally", "for",
 		"from", "global", "if", "import","thru",
 		"in", "is", "lambda", "nonlocal",
+		"const","var","namespace",//same meaning
 		"not", "or", "pass", "raise", "return",
 		"try", "while", "with", "yield");
 	RegOP("extern", "nonlocal","global")
@@ -191,6 +193,11 @@ void Register(OpRegistry* reg)
 			auto func = new AST::Func();
 			return (AST::Operator*)func;
 		});
+	RegOP("const", "var","namespace")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto nmVar = new AST::NamespaceVar(opIndex);
+		return (AST::Operator*)nmVar;
+			});
 	RegOP("class")
 		.SetProcess([](Parser* p, short opIndex) {
 		auto cls = new AST::XClass();
@@ -375,6 +382,8 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_High);
 	RegOP(".", "..", "...")
 		.SetPrecedence(Precedence_High1);
+	RegOP("const", "var")
+		.SetPrecedence(Precedence_Reqular + 1);
 	RegOP("*", "/", "%", "**", "//")
 		.SetPrecedence(Precedence_Reqular + 1);
 	RegOP("as")
