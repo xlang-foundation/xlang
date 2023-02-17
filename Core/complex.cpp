@@ -129,7 +129,8 @@ namespace X
 				strOut += std::to_string(m_real);
 			}
 			if (m_imaginary !=0) {
-				strOut += "+";
+				if (m_imaginary > 0)
+				    strOut += "+";
 				strOut += std::to_string(m_imaginary);
 				strOut += "j";
 			}
