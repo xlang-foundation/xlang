@@ -18,6 +18,12 @@ namespace X
 			~Complex()
 			{
 			}
+			virtual XObj* Clone() override
+			{
+				auto* newObj = new Complex(m_real, m_imaginary);
+				newObj->IncRef();
+				return newObj;
+			}
 			virtual Complex& operator+=( X::Value& val) override;
 			virtual Complex& operator-=( X::Value& val) override;
 			virtual Complex& operator*=( X::Value& val) override;

@@ -29,6 +29,7 @@ namespace X
 		char* end = str.s + str.size;
 		int it = 0;
 		bool meetDot = false;
+		bool meetJ = false;
 		bool correctSyntax = true;
 		char* p = str.s;
 		while (p < end)
@@ -50,6 +51,10 @@ namespace X
 				meetDot = true;
 				it++;
 			}
+			else if (c == 'j' && (p==end))//last one is j
+			{
+				meetJ = true;
+			}
 			else
 			{
 				//error
@@ -62,18 +67,27 @@ namespace X
 			if (meetDot)
 			{
 				dVal = (double)primary[1];
+				//todo: faster way?
 				for (int i = 0; i < digit_cnt[1]; i++)
 				{
 					dVal /= 10;
 				}
 				dVal += primary[0];
-				st = ParseState::Double;
+				st = meetJ? ParseState::Complex:ParseState::Double;
 			}
 			else
 			{
 				llVal = primary[0];
 				dVal = digit_cnt[0];//reuse for count of digits
-				st = ParseState::Long_Long;
+				if (meetJ)
+				{
+					st = ParseState::Complex;
+					dVal = llVal;
+				}
+				else
+				{
+					st = ParseState::Long_Long;
+				}
 			}
 		}
 		return st;
