@@ -466,6 +466,10 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 					idx = TokenNum;
 					v = new AST::Number(llVal, s.size);
 					break;
+				case X::ParseState::Complex:
+					idx = TokenNum;
+					v = new AST::ImaginaryNumber(dVal);
+					break;
 				default:
 					//Construct AST::Var
 					v = new AST::Var(s);

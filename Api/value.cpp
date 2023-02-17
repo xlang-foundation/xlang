@@ -21,29 +21,38 @@ namespace X
 		//	ReleaseObject(x.obj);
 		//}
 		flags = v.flags;
-		switch (t)
+		if (t == ValueType::Object)
 		{
-		case ValueType::Int64:
-			x.l += ToInt64(v);
-			break;
-		case ValueType::Double:
-			x.d += ToDouble(v);
-			break;
-		case ValueType::Str:
-			x.str = v.x.str;
-			ChangeToStrObject();
-			break;
-		case ValueType::Object:
-		{
-			if (t == ValueType::Object)
-			{
-				Value v0 = v;
-				(*((XObj*)x.obj)) += v0;
-			}
+			Value v0;
+			//don't change V
+			v0 += v;
+			(*((XObj*)x.obj)) += v0;
 		}
-		break;
-		default:
-			break;
+		else if (v.IsObject())
+		{
+			Value v0 = v;
+			v0 += *this;
+			t = ValueType::Object;
+			AssignObject(v0.GetObj());
+		}
+		else
+		{
+			switch (t)
+			{
+			case ValueType::Int64:
+				x.l += ToInt64(v);
+				break;
+			case ValueType::Double:
+				x.d += ToDouble(v);
+				break;
+			case ValueType::Str:
+				x.str = v.x.str;
+				ChangeToStrObject();
+				break;
+			default:
+				*this = v;
+				break;
+			}
 		}
 	}
 #if 0
