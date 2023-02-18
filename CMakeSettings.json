@@ -74,17 +74,6 @@
       "remoteCopySourcesMethod": "rsync"
     },
     {
-      "name": "x86-Clang-Release",
-      "generator": "Ninja",
-      "configurationType": "RelWithDebInfo",
-      "buildRoot": "${projectDir}\\out\\build\\${name}",
-      "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "",
-      "ctestCommandArgs": "",
-      "inheritEnvironments": [ "clang_cl_x86" ]
-    },
-    {
       "name": "WSL-GCC-Release",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
@@ -95,8 +84,7 @@
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "linux_x64" ],
-      "wslPath": "${defaultWSLPath}",
-      "variables": []
+      "wslPath": "${defaultWSLPath}"
     }
   ]
 }

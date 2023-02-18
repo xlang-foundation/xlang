@@ -5,6 +5,7 @@
 #include <string>
 #include <regex>
 #include <sstream>
+#include <iterator>
 #include "constexpr.h"
 namespace X
 {

@@ -9,13 +9,22 @@
 2. use Visual Studio to open this xlang folder  
 3. choose configuration for example Local Machine/x64-Debug, WSL:Ubuntu/WSL-GCC-Debug  
 4. build ( click on Visual Studio's menu: build/build all) 
+
 - build from Linux(Ubuntu)  
+## if want to enable xlang to call python libs directly  
+    sudo apt-get install python3-dev
+    and also need to pip install numpy
+    if not want to enable this feature, 
+    just comment out line below in CMakeLists.txt in root folder
+    add_subdirectory("PyEng")
+
 1. git clone https://github.com/xlang-foundation/xlang.git
 2. cd xlang
 3. mkdir out
 4. cd out
 5. cmake ..
 6. make
+
 
 # How to Run
 - go to console window, cd to xlang executable file folder

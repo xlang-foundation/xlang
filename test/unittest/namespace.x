@@ -1,10 +1,14 @@
 const xlang.ca.san_jose.jack.OK =10.33
+
+namespace x.y:
+	z =1
+
 const xlang.ca.san_jose.shawn.OK =3.141
 print("ca.san_jose.shawn.OK=",xlang.ca.san_jose.shawn.OK)
 const xlang.ca.san_jose.jack.OK =100120.33
 print("ca.san_jose.shawn.OK(changed)=",xlang.ca.san_jose.shawn.OK)
 print("ca.san_jose.jack.OK=",xlang.ca.san_jose.jack.OK)
-|-xlang:
+|- xlang:
 	class class_test():
 		def func_in_class(x,y,z):
 			print("xyz in func_in_class of class_test:",x,y,z)
@@ -14,7 +18,7 @@ print("ca.san_jose.jack.OK=",xlang.ca.san_jose.jack.OK)
 		return x+y+z
 	version = 1.0
 	Maker = "The Xlang Foundation"
-	|-Contributes:
+	|- Contributes:
 		Jack = 100
 		var Others:
 			QA_IDs = [119,200]
