@@ -110,6 +110,14 @@ std::string Func::getcode(bool includeHead)
 }
 bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
+	if (m_Index == -1)
+	{
+		ScopeLayout();
+		if (m_Index == -1)
+		{
+			return false;
+		}
+	}
 	Data::Function* f = new Data::Function(this);
 	//owned by Block
 	Value v0(f);//hold one refcount

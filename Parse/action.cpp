@@ -136,7 +136,7 @@ void Register(OpRegistry* reg)
 		"except", "finally", "for",
 		"from", "global", "if", "import","thru",
 		"in", "is", "lambda", "nonlocal",
-		"const","var","namespace",//same meaning
+		"const","var","namespace","|-",//same meaning
 		"not", "or", "pass", "raise", "return",
 		"try", "while", "with", "yield");
 	RegOP("extern", "nonlocal","global")
@@ -196,7 +196,7 @@ void Register(OpRegistry* reg)
 			auto func = new AST::Func();
 			return (AST::Operator*)func;
 		});
-	RegOP("const", "var","namespace")
+	RegOP("const", "var","namespace", "|-")
 		.SetProcess([](Parser* p, short opIndex) {
 		auto nmVar = new AST::NamespaceVar(opIndex);
 		return (AST::Operator*)nmVar;

@@ -95,6 +95,14 @@ bool XClass::Get(XlangRuntime* rt,XObj* pContext, int idx, Value& v, LValue* lVa
 }
 bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LValue* lValue)
 {
+	if (m_Index == -1)
+	{
+		ScopeLayout();
+		if (m_Index == -1)
+		{
+			return false;
+		}
+	}
 	m_stackFrame = new StackFrame(this);
 	m_stackFrame->SetVarCount((int)m_Vars.size());
 	for (auto it : m_tempMemberList)

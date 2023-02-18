@@ -14,15 +14,14 @@ namespace X
 	namespace Data
 	{
 		class NamespaceVarObject :
-			public virtual Object
+			public virtual Object,
+			public virtual AST::Scope
 		{
 			AST::StackFrame* m_stackFrame = nullptr;
-			AST::NamespaceVar* m_nmVar = nullptr;
 		public:
-			NamespaceVarObject(AST::NamespaceVar* nmVar)
+			NamespaceVarObject()
 			{
-				m_nmVar = nmVar;
-				m_stackFrame = new AST::StackFrame((AST::Scope*)m_nmVar);
+				m_stackFrame = new AST::StackFrame(this);
 			}
 			~NamespaceVarObject()
 			{
@@ -32,19 +31,31 @@ namespace X
 				}
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases);
+			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+				int idx, X::Value& v, LValue* lValue = nullptr)
+			{
+				m_stackFrame->Get(idx, v, lValue);
+				return true;
+			}
 			bool Get(int idx, X::Value& v, LValue* lValue)
 			{
 				m_stackFrame->Get(idx, v, lValue);
 				return true;
 			}
-			void Set(int index, X::Value& val)
+			void AddSlotTo(int index)
 			{
 				if (index >= m_stackFrame->GetVarCount())
 				{
 					m_stackFrame->SetVarCount(index + 1);
 				}
+			}
+			void Set(int index, X::Value& val)
+			{
 				m_stackFrame->Set(index, val);
 			}
+
+			// Inherited via Scope
+			virtual Scope* GetParentScope() override { return nullptr; }
 		};
 	}
 }
