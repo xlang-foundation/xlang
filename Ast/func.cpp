@@ -113,7 +113,8 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	if (m_Index == -1)
 	{
 		ScopeLayout();
-		if (m_Index == -1)
+		//for lambda function, no name, so skip this check
+		if (m_Name.size >0 && m_Index == -1)
 		{
 			return false;
 		}
