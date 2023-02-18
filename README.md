@@ -11,19 +11,23 @@
 4. build ( click on Visual Studio's menu: build/build all) 
 
 - build from Linux(Ubuntu)  
-## if want to enable xlang to call python libs directly  
-    sudo apt-get install python3-dev
-    and also need to pip install numpy
-    if not want to enable this feature, 
-    just comment out line below in CMakeLists.txt in root folder
-    add_subdirectory("PyEng")
-
-1. git clone https://github.com/xlang-foundation/xlang.git
-2. cd xlang
-3. mkdir out
-4. cd out
-5. cmake ..
-6. make
+    ## Prerequisites  
+        sudo apt-get install uuid-dev  
+    ## for openssl required by http plugin
+        sudo apt-get install libssl-dev
+    ## if want to enable xlang to call python libs directly  
+        sudo apt-get install python3-dev
+        and also need to pip install numpy
+        if not want to enable this feature, 
+        just comment out line below in CMakeLists.txt in root folder
+        add_subdirectory("PyEng")
+    ## Steps to build
+        1. git clone https://github.com/xlang-foundation/xlang.git
+        2. cd xlang
+        3. mkdir out
+        4. cd out
+        5. cmake ..
+        6. make
 
 
 # How to Run
@@ -41,7 +45,3 @@
 1. in Windows, install Android Studio
 2. open project from folder xlang\Android
 3. then build from Android Stduio menu: Build/Make Project
-
-#
-
-
