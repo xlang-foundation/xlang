@@ -1,9 +1,9 @@
 #pragma once
 #include "block.h"
 #include <assert.h> 
-#include "scope.h"
 #include "namespacevar_object.h"
 #include "dotop.h"
+
 namespace X
 {
 	namespace AST
@@ -13,57 +13,67 @@ namespace X
 			virtual public Scope
 		{
 			int m_Index = -1;
-			X::Value m_valObj;//Hold an object of NamespaceVarObject
+			X::Value m_obj;
 		public:
 			NamespaceVar() :
-				Block(), UnaryOp(), Operator(), Scope()
+				Block(), UnaryOp(), Operator()
 			{
-				Init();
 				m_type = ObType::NamespaceVar;
 			}
 			NamespaceVar(short op) :
-				Block(), UnaryOp(), Operator(op), Scope()
+				Block(), UnaryOp(), Operator(op)
 			{
-				Init();
 				m_type = ObType::NamespaceVar;
 			}
 			~NamespaceVar()
 			{
 
 			}
-			inline void Init()
-			{
-				if (m_valObj.IsInvalid())
-				{
-					m_valObj = new X::Data::NamespaceVarObject(this);
-				}
-			}
-			inline X::Data::NamespaceVarObject* Obj()
-			{
-				return dynamic_cast<X::Data::NamespaceVarObject*>(m_valObj.GetObj());
-			}
 			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v)
 			{
-				assert(idx != -1);
-				Obj()->Set(idx, v);
-				return true;
-			}
-			inline virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override
-			{
-				if (m_Index == -1)
+				if (m_obj.IsObject())
 				{
-					ScopeLayout();
-					assert(m_Index != -1 && m_scope != nullptr);
+					auto* pNameObj = dynamic_cast<Data::NamespaceVarObject*>(m_obj.GetObj());
+					pNameObj->Set(idx, v);
+					return true;
 				}
-				return m_scope->Set(rt, pContext, m_Index, v);
+				else
+				{
+					return false;
+				}
 			}
 			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, LValue* lValue = nullptr)
 			{
-				return Obj()->Get(idx, v, lValue);
+				if (m_obj.IsObject())
+				{
+					auto* pNameObj = dynamic_cast<Data::NamespaceVarObject*>(m_obj.GetObj());
+					return pNameObj->Get(idx,v,lValue);
+				}
+				else
+				{
+					return false;
+				}
+
 			}
-			inline X::Value& GetVal() { return m_valObj; }
+			virtual int AddOrGet(std::string& name, bool bGetOnly)
+			{
+				if (m_obj.IsObject())
+				{
+					auto* pNameObj = dynamic_cast<Data::NamespaceVarObject*>(m_obj.GetObj());
+					int idx = pNameObj->AddOrGet(name, bGetOnly);
+					if (idx >= 0)
+					{
+						pNameObj->AddSlotTo(idx);
+					}
+					return idx;
+				}
+				else
+				{
+					return -1;
+				}
+			}
 			inline std::string GetName()
 			{
 				if (R)
@@ -107,16 +117,9 @@ namespace X
 				Value& v, LValue* lValue = nullptr) override;
 
 			// Inherited via Scope
-			virtual Scope* GetParentScope() override
-			{
-				if (m_parent && m_parent->m_type == ObType::NamespaceVar)
-				{
-					return dynamic_cast<Scope*>(m_parent);
-				}
-				else
-				{
-					return nullptr;
-				}
+			virtual Scope* GetParentScope() override 
+			{ 
+				return FindScope(); 
 			}
 		};
 	}
