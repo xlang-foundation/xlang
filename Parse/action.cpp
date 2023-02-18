@@ -385,7 +385,7 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_High);
 	RegOP(".", "..", "...")
 		.SetPrecedence(Precedence_High1);
-	RegOP("const", "var")
+	RegOP("const", "var","namespace", "|-")
 		.SetPrecedence(Precedence_Reqular + 1);
 	RegOP("*", "/", "%", "**", "//")
 		.SetPrecedence(Precedence_Reqular + 1);

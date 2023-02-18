@@ -1,14 +1,11 @@
-const xlang.ca.san_jose.jack.OK =10.33
-
-namespace x.y:
-	z =1
-
+namespace xlang.ca.san_jose.jack.OK =10.33
+print("xlang.ca.san_jose.jack.OK=",xlang.ca.san_jose.jack.OK)
 const xlang.ca.san_jose.shawn.OK =3.141
 print("ca.san_jose.shawn.OK=",xlang.ca.san_jose.shawn.OK)
 const xlang.ca.san_jose.jack.OK =100120.33
 print("ca.san_jose.shawn.OK(changed)=",xlang.ca.san_jose.shawn.OK)
 print("ca.san_jose.jack.OK=",xlang.ca.san_jose.jack.OK)
-|- xlang:
+namespace xlang:
 	class class_test():
 		def func_in_class(x,y,z):
 			print("xyz in func_in_class of class_test:",x,y,z)

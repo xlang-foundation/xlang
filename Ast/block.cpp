@@ -37,7 +37,7 @@ bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, 
 {
 	if (Body.size() == 0)
 	{
-		return false;
+		return true;
 	}
 	bool bOk = true;
 	m_bRunning = true;
