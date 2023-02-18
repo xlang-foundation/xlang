@@ -24,7 +24,7 @@ namespace X
 		class Tensor:
 			virtual public Object
 		{
-
+			
 		};
 	}
 }
