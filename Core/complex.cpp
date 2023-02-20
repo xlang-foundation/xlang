@@ -7,17 +7,18 @@ namespace X
 {
 	namespace Data
 	{
-		Complex::Complex():XComplex(0){
+		Complex::Complex():XComplex(0),Object(){
 			m_t = ObjType::Complex;
 			m_real = 0;
 			m_imaginary = 0;
 		}
-		Complex::Complex(double real, double imaginary):XComplex(0){
+		Complex::Complex(double real, double imaginary):XComplex(0),Object(){
 			m_t = ObjType::Complex;
 			m_real = real;
 			m_imaginary = imaginary;
 		}
-		Complex::Complex(Complex& val):XComplex(0) {
+
+		Complex::Complex(Complex& val):XComplex(0),Object() {
 			m_t = ObjType::Complex;
 			m_real = val.m_real;
 			m_imaginary = val.m_imaginary;

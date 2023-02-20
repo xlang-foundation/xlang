@@ -25,6 +25,8 @@ namespace X
 			UIBase* m_parent = nullptr;
             BEGIN_PACKAGE(UIBase)
                 APISET().AddFunc<1>("setBackgroundColor", &UIBase::setBackgroundColor);
+				APISET().AddFunc<4>("setPadding", &UIBase::setPadding);
+                APISET().AddFunc<4>("setMargins", &UIBase::setMargins);
             END_PACKAGE
 		public:
             inline jobject GetObject() {return m_object;}
@@ -33,6 +35,8 @@ namespace X
 				m_page = page;
 			}
 			~UIBase();
+			bool setPadding(int left, int top, int right, int bottom);
+            bool setMargins(int left, int top, int right, int bottom);
 			void SetParent(UIBase* p)
 			{
 				m_parent =p;
@@ -239,6 +243,7 @@ namespace X
 					delete m_app;
 				}
 			}
+			void AddPlugins();
 			void SetHostPerThread(jobject h)
 			{
                 m_objHost = m_env->NewGlobalRef(h);

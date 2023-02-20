@@ -1,3 +1,7 @@
+from xlang_os import fs
+print(fs.abc)
+xy = fs.init(100,200)
+print("(out)xy=",xy)
 namespace xlang.ca.san_jose.jack.OK =10.33
 print("xlang.ca.san_jose.jack.OK=",xlang.ca.san_jose.jack.OK)
 const xlang.ca.san_jose.shawn.OK =3.141

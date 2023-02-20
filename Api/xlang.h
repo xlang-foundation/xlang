@@ -370,6 +370,7 @@ namespace X
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(int idx, Value& v) = 0;
 		virtual void RemoveALl() = 0;
+		virtual bool RunCodeWithThisScope(std::string& code) = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)
 	{

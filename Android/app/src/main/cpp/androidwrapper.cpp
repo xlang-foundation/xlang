@@ -1,6 +1,7 @@
 #include "androidwrapper.h"
 #include <android/log.h>
 #include "list.h"
+#include "androidApi.x"
 
 #if 0
 X::Value::operator X::Android::UIBase* () const
@@ -35,6 +36,11 @@ namespace X
 {
     namespace  Android
     {
+        void AndroidWrapper::AddPlugins()
+        {
+            std::string code(Android_Plugin_Code);
+            APISET().GetPack()->RunCodeWithThisScope(code);
+        }
         Color::Color(X::ARGS& params, X::KWARGS& kwParams)
         {
             if(params.size() ==1 && params[0].IsObject())
@@ -94,6 +100,27 @@ namespace X
             {
                 env->DeleteGlobalRef(m_object);
             }
+        }
+        bool UIBase::setPadding(int left, int top, int right, int bottom)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            jclass objClass = env->GetObjectClass(m_object);
+            jmethodID mId = env->GetMethodID(objClass,"setPadding","(IIII)V");
+            env->CallVoidMethod(m_object, mId,left,top,right,bottom);
+            env->DeleteLocalRef(objClass);
+            return true;
+        }
+        bool UIBase::setMargins(int left, int top, int right, int bottom)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(objClass,"setMargins","(Ljava/lang/Object;IIII)V");
+            env->CallVoidMethod(host, mId,m_object,left,top,right,bottom);
+            env->DeleteLocalRef(objClass);
+            return true;
         }
         std::string TextView::getText()
         {
