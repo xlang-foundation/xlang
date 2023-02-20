@@ -23,6 +23,7 @@ namespace X
 		virtual XProp* CreateProp(const char* name, U_FUNC setter, U_FUNC getter) override;
 		virtual XDict* CreateDict() override;
 		virtual XList* CreateList() override;
+		virtual XSet* CreateSet() override;
 		virtual XComplex* CreateComplex() override;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) override;
 		virtual std::string StringifyString(const std::string& str) override;

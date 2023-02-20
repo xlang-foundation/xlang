@@ -105,6 +105,12 @@ namespace X
 	}
 	template<>
 	template<>
+	void V<XSet>::Create()
+	{
+		SetObj(g_pXHost->CreateSet());
+	}
+	template<>
+	template<>
 	void V<XStr>::Create(int size)
 	{
 		SetObj(g_pXHost->CreateStr(nullptr, size));
