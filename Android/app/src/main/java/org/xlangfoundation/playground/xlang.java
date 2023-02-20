@@ -6,6 +6,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -27,7 +28,7 @@ public class xlang {
         System.loadLibrary("xlang");
     }
     private AppCompatActivity _activity;
-    private View _curPage;
+    private View _curPage = null;
     private  long _curModuleKey =0;
     public  xlang(AppCompatActivity activity)
     {
@@ -49,14 +50,37 @@ public class xlang {
     {
         LinearLayout layout = new LinearLayout(_activity);
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setLayoutParams(new ViewGroup.LayoutParams(
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
+                ViewGroup.LayoutParams.MATCH_PARENT);
+        lp.gravity= Gravity.CENTER;
+        //lp.setMargins(100, 20, 100, 10);
+        //layout.setPadding(100,20,100,10);
+        layout.setLayoutParams(lp);
         return (Object)layout;
+    }
+    public void setMargins (Object obj, int l, int t, int r, int b)
+    {
+        View v = (View)obj;
+        if (v.getLayoutParams() instanceof ViewGroup.MarginLayoutParams)
+        {
+            ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)v.getLayoutParams();
+            p.setMargins(l, t, r, b);
+            v.setLayoutParams(p);
+        }
+        else
+        {
+            ViewGroup.MarginLayoutParams p = new ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+            p.setMargins(l, t, r, b);
+            v.setLayoutParams(p);
+        }
     }
     public  Object createTextview(String txt)
     {
         TextView tv =  new TextView(_activity);
+        tv.setWidth(200);
         tv.setText(txt);
         return (Object) tv;
     }
@@ -71,6 +95,9 @@ public class xlang {
         Button btn =  new Button(_activity);
         btn.setTextColor(Color.RED);
         btn.setText(txt);
+        btn.setWidth(100);
+        //setMargins(btn,100,100,100,100);
+        btn.setGravity(Gravity.CENTER);
         return (Object) btn;
     }
     public  void setText(Object obj,String txt)
@@ -133,6 +160,10 @@ public class xlang {
             }
         });
     }
+    public void SetCurrentPage(View v)
+    {
+        _curPage = v;
+    }
     public  View GetCurrentPage()
     {
         return _curPage;
@@ -143,8 +174,12 @@ public class xlang {
     }
     public Object createPage(String title)
     {
+        if(_curPage != null)
+        {
+            return _curPage;
+        }
         ConstraintLayout layout = new ConstraintLayout(_activity);
-        layout.setId(100);
+        //layout.setId(100);
         ConstraintLayout.LayoutParams params =
                 new ConstraintLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,

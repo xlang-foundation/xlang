@@ -33,6 +33,10 @@ namespace X {
 		{
 			m_lock.Unlock();
 		}
+		virtual bool RunCodeWithThisScope(std::string& code) override
+		{
+			return true;
+		}
 		void Cleanup();
 		Data::Function* Find(std::string& name);
 		bool Register(const char* name, X::U_FUNC func,

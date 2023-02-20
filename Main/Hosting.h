@@ -77,6 +77,7 @@ namespace X
 		AppEventCode HandleAppEvent(int signum);
 		AST::Module* Load(std::string& moduleName,
 			const char* code, int size,unsigned long long& moduleKey);
+		AST::Module* LoadWithScope(AST::Scope* pScope,const char* code, int size);
 		X::Value NewModule();
 		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,X::Value& retVal);
 		bool InitRun(AST::Module* pTopModule,X::Value& retVal);

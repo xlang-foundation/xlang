@@ -94,6 +94,18 @@ namespace X
 	{
 		X::Value m_curModule;
 	public:
+		void Run()
+		{
+			std::string code = R"(
+				xyz =10
+				abc ="this is a string"
+				def init(x,y):
+					f = File("1.txt","w")
+					f.close()
+					return x+y
+			)";
+			APISET().GetPack()->RunCodeWithThisScope(code);
+		}
 		void SetModule(X::Value curModule)
 		{
 			m_curModule = curModule;

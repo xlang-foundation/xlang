@@ -21,9 +21,13 @@ Java_org_xlangfoundation_playground_xlang_loadJNI(
     //{
     //    env->GetJavaVM(&jvm);
     //}
+    //jclass txtV_cls = env->FindClass ( "TextView" );
+    //jobject obj = env->NewObjectV ( clazz );
+
     _android = new X::Android::AndroidWrapper(env, objHost);
     X::XLangStaticLoad();
     X::RegisterPackage<X::Android::AndroidWrapper>("android",_android);
+    _android->AddPlugins();
     return true;
 };
 extern "C" JNIEXPORT jlong JNICALL

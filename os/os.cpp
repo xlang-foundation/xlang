@@ -19,6 +19,8 @@ extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 	X::FileSystem::I().SetModule(curModule);
 	X::RegisterPackage<X::FileSystem>("fs", &X::FileSystem::I());
 	X::RegisterPackage<X::Utils>("utils");
+
+	X::FileSystem::I().Run();
 }
 extern "C"  X_EXPORT void Unload()
 {
