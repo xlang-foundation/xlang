@@ -37,6 +37,7 @@
 #include "manager.h"
 #include "typeobject.h"
 #include "complex.h"
+#inlcude "set.h"
 
 namespace X
 {
@@ -1031,6 +1032,26 @@ bool U_CreateComplexObject(X::XRuntime* rt, XObj* pContext,
 	return true;
 }
 
+bool U_CreateSetObject(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	double real = 0;
+	double imaginary = 0;
+
+	if (params.size() == 1) {
+		real = (double)params[0];	
+	}
+	else if (params.size() >= 2) {
+		real = (double)params[0];
+		imaginary = (double)params[1];
+	}
+	X::Data::Set* pSetObj = new X::Data::Set();
+	retValue = X::Value(pSetObj);
+	return true;
+}
+
 bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1131,6 +1152,7 @@ bool Builtin::RegisterInternals()
 	Register("type", (X::U_FUNC)U_GetType, params);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
+	Register("set", (X::U_FUNC)U_CreateSet, params);
 	return true;
 }
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)
