@@ -37,7 +37,7 @@
 #include "manager.h"
 #include "typeobject.h"
 #include "complex.h"
-#inlcude "set.h"
+#include "set.h"
 
 namespace X
 {
