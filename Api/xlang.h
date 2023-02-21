@@ -31,6 +31,7 @@ namespace X
 		List,
 		Dict,
 		Complex,
+		Set,
 		TableRow,
 		Table,
 		RemoteObject,
