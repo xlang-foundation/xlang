@@ -3,6 +3,8 @@
 #include "list.h"
 #include "androidApi.x"
 
+
+
 #if 0
 X::Value::operator X::Android::UIBase* () const
 {
@@ -108,6 +110,16 @@ namespace X
             jclass objClass = env->GetObjectClass(m_object);
             jmethodID mId = env->GetMethodID(objClass,"setPadding","(IIII)V");
             env->CallVoidMethod(m_object, mId,left,top,right,bottom);
+            env->DeleteLocalRef(objClass);
+            return true;
+        }
+        bool UIBase::setGravity(int gravity)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            jclass objClass = env->GetObjectClass(m_object);
+            jmethodID mId = env->GetMethodID(objClass,"setGravity","(I)V");
+            env->CallVoidMethod(m_object, mId,gravity);
             env->DeleteLocalRef(objClass);
             return true;
         }

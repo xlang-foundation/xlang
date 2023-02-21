@@ -27,10 +27,11 @@ l1.add(tv)
 l1.add(input1)
 l1.add(btn1)
 btn1.setMargins(100,100,100,100);
-tv.setMargins(100,100,100,100);
+tv.setMargins(0,100,100,100);
 l1.setPadding(100,20,100,10)
 l1.add(tv2)
 page.add(l1)
+l1.setGravity(android.Gravity.LEFT)
 
 def test(info):
    android.print('from test func:${info}')
