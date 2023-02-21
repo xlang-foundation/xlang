@@ -1142,6 +1142,7 @@ bool Builtin::RegisterInternals()
 	Register("each", (X::U_FUNC)U_Each, params, "", true);
 	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, "", true);
 	Register("to_xlang", (X::U_FUNC)U_To_XObj, params, "to_xlang", true);
+
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
 	Register("get_modulebykey", (X::U_FUNC)U_GetModuleFromKey, params);
@@ -1152,7 +1153,7 @@ bool Builtin::RegisterInternals()
 	Register("type", (X::U_FUNC)U_GetType, params);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
-	Register("set", (X::U_FUNC)U_CreateSet, params);
+	Register("set", (X::U_FUNC)U_CreateSetObject, params);
 	return true;
 }
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)
