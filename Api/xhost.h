@@ -40,6 +40,9 @@ namespace X
 	using EventHandler = std::function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;
 	using OnEventHandlerChanged = std::function<void(bool AddOrRemove,int handlerCnt)>;
+
+	typedef bool (*UI_THREAD_RUN_HANDLER) (X::Value& context,X::Value& callable,X::ARGS& args, X::KWARGS& kwParams);
+
 	class XHost
 	{
 	public:
@@ -86,6 +89,8 @@ namespace X
 		virtual bool SetExpressionScope(XCustomScope* pScope, X::Value& expr) = 0;
 		virtual bool RunExpression(X::Value& expr, X::Value& result) = 0;
 		virtual bool ExtractNativeObjectFromRemoteObject(X::Value& remoteObj, X::Value& nativeObj) = 0;
+		virtual void RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler) = 0;
+		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() = 0;
 	};
 	extern XHost* g_pXHost;
 }

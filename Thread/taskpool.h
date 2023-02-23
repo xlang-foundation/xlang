@@ -49,8 +49,13 @@ namespace X
 				m_t = ObjType::TaskPool;
 			}
 			~TaskPool();
+			virtual bool Call(XRuntime* rt, XObj* pContext,
+				ARGS& params,
+				KWARGS& kwParams,
+				X::Value& retValue) override;
 			void CancelAll();
 			Task* GetTaskToRun();
+			bool RunTaskInUIThread(Task* pTask);
 			bool RunTask(Task* pTask);
 			bool IsUIThread() { return m_IsInUIThread; }
 			void SetInUIThread(bool b)
