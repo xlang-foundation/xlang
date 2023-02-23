@@ -63,6 +63,7 @@ void Func::ScopeLayout()
 			int idx = AddOrGet(strVarName, false);
 			m_IndexofParamList.push_back(idx);
 		}
+		Params->ScopeLayout();
 	}
 }
 std::string Func::getcode(bool includeHead)
@@ -155,7 +156,8 @@ bool Func::Call(XRuntime* rt0,
 	KWARGS& kwParams,
 	Value& retValue)
 {
-	XlangRuntime* rt = G::I().Threading((XlangRuntime*)rt0);
+	auto* rt_from = (XlangRuntime*)rt0;
+	XlangRuntime* rt = G::I().Threading(rt_from);
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
 	StackFrame* frame = new StackFrame(this);
 	for (auto& kw : kwParams)

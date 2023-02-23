@@ -152,6 +152,7 @@ namespace X
 	{
 		XlangRuntime* pRuntime = new XlangRuntime();
 		pRuntime->SetM(pTopModule);
+		pTopModule->SetRT(pRuntime);
 		G::I().BindRuntimeToThread(pRuntime);
 
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();

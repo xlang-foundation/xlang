@@ -72,7 +72,8 @@ Java_org_xlangfoundation_playground_xlang_callJNI(
     X::ARGS args;
     X::KWARGS kwargs;
     X::Value retVal;
-    pObj->Call(pCurModule->GetRT(), nullptr,args,kwargs,retVal);
+    X::XRuntime* rt0 = (X::XRuntime*)pCurModule->GetRT();
+    pObj->Call(rt0, nullptr,args,kwargs,retVal);
     //jvm->DetachCurrentThread();
     return true;
 };

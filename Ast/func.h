@@ -38,7 +38,6 @@ protected:
 		}
 		ReCalcHint(n);
 	}
-	virtual void ScopeLayout() override;
 	virtual void SetScope(Scope* p) override
 	{
 		Expression::SetScope(p);
@@ -65,6 +64,12 @@ protected:
 		Params = p;
 		if (Params)
 		{
+			//all parameters must set as left value
+			auto& list = Params->GetList();
+			for (auto& l : list)
+			{
+				l->SetIsLeftValue(true);
+			}
 			ReCalcHint(Params);
 			Params->SetParent(this);
 		}
@@ -93,6 +98,7 @@ public:
 #endif
 		m_decors.clear();
 	}
+	virtual void ScopeLayout() override;
 	std::string getcode(bool includeHead = false);
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
@@ -236,6 +242,9 @@ public:
 			//not be used anymore, so delete it
 			delete pair;
 		}
+		//only accept once
+		NeedParam = false;
+
 	}
 
 	void SetRetType(Expression* p)

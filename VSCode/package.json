@@ -64,6 +64,7 @@
   },
   "main": "./dist/extension.js",
   "activationEvents": [
+    "onStartupFinished",
     "onLanguage:xlang",
     "onDebugResolve:xlang",
     "onDebugDynamicConfigurations:xlang",

@@ -27,6 +27,7 @@ namespace X
                 APISET().AddFunc<1>("setBackgroundColor", &UIBase::setBackgroundColor);
 				APISET().AddFunc<4>("setPadding", &UIBase::setPadding);
                 APISET().AddFunc<4>("setMargins", &UIBase::setMargins);
+				APISET().AddFunc<1>("setGravity", &UIBase::setGravity);
             END_PACKAGE
 		public:
             inline jobject GetObject() {return m_object;}
@@ -35,6 +36,7 @@ namespace X
 				m_page = page;
 			}
 			~UIBase();
+			bool setGravity(int gravity);
 			bool setPadding(int left, int top, int right, int bottom);
             bool setMargins(int left, int top, int right, int bottom);
 			void SetParent(UIBase* p)
