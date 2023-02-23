@@ -38,6 +38,54 @@ namespace X
 {
     namespace  Android
     {
+
+        bool UIThreadRun(X::Value& callable,void* pContext)
+        {
+            AndroidWrapper* aw =(AndroidWrapper*)pContext;
+            aw->AddUICall(callable);
+            return true;
+        }
+        bool AndroidWrapper::PostCallToJavaUIThread()
+        {
+            JNIEnv* env = nullptr;
+            m_jvm->AttachCurrentThread(&env, nullptr);
+            jclass objClass = env->GetObjectClass(m_objHost);
+            jmethodID mid = env->GetMethodID(
+                    objClass,"PostCallFromUIThread", "()V");
+            env->CallVoidMethod(m_objHost, mid);
+            env->DeleteLocalRef(objClass);
+            m_jvm->DetachCurrentThread();
+            return true;
+        }
+        void AndroidWrapper::CallFromUIThread()
+        {
+            while (true)
+            {
+                X::Value callable;
+                m_uiCallLock.Lock();
+                if (m_uiCalls.size() > 0)
+                {
+                    callable = m_uiCalls[0];
+                    m_uiCalls.erase(m_uiCalls.begin());
+                }
+                m_uiCallLock.Unlock();
+                if (callable.IsObject())
+                {
+                    X::Value retVal;
+                    X::ARGS args;
+                    X::KWARGS kwargs;
+                    callable.GetObj()->Call(nullptr,nullptr,args, kwargs, retVal);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        void AndroidWrapper::Init()
+        {
+            X::g_pXHost->RegisterUIThreadRunHandler(UIThreadRun,this);
+        }
         void AndroidWrapper::AddPlugins()
         {
             std::string code(Android_Plugin_Code);

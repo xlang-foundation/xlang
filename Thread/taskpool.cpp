@@ -84,11 +84,8 @@ namespace X
 			UI_THREAD_RUN_HANDLER callHandler = g_pXHost->GetUIThreadRunHandler();
 			if (callHandler)
 			{
-				X::Value context;
 				X::Value callable(this);
-				X::ARGS args;
-				X::KWARGS  kwargs;
-				callHandler(context, callable, args, kwargs);
+				callHandler(callable, g_pXHost->GetUIThreadRunContext());
 			}
 			return true;
 		}
