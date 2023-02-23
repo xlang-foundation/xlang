@@ -163,7 +163,7 @@ namespace X
 	}
 	XSet* XHost_Impl::CreateSet()
 	{
-		auto* pSet =  new X::Data::Set();
+		auto* pSet =  new X::Data::mSet();
 		pSet->IncRef();
 		return pSet;
 	}
