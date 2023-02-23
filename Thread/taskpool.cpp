@@ -33,6 +33,7 @@ namespace X
 			std::cout << "TaskPool::~TaskPool()";
 			CancelAll();
 		}
+
 		void TaskPool::CancelAll()
 		{
 			m_lock.Lock();
@@ -64,8 +65,39 @@ namespace X
 			m_lock.Unlock();
 			return pTsk;
 		}
+		bool TaskPool::Call(XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
+		{
+			Task* pTsk = GetTaskToRun();
+			while (pTsk)
+			{
+				pTsk->run();
+				pTsk = GetTaskToRun();
+			}
+			return true;
+		}
+		bool TaskPool::RunTaskInUIThread(Task* pTask)
+		{
+			m_lock.Lock();
+			m_tasks.push_back(pTask);
+			m_lock.Unlock();
+			UI_THREAD_RUN_HANDLER callHandler = g_pXHost->GetUIThreadRunHandler();
+			if (callHandler)
+			{
+				X::Value context;
+				X::Value callable(this);
+				X::ARGS args;
+				X::KWARGS  kwargs;
+				callHandler(context, callable, args, kwargs);
+			}
+			return true;
+		}
 		bool TaskPool::RunTask(Task* pTask)
 		{
+			if (m_IsInUIThread)
+			{
+				return RunTaskInUIThread(pTask);
+			}
 			m_lock.Lock();
 			m_tasks.push_back(pTask);
 

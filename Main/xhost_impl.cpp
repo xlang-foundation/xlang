@@ -408,4 +408,12 @@ namespace X
 	{
 		return RemoteObjectStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
 	}
+	void XHost_Impl::RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler)
+	{
+		m_uiThreadRunHandler = handler;
+	}
+	UI_THREAD_RUN_HANDLER XHost_Impl::GetUIThreadRunHandler()
+	{
+		return m_uiThreadRunHandler;
+	}
 }
