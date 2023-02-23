@@ -14,6 +14,7 @@ include_directories("../Ast")
 include_directories("../Parse")
 include_directories("../Serialize")
 include_directories("../rpc")
+include_directories("../Thread")
 include_directories("../Ext")
 include_directories("../Core")
 include_directories("../Text")
@@ -26,6 +27,7 @@ FILE(GLOB Core_SRC "../Core/*.cpp")
 FILE(GLOB Ast_SRC "../Ast/*.cpp")
 FILE(GLOB Serialize_SRC "../Serialize/*.cpp")
 FILE(GLOB Parse_SRC "../Parse/*.cpp")
+FILE(GLOB Thread_SRC "../Thread/*.cpp")
 FILE(GLOB Ext_SRC "../Ext/*.cpp")
 FILE(GLOB Text_SRC "../Text/*.cpp")
 FILE(GLOB Rpc_SRC "../rpc/*.cpp")
@@ -38,6 +40,7 @@ add_library(${PROJECT_NAME} SHARED
 	${Ast_SRC}
 	${Parse_SRC}
 	${Serialize_SRC}
+	${Thread_SRC}
 	${Ext_SRC}
 	${Text_SRC}
 	${Rpc_SRC}

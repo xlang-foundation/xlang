@@ -27,6 +27,7 @@ namespace X
 		Package,
 		ModuleObject,
 		Future,
+		TaskPool,
 		Iterator,
 		List,
 		Dict,

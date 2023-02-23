@@ -63,6 +63,7 @@ void Func::ScopeLayout()
 			int idx = AddOrGet(strVarName, false);
 			m_IndexofParamList.push_back(idx);
 		}
+		Params->ScopeLayout();
 	}
 }
 std::string Func::getcode(bool includeHead)

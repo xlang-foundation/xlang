@@ -282,35 +282,6 @@ namespace Data {
 		}
 	};
 
-	class Future:
-		public virtual Object
-	{
-		void* m_pTask = nullptr;
-	public:
-		Future()
-		{
-			m_t = ObjType::Future;
-		}
-		Future(void* task)
-			:Future()
-		{
-			m_pTask = task;
-		}
-		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue) override
-		{
-			return false;
-		}
-		virtual std::string ToString(bool WithFormat = false)
-		{
-			char v[1000];
-			snprintf(v, sizeof(v), "Future:%llu",
-				(long long)this);
-			return v;
-		}
-	};
-
 }
 }
 

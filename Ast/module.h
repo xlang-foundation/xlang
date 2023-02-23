@@ -64,7 +64,7 @@ class Module :
 	virtual public Block,
 	virtual public Scope
 {
-	XlangRuntime* m_pRuntime;//for top module, we need it
+	XlangRuntime* m_pRuntime=nullptr;//for top module, we need it
 	PrimitiveInfo m_primitives[(int)module_primitive::Count];
 	Locker m_lockSearchPath;
 	std::vector<std::string> m_searchPaths;
