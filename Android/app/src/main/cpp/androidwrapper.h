@@ -212,11 +212,14 @@ namespace X
 
 
 		class AndroidWrapper {
+            JavaVM* m_jvm = nullptr;
 			JNIEnv *m_env = nullptr;
 			Locker m_mapLock;
             jobject m_objHost = nullptr;
 			std::unordered_map<unsigned  int,jobject> m_objHostMap;
 			App* m_app;
+            Locker m_uiCallLock;
+            std::vector<X::Value> m_uiCalls;
 		public:
 		BEGIN_PACKAGE(AndroidWrapper)
                 APISET().AddClass<0, App>("App");
@@ -228,13 +231,25 @@ namespace X
 			AndroidWrapper() {
 				m_app = new App(this);
 			}
-
+            void SetJVM(JavaVM* jvm)
+            {
+                m_jvm = jvm;
+            }
 			AndroidWrapper(JNIEnv *env, jobject objHost):
 					AndroidWrapper(){
 				m_env = env;
 				SetHostPerThread(objHost);
 			}
-
+            void AddUICall(X::Value& c)
+            {
+                m_uiCallLock.Lock();
+                m_uiCalls.push_back(c);
+                m_uiCallLock.Unlock();
+				PostCallToJavaUIThread();
+            }
+			void Init();
+			bool PostCallToJavaUIThread();
+			void CallFromUIThread();
 			~AndroidWrapper() {
 				if (m_env != nullptr){
 					for(auto& it:m_objHostMap) {

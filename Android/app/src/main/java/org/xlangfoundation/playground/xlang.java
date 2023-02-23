@@ -2,6 +2,8 @@ package org.xlangfoundation.playground;
 
 import android.app.Fragment;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -100,6 +102,15 @@ public class xlang {
         btn.setGravity(Gravity.CENTER);
         return (Object) btn;
     }
+    public  void PostCallFromUIThread()
+    {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                callFromUIThreadJNI();
+            }
+        });
+    }
     public  void setText(Object obj,String txt)
     {
         if(obj != null)
@@ -192,5 +203,6 @@ public class xlang {
     public native long loadModuleJNI(String code);
     public native boolean runJNI(String code);
     public  native boolean callJNI(long moduleKey,long callable,Object[] params );
+    public  native boolean callFromUIThreadJNI();
     public native boolean unloadJNI();
 }

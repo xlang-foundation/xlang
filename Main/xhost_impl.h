@@ -7,6 +7,7 @@ namespace X
 		public XHost
 	{
 		UI_THREAD_RUN_HANDLER m_uiThreadRunHandler = nullptr;
+		void* m_uiThreadRunContext = nullptr;
 	public:
 		virtual void AddSysCleanupFunc(CLEANUP f) override;
 		virtual XRuntime* CreateRuntime() override;
@@ -51,8 +52,9 @@ namespace X
 		virtual bool SetExpressionScope(XCustomScope* pScope, X::Value& expr) override;
 		virtual bool RunExpression(X::Value& expr, X::Value& result) override;
 		virtual bool ExtractNativeObjectFromRemoteObject(X::Value& remoteObj, X::Value& nativeObj) override;
-		virtual void RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler) override;
+		virtual void RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler, void* pContext) override;
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() override;
+		virtual void* GetUIThreadRunContext() override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

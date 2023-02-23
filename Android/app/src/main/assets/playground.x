@@ -1,4 +1,7 @@
 import android
+uiTaskPool = taskpool(run_in_ui=True)
+taskPool = taskpool(10)
+
 app = android.app
 color = app.Color("Red")
 color2 =app.Color([0.3,0.3,0.5,0.6])
@@ -19,9 +22,21 @@ tv2.setText(android.AppInfo.Title)
 btn1  = page.Button();
 #btn1.setPadding(0,50,0,50)
 btn1.setText("Click Me")
+
+def sleep_fn(info):
+	print("before sleep","tid=",threadid())
+	sleep(5000)
+	print("after sleep","tid=",threadid())
+	return info
+def tv2_setText(info):
+	tv2.setText(info)
 def btn1_onclick():
     info = input1.getText()
-    tv2.setText(info)
+    sleep_fn.taskrun(taskPool,info).then((r){
+        print("r=",r,"tid=",threadid());
+        tv2_setText.taskrun(uiTaskPool,r);
+    })
+    #tv2.setText(info)
 btn1.setOnClickListener(btn1_onclick)
 l1.add(tv)
 l1.add(input1)
