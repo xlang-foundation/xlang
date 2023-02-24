@@ -291,6 +291,11 @@ namespace X
         {
             m_object = m_page->CreateLinearLayout();
         }
+        ScrollView::ScrollView(Page* page):
+                ViewGroup(page)
+        {
+            m_object = m_page->CreateScrollView();
+        }
         TextView::TextView(Page* page):UIElement(page)
         {
             m_object = m_page->CreateTextView("text view");
@@ -299,9 +304,9 @@ namespace X
         {
             m_object = m_page->CreateEditText("text view");
         }
-        Button::Button(Page* page):UIElement(page)
+        Button::Button(Page* page):TextView(page)
         {
-            m_object = m_page->CreateButton("click me");
+            m_object = m_page->CreateButton("");
         }
         jobject Page::CreateTextView(std::string txt)
         {
@@ -364,7 +369,20 @@ namespace X
             env->DeleteLocalRef(objClass);
             return objRef;
         }
-
+        jobject Page::CreateScrollView()
+        {
+            AndroidWrapper* aw = m_app->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"createScrollview",
+                    "()Ljava/lang/Object;");
+            jobject obj= env->CallObjectMethod(host, mId);
+            jobject objRef = env->NewGlobalRef(obj);
+            env->DeleteLocalRef(objClass);
+            return objRef;
+        }
         bool Page::Create()
         {
             std::string info("default");
@@ -384,7 +402,19 @@ namespace X
             return  true;
 
         }
-
+        bool App::ShowPage(Page* pPage)
+        {
+            AndroidWrapper* aw = GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"showPage",
+                    "(Ljava/lang/Object;)V");
+            env->CallVoidMethod(host, mId,pPage->GetObject());
+            env->DeleteLocalRef(objClass);
+            return true;
+        }
         bool AndroidWrapper::Print(std::string info)
         {
             __android_log_print(ANDROID_LOG_INFO, "xlang", "%s", info.c_str());

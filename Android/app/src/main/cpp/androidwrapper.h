@@ -77,7 +77,12 @@ namespace X
 
 			}
 		};
-
+		class ScrollView: public ViewGroup{
+			BEGIN_PACKAGE(ScrollView)
+					ADD_BASE(ViewGroup);
+			END_PACKAGE
+			ScrollView(Page* page);
+		};
 		//UI Element
 		class UIElement:
 				public UIBase
@@ -116,10 +121,10 @@ namespace X
             END_PACKAGE
             EditText(Page* page);
         };
-		class Button: public UIElement
+		class Button: public TextView
 		{
 			BEGIN_PACKAGE(Button)
-				ADD_BASE(UIElement);
+				ADD_BASE(TextView);
 			END_PACKAGE
 			Button(Page* page);
 		};
@@ -169,6 +174,7 @@ namespace X
 			BEGIN_PACKAGE(Page)
 				ADD_BASE(ViewGroup);
 				APISET().AddClass<0, LinearLayout,Page>("LinearLayout");
+                APISET().AddClass<0, ScrollView,Page>("ScrollView");
 				APISET().AddClass<0, ConstraintLayout,Page>("ConstraintLayout");
 				APISET().AddClass<0, TextView,Page>("TextView");
                 APISET().AddClass<0, EditText,Page>("EditText");
@@ -180,6 +186,7 @@ namespace X
 				return m_app;
 			}
 			jobject CreateLinearLayout();
+            jobject CreateScrollView();
 			jobject CreateTextView(std::string txt);
             jobject CreateEditText(std::string txt);
 			jobject CreateButton(std::string txt);
@@ -195,6 +202,7 @@ namespace X
 			BEGIN_PACKAGE(App)
 				APISET().AddVarClass<Color>("Color","Color");
 				APISET().AddClass<0, Page,App>("Page");
+                APISET().AddFunc<1>("showPage", &App::ShowPage);
 			END_PACKAGE
 			AndroidWrapper* GetParent()
 			{
@@ -208,6 +216,7 @@ namespace X
 			{
 				m_parent = pParent;
 			}
+            bool ShowPage(Page* pPage);
 		};
 
 

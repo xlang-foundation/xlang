@@ -118,8 +118,8 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         //androidx.appcompat.widget.Toolbar myToolbar = findViewById(R.id.toolbar);
-        ConstraintLayout rootLayout = findViewById(R.id.mainContent);
-        _xlang.SetCurrentPage(rootLayout);
+        ConstraintLayout rootLayout = findViewById(R.id.main_content_holder);
+        _xlang.SetContentHolder(rootLayout);
         //ViewGroup rootView = (ViewGroup)_xlang.GetCurrentPage();
         //setContentView(rootView);
         long moduleKey = _xlang.loadModuleJNI(code);
