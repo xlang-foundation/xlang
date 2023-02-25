@@ -18,24 +18,33 @@ bool PairOp::ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValu
 		Value lVal;
 		ExecAction action;
 		bOK = L->Exec(rt,action, pContext, lVal, lValue);
-		if (!bOK || !lVal.IsObject())
+		if (!bOK)
 		{
 			return bOK;
 		}
-		ARGS params;
-		KWARGS kwParams;
-		if (R)
+		//to support this case :)
+		//x =(3+4)(), for this one, xlang thinks it is just like x =3+4
+		if (!lVal.IsObject())
 		{
-			bOK = GetParamList(rt, R, params, kwParams);
-			if (!bOK)
-			{
-				return bOK;
-			}
+			v = lVal;
 		}
-		Data::Object* obj = dynamic_cast<Data::Object*>(lVal.GetObj());
-		if (obj)
+		else
 		{
-			bOK = obj->Call(rt, pContext,params, kwParams, v);
+			ARGS params;
+			KWARGS kwParams;
+			if (R)
+			{
+				bOK = GetParamList(rt, R, params, kwParams);
+				if (!bOK)
+				{
+					return bOK;
+				}
+			}
+			Data::Object* obj = dynamic_cast<Data::Object*>(lVal.GetObj());
+			if (obj)
+			{
+				bOK = obj->Call(rt, pContext, params, kwParams, v);
+			}
 		}
 	}
 	else

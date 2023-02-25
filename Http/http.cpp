@@ -12,6 +12,82 @@ namespace X
 	}
 	void HttpServer::Init(bool asHttps)
 	{
+		auto ProcessRequestUrl = [this](std::string url,
+			const httplib::Request& req,
+			httplib::Response& res)
+		{
+			bool bHandled = false;
+			ARGS params0;
+			HttpRequest* pHttpReq = new HttpRequest((void*)&req);
+			X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq));
+
+			HttpResponse* pHttpResp = new HttpResponse(&res);
+			X::Value valResp(pHttpResp->APISET().GetProxy(pHttpResp));
+
+			for (auto& pat : m_patters)
+			{
+				std::smatch matches;
+
+				if (std::regex_search(url, matches, pat.rule))
+				{
+					X::ARGS params;
+					for (size_t i = 1; i < matches.size(); ++i)
+					{
+						std::cout << i << ": '" << matches[i].str() << "'\n";
+						params.push_back(matches[i].str());
+					}
+					for (X::Value& param : pat.params)
+					{
+						params.push_back(param);
+					}
+					X::KWARGS kwargs;
+					kwargs.emplace(std::make_pair("req", valReq));
+					kwargs.emplace(std::make_pair("res", valResp));
+					for (auto& it : pat.kwParams)
+					{
+						kwargs.emplace(it);
+					}
+					X::Value retValue;
+					bool bCallOK = pat.handler.GetObj()->Call(nullptr, nullptr, params,kwargs, retValue);
+					if (bCallOK)
+					{
+						bHandled = bCallOK;
+					}
+					//if get return value, will set content,
+					//but only the last set will be valid for respouse
+					if (retValue.IsValid())
+					{
+						if (retValue.IsList()) //[ content,mime]
+						{
+							XList* pList = dynamic_cast<XList*>(retValue.GetObj());
+							if (pList->Size() >= 2)
+							{
+								pHttpResp->SetContent(pList->Get(0),
+									pList->Get(1).ToString());
+							}
+						}
+						else
+						{
+							pHttpResp->SetContent(retValue,"text/html");
+						}
+					}
+				}
+			}
+			return bHandled;
+		};
+
+		auto pre_handler = [this, ProcessRequestUrl](
+			const httplib::Request& req,
+			httplib::Response& res)
+		{
+			auto retCode = httplib::Server::HandlerResponse::Unhandled;
+			bool bHandled = ProcessRequestUrl(req.path, req,res);
+			if (bHandled)
+			{
+				retCode = httplib::Server::HandlerResponse::Handled;
+			}
+			return retCode;
+		};
 		if (asHttps)
 		{
 			httplib::SSLServer* pSrv = new httplib::SSLServer(
@@ -24,6 +100,7 @@ namespace X
 			{
 				printf("server has an error...\n");
 			}
+			pSrv->set_pre_routing_handler(pre_handler);
 			m_pSrv = (void*)pSrv;
 		}
 		else
@@ -33,6 +110,7 @@ namespace X
 			{
 				printf("server has an error...\n");
 			}
+			pSrv->set_pre_routing_handler(pre_handler);
 			m_pSrv = (void*)pSrv;
 		}
 	}
@@ -47,7 +125,9 @@ namespace X
 	}
 	bool HttpServer::Listen(std::string srvName,int port)
 	{
-		//Fire(0, params, kwParams);//event test
+		httplib::Server* pSrv = (httplib::Server*)m_pSrv;
+
+		//HandlerWithResponse
 		bool bOK = ((httplib::Server*)m_pSrv)->listen(
 			srvName.c_str(), port);
 		return bOK;
@@ -103,6 +183,70 @@ namespace X
 					}
 				}
 			});
+		return true;
+	}
+	std::string HttpServer::TranslateUrlToReqex(std::string& url)
+	{
+		std::string pattern = "<[^>]*>";
+		const std::regex r(pattern);
+		std::string target = "([^/&\\?]*)";
+		std::stringstream result;
+		std::regex_replace(std::ostream_iterator<char>(result),
+			url.begin(), url.end(), r, target);
+		return result.str();
+	}
+	bool HttpServer::Route(X::XRuntime* rt, X::XObj* pContext,
+		X::ARGS& params, X::KWARGS& kwParams,
+		X::Value& trailer, X::Value& retValue)
+	{
+		//if Route is working in decor mode, trailer will be the orgin function
+		//first parameter is the url
+		std::string url;
+		if (params.size() > 0)
+		{
+			X::Value& p0 = params[0];
+			if (p0.IsObject() && p0.GetObj()->GetType() == ObjType::Expr)
+			{
+				X::ARGS params0;
+				X::KWARGS kwParams0;
+				X::Value exprValue;
+				if (p0.GetObj()->Call(rt, pContext, params0, kwParams0, exprValue))
+				{
+					url = exprValue.ToString();
+				}
+			}
+			else
+			{
+				url = p0.ToString();
+			}
+		}
+		if (url.size() > 0)
+		{
+			X::ARGS params1;
+			int p_size = (int)params.size();
+			for (int i = 1; i < p_size; i++)
+			{
+				X::Value realVal;
+				X::Value& pi = params[i];
+				if (pi.IsObject() && pi.GetObj()->GetType() == ObjType::Expr)
+				{
+					X::ARGS params0;
+					X::KWARGS kwParams0;
+					X::Value exprValue;
+					if (pi.GetObj()->Call(rt, pContext, params0, kwParams0, exprValue))
+					{
+						realVal = exprValue;
+					}
+				}
+				else
+				{
+					realVal = pi;
+				}
+				params1.push_back(realVal);
+			}
+			auto url_reg = TranslateUrlToReqex(url);
+			m_patters.push_back(UrlPattern{ std::regex(url_reg),params1,kwParams,trailer });
+		}
 		return true;
 	}
 	bool HttpResponse::AddHeader(std::string headName, X::Value& headValue)

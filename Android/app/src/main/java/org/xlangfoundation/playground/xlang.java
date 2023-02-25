@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,7 +31,7 @@ public class xlang {
         System.loadLibrary("xlang");
     }
     private AppCompatActivity _activity;
-    private View _curPage = null;
+    private ViewGroup _ContentHolder = null;
     private  long _curModuleKey =0;
     public  xlang(AppCompatActivity activity)
     {
@@ -78,6 +79,14 @@ public class xlang {
             p.setMargins(l, t, r, b);
             v.setLayoutParams(p);
         }
+    }
+    public  Object createScrollview()
+    {
+        ScrollView v =  new ScrollView(_activity);
+        v.setLayoutParams(
+                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT));
+        return (Object) v;
     }
     public  Object createTextview(String txt)
     {
@@ -171,13 +180,13 @@ public class xlang {
             }
         });
     }
-    public void SetCurrentPage(View v)
+    public void SetContentHolder(ViewGroup v)
     {
-        _curPage = v;
+        _ContentHolder = v;
     }
     public  View GetCurrentPage()
     {
-        return _curPage;
+        return _ContentHolder;
     }
     public void addView(Object container,Object view)
     {
@@ -185,10 +194,6 @@ public class xlang {
     }
     public Object createPage(String title)
     {
-        if(_curPage != null)
-        {
-            return _curPage;
-        }
         ConstraintLayout layout = new ConstraintLayout(_activity);
         //layout.setId(100);
         ConstraintLayout.LayoutParams params =
@@ -196,8 +201,15 @@ public class xlang {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT);
         layout.setLayoutParams(params);
-        _curPage = layout;
         return layout;
+    }
+    public void showPage(Object page)
+    {
+        if(_ContentHolder != null)
+        {
+            _ContentHolder.removeAllViews();
+            _ContentHolder.addView((View)page);
+        }
     }
     public native boolean loadJNI();
     public native long loadModuleJNI(String code);

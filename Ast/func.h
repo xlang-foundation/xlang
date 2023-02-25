@@ -341,9 +341,22 @@ public:
 		X::Value& trailer,
 		X::Value& retValue) override
 	{
-		return m_func_ex ? m_func_ex(rt,
-			pContext == nullptr ? m_pContext : pContext, params, 
-			kwParams, trailer,retValue) : false;
+		if (m_func_ex)
+		{
+			return m_func_ex(rt,
+				pContext == nullptr ? m_pContext : pContext, params,
+				kwParams, trailer, retValue);
+		}
+		else if (m_func)
+		{
+			return m_func(rt,
+				pContext == nullptr ? m_pContext : pContext,
+				params, kwParams, retValue);
+		}
+		else
+		{
+			return false;
+		}
 	}
 	inline virtual bool Call(XRuntime* rt, XObj* pContext,
 		std::vector<Value>& params,

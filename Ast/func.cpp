@@ -142,13 +142,17 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	v = v0;
 	return true;
 }
+//this function seems just called from Decorator::Exec
+//but maybe have some problems with remoting
+//todo: need to check out
 bool Func::CallEx(XRuntime* rt, XObj* pContext,
 	ARGS& params,
 	KWARGS& kwParams,
 	X::Value& trailer,
 	X::Value& retValue)
 {
-	return true;
+	kwParams.emplace(std::make_pair("origin", trailer));
+	return Call(rt,pContext,params,kwParams,retValue);
 }
 bool Func::Call(XRuntime* rt0,
 	XObj* pContext,

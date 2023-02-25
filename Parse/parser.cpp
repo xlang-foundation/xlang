@@ -113,6 +113,11 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 }
 void Parser::NewLine(bool checkIfIsLambdaOrPair)
 {
+	//this case deals with { is in next line
+	// f = (x,y)
+	//{
+	//...
+	//}
 	short lastToken = get_last_token();
 	if (checkIfIsLambdaOrPair &&
 		lastToken == TokenID 
