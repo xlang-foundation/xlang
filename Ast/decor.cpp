@@ -73,7 +73,6 @@ namespace X
 							return bOK;
 						}
 					}
-					//kwParams.emplace(std::make_pair("origin", pContext));
 					Data::Object* obj = dynamic_cast<Data::Object*>(lVal.GetObj());
 					if (obj)
 					{

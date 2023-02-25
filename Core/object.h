@@ -239,7 +239,15 @@ namespace Data {
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return true;
+			if (m_expr)
+			{
+				AST::ExecAction action;
+				return m_expr->Exec((XlangRuntime*)rt, action, pContext, retValue);
+			}
+			else
+			{
+				return true;
+			}
 		}
 		virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 		{
