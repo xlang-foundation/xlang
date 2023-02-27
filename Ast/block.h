@@ -189,6 +189,7 @@ public:
 class If :
 	virtual public Block
 {
+	bool m_isIf = false;//if it is 'if', this flag is true, if it is 'elif', 'else' will be false
 	If* m_next = nil;//elif  or else
 public:
 	If() :
@@ -202,6 +203,11 @@ public:
 		m_type = ObType::If;
 		NeedParam = needParam;
 	}
+	void SetFlag(bool b)
+	{
+		m_isIf = b;
+	}
+	bool IsIf() { return m_isIf; }
 	~If()
 	{
 		if (m_next) delete m_next;
