@@ -1037,17 +1037,14 @@ bool U_CreateSetObject(X::XRuntime* rt, XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	double real = 0;
-	double imaginary = 0;
+	X::Data::mSet* pSetObj;
+	if (params.size() == 0) {
+		pSetObj = new X::Data::mSet();
+	}
+	else {
+		pSetObj = new X::Data::mSet(params);
+	}
 
-	if (params.size() == 1) {
-		real = (double)params[0];	
-	}
-	else if (params.size() >= 2) {
-		real = (double)params[0];
-		imaginary = (double)params[1];
-	}
-	X::Data::mSet* pSetObj = new X::Data::mSet();
 	retValue = X::Value(pSetObj);
 	return true;
 }

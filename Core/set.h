@@ -2,11 +2,11 @@
 #include "object.h"
 #include "str.h"
 #include "scope.h"
-#include "stackframe.h"
+#include "stackframe.h"																																																												
 #include "xclass_object.h"
 
 namespace X
-{
+{																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																							
 namespace Data
 {
 class mSet :
@@ -16,7 +16,7 @@ class mSet :
 protected:
 	bool m_useLValue = false;
 	std::vector<X::Value> m_data;
-	std::vector<X::LValue> m_ptrs;
+	std::vector<X::LValue> m_ptrs;																																																																																																																										
 	std::vector<AST::Scope*> m_bases;
 public:
 	static void cleanup();
@@ -25,9 +25,21 @@ public:
 		mSet()
 	{
 		AutoLock(m_lock);
+		printf ("in set.h::mSet(string), param \n");
 		for (auto& s : strs)
 		{
 			m_data.push_back(X::Value(new Str(s.c_str(), (int)s.size())));
+			printf ("     %s \n", s.c_str());
+		}
+	}
+	mSet(X::ARGS& params) :
+		mSet()
+	{
+		AutoLock(m_lock);
+		printf ("in set.h::mSet(X::ARGS), param \n");
+		for (auto& param : params)
+		{
+			m_data.push_back(param);
 		}
 	}
 	~mSet()
@@ -171,6 +183,8 @@ public:
 	}
 	virtual std::string ToString(bool WithFormat = false) override
 	{
+		printf ("in set.h::ToString()\n");
+
 		AutoLock(m_lock);
 		std::string strSet = "{\n";
 		size_t size = Size();
