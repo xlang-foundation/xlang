@@ -340,7 +340,8 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 bool If::EatMe(Expression* other)
 {
 	If* elseIf = dynamic_cast<If*>(other);
-	if (elseIf)
+	//if it is elif or else, then eat by the previous one
+	if (elseIf && !elseIf->IsIf())
 	{
 		If* p = this;
 		If* n = m_next;

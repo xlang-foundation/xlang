@@ -176,15 +176,23 @@ void Register(OpRegistry* reg)
 			auto op = new AST::While(opIndex);
 			return (AST::Operator*)op;
 		});
-	RegOP("if", "elif")
+	RegOP("if")
+		.SetProcess([](Parser* p, short opIndex) {
+			auto op = new AST::If(opIndex);
+			op->SetFlag(true);
+			return (AST::Operator*)op;
+			});
+	RegOP("elif")
 		.SetProcess([](Parser* p, short opIndex){
 			auto op = new AST::If(opIndex);
-			return (AST::Operator*)op;
+			op->SetFlag(false);
+		return (AST::Operator*)op;
 		});
 	RegOP("else")
 		.SetProcess([](Parser* p, short opIndex) {
-		auto op = new AST::If(opIndex,false);
-		return (AST::Operator*)op;
+			auto op = new AST::If(opIndex,false);
+			op->SetFlag(false);
+			return (AST::Operator*)op;
 			});
 	RegOP("in")
 		.SetProcess([](Parser* p,short opIndex){

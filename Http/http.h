@@ -10,6 +10,7 @@ namespace X
 {
 	struct UrlPattern
 	{
+		std::string strRule;
 		std::regex rule;
 		X::ARGS params;
 		X::KWARGS kwParams;

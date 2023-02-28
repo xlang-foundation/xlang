@@ -37,6 +37,7 @@
 #include "manager.h"
 #include "typeobject.h"
 #include "complex.h"
+#include "dict.h"
 #include "future.h"
 #include "taskpool.h"
 
@@ -1150,6 +1151,29 @@ bool U_CreateTaskPool(X::XRuntime* rt, XObj* pContext,
 	retValue = X::Value(pPool);
 	return true;
 }
+bool U_CreateDict(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	bool bOK = false;
+	if (params.size() > 0)
+	{
+		auto& p0 = params[0];
+		if (p0.IsObject() && p0.GetObj()->GetType() == ObjType::Dict)
+		{
+			retValue = p0;
+			bOK = true;
+		}
+	}
+	else
+	{
+		auto* pDict = new X::Data::Dict();
+		retValue = X::Value(pDict);
+		bOK = true;
+	}
+	return bOK;
+}
 bool Builtin::RegisterInternals()
 {
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
@@ -1206,6 +1230,7 @@ bool Builtin::RegisterInternals()
 	Register("event_loop", (X::U_FUNC)U_Event_Loop, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
+	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	return true;
 }
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)

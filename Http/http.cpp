@@ -12,6 +12,7 @@ namespace X
 	}
 	void HttpServer::Init(bool asHttps)
 	{
+		//valid only for the first matched
 		auto ProcessRequestUrl = [this](std::string url,
 			const httplib::Request& req,
 			httplib::Response& res)
@@ -27,14 +28,14 @@ namespace X
 			for (auto& pat : m_patters)
 			{
 				std::smatch matches;
-
 				if (std::regex_search(url, matches, pat.rule))
 				{
 					X::ARGS params;
 					for (size_t i = 1; i < matches.size(); ++i)
 					{
 						std::cout << i << ": '" << matches[i].str() << "'\n";
-						params.push_back(matches[i].str());
+						std::string strParam(matches[i].str());
+						params.push_back(strParam);
 					}
 					for (X::Value& param : pat.params)
 					{
@@ -62,8 +63,8 @@ namespace X
 							XList* pList = dynamic_cast<XList*>(retValue.GetObj());
 							if (pList->Size() >= 2)
 							{
-								pHttpResp->SetContent(pList->Get(0),
-									pList->Get(1).ToString());
+								X::Value v0 = pList->Get(0);
+								pHttpResp->SetContent(v0,pList->Get(1).ToString());
 							}
 						}
 						else
@@ -71,6 +72,7 @@ namespace X
 							pHttpResp->SetContent(retValue,"text/html");
 						}
 					}
+					break;
 				}
 			}
 			return bHandled;
@@ -187,6 +189,10 @@ namespace X
 	}
 	std::string HttpServer::TranslateUrlToReqex(std::string& url)
 	{
+		if (url == "/")
+		{
+			return "^/$";
+		}
 		std::string pattern = "<[^>]*>";
 		const std::regex r(pattern);
 		std::string target = "([^/&\\?]*)";
@@ -201,9 +207,9 @@ namespace X
 	{
 		//if Route is working in decor mode, trailer will be the orgin function
 		//first parameter is the url
-		std::string url;
 		if (params.size() > 0)
 		{
+			std::string url;
 			X::Value& p0 = params[0];
 			if (p0.IsObject() && p0.GetObj()->GetType() == ObjType::Expr)
 			{
@@ -219,9 +225,6 @@ namespace X
 			{
 				url = p0.ToString();
 			}
-		}
-		if (url.size() > 0)
-		{
 			X::ARGS params1;
 			int p_size = (int)params.size();
 			for (int i = 1; i < p_size; i++)
@@ -245,7 +248,8 @@ namespace X
 				params1.push_back(realVal);
 			}
 			auto url_reg = TranslateUrlToReqex(url);
-			m_patters.push_back(UrlPattern{ std::regex(url_reg),params1,kwParams,trailer });
+			m_patters.push_back(UrlPattern{ url,std::regex(url_reg),params1,kwParams,trailer });
+
 		}
 		return true;
 	}
