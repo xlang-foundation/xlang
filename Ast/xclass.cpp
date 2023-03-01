@@ -95,6 +95,8 @@ bool XClass::Get(XlangRuntime* rt,XObj* pContext, int idx, Value& v, LValue* lVa
 }
 bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LValue* lValue)
 {
+	m_stackFrame = new StackFrame(this);
+	m_stackFrame->SetVarCount((int)m_Vars.size());
 	if (m_Index == -1)
 	{
 		ScopeLayout();
@@ -103,48 +105,7 @@ bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, L
 			return false;
 		}
 	}
-	m_stackFrame = new StackFrame(this);
-	m_stackFrame->SetVarCount((int)m_Vars.size());
-	for (auto it : m_tempMemberList)
-	{
-		Value& v0 = it.defaultValue;
-		bool bSet = false;
-		if (it.typeName == EVENT_OBJ_TYPE_NAME)
-		{
-			auto* pEvtObj = new ObjectEvent();
-			Value valEvent(dynamic_cast<XObj*>(pEvtObj));
-			Set(rt, pContext, it.index, valEvent);
-			bSet = true;
-		}
-		else if (v0.IsObject())
-		{
-			Data::Object* pObj = dynamic_cast<Data::Object*>(v0.GetObj());
-			if (pObj->GetType() == X::ObjType::Expr)
-			{
-				Data::Expr* pExpr = dynamic_cast<Data::Expr*>(pObj);
-				if (pExpr)
-				{
-					AST::Expression*  pExpression = pExpr->Get();
-					if (pExpression)
-					{
-						Value v1;
-						if (pExpression->Exec(rt,action,pContext,v1))
-						{
-							Set(rt,pContext,it.index, v1);
-							bSet = true;
-						}
-					}
-				}
-			}
-		}
-
-		if (!bSet)
-		{
-			Set(rt,pContext,it.index, v0);
-		}
-	}
-	m_tempMemberList.clear();
-
+	Block::Exec(rt, action, pContext, v, lValue);
 	Data::XClassObject* cls = new Data::XClassObject(this);
 	Value v0(cls);
 	bool bOK = m_scope->Set(rt,pContext,m_Index, v0);
@@ -172,45 +133,42 @@ bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, L
 	}
 	return bOK;
 }
-
 void XClass::Add(Expression* item)
 {
-	switch (item->m_type)
+	//deal with class prop, for case just put prop name here, not assign
+	if (item->m_type == ObType::Var)
 	{
-	case ObType::Param:
+		item->SetIsLeftValue(true);//use this way to add this prop into class's scope
+	}
+	else if (item->m_type == ObType::Param)
 	{
 		Param* param = dynamic_cast<Param*>(item);
-		std::string strVarName;
-		std::string strVarType;
-		Value defaultValue;
-		if (param->Parse(strVarName, strVarType, defaultValue))
+		if (param->GetName())
 		{
-			int idx = AddOrGet(strVarName,false);
-			m_tempMemberList.push_back(MemberInfo{ idx,strVarType,defaultValue });
+			param->GetName()->SetIsLeftValue(true);
 		}
 	}
-		break;
-	case ObType::Func:
+	else if (item->m_type == ObType::Assign)
 	{
-		Func* func = dynamic_cast<Func*>(item);
-		String& funcName = func->GetNameStr();
-		std::string strName(funcName.s, funcName.size);
-		int idx = AddOrGet(strName, false);
-		Data::Function* f = new Data::Function(func);
-		Value funcObj(f);
-		m_tempMemberList.push_back(MemberInfo{ idx,"",funcObj });
-		if (strName == "constructor")//TODO: add class name also can be constructor
+		Assign* assign = dynamic_cast<Assign*>(item);
+		if (assign->GetL())
 		{
-			m_constructor = func;
+			auto* l = assign->GetL();
+			if (l->m_type == ObType::Var)
+			{
+				l->SetIsLeftValue(true);
+			}
+			else if (l->m_type == ObType::Param)
+			{
+				Param* param = dynamic_cast<Param*>(l);
+				if (param->GetName())
+				{
+					param->GetName()->SetIsLeftValue(true);
+				}
+			}
 		}
 	}
-		break;
-	default:
-		break;
-	}
-
-	item->SetParent(this);
-	item->ScopeLayout();
+	Block::Add(item);
 }
 }
 }
