@@ -293,7 +293,6 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XSet)
-		virtual Value Get(long long idx) = 0;
 	};
 	class XComplex :
 		virtual public XObj

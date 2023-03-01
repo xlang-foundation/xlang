@@ -69,6 +69,7 @@ namespace AST
 				*lValue_L += v_r;
 				break;
 			case X::OP_ID::MinusEqu:
+				*lValue_L -= v_r;
 				break;
 			case X::OP_ID::MulEqu:
 				*lValue_L *= v_r;
