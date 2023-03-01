@@ -29,6 +29,7 @@ protected:
 	List* Params = nil;
 	std::vector<int> m_IndexofParamList;//same size with input positional param
 	Expression* RetType = nil;
+	Module* GetMyModule();
 	void SetName(Expression* n)
 	{
 		Var* vName = dynamic_cast<Var*>(n);

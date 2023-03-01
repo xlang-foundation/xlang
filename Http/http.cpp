@@ -13,7 +13,8 @@ namespace X
 	void HttpServer::Init(bool asHttps)
 	{
 		//valid only for the first matched
-		auto ProcessRequestUrl = [this](std::string url,
+		XPackage* pCurPack = APISET().GetProxy(this);
+		auto ProcessRequestUrl = [this, pCurPack](std::string url,
 			const httplib::Request& req,
 			httplib::Response& res)
 		{
@@ -49,7 +50,8 @@ namespace X
 						kwargs.emplace(it);
 					}
 					X::Value retValue;
-					bool bCallOK = pat.handler.GetObj()->Call(nullptr, nullptr, params,kwargs, retValue);
+					bool bCallOK = pat.handler.GetObj()->Call(X::g_pXHost->GetCurrentRuntime(),
+						pCurPack, params,kwargs, retValue);
 					if (bCallOK)
 					{
 						bHandled = bCallOK;

@@ -154,6 +154,22 @@ bool Func::CallEx(XRuntime* rt, XObj* pContext,
 	kwParams.emplace(std::make_pair("origin", trailer));
 	return Call(rt,pContext,params,kwParams,retValue);
 }
+Module* Func::GetMyModule()
+{
+	auto pa = m_parent;
+	while (pa)
+	{
+		if (pa->m_type == ObType::Module)
+		{
+			return dynamic_cast<Module*>(pa);
+		}
+		else
+		{
+			pa = pa->GetParent();
+		}
+	}
+	return nullptr;
+}
 bool Func::Call(XRuntime* rt0,
 	XObj* pContext,
 	std::vector<Value>& params,
@@ -162,6 +178,10 @@ bool Func::Call(XRuntime* rt0,
 {
 	auto* rt_from = (XlangRuntime*)rt0;
 	XlangRuntime* rt = G::I().Threading(rt_from);
+	if (!rt->M())
+	{
+		rt->SetM(GetMyModule());
+	}
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
 	StackFrame* frame = new StackFrame(this);
 	for (auto& kw : kwParams)
