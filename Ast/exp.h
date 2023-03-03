@@ -597,6 +597,15 @@ public:
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
+	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr)
+	{
+		bool bOK = true;
+		if (Name)
+		{
+			bOK = Name->Exec(rt, action, pContext, v, lValue);
+		}
+		return bOK;
+	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{

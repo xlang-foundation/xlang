@@ -29,7 +29,7 @@ class test_class(base_class,another_class):
      return rand()
 
 x0 = test_class()
-x0.prop1 =[](size=100)
+x0.prop1 =[](size=2)
 x0.prop1[0] =1000
 x0.prop1[1] =1000
 

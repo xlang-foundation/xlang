@@ -4,6 +4,7 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.res.AssetManager;
+import android.graphics.Color;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -13,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -22,8 +24,10 @@ import org.xlangfoundation.playground.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toolbar;
 
 import  org.xlangfoundation.playground.xlang;
 
@@ -96,9 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
         boolean retVal = _xlang.loadJNI();
-        long moduleKey = _xlang.loadModuleJNI(code);
-        _xlang.setCurrentModuleKey(moduleKey);
-        //_xlang.unloadJNI();
+
         /*
         LinearLayout rowLayout = new LinearLayout(this);
         rowLayout.setId(100010);
@@ -114,10 +116,31 @@ public class MainActivity extends AppCompatActivity {
         //fragTransaction.commit();
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
-        //setContentView(binding.getRoot());
-        setContentView(_xlang.GetCurrentPage());
+        setContentView(binding.getRoot());
+        //androidx.appcompat.widget.Toolbar myToolbar = findViewById(R.id.toolbar);
+        ConstraintLayout rootLayout = findViewById(R.id.main_content_holder);
+        _xlang.SetContentHolder(rootLayout);
+        //ViewGroup rootView = (ViewGroup)_xlang.GetCurrentPage();
+        //setContentView(rootView);
+        long moduleKey = _xlang.loadModuleJNI(code);
+        _xlang.setCurrentModuleKey(moduleKey);
+        //_xlang.unloadJNI();
+        /*
+        androidx.appcompat.widget.Toolbar toolbar = new androidx.appcompat.widget.Toolbar(this);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 168);
+        toolbar.setLayoutParams(layoutParams);
+        //toolbar.setPopupTheme(R.style.AppTheme);
+        toolbar.setBackgroundColor(Color.BLUE);
+        toolbar.setTitle("This is the title");
+        toolbar.setVisibility(View.VISIBLE);
 
+        // Assuming in activity_main, you are using LinearLayout as root
+        //LinearLayout ll = (LinearLayout) findViewById(R.id.your_linear_layout);
+        */
+        //rootView.addView(binding.toolbar, 0);
         setSupportActionBar(binding.toolbar);
+
         /*
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
@@ -157,8 +180,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
+        /*
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         return NavigationUI.navigateUp(navController, appBarConfiguration)
-                || super.onSupportNavigateUp();
+                || super.onSupportNavigateUp();*/
+        return true;
     }
 }

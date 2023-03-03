@@ -4,11 +4,22 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <regex>
 
 namespace X
 {
+	struct UrlPattern
+	{
+		std::string strRule;
+		std::regex rule;
+		X::ARGS params;
+		X::KWARGS kwParams;
+		X::Value handler;
+	};
 	class HttpServer
 	{
+		std::vector<UrlPattern> m_patters;
+
 		void* m_pSrv = nullptr;
 		bool m_bAsHttps = false;
 		std::string m_cert_path;
@@ -17,13 +28,16 @@ namespace X
 		std::string m_client_ca_cert_dir_path;
 		std::string m_private_key_password;
 		std::vector<void*> m_handlers;
+
+		std::string TranslateUrlToReqex(std::string& url);
 	public:
 		BEGIN_PACKAGE(HttpServer)
 			APISET().AddEvent("OnConnect");
 			APISET().AddFunc<2>("listen", &HttpServer::Listen);
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
-		END_PACKAGE
+			APISET().AddVarFuncEx("route", &HttpServer::Route);
+			END_PACKAGE
 	public:
 
 		HttpServer(X::ARGS& params, X::KWARGS& kwParams)
@@ -56,6 +70,9 @@ namespace X
 		bool Listen(std::string srvName, int port);
 		bool Stop();
 		bool Get(std::string pattern, X::Value& valHandler);
+		bool Route(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams,
+			X::Value& trailer, X::Value& retValue);
 	};
 	class HttpRequest
 	{

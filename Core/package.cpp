@@ -6,6 +6,7 @@
 #include "event.h"
 #include "port.h"
 #include "utility.h"
+#include "Hosting.h"
 
 namespace X
 {
@@ -84,10 +85,29 @@ namespace X
 			}
 			return retVal;
 		}
-		X::Data::List* Package::FlatPack(XlangRuntime* rt, XObj* pContext,
-			std::vector<std::string>& IdList, int id_offset,
-			long long startIndex, long long count)
+		void Package::UnloadAddedModules()
 		{
+			for (auto* pModule : m_loadedModules)
+			{
+				X::Hosting::I().Unload(pModule);
+			}
+			m_loadedModules.clear();
+		}
+        bool Package::RunCodeWithThisScope(std::string &code)
+        {
+			auto* pTopModule = X::Hosting::I().LoadWithScope(this,code.c_str(),code.size());
+			m_loadedModules.push_back(pTopModule);
+			//change StackFrame VarCount
+			m_stackFrame->SetVarCount(GetVarNum());
+			X::Value retVal;
+			std::vector<std::string> passInParams;
+			bool bOK = X::Hosting::I().Run(pTopModule, retVal, passInParams);
+            return bOK;
+        }
+        X::Data::List *Package::FlatPack(XlangRuntime *rt, XObj *pContext,
+                                         std::vector<std::string> &IdList, int id_offset,
+                                         long long startIndex, long long count)
+        {
 			AutoLock(m_lock);
 			if (id_offset < IdList.size())
 			{

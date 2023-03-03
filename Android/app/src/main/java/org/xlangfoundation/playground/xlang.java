@@ -2,15 +2,19 @@ package org.xlangfoundation.playground;
 
 import android.app.Fragment;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,7 +31,7 @@ public class xlang {
         System.loadLibrary("xlang");
     }
     private AppCompatActivity _activity;
-    private View _curPage;
+    private ViewGroup _ContentHolder = null;
     private  long _curModuleKey =0;
     public  xlang(AppCompatActivity activity)
     {
@@ -49,14 +53,45 @@ public class xlang {
     {
         LinearLayout layout = new LinearLayout(_activity);
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setLayoutParams(new ViewGroup.LayoutParams(
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
+                ViewGroup.LayoutParams.MATCH_PARENT);
+        lp.gravity= Gravity.CENTER;
+        //lp.setMargins(100, 20, 100, 10);
+        //layout.setPadding(100,20,100,10);
+        layout.setLayoutParams(lp);
         return (Object)layout;
+    }
+    public void setMargins (Object obj, int l, int t, int r, int b)
+    {
+        View v = (View)obj;
+        if (v.getLayoutParams() instanceof ViewGroup.MarginLayoutParams)
+        {
+            ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams)v.getLayoutParams();
+            p.setMargins(l, t, r, b);
+            v.setLayoutParams(p);
+        }
+        else
+        {
+            ViewGroup.MarginLayoutParams p = new ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+            p.setMargins(l, t, r, b);
+            v.setLayoutParams(p);
+        }
+    }
+    public  Object createScrollview()
+    {
+        ScrollView v =  new ScrollView(_activity);
+        v.setLayoutParams(
+                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT));
+        return (Object) v;
     }
     public  Object createTextview(String txt)
     {
         TextView tv =  new TextView(_activity);
+        tv.setWidth(200);
         tv.setText(txt);
         return (Object) tv;
     }
@@ -71,7 +106,19 @@ public class xlang {
         Button btn =  new Button(_activity);
         btn.setTextColor(Color.RED);
         btn.setText(txt);
+        btn.setWidth(100);
+        //setMargins(btn,100,100,100,100);
+        btn.setGravity(Gravity.CENTER);
         return (Object) btn;
+    }
+    public  void PostCallFromUIThread()
+    {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                callFromUIThreadJNI();
+            }
+        });
     }
     public  void setText(Object obj,String txt)
     {
@@ -133,9 +180,13 @@ public class xlang {
             }
         });
     }
+    public void SetContentHolder(ViewGroup v)
+    {
+        _ContentHolder = v;
+    }
     public  View GetCurrentPage()
     {
-        return _curPage;
+        return _ContentHolder;
     }
     public void addView(Object container,Object view)
     {
@@ -144,18 +195,26 @@ public class xlang {
     public Object createPage(String title)
     {
         ConstraintLayout layout = new ConstraintLayout(_activity);
-        layout.setId(100);
+        //layout.setId(100);
         ConstraintLayout.LayoutParams params =
                 new ConstraintLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT);
         layout.setLayoutParams(params);
-        _curPage = layout;
         return layout;
+    }
+    public void showPage(Object page)
+    {
+        if(_ContentHolder != null)
+        {
+            _ContentHolder.removeAllViews();
+            _ContentHolder.addView((View)page);
+        }
     }
     public native boolean loadJNI();
     public native long loadModuleJNI(String code);
     public native boolean runJNI(String code);
     public  native boolean callJNI(long moduleKey,long callable,Object[] params );
+    public  native boolean callFromUIThreadJNI();
     public native boolean unloadJNI();
 }

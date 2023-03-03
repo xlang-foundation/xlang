@@ -63,6 +63,7 @@ void Func::ScopeLayout()
 			int idx = AddOrGet(strVarName, false);
 			m_IndexofParamList.push_back(idx);
 		}
+		Params->ScopeLayout();
 	}
 }
 std::string Func::getcode(bool includeHead)
@@ -141,13 +142,33 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	v = v0;
 	return true;
 }
+//this function seems just called from Decorator::Exec
+//but maybe have some problems with remoting
+//todo: need to check out
 bool Func::CallEx(XRuntime* rt, XObj* pContext,
 	ARGS& params,
 	KWARGS& kwParams,
 	X::Value& trailer,
 	X::Value& retValue)
 {
-	return true;
+	kwParams.emplace(std::make_pair("origin", trailer));
+	return Call(rt,pContext,params,kwParams,retValue);
+}
+Module* Func::GetMyModule()
+{
+	auto pa = m_parent;
+	while (pa)
+	{
+		if (pa->m_type == ObType::Module)
+		{
+			return dynamic_cast<Module*>(pa);
+		}
+		else
+		{
+			pa = pa->GetParent();
+		}
+	}
+	return nullptr;
 }
 bool Func::Call(XRuntime* rt0,
 	XObj* pContext,
@@ -155,7 +176,12 @@ bool Func::Call(XRuntime* rt0,
 	KWARGS& kwParams,
 	Value& retValue)
 {
-	XlangRuntime* rt = G::I().Threading((XlangRuntime*)rt0);
+	auto* rt_from = (XlangRuntime*)rt0;
+	XlangRuntime* rt = G::I().Threading(rt_from);
+	if (!rt->M())
+	{
+		rt->SetM(GetMyModule());
+	}
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
 	StackFrame* frame = new StackFrame(this);
 	for (auto& kw : kwParams)

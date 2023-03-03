@@ -38,6 +38,9 @@
 #include "typeobject.h"
 #include "complex.h"
 #include "set.h"
+#include "dict.h"
+#include "future.h"
+#include "taskpool.h"
 
 namespace X
 {
@@ -609,12 +612,42 @@ bool U_TaskRun(X::XRuntime* rt, XObj* pContext,
 	ARGS& params,KWARGS& kwParams,
 	X::Value& retValue)
 {
-	Data::List* pFutureList = nil;
-	Data::Future* pFuture = nil;
-	auto buildtask = [&](X::AST::Func* pFunc)
+	//if params has a TaskPool, will get it
+	X::Value taskPool;
+	ARGS params0;
+	for (auto& p : params)
+	{
+		if (p.IsObject() && p.GetObj()->GetType() == ObjType::TaskPool)
+		{
+			taskPool = p;
+		}
+		else
+		{
+			params0.push_back(p);
+		}
+	}
+	if (taskPool.IsInvalid())
+	{
+		std::string keyPool("TaskPool");
+		auto it = kwParams.find(keyPool);
+		if (it != kwParams.end())
+		{
+			if (it->second.IsObject())
+			{
+				taskPool = it->second;
+			}
+		}
+	}
+	X::Data::List* pFutureList = nil;
+	X::Data::Future* pFuture = nil;
+	auto buildtask = [&](X::Value& valFunc)
 	{
 		X::Task* tsk = new X::Task();
-		Data::Future* f = new Data::Future(tsk);
+		tsk->SetTaskPool(taskPool);
+		//tsk will be released by Future
+		X::Data::Future* f = new X::Data::Future(tsk);
+		X::Value varF(f);
+		tsk->SetFuture(varF);
 		if (pFuture || pFutureList)
 		{
 			if (pFutureList == nil)
@@ -631,7 +664,7 @@ bool U_TaskRun(X::XRuntime* rt, XObj* pContext,
 		{
 			pFuture = f;
 		}
-		bool bRet = tsk->Call(pFunc, (X::XlangRuntime*)rt, pContext, params, kwParams);
+		bool bRet = tsk->Call(valFunc, (X::XlangRuntime*)rt, pContext, params0, kwParams);
 		return bRet;
 	};
 	bool bOK = true;
@@ -642,14 +675,14 @@ bool U_TaskRun(X::XRuntime* rt, XObj* pContext,
 		auto& list = pFuncCalls->GetList();
 		for (auto& i : list)
 		{
-			buildtask(i.m_func);
+			//todo:
+			//buildtask(i.m_func);
 		}
 	}
 	else
 	{
-		X::Data::Function* pFuncObj = dynamic_cast<X::Data::Function*>(pContext);
-		X::AST::Func* pFunc = pFuncObj->GetFunc();
-		buildtask(pFunc);
+		X::Value valFunc(pContext);
+		buildtask(valFunc);
 	}
 	if (pFutureList)
 	{
@@ -1049,6 +1082,15 @@ bool U_CreateSetObject(X::XRuntime* rt, XObj* pContext,
 	return true;
 }
 
+bool U_Event_Loop(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	EventSystem::I().Loop();
+	retValue = X::Value(true);
+	return true;
+}
 bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1092,6 +1134,61 @@ bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 	if (bOK)
 	{
 		retValue = X::Value((long)procId);
+	}
+	return bOK;
+}
+bool U_CreateTaskPool(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::Data::TaskPool* pPool = new X::Data::TaskPool();
+	int num = 1;
+	if (params.size() > 0)
+	{
+		num = (int)params[0];
+	}
+	else
+	{
+		std::string keyNum("max_task_num");
+		auto it = kwParams.find(keyNum);
+		if (it != kwParams.end())
+		{
+			num = (int)it->second;
+		}
+	}
+	bool bRunInUI = false;
+	std::string keyInUIThread("run_in_ui");
+	auto it = kwParams.find(keyInUIThread);
+	if (it != kwParams.end())
+	{
+		bRunInUI = (bool)it->second;
+	}
+	pPool->SetThreadNum(num);
+	pPool->SetInUIThread(bRunInUI);
+	retValue = X::Value(pPool);
+	return true;
+}
+bool U_CreateDict(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	bool bOK = false;
+	if (params.size() > 0)
+	{
+		auto& p0 = params[0];
+		if (p0.IsObject() && p0.GetObj()->GetType() == ObjType::Dict)
+		{
+			retValue = p0;
+			bOK = true;
+		}
+	}
+	else
+	{
+		auto* pDict = new X::Data::Dict();
+		retValue = X::Value(pDict);
+		bOK = true;
 	}
 	return bOK;
 }
@@ -1149,8 +1246,11 @@ bool Builtin::RegisterInternals()
 	Register("str", (X::U_FUNC)U_ToString, params);
 	Register("type", (X::U_FUNC)U_GetType, params);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
+	Register("event_loop", (X::U_FUNC)U_Event_Loop, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
 	Register("set", (X::U_FUNC)U_CreateSetObject, params);
+	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
+	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	return true;
 }
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)

@@ -30,6 +30,8 @@ class Package :
 	{
 		m_funcPackageCleanup = func;
 	}
+	std::vector<AST::Module*> m_loadedModules;//for adding xlang code
+	void UnloadAddedModules();
 	Locker m_lock;
 public:
 	APISetBase* GetAPISet() { return m_pAPISet; }
@@ -41,6 +43,7 @@ public:
 	}
 	~Package()
 	{
+		UnloadAddedModules();
 		if (m_pObject)
 		{
 			Cleanup(m_pObject);
@@ -58,6 +61,7 @@ public:
 	{
 		m_pAPISet = p;
 	}
+	virtual bool RunCodeWithThisScope(std::string& code) override;
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;
@@ -187,6 +191,10 @@ class PackageProxy :
 	virtual void SetPackageCleanupFunc(PackageCleanup func) override
 	{
 		m_funcPackageCleanup = func;
+	}
+	virtual bool RunCodeWithThisScope(std::string& code) override
+	{
+		return true;
 	}
 public:
 	PackageProxy(Package* pPack,void* pObj) :

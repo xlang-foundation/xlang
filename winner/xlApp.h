@@ -4,6 +4,7 @@
 #include "xlang.h"
 #include "xlWindow.h"
 #include "xlImage.h"
+#include "Locker.h"
 
 namespace XWin
 {
@@ -11,6 +12,9 @@ namespace XWin
 		public Singleton<App>
 	{
 		X::Value m_curModule;
+		unsigned int m_threadId = 0;
+		Locker m_callLock;
+		std::vector<X::Value> m_calls;
 	public:
 		BEGIN_PACKAGE(App)
 			APISET().AddFunc<0>("Loop", &App::Loop,"App.Loop()");
@@ -21,7 +25,10 @@ namespace XWin
 		{
 			m_curModule = curModule;
 		}
+		void Process();
+		void AddUICall(X::Value& callable);
 		X::Value& GetModule() { return m_curModule; }
+		void PostMessage(unsigned int msgId, void* pParam);
 		bool Loop();
 	};
 }

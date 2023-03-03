@@ -1,6 +1,9 @@
 #include "androidwrapper.h"
 #include <android/log.h>
 #include "list.h"
+#include "androidApi.x"
+
+
 
 #if 0
 X::Value::operator X::Android::UIBase* () const
@@ -35,6 +38,59 @@ namespace X
 {
     namespace  Android
     {
+
+        bool UIThreadRun(X::Value& callable,void* pContext)
+        {
+            AndroidWrapper* aw =(AndroidWrapper*)pContext;
+            aw->AddUICall(callable);
+            return true;
+        }
+        bool AndroidWrapper::PostCallToJavaUIThread()
+        {
+            JNIEnv* env = nullptr;
+            m_jvm->AttachCurrentThread(&env, nullptr);
+            jclass objClass = env->GetObjectClass(m_objHost);
+            jmethodID mid = env->GetMethodID(
+                    objClass,"PostCallFromUIThread", "()V");
+            env->CallVoidMethod(m_objHost, mid);
+            env->DeleteLocalRef(objClass);
+            m_jvm->DetachCurrentThread();
+            return true;
+        }
+        void AndroidWrapper::CallFromUIThread()
+        {
+            while (true)
+            {
+                X::Value callable;
+                m_uiCallLock.Lock();
+                if (m_uiCalls.size() > 0)
+                {
+                    callable = m_uiCalls[0];
+                    m_uiCalls.erase(m_uiCalls.begin());
+                }
+                m_uiCallLock.Unlock();
+                if (callable.IsObject())
+                {
+                    X::Value retVal;
+                    X::ARGS args;
+                    X::KWARGS kwargs;
+                    callable.GetObj()->Call(nullptr,nullptr,args, kwargs, retVal);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        void AndroidWrapper::Init()
+        {
+            X::g_pXHost->RegisterUIThreadRunHandler(UIThreadRun,this);
+        }
+        void AndroidWrapper::AddPlugins()
+        {
+            std::string code(Android_Plugin_Code);
+            APISET().GetPack()->RunCodeWithThisScope(code);
+        }
         Color::Color(X::ARGS& params, X::KWARGS& kwParams)
         {
             if(params.size() ==1 && params[0].IsObject())
@@ -94,6 +150,37 @@ namespace X
             {
                 env->DeleteGlobalRef(m_object);
             }
+        }
+        bool UIBase::setPadding(int left, int top, int right, int bottom)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            jclass objClass = env->GetObjectClass(m_object);
+            jmethodID mId = env->GetMethodID(objClass,"setPadding","(IIII)V");
+            env->CallVoidMethod(m_object, mId,left,top,right,bottom);
+            env->DeleteLocalRef(objClass);
+            return true;
+        }
+        bool UIBase::setGravity(int gravity)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            jclass objClass = env->GetObjectClass(m_object);
+            jmethodID mId = env->GetMethodID(objClass,"setGravity","(I)V");
+            env->CallVoidMethod(m_object, mId,gravity);
+            env->DeleteLocalRef(objClass);
+            return true;
+        }
+        bool UIBase::setMargins(int left, int top, int right, int bottom)
+        {
+            AndroidWrapper* aw = m_page->GetApp()->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(objClass,"setMargins","(Ljava/lang/Object;IIII)V");
+            env->CallVoidMethod(host, mId,m_object,left,top,right,bottom);
+            env->DeleteLocalRef(objClass);
+            return true;
         }
         std::string TextView::getText()
         {
@@ -204,6 +291,11 @@ namespace X
         {
             m_object = m_page->CreateLinearLayout();
         }
+        ScrollView::ScrollView(Page* page):
+                ViewGroup(page)
+        {
+            m_object = m_page->CreateScrollView();
+        }
         TextView::TextView(Page* page):UIElement(page)
         {
             m_object = m_page->CreateTextView("text view");
@@ -212,9 +304,9 @@ namespace X
         {
             m_object = m_page->CreateEditText("text view");
         }
-        Button::Button(Page* page):UIElement(page)
+        Button::Button(Page* page):TextView(page)
         {
-            m_object = m_page->CreateButton("click me");
+            m_object = m_page->CreateButton("");
         }
         jobject Page::CreateTextView(std::string txt)
         {
@@ -277,7 +369,20 @@ namespace X
             env->DeleteLocalRef(objClass);
             return objRef;
         }
-
+        jobject Page::CreateScrollView()
+        {
+            AndroidWrapper* aw = m_app->GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"createScrollview",
+                    "()Ljava/lang/Object;");
+            jobject obj= env->CallObjectMethod(host, mId);
+            jobject objRef = env->NewGlobalRef(obj);
+            env->DeleteLocalRef(objClass);
+            return objRef;
+        }
         bool Page::Create()
         {
             std::string info("default");
@@ -297,7 +402,19 @@ namespace X
             return  true;
 
         }
-
+        bool App::ShowPage(Page* pPage)
+        {
+            AndroidWrapper* aw = GetParent();
+            auto* env = aw->GetEnv();
+            auto* host = aw->GetHost();
+            jclass objClass = env->GetObjectClass(host);
+            jmethodID mId = env->GetMethodID(
+                    objClass,"showPage",
+                    "(Ljava/lang/Object;)V");
+            env->CallVoidMethod(host, mId,pPage->GetObject());
+            env->DeleteLocalRef(objClass);
+            return true;
+        }
         bool AndroidWrapper::Print(std::string info)
         {
             __android_log_print(ANDROID_LOG_INFO, "xlang", "%s", info.c_str());

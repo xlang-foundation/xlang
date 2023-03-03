@@ -25,6 +25,9 @@ namespace X
 			UIBase* m_parent = nullptr;
             BEGIN_PACKAGE(UIBase)
                 APISET().AddFunc<1>("setBackgroundColor", &UIBase::setBackgroundColor);
+				APISET().AddFunc<4>("setPadding", &UIBase::setPadding);
+                APISET().AddFunc<4>("setMargins", &UIBase::setMargins);
+				APISET().AddFunc<1>("setGravity", &UIBase::setGravity);
             END_PACKAGE
 		public:
             inline jobject GetObject() {return m_object;}
@@ -33,6 +36,9 @@ namespace X
 				m_page = page;
 			}
 			~UIBase();
+			bool setGravity(int gravity);
+			bool setPadding(int left, int top, int right, int bottom);
+            bool setMargins(int left, int top, int right, int bottom);
 			void SetParent(UIBase* p)
 			{
 				m_parent =p;
@@ -71,7 +77,12 @@ namespace X
 
 			}
 		};
-
+		class ScrollView: public ViewGroup{
+			BEGIN_PACKAGE(ScrollView)
+					ADD_BASE(ViewGroup);
+			END_PACKAGE
+			ScrollView(Page* page);
+		};
 		//UI Element
 		class UIElement:
 				public UIBase
@@ -110,10 +121,10 @@ namespace X
             END_PACKAGE
             EditText(Page* page);
         };
-		class Button: public UIElement
+		class Button: public TextView
 		{
 			BEGIN_PACKAGE(Button)
-				ADD_BASE(UIElement);
+				ADD_BASE(TextView);
 			END_PACKAGE
 			Button(Page* page);
 		};
@@ -163,6 +174,7 @@ namespace X
 			BEGIN_PACKAGE(Page)
 				ADD_BASE(ViewGroup);
 				APISET().AddClass<0, LinearLayout,Page>("LinearLayout");
+                APISET().AddClass<0, ScrollView,Page>("ScrollView");
 				APISET().AddClass<0, ConstraintLayout,Page>("ConstraintLayout");
 				APISET().AddClass<0, TextView,Page>("TextView");
                 APISET().AddClass<0, EditText,Page>("EditText");
@@ -174,6 +186,7 @@ namespace X
 				return m_app;
 			}
 			jobject CreateLinearLayout();
+            jobject CreateScrollView();
 			jobject CreateTextView(std::string txt);
             jobject CreateEditText(std::string txt);
 			jobject CreateButton(std::string txt);
@@ -189,6 +202,7 @@ namespace X
 			BEGIN_PACKAGE(App)
 				APISET().AddVarClass<Color>("Color","Color");
 				APISET().AddClass<0, Page,App>("Page");
+                APISET().AddFunc<1>("showPage", &App::ShowPage);
 			END_PACKAGE
 			AndroidWrapper* GetParent()
 			{
@@ -202,15 +216,19 @@ namespace X
 			{
 				m_parent = pParent;
 			}
+            bool ShowPage(Page* pPage);
 		};
 
 
 		class AndroidWrapper {
+            JavaVM* m_jvm = nullptr;
 			JNIEnv *m_env = nullptr;
 			Locker m_mapLock;
             jobject m_objHost = nullptr;
 			std::unordered_map<unsigned  int,jobject> m_objHostMap;
 			App* m_app;
+            Locker m_uiCallLock;
+            std::vector<X::Value> m_uiCalls;
 		public:
 		BEGIN_PACKAGE(AndroidWrapper)
                 APISET().AddClass<0, App>("App");
@@ -222,13 +240,25 @@ namespace X
 			AndroidWrapper() {
 				m_app = new App(this);
 			}
-
+            void SetJVM(JavaVM* jvm)
+            {
+                m_jvm = jvm;
+            }
 			AndroidWrapper(JNIEnv *env, jobject objHost):
 					AndroidWrapper(){
 				m_env = env;
 				SetHostPerThread(objHost);
 			}
-
+            void AddUICall(X::Value& c)
+            {
+                m_uiCallLock.Lock();
+                m_uiCalls.push_back(c);
+                m_uiCallLock.Unlock();
+				PostCallToJavaUIThread();
+            }
+			void Init();
+			bool PostCallToJavaUIThread();
+			void CallFromUIThread();
 			~AndroidWrapper() {
 				if (m_env != nullptr){
 					for(auto& it:m_objHostMap) {
@@ -239,6 +269,7 @@ namespace X
 					delete m_app;
 				}
 			}
+			void AddPlugins();
 			void SetHostPerThread(jobject h)
 			{
                 m_objHost = m_env->NewGlobalRef(h);

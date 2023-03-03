@@ -29,6 +29,7 @@ protected:
 	List* Params = nil;
 	std::vector<int> m_IndexofParamList;//same size with input positional param
 	Expression* RetType = nil;
+	Module* GetMyModule();
 	void SetName(Expression* n)
 	{
 		Var* vName = dynamic_cast<Var*>(n);
@@ -38,7 +39,6 @@ protected:
 		}
 		ReCalcHint(n);
 	}
-	virtual void ScopeLayout() override;
 	virtual void SetScope(Scope* p) override
 	{
 		Expression::SetScope(p);
@@ -65,6 +65,12 @@ protected:
 		Params = p;
 		if (Params)
 		{
+			//all parameters must set as left value
+			auto& list = Params->GetList();
+			for (auto& l : list)
+			{
+				l->SetIsLeftValue(true);
+			}
 			ReCalcHint(Params);
 			Params->SetParent(this);
 		}
@@ -93,6 +99,7 @@ public:
 #endif
 		m_decors.clear();
 	}
+	virtual void ScopeLayout() override;
 	std::string getcode(bool includeHead = false);
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
@@ -236,6 +243,9 @@ public:
 			//not be used anymore, so delete it
 			delete pair;
 		}
+		//only accept once
+		NeedParam = false;
+
 	}
 
 	void SetRetType(Expression* p)
@@ -332,9 +342,22 @@ public:
 		X::Value& trailer,
 		X::Value& retValue) override
 	{
-		return m_func_ex ? m_func_ex(rt,
-			pContext == nullptr ? m_pContext : pContext, params, 
-			kwParams, trailer,retValue) : false;
+		if (m_func_ex)
+		{
+			return m_func_ex(rt,
+				pContext == nullptr ? m_pContext : pContext, params,
+				kwParams, trailer, retValue);
+		}
+		else if (m_func)
+		{
+			return m_func(rt,
+				pContext == nullptr ? m_pContext : pContext,
+				params, kwParams, retValue);
+		}
+		else
+		{
+			return false;
+		}
 	}
 	inline virtual bool Call(XRuntime* rt, XObj* pContext,
 		std::vector<Value>& params,

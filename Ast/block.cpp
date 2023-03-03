@@ -89,7 +89,10 @@ bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, 
 			}
 			if (!bOk)
 			{
-				std::cout << "Error Occurs in line:" << line << std::endl;
+				auto pid = GetPID();
+				std::cout << "Error Occurs in line:" << line <<",pid:" << pid<<std::endl;
+				auto code = i->GetCode();
+				std::cout << code << std::endl;
 			}
 			if (v0.IsValid() && (i == last))
 			{
@@ -167,7 +170,10 @@ bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, 
 		//std::cout << "after run line:" << line << std::endl;
 		if (!bOk)
 		{//TODO: error process here
-			std::cout << "Error Occurs in line:" << line << std::endl;
+			auto pid = GetPID();
+			std::cout << "Error Occurs in line:" << line << ",pid:" << pid << std::endl;
+			auto code = i->GetCode();
+			std::cout <<code<< std::endl;
 			//break;
 		}
 		if (v0.IsValid() && (i == last))
@@ -340,7 +346,8 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 bool If::EatMe(Expression* other)
 {
 	If* elseIf = dynamic_cast<If*>(other);
-	if (elseIf)
+	//if it is elif or else, then eat by the previous one
+	if (elseIf && !elseIf->IsIf())
 	{
 		If* p = this;
 		If* n = m_next;

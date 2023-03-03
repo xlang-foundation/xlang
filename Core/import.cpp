@@ -159,6 +159,7 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, 
 	Value& v, LValue* lValue)
 {
+	Scope* pMyScope = GetScope();
 	if (m_from)
 	{
 		Value v0;
@@ -194,7 +195,8 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 				auto* remoteObj = new RemoteObject(proxy);
 				remoteObj->SetObjName(im.name);
 				v = Value(dynamic_cast<XObj*>(remoteObj));
-				rt->M()->Add(rt, varName, nullptr, v);
+				pMyScope->AddAndSet(rt, pContext, varName, v);
+				//rt->M()->Add(rt, varName, nullptr, v);
 				continue;
 			}
 		}
@@ -202,7 +204,8 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		{
 			if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
 			{
-				rt->M()->Add(rt, varName, nullptr, v);
+				pMyScope->AddAndSet(rt, pContext, varName, v);
+				//rt->M()->Add(rt, varName, nullptr, v);
 				continue;
 			}
 		}
@@ -214,7 +217,8 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 				im.name,v);
 			if (bOK)
 			{
-				rt->M()->Add(rt, varName, nullptr, v);
+				pMyScope->AddAndSet(rt, pContext, varName, v);
+				//rt->M()->Add(rt, varName, nullptr, v);
 				continue;
 			}
 		}
@@ -226,7 +230,8 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 				im.name, v);
 			if (bOK)
 			{
-				rt->M()->Add(rt, varName, nullptr, v);
+				pMyScope->AddAndSet(rt, pContext, varName, v);
+				//rt->M()->Add(rt, varName, nullptr, v);
 				continue;
 			}
 		}
@@ -238,7 +243,8 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		{
 			ModuleObject* pModuleObj = new ModuleObject(pSubModule);
 			v = Value(pModuleObj);
-			rt->M()->Add(rt, varName, nullptr, v);
+			pMyScope->AddAndSet(rt, pContext, varName, v);
+			//rt->M()->Add(rt, varName, nullptr, v);
 			continue;
 		}
 		//then try Python Module
@@ -263,7 +269,8 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 				new Data::PyProxyObject(rt, pContext,
 					moduleName, m_path, curPath);
 			v = Value(pProxyObj);
-			rt->M()->Add(rt, varName, nullptr, v);
+			pMyScope->AddAndSet(rt, pContext, varName, v);
+			//rt->M()->Add(rt, varName, nullptr, v);
 		}
 	}
 	return true;
@@ -297,6 +304,7 @@ std::string X::AST::Import::ConvertDotSeqToString(
 void X::AST::Import::ScopeLayout()
 {
 	Operator::ScopeLayout();
+	auto* pMyScope = GetScope();
 	if (m_from)
 	{
 		m_from->SetParent(m_parent);

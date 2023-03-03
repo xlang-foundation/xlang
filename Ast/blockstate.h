@@ -118,6 +118,10 @@ public:
 			m_unsolved_decors.clear();
 		}
 	}
+	inline bool DoOp(AST::Operator* op)
+	{
+		return op->OpWithOperands(m_operands);
+	}
 	inline bool DoOpTop()
 	{
 		auto top = m_ops.top();

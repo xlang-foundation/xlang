@@ -24,6 +24,7 @@ include_directories("${XLANG_ROOT}/Ast")
 include_directories("${XLANG_ROOT}/Parse")
 include_directories("${XLANG_ROOT}/Serialize")
 include_directories("${XLANG_ROOT}/rpc")
+include_directories("${XLANG_ROOT}/Thread")
 include_directories("${XLANG_ROOT}/Ext")
 include_directories("${XLANG_ROOT}/Core")
 include_directories("${XLANG_ROOT}/Text")
@@ -36,6 +37,7 @@ FILE(GLOB Core_SRC "${XLANG_ROOT}/Core/*.cpp")
 FILE(GLOB Ast_SRC "${XLANG_ROOT}/Ast/*.cpp")
 FILE(GLOB Serialize_SRC "${XLANG_ROOT}/Serialize/*.cpp")
 FILE(GLOB Parse_SRC "${XLANG_ROOT}/Parse/*.cpp")
+FILE(GLOB Thread_SRC "${XLANG_ROOT}/Thread/*.cpp")
 FILE(GLOB Ext_SRC "${XLANG_ROOT}/Ext/*.cpp")
 FILE(GLOB Text_SRC "${XLANG_ROOT}/Text/*.cpp")
 FILE(GLOB Rpc_SRC "${XLANG_ROOT}/rpc/*.cpp")
@@ -49,6 +51,7 @@ add_library(${PROJECT_NAME} SHARED
         ${Ast_SRC}
         ${Parse_SRC}
         ${Serialize_SRC}
+        ${Thread_SRC}
         ${Ext_SRC}
         ${Text_SRC}
         ${Rpc_SRC}

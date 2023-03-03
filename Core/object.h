@@ -239,7 +239,15 @@ namespace Data {
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return true;
+			if (m_expr)
+			{
+				AST::ExecAction action;
+				return m_expr->Exec((XlangRuntime*)rt, action, pContext, retValue);
+			}
+			else
+			{
+				return true;
+			}
 		}
 		virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 		{
@@ -279,35 +287,6 @@ namespace Data {
 		{
 			return m_func->Call(rt, nullptr,
 				params, kwParams, retValue);
-		}
-	};
-
-	class Future:
-		public virtual Object
-	{
-		void* m_pTask = nullptr;
-	public:
-		Future()
-		{
-			m_t = ObjType::Future;
-		}
-		Future(void* task)
-			:Future()
-		{
-			m_pTask = task;
-		}
-		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue) override
-		{
-			return false;
-		}
-		virtual std::string ToString(bool WithFormat = false)
-		{
-			char v[1000];
-			snprintf(v, sizeof(v), "Future:%llu",
-				(long long)this);
-			return v;
 		}
 	};
 

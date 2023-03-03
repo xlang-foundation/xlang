@@ -1,4 +1,8 @@
 from xlang_win import App
+
+uiTaskPool = taskpool(run_in_ui=True)
+taskPool = taskpool(10)
+
 w = App.Window()
 w.SetText("Test")
 w.OnSize+=(){
@@ -94,6 +98,7 @@ btn = w.Button()
 btn.SetText("Reset")
 btn.SetRect(10,bot_line,100,40)
 btn.SetTop(box,1,0)
+
 btn.Click+= (){
 	global pos;
 	pos =1;
@@ -110,11 +115,23 @@ print("btn2.rect={",btn2.Left,",",btn2.Top,",",btn2.Right,",",btn2.Bottom,"}")
 btn2.SetTop(box,1,0)
 txt.SetLeft(btn2,2,10)
 
+def sleep_fn(x,y):
+	print("before sleep","tid=",threadid())
+	sleep(5000)
+	print("after sleep","tid=",threadid())
+	return x+y
+
+def Move(x):
+	global pos
+	pos +=x
+	c.Repaint()
+	txt.SetText("Button Move clicked,pos="+str(pos)+"tid="+str(threadid()))
+
 btn2.Click+= (){
-	global pos;
-	pos +=5;
-	c.Repaint();
-	txt.SetText("Button Move clicked");
+	sleep_fn.taskrun(taskPool,10,20).then((r){
+		print("r=",r,"tid=",threadid());
+		Move.taskrun(uiTaskPool,5);
+	})
 	print("button2 clicked")
 }
 btn2.Create()

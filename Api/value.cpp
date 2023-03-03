@@ -40,7 +40,17 @@ namespace X
 			switch (t)
 			{
 			case ValueType::Int64:
-				x.l += ToInt64(v);
+			{
+				if (v.t == ValueType::Double)
+				{//if right side is double, change to double
+					t = ValueType::Double;
+					x.d = (double)x.l + v.x.d;
+				}
+				else
+				{
+					x.l += ToInt64(v);
+				}
+			}
 				break;
 			case ValueType::Double:
 				x.d += ToDouble(v);

@@ -2,6 +2,8 @@
 #include "parser.h"
 #include "gthread.h"
 #include "moduleobject.h"
+#include "module.h"
+#include "moduleProxy.h"
 
 namespace X
 {
@@ -122,8 +124,26 @@ namespace X
 		moduleKey = AddModule(pTopModule);
 		return pTopModule;
 	}
-	bool Hosting::Unload(AST::Module* pTopModule)
-	{
+    AST::Module *Hosting::LoadWithScope(AST::Scope *pScope, const char *code, int size)
+    {
+		Parser parser;
+		if (!parser.Init())
+		{
+			return nullptr;
+		}
+		//prepare top module for this code
+		AST::ModuleProxy* pTopModule = new AST::ModuleProxy();
+		pTopModule->SetScope(pScope);
+		pTopModule->IncRef();
+		pTopModule->ScopeLayout();
+		parser.Compile(pTopModule,(char*)code, size);
+		std::string moduleName("proxy_module");
+		pTopModule->SetModuleName(moduleName);
+		AddModule(pTopModule);
+		return pTopModule;    
+	}
+    bool Hosting::Unload(AST::Module *pTopModule)
+    {
 		RemoveModule(pTopModule);
 		pTopModule->DecRef();
 		return true;
@@ -132,6 +152,7 @@ namespace X
 	{
 		XlangRuntime* pRuntime = new XlangRuntime();
 		pRuntime->SetM(pTopModule);
+		pTopModule->SetRT(pRuntime);
 		G::I().BindRuntimeToThread(pRuntime);
 
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();

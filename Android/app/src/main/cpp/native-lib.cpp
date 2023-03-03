@@ -13,17 +13,21 @@ namespace X
     extern void XLangStaticRun(std::string code);
     extern void XLangStaticUnload();
 }
+
 extern "C" JNIEXPORT jboolean JNICALL
 Java_org_xlangfoundation_playground_xlang_loadJNI(
         JNIEnv* env,
         jobject objHost) {
-    //if(jvm == 0)
-    //{
-    //    env->GetJavaVM(&jvm);
-    //}
+    if(jvm == 0)
+    {
+        env->GetJavaVM(&jvm);
+    }
     _android = new X::Android::AndroidWrapper(env, objHost);
+    _android->SetJVM(jvm);
     X::XLangStaticLoad();
     X::RegisterPackage<X::Android::AndroidWrapper>("android",_android);
+    _android->Init();
+    _android->AddPlugins();
     return true;
 };
 extern "C" JNIEXPORT jlong JNICALL
@@ -68,8 +72,17 @@ Java_org_xlangfoundation_playground_xlang_callJNI(
     X::ARGS args;
     X::KWARGS kwargs;
     X::Value retVal;
-    pObj->Call(pCurModule->GetRT(), nullptr,args,kwargs,retVal);
+    X::XRuntime* rt0 = (X::XRuntime*)pCurModule->GetRT();
+    pObj->Call(rt0, nullptr,args,kwargs,retVal);
     //jvm->DetachCurrentThread();
+    return true;
+};
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_org_xlangfoundation_playground_xlang_callFromUIThreadJNI(
+        JNIEnv* env,
+        jobject objHost) {
+    _android->CallFromUIThread();
     return true;
 };
 

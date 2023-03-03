@@ -113,6 +113,11 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 }
 void Parser::NewLine(bool checkIfIsLambdaOrPair)
 {
+	//this case deals with { is in next line
+	// f = (x,y)
+	//{
+	//...
+	//}
 	short lastToken = get_last_token();
 	if (checkIfIsLambdaOrPair &&
 		lastToken == TokenID 
@@ -330,6 +335,10 @@ AST::Operator* Parser::PairLeft(short opIndex)
 	if (lastToken == TokenID && LastIsLambda())
 	{
 		auto op = new AST::Func();
+		//the last Operand is Pair, so set as R for this Func
+		op->SetR(m_curBlkState->OperandTop());
+		m_curBlkState->OperandPop();
+		op->ScopeLayout();
 		op->SetTokenIndex(m_tokenIndex++);
 		//for code line inside this function, 
 		//we need to assign upper block as its parent
