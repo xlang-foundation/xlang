@@ -32,6 +32,7 @@ namespace X
 		List,
 		Dict,
 		Complex,
+		Set,
 		TableRow,
 		Table,
 		RemoteObject,
@@ -288,6 +289,12 @@ namespace X
 			Set(k,val);
 		}
 	};
+	class XSet :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XSet)
+	};
 	class XComplex :
 		virtual public XObj
 	{
@@ -453,6 +460,7 @@ namespace X
 	using Str = V<XStr>;
 	using Dict = V<XDict>;
 	using List = V<XList>;
+	using Set = V<XSet>;
 	using Complex = V<XComplex>;
 	using Bin = V<XBin>;
 	using Package = V<XPackage>;

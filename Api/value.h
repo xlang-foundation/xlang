@@ -388,6 +388,7 @@ public:
 		}
 	}
 	virtual void operator += (const Value& v);
+	virtual void operator -= (const Value& v);
 	template<typename... VarList>
 	Value operator()(VarList... args)
 	{
@@ -417,7 +418,7 @@ public:
 	{
 		return QueryMember(key);
 	}
-	ARITH_OP(-= );
+	//ARITH_OP(-= );
 	ARITH_OP(*= );
 	ARITH_OP(/= );
 	COMPARE_OP(==);

@@ -37,6 +37,7 @@
 #include "manager.h"
 #include "typeobject.h"
 #include "complex.h"
+#include "set.h"
 #include "dict.h"
 #include "future.h"
 #include "taskpool.h"
@@ -1064,6 +1065,23 @@ bool U_CreateComplexObject(X::XRuntime* rt, XObj* pContext,
 	return true;
 }
 
+bool U_CreateSetObject(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	X::Data::mSet* pSetObj;
+	if (params.size() == 0) {
+		pSetObj = new X::Data::mSet();
+	}
+	else {
+		pSetObj = new X::Data::mSet(params);
+	}
+
+	retValue = X::Value(pSetObj);
+	return true;
+}
+
 bool U_Event_Loop(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1218,6 +1236,7 @@ bool Builtin::RegisterInternals()
 	Register("each", (X::U_FUNC)U_Each, params, "", true);
 	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, "", true);
 	Register("to_xlang", (X::U_FUNC)U_To_XObj, params, "to_xlang", true);
+
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
 	Register("get_modulebykey", (X::U_FUNC)U_GetModuleFromKey, params);
@@ -1229,6 +1248,7 @@ bool Builtin::RegisterInternals()
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
 	Register("event_loop", (X::U_FUNC)U_Event_Loop, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
+	Register("set", (X::U_FUNC)U_CreateSetObject, params);
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	return true;

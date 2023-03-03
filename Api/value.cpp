@@ -4,7 +4,7 @@
 
 namespace X 
 {
-	ARITH_OP_IMPL(-= )
+	//ARITH_OP_IMPL(-= )
 	ARITH_OP_IMPL(*= )
 	ARITH_OP_IMPL(/= )
 	COMPARE_OP_IMPL(== )
@@ -65,6 +65,49 @@ namespace X
 			}
 		}
 	}
+
+	void Value::operator -= (const Value& v)
+	{
+		//if (IsObject())
+		//{
+		//	ReleaseObject(x.obj);
+		//}
+		flags = v.flags;
+		if (t == ValueType::Object)
+		{
+			Value v0;
+			//don't change V
+			v0 += v;
+			(*((XObj*)x.obj)) -= v0;
+		}
+		else if (v.IsObject())
+		{
+			Value v0 = v;
+			v0 -= *this;
+			t = ValueType::Object;
+			AssignObject(v0.GetObj());
+		}
+		else
+		{
+			switch (t)
+			{
+			case ValueType::Int64:
+				x.l -= ToInt64(v);
+				break;
+			case ValueType::Double:
+				x.d -= ToDouble(v);
+				break;
+			case ValueType::Str:
+				x.str = v.x.str;
+				ChangeToStrObject();
+				break;
+			default:
+				*this -= v;
+				break;
+			}
+		}
+	}
+
 #if 0
 	template<typename toT>
 	Value::operator toT* () const
@@ -112,6 +155,12 @@ namespace X
 	void V<XComplex>::Create()
 	{
 		SetObj(g_pXHost->CreateComplex());
+	}
+	template<>
+	template<>
+	void V<XSet>::Create()
+	{
+		SetObj(g_pXHost->CreateSet());
 	}
 	template<>
 	template<>

@@ -17,6 +17,7 @@ namespace X
 	class XEvent;
 	class XDict;
 	class XList;
+	class XSet;
 	class XComplex;
 	class XBin;
 	class XRemoteObject;
@@ -57,6 +58,7 @@ namespace X
 		virtual XStr* CreateStr(const char* data, int size) = 0;
 		virtual XDict* CreateDict() = 0;
 		virtual XList* CreateList() = 0;
+		virtual XSet* CreateSet() = 0;
 		virtual XComplex* CreateComplex() = 0;
 		virtual XPackage* CreatePackage(APISetBase* pAPISet,void* pRealObj) = 0;
 		virtual XPackage* CreatePackageProxy(XPackage* pPackage,void* pRealObj) = 0;

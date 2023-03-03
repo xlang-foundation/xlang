@@ -3,6 +3,7 @@
 #include "object.h"
 #include "dict.h"
 #include "list.h"
+#include "set.h"
 #include "table.h"
 #include "pyproxyobject.h"
 
@@ -194,7 +195,9 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = true;
+	bool isDict = false; 
 	Data::Dict* pDict = new Data::Dict();
+	Data::mSet* pSet = new Data::mSet();
 	auto KeyProc = [=](Expression* keyExpr)
 	{
 		X::Value retVal;
@@ -210,7 +213,7 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 		}
 		return retVal;
 	};
-	auto SetKWProc = [=](Expression* i, Data::Dict* pDict)
+	auto SetKWProcDict = [=](Expression* i, Data::Dict* pDict)
 	{
 		Value Key;
 		Value Val;
@@ -225,28 +228,67 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 			(dynamic_cast<Assign*>(i))->GetL()->Exec(rt,action, pContext, Key);
 			(dynamic_cast<Assign*>(i))->GetL()->Exec(rt,action, pContext, Val);
 			break;
-		case ObType::Var:
-			Key = KeyProc((dynamic_cast<Param*>(i))->GetName());
-			break;
+
 		default:
 			break;
 		}
 		std::string strKey = Key.ToString();
 		pDict->Set(Key, Val);
 	};
+	auto FindDict = [=](Expression* i)
+	{
+		Value Key;
+		Value Val;
+		if (i->m_type == ObType::Param || i->m_type == ObType::Assign) 
+			return true;
+		else
+			return false;
+	};
+
 	if (R && R->m_type == ObType::List)
 	{
 		auto& list = (dynamic_cast<AST::List*>(R))->GetList();
+
 		for (auto& i : list)
 		{
-			SetKWProc(i,pDict);
+			isDict = FindDict(i);
+			if (isDict)
+				break;
+		}
+
+		for (auto& i : list)
+		{
+			if (isDict){
+				SetKWProcDict(i,pDict);
+			}
+			else {
+				Value Val;
+				ExecAction action;
+				i->Exec(rt,action, pContext, Val);
+				pSet->Set(Val);
+			}
 		}
 	}
 	else if(R)
 	{
-		SetKWProc(R, pDict);
+		isDict = FindDict(R);
+		if (isDict){
+			SetKWProcDict(R,pDict);
+		}
+		else {
+			Value Val;
+			ExecAction action;
+			R->Exec(rt,action, pContext, Val);
+			pSet->Set(Val);
+		}
 	}
-	v = Value(pDict);
+	if (isDict){
+		v = Value(pDict);
+	}	
+	else {
+		v = Value(pSet);
+	}
+
 	return bOK;
 }
 bool PairOp::TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)

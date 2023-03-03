@@ -7,6 +7,7 @@
 #include "package.h"
 #include "dict.h"
 #include "list.h"
+#include "set.h"
 #include "complex.h"
 #include "bin.h"
 #include "BlockStream.h"
@@ -159,6 +160,12 @@ namespace X
 		auto* pDict =  new X::Data::Dict();
 		pDict->IncRef();
 		return pDict;
+	}
+	XSet* XHost_Impl::CreateSet()
+	{
+		auto* pSet =  new X::Data::mSet();
+		pSet->IncRef();
+		return pSet;
 	}
 	XComplex* XHost_Impl::CreateComplex()
 	{
