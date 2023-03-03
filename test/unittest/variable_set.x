@@ -23,11 +23,11 @@ print(A.Size())
 #print(A.Size())
 #print(len(A)) 
 
-
 #B = {"red", "orange", "yellow", "green"}
-#B = {1,2,3}
-#print("type of B =",type(B)) 
-#print(B)
+B = {1,2,3}
+#B = {1.1,2.2,3.3}
+print("type of B =",type(B)) 
+print(B)
 #print(len(B)) 
 #C = {"blue", "indigo", "violet"}
 #B.update(C)

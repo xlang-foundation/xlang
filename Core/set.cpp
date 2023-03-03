@@ -184,33 +184,7 @@ namespace X
 			retValue = X::Value(this);
 			return true;
 		}
-		X::Value mSet::UpdateItemValue(XlangRuntime* rt, XObj* pContext,
-			std::vector<std::string>& IdSet, int id_offset,
-			std::string itemName, X::Value& val)
-		{
-			AutoLock(m_lock);
-			if (id_offset < IdSet.size())
-			{
-				unsigned long long index = 0;
-				SCANF(IdSet[id_offset++].c_str(), "%llu", &index);
-				Value item;
-				Get(index, item);
-				if (item.IsObject())
-				{
-					Object* pChildObj = dynamic_cast<Object*>(item.GetObj());
-					if (pChildObj)
-					{
-						return pChildObj->UpdateItemValue(rt, pContext, 
-							IdSet, id_offset, itemName, val);
-					}
-				}
-				return val;//all elses, no change
-			}
-			unsigned long long index = 0;
-			SCANF(itemName.c_str(), "%llu", &index);
-			Set(index, val);
-			return val;
-		}
+		
 		List* mSet::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdSet, int id_offset,
 			long long startIndex, long long count)

@@ -4,7 +4,7 @@
 
 namespace X
 {
-	namespace Data { class List; class Dict; }
+	namespace Data { class List; class Dict; class mSet; }
 namespace AST
 {
 	class PairOp :
