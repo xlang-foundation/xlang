@@ -68,6 +68,7 @@ namespace X
 		}
 		void Function::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
+			Object::GetBaseScopes(bases);
 			bases.push_back(&_function_op);
 		}
 		int Function::QueryMethod(const char* name, bool* pKeepRawParams)

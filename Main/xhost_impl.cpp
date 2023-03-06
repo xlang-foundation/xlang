@@ -18,6 +18,7 @@
 #include "import.h"
 #include "expr_scope.h"
 #include "RemoteObjectStub.h"
+#include "tensor.h"
 
 namespace X 
 {
@@ -155,6 +156,13 @@ namespace X
 		pList->IncRef();
 		return pList;
 	}
+	XTensor* XHost_Impl::CreateTensor()
+	{
+		auto* pTensor = new X::Data::Tensor();
+		pTensor->IncRef();
+		return pTensor;
+	}
+
 	XDict* XHost_Impl::CreateDict()
 	{
 		auto* pDict =  new X::Data::Dict();

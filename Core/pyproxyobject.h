@@ -260,6 +260,7 @@ namespace X
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 			{
+				Object::GetBaseScopes(bases);
 				bases.push_back(dynamic_cast<Scope*>(this));
 			}
 			void SetModuleFileName(std::string& fileName)

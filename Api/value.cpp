@@ -152,6 +152,11 @@ namespace X
 		SetObj(g_pXHost->CreateList());
 	}
 	template<>
+	void V<XTensor>::Create()
+	{
+		SetObj(g_pXHost->CreateTensor());
+	}
+	template<>
 	void V<XComplex>::Create()
 	{
 		SetObj(g_pXHost->CreateComplex());

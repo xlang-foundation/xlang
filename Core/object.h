@@ -31,6 +31,7 @@ namespace Data {
 	protected:
 		ObjType m_t = ObjType::Base;
 		AttributeBag* m_aBag = nullptr;
+		AST::Scope* m_extraScope = nullptr;//ref to extra scope, don't delete it
 		Locker m_lock;
 		Locker m_external_lock;
 	public:
@@ -48,6 +49,10 @@ namespace Data {
 			AutoLock(m_lock);
 			return ObjRef::AddRef();
 		}
+		inline void SetExtraScope(AST::Scope* pScope)
+		{
+			m_extraScope = pScope;
+		}
 		virtual XObj* Clone() override
 		{
 			IncRef();
@@ -58,7 +63,13 @@ namespace Data {
 			return true;
 		}
 		inline virtual void CloseIterator(Iterator_Pos pos) {}
-		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases){}
+		inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
+		{
+			if (m_extraScope)
+			{
+				bases.push_back(m_extraScope);
+			}
+		}
 		AttributeBag* GetAttrBag();
 		void DeleteAttrBag();
 		inline virtual int DecRef()
@@ -153,6 +164,8 @@ namespace Data {
 				return "List";
 			case X::ObjType::Dict:
 				return "Dict";
+			case X::ObjType::Tensor:
+				return "Tensor";
 			case X::ObjType::TableRow:
 				return "TableRow";
 			case X::ObjType::Table:

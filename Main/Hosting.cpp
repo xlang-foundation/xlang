@@ -4,6 +4,7 @@
 #include "moduleobject.h"
 #include "module.h"
 #include "moduleProxy.h"
+#include "event.h"
 
 namespace X
 {
@@ -28,6 +29,20 @@ namespace X
 		}
 
 	};
+	bool Hosting::PostRunFragmentInMainThread(AST::ModuleObject* pModuleObj, std::string& code)
+	{
+		X::ARGS params0;
+		params0.push_back(X::Value(pModuleObj));
+		params0.push_back(X::Value(code));
+		EventSystem::I().AddEventTask([this](X::ARGS params)
+			{
+				auto* pModuleObj0 = dynamic_cast<AST::ModuleObject*>(params[0].GetObj());
+				std::string code = params[1].ToString();
+				X::Value retVal;
+				RunFragmentInModule(pModuleObj0, code.c_str(), code.size(), retVal);
+			}, params0);
+		return true;
+	}
 	bool Hosting::RunAsBackend(std::string& moduleName, std::string& code,
 		std::vector<std::string>& passInParams)
 	{

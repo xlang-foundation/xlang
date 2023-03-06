@@ -41,6 +41,7 @@
 #include "dict.h"
 #include "future.h"
 #include "taskpool.h"
+#include "tensor.h"
 
 namespace X
 {
@@ -471,6 +472,32 @@ Data::Function* Builtin::Find(std::string& name)
 	{
 		return nil;
 	}
+}
+bool Builtin::RegisterWithScope(const char* name, X::U_FUNC func,
+	AST::Scope* pScope,
+	std::vector<std::pair<std::string, std::string>>& params,
+	const char* doc,
+	bool regToMeta)
+{
+	std::string strName(name);
+	AST::ExternFunc* extFunc = new AST::ExternFunc(
+		strName, doc,
+		(X::U_FUNC)func);
+	auto* pFuncObj = new Data::Function(extFunc, true);
+	pFuncObj->SetExtraScope(pScope);
+	pFuncObj->IncRef();
+	m_lock.Lock();
+	int id = (int)m_Funcs.size();
+	m_Funcs.push_back({ name ,pFuncObj });
+	m_mapNameToIndex.emplace(std::make_pair(name, id));
+	m_lock.Unlock();
+	if (regToMeta)
+	{
+		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);
+		X::Value vFunc(pFuncObj);
+		X::AST::MetaScope::I().Set(nullptr, nullptr, idx, vFunc);
+	}
+	return true;
 }
 bool Builtin::Register(const char* name, X::U_FUNC func,
 	std::vector<std::pair<std::string, std::string>>& params,
@@ -1192,6 +1219,64 @@ bool U_CreateDict(X::XRuntime* rt, XObj* pContext,
 	}
 	return bOK;
 }
+
+#define Tensor_DType "dtype"
+#define Tensor_Shape "shape"
+bool U_CreateTensor(X::XRuntime* rt, XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	bool bOK = true;
+	auto* pTensor = new X::Data::Tensor();
+
+	int dtype = (int)X::TensorDataType::FLOAT;
+	auto it = kwParams.find(Tensor_DType);
+	if (it != kwParams.end())
+	{
+		dtype = (int)it->second;
+	}
+
+	pTensor->SetDataType((X::TensorDataType)dtype);
+	//if there is init data, will skip shape
+	X::Value initData;
+	if (params.size() > 0)
+	{
+		initData = params[0];
+	}
+	else
+	{
+		std::vector<int> shapes;
+		it = kwParams.find(Tensor_Shape);
+		if (it != kwParams.end())
+		{
+			auto val = it->second;
+			if (val.IsObject())
+			{
+				if (val.GetObj()->GetType() == ObjType::List)
+				{
+					List valList(val);
+					auto size = valList.Size();
+					for (long long i = 0; i < size; i++)
+					{
+						shapes.push_back((int)valList->Get(i));
+					}
+				}
+			}
+			pTensor->SetShape(shapes);
+		}
+	}
+	bOK = pTensor->Create(initData);
+	if (bOK)
+	{
+		retValue = X::Value(pTensor);
+	}
+	else
+	{
+		delete pTensor;
+	}
+	return bOK;
+}
 bool Builtin::RegisterInternals()
 {
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
@@ -1251,6 +1336,7 @@ bool Builtin::RegisterInternals()
 	Register("set", (X::U_FUNC)U_CreateSetObject, params);
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
+	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 	return true;
 }
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)

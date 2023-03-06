@@ -1,3 +1,4 @@
-d = dict()
-d+={"k1":1233}
-print(type(d),d)
+
+def func1(info:string):
+    print(info)
+func1("Hello Xlang")

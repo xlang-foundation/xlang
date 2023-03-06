@@ -29,7 +29,7 @@ namespace X
 		int OwnerThreadId = -1;
 		long cookie = 0;
 	};
-
+	using EventTask = std::function<void(ARGS& params)>;
 	class ObjectEvent :
 		public virtual Data::Object,
 		public virtual XEvent
@@ -84,6 +84,7 @@ namespace X
 		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 		{
+			Object::GetBaseScopes(bases);
 			bases.push_back(m_APIs.GetScope());
 		}
 		double wait(int x,double y)
@@ -261,10 +262,16 @@ namespace X
 			ARGS params;
 			KWARGS kwParams;
 		};
+		struct EventTaskInfo
+		{
+			EventTask task;
+			ARGS params;
+		};
 		bool m_run = true;
 		Locker m_lockEventOnFire;
 		std::vector<EventFireInfo> m_eventsOnFire;
-
+		Locker m_lockEventTasks;
+		std::vector< EventTaskInfo> m_eventTasks;
 		XWait m_wait;
 		Locker m_lockEventMap;
 		std::unordered_map<std::string, ObjectEvent*> m_eventMap;
@@ -306,6 +313,13 @@ namespace X
 			}
 			return pEvt;
 		}
+		inline void AddEventTask(EventTask task, ARGS& params)
+		{
+			m_lockEventTasks.Lock();
+			m_eventTasks.push_back(EventTaskInfo{ task,params });
+			m_lockEventTasks.Unlock();
+			m_wait.Release();
+		}
 		void Loop()
 		{
 			while (m_run)
@@ -325,6 +339,16 @@ namespace X
 					m_lockEventOnFire.Lock();
 				}
 				m_lockEventOnFire.Unlock();
+				m_lockEventTasks.Lock();
+				while (m_eventTasks.size() > 0)
+				{
+					auto tskInfo = m_eventTasks[0];
+					m_eventTasks.erase(m_eventTasks.begin());
+					m_lockEventTasks.Unlock();
+					tskInfo.task(tskInfo.params);
+					m_lockEventTasks.Lock();
+				}
+				m_lockEventTasks.Unlock();
 			}
 		}
 		inline void Fire(X::XRuntime* rt, XObj* pContext,

@@ -111,6 +111,7 @@ namespace X
 
 		void Future::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
+			Object::GetBaseScopes(bases);
 			bases.push_back(&_FutureScope);
 		}
 		void Future::cleanup()
