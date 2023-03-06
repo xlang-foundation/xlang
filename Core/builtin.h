@@ -43,6 +43,11 @@ namespace X {
 			std::vector<std::pair<std::string, std::string>>& params,
 			const char* doc = "",
 			bool regToMeta=false);
+		bool RegisterWithScope(const char* name, X::U_FUNC func,
+			AST::Scope* pScope,
+			std::vector<std::pair<std::string, std::string>>& params,
+			const char* doc = "",
+			bool regToMeta = false);
 		bool RegisterInternals();
 
 		// Inherited via XPackage

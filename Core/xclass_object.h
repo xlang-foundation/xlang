@@ -35,6 +35,7 @@ namespace X {
 			}
 			inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 			{
+				Object::GetBaseScopes(bases);
 				bases.push_back(GetClassObj());
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,

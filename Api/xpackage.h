@@ -121,6 +121,7 @@ namespace X
 			Func,
 			FuncEx,
 			Prop,
+			Const,
 			ObjectEvent,
 			Class,
 			ClassInstance,
@@ -129,6 +130,7 @@ namespace X
 		{
 			MemberType type;
 			std::string name;
+			X::Value constVal;
 			X::U_FUNC func;
 			X::U_FUNC func2;
 			X::U_FUNC_EX func_ex;
@@ -218,6 +220,10 @@ namespace X
 			}
 			return pEvt;
 		}
+		void AddConst(const char* name,X::Value val)
+		{
+			m_members.push_back(MemberInfo{ MemberType::Const,name,val });
+		}
 		void AddEvent(const char* name)
 		{
 			m_members.push_back(MemberInfo{ MemberType::ObjectEvent,name });
@@ -231,7 +237,7 @@ namespace X
 			apiset.Create(class_inst, cleanFunc);
 
 			m_members.push_back(MemberInfo{
-				MemberType::Class,class_name,
+				MemberType::Class,class_name,X::Value(),
 				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -257,7 +263,7 @@ namespace X
 			apiset.Create(class_inst, cleanFunc);
 
 			m_members.push_back(MemberInfo{
-				MemberType::Class,class_name,
+				MemberType::Class,class_name,X::Value(),
 				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -290,7 +296,7 @@ namespace X
 			Class_T::BuildAPI();
 			apiset.Create(nullptr);
 			m_members.push_back(MemberInfo{
-				MemberType::Class,class_name,
+				MemberType::Class,class_name,X::Value(),
 				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -317,7 +323,7 @@ namespace X
 			Class_T::BuildAPI();
 			apiset.Create(nullptr);
 			m_members.push_back(MemberInfo{
-				MemberType::Class,class_name,
+				MemberType::Class,class_name,X::Value(),
 				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -330,7 +336,7 @@ namespace X
 		void AddFunc(const char* func_name, F f,const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Func,func_name,
+				MemberType::Func,func_name,X::Value(),
 				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -345,7 +351,7 @@ namespace X
 		void AddFuncEx(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::FuncEx,func_name,nullptr,nullptr,
+				MemberType::FuncEx,func_name,X::Value(),nullptr,nullptr,
 				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
@@ -360,7 +366,7 @@ namespace X
 		void AddRTFunc(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Func,func_name,
+				MemberType::Func,func_name,X::Value(),
 				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -375,7 +381,7 @@ namespace X
 		void AddVarFuncEx(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::FuncEx,func_name,nullptr,nullptr,
+				MemberType::FuncEx,func_name,X::Value(),nullptr,nullptr,
 				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
@@ -389,7 +395,7 @@ namespace X
 		void AddRawParamFunc(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::FuncEx,func_name,nullptr,nullptr,
+				MemberType::FuncEx,func_name,X::Value(),nullptr,nullptr,
 				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
@@ -403,7 +409,7 @@ namespace X
 		void AddVarFunc(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Func,func_name,
+				MemberType::Func,func_name,X::Value(),
 				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -417,7 +423,7 @@ namespace X
 		void AddProp0(const char* func_name, PTMV var)
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,
+				MemberType::Prop,func_name,X::Value(),
 				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -444,7 +450,7 @@ namespace X
 		void AddPropWithType(const char* func_name, PTMV var)
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,
+				MemberType::Prop,func_name,X::Value(),
 				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -469,7 +475,7 @@ namespace X
 			std::function<X::Value(T* pThis)> getF)
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,
+				MemberType::Prop,func_name,X::Value(),
 				(X::U_FUNC)([setF](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -493,7 +499,7 @@ namespace X
 		void AddProp(const char* func_name,GETF get)
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,
+				MemberType::Prop,func_name,X::Value(),
 				nullptr,
 				(X::U_FUNC)([get](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
@@ -509,7 +515,7 @@ namespace X
 		void AddProp(const char* func_name, SETF set, GETF get)
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,
+				MemberType::Prop,func_name,X::Value(),
 				(X::U_FUNC)([set](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -584,6 +590,11 @@ namespace X
 					{
 						auto* pPropObj = X::g_pXHost->CreateProp(m.name.c_str(), m.func, m.func2);
 						v0 = X::Value(pPropObj, false);
+					}
+					break;
+					case MemberType::Const:
+					{
+						v0 = m.constVal;
 					}
 					break;
 					case MemberType::ObjectEvent:

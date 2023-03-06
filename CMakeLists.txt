@@ -27,4 +27,5 @@ if(WIN32)
 add_subdirectory("winner")
 endif()
 add_subdirectory("sqlite")
+add_subdirectory("Image")
 

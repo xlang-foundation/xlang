@@ -22,12 +22,18 @@ namespace X
 				{
 					std::string name("runfragment");
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						"retVal = runfragment(code)",
+						"retVal = runfragment(code[,post = True|False])",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							ARGS& params,
 							KWARGS& kwParams,
 							X::Value& retValue)
 							{
+								bool bPost = false;
+								auto kwIt = kwParams.find("post");
+								if (kwIt != kwParams.end())
+								{
+									bPost = (bool)kwIt->second;
+								}
 								if (params.size() > 0)
 								{
 									std::string code;
@@ -44,8 +50,15 @@ namespace X
 										code = v0.ToString();
 									}
 									auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
-									return Hosting::I().RunFragmentInModule(pModuleObj,
-										code.c_str(), code.size(), retValue);
+									if (bPost)
+									{
+										Hosting::I().PostRunFragmentInMainThread(pModuleObj, code);
+									}
+									else
+									{
+										return Hosting::I().RunFragmentInModule(pModuleObj,
+											code.c_str(), code.size(), retValue);
+									}
 								}
 								else
 								{
@@ -113,6 +126,7 @@ namespace X
 		static ModuleOp _module_op;
 		void ModuleObject::GetBaseScopes(std::vector<Scope*>& bases)
 		{
+			Object::GetBaseScopes(bases);
 			bases.push_back(&_module_op);
 			bases.push_back(m_pModule);
 		}

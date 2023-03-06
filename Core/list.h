@@ -209,6 +209,7 @@ public:
 	}
 	virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{ 
+		Object::GetBaseScopes(bases);
 		for (auto it : m_bases)
 		{
 			bases.push_back(it);

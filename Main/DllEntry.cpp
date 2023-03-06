@@ -26,6 +26,7 @@
 #include "moduleobject.h"
 #include "BlockStream.h"
 #include "future.h"
+#include "tensor.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -305,6 +306,7 @@ void XLangStaticUnload()
 	X::Data::Str::cleanup();
 	X::Data::List::cleanup();
 	X::Data::Dict::cleanup();
+	X::Data::Tensor::cleanup();
 	X::Data::Future::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 	Hosting::I().Cleanup();

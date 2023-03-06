@@ -31,6 +31,7 @@ namespace X
 		Iterator,
 		List,
 		Dict,
+		Tensor,
 		Complex,
 		Set,
 		TableRow,
@@ -295,6 +296,29 @@ namespace X
 	public:
 		Internal_Reserve(XSet)
 	};
+	enum class TensorDataType
+	{
+		BOOL = 0,
+		BYTE, UBYTE,//8 bits
+		SHORT, USHORT,//16bits
+		HALFFLOAT,//16 bits
+		INT, UINT,//32 bits
+		LONGLONG, ULONGLONG,//64 bits
+		FLOAT, //32 bits
+		DOUBLE,//64 bits
+		CFLOAT, //32bits+32bits
+		CDOUBLE//64 bits+64bits
+	};
+	class XTensor :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XTensor)
+		virtual char* GetData() = 0;
+		virtual void SetShape(std::vector<int> shapes) = 0;
+		virtual void SetDataType(TensorDataType t) = 0;
+		virtual bool Create(X::Value& initData) = 0;
+	};
 	class XComplex :
 		virtual public XObj
 	{
@@ -460,6 +484,7 @@ namespace X
 	using Str = V<XStr>;
 	using Dict = V<XDict>;
 	using List = V<XList>;
+	using Tensor = V<XTensor>;
 	using Set = V<XSet>;
 	using Complex = V<XComplex>;
 	using Bin = V<XBin>;

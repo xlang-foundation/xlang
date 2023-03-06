@@ -95,5 +95,6 @@ namespace X
 			X::Value& retVal);
 		bool RunAsBackend(std::string& moduleName,std::string& code,
 			std::vector<std::string>& passInParams);
+		bool PostRunFragmentInMainThread(AST::ModuleObject* pModuleObj,std::string& code);
 	};
 }
