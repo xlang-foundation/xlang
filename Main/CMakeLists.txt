@@ -19,6 +19,7 @@ include_directories("../Ext")
 include_directories("../Core")
 include_directories("../Text")
 include_directories("../Scripts")
+include_directories("../nn")
 include_directories(".")
 
 FILE(GLOB Api_SRC "../Api/value.cpp")
@@ -31,6 +32,7 @@ FILE(GLOB Thread_SRC "../Thread/*.cpp")
 FILE(GLOB Ext_SRC "../Ext/*.cpp")
 FILE(GLOB Text_SRC "../Text/*.cpp")
 FILE(GLOB Rpc_SRC "../rpc/*.cpp")
+FILE(GLOB Nn_SRC "../nn/*.cpp")
 FILE(GLOB Main_SRC "*.cpp")
 
 add_library(${PROJECT_NAME} SHARED 
@@ -44,6 +46,7 @@ add_library(${PROJECT_NAME} SHARED
 	${Ext_SRC}
 	${Text_SRC}
 	${Rpc_SRC}
+	${Nn_SRC}
 	${Main_SRC}
 )
 
