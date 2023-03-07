@@ -1,5 +1,8 @@
 #include "tensor.h"
 #include "list.h"
+#include "dict.h"
+#include "port.h"
+#include "function.h"
 
 namespace X
 {
@@ -46,13 +49,45 @@ namespace X
 					"cfloat",
 					"cdouble"
 				};
-				int cnt = (int)dataTypeList.size();
-				m_stackFrame->SetVarCount(cnt);
-				for(int i = 0;i < cnt; i++)
+				int const_cnt = (int)dataTypeList.size();
+				int func_cnt = 1;
+				m_stackFrame->SetVarCount(const_cnt+ func_cnt);
+				for(int i = 0;i < const_cnt; i++)
 				{
 					int idx = AddOrGet(dataTypeList[i], false);
 					X::Value  val(i);
 					m_stackFrame->Set(idx, val);
+				}
+				std::string strName;
+				{
+					strName = "permute";
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"permute(list of indices)",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							X::ARGS& params,
+							X::KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+								auto& p0 = params[0];
+								if (p0.IsList())
+								{
+									List* pList = dynamic_cast<List*>(p0.GetObj());
+									int axesCnt = (int)pList->Size();
+									std::vector<int> axes;
+									for (int i = 0; i < axesCnt; i++)
+									{
+										axes.push_back((int)pList->Get(i));
+									}
+									retValue = pObj->permute(axes);
+								}
+								return true;
+							}));
+					auto* pFuncObj = new Function(extFunc);
+					pFuncObj->IncRef();
+					int idx = AddOrGet(strName, false);
+					Value funcVal(pFuncObj);
+					m_stackFrame->Set(idx, funcVal);
 				}
 			}
 			// Inherited via Scope
@@ -83,6 +118,64 @@ namespace X
 		{
 			m_t = ObjType::Tensor;
 
+		}
+		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
+		{
+			long long addr = 0;
+			int idxCnt = (int)indices.size();
+			for (int i = 0; i < idxCnt; i++)
+			{
+				addr += indices[i] * m_dims[i].dimProd;
+			}
+			X::Value retVal;
+			addr *= GetItemSize();
+			char* pAddr = m_data + addr;
+			switch (m_dataType)
+			{
+			case X::TensorDataType::BOOL:
+				retVal = X::Value((bool)*(char*)pAddr);
+				break;
+			case X::TensorDataType::BYTE:
+				retVal = X::Value(*(char*)pAddr);
+				break;
+			case X::TensorDataType::UBYTE:
+				retVal = X::Value(*(char*)pAddr);
+				break;
+			case X::TensorDataType::SHORT:
+				retVal = X::Value((int)*(short*)pAddr);
+				break;
+			case X::TensorDataType::USHORT:
+				retVal = X::Value((int)*(unsigned short*)pAddr);
+				break;
+			case X::TensorDataType::HALFFLOAT:
+				retVal = X::Value((float)*(short*)pAddr);
+				break;
+			case X::TensorDataType::INT:
+				retVal = X::Value(*(int*)pAddr);
+				break;
+			case X::TensorDataType::UINT:
+				retVal = X::Value(*(unsigned int*)pAddr);
+				break;
+			case X::TensorDataType::LONGLONG:
+				retVal = X::Value(*(long long*)pAddr);
+				break;
+			case X::TensorDataType::ULONGLONG:
+				retVal = X::Value(*(unsigned long long*)pAddr);
+				break;
+			case X::TensorDataType::FLOAT:
+				retVal = X::Value(*(float*)pAddr);
+				break;
+			case X::TensorDataType::DOUBLE:
+				retVal = X::Value(*(double*)pAddr);
+				break;
+			case X::TensorDataType::CFLOAT:
+				break;
+			case X::TensorDataType::CDOUBLE:
+				break;
+			default:
+				break;
+			}
+			return retVal;
 		}
 		void Tensor::SetDataWithIndices(std::vector<long long>& indices,X::Value& val)
 		{
@@ -163,6 +256,85 @@ namespace X
 				}
 			}
 		}
+		List* Tensor::FlatPack(XlangRuntime* rt, XObj* pContext, 
+			std::vector<std::string>& IdList, int id_offset, 
+			long long startIndex, long long count)
+		{
+			AutoLock(m_lock);
+			int idSize = (int)IdList.size();
+			std::vector<long long> indices;
+			for(int i= id_offset;i< idSize;i++)
+			{
+				long long index = 0;
+				SCANF(IdList[i].c_str(), "%lld", &index);
+				indices.push_back(index);
+			}
+			int dimCount = (int)m_dims.size();
+			int lastDimIndex = (int)indices.size();
+			long long lastDimSize = m_dims[lastDimIndex].size;
+			if (startIndex < 0 || startIndex >= lastDimSize)
+			{
+				return nullptr;
+			}
+			if (count == -1)
+			{
+				count = lastDimSize - startIndex;
+			}
+			if ((startIndex + count) > lastDimSize)
+			{
+				return nullptr;
+			}
+			indices.push_back(startIndex);
+			List* pOutList = new List();
+			pOutList->IncRef();
+			for (long long i = 0; i < count; i++)
+			{
+				long long idx = startIndex + i;
+				Dict* dict = new Dict();
+				auto objIds = CombinObjectIds(IdList, (unsigned long long)idx);
+				dict->Set("Id", objIds);
+
+				if (lastDimIndex < (dimCount - 1))
+				{
+					//still return Tensor as ValueType
+					Data::Str* pStrType = new Data::Str(GetTypeString());
+					dict->Set("Type", X::Value(pStrType));
+					X::Value objId((unsigned long long)dynamic_cast<XObj*>(this));
+					dict->Set("Value", objId);
+					X::Value valSize(m_dims[lastDimIndex+1].size);
+					dict->Set("Size", valSize);
+				}
+				else
+				{
+					indices[indices.size() - 1] = idx;
+					X::Value val = GetDataWithIndices(indices);
+					auto valType = val.GetValueType();
+					Data::Str* pStrType = new Data::Str(valType);
+					dict->Set("Type", X::Value(pStrType));
+
+					if (!val.IsObject() || (val.IsObject() &&
+						dynamic_cast<Object*>(val.GetObj())->IsStr()))
+					{
+						dict->Set("Value", val);
+					}
+					else if (val.IsObject())
+					{
+						X::Value objId((unsigned long long)val.GetObj());
+						dict->Set("Value", objId);
+						X::Value valSize(val.GetObj()->Size());
+						dict->Set("Size", valSize);
+					}
+				}
+
+				X::Value valDict(dict);
+				pOutList->Add(rt, valDict);
+			}
+			return pOutList;
+		}
+		X::Value Tensor::UpdateItemValue(XlangRuntime* rt, XObj* pContext, std::vector<std::string>& IdList, int id_offset, std::string itemName, X::Value& val)
+		{
+			return X::Value();
+		}
 		bool Tensor::Create(X::Value& initData)
 		{
 			X::Value dimData = initData;
@@ -216,6 +388,14 @@ namespace X
 			{
 				delete m_data;
 			}
+		}
+		Tensor& Tensor::operator *=(X::Value& r)
+		{
+			if (!r.IsObject())
+			{
+
+			}
+			return *this;
 		}
 		AST::Scope* Tensor::GetBaseScope() { return &_TensorScope; }
 		void Tensor::GetBaseScopes(std::vector<AST::Scope*>& bases)

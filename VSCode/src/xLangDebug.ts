@@ -903,6 +903,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.type = "List";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
+				break;
+			case 'Tensor':
+				v.reference = this._runtime.createScopeRef(
+					v.Type,v.FrameId,v.Val,v.Id);
+				dapVariable.value = 'Tensor(Size:'+v.Size.toString()+")";
+				dapVariable.type = "Tensor";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = v.Size;
 				break;		
 			case 'Prop':
 				v.reference = this._runtime.createScopeRef(

@@ -1,5 +1,6 @@
 #pragma once
 #include "object.h"
+#include <functional>
 
 /*
 	Shawn Xiong @2/15/2023
@@ -22,11 +23,11 @@ namespace X
 	{
 		struct TensorDim
 		{
-			long long offset = 0;//in another Tensor's Row's offset
 			long long size;
 			long long stride;
 			long long dimProd;
 		};
+		using TensorIterateProc = std::function<void(std::vector<long long>& indices)>;
 		class Tensor:
 			virtual public XTensor,
 			virtual public Object
@@ -85,7 +86,7 @@ namespace X
 				return itemCnt;
 			}
 			void DeepCopyDataFromList(List* pList,std::vector<long long>& indices,int level);
-			void SetDataWithIndices(std::vector<long long>& indices,X::Value& val);
+			X::Value GetDataWithIndices(std::vector<long long>& indices);
 			void CalcDimProd()
 			{
 				int nd = (int)m_dims.size();
@@ -101,7 +102,20 @@ namespace X
 			static void cleanup();
 			Tensor();
 			~Tensor();
+			//this function only return first dim's size
+			//because debug will use it as first level
 			virtual long long Size() override
+			{
+				if (m_dims.size() > 0)
+				{
+					return m_dims[0].size;
+				}
+				else
+				{
+					return 0;
+				}
+			}
+			virtual long long GetDataSize()
 			{
 				return GetCount() * GetItemSize();
 			}
@@ -116,10 +130,72 @@ namespace X
 					m_dims.push_back(TensorDim{ i,i });
 				}
 			}
+			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
+			inline X::Value permute(std::vector<int> axes)
+			{
+				Tensor* pNewTensor = new Tensor();
+				pNewTensor->SetDataType(m_dataType);
+				int dimCnt = (int)m_dims.size();
+				std::vector<int> dims;
+				for (int i=0;i< dimCnt;i++)
+				{
+					dims.push_back(m_dims[axes[i]].size);
+				}
+				pNewTensor->SetShape(dims);
+				X::Value initData;
+				pNewTensor->Create(initData);
+				auto it_proc = [pNewTensor,this, dimCnt, axes](std::vector<long long>& indices)
+				{
+					std::vector<long long> target_indices;
+					for (int i = 0; i < dimCnt; i++)
+					{
+						target_indices.push_back(indices[axes[i]]);
+					}
+					X::Value val = GetDataWithIndices(indices);
+					pNewTensor->SetDataWithIndices(target_indices, val);
+				};
+				IterateAll(it_proc);
+				return X::Value(pNewTensor);
+			}
+			inline void IterateAll(TensorIterateProc proc)
+			{
+				std::vector<long long> indices;
+				indices.resize(m_dims.size());
+				IterateLoop(indices, proc, 0);
+			}
+			//before call,indices need has same size of m_dims
+			inline void IterateLoop(std::vector<long long>&indices, TensorIterateProc proc,int level=0)
+			{
+				if (m_dims.size() == 0)
+				{
+					return;
+				}
+				int lastDim = (int)m_dims.size()-1;
+				auto& dim = m_dims[level];
+				for (long long i = 0; i < dim.size; i++)
+				{
+					indices[level] = i;
+					if (lastDim == level)
+					{
+						proc(indices);
+					}
+					else
+					{
+						IterateLoop(indices, proc, level + 1);
+					}
+				}
+			}
 			virtual void SetDataType(TensorDataType t) override
 			{
 				m_dataType = t;
 			}
+			virtual Tensor& operator *=(X::Value& r) override;
+			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+				std::vector<std::string>& IdList, int id_offset,
+				long long startIndex, long long count) override;
+			virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
+				std::vector<std::string>& IdList, int id_offset,
+				std::string itemName, X::Value& val) override;
 			virtual bool Create(X::Value& initData) override;
 			static AST::Scope* GetBaseScope();
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
