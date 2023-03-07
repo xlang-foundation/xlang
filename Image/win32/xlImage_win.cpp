@@ -146,6 +146,7 @@ namespace X {
 					hr = pConverter->GetSize(&width, &height);
 					std::vector<int> shapes({ (int)width, (int)height, pixSize });
 					tensor->SetShape(shapes);
+					tensor->SetDataType(X::TensorDataType::UBYTE);
 					tensor->Create(X::Value());
 					char* pBuffer = tensor->GetData();
 					pConverter->CopyPixels(0, width * 4, tensor->Size(),(BYTE*)pBuffer);

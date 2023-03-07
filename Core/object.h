@@ -164,6 +164,8 @@ namespace Data {
 				return "List";
 			case X::ObjType::Dict:
 				return "Dict";
+			case X::ObjType::Set:
+				return "Set";
 			case X::ObjType::Tensor:
 				return "Tensor";
 			case X::ObjType::TableRow:
