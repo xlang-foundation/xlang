@@ -50,7 +50,7 @@ namespace X
 					"cdouble"
 				};
 				int const_cnt = (int)dataTypeList.size();
-				int func_cnt = 1;
+				int func_cnt = 2;
 				m_stackFrame->SetVarCount(const_cnt+ func_cnt);
 				for(int i = 0;i < const_cnt; i++)
 				{
@@ -81,6 +81,25 @@ namespace X
 									}
 									retValue = pObj->permute(axes);
 								}
+								return true;
+							}));
+					auto* pFuncObj = new Function(extFunc);
+					pFuncObj->IncRef();
+					int idx = AddOrGet(strName, false);
+					Value funcVal(pFuncObj);
+					m_stackFrame->Set(idx, funcVal);
+				}
+				{
+					strName = "astype";
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"astype(type)",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							X::ARGS& params,
+							X::KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+								retValue = pObj->asType((int)params[0]);
 								return true;
 							}));
 					auto* pFuncObj = new Function(extFunc);

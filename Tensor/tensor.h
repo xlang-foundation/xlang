@@ -131,6 +131,29 @@ namespace X
 				}
 			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
+			inline X::Value asType(int type)
+			{
+				TensorDataType dt = (TensorDataType)type;
+				Tensor* pNewTensor = new Tensor();
+				pNewTensor->SetDataType(dt);
+				int dimCnt = (int)m_dims.size();
+				std::vector<int> dims;
+				for (int i = 0; i < dimCnt; i++)
+				{
+					dims.push_back(m_dims[i].size);
+				}
+				pNewTensor->SetShape(dims);
+				X::Value initData;
+				pNewTensor->Create(initData);
+				auto it_proc = [pNewTensor, this, dimCnt](std::vector<long long>& indices)
+				{
+					X::Value val = GetDataWithIndices(indices);
+					pNewTensor->SetDataWithIndices(indices, val);
+				};
+				IterateAll(it_proc);
+				return X::Value(pNewTensor);
+
+			}
 			inline X::Value permute(std::vector<int> axes)
 			{
 				Tensor* pNewTensor = new Tensor();
