@@ -3,6 +3,7 @@
 #include "dict.h"
 #include "port.h"
 #include "function.h"
+#include "tensorop.h"
 
 namespace X
 {
@@ -50,7 +51,7 @@ namespace X
 					"cdouble"
 				};
 				int const_cnt = (int)dataTypeList.size();
-				int func_cnt = 1;
+				int func_cnt = 3;
 				m_stackFrame->SetVarCount(const_cnt+ func_cnt);
 				for(int i = 0;i < const_cnt; i++)
 				{
@@ -81,6 +82,46 @@ namespace X
 									}
 									retValue = pObj->permute(axes);
 								}
+								return true;
+							}));
+					auto* pFuncObj = new Function(extFunc);
+					pFuncObj->IncRef();
+					int idx = AddOrGet(strName, false);
+					Value funcVal(pFuncObj);
+					m_stackFrame->Set(idx, funcVal);
+				}
+				{
+					strName = "astype";
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"astype(type)",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							X::ARGS& params,
+							X::KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+								retValue = pObj->asType((int)params[0]);
+								return true;
+							}));
+					auto* pFuncObj = new Function(extFunc);
+					pFuncObj->IncRef();
+					int idx = AddOrGet(strName, false);
+					Value funcVal(pFuncObj);
+					m_stackFrame->Set(idx, funcVal);
+				}
+				{
+					strName = "Conv2d";
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"tensor1*Conv2d()*kernel_tensor",
+						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
+							X::ARGS& params,
+							X::KWARGS& kwParams,
+							X::Value& retValue)
+							{
+								TensorOperator* pOp = new TensorOperator();
+								X::Value action;
+								pOp->SetOpAction(action);
+								retValue = X::Value(pOp);
 								return true;
 							}));
 					auto* pFuncObj = new Function(extFunc);
@@ -391,10 +432,7 @@ namespace X
 		}
 		Tensor& Tensor::operator *=(X::Value& r)
 		{
-			if (!r.IsObject())
-			{
-
-			}
+			SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
 		AST::Scope* Tensor::GetBaseScope() { return &_TensorScope; }
