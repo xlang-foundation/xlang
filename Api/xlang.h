@@ -32,6 +32,7 @@ namespace X
 		List,
 		Dict,
 		Tensor,
+		TensorOperator,
 		Complex,
 		Set,
 		TableRow,

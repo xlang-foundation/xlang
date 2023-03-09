@@ -3,6 +3,11 @@
 * A super glue to easily integrating with other languages such as c++/c, python and javascript and any framework cross operation system barriers.  
 * Running faster than python about 3x-5x  
 
+# for AI/Deep learning
+- fully optimized tensor architecture with data flow graph  
+- automatically generate tensor data flow graph and compile for target  
+- boost inference/training speed at least 8x in GPU(CUDA)  
+
 # How to Build  
 - build from Windows  
 1. git clone https://github.com/xlang-foundation/xlang.git  
