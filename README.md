@@ -4,9 +4,10 @@
 * Running faster than python about 3x-5x  
 
 # for AI/Deep learning
-- fully optimized tensor architecture with data flow graph  
+- fully optimized tensor computing architecture 
+- easily build neural network with tensor expression
 - automatically generate tensor data flow graph and compile for target  
-- boost inference/training speed at least 8x in GPU(CUDA)  
+- boost inference/training performance about 6x-10x in GPU(CUDA)  
 
 # How to Build  
 - build from Windows  
