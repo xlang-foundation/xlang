@@ -35,22 +35,26 @@ do
     #echo $script_base
     python_rpt=$script_base_p.rpt 
     xlang_rpt=$script_base_x.rpt 
-    : '
+    
     if [ -f $python_rpt ];
     then
-      echo "python result exists"
+      #echo "python result exists"
       rm -i $python_rpt
     fi
 
     if [ -f $xlang_rpt ];
     then
-      echo "xlang result exists"
+      #echo "xlang result exists"
       rm -i $python_rpt
     fi
-    '
+    
     python $script_file >> $python_rpt
     xlang_exec $script_file >> $xlang_rpt
 
     diff $python_rpt $xlang_rpt >> comparison.rpt
 
 done
+
+echo "Automatic unit test has completed successfully."
+echo "Please refer each individual report in folder $script_folder/rpt."
+echo "Python and Xlang execution comparison can be found in $script_folder/rptcomparison.rpt."
