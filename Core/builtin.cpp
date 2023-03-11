@@ -42,6 +42,7 @@
 #include "future.h"
 #include "taskpool.h"
 #include "tensor.h"
+#include "tensor_cpu.h"
 
 namespace X
 {
@@ -1285,6 +1286,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::JsonWrapper>("json");
 	X::RegisterPackage<X::HtmlWrapper>("html");
 	X::RegisterPackage<X::DevOps::DebugService>("xdb");
+	X::RegisterPackage<X::CpuTensor>("CpuTensor");
 
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
