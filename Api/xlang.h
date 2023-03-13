@@ -32,7 +32,7 @@ namespace X
 		List,
 		Dict,
 		Tensor,
-		TensorOperator,
+		TensorGraph,
 		Complex,
 		Set,
 		TableRow,
@@ -320,6 +320,13 @@ namespace X
 		virtual void SetShape(std::vector<int> shapes) = 0;
 		virtual void SetDataType(TensorDataType t) = 0;
 		virtual bool Create(X::Value& initData) = 0;
+	};
+	class XTensorGraph :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XTensorGraph)
+		virtual void Create(XObj* pContext,X::ARGS& params, X::KWARGS& kwParams) = 0;
 	};
 	class XComplex :
 		virtual public XObj

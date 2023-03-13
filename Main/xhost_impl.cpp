@@ -19,6 +19,8 @@
 #include "expr_scope.h"
 #include "RemoteObjectStub.h"
 #include "tensor.h"
+#include "tensorop.h"
+#include "tensor_graph.h"
 
 namespace X 
 {
@@ -162,7 +164,19 @@ namespace X
 		pTensor->IncRef();
 		return pTensor;
 	}
-
+	XTensor* XHost_Impl::CreateTensorOperator(Tensor_OperatorHandler op, bool isUnaryOp)
+	{
+		auto* pTensor = new X::Data::TensorOperator(op, isUnaryOp);
+		pTensor->IncRef();
+		return pTensor;
+	}
+	XTensorGraph* XHost_Impl::CreateTensorGraph()
+	{
+		auto* pTensorGraph = new X::Data::TensorGraph();
+		pTensorGraph->IncRef();
+		return pTensorGraph;
+	}
+	
 	XDict* XHost_Impl::CreateDict()
 	{
 		auto* pDict =  new X::Data::Dict();

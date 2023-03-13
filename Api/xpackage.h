@@ -26,7 +26,7 @@ namespace X
 		}
 	}
 	template<class impl_pack_class>
-	XPackage* RegisterPackage(const char* pack_name, impl_pack_class* instance =nullptr)
+	XPackage* RegisterPackage(const char* pack_name, impl_pack_class* instance = nullptr)
 	{
 		auto& apiset = impl_pack_class::APISET();
 		if (apiset.IsCreated())
@@ -41,17 +41,17 @@ namespace X
 			});
 		if (instance == nullptr)
 		{
-			X::g_pXHost->RegisterPackage(pack_name, &apiset,[]()
+			X::g_pXHost->RegisterPackage(pack_name, &apiset, []()
 				{
 					impl_pack_class* pPackImpl = new impl_pack_class();
-					return impl_pack_class::APISET().GetProxy(pPackImpl);
+			return impl_pack_class::APISET().GetProxy(pPackImpl);
 				});
 		}
 		else
 		{
 			auto* pXPack = impl_pack_class::APISET().GetPack();
 			X::Value v0(dynamic_cast<X::XObj*>(pXPack));
-			X::g_pXHost->RegisterPackage(pack_name,&apiset,v0);
+			X::g_pXHost->RegisterPackage(pack_name, &apiset, v0);
 		}
 		return apiset.GetPack();
 	}
@@ -71,24 +71,24 @@ namespace X
 		template<class class_T, typename F, typename Array, std::size_t... I>
 		inline auto VarCall_Ex_impl(class_T* pThis, F f, X::Value& extra, Array& a, std::index_sequence<I...>)
 		{
-			return (pThis->*f)(extra,a[I]...);
+			return (pThis->*f)(extra, a[I]...);
 		}
 		template<std::size_t N, class class_T, typename F, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto VarCallEx(class_T* pThis, F f,X::Value& extra,T& a)
+		inline auto VarCallEx(class_T* pThis, F f, X::Value& extra, T& a)
 		{
-			return VarCall_Ex_impl(pThis, f, extra,a, Indices{});
+			return VarCall_Ex_impl(pThis, f, extra, a, Indices{});
 		}
 
 		template<class class_T, typename F, typename Array, std::size_t... I>
 		inline auto VarCall_impl_Extra(X::XRuntime* rt, X::XObj* pContext,
 			class_T* pThis, F f, Array& a, std::index_sequence<I...>)
 		{
-			return (pThis->*f)(rt, pContext,a[I]...);
+			return (pThis->*f)(rt, pContext, a[I]...);
 		}
 		template<std::size_t N, class class_T, typename F, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto VarCall_Extra(X::XRuntime* rt, X::XObj* pContext,class_T* pThis, F f, T& a)
+		inline auto VarCall_Extra(X::XRuntime* rt, X::XObj* pContext, class_T* pThis, F f, T& a)
 		{
-			return VarCall_impl_Extra(rt,pContext,pThis, f, a, Indices{});
+			return VarCall_impl_Extra(rt, pContext, pThis, f, a, Indices{});
 		}
 
 		template<class class_T, typename Array, std::size_t... I>
@@ -101,15 +101,15 @@ namespace X
 		{
 			return NewClass_impl<class_T>(a, Indices{});
 		}
-		template<typename FirstT,class class_T, typename Array, std::size_t... I>
-		inline auto NewClass_impl(FirstT first,Array& a, std::index_sequence<I...>)
+		template<typename FirstT, class class_T, typename Array, std::size_t... I>
+		inline auto NewClass_impl(FirstT first, Array& a, std::index_sequence<I...>)
 		{
-			return new class_T(first,a[I]...);
+			return new class_T(first, a[I]...);
 		}
-		template<typename FirstT,std::size_t N, class class_T, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto NewClass(FirstT first,T& a)
+		template<typename FirstT, std::size_t N, class class_T, typename T, typename Indices = std::make_index_sequence<N>>
+		inline auto NewClass(FirstT first, T& a)
 		{
-			return NewClass_impl<FirstT,class_T>(first,a, Indices{});
+			return NewClass_impl<FirstT, class_T>(first, a, Indices{});
 		}
 	}
 
@@ -138,6 +138,7 @@ namespace X
 			std::string doc;
 		};
 	protected:
+		bool m_bHaveTensorOps = false;
 		std::vector<MemberInfo> m_members;
 		std::vector<int> __events;//index no
 		std::vector<APISetBase*> m_bases;
@@ -158,7 +159,7 @@ namespace X
 		virtual XPackage* GetProxy(void* pRealObj) = 0;
 	};
 	template<class T>
-	class XPackageAPISet:
+	class XPackageAPISet :
 		public APISetBase
 	{
 	public:
@@ -171,7 +172,7 @@ namespace X
 			{
 				return pTObj->__pPack_;
 			}
-			auto* pPack =  g_pXHost->CreatePackageProxy(m_xPack, pRealObj);
+			auto* pPack = g_pXHost->CreatePackageProxy(m_xPack, pRealObj);
 			pTObj->__pPack_ = pPack;
 			return pPack;
 		}
@@ -195,7 +196,7 @@ namespace X
 		{
 			m_bases.push_back(pBase);
 		}
-		inline void Fire(XPackage* pPack,int evtIndex,
+		inline void Fire(XPackage* pPack, int evtIndex,
 			X::ARGS& params, X::KWARGS& kwargs)
 		{
 			if (pPack && evtIndex >= 0 && evtIndex < (int)__events.size())
@@ -220,7 +221,7 @@ namespace X
 			}
 			return pEvt;
 		}
-		void AddConst(const char* name,X::Value val)
+		void AddConst(const char* name, X::Value val)
 		{
 			m_members.push_back(MemberInfo{ MemberType::Const,name,val });
 		}
@@ -333,7 +334,7 @@ namespace X
 					}),nullptr,nullptr,false,std::string(doc) });
 		}
 		template<std::size_t Parameter_Num, typename F>
-		void AddFunc(const char* func_name, F f,const char* doc = "")
+		void AddFunc(const char* func_name, F f, const char* doc = "")
 		{
 			m_members.push_back(MemberInfo{
 				MemberType::Func,func_name,X::Value(),
@@ -345,7 +346,7 @@ namespace X
 						auto _retVal = HelpFuncs::VarCall<Parameter_Num>(pThis,f,params);
 						retValue = X::Value(_retVal);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc)});
+					}),nullptr,nullptr,false,std::string(doc) });
 		}
 		template<std::size_t Parameter_Num, typename F>
 		void AddFuncEx(const char* func_name, F f, const char* doc = "")
@@ -360,7 +361,7 @@ namespace X
 						auto _retVal = HelpFuncs::VarCallEx<Parameter_Num>(pThis,f, trailer,params);
 						retValue = X::Value(_retVal);
 						return true;
-					}),false,std::string(doc)});
+					}),false,std::string(doc) });
 		}
 		template<std::size_t Parameter_Num, typename F>
 		void AddRTFunc(const char* func_name, F f, const char* doc = "")
@@ -446,7 +447,7 @@ namespace X
 		//in gcc, id PTMV is std::string will make error
 		//with ambiguous overload for �operator=� 
 		//so use this way to add type
-		template<typename VAR_TYPE,typename PTMV>
+		template<typename VAR_TYPE, typename PTMV>
 		void AddPropWithType(const char* func_name, PTMV var)
 		{
 			m_members.push_back(MemberInfo{
@@ -471,7 +472,7 @@ namespace X
 					})
 				});
 		}
-		void AddPropL(const char* func_name,std::function<void(T* pThis,X::Value)> setF,
+		void AddPropL(const char* func_name, std::function<void(T* pThis, X::Value)> setF,
 			std::function<X::Value(T* pThis)> getF)
 		{
 			m_members.push_back(MemberInfo{
@@ -496,7 +497,7 @@ namespace X
 				});
 		}
 		template<typename GETF>
-		void AddProp(const char* func_name,GETF get)
+		void AddProp(const char* func_name, GETF get)
 		{
 			m_members.push_back(MemberInfo{
 				MemberType::Prop,func_name,X::Value(),
@@ -535,11 +536,84 @@ namespace X
 					})
 				});
 		}
+		template<typename F>
+		bool AddTensorUnaryOp(const char* name, F f,const char* doc = "")
+		{
+			m_bHaveTensorOps = true;
+			//add func with name to return a TensorOperator
+			m_members.push_back(MemberInfo{
+				MemberType::Func,name,X::Value(),
+				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+						auto* pThis = (T*)pPackage->GetEmbedObj();
+						Tensor_OperatorHandler handler= [pThis, f, params, kwParams]
+						(X::ARGS& inputs, X::Value& retVal)
+						{
+							//todo: check performace impact
+							X::ARGS params0 = params;
+							X::KWARGS kwParams0 = kwParams;
+							(pThis->*f)(params0, kwParams0, inputs[0], retVal);
+						};
+						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,true);
+						retValue = X::Value(pTensorOp);
+						return true;
+					}),nullptr,nullptr,false,std::string(doc) });
+			return true;
+		}
+		template<typename F>
+		bool AddTensorBinaryOp(const char* name, F f,const char* doc = "")
+		{
+			m_bHaveTensorOps = true;
+			//add func with name to return a TensorOperator
+			m_members.push_back(MemberInfo{
+				MemberType::Func,name,X::Value(),
+				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+						auto* pThis = (T*)pPackage->GetEmbedObj();
+						Tensor_OperatorHandler handler= [pThis, f, params, kwParams]
+						(X::ARGS& inputs, X::Value& retVal)
+						{
+							//todo: check performace impact
+							X::ARGS params0 = params;
+							X::KWARGS kwParams0 = kwParams;
+							(pThis->*f)(params0, kwParams0, inputs[0], inputs[1], retVal);
+						};
+						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,false);
+						retValue = X::Value(pTensorOp);
+						return true;
+					}),nullptr,nullptr,false,std::string(doc) });
+			return true;
+		}
+		inline void RegisterToTensorSystem()
+		{
+			//add a funcation graph for this Package
+			m_members.push_back(MemberInfo{
+				MemberType::Func,"graph",X::Value(),
+				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+						auto* pThis = (T*)pPackage->GetEmbedObj();
+						auto* pTensorGraph = X::g_pXHost->CreateTensorGraph();
+						pTensorGraph->Create(pContext,params, kwParams);
+						retValue = X::Value(pTensorGraph);
+						return true;
+					}),nullptr,nullptr,false,
+				std::string("create tensor graph, packageInstance.graph(t1,t2,...tn)")});
+		}
 		bool Create(T* thisObj, PackageCleanup cleanFunc = nullptr)
 		{
 			if (m_alreadyCallBuild)
 			{
 				return true;
+			}
+			if (m_bHaveTensorOps)
+			{
+				RegisterToTensorSystem();
 			}
 			std::vector<APISetBase*> bases;
 			CollectBases(bases);//include this class also
@@ -549,7 +623,7 @@ namespace X
 				memberNum += (int)b->Members().size();;
 			}
 
-			auto* pPackage = X::g_pXHost->CreatePackage(this,thisObj);
+			auto* pPackage = X::g_pXHost->CreatePackage(this, thisObj);
 			//if object created by outside,thisObj will not be NULL
 			//then don't need to be deleted by XPackage
 			if (thisObj == nullptr)
@@ -563,7 +637,7 @@ namespace X
 				pPackage->SetPackageCleanupFunc(cleanFunc);
 			}
 			pPackage->Init(memberNum);
-			for (auto* b : bases) 
+			for (auto* b : bases)
 			{
 				for (auto& m : b->Members())
 				{

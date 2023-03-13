@@ -118,7 +118,8 @@ namespace X
 							X::KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								TensorOperator* pOp = new TensorOperator();
+								Tensor_OperatorHandler handler;
+								TensorOperator* pOp = new TensorOperator(handler,false);
 								X::Value action;
 								pOp->SetOpAction(action);
 								retValue = X::Value(pOp);
@@ -410,6 +411,7 @@ namespace X
 			if (totalSize > 0)
 			{
 				m_data = new char[totalSize];
+				m_dataSize = totalSize;
 			}
 			int dim = (int)m_dims.size();
 			//copy data from initData
