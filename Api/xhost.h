@@ -18,6 +18,7 @@ namespace X
 	class XDict;
 	class XList;
 	class XTensor;
+	class XTensorGraph;
 	class XSet;
 	class XComplex;
 	class XBin;
@@ -42,6 +43,7 @@ namespace X
 	using EventHandler = std::function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;
 	using OnEventHandlerChanged = std::function<void(bool AddOrRemove,int handlerCnt)>;
+	using Tensor_OperatorHandler = std::function<void(X::ARGS& inputs, X::Value& retVal)>;
 
 	typedef bool (*UI_THREAD_RUN_HANDLER) (X::Value& callable,void* pContext);
 
@@ -60,6 +62,8 @@ namespace X
 		virtual XDict* CreateDict() = 0;
 		virtual XList* CreateList() = 0;
 		virtual XTensor* CreateTensor() = 0;
+		virtual XTensor* CreateTensorOperator(Tensor_OperatorHandler op, bool isUnaryOp) = 0;
+		virtual XTensorGraph* CreateTensorGraph() = 0;
 		virtual XSet* CreateSet() = 0;
 		virtual XComplex* CreateComplex() = 0;
 		virtual XPackage* CreatePackage(APISetBase* pAPISet,void* pRealObj) = 0;

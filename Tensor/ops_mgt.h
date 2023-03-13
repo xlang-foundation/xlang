@@ -20,7 +20,8 @@ namespace X
 		public:
 			X::Value CreateOp(X::Value& action)
 			{
-				TensorOperator* pOp = new TensorOperator();
+				Tensor_OperatorHandler handler;
+				TensorOperator* pOp = new TensorOperator(handler,false);
 				pOp->SetOpAction(action);
 				return X::Value(pOp);
 			}

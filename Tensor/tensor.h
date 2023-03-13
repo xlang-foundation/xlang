@@ -45,6 +45,7 @@ namespace X
 				m_op = op;
 			}
 			//for data tensor
+			long long m_dataSize = 0;
 			char* m_data=nullptr;
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
@@ -117,6 +118,12 @@ namespace X
 			Tensor();
 			~Tensor();
 
+			inline bool NeedCalc()
+			{
+				return (m_op != Tensor_Operator::None);
+			}
+			inline X::Value& GetRightValue() { return m_rightVal; }
+			inline Tensor_Operator GetOp() { return m_op; }
 			//this function only return first dim's size
 			//because debug will use it as first level
 			virtual long long Size() override
@@ -145,6 +152,17 @@ namespace X
 					m_dims.push_back(TensorDim{ i,i });
 				}
 			}
+			virtual XObj* Clone() override
+			{
+				auto* newTensor = new Tensor();
+				newTensor->IncRef();
+				newTensor->m_data = new char[m_dataSize];
+				memcpy(newTensor->m_data, m_data, m_dataSize);
+				newTensor->m_dataSize = m_dataSize;
+				newTensor->m_dims = m_dims;
+				newTensor->m_dataType = m_dataType;
+				return newTensor;
+			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
 			inline X::Value asType(int type)
 			{
@@ -155,7 +173,7 @@ namespace X
 				std::vector<int> dims;
 				for (int i = 0; i < dimCnt; i++)
 				{
-					dims.push_back(m_dims[i].size);
+					dims.push_back((int)m_dims[i].size);
 				}
 				pNewTensor->SetShape(dims);
 				X::Value initData;
@@ -177,7 +195,7 @@ namespace X
 				std::vector<int> dims;
 				for (int i=0;i< dimCnt;i++)
 				{
-					dims.push_back(m_dims[axes[i]].size);
+					dims.push_back((int)m_dims[axes[i]].size);
 				}
 				pNewTensor->SetShape(dims);
 				X::Value initData;
