@@ -1,7 +1,13 @@
-# xlang
-* A new dynamic programing language for **AI and IOT** with natural born **distributed computing ability**    
+# XLang™
+* A next-generation dynamic and high-performance language for **AI and IOT** with natural born **distributed computing ability**    
 * A super glue to easily integrating with other languages such as c++/c, python and javascript and any framework cross operation system barriers.  
 * Running faster than python about 3x-5x  
+
+# for AI/Deep learning
+- fully optimized tensor computing architecture 
+- easily build neural network with tensor expression
+- automatically generate tensor data flow graph and compile for target  
+- boost inference/training performance about 6x-10x in GPU(CUDA)  
 
 # How to Build  
 - build from Windows  
@@ -15,7 +21,7 @@
         sudo apt-get install uuid-dev  
     ## for openssl required by http plugin
         sudo apt-get install libssl-dev
-    ## if want to enable xlang to call python libs directly  
+    ## if want to enable xlang™ to call python libs directly  
         sudo apt-get install python3-dev
         and also need to pip install numpy
         if not want to enable this feature, 

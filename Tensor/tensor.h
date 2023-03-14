@@ -27,14 +27,28 @@ namespace X
 			long long stride;
 			long long dimProd;
 		};
+		enum class Tensor_Operator
+		{
+			None,Add,Minus,Mul,Div
+		};
 		using TensorIterateProc = std::function<void(std::vector<long long>& indices)>;
 		class Tensor:
 			virtual public XTensor,
 			virtual public Object
 		{
+			//for tensor operator
+			X::Value m_rightVal; //maybe a Tensor or TensorOperator
+			Tensor_Operator m_op = Tensor_Operator::None;
+			void SetRightVal(X::Value& val, Tensor_Operator op)
+			{
+				m_rightVal = val;
+				m_op = op;
+			}
+			//for data tensor
 			char* m_data=nullptr;
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
+
 
 			long long GetItemSize()
 			{
@@ -102,6 +116,7 @@ namespace X
 			static void cleanup();
 			Tensor();
 			~Tensor();
+
 			//this function only return first dim's size
 			//because debug will use it as first level
 			virtual long long Size() override
@@ -131,6 +146,29 @@ namespace X
 				}
 			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
+			inline X::Value asType(int type)
+			{
+				TensorDataType dt = (TensorDataType)type;
+				Tensor* pNewTensor = new Tensor();
+				pNewTensor->SetDataType(dt);
+				int dimCnt = (int)m_dims.size();
+				std::vector<int> dims;
+				for (int i = 0; i < dimCnt; i++)
+				{
+					dims.push_back(m_dims[i].size);
+				}
+				pNewTensor->SetShape(dims);
+				X::Value initData;
+				pNewTensor->Create(initData);
+				auto it_proc = [pNewTensor, this, dimCnt](std::vector<long long>& indices)
+				{
+					X::Value val = GetDataWithIndices(indices);
+					pNewTensor->SetDataWithIndices(indices, val);
+				};
+				IterateAll(it_proc);
+				return X::Value(pNewTensor);
+
+			}
 			inline X::Value permute(std::vector<int> axes)
 			{
 				Tensor* pNewTensor = new Tensor();
