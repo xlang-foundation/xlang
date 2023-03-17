@@ -320,6 +320,7 @@ namespace X
 			{
 				AutoLock(m_lock);
 				std::string strShapes;
+				std::string *pstrMatrix = new std::string();
 				char v[1000];
 				int dcnt = (int)m_dims.size();
 				for (int i=0;i<dcnt;i++)
@@ -333,50 +334,51 @@ namespace X
 					strShapes += v;
 				}
 				std::string strOut = "Tensor(size=(" + strShapes + "),";
-				strOut +="[todo:output data";
+				strOut +="[";
 
-				auto it_proc = [this](std::vector<long long>& indices)
+				auto it_proc = [this, pstrMatrix, v](std::vector<long long>& indices)
 				{
 					X::Value val = GetDataWithIndices(indices);
-					char v[1000];
+					//char v[1000];
+					memset ((void *)v, 0, sizeof(v));
 					switch (m_dataType)
 					{
 					case X::TensorDataType::BOOL:
 						if (val)
-							snprintf(v, sizeof(v), "%s","True");
+							snprintf((char *)v, sizeof(v), "%s","True");
 						else
-							snprintf(v, sizeof(v), "%s","False");
+							snprintf((char *)v, sizeof(v), "%s","False");
 						break;
 					case X::TensorDataType::BYTE:
 						break;
 					case X::TensorDataType::UBYTE:
 						break;
 					case X::TensorDataType::SHORT:
-						snprintf(v, sizeof(v), "%hd",(short)val.GetDouble());
+						snprintf((char *)v, sizeof(v), "%hd",(short)val.GetDouble());
 						break;
 					case X::TensorDataType::USHORT:
-						snprintf(v, sizeof(v), "%hu",(unsigned short)val.GetDouble());
+						snprintf((char *)v, sizeof(v), "%hu",(unsigned short)val.GetDouble());
 						break;
 					case X::TensorDataType::HALFFLOAT:
-						snprintf(v, sizeof(v), "%f",val.GetDouble());
+						snprintf((char *)v, sizeof(v), "%f",val.GetDouble());
 						break;
 					case X::TensorDataType::INT:
-						snprintf(v, sizeof(v), "%d",(int)val.GetLongLong());
+						snprintf((char *)v, sizeof(v), "%d",(int)val.GetLongLong());
 						break;
 					case X::TensorDataType::UINT:
-						snprintf(v, sizeof(v), "%u",(unsigned int)val.GetLongLong());
+						snprintf((char *)v, sizeof(v), "%u",(unsigned int)val.GetLongLong());
 						break;
 					case X::TensorDataType::LONGLONG:
-						snprintf(v, sizeof(v), "%lld",(long long)val.GetLongLong());
+						snprintf((char *)v, sizeof(v), "%lld",(long long)val.GetLongLong());
 						break;
 					case X::TensorDataType::ULONGLONG:
-						snprintf(v, sizeof(v), "%lld",(unsigned long long)val.GetLongLong());
+						snprintf((char *)v, sizeof(v), "%lld",(unsigned long long)val.GetLongLong());
 						break;
 					case X::TensorDataType::FLOAT:
-						snprintf(v, sizeof(v), "%f",(float)val.GetDouble());
+						snprintf((char *)v, sizeof(v), "%f",(float)val.GetDouble());
 						break;
 					case X::TensorDataType::DOUBLE:
-						snprintf(v, sizeof(v), "%lf",(double)val.GetDouble());
+						snprintf((char *)v, sizeof(v), "%lf",(double)val.GetDouble());
 						break;
 					case X::TensorDataType::CFLOAT:
 						//todo:
@@ -386,15 +388,19 @@ namespace X
 						break;
 					default:
 						break;
-					}					
+					}				
+					//printf ("%s,", v);	
+					pstrMatrix->append(v);
+					pstrMatrix->append(",");
 				};
-				IterateAll(it_proc);
 
-				//strShapes += v;
-					
+				IterateAll(it_proc);			
 
+				pstrMatrix->back() = 0; // to remove the last comma
+				strOut += *pstrMatrix; 
 				strOut += "]";
 				strOut += ")";
+
 				return strOut;
 			}
 		};
