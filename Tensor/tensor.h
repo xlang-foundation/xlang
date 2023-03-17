@@ -269,10 +269,25 @@ namespace X
 					switch (m_dataType)
 					{
 					case X::TensorDataType::BOOL:
+						break;
 					case X::TensorDataType::BYTE:
+						if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,7) && val < pow(2,7) ) 
+						{
+							Addable = true;
+						}
+						break;
 					case X::TensorDataType::UBYTE:
+						if (ty == X::ValueType::Int64 && val < pow(2,8)) 
+						{
+							Addable = true;
+						}
 						break;
 					case X::TensorDataType::SHORT:
+						if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,15) && val < pow(2,15) ) 
+						{
+							Addable = true;
+						}
+						break;
 					case X::TensorDataType::USHORT:
 						if (ty == X::ValueType::Int64 && val < pow(2,16)) 
 						{
@@ -280,6 +295,11 @@ namespace X
 						}
 						break;
 					case X::TensorDataType::INT:
+						if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,31) && val < pow(2,31)) 
+						{
+							Addable = true;
+						}
+						break;
 					case X::TensorDataType::UINT:
 						if (ty == X::ValueType::Int64 && val < pow(2,32)) 
 						{
