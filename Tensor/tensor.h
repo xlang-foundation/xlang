@@ -50,6 +50,24 @@ namespace X
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
 
+			bool IsSimilarTensor (const Tensor& t) {
+				bool sim = true;
+				int nd = (int)m_dims.size();
+				int td = (int)t.m_dims.size();
+				if (nd != td) {//
+					sim = false;
+				}
+				else {
+					for (int i = 0; i < nd; i++) {
+						if (m_dims[i].size != t.m_dims[i].size) {
+							sim = false;
+							break;
+						}
+					}
+				}
+				return sim;
+			}
+
 
 			long long GetItemSize()
 			{
@@ -213,6 +231,49 @@ namespace X
 				IterateAll(it_proc);
 				return X::Value(pNewTensor);
 			}
+			/*
+			inline void Add(const X::Value& operand)
+			{
+				AutoLock(m_lock);
+				
+				auto it_proc = [this](std::vector<long long>& indices, X::Value& operand)
+				{
+					for (int i = 0; i < m_dims.size(); i++)
+					{
+						//
+					}
+					X::Value val = GetDataWithIndices(indices);
+					if (operand.IsObject())
+					{
+						auto* pObj = val.GetObj();
+						if (pObj->GetType() == ObjType::Tensor ) {
+							Tensor* pTobj = dynamic_cast<Tensor*>(pObj);
+							if (IsSimilarTensor(*pTobj)) {
+								X::Value val_operand = pTobj->GetDataWithIndices(indices);
+								//SetDataWithIndices(indices, val+= val_operand);
+								SetDataWithIndices(indices, val_operand);
+							}
+						}
+						else {
+							//exceptions
+							return;
+						}
+					}
+					else {
+						//SetDataWithIndices(indices, val+= operand);
+						SetDataWithIndices(indices, operand);
+					}
+				};
+
+				IterateAll(it_proc);
+			}
+			*/
+			inline void Minus(const X::Value& operand)
+			{
+				AutoLock(m_lock);
+			
+			}
+
 			inline void IterateAll(TensorIterateProc proc)
 			{
 				std::vector<long long> indices;
@@ -268,11 +329,70 @@ namespace X
 					{
 						strShapes += ",";
 					}
-					snprintf(v, sizeof(v), "%ld",d.size);
+					snprintf(v, sizeof(v), "%lld",d.size);
 					strShapes += v;
 				}
 				std::string strOut = "Tensor(size=(" + strShapes + "),";
 				strOut +="[todo:output data";
+
+				auto it_proc = [this](std::vector<long long>& indices)
+				{
+					X::Value val = GetDataWithIndices(indices);
+					char v[1000];
+					switch (m_dataType)
+					{
+					case X::TensorDataType::BOOL:
+						if (val)
+							snprintf(v, sizeof(v), "%s","True");
+						else
+							snprintf(v, sizeof(v), "%s","False");
+						break;
+					case X::TensorDataType::BYTE:
+						break;
+					case X::TensorDataType::UBYTE:
+						break;
+					case X::TensorDataType::SHORT:
+						snprintf(v, sizeof(v), "%hd",(short)val.GetDouble());
+						break;
+					case X::TensorDataType::USHORT:
+						snprintf(v, sizeof(v), "%hu",(unsigned short)val.GetDouble());
+						break;
+					case X::TensorDataType::HALFFLOAT:
+						snprintf(v, sizeof(v), "%f",val.GetDouble());
+						break;
+					case X::TensorDataType::INT:
+						snprintf(v, sizeof(v), "%d",(int)val.GetLongLong());
+						break;
+					case X::TensorDataType::UINT:
+						snprintf(v, sizeof(v), "%u",(unsigned int)val.GetLongLong());
+						break;
+					case X::TensorDataType::LONGLONG:
+						snprintf(v, sizeof(v), "%lld",(long long)val.GetLongLong());
+						break;
+					case X::TensorDataType::ULONGLONG:
+						snprintf(v, sizeof(v), "%lld",(unsigned long long)val.GetLongLong());
+						break;
+					case X::TensorDataType::FLOAT:
+						snprintf(v, sizeof(v), "%f",(float)val.GetDouble());
+						break;
+					case X::TensorDataType::DOUBLE:
+						snprintf(v, sizeof(v), "%lf",(double)val.GetDouble());
+						break;
+					case X::TensorDataType::CFLOAT:
+						//todo:
+						break;
+					case X::TensorDataType::CDOUBLE:
+						//todo:
+						break;
+					default:
+						break;
+					}					
+				};
+				IterateAll(it_proc);
+
+				//strShapes += v;
+					
+
 				strOut += "]";
 				strOut += ")";
 				return strOut;
