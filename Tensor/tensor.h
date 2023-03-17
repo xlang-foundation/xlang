@@ -1,6 +1,7 @@
 #pragma once
 #include "object.h"
 #include <functional>
+#include <math.h>
 
 /*
 	Shawn Xiong @2/15/2023
@@ -231,17 +232,102 @@ namespace X
 				IterateAll(it_proc);
 				return X::Value(pNewTensor);
 			}
-			/*
+			
+			inline bool IsAddable(const X::Value& operand) 
+			{
+				bool Addable = false;
+				auto ty = ((X::Value)operand).GetType();
+
+				if (ty == X::ValueType::Object) {//only tensor, no list, set, dictionary, complex, etc.
+					auto* pObj = ((X::Value)operand).GetObj();
+					if (pObj->GetType() == ObjType::Tensor)
+					{
+						Tensor* pTensor = dynamic_cast<Tensor*> (pObj);
+						Addable = IsSimilarTensor(*pTensor);					
+					}
+					return Addable;
+				}
+
+				bool IsNum = false;
+				auto val = 0;
+				switch (ty)
+				{
+				case X::ValueType::Int64:
+					IsNum = true;
+					val = ((X::Value)operand).GetLongLong();
+					break;
+				case X::ValueType::Double:
+					IsNum = true;
+					val = ((X::Value)operand).GetDouble();
+					break;
+				default:  //todo, what about boolean?
+					break;
+				}
+
+				if (IsNum) //number only
+				{
+					switch (m_dataType)
+					{
+					case X::TensorDataType::BOOL:
+					case X::TensorDataType::BYTE:
+					case X::TensorDataType::UBYTE:
+						break;
+					case X::TensorDataType::SHORT:
+					case X::TensorDataType::USHORT:
+						if (ty == X::ValueType::Int64 && val < pow(2,16)) 
+						{
+							Addable = true;
+						}
+						break;
+					case X::TensorDataType::INT:
+					case X::TensorDataType::UINT:
+						if (ty == X::ValueType::Int64 && val < pow(2,32)) 
+						{
+							Addable = true;
+						}
+						break;
+					case X::TensorDataType::LONGLONG:
+					case X::TensorDataType::ULONGLONG:
+						if (ty == X::ValueType::Int64) 
+						{
+							Addable = true;
+						}
+						break;
+					case X::TensorDataType::HALFFLOAT:
+						if ((ty == X::ValueType::Int64 || ty == X::ValueType::Double) && val < pow(2,16)) 
+						{
+							Addable = true;
+						}
+						break;
+					case X::TensorDataType::FLOAT:
+						if ((ty == X::ValueType::Int64 || ty == X::ValueType::Double) && val < pow(2,32)) 
+						{
+							Addable = true;
+						}
+						break;
+					case X::TensorDataType::DOUBLE:
+					case X::TensorDataType::CFLOAT:
+						if (ty == X::ValueType::Int64 || ty == X::ValueType::Double) 
+						{
+							Addable = true;
+						}
+						break;
+					case X::TensorDataType::CDOUBLE:
+						break;
+					default:
+						break;
+					}
+				}
+				return Addable;
+			}
+
+/*
 			inline void Add(const X::Value& operand)
 			{
 				AutoLock(m_lock);
-				
-				auto it_proc = [this](std::vector<long long>& indices, X::Value& operand)
+			
+				auto it_proc = [this, operand](std::vector<long long>& indices)
 				{
-					for (int i = 0; i < m_dims.size(); i++)
-					{
-						//
-					}
 					X::Value val = GetDataWithIndices(indices);
 					if (operand.IsObject())
 					{
@@ -267,7 +353,7 @@ namespace X
 
 				IterateAll(it_proc);
 			}
-			*/
+*/			
 			inline void Minus(const X::Value& operand)
 			{
 				AutoLock(m_lock);
@@ -320,7 +406,7 @@ namespace X
 			{
 				AutoLock(m_lock);
 				std::string strShapes;
-				std::string *pstrMatrix = new std::string();
+				std::string *pstrElements = new std::string();
 				char v[1000];
 				int dcnt = (int)m_dims.size();
 				for (int i=0;i<dcnt;i++)
@@ -336,7 +422,7 @@ namespace X
 				std::string strOut = "Tensor(size=(" + strShapes + "),";
 				strOut +="[";
 
-				auto it_proc = [this, pstrMatrix, v](std::vector<long long>& indices)
+				auto it_proc = [this, pstrElements, v](std::vector<long long>& indices)
 				{
 					X::Value val = GetDataWithIndices(indices);
 					//char v[1000];
@@ -389,15 +475,14 @@ namespace X
 					default:
 						break;
 					}				
-					//printf ("%s,", v);	
-					pstrMatrix->append(v);
-					pstrMatrix->append(",");
+					pstrElements->append(v);
+					pstrElements->append(",");
 				};
 
 				IterateAll(it_proc);			
 
-				pstrMatrix->back() = 0; // to remove the last comma
-				strOut += *pstrMatrix; 
+				pstrElements->back() = 0; // to remove the last comma
+				strOut += *pstrElements; 
 				strOut += "]";
 				strOut += ")";
 
