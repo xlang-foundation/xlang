@@ -236,7 +236,6 @@ namespace X
 			
 			inline std::tuple<bool, bool> IsAddable(const X::Value& operand) 
 			{
-				printf ("in IsAddable(const X::Value& operand)\n");
 
 				bool Addable = false;
 				bool IsNum = false;
@@ -345,7 +344,7 @@ namespace X
 				return {Addable, IsNum};
 			}
 
-			inline void Add(X::Value& operand)
+			inline void AddMinus(X::Value& operand, Tensor_Operator op)
 			{
 				bool bIsAddable =false;
 				bool bIsNum = false;
@@ -355,10 +354,13 @@ namespace X
 					AutoLock(m_lock);
 					if (bIsNum) 
 					{
-						auto it_proc = [this, operand](std::vector<long long>& indices)
+						auto it_proc = [this, operand, op](std::vector<long long>& indices)
 						{
 							X::Value val = GetDataWithIndices(indices);
-							val += operand;
+							if (op == Tensor_Operator::Add) //only Add or Minus allowed
+								val += operand;
+							else
+								val += operand;
 							SetDataWithIndices(indices, val);
 						};
 						IterateAll(it_proc);
@@ -366,11 +368,14 @@ namespace X
 					else 
 					{//tensor only, verified in IsAddable()
 						Tensor* pTobj = dynamic_cast<Tensor*>(operand.GetObj());
-						auto it_proc_tensor = [this, pTobj](std::vector<long long>& indices)
+						auto it_proc_tensor = [this, pTobj, op](std::vector<long long>& indices)
 						{
 							X::Value val = GetDataWithIndices(indices);
 							X::Value val_operand = pTobj->GetDataWithIndices(indices);
-							val += val_operand;
+							if (op == Tensor_Operator::Add) //only Add or Minus allowed
+								val += val_operand;
+							else
+								val -= val_operand;
 							SetDataWithIndices(indices, val);
 						};
 						IterateAll(it_proc_tensor);
@@ -381,18 +386,33 @@ namespace X
 			}
 
 			Tensor& operator+(X::Value& val){
-				Add(val);
-			}
-
-			virtual Tensor& operator+=(X::Value& val) override{
-				Add(val);
+				AddMinus(val, Tensor_Operator::Add);
 				return *this;
 			}
 
-			inline void Minus(const X::Value& operand)
-			{
-				AutoLock(m_lock);
-			
+			virtual Tensor& operator+=(X::Value& val) override{
+				AddMinus(val, Tensor_Operator::Add);
+				return *this;
+			}
+
+			Tensor& Add(X::Value& val){
+				AddMinus(val, Tensor_Operator::Add);
+				return *this;
+			}
+
+			Tensor& operator-(X::Value& val){
+				AddMinus(val, Tensor_Operator::Minus);
+				return *this;
+			}
+
+			virtual Tensor& operator-=(X::Value& val) override{
+				AddMinus(val, Tensor_Operator::Minus);
+				return *this;
+			}
+
+			Tensor& Minus(X::Value& val){
+				AddMinus(val, Tensor_Operator::Minus);
+				return *this;
 			}
 
 			inline void IterateAll(TensorIterateProc proc)
