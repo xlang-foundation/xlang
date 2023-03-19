@@ -2,6 +2,7 @@
 #include "object.h"
 #include <functional>
 #include <math.h>
+#include<tuple>
 
 /*
 	Shawn Xiong @2/15/2023
@@ -233,9 +234,13 @@ namespace X
 				return X::Value(pNewTensor);
 			}
 			
-			inline bool IsAddable(const X::Value& operand) 
+			inline std::tuple<bool, bool> IsAddable(const X::Value& operand) 
 			{
+				printf ("in IsAddable(const X::Value& operand)\n");
+
 				bool Addable = false;
+				bool IsNum = false;
+
 				auto ty = ((X::Value)operand).GetType();
 
 				if (ty == X::ValueType::Object) {//only tensor, no list, set, dictionary, complex, etc.
@@ -245,10 +250,9 @@ namespace X
 						Tensor* pTensor = dynamic_cast<Tensor*> (pObj);
 						Addable = IsSimilarTensor(*pTensor);					
 					}
-					return Addable;
+					return {Addable, IsNum};
 				}
 
-				bool IsNum = false;
 				auto val = 0;
 				switch (ty)
 				{
@@ -338,42 +342,53 @@ namespace X
 						break;
 					}
 				}
-				return Addable;
+				return {Addable, IsNum};
 			}
 
-/*
-			inline void Add(const X::Value& operand)
+			inline void Add(X::Value& operand)
 			{
-				AutoLock(m_lock);
-			
-				auto it_proc = [this, operand](std::vector<long long>& indices)
-				{
-					X::Value val = GetDataWithIndices(indices);
-					if (operand.IsObject())
-					{
-						auto* pObj = val.GetObj();
-						if (pObj->GetType() == ObjType::Tensor ) {
-							Tensor* pTobj = dynamic_cast<Tensor*>(pObj);
-							if (IsSimilarTensor(*pTobj)) {
-								X::Value val_operand = pTobj->GetDataWithIndices(indices);
-								//SetDataWithIndices(indices, val+= val_operand);
-								SetDataWithIndices(indices, val_operand);
-							}
-						}
-						else {
-							//exceptions
-							return;
-						}
-					}
-					else {
-						//SetDataWithIndices(indices, val+= operand);
-						SetDataWithIndices(indices, operand);
-					}
-				};
+				bool bIsAddable =false;
+				bool bIsNum = false;
+				std::tie (bIsAddable, bIsNum) = IsAddable(operand);
 
-				IterateAll(it_proc);
+				if (bIsAddable) {
+					AutoLock(m_lock);
+					if (bIsNum) 
+					{
+						auto it_proc = [this, operand](std::vector<long long>& indices)
+						{
+							X::Value val = GetDataWithIndices(indices);
+							val += operand;
+							SetDataWithIndices(indices, val);
+						};
+						IterateAll(it_proc);
+					}
+					else 
+					{//tensor only, verified in IsAddable()
+						Tensor* pTobj = dynamic_cast<Tensor*>(operand.GetObj());
+						auto it_proc_tensor = [this, pTobj](std::vector<long long>& indices)
+						{
+							X::Value val = GetDataWithIndices(indices);
+							X::Value val_operand = pTobj->GetDataWithIndices(indices);
+							val += val_operand;
+							SetDataWithIndices(indices, val);
+						};
+						IterateAll(it_proc_tensor);
+					}
+
+				}
+			
 			}
-*/			
+
+			Tensor& operator+(X::Value& val){
+				Add(val);
+			}
+
+			virtual Tensor& operator+=(X::Value& val) override{
+				Add(val);
+				return *this;
+			}
+
 			inline void Minus(const X::Value& operand)
 			{
 				AutoLock(m_lock);
