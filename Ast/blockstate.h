@@ -28,6 +28,8 @@ class BlockState
 		return G::I().R().OpAct(idx);
 	}
 public:
+	//if meet some keyword like select, will set it true to skip \n
+	bool m_SkipLineFeedN = false;
 	//below,before meet first non-tab char,it is true 
 	bool m_NewLine_WillStart = true;
 	int m_TabCountAtLineBegin = 0;
