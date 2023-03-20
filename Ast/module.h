@@ -31,8 +31,22 @@ typedef void (*CommandProcessProc)(XlangRuntime* rt,
 	XObj* pContextCurrent,
 	CommandInfo* pCommandInfo,
 	X::Value& retVal);
-struct CommandInfo
+class CommandInfo:
+	virtual public ObjRef
 {
+	Locker _lock;
+public:
+	inline virtual int IncRef()
+	{
+		AutoLock(_lock);
+		return ObjRef::AddRef();
+	}
+	inline virtual int DecRef()
+	{
+		AutoLock(m_lock);
+		return ObjRef::Release();
+	}
+
 	dbg dbgType;
 
 	void* m_callContext = nullptr;
@@ -46,8 +60,6 @@ struct CommandInfo
 
 	CommandProcessProc m_process = nullptr;
 	XWait* m_wait = nullptr;
-	bool m_downstreamDelete = false;//when the downstream get this command
-	//need to delete this pointer
 };
 enum class module_primitive
 {
@@ -211,6 +223,7 @@ public:
 		//auto tid = GetThreadID();
 		//std::cout << "AddCommand,before add,bWaitFinish=" 
 		//	<< bWaitFinish<<"pCmdInfo="<< pCmdInfo <<"tid="<<tid << std::endl;
+		pCmdInfo->IncRef();//for keeping in m_commands
 		m_lockCommands.Lock();
 		m_commands.push_back(pCmdInfo);
 		m_lockCommands.Unlock();
@@ -241,6 +254,8 @@ public:
 		if (bRet && m_commands.size()>0)
 		{
 			pCommandInfo = m_commands[0];
+			// pCommandInfo already have refcount when adding into m_commands
+			//so don't call IncRef here
 			m_commands.erase(m_commands.begin());
 		}
 		m_lockCommands.Unlock();

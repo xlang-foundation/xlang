@@ -163,10 +163,7 @@ public:
 			{
 				pCmdInfo->m_wait->Release();
 			}
-			if (pCmdInfo->m_downstreamDelete)
-			{
-				delete pCmdInfo;
-			}
+			pCmdInfo->DecRef();
 		}
 	}
 	inline bool ExitBlockRun(XlangRuntime* rt,XObj* pContext,

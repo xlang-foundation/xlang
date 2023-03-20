@@ -37,6 +37,9 @@ enum class ObType
 	Module,
 	Block,
 	Class,
+#if ADD_SQL
+	Select,
+#endif
 	From,
 	ColonOp,
 	CommaOp,
