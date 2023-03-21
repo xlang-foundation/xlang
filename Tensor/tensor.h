@@ -360,7 +360,7 @@ namespace X
 							if (op == Tensor_Operator::Add) //only Add or Minus allowed
 								val += operand;
 							else
-								val += operand;
+								val -= operand;
 							SetDataWithIndices(indices, val);
 						};
 						IterateAll(it_proc);
@@ -384,6 +384,42 @@ namespace X
 				}
 			
 			}
+
+			inline void Multiply(X::Value& operand, Tensor_Operator op)
+			{
+				bool bIsAddable =false;
+				bool bIsNum = false;
+				std::tie (bIsAddable, bIsNum) = IsAddable(operand);
+
+				if (bIsAddable) {
+					AutoLock(m_lock);
+					if (bIsNum) 
+					{
+						auto it_proc = [this, operand, op](std::vector<long long>& indices)
+						{
+							X::Value val = GetDataWithIndices(indices);
+							val *= operand;
+							SetDataWithIndices(indices, val);
+						};
+						IterateAll(it_proc);
+					}
+					else 
+					{//tensor only, verified in IsAddable()
+						Tensor* pTobj = dynamic_cast<Tensor*>(operand.GetObj());
+						auto it_proc_tensor = [this, pTobj, op](std::vector<long long>& indices)
+						{
+							X::Value val = GetDataWithIndices(indices);
+							X::Value val_operand = pTobj->GetDataWithIndices(indices);
+							val *= val_operand;
+							SetDataWithIndices(indices, val);
+						};
+						IterateAll(it_proc_tensor);
+					}
+
+				}
+			
+			}
+
 
 			Tensor& operator+(X::Value& val){
 				AddMinus(val, Tensor_Operator::Add);
@@ -412,6 +448,21 @@ namespace X
 
 			Tensor& Minus(X::Value& val){
 				AddMinus(val, Tensor_Operator::Minus);
+				return *this;
+			}
+
+			Tensor& operator*(X::Value& val){
+				Multiply(val, Tensor_Operator::Minus);
+				return *this;
+			}
+
+			//virtual Tensor& operator*=(X::Value& val) override{
+		//		Multiply(val, Tensor_Operator::Minus);
+		//		return *this;
+		//	}
+
+			Tensor& Mul(X::Value& val){
+				Multiply(val, Tensor_Operator::Minus);
 				return *this;
 			}
 
