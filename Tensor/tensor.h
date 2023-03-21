@@ -274,63 +274,74 @@ namespace X
 					case X::TensorDataType::BOOL:
 						break;
 					case X::TensorDataType::BYTE:
-						if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,7) && val < pow(2,7) ) 
+						//if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,7) && val < pow(2,7) ) 
+						if (ty == X::ValueType::Int64 && val >= -128 && val <= 127) 
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::UBYTE:
-						if (ty == X::ValueType::Int64 && val < pow(2,8)) 
+						//if (ty == X::ValueType::Int64 && val < pow(2,8)) 
+						if (ty == X::ValueType::Int64 && val <= 255) 
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::SHORT:
-						if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,15) && val < pow(2,15) ) 
+						//if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,15) && val < pow(2,15) ) 
+						if (ty == X::ValueType::Int64 && val >= -32768 && val <= 32767) 
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::USHORT:
-						if (ty == X::ValueType::Int64 && val < pow(2,16)) 
+						//if (ty == X::ValueType::Int64 && val < pow(2,16)) 
+						if (ty == X::ValueType::Int64 && val <= 65535) 
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::INT:
-						if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,31) && val < pow(2,31)) 
+						//if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,31) && val < pow(2,31)) 
+						if (ty == X::ValueType::Int64 && val >= -2147483648 && val <= 2147483647) 
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::UINT:
-						if (ty == X::ValueType::Int64 && val < pow(2,32)) 
+						//if (ty == X::ValueType::Int64 && val < pow(2,32)) 
+						if (ty == X::ValueType::Int64 && val <= 4294967295)
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::LONGLONG:
+						if (ty == X::ValueType::Int64 && val >= -9,223,372,036,854,775,808 && val <= 9,223,372,036,854,775,807) 
+						{
+							Addable = true;
+						}
+						break;
 					case X::TensorDataType::ULONGLONG:
-						if (ty == X::ValueType::Int64) 
+						if (ty == X::ValueType::Int64 && val <= 18,446,744,073,709,551,615) 
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::HALFFLOAT:
-						if ((ty == X::ValueType::Int64 || ty == X::ValueType::Double) && val < pow(2,16)) 
+						if ((ty == X::ValueType::Double || ty == X::ValueType::Double) && val < pow(2,16)) 
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::FLOAT:
-						if ((ty == X::ValueType::Int64 || ty == X::ValueType::Double) && val < pow(2,32)) 
+						if ((ty == X::ValueType::Double || ty == X::ValueType::Double) && val < pow(2,32)) 
 						{
 							Addable = true;
 						}
 						break;
 					case X::TensorDataType::DOUBLE:
 					case X::TensorDataType::CFLOAT:
-						if (ty == X::ValueType::Int64 || ty == X::ValueType::Double) 
+						if (ty == X::ValueType::Double || ty == X::ValueType::Double) 
 						{
 							Addable = true;
 						}
@@ -409,6 +420,7 @@ namespace X
 						auto it_proc_tensor = [this, pTobj, op](std::vector<long long>& indices)
 						{
 							X::Value val = GetDataWithIndices(indices);
+							//exchange m,n postions
 							X::Value val_operand = pTobj->GetDataWithIndices(indices);
 							val *= val_operand;
 							SetDataWithIndices(indices, val);
@@ -419,7 +431,6 @@ namespace X
 				}
 			
 			}
-
 
 			Tensor& operator+(X::Value& val){
 				AddMinus(val, Tensor_Operator::Add);
@@ -452,6 +463,7 @@ namespace X
 			}
 
 			Tensor& operator*(X::Value& val){
+				printf ("in operator*");
 				Multiply(val, Tensor_Operator::Minus);
 				return *this;
 			}
@@ -462,6 +474,7 @@ namespace X
 		//	}
 
 			Tensor& Mul(X::Value& val){
+				printf ("in Mul");
 				Multiply(val, Tensor_Operator::Minus);
 				return *this;
 			}
