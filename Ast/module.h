@@ -26,7 +26,7 @@ struct BreakPointInfo
 	int sessionTid;
 };
 
-struct CommandInfo;
+class CommandInfo;
 typedef void (*CommandProcessProc)(XlangRuntime* rt,
 	XObj* pContextCurrent,
 	CommandInfo* pCommandInfo,

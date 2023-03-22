@@ -83,9 +83,12 @@ public:
 			OpAction cur_opAct = OpAct(curOp->getOp());
 			//check this case .[test1,test2](....)
 			//after . it is a ops,not var
+			//todo: 3/20/2023, for tensor, want to process left first if same precedence
+			//so change here,
 			if (lastToken != top->getOp()
 				&& top->m_type != AST::ObType::Pair
-				&& topAct.precedence > cur_opAct.precedence) 
+				//&& topAct.precedence > cur_opAct.precedence)
+				&& topAct.precedence >= cur_opAct.precedence)
 			{
 				DoOpTop();
 			}

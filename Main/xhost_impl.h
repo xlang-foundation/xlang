@@ -26,7 +26,7 @@ namespace X
 		virtual XDict* CreateDict() override;
 		virtual XList* CreateList() override;
 		virtual XTensor* CreateTensor() override;
-		virtual XTensor* CreateTensorOperator(Tensor_OperatorHandler op,bool isUnaryOp) override;
+		virtual XTensorOperator* CreateTensorOperator(Tensor_OperatorHandler op,bool isUnaryOp) override;
 		virtual XTensorGraph* CreateTensorGraph() override;
 		virtual XSet* CreateSet() override;
 		virtual XComplex* CreateComplex() override;

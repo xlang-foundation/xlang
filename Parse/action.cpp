@@ -24,9 +24,9 @@ void RegisterOps(OpRegistry* reg)
 		return true;
 	})
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
-		v = L;
-		v.Clone();
-		v += R;
+		//v = L;
+		//v.Clone();
+		v = L+R;
 		return true;
 	});
 	RegOP("-")
@@ -41,6 +41,7 @@ void RegisterOps(OpRegistry* reg)
 		v -= R;
 		return true;
 	});
+#if __not_tensor__
 	RegOP("*")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = L;
@@ -48,6 +49,13 @@ void RegisterOps(OpRegistry* reg)
 		v *= R;
 		return true;
 	});
+#else
+	RegOP("*")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L * R;
+		return true;
+	});
+#endif
 	RegOP(".")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		int cnt = R.GetF();
@@ -397,10 +405,12 @@ void Register(OpRegistry* reg)
 
 	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(reg,
 		{ OP_ID::Equ,OP_ID::AddEqu,OP_ID::MinusEqu,OP_ID::MulEqu,
-		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu });
+		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu })
+		.SetPrecedence(Precedence_Reqular-1);;
 	RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
 		{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
-		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu });
+		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu })
+		.SetPrecedence(Precedence_Reqular-1);;
 
 	RegOP("[", "]", "{", "}", "(",")")
 		.SetPrecedence(Precedence_High);
