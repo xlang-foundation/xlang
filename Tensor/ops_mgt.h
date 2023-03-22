@@ -1,7 +1,7 @@
 #pragma once
 
 #include "singleton.h"
-#include "tensorop.h"
+
 
 namespace X
 {
@@ -17,13 +17,14 @@ namespace X
 		class OpsManager :
 			public Singleton<OpsManager>
 		{
+			int m_TempTensorLastIndex = 100;
 		public:
-			X::Value CreateOp(X::Value& action)
+			std::string GenNewName()
 			{
-				Tensor_OperatorHandler handler;
-				TensorOperator* pOp = new TensorOperator(handler,false);
-				pOp->SetOpAction(action);
-				return X::Value(pOp);
+				int idx=  m_TempTensorLastIndex++;
+				char v[1000];
+				snprintf(v, sizeof(v), "temp_%d",idx);
+				return v;
 			}
 		};
 	}

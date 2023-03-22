@@ -4,6 +4,7 @@
 #include "xlang.h"
 #include "ops_mgt.h"
 #include "function.h"
+#include <iostream>
 
 namespace X
 {
@@ -27,7 +28,8 @@ namespace X
 		}
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
-			retVal = retVal;
+			std::cout << "Call Add" << std::endl;
+ 			retVal = retVal;
 		}
 		void Minus(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
@@ -35,6 +37,7 @@ namespace X
 		}
 		void Multiply(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
+			std::cout << "Call Multiply" << std::endl;
 			retVal = retVal;
 		}
 		void Divide(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
