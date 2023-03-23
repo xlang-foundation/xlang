@@ -164,7 +164,7 @@ namespace X
 		pTensor->IncRef();
 		return pTensor;
 	}
-	XTensor* XHost_Impl::CreateTensorOperator(Tensor_OperatorHandler op, bool isUnaryOp)
+	XTensorOperator* XHost_Impl::CreateTensorOperator(Tensor_OperatorHandler op, bool isUnaryOp)
 	{
 		auto* pTensor = new X::Data::TensorOperator(op, isUnaryOp);
 		pTensor->IncRef();

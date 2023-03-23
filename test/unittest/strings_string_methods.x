@@ -8,7 +8,7 @@ x = txt.capitalize()
 print (x)
 
 #The first character is converted to upper case, and the rest are converted to lower case
-txt = "python is FUN!"
+txt = "Xlang is FUN!"
 x = txt.capitalize()
 print (x) 
 

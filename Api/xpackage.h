@@ -543,7 +543,7 @@ namespace X
 			//add func with name to return a TensorOperator
 			m_members.push_back(MemberInfo{
 				MemberType::Func,name,X::Value(),
-				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
 						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
@@ -557,6 +557,8 @@ namespace X
 							(pThis->*f)(params0, kwParams0, inputs[0], retVal);
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,true);
+						std::string strName(name);
+						pTensorOp->SetName(strName);
 						retValue = X::Value(pTensorOp);
 						return true;
 					}),nullptr,nullptr,false,std::string(doc) });
@@ -569,7 +571,7 @@ namespace X
 			//add func with name to return a TensorOperator
 			m_members.push_back(MemberInfo{
 				MemberType::Func,name,X::Value(),
-				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
 						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
@@ -583,6 +585,8 @@ namespace X
 							(pThis->*f)(params0, kwParams0, inputs[0], inputs[1], retVal);
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,false);
+						std::string strName(name);
+						pTensorOp->SetName(strName);
 						retValue = X::Value(pTensorOp);
 						return true;
 					}),nullptr,nullptr,false,std::string(doc) });

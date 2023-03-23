@@ -28,6 +28,8 @@ class BlockState
 		return G::I().R().OpAct(idx);
 	}
 public:
+	//if meet some keyword like select, will set it true to skip \n
+	bool m_SkipLineFeedN = false;
 	//below,before meet first non-tab char,it is true 
 	bool m_NewLine_WillStart = true;
 	int m_TabCountAtLineBegin = 0;
@@ -81,9 +83,12 @@ public:
 			OpAction cur_opAct = OpAct(curOp->getOp());
 			//check this case .[test1,test2](....)
 			//after . it is a ops,not var
+			//todo: 3/20/2023, for tensor, want to process left first if same precedence
+			//so change here,
 			if (lastToken != top->getOp()
 				&& top->m_type != AST::ObType::Pair
-				&& topAct.precedence > cur_opAct.precedence) 
+				//&& topAct.precedence > cur_opAct.precedence)
+				&& topAct.precedence >= cur_opAct.precedence)
 			{
 				DoOpTop();
 			}

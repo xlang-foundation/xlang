@@ -473,10 +473,10 @@ namespace X
 				pCmdInfo->m_process = stackTracePack;
 				pCmdInfo->m_needRetValue = true;
 				pCmdInfo->dbgType = AST::dbg::StackTrace;
-				pCmdInfo->m_downstreamDelete = false;
+				pCmdInfo->IncRef();//we need keep it for return, will removing in below
 				pModule->AddCommand(pCmdInfo, true);
 				retValue = pCmdInfo->m_retValueHolder;
-				delete pCmdInfo;
+				pCmdInfo->DecRef();
 			}
 			else if (strCmd == "Globals"
 				|| strCmd == "Locals"
@@ -554,15 +554,16 @@ namespace X
 				pCmdInfo->m_varParam = valParam;
 				pCmdInfo->m_callContext = this;
 				pCmdInfo->m_needRetValue = true;
-				pCmdInfo->m_downstreamDelete = false;
+				pCmdInfo->IncRef();// we need pCmdInfo keep for return
 				pModule->AddCommand(pCmdInfo, true);
 				retValue = pCmdInfo->m_retValueHolder;
-				delete pCmdInfo;
+				pCmdInfo->DecRef();
 			}
 			if (strCmd == "Step")
 			{
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
-				pCmdInfo->m_downstreamDelete = true;
+				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
+				//and when this command be processed, will release it
 				pCmdInfo->dbgType = AST::dbg::Step;
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
@@ -570,7 +571,8 @@ namespace X
 			else if (strCmd == "Continue")
 			{
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
-				pCmdInfo->m_downstreamDelete = true;
+				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
+				//and when this command be processed, will release it
 				pCmdInfo->dbgType = AST::dbg::Continue;
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
@@ -578,7 +580,8 @@ namespace X
 			else if (strCmd == "StepIn")
 			{
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
-				pCmdInfo->m_downstreamDelete = true;
+				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
+				//and when this command be processed, will release it
 				pCmdInfo->dbgType = AST::dbg::StepIn;
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
@@ -586,7 +589,8 @@ namespace X
 			else if (strCmd == "StepOut")
 			{
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
-				pCmdInfo->m_downstreamDelete = true;
+				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
+				//and when this command be processed, will release it
 				pCmdInfo->dbgType = AST::dbg::StepOut;
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);

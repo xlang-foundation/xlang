@@ -1223,6 +1223,7 @@ bool U_CreateDict(X::XRuntime* rt, XObj* pContext,
 
 #define Tensor_DType "dtype"
 #define Tensor_Shape "shape"
+#define Tensor_Name "name"
 bool U_CreateTensor(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1231,8 +1232,15 @@ bool U_CreateTensor(X::XRuntime* rt, XObj* pContext,
 	bool bOK = true;
 	auto* pTensor = new X::Data::Tensor();
 
+	std::string name;
+	auto it = kwParams.find(Tensor_Name);
+	if (it != kwParams.end())
+	{
+		name = it->second.ToString();
+	}
+	pTensor->SetName(name);
 	int dtype = (int)X::TensorDataType::FLOAT;
-	auto it = kwParams.find(Tensor_DType);
+	it = kwParams.find(Tensor_DType);
 	if (it != kwParams.end())
 	{
 		dtype = (int)it->second;

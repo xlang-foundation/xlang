@@ -1,8 +1,9 @@
 #pragma once
 #include "object.h"
 #include <functional>
-#include <math.h>
-#include<tuple>
+#include "tensorop.h"
+#include "ops_mgt.h"
+#include "tensor_expression.h"
 
 /*
 	Shawn Xiong @2/15/2023
@@ -29,24 +30,12 @@ namespace X
 			long long stride;
 			long long dimProd;
 		};
-		enum class Tensor_Operator
-		{
-			None,Add,Minus,Mul,Div
-		};
 		using TensorIterateProc = std::function<void(std::vector<long long>& indices)>;
 		class Tensor:
 			virtual public XTensor,
 			virtual public Object
 		{
-			//for tensor operator
-			X::Value m_rightVal; //maybe a Tensor or TensorOperator
-			Tensor_Operator m_op = Tensor_Operator::None;
-			void SetRightVal(X::Value& val, Tensor_Operator op)
-			{
-				m_rightVal = val;
-				m_op = op;
-			}
-			//for data tensor
+			std::string m_name;
 			long long m_dataSize = 0;
 			char* m_data=nullptr;
 			std::vector<TensorDim> m_dims;
@@ -138,12 +127,11 @@ namespace X
 			Tensor();
 			~Tensor();
 
-			inline bool NeedCalc()
+			inline void SetName(std::string& n)
 			{
-				return (m_op != Tensor_Operator::None);
+				m_name = n;
 			}
-			inline X::Value& GetRightValue() { return m_rightVal; }
-			inline Tensor_Operator GetOp() { return m_op; }
+			inline std::string& GetName() { return m_name; }
 			//this function only return first dim's size
 			//because debug will use it as first level
 			virtual long long Size() override
@@ -520,6 +508,31 @@ namespace X
 			virtual void SetDataType(TensorDataType t) override
 			{
 				m_dataType = t;
+			}
+			virtual bool Multiply(const X::Value& r, X::Value& retVal) override
+			{
+				auto* newTensor = new TensorExpression();
+				X::Value left(this);
+				newTensor->SetLeftVal(left);
+				X::Value right(r);
+				newTensor->SetRightVal(right,Tensor_Operator::Mul);
+				std::string newName = OpsManager::I().GenNewName();
+				newTensor->SetName(newName);
+				retVal = newTensor;
+				return true;
+			}
+			virtual bool Add(const X::Value& r, X::Value& retVal) override
+			{
+				auto* newTensor = new TensorExpression();
+				X::Value left(this);
+				newTensor->SetLeftVal(left);
+				X::Value right(r);
+				newTensor->SetRightVal(right, Tensor_Operator::Add);
+				//if left has name, then add new tensor with a name
+				std::string newName = OpsManager::I().GenNewName();
+				newTensor->SetName(newName);
+				retVal = newTensor;
+				return true;
 			}
 			virtual Tensor& operator *=(X::Value& r) override;
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,

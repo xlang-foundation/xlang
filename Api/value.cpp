@@ -13,7 +13,47 @@ namespace X
 	COMPARE_OP_IMPL(< )
 	COMPARE_OP_IMPL(>= )
 	COMPARE_OP_IMPL(<= )
-
+	
+	Value Value::operator* (const Value& right)
+	{
+		Value ret;
+		bool done = false;
+		if (t == ValueType::Object)
+		{
+			X::XObj* pObj = GetObj();
+			done = pObj->Multiply(right, ret);
+		}
+		else if (right.IsObject())
+		{
+			done = right.GetObj()->Multiply(this, ret);
+		}
+		if (!done)
+		{
+			ret = this;
+			ret *= right;
+		}
+		return ret;
+	}
+	Value Value::operator+ (const Value& right)
+	{
+		Value ret;
+		bool done = false;
+		if (t == ValueType::Object)
+		{
+			X::XObj* pObj = GetObj();
+			done = pObj->Add(right, ret);
+		}
+		else if (right.IsObject())
+		{
+			done = right.GetObj()->Add(this, ret);
+		}
+		if (!done)
+		{
+			ret = this;
+			ret += right;
+		}
+		return ret;
+	}
 	void Value::operator += (const Value& v)
 	{
 		//if (IsObject())

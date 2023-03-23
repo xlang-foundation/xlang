@@ -111,8 +111,13 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		}
 	}
 }
-void Parser::NewLine(bool checkIfIsLambdaOrPair)
+void Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 {
+	if (meetLineFeed_n && m_curBlkState->m_SkipLineFeedN)
+	{
+		ResetForNewLine();
+		return;
+	}
 	//this case deals with { is in next line
 	// f = (x,y)
 	//{
@@ -411,7 +416,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 					get_last_token(), op);
 				m_curBlkState->PushOp(op);
 				push_preceding_token(idx);
-				NewLine();
+				NewLine(false);
 			}
 			break;
 		case TokenComment:
@@ -529,7 +534,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			break;
 		}//end switch
 	}
-	NewLine();//just call it to process the last line
+	NewLine(false);//just call it to process the last line
 	while (m_stackBlocks.size() > 1)
 	{
 		auto top = m_stackBlocks.top();

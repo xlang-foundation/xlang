@@ -12,6 +12,7 @@
 #include "decor.h"
 #include "op_registry.h"
 #include "namespace_var.h"
+#include "sql.h"
 
 namespace X {
 
@@ -23,9 +24,9 @@ void RegisterOps(OpRegistry* reg)
 		return true;
 	})
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
-		v = L;
-		v.Clone();
-		v += R;
+		//v = L;
+		//v.Clone();
+		v = L+R;
 		return true;
 	});
 	RegOP("-")
@@ -40,6 +41,7 @@ void RegisterOps(OpRegistry* reg)
 		v -= R;
 		return true;
 	});
+#if __not_tensor__
 	RegOP("*")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = L;
@@ -47,6 +49,13 @@ void RegisterOps(OpRegistry* reg)
 		v *= R;
 		return true;
 	});
+#else
+	RegOP("*")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L * R;
+		return true;
+	});
+#endif
 	RegOP(".")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		int cnt = R.GetF();
@@ -260,7 +269,15 @@ void Register(OpRegistry* reg)
 	RegOP("==", "!=", ">", "<", ">=", "<=","and","or").SetIds(reg,
 		{ OP_ID::Equal,OP_ID::NotEqual,OP_ID::Great,OP_ID::Less,
 		OP_ID::GreatAndEqual,OP_ID::LessAndEqual,OP_ID::And,OP_ID::Or});
-
+	//for sql statment
+#if ADD_SQL
+	RegOP("SELECT")
+		.SetProcess([](Parser* p, short opIndex) {
+		p->SetSkipLineFeedFlags(true);//will set back to false after meet ;
+		auto op = new AST::Select(opIndex);
+	return (AST::Operator*)op;
+		});
+#endif
 	//Override for +-* which may be an unary Operator
 	RegOP("+", "-", "*")
 		.SetProcess([](Parser* p, short opIndex){
@@ -356,11 +373,15 @@ void Register(OpRegistry* reg)
 	RegOP(";").SetProcess([](Parser* p, short opIndex)
 		{
 			p->NewLine(false);
+#if ADD_SQL
+			//todo: need more check here
+			p->SetSkipLineFeedFlags(false);
+#endif
 			return (AST::Operator*)nil;
 		});
 	RegOP("\n").SetProcess([](Parser* p, short opIndex)
 		{
-			p->NewLine();
+			p->NewLine(true);
 			return (AST::Operator*)nil;
 		});
 
@@ -384,10 +405,12 @@ void Register(OpRegistry* reg)
 
 	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(reg,
 		{ OP_ID::Equ,OP_ID::AddEqu,OP_ID::MinusEqu,OP_ID::MulEqu,
-		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu });
+		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu })
+		.SetPrecedence(Precedence_Reqular-1);;
 	RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
 		{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
-		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu });
+		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu })
+		.SetPrecedence(Precedence_Reqular-1);;
 
 	RegOP("[", "]", "{", "}", "(",")")
 		.SetPrecedence(Precedence_High);
@@ -409,6 +432,10 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_LOW2);
 	RegOP("and", "or")
 		.SetPrecedence(Precedence_LOW1);
+#if ADD_SQL
+	RegOP("SELECT")
+		.SetPrecedence(Precedence_LOW1-1);
+#endif
 	//12/9/2022 todo: it was RegOP("\n",",",":")
 	//but for def func1(x:int,y:double) case
 	//need to make : at least has same Precedence as ','

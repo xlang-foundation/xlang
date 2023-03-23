@@ -1,5 +1,5 @@
 #pragma once
-#include "tensor.h"
+#include "object.h"
 
 namespace X
 {
@@ -7,14 +7,18 @@ namespace X
 	{
 		//base class for all tensor's ops
 		class TensorOperator :
-			virtual public Tensor
+			virtual public XTensorOperator,
+			virtual public Object
 		{
+			std::string m_name;
+
 			X::Value m_opAction;//like a function to work with tensor
 			Tensor_OperatorHandler m_opHandler;
 			bool m_isUnaryOp = false;
 		public:
-			TensorOperator(Tensor_OperatorHandler op, bool isUnaryOp):XTensor(0),Object(),Tensor()
+			TensorOperator(Tensor_OperatorHandler op, bool isUnaryOp):XTensorOperator(0),Object()
 			{
+				m_t = ObjType::TensorOperator;
 				m_opHandler = op;
 				m_isUnaryOp = isUnaryOp;
 			}
@@ -22,6 +26,11 @@ namespace X
 			{
 
 			}
+			virtual inline void SetName(std::string& n) override
+			{
+				m_name = n;
+			}
+			inline std::string& GetName() { return m_name; }
 			inline bool IsUnaryOp() { return m_isUnaryOp; }
 			inline Tensor_OperatorHandler GetOpHandler()
 			{

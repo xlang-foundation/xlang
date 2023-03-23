@@ -18,6 +18,7 @@ namespace X
 	class XDict;
 	class XList;
 	class XTensor;
+	class XTensorOperator;
 	class XTensorGraph;
 	class XSet;
 	class XComplex;
@@ -62,7 +63,7 @@ namespace X
 		virtual XDict* CreateDict() = 0;
 		virtual XList* CreateList() = 0;
 		virtual XTensor* CreateTensor() = 0;
-		virtual XTensor* CreateTensorOperator(Tensor_OperatorHandler op, bool isUnaryOp) = 0;
+		virtual XTensorOperator* CreateTensorOperator(Tensor_OperatorHandler op, bool isUnaryOp) = 0;
 		virtual XTensorGraph* CreateTensorGraph() = 0;
 		virtual XSet* CreateSet() = 0;
 		virtual XComplex* CreateComplex() = 0;

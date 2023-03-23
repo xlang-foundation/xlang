@@ -317,7 +317,7 @@ public:
 	{
 		return (x.l!=0);
 	}
-	inline XObj* GetObj()
+	inline XObj* GetObj() const
 	{
 		return x.obj;
 	}
@@ -387,6 +387,8 @@ public:
 			break;
 		}
 	}
+	virtual Value operator* (const Value& right);
+	virtual Value operator + (const Value& right);
 	virtual void operator += (const Value& v);
 	virtual void operator -= (const Value& v);
 	template<typename... VarList>
