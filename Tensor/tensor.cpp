@@ -434,7 +434,8 @@ namespace X
 		}
 		Tensor& Tensor::operator *=(X::Value& r)
 		{
-			SetRightVal(r, Tensor_Operator::Mul);
+			//todo:
+			//SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
 		AST::Scope* Tensor::GetBaseScope() { return &_TensorScope; }

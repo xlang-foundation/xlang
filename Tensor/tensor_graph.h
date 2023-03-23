@@ -13,7 +13,7 @@ namespace X
 			X::ARGS inputs;
 			X::Value output;
 		};
-		class Tensor;
+		class TensorExpression;
 		class TensorGraph :
 			virtual public XTensorGraph,
 			virtual public Object
@@ -25,7 +25,7 @@ namespace X
 			};
 			int m_LastInstructionId = 0;
 			void BuildGraph(void* pBuildContext,
-				XObj* pContext, Tensor* pTensor, GraphBuildAction& retAction);
+				XObj* pContext, TensorExpression* pTensor, GraphBuildAction& retAction);
 
 			std::vector<TensorRunItem> m_runItems;
 
