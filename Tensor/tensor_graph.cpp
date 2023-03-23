@@ -169,6 +169,30 @@ namespace X
 			}
 			return handler;
 		}
+		static std::string GetNameWithOp(Tensor_Operator op)
+		{
+			std::string strName;
+			switch (op)
+			{
+			case X::Data::Tensor_Operator::None:
+				break;
+			case X::Data::Tensor_Operator::Add:
+				strName = "add";
+				break;
+			case X::Data::Tensor_Operator::Minus:
+				strName = "minus";
+				break;
+			case X::Data::Tensor_Operator::Mul:
+				strName = "mul";
+				break;
+			case X::Data::Tensor_Operator::Div:
+				strName = "div";
+				break;
+			default:
+				break;
+			}
+			return strName;
+		}
 		void TensorGraph::BuildGraph(void* pBuildContext,
 			XObj* pContext, Tensor* pTensor, GraphBuildAction& retAction)
 		{
@@ -204,38 +228,20 @@ namespace X
 						GraphBuildAction action0 = GraphBuildAction::None;
 						BuildGraph(pBuildContext,pContext, pRight, action0);//action0 should be None with return
 					}
-					//check if the op is registered
-					auto opHandler = QueryRegisteredOpHandler(pBuildContext,pContext,(int)op);
-					if (opHandler)
+					if (thiLevel_Action != GraphBuildAction::MeetBinaryOp)
 					{
-						X::ARGS inputs;
-						inputs.push_back(leftValue);
-						inputs.push_back(rightValue);
-						X::Value retValue(pTensor);
-
-						std::string strName;
-						switch (op)
+						//check if the op is registered
+						auto opHandler = QueryRegisteredOpHandler(pBuildContext, pContext, (int)op);
+						if (opHandler)
 						{
-						case X::Data::Tensor_Operator::None:
-							break;
-						case X::Data::Tensor_Operator::Add:
-							strName = "add";
-							break;
-						case X::Data::Tensor_Operator::Minus:
-							strName = "minus";
-							break;
-						case X::Data::Tensor_Operator::Mul:
-							strName = "mul";
-							break;
-						case X::Data::Tensor_Operator::Div:
-							strName = "div";
-							break;
-						default:
-							break;
+							X::ARGS inputs;
+							inputs.push_back(leftValue);
+							inputs.push_back(rightValue);
+							X::Value retValue(pTensor);
+							std::string strName = GetNameWithOp(op);
+							//put this handler into runlist
+							m_runItems.push_back({ strName,opHandler,inputs, retValue });
 						}
-						//put this handler into runlist
-						m_runItems.push_back({ strName,opHandler,inputs, retValue });
-
 					}
 				}
 				else if (pXObj->GetType() == ObjType::TensorOperator)
@@ -247,7 +253,7 @@ namespace X
 						{
 							auto opHandler = pOp->GetOpHandler();
 							X::ARGS inputs;
-							inputs.push_back(X::Value(pTensor));
+							inputs.push_back(leftValue);
 							X::Value retValue(pTensor);
 							//put this handler into runlist
 							m_runItems.push_back({ pOp->GetName(),opHandler,inputs, retValue });
