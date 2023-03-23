@@ -401,6 +401,10 @@ namespace X
 				bool bIsAddable =false;
 				bool bIsNum = false;
 				std::tie (bIsAddable, bIsNum) = IsAddable(operand);
+				//Tensor tempT(*this);
+				//Tensor *ptempT = dynamic_cast<Tensor*>clone();
+
+				printf ("in Multiply\n");
 
 				if (bIsAddable) {
 					AutoLock(m_lock);
@@ -417,6 +421,12 @@ namespace X
 					else 
 					{//tensor only, verified in IsAddable()
 						Tensor* pTobj = dynamic_cast<Tensor*>(operand.GetObj());
+
+						std::vector<int> axes;
+						axes.push_back(1);
+						axes.push_back(0);
+						pTobj->permute(axes);
+						printf("in Multiply, after permute\n");
 						auto it_proc_tensor = [this, pTobj, op](std::vector<long long>& indices)
 						{
 							X::Value val = GetDataWithIndices(indices);
@@ -475,7 +485,7 @@ namespace X
 
 			Tensor& Mul(X::Value& val){
 				printf ("in Mul");
-				Multiply(val, Tensor_Operator::Minus);
+				Multiply(val, Tensor_Operator::Mul);
 				return *this;
 			}
 

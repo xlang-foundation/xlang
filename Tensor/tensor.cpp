@@ -434,7 +434,7 @@ namespace X
 		}
 		Tensor& Tensor::operator *=(X::Value& r)
 		{
-			printf ("in operator *=");
+			printf ("in operator *=\n");
 			Multiply(r, Tensor_Operator::Mul);
 			SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
