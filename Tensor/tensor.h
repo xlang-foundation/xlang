@@ -3,6 +3,7 @@
 #include <functional>
 #include "tensorop.h"
 #include "ops_mgt.h"
+#include "tensor_expression.h"
 
 /*
 	Shawn Xiong @2/15/2023
@@ -29,32 +30,12 @@ namespace X
 			long long stride;
 			long long dimProd;
 		};
-		enum class Tensor_Operator
-		{
-			None,Add,Minus,Mul,Div,
-			Count
-		};
 		using TensorIterateProc = std::function<void(std::vector<long long>& indices)>;
 		class Tensor:
 			virtual public XTensor,
 			virtual public Object
 		{
-			//for debug
 			std::string m_name;
-			//for tensor operator
-			X::Value m_leftVal;
-			X::Value m_rightVal; //maybe a Tensor or TensorOperator
-			Tensor_Operator m_op = Tensor_Operator::None;
-			void SetLeftVal(X::Value& val)
-			{
-				m_leftVal = val;
-			}
-			void SetRightVal(X::Value& val, Tensor_Operator op)
-			{
-				m_rightVal = val;
-				m_op = op;
-			}
-			//for data tensor
 			long long m_dataSize = 0;
 			char* m_data=nullptr;
 			std::vector<TensorDim> m_dims;
@@ -133,13 +114,6 @@ namespace X
 				m_name = n;
 			}
 			inline std::string& GetName() { return m_name; }
-			inline bool NeedCalc()
-			{
-				return (m_op != Tensor_Operator::None);
-			}
-			inline X::Value& GetLeftValue() { return m_leftVal; }
-			inline X::Value& GetRightValue() { return m_rightVal; }
-			inline Tensor_Operator GetOp() { return m_op; }
 			//this function only return first dim's size
 			//because debug will use it as first level
 			virtual long long Size() override
@@ -263,83 +237,26 @@ namespace X
 			}
 			virtual bool Multiply(const X::Value& r, X::Value& retVal) override
 			{
-				auto* newTensor = new Tensor();
+				auto* newTensor = new TensorExpression();
 				X::Value left(this);
 				newTensor->SetLeftVal(left);
 				X::Value right(r);
 				newTensor->SetRightVal(right,Tensor_Operator::Mul);
-#if _combine_name
-				//if left has name, then add new tensor with a name
-				if (!m_name.empty())
-				{
-					std::string rightName;
-					if (r.IsObject() && r.GetObj()->GetType() == ObjType::Tensor)
-					{
-						Tensor* pRightTensor = dynamic_cast<Tensor*>(r.GetObj());
-						if (pRightTensor)
-						{
-							rightName = pRightTensor->GetName();
-						}
-					}
-					else if (r.IsObject() && r.GetObj()->GetType() == ObjType::TensorOperator)
-					{
-						TensorOperator* pRightTensorOp = dynamic_cast<TensorOperator*>(r.GetObj());
-						if (pRightTensorOp)
-						{
-							rightName = pRightTensorOp->GetName();
-						}
-					}
-					if (!rightName.empty())
-					{
-						std::string newName = '<'+m_name + "*" + rightName+ '>';
-						newTensor->SetName(newName);
-					}
-				}
-#else
 				std::string newName = OpsManager::I().GenNewName();
 				newTensor->SetName(newName);
-#endif
 				retVal = newTensor;
 				return true;
 			}
 			virtual bool Add(const X::Value& r, X::Value& retVal) override
 			{
-				auto* newTensor = new Tensor();
+				auto* newTensor = new TensorExpression();
 				X::Value left(this);
 				newTensor->SetLeftVal(left);
 				X::Value right(r);
 				newTensor->SetRightVal(right, Tensor_Operator::Add);
 				//if left has name, then add new tensor with a name
-#if _combine_name
-				if (!m_name.empty())
-				{
-					std::string rightName;
-					if (r.IsObject() && r.GetObj()->GetType() == ObjType::Tensor)
-					{
-						Tensor* pRightTensor = dynamic_cast<Tensor*>(r.GetObj());
-						if (pRightTensor)
-						{
-							rightName = pRightTensor->GetName();
-						}
-					}
-					else if (r.IsObject() && r.GetObj()->GetType() == ObjType::TensorOperator)
-					{
-						TensorOperator* pRightTensorOp = dynamic_cast<TensorOperator*>(r.GetObj());
-						if (pRightTensorOp)
-						{
-							rightName = pRightTensorOp->GetName();
-						}
-					}
-					if (!rightName.empty())
-					{
-						std::string newName = '<' + m_name + "+" + rightName + '>';
-						newTensor->SetName(newName);
-					}
-				}
-#else
 				std::string newName = OpsManager::I().GenNewName();
 				newTensor->SetName(newName);
-#endif
 				retVal = newTensor;
 				return true;
 			}

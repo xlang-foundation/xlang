@@ -1,6 +1,7 @@
 #include "tensor_graph.h"
 #include "function.h"
 #include "tensor.h"
+#include "tensor_expression.h"
 #include "tensorop.h"
 #include <iostream>
 
@@ -91,6 +92,7 @@ namespace X
 		{
 			//match with Tensor_Operator in tensor.h
 			std::vector<Tensor_OperatorHandler> m_Handlers;
+			std::unordered_map<TensorExpression*, bool> m_BeCalledMap;
 		public:
 			GraphBuildContext()
 			{
@@ -106,6 +108,22 @@ namespace X
 			void SetHandler(int idx, Tensor_OperatorHandler handler)
 			{
 				m_Handlers[idx] = handler;
+			}
+			bool IsCalledBuild(TensorExpression* exp)
+			{
+				auto it = m_BeCalledMap.find(exp);
+				if (it != m_BeCalledMap.end())
+				{
+					return it->second;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			void SetBuildCalled(TensorExpression* exp)
+			{
+				m_BeCalledMap.emplace(std::make_pair(exp, true));
 			}
 		};
 
@@ -194,39 +212,41 @@ namespace X
 			return strName;
 		}
 		void TensorGraph::BuildGraph(void* pBuildContext,
-			XObj* pContext, Tensor* pTensor, GraphBuildAction& retAction)
+			XObj* pContext, TensorExpression* pTensor, GraphBuildAction& retAction)
 		{
-			if (!pTensor->NeedCalc())
-			{
-				return;
-			}
+			GraphBuildContext* pGraphBuildContext = (GraphBuildContext*)pBuildContext;
 			GraphBuildAction thiLevel_Action = GraphBuildAction::None;
 			Tensor_Operator op = pTensor->GetOp();
-			X::Value leftValue = pTensor->GetLeftValue();//left must be tensor
-			if (leftValue.IsObject() && leftValue.GetObj()->GetType() == ObjType::Tensor)
+			X::Value leftValue = pTensor->GetLeftValue();
+			//check if left is a tensor expresion, if it is, then call BuildGraph
+			//todo: check if this Tensor Expresion is already build graph or not
+			if (leftValue.IsObject() && leftValue.GetObj()->GetType() == ObjType::TensorExpression)
 			{
-				Tensor* pLeft = dynamic_cast<Tensor*>(leftValue.GetObj());
-				if (pLeft->NeedCalc())
+				TensorExpression* pLeft = dynamic_cast<TensorExpression*>(leftValue.GetObj());
+				if (pLeft)
 				{
-					BuildGraph(pBuildContext,pContext, pLeft, thiLevel_Action);
+					if (!pGraphBuildContext->IsCalledBuild(pLeft))
+					{
+						pGraphBuildContext->SetBuildCalled(pLeft);
+						BuildGraph(pBuildContext, pContext, pLeft, thiLevel_Action);
+					}
 				}
-			}
-			else
-			{
-				//error
-				return;
 			}
 			X::Value rightValue = pTensor->GetRightValue();
 			if (rightValue.IsObject())
 			{
 				XObj* pXObj = rightValue.GetObj();
-				if (pXObj->GetType() == ObjType::Tensor)
+				if (pXObj->GetType() == ObjType::Tensor || pXObj->GetType() == ObjType::TensorExpression)
 				{
-					Tensor* pRight = dynamic_cast<Tensor*>(pXObj);
-					if (pRight->NeedCalc())
+					if (pXObj->GetType() == ObjType::TensorExpression)
 					{
+						TensorExpression* pRight = dynamic_cast<TensorExpression*>(pXObj);
 						GraphBuildAction action0 = GraphBuildAction::None;
-						BuildGraph(pBuildContext,pContext, pRight, action0);//action0 should be None with return
+						if (!pGraphBuildContext->IsCalledBuild(pRight))
+						{
+							pGraphBuildContext->SetBuildCalled(pRight);
+							BuildGraph(pBuildContext, pContext, pRight, action0);//action0 should be None with return
+						}
 					}
 					if (thiLevel_Action != GraphBuildAction::MeetBinaryOp)
 					{
@@ -268,10 +288,11 @@ namespace X
 			}
 			if (thiLevel_Action == GraphBuildAction::MeetBinaryOp)
 			{
-				Tensor* pLeft = dynamic_cast<Tensor*>(leftValue.GetObj());
+				//in this case, left must be TensorExpression
+				TensorExpression* pLeft = dynamic_cast<TensorExpression*>(leftValue.GetObj());
 				X::Value leftValue_LowLevel = pLeft->GetLeftValue();
 				X::Value opValue = pLeft->GetRightValue();
-				if (opValue.IsObject() && rightValue.GetObj()->GetType() == ObjType::Tensor)
+				if (opValue.IsObject())
 				{
 					TensorOperator* pOp = dynamic_cast<TensorOperator*>(opValue.GetObj());
 					auto opHandler = pOp->GetOpHandler();
@@ -292,13 +313,13 @@ namespace X
 			//this operator impl., replace with that
 			for (auto& p : params)
 			{
-				if (!p.IsObject() || p.GetObj()->GetType() != ObjType::Tensor)
+				if (!p.IsObject() || p.GetObj()->GetType() != ObjType::TensorExpression)
 				{
 					continue;
 				}
-				Tensor* tensor =dynamic_cast<Tensor*>(p.GetObj());
+				TensorExpression* tensorExp =dynamic_cast<TensorExpression*>(p.GetObj());
 				GraphBuildAction action = GraphBuildAction::None;
-				BuildGraph(&buildContext,pContext, tensor, action);
+				BuildGraph(&buildContext,pContext, tensorExp, action);
 			}
 		}
 		bool TensorGraph::Run(X::ARGS& params, X::KWARGS& kwParams)
@@ -322,12 +343,23 @@ namespace X
 				for (auto& in : item.inputs)
 				{
 					std::string inputName;
-					if (in.IsObject() && in.GetObj()->GetType() == ObjType::Tensor)
+					if (in.IsObject())
 					{
-						Tensor* pTensor = dynamic_cast<Tensor*>(in.GetObj());
-						if(pTensor)
+						if (in.GetObj()->GetType() == ObjType::Tensor)
 						{
-							inputName = pTensor->GetName();
+							Tensor* pTensor = dynamic_cast<Tensor*>(in.GetObj());
+							if (pTensor)
+							{
+								inputName = pTensor->GetName();
+							}
+						}
+						else if(in.GetObj()->GetType() == ObjType::TensorExpression)
+						{
+							TensorExpression* pTensorExp = dynamic_cast<TensorExpression*>(in.GetObj());
+							if (pTensorExp)
+							{
+								inputName = pTensorExp->GetName();
+							}
 						}
 					}
 					else
@@ -336,13 +368,24 @@ namespace X
 					}
 					lineOut += " " + inputName;
 				}
-				if (item.output.IsObject() && item.output.GetObj()->GetType() == ObjType::Tensor)
+				if (item.output.IsObject())
 				{
 					std::string outputName;
-					Tensor* pTensor = dynamic_cast<Tensor*>(item.output.GetObj());
-					if (pTensor)
+					if (item.output.GetObj()->GetType() == ObjType::Tensor)
 					{
-						outputName = pTensor->GetName();
+						Tensor* pTensor = dynamic_cast<Tensor*>(item.output.GetObj());
+						if (pTensor)
+						{
+							outputName = pTensor->GetName();
+						}
+					}
+					else if (item.output.GetObj()->GetType() == ObjType::TensorExpression)
+					{
+						TensorExpression* pTensorExp = dynamic_cast<TensorExpression*>(item.output.GetObj());
+						if (pTensorExp)
+						{
+							outputName = pTensorExp->GetName();
+						}
 					}
 					lineOut += " -> " + outputName;
 				}
