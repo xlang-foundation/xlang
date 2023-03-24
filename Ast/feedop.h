@@ -24,7 +24,7 @@ namespace X
 				m_size = size;
 			}
 			inline virtual bool OpWithOperands(
-				std::stack<AST::Expression*>& operands)
+				std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 			{
 				operands.push(this);
 				return true;
