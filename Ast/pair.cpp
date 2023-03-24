@@ -3,6 +3,7 @@
 #include "object.h"
 #include "dict.h"
 #include "list.h"
+#include "tensor.h"
 #include "set.h"
 #include "table.h"
 #include "pyproxyobject.h"
@@ -72,6 +73,75 @@ bool PairOp::GetItemFromDict(XlangRuntime* rt, XObj* pContext,
 	}
 	return bOK;
 }
+bool PairOp::GetItemFromTensor(XlangRuntime* rt, XObj* pContext,
+	Data::Tensor* pTensor, Expression* r,
+	Value& v, LValue* lValue)
+{
+	bool bOK = true;
+
+	auto extract_from_param = [&](Param* pParam)
+	{
+		Data::TensorIndex retIdx = { 0,-1 };
+		Value vIdx;
+		ExecAction action;
+		auto* first = pParam->GetName();
+		auto* second = pParam->GetType();
+		if (first && first->Exec(rt, action, pContext, vIdx))
+		{
+			retIdx.i = (long long)vIdx;
+		}
+		if (second && second->Exec(rt, action, pContext, vIdx))
+		{
+			retIdx.j = (long long)vIdx;
+		}
+		return retIdx;
+	};
+
+	std::vector<Data::TensorIndex> IdxAry;
+	if (R->m_type == ObType::List)
+	{
+		auto& list = (dynamic_cast<List*>(R))->GetList();
+		for (auto e : list)
+		{
+			Data::TensorIndex idx = { 0,-1 };
+			if (e->m_type == ObType::Param)
+			{
+				Param* pParam = dynamic_cast<Param*>(e);
+				idx = extract_from_param(pParam);
+			}
+			else
+			{
+				//keep index start with end as same number
+				Value v1;
+				ExecAction action;
+				if (e->Exec(rt, action, pContext, v1))
+				{
+					idx.i = idx.j = (long long)v1;
+				}
+			}
+			IdxAry.push_back(idx);
+		}
+	}
+	else if (R->m_type == ObType::Param)
+	{
+		Param* pParam = dynamic_cast<Param*>(R);
+		Data::TensorIndex idx = extract_from_param(pParam);
+		IdxAry.push_back(idx);
+	}
+	else
+	{
+		Data::TensorIndex idx = { 0,-1 };
+		Value v1;
+		ExecAction action;
+		if (R->Exec(rt, action, pContext, v1))
+		{
+			idx.i = idx.j = (long long)v1;
+		}
+		IdxAry.push_back(idx);
+	}
+	bOK = pTensor->Get(IdxAry,v);
+	return bOK;
+}
 bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 	Data::List* pDataList, Expression* r,
 	Value& v, LValue* lValue)
@@ -136,6 +206,10 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 			bOK = GetItemFromDict(rt, pContext, dynamic_cast<Data::Dict*>(pDataObj), R, v, lValue);
 			break;
 		case X::ObjType::Table:
+			break;
+		case X::ObjType::Tensor:
+			bOK = GetItemFromTensor(rt, pContext,
+				dynamic_cast<Data::Tensor*>(pDataObj), R, v, lValue);
 			break;
 		case X::ObjType::PyProxyObject:
 		{

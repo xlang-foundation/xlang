@@ -85,8 +85,11 @@ public:
 			//after . it is a ops,not var
 			//todo: 3/20/2023, for tensor, want to process left first if same precedence
 			//so change here,
-			if (lastToken != top->getOp()
-				&& top->m_type != AST::ObType::Pair
+
+			//todo: 3/23/2023 shawn,comment 'lastToken != top->getOp()' out for cause:t1[:,:2]
+			//check if some other impacts
+			if (/*lastToken != top->getOp()
+				&& */top->m_type != AST::ObType::Pair
 				//&& topAct.precedence > cur_opAct.precedence)
 				&& topAct.precedence >= cur_opAct.precedence)
 			{
@@ -125,13 +128,20 @@ public:
 	}
 	inline bool DoOp(AST::Operator* op)
 	{
-		return op->OpWithOperands(m_operands);
+		return op->OpWithOperands(m_operands,-1);
 	}
 	inline bool DoOpTop()
 	{
 		auto top = m_ops.top();
 		m_ops.pop();
-		return top->OpWithOperands(m_operands);
+		//get the next op,take its tokenIndex to constraint OpWithOperands
+		int tokenIndex = -1;
+		if (!m_ops.empty())
+		{
+			auto next = m_ops.top();
+			tokenIndex = next->GetTokenIndex();
+		}
+		return top->OpWithOperands(m_operands, tokenIndex);
 	}
 };
 }

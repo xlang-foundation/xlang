@@ -51,7 +51,7 @@ public:
 		m_type = ObType::ActionOp;
 	}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands)
+		std::stack<AST::Expression*>& operands,int LeftTokenIndex)
 	{
 		operands.push(this);
 		return true;

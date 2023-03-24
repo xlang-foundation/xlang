@@ -356,7 +356,7 @@ public:
 		return pos;
 	}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands)
+		std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 	{
 		if (!operands.empty())
 		{

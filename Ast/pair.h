@@ -4,7 +4,7 @@
 
 namespace X
 {
-	namespace Data { class List; class Dict; class mSet; }
+	namespace Data { class List; class Dict; class Tensor; class mSet; }
 namespace AST
 {
 	class PairOp :
@@ -17,6 +17,9 @@ namespace AST
 		bool TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
 		bool GetItemFromList(XlangRuntime* rt, XObj* pContext,
 			Data::List* pDataList, Expression* r,
+			Value& v, LValue* lValue);
+		bool GetItemFromTensor(XlangRuntime* rt, XObj* pContext,
+			Data::Tensor* pTensor, Expression* r,
 			Value& v, LValue* lValue);
 		bool GetItemFromDict(XlangRuntime* rt, XObj* pContext,
 			Data::Dict* pDataDict, Expression* r,

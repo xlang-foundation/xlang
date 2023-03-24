@@ -286,7 +286,7 @@ bool InOp::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	}
 	return bOK;
 }
-bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
+bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 {
 	//for right operands, support multiple token
 	//for example: x: long int, the type is two-tokens word
@@ -295,31 +295,49 @@ bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands)
 	while (!operands.empty() 
 		&& operands.top()->GetTokenIndex() > m_tokenIndex)
 	{
-		auto r = operands.top();
+		operandR = operands.top();
 		operands.pop();
-		operandR = r;
 	}
+#if NOT_SUPPORT //we want to support 1:[skip] for tensor index,
+	//but check if have some other impacts
 	if (operandR == nullptr)
 	{
 		std::cout << "syntax error" << std::endl;
 		return false;
 	}
-	auto operandL = operands.top();
+#endif
+	AST::Expression* operandL = nullptr;
+	while (!operands.empty()
+		&& operands.top()->GetTokenIndex() > LeftTokenIndex)
+	{
+		operandL = operands.top();
+		operands.pop();
+	}
+
+#if NOT_SUPPORT 
 	if (operandL == nullptr)
 	{
 		std::cout << "syntax error" << std::endl;
 		return false;
 	}
-	operands.pop();
+#endif
 	auto param = new AST::Param(operandL, operandR);
-	param->SetTokenIndex(operandL->GetTokenIndex());
-	param->ReCalcHint(operandL);
-	param->ReCalcHint(operandR);
+	if (operandL)
+	{
+		param->SetTokenIndex(operandL->GetTokenIndex());
+		param->ReCalcHint(operandL);
+	}
+	else
+	{//not set TokenIndex, use this op's
+		param->SetTokenIndex(m_tokenIndex);
+		//if no Left,use this ColonOP's Hints
+		param->ReCalcHint(this);
+	}
 	operands.push(param);
 	return true;
 }
 
-bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
+bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 {
 	AST::List* list = nil;
 
@@ -330,18 +348,21 @@ bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 	if (!operands.empty())
 	{
 		auto operandL = operands.top();
-		operands.pop();
-		if (operandL->m_type != AST::ObType::List)
+		if (operandL->GetTokenIndex()> LeftTokenIndex)
 		{
-			list = new AST::List(operandL);
-			list->SetTokenIndex(operandL->GetTokenIndex());
-		}
-		else
-		{
-			list = dynamic_cast<AST::List*>(operandL);
+			operands.pop();
+			if (operandL->m_type != AST::ObType::List)
+			{
+				list = new AST::List(operandL);
+				list->SetTokenIndex(operandL->GetTokenIndex());
+			}
+			else
+			{
+				list = dynamic_cast<AST::List*>(operandL);
+			}
 		}
 	}
-	else
+	if(list == nil)
 	{
 		list = new AST::List();
 	}
@@ -364,7 +385,7 @@ bool CommaOp::OpWithOperands(std::stack<AST::Expression*>& operands)
 	return true;
 }
 
-bool SemicolonOp::OpWithOperands(std::stack<AST::Expression*>& operands)
+bool SemicolonOp::OpWithOperands(std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 {
 	return true;
 }

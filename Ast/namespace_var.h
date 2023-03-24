@@ -102,7 +102,7 @@ namespace X
 			virtual void Add(Expression* item) override;
 			virtual void ScopeLayout() override;
 			virtual bool OpWithOperands(
-				std::stack<AST::Expression*>& operands)
+				std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 			{
 				if (!operands.empty()
 					&& operands.top()->GetTokenIndex() > m_tokenIndex)

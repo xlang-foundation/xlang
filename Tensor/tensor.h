@@ -2,9 +2,6 @@
 #include "object.h"
 #include <functional>
 #include "tensorop.h"
-#include "ops_mgt.h"
-#include "tensor_expression.h"
-
 /*
 	Shawn Xiong @2/15/2023
 	Tensor is a multiple dimensional array whith same data type
@@ -26,9 +23,14 @@ namespace X
 	{
 		struct TensorDim
 		{
+			long long offset;//start pos
 			long long size;
-			long long stride;
+			long long stride;//offset to next row data
 			long long dimProd;
+		};
+		struct TensorIndex
+		{
+			long long i,j;
 		};
 		using TensorIterateProc = std::function<void(std::vector<long long>& indices)>;
 		class Tensor:
@@ -36,7 +38,11 @@ namespace X
 			virtual public Object
 		{
 			std::string m_name;
-			long long m_dataSize = 0;
+
+			long long m_dataSize = 0;//calculated from m_dims,keep for fast calculation
+			//reference tensor to hold m_data
+			//when create Tensor, need to Increase refcount for m_pTensorToOwneData
+			Tensor* m_pTensorToOwneData = nullptr;
 			char* m_data=nullptr;
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
@@ -145,9 +151,10 @@ namespace X
 			{
 				for (auto i : shapes)
 				{
-					m_dims.push_back(TensorDim{ i,i });
+					m_dims.push_back(TensorDim{0,i,i});
 				}
 			}
+			bool Get(std::vector<Data::TensorIndex>& IdxAry, X::Value& retVal);
 			virtual XObj* Clone() override
 			{
 				auto* newTensor = new Tensor();
@@ -243,31 +250,9 @@ namespace X
 			{
 				m_dataType = t;
 			}
-			virtual bool Multiply(const X::Value& r, X::Value& retVal) override
-			{
-				auto* newTensor = new TensorExpression();
-				X::Value left(this);
-				newTensor->SetLeftVal(left);
-				X::Value right(r);
-				newTensor->SetRightVal(right,Tensor_Operator::Mul);
-				std::string newName = OpsManager::I().GenNewName();
-				newTensor->SetName(newName);
-				retVal = newTensor;
-				return true;
-			}
-			virtual bool Add(const X::Value& r, X::Value& retVal) override
-			{
-				auto* newTensor = new TensorExpression();
-				X::Value left(this);
-				newTensor->SetLeftVal(left);
-				X::Value right(r);
-				newTensor->SetRightVal(right, Tensor_Operator::Add);
-				//if left has name, then add new tensor with a name
-				std::string newName = OpsManager::I().GenNewName();
-				newTensor->SetName(newName);
-				retVal = newTensor;
-				return true;
-			}
+			virtual bool Multiply(const X::Value& r, X::Value& retVal) override;
+			virtual bool Add(const X::Value& r, X::Value& retVal) override;
+
 			virtual Tensor& operator *=(X::Value& r) override;
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
