@@ -29,7 +29,7 @@ namespace X
 			{
 			}
 			virtual bool OpWithOperands(
-				std::stack<AST::Expression*>& operands) override
+				std::stack<AST::Expression*>& operands, int LeftTokenIndex) override
 			{
 				return true;
 			}

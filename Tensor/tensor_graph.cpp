@@ -219,7 +219,7 @@ namespace X
 			Tensor_Operator op = pTensor->GetOp();
 			X::Value leftValue = pTensor->GetLeftValue();
 			//check if left is a tensor expresion, if it is, then call BuildGraph
-			//todo: check if this Tensor Expresion is already build graph or not
+			//Check if this Tensor Expresion is already build graph or not
 			if (leftValue.IsObject() && leftValue.GetObj()->GetType() == ObjType::TensorExpression)
 			{
 				TensorExpression* pLeft = dynamic_cast<TensorExpression*>(leftValue.GetObj());
@@ -285,6 +285,11 @@ namespace X
 						}
 					}
 				}
+			}
+			else
+			{//scala such as int64/double
+
+
 			}
 			if (thiLevel_Action == GraphBuildAction::MeetBinaryOp)
 			{

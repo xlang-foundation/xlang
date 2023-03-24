@@ -44,7 +44,8 @@ public:
 	virtual void SetL(Expression* l) {}
 	virtual void SetR(Expression* r) {}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands) 
+		std::stack<AST::Expression*>& operands,
+		int LeftTokenIndex)
 	{
 		return true;//OP finished
 	}
@@ -128,7 +129,7 @@ public:
 		return pos;
 	}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands)
+		std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 	{
 		//for BinaryOp eat all operands just keep left-most one
 		//as right operand
@@ -246,7 +247,7 @@ public:
 		m_type = ObType::ColonOp;
 	}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands);
+		std::stack<AST::Expression*>& operands, int LeftTokenIndex);
 };
 class CommaOp :
 	virtual public Operator
@@ -262,7 +263,7 @@ public:
 		m_type = ObType::CommaOp;
 	}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands);
+		std::stack<AST::Expression*>& operands, int LeftTokenIndex);
 };
 class SemicolonOp :
 	virtual public Operator
@@ -278,7 +279,7 @@ public:
 		m_type = ObType::SemicolonOp;
 	}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands);
+		std::stack<AST::Expression*>& operands, int LeftTokenIndex);
 };
 
 class UnaryOp :
@@ -339,7 +340,7 @@ public:
 		if (R) R->ScopeLayout();
 	}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands)
+		std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 	{
 		if (NeedParam && operands.size()>0)
 		{

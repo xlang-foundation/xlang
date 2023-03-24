@@ -3,7 +3,9 @@
 #include "dict.h"
 #include "port.h"
 #include "function.h"
-#include "tensorop.h"
+#include "ops_mgt.h"
+#include "tensor_expression.h"
+
 
 namespace X
 {
@@ -160,6 +162,37 @@ namespace X
 		{
 			m_t = ObjType::Tensor;
 
+		}
+		bool Tensor::Get(std::vector<Data::TensorIndex>& IdxAry, X::Value& retVal)
+		{
+			//check if point to one item,not a tensor
+			bool bOneItem = true;
+			std::vector<long long> indices;
+			if (IdxAry.size() == m_dims.size())
+			{
+				for (auto& idx : IdxAry)
+				{
+					if (idx.i != idx.j)
+					{
+						bOneItem = false;
+						break;
+					}
+					else
+					{
+						indices.push_back(idx.i);
+					}
+				}
+			}
+			if (bOneItem)
+			{
+				retVal = GetDataWithIndices(indices);
+			}
+			else
+			{
+				auto* pNewTensor = new X::Data::Tensor();
+
+			}
+			return true;
 		}
 		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
 		{
@@ -443,6 +476,31 @@ namespace X
 		{
 			Object::GetBaseScopes(bases);
 			bases.push_back(&_TensorScope);
+		}
+		bool Tensor::Multiply(const X::Value& r, X::Value& retVal)
+		{
+			auto* newTensor = new TensorExpression();
+			X::Value left(this);
+			newTensor->SetLeftVal(left);
+			X::Value right(r);
+			newTensor->SetRightVal(right, Tensor_Operator::Mul);
+			std::string newName = OpsManager::I().GenNewName();
+			newTensor->SetName(newName);
+			retVal = newTensor;
+			return true;
+		}
+		bool Tensor::Add(const X::Value& r, X::Value& retVal)
+		{
+			auto* newTensor = new TensorExpression();
+			X::Value left(this);
+			newTensor->SetLeftVal(left);
+			X::Value right(r);
+			newTensor->SetRightVal(right, Tensor_Operator::Add);
+			//if left has name, then add new tensor with a name
+			std::string newName = OpsManager::I().GenNewName();
+			newTensor->SetName(newName);
+			retVal = newTensor;
+			return true;
 		}
 	}
 }
