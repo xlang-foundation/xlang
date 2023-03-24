@@ -41,25 +41,6 @@ namespace X
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
 
-			bool IsSimilarTensor (const Tensor& t) {
-				bool sim = true;
-				int nd = (int)m_dims.size();
-				int td = (int)t.m_dims.size();
-				if (nd != td) {//
-					sim = false;
-				}
-				else {
-					for (int i = 0; i < nd; i++) {
-						if (m_dims[i].size != t.m_dims[i].size) {
-							sim = false;
-							break;
-						}
-					}
-				}
-				return sim;
-			}
-
-
 			long long GetItemSize()
 			{
 				long long size = 1;
@@ -110,7 +91,6 @@ namespace X
 				return itemCnt;
 			}
 			void DeepCopyDataFromList(List* pList,std::vector<long long>& indices,int level);
-			X::Value GetDataWithIndices(std::vector<long long>& indices);
 			void CalcDimProd()
 			{
 				int nd = (int)m_dims.size();
@@ -153,6 +133,14 @@ namespace X
 			{
 				return m_data;
 			}
+			TensorDataType GetDataType() 
+			{
+				return m_dataType;
+			}
+			std::vector<TensorDim> GetDims() 
+			{
+				return m_dims;
+			}
 			virtual void SetShape(std::vector<int> shapes) override
 			{
 				for (auto i : shapes)
@@ -172,6 +160,7 @@ namespace X
 				return newTensor;
 			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
+			X::Value GetDataWithIndices(std::vector<long long>& indices);
 			inline X::Value asType(int type)
 			{
 				TensorDataType dt = (TensorDataType)type;
@@ -222,261 +211,6 @@ namespace X
 				return X::Value(pNewTensor);
 			}
 			
-			inline std::tuple<bool, bool> IsAddable(const X::Value& operand) 
-			{
-
-				bool Addable = false;
-				bool IsNum = false;
-
-				auto ty = ((X::Value)operand).GetType();
-
-				if (ty == X::ValueType::Object) {//only tensor, no list, set, dictionary, complex, etc.
-					auto* pObj = ((X::Value)operand).GetObj();
-					if (pObj->GetType() == ObjType::Tensor)
-					{
-						Tensor* pTensor = dynamic_cast<Tensor*> (pObj);
-						Addable = IsSimilarTensor(*pTensor);					
-					}
-					return {Addable, IsNum};
-				}
-
-				auto val = 0;
-				switch (ty)
-				{
-				case X::ValueType::Int64:
-					IsNum = true;
-					val = ((X::Value)operand).GetLongLong();
-					break;
-				case X::ValueType::Double:
-					IsNum = true;
-					val = ((X::Value)operand).GetDouble();
-					break;
-				default:  //todo, what about boolean?
-					break;
-				}
-
-				if (IsNum) //number only
-				{
-					switch (m_dataType)
-					{
-					case X::TensorDataType::BOOL:
-						break;
-					case X::TensorDataType::BYTE:
-						//if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,7) && val < pow(2,7) ) 
-						if (ty == X::ValueType::Int64 && val >= -128 && val <= 127) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::UBYTE:
-						//if (ty == X::ValueType::Int64 && val < pow(2,8)) 
-						if (ty == X::ValueType::Int64 && val <= 255) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::SHORT:
-						//if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,15) && val < pow(2,15) ) 
-						if (ty == X::ValueType::Int64 && val >= -32768 && val <= 32767) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::USHORT:
-						//if (ty == X::ValueType::Int64 && val < pow(2,16)) 
-						if (ty == X::ValueType::Int64 && val <= 65535) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::INT:
-						//if (ty == X::ValueType::Int64 && val >= (-1)*pow(2,31) && val < pow(2,31)) 
-						if (ty == X::ValueType::Int64 && val >= -2147483648 && val <= 2147483647) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::UINT:
-						//if (ty == X::ValueType::Int64 && val < pow(2,32)) 
-						if (ty == X::ValueType::Int64 && val <= 4294967295)
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::LONGLONG:
-						if (ty == X::ValueType::Int64 && val >= -9,223,372,036,854,775,808 && val <= 9,223,372,036,854,775,807) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::ULONGLONG:
-						if (ty == X::ValueType::Int64 && val <= 18,446,744,073,709,551,615) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::HALFFLOAT:
-						if ((ty == X::ValueType::Double || ty == X::ValueType::Double) && val < pow(2,16)) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::FLOAT:
-						if ((ty == X::ValueType::Double || ty == X::ValueType::Double) && val < pow(2,32)) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::DOUBLE:
-					case X::TensorDataType::CFLOAT:
-						if (ty == X::ValueType::Double || ty == X::ValueType::Double) 
-						{
-							Addable = true;
-						}
-						break;
-					case X::TensorDataType::CDOUBLE:
-						break;
-					default:
-						break;
-					}
-				}
-				return {Addable, IsNum};
-			}
-
-			inline void AddMinus(X::Value& operand, Tensor_Operator op)
-			{
-				bool bIsAddable =false;
-				bool bIsNum = false;
-				std::tie (bIsAddable, bIsNum) = IsAddable(operand);
-
-				if (bIsAddable) {
-					AutoLock(m_lock);
-					if (bIsNum) 
-					{
-						auto it_proc = [this, operand, op](std::vector<long long>& indices)
-						{
-							X::Value val = GetDataWithIndices(indices);
-							if (op == Tensor_Operator::Add) //only Add or Minus allowed
-								val += operand;
-							else
-								val -= operand;
-							SetDataWithIndices(indices, val);
-						};
-						IterateAll(it_proc);
-					}
-					else 
-					{//tensor only, verified in IsAddable()
-						Tensor* pTobj = dynamic_cast<Tensor*>(operand.GetObj());
-						auto it_proc_tensor = [this, pTobj, op](std::vector<long long>& indices)
-						{
-							X::Value val = GetDataWithIndices(indices);
-							X::Value val_operand = pTobj->GetDataWithIndices(indices);
-							if (op == Tensor_Operator::Add) //only Add or Minus allowed
-								val += val_operand;
-							else
-								val -= val_operand;
-							SetDataWithIndices(indices, val);
-						};
-						IterateAll(it_proc_tensor);
-					}
-
-				}
-			
-			}
-
-			inline void Multiply(X::Value& operand, Tensor_Operator op)
-			{
-				bool bIsAddable =false;
-				bool bIsNum = false;
-				std::tie (bIsAddable, bIsNum) = IsAddable(operand);
-				//Tensor tempT(*this);
-				//Tensor *ptempT = dynamic_cast<Tensor*>clone();
-
-				printf ("in Multiply\n");
-
-				if (bIsAddable) {
-					AutoLock(m_lock);
-					if (bIsNum) 
-					{
-						auto it_proc = [this, operand, op](std::vector<long long>& indices)
-						{
-							X::Value val = GetDataWithIndices(indices);
-							val *= operand;
-							SetDataWithIndices(indices, val);
-						};
-						IterateAll(it_proc);
-					}
-					else 
-					{//tensor only, verified in IsAddable()
-						Tensor* pTobj = dynamic_cast<Tensor*>(operand.GetObj());
-
-						std::vector<int> axes;
-						axes.push_back(1);
-						axes.push_back(0);
-						pTobj->permute(axes);
-						printf("in Multiply, after permute\n");
-						auto it_proc_tensor = [this, pTobj, op](std::vector<long long>& indices)
-						{
-							X::Value val = GetDataWithIndices(indices);
-							//exchange m,n postions
-							X::Value val_operand = pTobj->GetDataWithIndices(indices);
-							val *= val_operand;
-							SetDataWithIndices(indices, val);
-						};
-						IterateAll(it_proc_tensor);
-					}
-
-				}
-			
-			}
-
-			Tensor& operator+(X::Value& val){
-				AddMinus(val, Tensor_Operator::Add);
-				return *this;
-			}
-
-			virtual Tensor& operator+=(X::Value& val) override{
-				AddMinus(val, Tensor_Operator::Add);
-				return *this;
-			}
-
-			Tensor& Add(X::Value& val){
-				AddMinus(val, Tensor_Operator::Add);
-				return *this;
-			}
-
-			Tensor& operator-(X::Value& val){
-				AddMinus(val, Tensor_Operator::Minus);
-				return *this;
-			}
-
-			virtual Tensor& operator-=(X::Value& val) override{
-				AddMinus(val, Tensor_Operator::Minus);
-				return *this;
-			}
-
-			Tensor& Minus(X::Value& val){
-				AddMinus(val, Tensor_Operator::Minus);
-				return *this;
-			}
-
-			Tensor& operator*(X::Value& val){
-				printf ("in operator*");
-				Multiply(val, Tensor_Operator::Minus);
-				return *this;
-			}
-
-			//virtual Tensor& operator*=(X::Value& val) override{
-		//		Multiply(val, Tensor_Operator::Minus);
-		//		return *this;
-		//	}
-
-			Tensor& Mul(X::Value& val){
-				printf ("in Mul");
-				Multiply(val, Tensor_Operator::Mul);
-				return *this;
-			}
-
 			inline void IterateAll(TensorIterateProc proc)
 			{
 				std::vector<long long> indices;
@@ -630,6 +364,7 @@ namespace X
 
 				return strOut;
 			}
+			
 		};
 	}
 }
