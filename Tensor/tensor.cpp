@@ -5,7 +5,7 @@
 #include "function.h"
 #include "ops_mgt.h"
 #include "tensor_expression.h"
-
+#include "utility.h"
 
 namespace X
 {
@@ -63,9 +63,9 @@ namespace X
 				}
 				std::string strName;
 				{
-					strName = "permute";
+					strName = "randwithshape";
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"permute(list of indices)",
+						"randwithshape(shapes in list)",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							X::ARGS& params,
 							X::KWARGS& kwParams,
@@ -77,12 +77,49 @@ namespace X
 								{
 									List* pList = dynamic_cast<List*>(p0.GetObj());
 									int axesCnt = (int)pList->Size();
-									std::vector<int> axes;
+									double dMin = 0;
+									double dMax = 1;
+									TensorDataType dt = TensorDataType::DOUBLE;
+									auto it = kwParams.find(Tensor_DType);
+									if (it != kwParams.end())
+									{
+										dt = (TensorDataType)(int)it->second;
+									}
+									it = kwParams.find(Tensor_Max);
+									if (it != kwParams.end())
+									{
+										dMax = (double)it->second;
+									}
+									it = kwParams.find(Tensor_Min);
+									if (it != kwParams.end())
+									{
+										dMin = (double)it->second;
+									}
+									Tensor* pNewTensor = new Tensor();
+									pNewTensor->SetDataType(dt);
+									std::vector<int> dims(axesCnt);
 									for (int i = 0; i < axesCnt; i++)
 									{
-										axes.push_back((int)pList->Get(i));
+										dims[i]=(int)pList->Get(i);
 									}
-									retValue = pObj->permute(axes);
+									pNewTensor->SetShape(dims);
+									X::Value initData;
+									pNewTensor->Create(initData);
+									auto it_proc = [pNewTensor,dt,dMin,dMax](std::vector<long long>& indices)
+									{
+										X::Value val;
+										if (dt == TensorDataType::DOUBLE)
+										{
+											val = randDouble(dMin, dMax);
+										}
+										else
+										{
+											val = rand64();
+										}
+										pNewTensor->SetDataWithIndices(indices, val);
+									};
+									pNewTensor->IterateAll(it_proc);
+									retValue = X::Value(pNewTensor);
 								}
 								return true;
 							}));
