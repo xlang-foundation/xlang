@@ -1221,9 +1221,6 @@ bool U_CreateDict(X::XRuntime* rt, XObj* pContext,
 	return bOK;
 }
 
-#define Tensor_DType "dtype"
-#define Tensor_Shape "shape"
-#define Tensor_Name "name"
 bool U_CreateTensor(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,

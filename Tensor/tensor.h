@@ -17,6 +17,13 @@
 	maybe also include char as item to reduce memeory 
 	in some case use as flags
 */
+
+#define Tensor_DType "dtype"
+#define Tensor_Shape "shape"
+#define Tensor_Max "max"
+#define Tensor_Min "min"
+#define Tensor_Name "name"
+
 namespace X
 {
 	namespace Data

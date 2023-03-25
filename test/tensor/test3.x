@@ -1,3 +1,5 @@
+t0 = tensor.randwithshape([10,3,64,64],min=-1,max=1)
+t0_dim_2_3 =t0[1,1]
 t1 = tensor([[1.2,2.2,3],
 			[4,5,6],
 			[7,8,9],
