@@ -196,7 +196,8 @@ namespace X
 				long long newStartItemOffet = 0;
 				for (int i = 0; i < newStartDim; i++)
 				{
-					newStartItemOffet += IdxAry[i].i * m_dims[i].dimProd;
+					TensorDim& dimInfo = m_dims[i];
+					newStartItemOffet += (IdxAry[i].i+ dimInfo.offset) * dimInfo.dimProd;
 				}
 				pNewTensor->m_startItemOffet = newStartItemOffet;
 				for (int i = newStartDim; i < (int)m_dims.size(); i++)
