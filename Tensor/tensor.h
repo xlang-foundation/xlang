@@ -162,6 +162,36 @@ namespace X
 					m_dims.push_back(TensorDim{0,i,i});
 				}
 			}
+			//used by tensorOP to allocate data bases on pBaseTensor
+			bool CreateBaseOnTensor(Tensor* pBaseTensor)
+			{
+				//if m_data allocated,means already created
+				if (m_data)
+				{
+					return true;
+				}
+				//this tensor will be orginal tensor, not view of tensor
+				//so do init below
+				m_dataType = pBaseTensor->m_dataType;
+				for (auto& dim : pBaseTensor->m_dims)
+				{
+					TensorDim newDim = dim;
+					//remove view prop from base tensor
+					//this tensor starts from new status
+					//just keep size
+					newDim.offset = 0;
+					newDim.stride = newDim.size;
+					m_dims.push_back(newDim);
+				}
+				CalcDimProd();
+				long long totalSize = GetCount() * GetItemSize();
+				if (totalSize > 0)
+				{
+					m_data = new char[totalSize];
+					m_dataSize = totalSize;
+				}
+				return true;
+			}
 			bool Get(std::vector<Data::TensorIndex>& IdxAry, X::Value& retVal);
 			virtual XObj* Clone() override
 			{
