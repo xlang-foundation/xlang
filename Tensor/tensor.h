@@ -44,10 +44,22 @@ namespace X
 			//when create Tensor, need to Increase refcount for m_pTensorToOwneData
 			Tensor* m_pTensorToOwneData = nullptr;
 			char* m_data=nullptr;
+			int m_startItemOffet = 0;// unit is sizeof data type
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
 
-
+			long long CalcItemOffset(std::vector<long long>& indices)
+			{
+				long long off = m_startItemOffet;
+				int idxCnt = (int)indices.size();
+				for (int i = 0; i < idxCnt; i++)
+				{
+					auto& dim = m_dims[i];
+					off += (indices[i] + dim.offset) * dim.dimProd;
+				}
+				off *= GetItemSize();
+				return off;
+			}
 			long long GetItemSize()
 			{
 				long long size = 1;
@@ -106,7 +118,9 @@ namespace X
 				m_dims[nd - 1].dimProd = a;
 				for (int i = nd - 1; i >= 1; i--)
 				{
-					a *= m_dims[i].size;
+					//use stride instead of size becuase view of Tensor will change size 
+					//but stride keeps same as original
+					a *= m_dims[i].stride;
 					m_dims[i - 1].dimProd = a;
 				}
 			}
