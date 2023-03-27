@@ -310,15 +310,21 @@ namespace X
 							for (j = 0; j < v; j ++) {
 								//indices.push_back(i);
 								//indices.push_back(j);
-								indices.assign(i,j);
+								//indices.assign(i,j);
+								indices[0] = i;
+								indices[1] = j;
 								val = 0;
 								for (k =0; k<n; k++) { //c(i,j) = a(i,0)*b(0,j)+ a(i,1)*b(1,j)+ ...+a(i,n-1)*b(n-1,j)
 									//indices1.push_back(i);
 									//indices1.push_back(k);
 									//indices2.push_back(k);
 									//indices2.push_back(j);
-									indices1.assign(i,k);
-									indices2.assign(k,j);
+									//indices1.assign(i,k);
+									//indices2.assign(k,j);
+									indices1[0] = i;
+									indices1[1] = k;
+									indices2[0] = k;
+									indices2[1] = j;
 									val_1 = pInput1->GetDataWithIndices(indices1);
 									val_2 = pInput2->GetDataWithIndices(indices2);								
 									val += val_1.GetLongLong() * val_2.GetLongLong();
