@@ -9,11 +9,10 @@ include_directories(".")
 
 FILE(GLOB API_SRC "../Api/value.cpp")
 FILE(GLOB Main_SRC "*.cpp")
-if (WIN32)
-FILE(GLOB OS_SRC "win32/*.cpp")
-else()
-FILE(GLOB OS_SRC "dummy/*.cpp")
-endif()
+
+FILE(GLOB OS_SRC "turbojpeg/*.cpp")
+link_directories("turbojpeg/lib")
+
 add_library(${PROJECT_NAME} 
 	SHARED
 	${API_SRC}
@@ -21,7 +20,4 @@ add_library(${PROJECT_NAME}
 	${OS_SRC}
 )
 
-
-if (WIN32)
-    target_link_libraries(${PROJECT_NAME} d2d1 Comctl32)
-endif()
+target_link_libraries(${PROJECT_NAME} turbojpeg-static-vc64)
