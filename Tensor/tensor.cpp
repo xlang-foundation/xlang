@@ -79,21 +79,39 @@ namespace X
 									int axesCnt = (int)pList->Size();
 									double dMin = 0;
 									double dMax = 1;
+									long long llMin = LLONG_MIN;
+									long long llMax = LLONG_MAX;
 									TensorDataType dt = TensorDataType::DOUBLE;
 									auto it = kwParams.find(Tensor_DType);
 									if (it != kwParams.end())
 									{
 										dt = (TensorDataType)(int)it->second;
 									}
-									it = kwParams.find(Tensor_Max);
-									if (it != kwParams.end())
+									if (dt == TensorDataType::DOUBLE)
 									{
-										dMax = (double)it->second;
+										it = kwParams.find(Tensor_Max);
+										if (it != kwParams.end())
+										{
+											dMax = (double)it->second;
+										}
+										it = kwParams.find(Tensor_Min);
+										if (it != kwParams.end())
+										{
+											dMin = (double)it->second;
+										}
 									}
-									it = kwParams.find(Tensor_Min);
-									if (it != kwParams.end())
+									else
 									{
-										dMin = (double)it->second;
+										it = kwParams.find(Tensor_Max);
+										if (it != kwParams.end())
+										{
+											llMax = (long long)it->second;
+										}
+										it = kwParams.find(Tensor_Min);
+										if (it != kwParams.end())
+										{
+											llMin = (long long)it->second;
+										}
 									}
 									Tensor* pNewTensor = new Tensor();
 									pNewTensor->SetDataType(dt);
@@ -105,20 +123,24 @@ namespace X
 									pNewTensor->SetShape(dims);
 									X::Value initData;
 									pNewTensor->Create(initData);
-									auto it_proc = [pNewTensor,dt,dMin,dMax](std::vector<long long>& indices)
+									auto it_proc = [pNewTensor,dMin,dMax](std::vector<long long>& indices)
 									{
-										X::Value val;
-										if (dt == TensorDataType::DOUBLE)
-										{
-											val = randDouble(dMin, dMax);
-										}
-										else
-										{
-											val = rand64();
-										}
+										X::Value val = randDouble(dMin, dMax);
 										pNewTensor->SetDataWithIndices(indices, val);
 									};
-									pNewTensor->IterateAll(it_proc);
+									auto it_proc_int64 = [pNewTensor,llMin,llMax](std::vector<long long>& indices)
+									{
+										X::Value val= rand64(llMin,llMax);
+										pNewTensor->SetDataWithIndices(indices, val);
+									};
+									if (dt == TensorDataType::DOUBLE)
+									{
+										pNewTensor->IterateAll(it_proc);
+									}
+									else
+									{
+										pNewTensor->IterateAll(it_proc_int64);
+									}
 									retValue = X::Value(pNewTensor);
 								}
 								return true;

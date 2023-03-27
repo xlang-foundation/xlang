@@ -110,11 +110,11 @@ unsigned long GetThreadID()
 	return tid;
 }
 
-long long rand64()
+long long rand64(long long m0,long long mx)
 {
 	static std::random_device rd;
 	static std::mt19937_64 e2(rd());
-	static std::uniform_int_distribution<long long int> dist(std::llround(std::pow(2, 61)), std::llround(std::pow(2, 62)));
+	static std::uniform_int_distribution<long long int> dist(m0,mx);
 	return dist(e2);
 }
 double randDouble(double m0, double mx)

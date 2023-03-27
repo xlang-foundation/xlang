@@ -161,10 +161,6 @@ namespace X
 			{
 				return m_data;
 			}
-			TensorDataType GetDataType() 
-			{
-				return m_dataType;
-			}
 			std::vector<TensorDim> GetDims() 
 			{
 				return m_dims;
@@ -309,6 +305,10 @@ namespace X
 			virtual void SetDataType(TensorDataType t) override
 			{
 				m_dataType = t;
+			}
+			virtual TensorDataType GetDataType() override
+			{
+				return m_dataType;
 			}
 			virtual bool Multiply(const X::Value& r, X::Value& retVal) override;
 			virtual bool Add(const X::Value& r, X::Value& retVal) override;
