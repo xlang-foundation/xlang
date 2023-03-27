@@ -87,7 +87,8 @@ namespace X {
 				std::vector<int> shapes({ (int)height,(int)width, pixSize });
 				tensor->SetShape(shapes);
 				tensor->SetDataType(X::TensorDataType::UBYTE);
-				tensor->Create(X::Value());
+				X::Value initData;
+				tensor->Create(initData);
 				char* pBuffer = tensor->GetData();
 				tjDecompress2(_jpegDecompressor, (unsigned char*)pCompressedBuf, jepgSize,
 					(unsigned char*)pBuffer,width, width * pixSize, height, tjPixFmt, /*TJFLAG_FASTDCT*/0);
