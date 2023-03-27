@@ -11,7 +11,7 @@ bool RunProcess(std::string cmd,
 long long getCurMilliTimeStamp();
 unsigned long GetPID();
 unsigned long GetThreadID();
-long long rand64();
+long long rand64(long long m0 = LLONG_MIN,long long mx = LLONG_MAX);
 double randDouble(double m0 = LDBL_MIN, double mx = LDBL_MAX);
 std::vector<std::string> split(const std::string& str, char delim,bool trimSpace =true);
 std::vector<std::string> split(const std::string& str, const char* delim);

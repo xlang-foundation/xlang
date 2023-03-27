@@ -162,6 +162,14 @@ namespace X
 			{
 				return m_data;
 			}
+			inline virtual int GetDimCount() override
+			{
+				return (int)m_dims.size();
+			}
+			inline virtual long long GetDimSize(int dimIdx) override
+			{
+				return m_dims[dimIdx].size;
+			}
 			virtual void SetShape(std::vector<int> shapes) override
 			{
 				for (auto i : shapes)
@@ -292,6 +300,10 @@ namespace X
 			virtual void SetDataType(TensorDataType t) override
 			{
 				m_dataType = t;
+			}
+			virtual TensorDataType GetDataType() override
+			{
+				return m_dataType;
 			}
 			virtual bool Multiply(const X::Value& r, X::Value& retVal) override;
 			virtual bool Add(const X::Value& r, X::Value& retVal) override;

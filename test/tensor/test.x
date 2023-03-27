@@ -1,6 +1,10 @@
 from xlang_image import Factory
 im =  Factory.Image("bg.jpg") 
 t =  im.to_tensor(Factory.rgba)
+new_im =  Factory.Image("bg_new.jpg")
+new_im.from_tensor(t)
+new_im.save()
+
 t_float = t.astype(tensor.float)
 x = t_float*nn.conv2d(3,3,64)*w1
 t_p = t.permute([2,0,1])

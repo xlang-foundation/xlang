@@ -154,6 +154,19 @@ namespace X {
 				}
 				return X::Value(tensor);
 			}
+			bool From_Tensor(X::XRuntime* rt, X::XObj* pContext,
+				ARGS& params,
+				KWARGS& kwParams,
+				X::Value& retValue)
+			{
+				if (params.size() < 1)
+				{
+					retValue = X::Value(false);
+					return false;
+				}
+
+				return true;
+			}
 			HBITMAP ToHBITMAP()
 			{
 				IWICFormatConverter* pConverter = nullptr;
