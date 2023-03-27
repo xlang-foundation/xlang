@@ -117,7 +117,6 @@ namespace X
 				return itemCnt;
 			}
 			void DeepCopyDataFromList(List* pList,std::vector<long long>& indices,int level);
-			X::Value GetDataWithIndices(std::vector<long long>& indices);
 			void CalcDimProd()
 			{
 				int nd = (int)m_dims.size();
@@ -161,6 +160,10 @@ namespace X
 			virtual char* GetData() override
 			{
 				return m_data;
+			}
+			std::vector<TensorDim> GetDims() 
+			{
+				return m_dims;
 			}
 			inline virtual int GetDimCount() override
 			{
@@ -220,6 +223,7 @@ namespace X
 				return newTensor;
 			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
+			X::Value GetDataWithIndices(std::vector<long long>& indices);
 			inline X::Value asType(int type)
 			{
 				TensorDataType dt = (TensorDataType)type;
@@ -269,6 +273,7 @@ namespace X
 				IterateAll(it_proc);
 				return X::Value(pNewTensor);
 			}
+			
 			inline void IterateAll(TensorIterateProc proc)
 			{
 				std::vector<long long> indices;
@@ -322,6 +327,7 @@ namespace X
 			{
 				AutoLock(m_lock);
 				std::string strShapes;
+				std::string *pstrElements = new std::string();
 				char v[1000];
 				int dcnt = (int)m_dims.size();
 				for (int i=0;i<dcnt;i++)
@@ -331,15 +337,79 @@ namespace X
 					{
 						strShapes += ",";
 					}
-					snprintf(v, sizeof(v), "%ld",d.size);
+					snprintf(v, sizeof(v), "%lld",d.size);
 					strShapes += v;
 				}
 				std::string strOut = "Tensor(size=(" + strShapes + "),";
-				strOut +="[todo:output data";
+				strOut +="[";
+
+				auto it_proc = [this, pstrElements, v](std::vector<long long>& indices)
+				{
+					X::Value val = GetDataWithIndices(indices);
+					//char v[1000];
+					memset ((void *)v, 0, sizeof(v));
+					switch (m_dataType)
+					{
+					case X::TensorDataType::BOOL:
+						if (val)
+							snprintf((char *)v, sizeof(v), "%s","True");
+						else
+							snprintf((char *)v, sizeof(v), "%s","False");
+						break;
+					case X::TensorDataType::BYTE:
+						break;
+					case X::TensorDataType::UBYTE:
+						break;
+					case X::TensorDataType::SHORT:
+						snprintf((char *)v, sizeof(v), "%hd",(short)val.GetDouble());
+						break;
+					case X::TensorDataType::USHORT:
+						snprintf((char *)v, sizeof(v), "%hu",(unsigned short)val.GetDouble());
+						break;
+					case X::TensorDataType::HALFFLOAT:
+						snprintf((char *)v, sizeof(v), "%f",val.GetDouble());
+						break;
+					case X::TensorDataType::INT:
+						snprintf((char *)v, sizeof(v), "%d",(int)val.GetLongLong());
+						break;
+					case X::TensorDataType::UINT:
+						snprintf((char *)v, sizeof(v), "%u",(unsigned int)val.GetLongLong());
+						break;
+					case X::TensorDataType::LONGLONG:
+						snprintf((char *)v, sizeof(v), "%lld",(long long)val.GetLongLong());
+						break;
+					case X::TensorDataType::ULONGLONG:
+						snprintf((char *)v, sizeof(v), "%lld",(unsigned long long)val.GetLongLong());
+						break;
+					case X::TensorDataType::FLOAT:
+						snprintf((char *)v, sizeof(v), "%f",(float)val.GetDouble());
+						break;
+					case X::TensorDataType::DOUBLE:
+						snprintf((char *)v, sizeof(v), "%lf",(double)val.GetDouble());
+						break;
+					case X::TensorDataType::CFLOAT:
+						//todo:
+						break;
+					case X::TensorDataType::CDOUBLE:
+						//todo:
+						break;
+					default:
+						break;
+					}				
+					pstrElements->append(v);
+					pstrElements->append(",");
+				};
+
+				IterateAll(it_proc);			
+
+				pstrElements->back() = 0; // to remove the last comma
+				strOut += *pstrElements; 
 				strOut += "]";
 				strOut += ")";
+
 				return strOut;
 			}
+			
 		};
 	}
 }
