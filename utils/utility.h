@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <float.h>
+#include "limits.h"
 
 bool RunProcess(std::string cmd,
 	std::string initPath,
