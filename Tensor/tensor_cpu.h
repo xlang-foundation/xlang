@@ -72,6 +72,7 @@ namespace X
 		}
 		void Minus(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
+			std::cout << "In Minus()"<< std::endl;
 			AddMinusMulDiv(input1, input2, retVal, X::Data::Tensor_Operator::Minus);
 		}
 		void Multiply(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
@@ -207,6 +208,7 @@ namespace X
 
 		inline void AddMinusMulDiv(X::Value& input1, X::Value& input2, X::Value& retVal, X::Data::Tensor_Operator op)
 		{
+			std::cout << "In AddMinusMulDiv()" << std::endl;
 			bool bIsAddable =false;
 			bool bIsNum = false;
 			//input1 and retVal must be tensors
@@ -216,7 +218,11 @@ namespace X
 			X::Data::Tensor* pInput1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());
 			
+			pRetVal->CreateBaseOnTensor(pInput1);
+
 			std::tie (bIsAddable, bIsNum) = IsAddable(*pInput1, input2, op);
+			std::cout << "In AddMinusMulDiv(), bIsAddable ="<< bIsAddable << ", bIsNum = " << bIsNum << std::endl;
+	
 			if (bIsAddable) {
 				AutoLock(m_lock);
 				if (bIsNum) 
@@ -258,14 +264,18 @@ namespace X
 				else 
 				{//tensor only, verified in IsAddable()
 					X::Data::Tensor* pInput2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+					auto it_proc_tensor_display = [pRetVal](std::vector<long long>& indices)
+					{
+						X::Value val = pRetVal->GetDataWithIndices(indices);
+						std::cout << "it_proc_tensor_display, item in retVal ="<< val.GetLongLong() << std::endl;
+					};
 					auto it_proc_tensor_add = [pInput1, pInput2, pRetVal](std::vector<long long>& indices)
 					{
 						X::Value val = pInput1->GetDataWithIndices(indices);
 						X::Value val_operand = pInput2->GetDataWithIndices(indices);
 						val += val_operand;
 						std::cout << "In it_proc_tensor_add(), new val ="<< val.GetLongLong() << std::endl;
-						pInput1->SetDataWithIndices(indices, val);
-						//pRetVal->SetDataWithIndices(indices, val);
+						pRetVal->SetDataWithIndices(indices, val);
 					};
 					auto it_proc_tensor_minus = [pInput1, pInput2, pRetVal](std::vector<long long>& indices)
 					{
@@ -273,7 +283,7 @@ namespace X
 						X::Value val_operand = pInput2->GetDataWithIndices(indices);
 						val -= val_operand;
 						std::cout << "In it_proc_tensor_minus(), new val ="<< val.GetLongLong() << std::endl;
-						pInput1->SetDataWithIndices(indices, val);
+						pRetVal->SetDataWithIndices(indices, val);
 					};
 					auto it_proc_tensor_mul = [pInput1, pInput2, pRetVal]()
 					{
@@ -311,10 +321,12 @@ namespace X
 									indices2.assign(k,j);
 									val_1 = pInput1->GetDataWithIndices(indices1);
 									val_2 = pInput2->GetDataWithIndices(indices2);								
-									val += val_1 * val_2;
+									val += val_1.GetLongLong() * val_2.GetLongLong();
 									//indices1.clear();
 									//indices2.clear();
+									std::cout<<"i="<<i<<",j="<<j<<",k="<<k<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
 								}
+								std::cout<<"i="<<i<<",j="<<j<<",val="<<val.GetLongLong()<< std::endl;
 								pRetVal->SetDataWithIndices(indices, val);
 								//indices.clear();
 							}
@@ -327,44 +339,7 @@ namespace X
 					else if (op == X::Data::Tensor_Operator::Mul) 
 						it_proc_tensor_mul();
 					
-					pRetVal = pInput1;
-					//*pRetVal = pInput1->Clone();
-
-					std::vector<long long> indices_x;
-					X::Value val_x;
-					std::cout << "-------------------pInput1--------------------" << std::endl;
-					for (int i=0;i<(int)pInput1->GetDims().size();i++)
-					{
-						std::cout << "return tensor dims:("<<i<< ") = "<<pInput1->GetDims()[i].size << std::endl;
-					}
-					for (int i=0;i<pInput1->GetDims()[0].size;i++)
-					{
-						for (int j=0;j<pInput1->GetDims()[1].size;j++)
-						{
-							indices_x.assign(i,j);
-							val_x = pInput1->GetDataWithIndices(indices_x);
-							std::cout << "(" << i << "," << j<<")="<< val_x.GetLongLong() <<"," << std::endl;
-						}
-					}
-
-					std::cout << "-------------------pRetVal--------------------" << std::endl;
-					int dcnt = (int)pRetVal->GetDims().size();
-					for (int i=0;i<dcnt;i++)
-					{
-						std::cout << "return tensor dims:("<<i<< ") = "<<pRetVal->GetDims()[i].size << std::endl;
-					}
-					for (int i=0;i<pRetVal->GetDims()[0].size;i++)
-					{
-						for (int j=0;j<pRetVal->GetDims()[1].size;j++)
-						{
-							indices_x.assign(i,j);
-							val_x = pRetVal->GetDataWithIndices(indices_x);
-							std::cout << "(" << i << "," << j<<")="<< val_x.GetLongLong() <<"," << std::endl;
-						}
-					}
-					std::cout << "------------------------------------------" << std::endl;
-
-
+					pRetVal->IterateAll(it_proc_tensor_display);				
 
 				} //tensor
 			} //bIsAddable

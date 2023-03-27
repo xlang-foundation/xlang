@@ -17,6 +17,13 @@
 	maybe also include char as item to reduce memeory 
 	in some case use as flags
 */
+
+#define Tensor_DType "dtype"
+#define Tensor_Shape "shape"
+#define Tensor_Max "max"
+#define Tensor_Min "min"
+#define Tensor_Name "name"
+
 namespace X
 {
 	namespace Data
@@ -44,9 +51,22 @@ namespace X
 			//when create Tensor, need to Increase refcount for m_pTensorToOwneData
 			Tensor* m_pTensorToOwneData = nullptr;
 			char* m_data=nullptr;
+			int m_startItemOffet = 0;// unit is sizeof data type
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
 
+			long long CalcItemOffset(std::vector<long long>& indices)
+			{
+				long long off = m_startItemOffet;
+				int idxCnt = (int)indices.size();
+				for (int i = 0; i < idxCnt; i++)
+				{
+					auto& dim = m_dims[i];
+					off += (indices[i] + dim.offset) * dim.dimProd;
+				}
+				off *= GetItemSize();
+				return off;
+			}
 			long long GetItemSize()
 			{
 				long long size = 1;
@@ -104,7 +124,9 @@ namespace X
 				m_dims[nd - 1].dimProd = a;
 				for (int i = nd - 1; i >= 1; i--)
 				{
-					a *= m_dims[i].size;
+					//use stride instead of size becuase view of Tensor will change size 
+					//but stride keeps same as original
+					a *= m_dims[i].stride;
 					m_dims[i - 1].dimProd = a;
 				}
 			}
@@ -153,6 +175,36 @@ namespace X
 				{
 					m_dims.push_back(TensorDim{0,i,i});
 				}
+			}
+			//used by tensorOP to allocate data bases on pBaseTensor
+			bool CreateBaseOnTensor(Tensor* pBaseTensor)
+			{
+				//if m_data allocated,means already created
+				if (m_data)
+				{
+					return true;
+				}
+				//this tensor will be orginal tensor, not view of tensor
+				//so do init below
+				m_dataType = pBaseTensor->m_dataType;
+				for (auto& dim : pBaseTensor->m_dims)
+				{
+					TensorDim newDim = dim;
+					//remove view prop from base tensor
+					//this tensor starts from new status
+					//just keep size
+					newDim.offset = 0;
+					newDim.stride = newDim.size;
+					m_dims.push_back(newDim);
+				}
+				CalcDimProd();
+				long long totalSize = GetCount() * GetItemSize();
+				if (totalSize > 0)
+				{
+					m_data = new char[totalSize];
+					m_dataSize = totalSize;
+				}
+				return true;
 			}
 			bool Get(std::vector<Data::TensorIndex>& IdxAry, X::Value& retVal);
 			virtual XObj* Clone() override

@@ -16,14 +16,21 @@ print("t2 =", t2)
 #to add a tensor to a tensor
 #t1 += t2
 #print("t1+t2=", t1)
+
 import CpuTensor as T
+
 t11 = t1+t2
 #t1 = t1+10
 print("a.t1+t2=", t11)
+
+#t11 = t2-t1
+#print("a.t2-t1=", t11)
+
 t_g = T.graph(t11)
 print(t_g)
 t_g.run()
 print("b.t1+t2=", t11)
+#print("a.t2-t1=", t11)
 
 
 #t3 = tensor([[51,52,53],[54,55,56],[57,58,59],[60,61,62]])

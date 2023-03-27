@@ -5,7 +5,7 @@
 #include "function.h"
 #include "ops_mgt.h"
 #include "tensor_expression.h"
-
+#include "utility.h"
 
 namespace X
 {
@@ -63,9 +63,9 @@ namespace X
 				}
 				std::string strName;
 				{
-					strName = "permute";
+					strName = "randwithshape";
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"permute(list of indices)",
+						"randwithshape(shapes in list)",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							X::ARGS& params,
 							X::KWARGS& kwParams,
@@ -77,12 +77,49 @@ namespace X
 								{
 									List* pList = dynamic_cast<List*>(p0.GetObj());
 									int axesCnt = (int)pList->Size();
-									std::vector<int> axes;
+									double dMin = 0;
+									double dMax = 1;
+									TensorDataType dt = TensorDataType::DOUBLE;
+									auto it = kwParams.find(Tensor_DType);
+									if (it != kwParams.end())
+									{
+										dt = (TensorDataType)(int)it->second;
+									}
+									it = kwParams.find(Tensor_Max);
+									if (it != kwParams.end())
+									{
+										dMax = (double)it->second;
+									}
+									it = kwParams.find(Tensor_Min);
+									if (it != kwParams.end())
+									{
+										dMin = (double)it->second;
+									}
+									Tensor* pNewTensor = new Tensor();
+									pNewTensor->SetDataType(dt);
+									std::vector<int> dims(axesCnt);
 									for (int i = 0; i < axesCnt; i++)
 									{
-										axes.push_back((int)pList->Get(i));
+										dims[i]=(int)pList->Get(i);
 									}
-									retValue = pObj->permute(axes);
+									pNewTensor->SetShape(dims);
+									X::Value initData;
+									pNewTensor->Create(initData);
+									auto it_proc = [pNewTensor,dt,dMin,dMax](std::vector<long long>& indices)
+									{
+										X::Value val;
+										if (dt == TensorDataType::DOUBLE)
+										{
+											val = randDouble(dMin, dMax);
+										}
+										else
+										{
+											val = rand64();
+										}
+										pNewTensor->SetDataWithIndices(indices, val);
+									};
+									pNewTensor->IterateAll(it_proc);
+									retValue = X::Value(pNewTensor);
 								}
 								return true;
 							}));
@@ -166,44 +203,83 @@ namespace X
 		bool Tensor::Get(std::vector<Data::TensorIndex>& IdxAry, X::Value& retVal)
 		{
 			//check if point to one item,not a tensor
-			bool bOneItem = true;
 			std::vector<long long> indices;
-			if (IdxAry.size() == m_dims.size())
+			int newStartDim = 0;
+			for (auto& idx : IdxAry)
 			{
-				for (auto& idx : IdxAry)
+				if (idx.i == idx.j)
 				{
-					if (idx.i != idx.j)
-					{
-						bOneItem = false;
-						break;
-					}
-					else
-					{
-						indices.push_back(idx.i);
-					}
+					newStartDim++;
+					indices.push_back(idx.i);
+				}
+				else
+				{
+					break;
 				}
 			}
-			if (bOneItem)
+			//all same index,point to an item, not a tensor
+			if (newStartDim == (int)m_dims.size())
 			{
 				retVal = GetDataWithIndices(indices);
 			}
 			else
 			{
 				auto* pNewTensor = new X::Data::Tensor();
-
+				pNewTensor->m_dataType = m_dataType;
+				//keep this tensor as New Tensor's ref
+				IncRef();
+				pNewTensor->m_pTensorToOwneData = this;
+				pNewTensor->m_data = m_data;
+				long long newStartItemOffet = 0;
+				for (int i = 0; i < newStartDim; i++)
+				{
+					TensorDim& dimInfo = m_dims[i];
+					newStartItemOffet += (IdxAry[i].i+ dimInfo.offset) * dimInfo.dimProd;
+				}
+				pNewTensor->m_startItemOffet = newStartItemOffet;
+				for (int i = newStartDim; i < (int)m_dims.size(); i++)
+				{
+					TensorDim& dimInfo = m_dims[i];
+					TensorDim newDimInfo;
+					newDimInfo.dimProd = 0;//init as 0, calc later
+					newDimInfo.stride = dimInfo.stride;
+					if (i < (int)IdxAry.size())
+					{
+						auto& idxInfo = IdxAry[i];
+						newDimInfo.offset = dimInfo.offset+idxInfo.i;
+						//stride keep same,because the memory is from the first tensor
+						long long newSize = 0;
+						if (idxInfo.j < 0 && idxInfo.i>0)
+						{
+							newSize = dimInfo.size + idxInfo.j - idxInfo.i + 1;
+						}
+						else if (idxInfo.j > 0 && idxInfo.i < 0)
+						{
+							newSize = idxInfo.j - (dimInfo.size + idxInfo.i) + 1;
+						}
+						else
+						{
+							newSize = idxInfo.j - idxInfo.i + 1;
+						}
+						newDimInfo.size = newSize;
+					}
+					else
+					{
+						newDimInfo.offset = dimInfo.offset;
+						newDimInfo.size = dimInfo.size;
+					}
+					pNewTensor->m_dims.push_back(newDimInfo);
+				}
+				pNewTensor->CalcDimProd();
+				retVal = X::Value(pNewTensor);
 			}
 			return true;
 		}
+		
 		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
 		{
-			long long addr = 0;
-			int idxCnt = (int)indices.size();
-			for (int i = 0; i < idxCnt; i++)
-			{
-				addr += indices[i] * m_dims[i].dimProd;
-			}
+			long long addr = CalcItemOffset(indices);
 			X::Value retVal;
-			addr *= GetItemSize();
 			char* pAddr = m_data + addr;
 			switch (m_dataType)
 			{
@@ -254,13 +330,8 @@ namespace X
 		}
 		void Tensor::SetDataWithIndices(std::vector<long long>& indices,X::Value& val)
 		{
-			long long addr = 0;
-			int idxCnt = (int)indices.size();
-			for (int i = 0; i < idxCnt; i++)
-			{
-				addr += indices[i] * m_dims[i].dimProd;
-			}
-			addr *= GetItemSize();
+			long long addr = CalcItemOffset(indices);
+			X::Value retVal;
 			char* pAddr = m_data + addr;
 			//Set value to this addr 
 			switch (m_dataType)
@@ -417,7 +488,7 @@ namespace X
 			{
 				List* pList = dynamic_cast<List*>(dimData.GetObj());
 				long long dimSize = pList->Size();
-				m_dims.push_back(TensorDim{ dimSize,dimSize });
+				m_dims.push_back(TensorDim{ 0,dimSize,dimSize });
 				if (dimSize > 0)
 				{
 					dimData = pList->Get(0);
@@ -460,7 +531,11 @@ namespace X
 		}
 		Tensor::~Tensor()
 		{
-			if (m_data)
+			if (m_pTensorToOwneData)
+			{
+				m_pTensorToOwneData->DecRef();
+			}
+			else if(m_data != nullptr)
 			{
 				delete m_data;
 			}
