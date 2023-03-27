@@ -208,7 +208,6 @@ namespace X
 
 		inline void AddMinusMulDiv(X::Value& input1, X::Value& input2, X::Value& retVal, X::Data::Tensor_Operator op)
 		{
-			std::cout << "In AddMinusMulDiv()" << std::endl;
 			bool bIsAddable =false;
 			bool bIsNum = false;
 			//input1 and retVal must be tensors
@@ -287,14 +286,6 @@ namespace X
 					};
 					auto it_proc_tensor_mul = [pInput1, pInput2, pRetVal]()
 					{
-						/*
-						X::Value val = pInput1->GetDataWithIndices(indices);
-						X::Value val_operand = pInput2->GetDataWithIndices(indices);
-						val -= val_operand;
-						std::cout << "In it_proc_tensor_minus(), new val ="<< val.GetLongLong() << std::endl;
-						pInput1->SetDataWithIndices(indices, val);
-						*/
-
 						//Matrix1 (m,n), Matrix2 (u,v), n = u, after production, new Matrix shape (m,v)
 						int m = pInput1->GetDims()[0].size; //rows of matrix1
 						int n = pInput1->GetDims()[1].size; //columns of matrix1
@@ -308,19 +299,10 @@ namespace X
 						indices2.resize(2);
 						for ( i = 0; i < m; i++) {
 							for (j = 0; j < v; j ++) {
-								//indices.push_back(i);
-								//indices.push_back(j);
-								//indices.assign(i,j);
 								indices[0] = i;
 								indices[1] = j;
 								val = 0;
 								for (k =0; k<n; k++) { //c(i,j) = a(i,0)*b(0,j)+ a(i,1)*b(1,j)+ ...+a(i,n-1)*b(n-1,j)
-									//indices1.push_back(i);
-									//indices1.push_back(k);
-									//indices2.push_back(k);
-									//indices2.push_back(j);
-									//indices1.assign(i,k);
-									//indices2.assign(k,j);
 									indices1[0] = i;
 									indices1[1] = k;
 									indices2[0] = k;
@@ -328,68 +310,64 @@ namespace X
 									val_1 = pInput1->GetDataWithIndices(indices1);
 									val_2 = pInput2->GetDataWithIndices(indices2);								
 									val += val_1.GetLongLong() * val_2.GetLongLong();
-									//indices1.clear();
-									//indices2.clear();
 									std::cout<<"i="<<i<<",j="<<j<<",k="<<k<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
 								}
 								std::cout<<"i="<<i<<",j="<<j<<",val="<<val.GetLongLong()<< std::endl;
 								pRetVal->SetDataWithIndices(indices, val);
-								//indices.clear();
 							}
 						}
 					};
+					auto it_proc_tensor_mul_vector = [pInput1, pInput2, pRetVal]()
+					{
+						//vector (n), Matrix2 (m,n), after production, result is a linear map vector(m)
+						int v = pInput1->GetDims()[0].size; //vector
+						int m = pInput2->GetDims()[0].size; //rows of matrix2
+						int n = pInput2->GetDims()[1].size; //columns of matrix2
+						if (n!=v)  //To do, error handling
+							return;
+
+						int i, j;
+						X::Value val_1, val_2, val;
+						std::vector<long long> indices1, indices2, indices;
+						indices.resize(1);
+						indices1.resize(1);
+						indices2.resize(2);
+						for (j = 0; j < m; j ++) {
+							indices[0] = j;
+							val = 0;
+							for ( i = 0; i < n; i++) {//c(i,j) = a(i,0)*b(0,j)+ a(i,1)*b(1,j)+ ...+a(i,n-1)*b(n-1,j)
+								indices1[0] = i;
+								indices2[0] = j;
+								indices2[1] = i;
+								val_1 = pInput1->GetDataWithIndices(indices1);
+								val_2 = pInput2->GetDataWithIndices(indices2);								
+								val += val_1.GetLongLong() * val_2.GetLongLong();
+								std::cout<<"i="<<i<<",j="<<j<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
+							}
+							std::cout<<"i="<<i<<",j="<<j<<",val="<<val.GetLongLong()<< std::endl;
+							pRetVal->SetDataWithIndices(indices, val);
+						}
+					};
+
 					if (op == X::Data::Tensor_Operator::Add) 
 						pInput1->IterateAll(it_proc_tensor_add);
 					else if (op == X::Data::Tensor_Operator::Minus) 
 						pInput1->IterateAll(it_proc_tensor_minus);
-					else if (op == X::Data::Tensor_Operator::Mul) 
-						it_proc_tensor_mul();
-					
+					else if (op == X::Data::Tensor_Operator::Mul) {
+						if (pInput1->GetDimCount() == 2 && pInput2->GetDimCount() == 2) //both are 2D matrixes 
+							it_proc_tensor_mul();
+						else if (pInput1->GetDimCount() == 1 && pInput2->GetDimCount() == 2)
+							it_proc_tensor_mul_vector();
+						else if (pInput1->GetDimCount() == 2 && pInput2->GetDimCount() == 1)
+							it_proc_tensor_mul();
+					}
+
 					pRetVal->IterateAll(it_proc_tensor_display);				
 
 				} //tensor
 			} //bIsAddable
-		}	
+		}	//AddMinusMulDiv
+	}; //class CpuTensor
+} //namespace X
 
-		/*
-		Tensor& operator+(X::Value& val){
-			AddMinus(val, X::Data::Tensor_Operator::Add);
-			return *this;
-		}
-		virtual Tensor& operator+=(X::Value& val) override{
-			AddMinus(val, X::Data::Tensor_Operator::Add);
-			return *this;
-		}
-		Tensor& Add(X::Value& val){
-			AddMinus(val, X::Data::Tensor_Operator::Add);
-			return *this;
-		}
-		Tensor& operator-(X::Value& val){
-			AddMinus(val, X::Data::Tensor_Operator::Minus);
-			return *this;
-		}
-		virtual Tensor& operator-=(X::Value& val) override{
-			AddMinus(val, X::Data::Tensor_Operator::Minus);
-			return *this;
-		}
-		Tensor& Minus(X::Value& val){
-			AddMinus(val, X::Data::Tensor_Operator::Minus);
-			return *this;
-		}
-		Tensor& operator*(X::Value& val){
-			printf ("in operator*");
-			Multiply(val, X::Data::Tensor_Operator::Minus);
-			return *this;
-		}
-		//virtual Tensor& operator*=(X::Value& val) override{
-	    //	Multiply(val, X::Data::Tensor_Operator::Minus);
-		//	return *this;
-		//}
-		Tensor& Mul(X::Value& val){
-			printf ("in Mul");
-			Multiply(val, X::Data::Tensor_Operator::Mul);
-			return *this;
-		}
-		*/
-	};
-}
+
