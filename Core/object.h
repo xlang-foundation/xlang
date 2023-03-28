@@ -167,6 +167,7 @@ namespace Data {
 			case X::ObjType::Set:
 				return "Set";
 			case X::ObjType::Tensor:
+			case X::ObjType::TensorExpression:
 				return "Tensor";
 			case X::ObjType::TableRow:
 				return "TableRow";
