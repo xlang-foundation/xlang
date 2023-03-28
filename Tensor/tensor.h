@@ -3,6 +3,7 @@
 #include <functional>
 #include "limits.h"
 #include "tensorop.h"
+#include "list.h"
 /*
 	Shawn Xiong @2/15/2023
 	Tensor is a multiple dimensional array whith same data type
@@ -262,6 +263,47 @@ namespace X
 			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
 			X::Value GetDataWithIndices(std::vector<long long>& indices);
+
+			//keep use same memory
+			inline X::Value reshape(X::Value& listOfShape)
+			{
+				//for reshape, this tensor must be orignal tensor, not slice of tensor
+				if (m_pTensorToOwneData != nullptr)
+				{
+					return X::Value();
+				}
+				std::vector<int> shapes;
+				int shapeCount = 1;
+				if (listOfShape.IsList())
+				{
+					X::Data::List* pList = dynamic_cast<X::Data::List*>(listOfShape.GetObj());
+					int axesCnt = (int)pList->Size();
+					for (int i = 0; i < axesCnt; i++)
+					{
+						int s = (int)pList->Get(i);
+						shapeCount *= s;
+						shapes.push_back(s);
+					}
+				}
+				else
+				{
+					return X::Value();
+				}
+				if (shapeCount != GetCount())
+				{
+					return X::Value();
+				}
+				auto* pNewTensor = new Tensor();
+				//keep this tensor as New Tensor's ref
+				IncRef();
+				pNewTensor->m_dataType = m_dataType;
+				pNewTensor->m_pTensorToOwneData = this;
+				pNewTensor->m_data = m_data;
+				pNewTensor->SetShape(shapes);
+				pNewTensor->CalcDimProd();
+				pNewTensor->m_dataSize = m_dataSize;
+				return X::Value(pNewTensor);
+			}
 			inline X::Value asType(int type)
 			{
 				TensorDataType dt = (TensorDataType)type;
