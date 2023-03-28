@@ -7,7 +7,7 @@
 #include "tensorop.h"
 #include "tensor_expression.h"
 #include <iostream>
-
+#include "list.h"
 namespace X
 {
 	class CpuTensor
@@ -64,7 +64,55 @@ namespace X
 		}
 		void Permute(X::ARGS& params, X::KWARGS& kwParams,X::Value input, X::Value& retVal)
 		{
-
+			std::vector<int> axes;
+			if (params.size() > 0)
+			{
+				auto& p0 = params[0];
+				if (p0.IsList())
+				{
+					X::Data::List* pList = dynamic_cast<X::Data::List*>(p0.GetObj());
+					int axesCnt = (int)pList->Size();
+					for (int i = 0; i < axesCnt; i++)
+					{
+						axes.push_back((int)pList->Get(i));
+					}
+				}
+				else
+				{
+					return;
+				}
+			}
+			else
+			{
+				return;
+			}
+			if (!input.IsObject())
+			{
+				return;
+			}
+			auto* pInputTensor = dynamic_cast<X::Data::Tensor*>(input.GetObj());
+			if (pInputTensor == nullptr)
+			{
+				return;
+			}
+			auto* pNewTensor = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());
+			if (pNewTensor == nullptr)
+			{
+				return;
+			}
+			pNewTensor->CreateBaseOnTensorWithPermute(pInputTensor, axes);
+			int dimCnt = (int)pInputTensor->GetDimCount();
+			auto it_proc = [pNewTensor, pInputTensor, dimCnt, axes](std::vector<long long>& indices)
+			{
+				std::vector<long long> target_indices;
+				for (int i = 0; i < dimCnt; i++)
+				{
+					target_indices.push_back(indices[axes[i]]);
+				}
+				X::Value val = pInputTensor->GetDataWithIndices(indices);
+				pNewTensor->SetDataWithIndices(target_indices, val);
+			};
+			pNewTensor->IterateAll(it_proc);
 		}
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
