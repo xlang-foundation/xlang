@@ -54,6 +54,34 @@ namespace X
 		}
 		return ret;
 	}
+	Value Value::operator- (const Value& right)
+	{
+		Value ret;
+		bool done = false;
+		if (t == ValueType::Object)
+		{
+			X::XObj* pObj = GetObj();
+			if (right.IsObject())
+			{
+				done = pObj->Minus(right, ret);
+			}
+			else
+			{
+				done = pObj->Add(right.Negative(), ret);
+			}
+		}
+		else if (right.IsObject())
+		{
+			//for case:this Value is not an object, just right side is an object
+			done = right.GetObj()->Minuend(this, ret);
+		}
+		if (!done)
+		{
+			ret = this;
+			ret -= right;
+		}
+		return ret;
+	}
 	void Value::operator += (const Value& v)
 	{
 		//if (IsObject())

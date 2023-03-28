@@ -36,9 +36,10 @@ void RegisterOps(OpRegistry* reg)
 		return true;
 	})
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
-		v = L;
-		v.Clone();
-		v -= R;
+		//v = L;
+		//v.Clone();
+		//v -= R;
+		v = L - R;
 		return true;
 	});
 #if __not_tensor__

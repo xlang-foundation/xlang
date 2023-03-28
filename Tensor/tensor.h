@@ -313,7 +313,8 @@ namespace X
 			}
 			virtual bool Multiply(const X::Value& r, X::Value& retVal) override;
 			virtual bool Add(const X::Value& r, X::Value& retVal) override;
-
+			virtual bool Minus(const X::Value& r, X::Value& retVal) override;
+			virtual bool Minuend(const X::Value& leftValue, X::Value& retVal) override;
 			virtual Tensor& operator *=(X::Value& r) override;
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
