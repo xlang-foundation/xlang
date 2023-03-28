@@ -171,19 +171,21 @@ namespace X
 					m_stackFrame->Set(idx, funcVal);
 				}
 				{
-					strName = "Conv2d";
+					strName = "reshape";
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"tensor1*Conv2d()*kernel_tensor",
+						"reshape(list of shape: [10,40,10], need to have same amount of items)",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							X::ARGS& params,
 							X::KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								Tensor_OperatorHandler handler;
-								TensorOperator* pOp = new TensorOperator(handler,false);
-								X::Value action;
-								pOp->SetOpAction(action);
-								retValue = X::Value(pOp);
+								if (params.size() == 0)
+								{
+									retValue = X::Value();
+									return true;
+								}
+								Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+								retValue = pObj->reshape(params[0]);
 								return true;
 							}));
 					auto* pFuncObj = new Function(extFunc);

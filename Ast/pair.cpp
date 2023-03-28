@@ -208,6 +208,7 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 		case X::ObjType::Table:
 			break;
 		case X::ObjType::Tensor:
+		case X::ObjType::TensorExpression:
 			bOK = GetItemFromTensor(rt, pContext,
 				dynamic_cast<Data::Tensor*>(pDataObj), R, v, lValue);
 			break;
