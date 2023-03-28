@@ -45,15 +45,21 @@ namespace X
 			bool IsProd = false;
 			int t1_dims_size = (int)(t1.GetDims().size());
 			int t2_dims_size = (int)(t2.GetDims().size());
-			if (t1_dims_size <= 1) //one axes
-			{
-				if (t1.GetDims()[0].size == t2.GetDims()[0].size) 
-					IsProd = true;
-			}
-			else if (t1_dims_size == 2 && t2_dims_size == 2) {//matrixes
+			if (t1_dims_size == 2 && t2_dims_size == 2) {//matrixes
 				if (t1.GetDims()[1].size == t2.GetDims()[0].size) 
 					IsProd = true;
 			}
+			else if (t1_dims_size <= 1 && t2_dims_size == 2) //one axes
+			{
+				if (t1.GetDims()[0].size == t2.GetDims()[1].size ) 
+					IsProd = true;
+			}
+			else if (t1_dims_size == 2 && t2_dims_size <= 1) //one axes
+			{
+				if (t1.GetDims()[1].size == t2.GetDims()[0].size) 
+					IsProd = true;
+			}
+
 			return IsProd;		
 		}
 
@@ -286,6 +292,7 @@ namespace X
 					};
 					auto it_proc_tensor_mul = [pInput1, pInput2, pRetVal]()
 					{
+						std::cout << "In it_proc_tensor_mul()"<< std::endl;
 						//Matrix1 (m,n), Matrix2 (u,v), n = u, after production, new Matrix shape (m,v)
 						int m = pInput1->GetDims()[0].size; //rows of matrix1
 						int n = pInput1->GetDims()[1].size; //columns of matrix1
@@ -319,33 +326,39 @@ namespace X
 					};
 					auto it_proc_tensor_mul_vector = [pInput1, pInput2, pRetVal]()
 					{
-						//vector (n), Matrix2 (m,n), after production, result is a linear map vector(m)
-						int v = pInput1->GetDims()[0].size; //vector
-						int m = pInput2->GetDims()[0].size; //rows of matrix2
-						int n = pInput2->GetDims()[1].size; //columns of matrix2
+						std::cout << "In it_proc_tensor_mul_vector()"<< std::endl;
+						//Input 1 - Matrix (m,n), Input2 - vector (n), result is a linear map vector(m)
+						int m = pInput1->GetDims()[0].size; //rows of matrix2
+						int n = pInput1->GetDims()[1].size; //columns of matrix2
+						int v = pInput2->GetDims()[0].size; //vector
 						if (n!=v)  //To do, error handling
 							return;
+
+						std::vector<int> dims;
+						dims.push_back(m);
+						pRetVal->SetShape(dims);
 
 						int i, j;
 						X::Value val_1, val_2, val;
 						std::vector<long long> indices1, indices2, indices;
 						indices.resize(1);
-						indices1.resize(1);
-						indices2.resize(2);
-						for (j = 0; j < m; j ++) {
-							indices[0] = j;
+						indices1.resize(2);
+						indices2.resize(1);
+
+						for (i = 0; i < m; i ++) {
+							indices[0] = i;
 							val = 0;
-							for ( i = 0; i < n; i++) {//c(i,j) = a(i,0)*b(0,j)+ a(i,1)*b(1,j)+ ...+a(i,n-1)*b(n-1,j)
+							for ( j = 0; j < n; j++) {//Ret(i) = sigma {matrix[i,j]*Vector[j]}
 								indices1[0] = i;
+								indices1[1] = j;
 								indices2[0] = j;
-								indices2[1] = i;
 								val_1 = pInput1->GetDataWithIndices(indices1);
 								val_2 = pInput2->GetDataWithIndices(indices2);								
 								val += val_1.GetLongLong() * val_2.GetLongLong();
 								std::cout<<"i="<<i<<",j="<<j<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
 							}
-							std::cout<<"i="<<i<<",j="<<j<<",val="<<val.GetLongLong()<< std::endl;
 							pRetVal->SetDataWithIndices(indices, val);
+							std::cout<<"After Set data, i="<<i<<",val="<<val.GetLongLong()<< std::endl;
 						}
 					};
 
@@ -359,7 +372,9 @@ namespace X
 						else if (pInput1->GetDimCount() == 1 && pInput2->GetDimCount() == 2)
 							it_proc_tensor_mul_vector();
 						else if (pInput1->GetDimCount() == 2 && pInput2->GetDimCount() == 1)
-							it_proc_tensor_mul();
+							it_proc_tensor_mul_vector();
+						else
+							std::cout<<"Tensor multiplication can't be performed"<< std::endl;
 					}
 
 					pRetVal->IterateAll(it_proc_tensor_display);				

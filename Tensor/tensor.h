@@ -60,10 +60,12 @@ namespace X
 			{
 				long long off = m_startItemOffet;
 				int idxCnt = (int)indices.size();
+				//std::cout << "In CalcItemOffset(), indices.size = " << idxCnt << std::endl;
 				for (int i = 0; i < idxCnt; i++)
 				{
 					auto& dim = m_dims[i];
 					off += (indices[i] + dim.offset) * dim.dimProd;
+					//std::cout << "In CalcItemOffset(),indices[" <<i<<"]="<<indices[i] << std::endl;
 				}
 				off *= GetItemSize();
 				return off;
@@ -175,7 +177,8 @@ namespace X
 				return m_dims[dimIdx].size;
 			}
 			virtual void SetShape(std::vector<int> shapes) override
-			{
+			{	
+				m_dims.clear();
 				for (auto i : shapes)
 				{
 					m_dims.push_back(TensorDim{0,i,i});
