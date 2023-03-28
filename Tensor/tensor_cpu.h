@@ -112,7 +112,7 @@ namespace X
 				X::Value val = pInputTensor->GetDataWithIndices(indices);
 				pNewTensor->SetDataWithIndices(target_indices, val);
 			};
-			pNewTensor->IterateAll(it_proc);
+			pInputTensor->IterateAll(it_proc);
 		}
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
