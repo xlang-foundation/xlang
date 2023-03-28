@@ -309,10 +309,12 @@ namespace X
 				retVal = X::Value((bool)*(char*)pAddr);
 				break;
 			case X::TensorDataType::BYTE:
-				retVal = X::Value(*(char*)pAddr);
+				//convert to int to avoid X::Value(char) eat it
+				retVal = X::Value((int)*(char*)pAddr);
 				break;
 			case X::TensorDataType::UBYTE:
-				retVal = X::Value(*(char*)pAddr);
+				//convert to int to avoid X::Value(char) eat it
+				retVal = X::Value((int)*(unsigned char*)pAddr);
 				break;
 			case X::TensorDataType::SHORT:
 				retVal = X::Value((int)*(short*)pAddr);
