@@ -102,17 +102,24 @@ namespace X
 			}
 			pNewTensor->CreateBaseOnTensorWithPermute(pInputTensor, axes);
 			int dimCnt = (int)pInputTensor->GetDimCount();
-			auto it_proc = [pNewTensor, pInputTensor, dimCnt, axes](std::vector<long long>& indices)
+			std::vector<long long> orgial_indices(dimCnt);
+			auto it_proc = [pNewTensor, pInputTensor, dimCnt, axes, &orgial_indices](std::vector<long long>& indices)
 			{
-				std::vector<long long> target_indices;
 				for (int i = 0; i < dimCnt; i++)
 				{
-					target_indices.push_back(indices[axes[i]]);
+					if (i < (int)axes.size())
+					{
+						orgial_indices[axes[i]] = indices[i];
+					}
+					else
+					{
+						orgial_indices[i] = indices[i];
+					}
 				}
-				X::Value val = pInputTensor->GetDataWithIndices(indices);
-				pNewTensor->SetDataWithIndices(target_indices, val);
+				X::Value val = pInputTensor->GetDataWithIndices(orgial_indices);
+				pNewTensor->SetDataWithIndices(indices, val);
 			};
-			pInputTensor->IterateAll(it_proc);
+			pNewTensor->IterateAll(it_proc);
 		}
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{

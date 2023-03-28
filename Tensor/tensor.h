@@ -237,14 +237,7 @@ namespace X
 				m_dims.resize(dimCnt);
 				for (int i=0;i< dimCnt;i++)
 				{
-					if (i < axCnt)
-					{
-						m_dims[axes[i]] = newDims[i];
-					}
-					else
-					{
-						m_dims[i] = newDims[i];
-					}
+					m_dims[i] = (i < axCnt) ? newDims[axes[i]] : newDims[i];
 				}
 				CalcDimProd();
 				long long totalSize = GetCount() * GetItemSize();
