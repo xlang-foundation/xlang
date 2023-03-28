@@ -300,6 +300,7 @@ namespace X
 		
 		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
 		{
+			std::cout << "In GetDataWithIndices(), indices.size = " << indices.size()<<", indice[0] = "<<indices[0] << std::endl;
 			long long addr = CalcItemOffset(indices);
 			X::Value retVal;
 			char* pAddr = m_data + addr;
@@ -352,6 +353,8 @@ namespace X
 		}
 		void Tensor::SetDataWithIndices(std::vector<long long>& indices,X::Value& val)
 		{
+			std::cout << "In SetDataWithIndices(), indices.size = " << indices.size()<<", indice[0] = "<<indices[0] << ", Val = " << val.GetLongLong() << std::endl;
+
 			long long addr = CalcItemOffset(indices);
 			X::Value retVal;
 			char* pAddr = m_data + addr;
