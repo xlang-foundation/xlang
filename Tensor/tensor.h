@@ -214,6 +214,50 @@ namespace X
 				}
 				return true;
 			}
+			bool CreateBaseOnTensorWithPermute(Tensor* pBaseTensor, std::vector<int>& axes)
+			{
+				//if m_data allocated,means already created
+				if (m_data)
+				{
+					return true;
+				}
+				//this tensor will be orginal tensor, not view of tensor
+				//so do init below
+				m_dataType = pBaseTensor->m_dataType;
+				std::vector<TensorDim> newDims;
+				for (auto& dim : pBaseTensor->m_dims)
+				{
+					TensorDim newDim = dim;
+					//remove view prop from base tensor
+					//this tensor starts from new status
+					//just keep size
+					newDim.offset = 0;
+					newDim.stride = newDim.size;
+					newDims.push_back(newDim);
+				}
+				int axCnt = (int)axes.size();
+				int dimCnt = (int)newDims.size();
+				m_dims.resize(dimCnt);
+				for (int i=0;i< dimCnt;i++)
+				{
+					if (i < axCnt)
+					{
+						m_dims[axes[i]] = newDims[i];
+					}
+					else
+					{
+						m_dims[i] = newDims[i];
+					}
+				}
+				CalcDimProd();
+				long long totalSize = GetCount() * GetItemSize();
+				if (totalSize > 0)
+				{
+					m_data = new char[totalSize];
+					m_dataSize = totalSize;
+				}
+				return true;
+			}
 			bool Get(std::vector<Data::TensorIndex>& IdxAry, X::Value& retVal);
 			virtual XObj* Clone() override
 			{
@@ -250,32 +294,6 @@ namespace X
 				IterateAll(it_proc);
 				return X::Value(pNewTensor);
 
-			}
-			inline X::Value permute(std::vector<int> axes)
-			{
-				Tensor* pNewTensor = new Tensor();
-				pNewTensor->SetDataType(m_dataType);
-				int dimCnt = (int)m_dims.size();
-				std::vector<int> dims;
-				for (int i=0;i< dimCnt;i++)
-				{
-					dims.push_back((int)m_dims[axes[i]].size);
-				}
-				pNewTensor->SetShape(dims);
-				X::Value initData;
-				pNewTensor->Create(initData);
-				auto it_proc = [pNewTensor,this, dimCnt, axes](std::vector<long long>& indices)
-				{
-					std::vector<long long> target_indices;
-					for (int i = 0; i < dimCnt; i++)
-					{
-						target_indices.push_back(indices[axes[i]]);
-					}
-					X::Value val = GetDataWithIndices(indices);
-					pNewTensor->SetDataWithIndices(target_indices, val);
-				};
-				IterateAll(it_proc);
-				return X::Value(pNewTensor);
 			}
 			
 			inline void IterateAll(TensorIterateProc proc)
@@ -316,7 +334,8 @@ namespace X
 			}
 			virtual bool Multiply(const X::Value& r, X::Value& retVal) override;
 			virtual bool Add(const X::Value& r, X::Value& retVal) override;
-
+			virtual bool Minus(const X::Value& r, X::Value& retVal) override;
+			virtual bool Minuend(const X::Value& leftValue, X::Value& retVal) override;
 			virtual Tensor& operator *=(X::Value& r) override;
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,

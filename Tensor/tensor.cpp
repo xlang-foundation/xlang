@@ -602,5 +602,31 @@ namespace X
 			retVal = newTensor;
 			return true;
 		}
+		bool Tensor::Minus(const X::Value& r, X::Value& retVal)
+		{
+			auto* newTensor = new TensorExpression();
+			X::Value left(this);
+			newTensor->SetLeftVal(left);
+			X::Value right(r);
+			newTensor->SetRightVal(right, Tensor_Operator::Minus);
+			//if left has name, then add new tensor with a name
+			std::string newName = OpsManager::I().GenNewName();
+			newTensor->SetName(newName);
+			retVal = newTensor;
+			return true;
+		}
+		bool Tensor::Minuend(const X::Value& leftValue, X::Value& retVal)
+		{
+			auto* newTensor = new TensorExpression();
+			X::Value left(leftValue);
+			newTensor->SetLeftVal(left);
+			X::Value right(this);
+			newTensor->SetRightVal(right, Tensor_Operator::Minus);
+			//if left has name, then add new tensor with a name
+			std::string newName = OpsManager::I().GenNewName();
+			newTensor->SetName(newName);
+			retVal = newTensor;
+			return true;
+		}
 	}
 }

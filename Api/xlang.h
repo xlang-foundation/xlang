@@ -183,6 +183,15 @@ namespace X
 		{
 			return false;
 		}
+		virtual bool Minus(const X::Value& r, X::Value& retVal)
+		{
+			return false;
+		}
+		//for case leftValue - this_Object
+		virtual bool Minuend(const X::Value& leftValue, X::Value& retVal)
+		{
+			return false;
+		}
 		virtual XObj& operator +=(Value& r)
 		{
 			return *this;

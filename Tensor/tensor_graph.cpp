@@ -288,8 +288,17 @@ namespace X
 			}
 			else
 			{//scala such as int64/double
-
-
+				auto opHandler = QueryRegisteredOpHandler(pBuildContext, pContext, (int)op);
+				if (opHandler)
+				{
+					X::ARGS inputs;
+					inputs.push_back(leftValue);
+					inputs.push_back(rightValue);
+					X::Value retValue(pTensor);
+					std::string strName = GetNameWithOp(op);
+					//put this handler into runlist
+					m_runItems.push_back({ strName,opHandler,inputs, retValue });
+				}
 			}
 			if (thiLevel_Action == GraphBuildAction::MeetBinaryOp)
 			{

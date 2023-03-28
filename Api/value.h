@@ -224,6 +224,22 @@ public:
 	bool ChangeToStrObject();
 	void AssignObject(XObj* p,bool bAddRef = true);
 	void ReleaseObject(XObj* p);
+	inline Value Negative() const
+	{
+		Value newV = this;
+		switch (t)
+		{
+		case ValueType::Int64:
+			newV.x.l = -x.l;
+			break;
+		case ValueType::Double:
+			newV.x.d = -x.d;
+			break;
+		default://others no change
+			break;
+		}
+		return newV;
+	}
 	inline Value(const Value& v)
 	{
 		flags = v.flags;
@@ -294,6 +310,7 @@ public:
 	{
 		return (void*)x.obj;
 	}
+	
 	size_t Hash();
 
 	inline double GetDouble()
@@ -389,6 +406,7 @@ public:
 	}
 	virtual Value operator* (const Value& right);
 	virtual Value operator + (const Value& right);
+	virtual Value operator - (const Value& right);
 	virtual void operator += (const Value& v);
 	virtual void operator -= (const Value& v);
 	template<typename... VarList>
