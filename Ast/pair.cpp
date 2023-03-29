@@ -448,6 +448,25 @@ bool PairOp::TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 	v = Value(pDataTable);
 	return true;
 }
+bool PairOp::Set(XlangRuntime* rt, XObj* pContext, Value& v)
+{
+	Value leftObj;
+	ExecAction action;
+	bool bOK = L->Exec(rt, action, pContext, leftObj);
+	if (!bOK || !leftObj.IsObject())
+	{
+		return false;
+	}
+	Value varIdx;
+	bOK = R->Exec(rt, action, pContext, varIdx);
+	if (!bOK)
+	{
+		return false;
+	}
+	X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(leftObj.GetObj());
+	pObj->Set(varIdx, v);
+	return true;
+}
 bool PairOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	bool bOK = false;
