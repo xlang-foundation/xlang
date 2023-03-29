@@ -118,6 +118,15 @@ namespace X
 				}
 				return itemCnt;
 			}
+			long long GetCountWithStride()
+			{
+				long long itemCnt = 1;
+				for (auto& d : m_dims)
+				{
+					itemCnt *= d.stride;
+				}
+				return itemCnt;
+			}
 			void DeepCopyDataFromList(List* pList,std::vector<long long>& indices,int level);
 			void CalcDimProd()
 			{
@@ -249,6 +258,25 @@ namespace X
 				}
 				return true;
 			}
+			virtual bool Set(Value valIdx, X::Value& val) override
+			{
+				std::vector<long long> indices;
+				if (valIdx.IsList())
+				{
+					List* pList = dynamic_cast<List*>(valIdx.GetObj());
+					auto size = pList->Size();
+					for (long long i = 0; i< size; i++)
+					{
+						indices.push_back((long long)pList->Get(i));
+					}
+				}
+				else
+				{
+					indices.push_back((long long)valIdx);
+				}
+				SetDataWithIndices(indices, val);
+				return true;
+			}
 			bool Get(std::vector<Data::TensorIndex>& IdxAry, X::Value& retVal);
 			virtual XObj* Clone() override
 			{
@@ -267,11 +295,7 @@ namespace X
 			//keep use same memory
 			inline X::Value reshape(X::Value& listOfShape)
 			{
-				//for reshape, this tensor must be orignal tensor, not slice of tensor
-				if (m_pTensorToOwneData != nullptr)
-				{
-					return X::Value();
-				}
+
 				std::vector<int> shapes;
 				int shapeCount = 1;
 				if (listOfShape.IsList())
@@ -289,7 +313,9 @@ namespace X
 				{
 					return X::Value();
 				}
-				if (shapeCount != GetCount())
+				//if this tensor is a view of origial tensor
+				//need to check with the stride to keep memory as same size
+				if (shapeCount != GetCountWithStride())
 				{
 					return X::Value();
 				}

@@ -238,6 +238,7 @@ namespace Data {
 		}
 		virtual bool Get(long long idx, X::Value& val) { return false; }
 		virtual bool Set(long long idx, X::Value& val) { return false; }
+		virtual bool Set(Value valIdx, X::Value& val) { return false; }
 	};
 	class Expr
 		: public virtual Object

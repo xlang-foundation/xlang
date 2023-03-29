@@ -552,6 +552,15 @@ namespace X
 				List* pList = dynamic_cast<List*>(initData.GetObj());
 				DeepCopyDataFromList(pList, indices, 0);
 			}
+			else
+			{//treat as scala,and set all items to this value
+				auto it_proc = [this, initData](std::vector<long long>& indices)
+				{
+					X::Value val = initData;
+					SetDataWithIndices(indices,val);
+				};
+				IterateAll(it_proc);
+			}
 
 			return true;
 		}
