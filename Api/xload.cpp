@@ -25,6 +25,7 @@
 #define GetProc(handle,funcName) dlsym(handle, funcName)
 #define UNLOADLIB(handle) dlclose(handle)
 #endif
+#include <sstream>
 
 
 namespace X
@@ -134,6 +135,17 @@ namespace X
 	{
 		return g_pXHost?g_pXHost->HandleAppEvent(signum): AppEventCode::Error;
 	}
+	static std::vector<std::string> SplitStr(const std::string& str, char delim)
+	{
+		std::vector<std::string> list;
+		std::string temp;
+		std::stringstream ss(str);
+		while (std::getline(ss, temp, delim))
+		{
+			list.push_back(temp);
+		}
+		return list;
+	}
 	static bool SearchDll(std::string& dllMainName, std::string& searchPath,
 		std::string& findFileName)
 	{
@@ -167,15 +179,21 @@ namespace X
 		m_pConfig = pCfg;
 		std::string engName("xlang_eng");
 		std::string loadDllName;
-		bool bFound = SearchDll(engName, m_pConfig->appPath, loadDllName);
+		std::string searchPath(m_pConfig->appPath);
+		bool bFound = SearchDll(engName, searchPath, loadDllName);
 		if (!bFound)
 		{
-			for (auto pa : m_pConfig->dllSearchPath)
+			if (pCfg->dllSearchPath)
 			{
-				bFound = SearchDll(engName,pa, loadDllName);
-				if (bFound)
+				std::string strPaths(pCfg->dllSearchPath);
+				std::vector<std::string> otherSearchPaths = SplitStr(strPaths, '\n');
+				for (auto& pa : otherSearchPaths)
 				{
-					break;
+					bFound = SearchDll(engName, pa, loadDllName);
+					if (bFound)
+					{
+						break;
+					}
 				}
 			}
 		}

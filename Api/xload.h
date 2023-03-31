@@ -11,6 +11,7 @@ namespace X
 		Exit,
 		Continue,
 	};
+	//don't use stl in this struct, will be used cross DLL or so, will cause problems
 	struct Config
 	{
 		bool dbg = false;//-dbg
@@ -21,13 +22,23 @@ namespace X
 		bool padding1 = false;
 		bool padding2 = false;
 		bool padding3 = false;
-		std::string inlineCode;//-c "code"
-		std::string fileName;
-		std::vector<std::string> passInParams;
-		std::string appPath;
-		std::string appFullName;//include path and exe name
-		std::string xlangEnginePath;//for XLang engine dll path
-		std::vector<std::string> dllSearchPath;
+		const char* inlineCode = nullptr;//-c "code"
+		const char* fileName = nullptr;
+		const char* passInParams = nullptr;
+		const char* appPath = nullptr;
+		const char* appFullName = nullptr;//include path and exe name
+		const char* xlangEnginePath = nullptr;//for XLang engine dll path
+		const char* dllSearchPath = nullptr;
+		~Config()
+		{
+			if (inlineCode) delete inlineCode;
+			if (fileName) delete fileName;
+			if (passInParams) delete passInParams;
+			if (appPath) delete appPath;
+			if (appFullName) delete appFullName;
+			if (xlangEnginePath) delete xlangEnginePath;
+			if (dllSearchPath) delete dllSearchPath;
+		}
 	};
 	class XLoad
 	{

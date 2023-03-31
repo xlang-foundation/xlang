@@ -49,19 +49,22 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 {
 	//first one is exe file name with path
 	std::string& progName = params[0];
-	paramCfg.config.appFullName = progName;
 	auto pos = progName.rfind(Path_Sep);
 	if (pos != progName.npos)
 	{
-		paramCfg.config.appPath = progName.substr(0, pos);
+		std::string strAppPath = progName.substr(0, pos);
+		paramCfg.config.appPath = new char[strAppPath.length() + 1];
+		memcpy((char*)paramCfg.config.appPath, strAppPath.data(), strAppPath.length() + 1);
 	}
-	paramCfg.config.appFullName = progName;
+	paramCfg.config.appFullName = new char[progName.length() + 1];
+	memcpy((char*)paramCfg.config.appFullName, progName.data(), progName.length() + 1);
 
 	if (params.size() == 1)
 	{
 		paramCfg.print_usage = true;
 		return true;
 	}
+	std::string strPassInParams;
 	int i = 1;
 	bool starFile = false;
 	while(i< (int)params.size())
@@ -78,7 +81,9 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 				i++;
 				if (i < (int)params.size())
 				{
-					paramCfg.config.inlineCode = params[i];
+					auto& s_i = params[i];
+					paramCfg.config.inlineCode = new char[s_i.length() + 1];
+					memcpy((char*)paramCfg.config.inlineCode, s_i.data(), s_i.length() + 1);
 					i++;
 				}
 			}
@@ -89,7 +94,9 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 			}
 			else if (s.find("-c ")==0)
 			{//pass code as string
-				paramCfg.config.inlineCode = params[i].substr(2);
+				auto s_i = params[i].substr(2);
+				paramCfg.config.inlineCode = new char[s_i.length() + 1];
+				memcpy((char*)paramCfg.config.inlineCode, s_i.data(), s_i.length() + 1);
 				i++;
 			}
 			else if (s == "-dbg")
@@ -122,14 +129,27 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 		{
 			starFile = true;
 			//first one is file name
-			paramCfg.config.fileName = s;
+			paramCfg.config.fileName = new char[s.length() + 1];
+			memcpy((char*)paramCfg.config.fileName, s.data(), s.length() + 1);
 			i++;
 		}
 		else
 		{//parse passIn Params after file name
-			paramCfg.config.passInParams.push_back(s);
+			if (strPassInParams.empty())
+			{
+				strPassInParams = s;
+			}
+			else
+			{
+				strPassInParams += "\n"+s;
+			}
 			i++;
 		}
+	}
+	if (!strPassInParams.empty())
+	{
+		paramCfg.config.passInParams = new char[strPassInParams.length() + 1];
+		memcpy((char*)paramCfg.config.passInParams, strPassInParams.data(), strPassInParams.length() + 1);
 	}
 	return true;
 }
