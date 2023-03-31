@@ -1125,8 +1125,8 @@ bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 	X::Value& retValue)
 {
 	XlangRuntime* xlRt = dynamic_cast<XlangRuntime*>(rt);
-	auto& appPath = X::g_pXload->GetConfig().appPath;
-	auto& appFullName = X::g_pXload->GetConfig().appFullName;
+	std::string appPath(X::g_pXload->GetConfig().appPath);
+	std::string appFullName(X::g_pXload->GetConfig().appFullName);
 	std::string cmd;
 	if (params.size() > 0)
 	{

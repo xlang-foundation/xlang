@@ -408,7 +408,7 @@ namespace X
 			{
 				AutoLock(m_lock);
 				std::string strShapes;
-				std::string *pstrElements = new std::string();
+				std::string strElements;
 				char v[1000];
 				int dcnt = (int)m_dims.size();
 				for (int i=0;i<dcnt;i++)
@@ -424,7 +424,7 @@ namespace X
 				std::string strOut = "Tensor(size=(" + strShapes + "),";
 				strOut +="[";
 
-				auto it_proc = [this, pstrElements, v](std::vector<long long>& indices)
+				auto it_proc = [this, &strElements, v](std::vector<long long>& indices)
 				{
 					X::Value val = GetDataWithIndices(indices);
 					//char v[1000];
@@ -477,14 +477,16 @@ namespace X
 					default:
 						break;
 					}				
-					pstrElements->append(v);
-					pstrElements->append(",");
+					strElements.append(v);
+					strElements.append(",");
 				};
 
 				IterateAll(it_proc);			
-
-				pstrElements->back() = 0; // to remove the last comma
-				strOut += *pstrElements; 
+				if (!strElements.empty())
+				{
+					strElements.back() = 0; // to remove the last comma
+				}
+				strOut += strElements; 
 				strOut += "]";
 				strOut += ")";
 
