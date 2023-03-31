@@ -214,6 +214,24 @@ namespace X
 				}
 				return true;
 			}
+			//used by tensorOP to allocate data bases on pBaseTensor
+			bool CreateBaseOnShape(std::vector<int> shapes)
+			{
+				//if m_data allocated,means already created
+				if (m_data)
+				{
+					return true;
+				}
+				SetShape (shapes);
+				CalcDimProd();
+				long long totalSize = GetCount() * GetItemSize();
+				if (totalSize > 0)
+				{
+					m_data = new char[totalSize];
+					m_dataSize = totalSize;
+				}
+				return true;
+			}
 			bool CreateBaseOnTensorWithPermute(Tensor* pBaseTensor, std::vector<int>& axes)
 			{
 				//if m_data allocated,means already created
