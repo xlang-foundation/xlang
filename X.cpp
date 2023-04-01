@@ -11,6 +11,7 @@
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
 #else
+#include <string.h> //for memcpy
 #define Path_Sep_S "/"
 #define Path_Sep '/'
 #endif
