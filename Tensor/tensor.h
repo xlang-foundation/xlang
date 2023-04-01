@@ -3,6 +3,7 @@
 #include <functional>
 #include "limits.h"
 #include "tensorop.h"
+#include "list.h"
 /*
 	Shawn Xiong @2/15/2023
 	Tensor is a multiple dimensional array whith same data type
@@ -116,6 +117,15 @@ namespace X
 				for (auto& d : m_dims)
 				{
 					itemCnt *= d.size;
+				}
+				return itemCnt;
+			}
+			long long GetCountWithStride()
+			{
+				long long itemCnt = 1;
+				for (auto& d : m_dims)
+				{
+					itemCnt *= d.stride;
 				}
 				return itemCnt;
 			}
@@ -258,14 +268,7 @@ namespace X
 				m_dims.resize(dimCnt);
 				for (int i=0;i< dimCnt;i++)
 				{
-					if (i < axCnt)
-					{
-						m_dims[axes[i]] = newDims[i];
-					}
-					else
-					{
-						m_dims[i] = newDims[i];
-					}
+					m_dims[i] = (i < axCnt) ? newDims[axes[i]] : newDims[i];
 				}
 				CalcDimProd();
 				long long totalSize = GetCount() * GetItemSize();
@@ -274,6 +277,25 @@ namespace X
 					m_data = new char[totalSize];
 					m_dataSize = totalSize;
 				}
+				return true;
+			}
+			virtual bool Set(Value valIdx, X::Value& val) override
+			{
+				std::vector<long long> indices;
+				if (valIdx.IsList())
+				{
+					List* pList = dynamic_cast<List*>(valIdx.GetObj());
+					auto size = pList->Size();
+					for (long long i = 0; i< size; i++)
+					{
+						indices.push_back((long long)pList->Get(i));
+					}
+				}
+				else
+				{
+					indices.push_back((long long)valIdx);
+				}
+				SetDataWithIndices(indices, val);
 				return true;
 			}
 			bool Get(std::vector<Data::TensorIndex>& IdxAry, X::Value& retVal);
@@ -290,6 +312,45 @@ namespace X
 			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
 			X::Value GetDataWithIndices(std::vector<long long>& indices);
+
+			//keep use same memory
+			inline X::Value reshape(X::Value& listOfShape)
+			{
+
+				std::vector<int> shapes;
+				int shapeCount = 1;
+				if (listOfShape.IsList())
+				{
+					X::Data::List* pList = dynamic_cast<X::Data::List*>(listOfShape.GetObj());
+					int axesCnt = (int)pList->Size();
+					for (int i = 0; i < axesCnt; i++)
+					{
+						int s = (int)pList->Get(i);
+						shapeCount *= s;
+						shapes.push_back(s);
+					}
+				}
+				else
+				{
+					return X::Value();
+				}
+				//if this tensor is a view of origial tensor
+				//need to check with the stride to keep memory as same size
+				if (shapeCount != GetCountWithStride())
+				{
+					return X::Value();
+				}
+				auto* pNewTensor = new Tensor();
+				//keep this tensor as New Tensor's ref
+				IncRef();
+				pNewTensor->m_dataType = m_dataType;
+				pNewTensor->m_pTensorToOwneData = this;
+				pNewTensor->m_data = m_data;
+				pNewTensor->SetShape(shapes);
+				pNewTensor->CalcDimProd();
+				pNewTensor->m_dataSize = m_dataSize;
+				return X::Value(pNewTensor);
+			}
 			inline X::Value asType(int type)
 			{
 				TensorDataType dt = (TensorDataType)type;
@@ -368,7 +429,7 @@ namespace X
 			{
 				AutoLock(m_lock);
 				std::string strShapes;
-				std::string *pstrElements = new std::string();
+				std::string strElements;
 				char v[1000];
 				int dcnt = (int)m_dims.size();
 				for (int i=0;i<dcnt;i++)
@@ -384,7 +445,7 @@ namespace X
 				std::string strOut = "Tensor(size=(" + strShapes + "),";
 				strOut +="[";
 
-				auto it_proc = [this, pstrElements, v](std::vector<long long>& indices)
+				auto it_proc = [this, &strElements, v](std::vector<long long>& indices)
 				{
 					X::Value val = GetDataWithIndices(indices);
 					//char v[1000];
@@ -437,14 +498,16 @@ namespace X
 					default:
 						break;
 					}				
-					pstrElements->append(v);
-					pstrElements->append(",");
+					strElements.append(v);
+					strElements.append(",");
 				};
 
 				IterateAll(it_proc);			
-
-				pstrElements->back() = 0; // to remove the last comma
-				strOut += *pstrElements; 
+				if (!strElements.empty())
+				{
+					strElements.back() = 0; // to remove the last comma
+				}
+				strOut += strElements; 
 				strOut += "]";
 				strOut += ")";
 

@@ -27,6 +27,7 @@
 #include "BlockStream.h"
 #include "future.h"
 #include "tensor.h"
+#include "utility.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -75,9 +76,11 @@ bool LoadDevopsEngine(int port = 3142)
 		loadDllName = candiateFiles[0];
 		bHaveDll = true;
 	}
-	else
+	else if(g_pXload->GetConfig().dllSearchPath)
 	{
-		for (auto& pa : g_pXload->GetConfig().dllSearchPath)
+		std::string strPaths(g_pXload->GetConfig().dllSearchPath);
+		std::vector<std::string> otherSearchPaths = split(strPaths, '\n');
+		for (auto& pa : otherSearchPaths)
 		{
 			bRet = file_search(pa,
 				LibPrefix+engName + ShareLibExt, candiateFiles);
@@ -85,7 +88,7 @@ bool LoadDevopsEngine(int port = 3142)
 			{
 				loadDllName = candiateFiles[0];
 				bHaveDll = true;
-				break;
+				//break;
 			}
 		}
 	}
@@ -150,9 +153,11 @@ bool LoadPythonEngine()
 		loadDllName = candiateFiles[0];
 		bHaveDll = true;
 	}
-	else
+	else if (g_pXload->GetConfig().dllSearchPath)
 	{
-		for (auto& pa : g_pXload->GetConfig().dllSearchPath)
+		std::string strPaths(g_pXload->GetConfig().dllSearchPath);
+		std::vector<std::string> otherSearchPaths = split(strPaths, '\n');
+		for (auto& pa : otherSearchPaths)
 		{
 			bRet = file_search(pa,
 				LibPrefix+engName + ShareLibExt, candiateFiles);
@@ -160,7 +165,7 @@ bool LoadPythonEngine()
 			{
 				loadDllName = candiateFiles[0];
 				bHaveDll = true;
-				break;
+				//break;
 			}
 		}
 	}
@@ -234,26 +239,39 @@ void XLangRun()
 	ScriptsManager::I().Run();
 	XLangProxyManager::I().Register();
 
+	std::vector<std::string> passInParams;
+	if (g_pXload->GetConfig().passInParams)
+	{
+		std::string strPassInParams(g_pXload->GetConfig().passInParams);
+		passInParams = split(strPassInParams, '\n');
+	}
 	bool HasCode = false;
 	std::string code;
-	std::string& fileName = g_pXload->GetConfig().fileName;
-	std::string& inlineCode = g_pXload->GetConfig().inlineCode;
-	if (!inlineCode.empty())
+	const char* fileName = g_pXload->GetConfig().fileName;
+	const char* inlineCode = g_pXload->GetConfig().inlineCode;
+	if (inlineCode)
 	{
 		Value retVal;
-		fileName = "inline_code";
+		std::string strFileName = "inline_code";
 		HasCode = true;
-		code = g_pXload->GetConfig().inlineCode;
+		code = inlineCode;
 		ReplaceAll(code, "\\n", "\n");
 		ReplaceAll(code, "\\t", "\t");
-		Hosting::I().Run(fileName, inlineCode.c_str(),
-			(int)inlineCode.size(), 
-			g_pXload->GetConfig().passInParams,
+		std::vector<std::string> passInParams;
+		if (g_pXload->GetConfig().passInParams)
+		{
+			std::string strPassInParams(g_pXload->GetConfig().passInParams);
+			passInParams = split(strPassInParams, '\n');
+		}
+		Hosting::I().Run(strFileName, inlineCode,
+			(int)strlen(inlineCode),
+			passInParams,
 			retVal);
 	}
-	else if (!fileName.empty())
+	else if (fileName)
 	{
-		bool bOK = LoadStringFromFile(fileName, code);
+		std::string strFileName = fileName;
+		bool bOK = LoadStringFromFile(strFileName, code);
 		if (bOK)
 		{
 			HasCode = true;
@@ -268,8 +286,12 @@ void XLangRun()
 	{
 		if (g_pXload->GetConfig().runAsBackend)
 		{
-			Hosting::I().RunAsBackend(fileName, code,
-				g_pXload->GetConfig().passInParams);
+			std::string strFileName;
+			if (fileName)
+			{
+				strFileName = fileName;
+			}
+			Hosting::I().RunAsBackend(strFileName, code,passInParams);
 			std::cout << "Running in background" << std::endl;
 			EventSystem::I().Loop();
 			enterEventLoop = false;
@@ -277,9 +299,14 @@ void XLangRun()
 		else
 		{
 			Value retVal;
-			std::vector<std::string> passInParams;
-			Hosting::I().Run(fileName, code.c_str(), (int)code.size(), 
-				g_pXload->GetConfig().passInParams,retVal);
+			std::string strFileName;
+			if (fileName)
+			{
+				strFileName = fileName;
+			}
+			Hosting::I().Run(strFileName, code.c_str(), (int)code.size(),
+				passInParams,
+				retVal);
 			if (retVal.IsValid())
 			{
 				std::cout << retVal.ToString() << std::endl;
@@ -398,7 +425,9 @@ extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 	}
 #endif
 	X::g_pXload = (X::XLoad*)pXload;
-	X::g_pXload->GetConfig().xlangEnginePath = strFolderPath;
+	const char* engPath = new char[strFolderPath.length() + 1];
+	memcpy((char*)engPath, strFolderPath.data(), strFolderPath.length() + 1);
+	X::g_pXload->GetConfig().xlangEnginePath = engPath;
 
 	auto* pXHost = X::CreatXHost();
 	*pXHostHolder = pXHost;

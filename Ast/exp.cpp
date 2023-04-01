@@ -13,6 +13,7 @@
 #include "import.h"
 #include "module.h"
 #include "complex.h"
+#include "list.h"
 
 namespace X 
 {
@@ -486,6 +487,22 @@ bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v)
 		v = Value(pStrObj);
 	}
 	return bOK;
+}
+bool List::Exec(XlangRuntime* rt, ExecAction& action,
+	XObj* pContext, Value& v, LValue* lValue)
+{
+	X::Data::List* pOutList = new X::Data::List();
+	for (auto& item : list)
+	{
+		Value v0;
+		ExecAction action0;
+		if (item->Exec(rt, action0, pContext, v0))
+		{
+			pOutList->Add(rt, v0);
+		}
+	}
+	v = X::Value(pOutList);
+	return true;
 }
 }
 }

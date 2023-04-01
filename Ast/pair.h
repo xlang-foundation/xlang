@@ -61,6 +61,7 @@ namespace AST
 				R->SetIsLeftValue(b);
 			}
 		}
+		virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override;
 		inline virtual bool SetArry(XlangRuntime* rt, XObj* pContext, ARGS& ary) override
 		{
 			if (ary.size() == 0)

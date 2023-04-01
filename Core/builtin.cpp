@@ -1125,8 +1125,8 @@ bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 	X::Value& retValue)
 {
 	XlangRuntime* xlRt = dynamic_cast<XlangRuntime*>(rt);
-	auto& appPath = X::g_pXload->GetConfig().appPath;
-	auto& appFullName = X::g_pXload->GetConfig().appFullName;
+	std::string appPath(X::g_pXload->GetConfig().appPath);
+	std::string appFullName(X::g_pXload->GetConfig().appFullName);
 	std::string cmd;
 	if (params.size() > 0)
 	{
@@ -1236,41 +1236,56 @@ bool U_CreateTensor(X::XRuntime* rt, XObj* pContext,
 		name = it->second.ToString();
 	}
 	pTensor->SetName(name);
-	int dtype = (int)X::TensorDataType::FLOAT;
-	it = kwParams.find(Tensor_DType);
-	if (it != kwParams.end())
-	{
-		dtype = (int)it->second;
-	}
-
-	pTensor->SetDataType((X::TensorDataType)dtype);
 	//if there is init data, will skip shape
 	X::Value initData;
 	if (params.size() > 0)
 	{
 		initData = params[0];
 	}
-	else
+
+	int dtype = (int)X::TensorDataType::FLOAT;
+	it = kwParams.find(Tensor_DType);
+	if (it != kwParams.end())
 	{
-		std::vector<int> shapes;
-		it = kwParams.find(Tensor_Shape);
-		if (it != kwParams.end())
+		dtype = (int)it->second;
+	}
+	else if(initData.IsValid())
+	{
+		if (!initData.IsList())
 		{
-			auto val = it->second;
-			if (val.IsObject())
+			auto ty = initData.GetType();
+			switch (ty)
 			{
-				if (val.GetObj()->GetType() == ObjType::List)
+			case X::ValueType::Int64:
+				dtype = (int)TensorDataType::LONGLONG;
+				break;
+			case X::ValueType::Double:
+				dtype = (int)TensorDataType::DOUBLE;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	pTensor->SetDataType((X::TensorDataType)dtype);
+	std::vector<int> shapes;
+	it = kwParams.find(Tensor_Shape);
+	if (it != kwParams.end())
+	{
+		auto val = it->second;
+		if (val.IsObject())
+		{
+			if (val.GetObj()->GetType() == ObjType::List)
+			{
+				List valList(val);
+				auto size = valList.Size();
+				for (long long i = 0; i < size; i++)
 				{
-					List valList(val);
-					auto size = valList.Size();
-					for (long long i = 0; i < size; i++)
-					{
-						shapes.push_back((int)valList->Get(i));
-					}
+					shapes.push_back((int)valList->Get(i));
 				}
 			}
-			pTensor->SetShape(shapes);
 		}
+		pTensor->SetShape(shapes);
 	}
 	bOK = pTensor->Create(initData);
 	if (bOK)

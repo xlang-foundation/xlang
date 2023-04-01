@@ -478,6 +478,8 @@ public:
 			delete e;
 		}
 	}
+	virtual bool Exec(XlangRuntime* rt, ExecAction& action,
+		XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt,pContext,stream);

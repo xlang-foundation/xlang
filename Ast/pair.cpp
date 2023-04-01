@@ -208,6 +208,7 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 		case X::ObjType::Table:
 			break;
 		case X::ObjType::Tensor:
+		case X::ObjType::TensorExpression:
 			bOK = GetItemFromTensor(rt, pContext,
 				dynamic_cast<Data::Tensor*>(pDataObj), R, v, lValue);
 			break;
@@ -445,6 +446,25 @@ bool PairOp::TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 
 	}
 	v = Value(pDataTable);
+	return true;
+}
+bool PairOp::Set(XlangRuntime* rt, XObj* pContext, Value& v)
+{
+	Value leftObj;
+	ExecAction action;
+	bool bOK = L->Exec(rt, action, pContext, leftObj);
+	if (!bOK || !leftObj.IsObject())
+	{
+		return false;
+	}
+	Value varIdx;
+	bOK = R->Exec(rt, action, pContext, varIdx);
+	if (!bOK)
+	{
+		return false;
+	}
+	X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(leftObj.GetObj());
+	pObj->Set(varIdx, v);
 	return true;
 }
 bool PairOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)

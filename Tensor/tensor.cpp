@@ -171,19 +171,21 @@ namespace X
 					m_stackFrame->Set(idx, funcVal);
 				}
 				{
-					strName = "Conv2d";
+					strName = "reshape";
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"tensor1*Conv2d()*kernel_tensor",
+						"reshape(list of shape: [10,40,10], need to have same amount of items)",
 						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
 							X::ARGS& params,
 							X::KWARGS& kwParams,
 							X::Value& retValue)
 							{
-								Tensor_OperatorHandler handler;
-								TensorOperator* pOp = new TensorOperator(handler,false);
-								X::Value action;
-								pOp->SetOpAction(action);
-								retValue = X::Value(pOp);
+								if (params.size() == 0)
+								{
+									retValue = X::Value();
+									return true;
+								}
+								Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+								retValue = pObj->reshape(params[0]);
 								return true;
 							}));
 					auto* pFuncObj = new Function(extFunc);
@@ -310,10 +312,12 @@ namespace X
 				retVal = X::Value((bool)*(char*)pAddr);
 				break;
 			case X::TensorDataType::BYTE:
-				retVal = X::Value(*(char*)pAddr);
+				//convert to int to avoid X::Value(char) eat it
+				retVal = X::Value((int)*(char*)pAddr);
 				break;
 			case X::TensorDataType::UBYTE:
-				retVal = X::Value(*(char*)pAddr);
+				//convert to int to avoid X::Value(char) eat it
+				retVal = X::Value((int)*(unsigned char*)pAddr);
 				break;
 			case X::TensorDataType::SHORT:
 				retVal = X::Value((int)*(short*)pAddr);
@@ -550,6 +554,15 @@ namespace X
 				indices.resize(dim);
 				List* pList = dynamic_cast<List*>(initData.GetObj());
 				DeepCopyDataFromList(pList, indices, 0);
+			}
+			else
+			{//treat as scala,and set all items to this value
+				auto it_proc = [this, initData](std::vector<long long>& indices)
+				{
+					X::Value val = initData;
+					SetDataWithIndices(indices,val);
+				};
+				IterateAll(it_proc);
 			}
 
 			return true;
