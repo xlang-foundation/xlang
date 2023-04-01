@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <vector>
 #include <string>
+#include <cstring>
 #include "X.h"
 #include "xload.h"
 #include "cli.h"

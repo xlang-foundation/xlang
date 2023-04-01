@@ -126,60 +126,226 @@ namespace X
 				pNewTensor->SetDataWithIndices(indices, val);
 			};
 			pNewTensor->IterateAll(it_proc);
+		}//permute
+
+		bool IsNum(X::Value input) 
+		{
+			bool IsNum = false;
+			auto ty = ((X::Value)input).GetType();
+			auto val = 0;
+			switch (ty)
+			{
+			case X::ValueType::Int64:
+				IsNum = true;
+				val = ((X::Value)input).GetLongLong();
+				break;
+			case X::ValueType::Double:
+				IsNum = true;
+				val = ((X::Value)input).GetDouble();
+				break;
+			default:  //todo, what about boolean?
+				break;
+			}
+			return IsNum;
 		}
+
+		bool IsTensor(X::Value input) 
+		{
+			bool IsTensor = false;
+			auto ty = ((X::Value)input).GetType();
+			if (ty == X::ValueType::Object) 
+			{
+				auto* pObj = ((X::Value)input).GetObj();
+				if (pObj->GetType() == ObjType::Tensor)
+					IsTensor = true;
+			}
+			return IsTensor;		
+		}
+		inline std::tuple<bool, bool> IsNumAddable(X::Data::Tensor &t, const X::Value& operand) 
+		{
+			bool Addable = false;
+			bool IsNum = false;
+
+			auto val = 0;
+			auto ty = ((X::Value)operand).GetType();
+
+			switch (ty)
+			{
+			case X::ValueType::Int64:
+				IsNum = true;
+				val = ((X::Value)operand).GetLongLong();
+				break;
+			case X::ValueType::Double:
+				IsNum = true;
+				val = ((X::Value)operand).GetDouble();
+				break;
+			default:  //todo, what about boolean?
+				break;
+			}
+
+			switch (t.GetDataType())
+			{
+			case X::TensorDataType::BOOL:
+				break;
+			case X::TensorDataType::BYTE:
+				if (ty == X::ValueType::Int64 && val >= -128 && val <= 127) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::UBYTE:
+				if (ty == X::ValueType::Int64 && val <= 255) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::SHORT:
+				if (ty == X::ValueType::Int64 && val >= -32768 && val <= 32767) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::USHORT:
+				if (ty == X::ValueType::Int64 && val <= 65535) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::INT:
+				if (ty == X::ValueType::Int64 && val >= -2147483648 && val <= 2147483647) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::UINT:
+				if (ty == X::ValueType::Int64 && val <= 4294967295)
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::LONGLONG:
+				if (ty == X::ValueType::Int64 && val >= -9,223,372,036,854,775,808 && val <= 9,223,372,036,854,775,807) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::ULONGLONG:
+				if (ty == X::ValueType::Int64 && val <= 18,446,744,073,709,551,615) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::HALFFLOAT:
+				if ((ty == X::ValueType::Double || ty == X::ValueType::Double) && val <= 65535) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::FLOAT:
+				if ((ty == X::ValueType::Double || ty == X::ValueType::Double) && val <= 4294967295) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::DOUBLE:
+			case X::TensorDataType::CFLOAT:
+				if (ty == X::ValueType::Double || ty == X::ValueType::Double) 
+				{
+					Addable = true;
+				}
+				break;
+			case X::TensorDataType::CDOUBLE:
+				break;
+			default:
+				break;
+			}
+			return {Addable, IsNum};
+		}
+		inline std::tuple<bool, bool> IsTensorAddable(X::Data::Tensor &t1, X::Data::Tensor &t2) 
+		{
+			bool Addable = false;
+			bool IsNum = false;
+			Addable = IsSimilarTensor(t1,t2);	
+			return {Addable, IsNum};
+		}
+
+
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
+
+			if (!IsTensor(retVal))
+				return;
+
+			X::Data::Tensor* pTensor1 = 0;
+			X::Data::Tensor* pTensor2 = 0; 
+			bool IsTensor1 = IsTensor (input1);
+			bool IsTensor2 = IsTensor (input2);
 			bool bIsAddable =false;
 			bool bIsNum = false;
-			//input1 and retVal must be tensors
-			if (!input1.IsObject() || !retVal.IsObject())
-				return;
-				
-			X::Data::Tensor* pInput1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
-			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());
-			
-			pRetVal->CreateBaseOnTensor(pInput1);
+			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
 
-			std::tie (bIsAddable, bIsNum) = IsAddable(*pInput1, input2, X::Data::Tensor_Operator::Add);
-			std::cout << "In AddMinusMulDiv(), bIsAddable ="<< bIsAddable << ", bIsNum = " << bIsNum << std::endl;
-
-			if (bIsAddable)
+			auto it_proc_tensor_display = [pRetVal](std::vector<long long>& indices)
 			{
-				AutoLock(m_lock);
-				if (bIsNum) 
+				X::Value val = pRetVal->GetDataWithIndices(indices);
+				std::cout << "it_proc_tensor_display, item in retVal ="<< val.GetLongLong() << std::endl;
+			};
+			auto it_proc_scaler_add = [pTensor1, input2, pRetVal](std::vector<long long>& indices)
+			{
+				X::Value val = pTensor1->GetDataWithIndices(indices);
+				val += input2;
+				pRetVal->SetDataWithIndices(indices, val);
+			};
+			auto it_proc_tensor_add = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices)
+			{
+				X::Value val = pTensor1->GetDataWithIndices(indices);
+				X::Value val_operand = pTensor2->GetDataWithIndices(indices);
+				val += val_operand;
+				std::cout << "In it_proc_tensor_add(), new val ="<< val.GetLongLong() << std::endl;
+				pRetVal->SetDataWithIndices(indices, val);
+			};
+
+			AutoLock(m_lock);
+			if (!IsTensor1 && !IsTensor2)
+			{
+				return;  //todo, error handling
+			}
+			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
+			{
+				if (!IsNum(input2))	//the other must be a number
+					return;
+				pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
+				std::tie (bIsAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
+				if (!bIsAddable)
+					return;
+				pRetVal->CreateBaseOnTensor(pTensor1);
+				pTensor1->IterateAll(it_proc_scaler_add);
+		
+			}
+			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
+				if (!IsNum(input1))	//the other must be a number
+					return;
+				pTensor1 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+				std::tie (bIsAddable, bIsNum) = IsNumAddable(*pTensor1, input1);
+				if (!bIsAddable)
+					return;
+				pRetVal->CreateBaseOnTensor(pTensor1);
+				pTensor1->IterateAll(it_proc_scaler_add);
+			}
+			else  //both tensors
+			{
+				pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
+				pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+				std::tie (bIsAddable, bIsNum) = IsTensorAddable(*pTensor1, *pTensor2);
+				if (bIsAddable)
 				{
-					auto it_proc_scaler_add = [pInput1, input2, pRetVal](std::vector<long long>& indices)
-					{
-						X::Value val = pInput1->GetDataWithIndices(indices);
-						val += input2;
-						pRetVal->SetDataWithIndices(indices, val);
-					};
-					pInput1->IterateAll(it_proc_scaler_add);
+						pTensor1->IterateAll(it_proc_tensor_add);
+						pRetVal->IterateAll(it_proc_tensor_display);				
 
-				} //scaler
-				else 
-				{//tensor only, verified in IsAddable()
-					X::Data::Tensor* pInput2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
-					auto it_proc_tensor_display = [pRetVal](std::vector<long long>& indices)
-					{
-						X::Value val = pRetVal->GetDataWithIndices(indices);
-						std::cout << "it_proc_tensor_display, item in retVal ="<< val.GetLongLong() << std::endl;
-					};
-					auto it_proc_tensor_add = [pInput1, pInput2, pRetVal](std::vector<long long>& indices)
-					{
-						X::Value val = pInput1->GetDataWithIndices(indices);
-						X::Value val_operand = pInput2->GetDataWithIndices(indices);
-						val += val_operand;
-						std::cout << "In it_proc_tensor_add(), new val ="<< val.GetLongLong() << std::endl;
-						pRetVal->SetDataWithIndices(indices, val);
-					};
+				} //bIsAddable
+			}
+		
 
-					pInput1->IterateAll(it_proc_tensor_add);
 
-					pRetVal->IterateAll(it_proc_tensor_display);				
-
-				} //tensor
-			} //bIsAddable
 		}
 		void Minus(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
@@ -528,6 +694,7 @@ namespace X
 			}
 			return {Addable, IsNum};
 		}
+
 
 
 	}; //class CpuTensor
