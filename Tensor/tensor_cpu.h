@@ -371,8 +371,16 @@ namespace X
 			{
 				pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 				pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
-				pRetVal->CreateBaseOnTensor(pTensor1);
+				long long tot_element_count_1 = pTensor1->GetCount();
+				long long tot_element_count_2 = pTensor2->GetCount();
+				if (tot_element_count_1 < tot_element_count_2)//make sure T1 has more elements than T2
+				{	
+					X::Data::Tensor* temp_t = pTensor1;
+					pTensor1 = pTensor2;
+					pTensor2 = temp_t;
+				}
 
+				pRetVal->CreateBaseOnTensor(pTensor1);
 				auto it_proc_tensor_add = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor1->GetDataWithIndices(indices);
@@ -381,15 +389,35 @@ namespace X
 					std::cout << "In it_proc_tensor_add(), new val ="<< val.GetLongLong() << std::endl;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
-
-				std::cout << "In tensor_cpu.h::Add(), both are tensors" << std::endl;
 				bIsAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
 				std::cout << "In tensor_cpu.h::Add(), IsTensorAddableNew = " << bIsAddable << std::endl;
-
 				if (bIsAddable)
 				{
-					pTensor1->IterateAll(it_proc_tensor_add);
+					//pTensor1->IterateAll(it_proc_tensor_add);
 					//pRetVal->IterateAll(it_proc_tensor_display);				
+					X::Value val_1, val_2, val_ret;
+					//std::vector<long long> indice1, indice2, indice_ret;
+					long long tot_element_count_1 = pTensor1->GetCount();
+					long long tot_element_count_2 = pTensor2->GetCount();
+					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
+
+					while (cur_element_count_1 < tot_element_count_1)
+					{
+						if (cur_element_count_1 % tot_element_count_2 == 0) 
+						{
+							//indice2.clear();
+							cur_element_count_2 = 0;
+						}
+						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
+						val_2 = pTensor1->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
+						val_ret = val_1 + val_2;
+						pRetVal->SetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize(), val_ret);
+						cur_element_count_1 ++;
+						cur_element_count_2 ++;
+
+						pTensor1->IterateAll(it_proc_tensor_add);
+					}
+
 				} //bIsAddable
 			}
 		}

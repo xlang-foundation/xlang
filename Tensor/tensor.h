@@ -57,6 +57,7 @@ namespace X
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
 
+		public:
 			long long CalcItemOffset(std::vector<long long>& indices)
 			{
 				long long off = m_startItemOffet;
@@ -111,6 +112,7 @@ namespace X
 				}
 				return size;
 			}
+		public:
 			long long GetCount()
 			{
 				long long itemCnt = 1;
@@ -311,7 +313,9 @@ namespace X
 				return newTensor;
 			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
+			void SetDataWithOffset(long long addr, X::Value& val);
 			X::Value GetDataWithIndices(std::vector<long long>& indices);
+			X::Value GetDataWithOffset(long long addr);
 
 			//keep use same memory
 			inline X::Value reshape(X::Value& listOfShape)
