@@ -151,14 +151,25 @@ namespace X
 
 		bool IsTensor(X::Value input) 
 		{
+			//std::cout << "In IsTensor()" << std::endl;
 			bool IsTensor = false;
 			auto ty = ((X::Value)input).GetType();
 			if (ty == X::ValueType::Object) 
 			{
+				//std::cout << "In IsTensor(), is an object" << std::endl;
 				auto* pObj = ((X::Value)input).GetObj();
-				if (pObj->GetType() == ObjType::Tensor)
+				auto obj_ty = pObj->GetType();
+				if (obj_ty == ObjType::Tensor || obj_ty == X::ObjType::TensorExpression) 
+				{
+					//std::cout << "In IsTensor(), is a tensor" << std::endl;
 					IsTensor = true;
+				}
+				//else 
+				//	std::cout << "In IsTensor(), is not a tensor" << std::endl;
 			}
+			//else 
+			//	std::cout << "In IsTensor(), not an object" << std::endl;
+
 			return IsTensor;		
 		}
 		inline std::tuple<bool, bool> IsNumAddable(X::Data::Tensor &t, const X::Value& operand) 
@@ -269,13 +280,31 @@ namespace X
 			return {Addable, IsNum};
 		}
 
+		inline bool IsTensorAddableNew(X::Data::Tensor &t1, X::Data::Tensor &t2) 
+		{
+			int dim_count1 = t1.GetDimCount(); //T(4,5,6,7)  -- 4 dimensions, 4*5*6*7 elements
+			int dim_count2 = t2.GetDimCount(); //T(6,7)      -- 2 dimensions, 6*7 elements
+			int dim_size1, dim_size2;
+			for (auto i = 0; i < MIN_VAL(dim_count1, dim_count2); i++) // i = 0, 1 
+			{
+				dim_size1 = t1.GetDimSize(dim_count1 - i - 1); // dims[3], dims[2]
+				dim_size2 = t2.GetDimSize(dim_count2 - i - 1); // dims[1], dims[0]
+				if (dim_size1 != dim_size2)
+					return false;
+			}	
+			return true;
+		}
+
 
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
+			std::cout << "In tensor_cpu.h::Add()" << std::endl;
 
-			if (!IsTensor(retVal))
-				return;
-
+			if (!IsTensor(retVal)) {
+				std::cout << "In tensor_cpu.h::Add(),returned" << std::endl;
+		 	//	return;
+			}
+			
 			X::Data::Tensor* pTensor1 = 0;
 			X::Data::Tensor* pTensor2 = 0; 
 			bool IsTensor1 = IsTensor (input1);
@@ -287,68 +316,87 @@ namespace X
 			auto it_proc_tensor_display = [pRetVal](std::vector<long long>& indices)
 			{
 				X::Value val = pRetVal->GetDataWithIndices(indices);
-				std::cout << "it_proc_tensor_display, item in retVal ="<< val.GetLongLong() << std::endl;
-			};
-			auto it_proc_scaler_add = [pTensor1, input2, pRetVal](std::vector<long long>& indices)
-			{
-				X::Value val = pTensor1->GetDataWithIndices(indices);
-				val += input2;
-				pRetVal->SetDataWithIndices(indices, val);
-			};
-			auto it_proc_tensor_add = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices)
-			{
-				X::Value val = pTensor1->GetDataWithIndices(indices);
-				X::Value val_operand = pTensor2->GetDataWithIndices(indices);
-				val += val_operand;
-				std::cout << "In it_proc_tensor_add(), new val ="<< val.GetLongLong() << std::endl;
-				pRetVal->SetDataWithIndices(indices, val);
+				std::cout << "in Add()::it_proc_tensor_display(), item in retVal ="<< val.GetLongLong() << std::endl;
 			};
 
 			AutoLock(m_lock);
+
 			if (!IsTensor1 && !IsTensor2)
 			{
+				std::cout << "In tensor_cpu.h::Add(), none is tensor, returned 2 =" << std::endl;
 				return;  //todo, error handling
 			}
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
+				std::cout << "In tensor_cpu.h::Add(), 1 is tensor, 2 is not a tensor" << std::endl;
 				if (!IsNum(input2))	//the other must be a number
 					return;
 				pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
-				std::tie (bIsAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
-				if (!bIsAddable)
-					return;
 				pRetVal->CreateBaseOnTensor(pTensor1);
+				auto it_proc_scaler_add = [pTensor1, input2, pRetVal](std::vector<long long>& indices)
+				{
+					std::cout << "it_proc_scaler_add, + " << ((X::Value)input2).GetLongLong() << std::endl;
+					X::Value val = pTensor1->GetDataWithIndices(indices);
+					std::cout << "it_proc_scaler_add, get Val ="<< val.GetLongLong() << std::endl;
+					val += input2;
+					std::cout << "it_proc_scaler_add, set Val ="<< val.GetLongLong() << std::endl;
+					pRetVal->SetDataWithIndices(indices, val);
+				};
+				//std::tie (bIsAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
+				//if (!bIsAddable)
+				//	return;
 				pTensor1->IterateAll(it_proc_scaler_add);
-		
 			}
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
+				std::cout << "In tensor_cpu.h::Add(), 1 is not a tensor, 2 is a tensor" << std::endl;
 				if (!IsNum(input1))	//the other must be a number
 					return;
 				pTensor1 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
-				std::tie (bIsAddable, bIsNum) = IsNumAddable(*pTensor1, input1);
-				if (!bIsAddable)
-					return;
 				pRetVal->CreateBaseOnTensor(pTensor1);
+				//std::tie (bIsAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
+				//if (!bIsAddable)
+				//	return;
+				auto it_proc_scaler_add = [pTensor1, input2, pRetVal](std::vector<long long>& indices)
+				{
+					std::cout << "it_proc_scaler_add, begin " << std::endl;
+					X::Value val = pTensor1->GetDataWithIndices(indices);
+					std::cout << "it_proc_scaler_add, get Val ="<< val.GetLongLong() << std::endl;
+					val += input2;
+					std::cout << "it_proc_scaler_add, set Val ="<< val.GetLongLong() << std::endl;
+					pRetVal->SetDataWithIndices(indices, val);
+				};
 				pTensor1->IterateAll(it_proc_scaler_add);
 			}
 			else  //both tensors
 			{
 				pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 				pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
-				std::tie (bIsAddable, bIsNum) = IsTensorAddable(*pTensor1, *pTensor2);
+				pRetVal->CreateBaseOnTensor(pTensor1);
+
+				auto it_proc_tensor_add = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices)
+				{
+					X::Value val = pTensor1->GetDataWithIndices(indices);
+					X::Value val_operand = pTensor2->GetDataWithIndices(indices);
+					val += val_operand;
+					std::cout << "In it_proc_tensor_add(), new val ="<< val.GetLongLong() << std::endl;
+					pRetVal->SetDataWithIndices(indices, val);
+				};
+
+				std::cout << "In tensor_cpu.h::Add(), both are tensors" << std::endl;
+				bIsAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
+				std::cout << "In tensor_cpu.h::Add(), IsTensorAddableNew = " << bIsAddable << std::endl;
+
 				if (bIsAddable)
 				{
-						pTensor1->IterateAll(it_proc_tensor_add);
-						pRetVal->IterateAll(it_proc_tensor_display);				
-
+					pTensor1->IterateAll(it_proc_tensor_add);
+					//pRetVal->IterateAll(it_proc_tensor_display);				
 				} //bIsAddable
 			}
-		
-
-
 		}
 		void Minus(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
+			std::cout << "In tensor_cpu.h::Minus() =" << std::endl;
+
 			bool bIsAddable =false;
 			bool bIsNum = false;
 			//input1 and retVal must be tensors
@@ -404,6 +452,7 @@ namespace X
 		}
 		void Multiply(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
+			std::cout << "In tensor_cpu.h::Multiply() =" << std::endl;
 			bool bIsAddable =false;
 			bool bIsNum = false;
 			//input1 and retVal must be tensors
@@ -530,6 +579,7 @@ namespace X
 		}
 		void Divide(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
+			std::cout << "In tensor_cpu.h::Divide() =" << std::endl;
 			bool bIsAddable =false;
 			bool bIsNum = false;
 			//input1 and retVal must be tensors
