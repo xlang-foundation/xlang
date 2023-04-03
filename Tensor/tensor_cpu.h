@@ -299,6 +299,9 @@ namespace X
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
 			std::cout << "In tensor_cpu.h::Add()" << std::endl;
+			std::cout << "In tensor_cpu.h::Add(), input1 is " << input1.ToString()<< std::endl;
+			std::cout << "In tensor_cpu.h::Add(), input2 is " << input2.ToString()<< std::endl;
+			std::cout << "In tensor_cpu.h::Add(), input2 (long long) is " << input2.GetLongLong()<< std::endl;
 
 			//if (!IsTensor(retVal)) {
 			//	std::cout << "In tensor_cpu.h::Add(),returned" << std::endl;
@@ -327,6 +330,9 @@ namespace X
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
 				std::cout << "In tensor_cpu.h::Add(), input1 is tensor, input2 is not a tensor" << std::endl;
+				//std::cout << "In tensor_cpu.h::Add(), input2 is " << input2.ToString()<< std::endl;
+				auto temp_input2 = input2.ToString();
+
 				if (!IsNum(input2))	//the other must be a number
 					return;
 				X::Value input = input2;
@@ -422,6 +428,10 @@ namespace X
 		void Minus(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "In tensor_cpu.h::Minus()" << std::endl;
+			std::cout << "In tensor_cpu.h::Minus()" << std::endl;
+			std::cout << "In tensor_cpu.h::Minus(), input1 is " << input1.ToString()<< std::endl;
+			std::cout << "In tensor_cpu.h::Minus(), input2 is " << input2.ToString()<< std::endl;
+			std::cout << "In tensor_cpu.h::Minus(), input2 (long long) is " << input2.GetLongLong()<< std::endl;
 
 			//if (!IsTensor(retVal)) {
 			//	std::cout << "In tensor_cpu.h::Minus(),returned" << std::endl;
