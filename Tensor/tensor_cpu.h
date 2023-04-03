@@ -287,8 +287,8 @@ namespace X
 			int dim_size1, dim_size2;
 			for (auto i = 0; i < MIN_VAL(dim_count1, dim_count2); i++) // i = 0, 1 
 			{
-				dim_size1 = t1.GetDimSize(dim_count1 - i - 1); // dims[3], dims[2]
-				dim_size2 = t2.GetDimSize(dim_count2 - i - 1); // dims[1], dims[0]
+				dim_size1 = t1.GetDimSize(dim_count1 - i - 1); // dims[3] = 7, dims[2] = 6
+				dim_size2 = t2.GetDimSize(dim_count2 - i - 1); // dims[1] = 7, dims[0] = 6
 				if (dim_size1 != dim_size2)
 					return false;
 			}	
@@ -331,6 +331,7 @@ namespace X
 				std::cout << "In tensor_cpu.h::Add(), 1 is tensor, 2 is not a tensor" << std::endl;
 				if (!IsNum(input2))	//the other must be a number
 					return;
+					
 				pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor1);
 				auto it_proc_scaler_add = [pTensor1, input2, pRetVal](std::vector<long long>& indices)
@@ -385,6 +386,7 @@ namespace X
 				{
 					X::Value val = pTensor1->GetDataWithIndices(indices);
 					X::Value val_operand = pTensor2->GetDataWithIndices(indices);
+					std::cout << "In it_proc_tensor_add(),val1="<<val.GetLongLong()<<",val2 ="<<val_operand.GetLongLong()<< std::endl;
 					val += val_operand;
 					std::cout << "In it_proc_tensor_add(), new val ="<< val.GetLongLong() << std::endl;
 					pRetVal->SetDataWithIndices(indices, val);
@@ -400,6 +402,7 @@ namespace X
 					long long tot_element_count_1 = pTensor1->GetCount();
 					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
+					std::cout << "In Add(), total elements in t1 ="<<tot_element_count_1<<", total elements in t2 ="<<tot_element_count_2<< std::endl;
 
 					while (cur_element_count_1 < tot_element_count_1)
 					{
@@ -408,14 +411,17 @@ namespace X
 							//indice2.clear();
 							cur_element_count_2 = 0;
 						}
+						std::cout << "In Add(), current index1 ="<<cur_element_count_1<<", current index2 ="<<cur_element_count_2<< std::endl;
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor1->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
-						val_ret = val_1 + val_2;
-						pRetVal->SetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize(), val_ret);
+						std::cout << "In Add(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
+						val_ret = val_1.GetLongLong() + val_2.GetLongLong();
+						std::cout << "In Add(), new val1="<<val_ret.GetLongLong()<< std::endl;
+						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
 						cur_element_count_1 ++;
 						cur_element_count_2 ++;
 
-						pTensor1->IterateAll(it_proc_tensor_add);
+						//pTensor1->IterateAll(it_proc_tensor_add);
 					}
 
 				} //bIsAddable
