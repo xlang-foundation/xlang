@@ -295,7 +295,6 @@ namespace X
 			return true;
 		}
 
-
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
 			std::cout << "In tensor_cpu.h::Add()" << std::endl;
@@ -331,12 +330,10 @@ namespace X
 			{
 				std::cout << "In tensor_cpu.h::Add(), input1 is tensor, input2 is not a tensor" << std::endl;
 				//std::cout << "In tensor_cpu.h::Add(), input2 is " << input2.ToString()<< std::endl;
-				auto temp_input2 = input2.ToString();
 
 				if (!IsNum(input2))	//the other must be a number
 					return;
 				X::Value input = input2;
-
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
@@ -356,7 +353,6 @@ namespace X
 				if (!IsNum(input1))	//the other must be a number
 					return;
 				X::Value input = input1;
-
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
@@ -373,10 +369,8 @@ namespace X
 			}
 			else  //both tensors
 			{
-				X::Data::Tensor* pTensor1 = 0;
-				X::Data::Tensor* pTensor2 = 0; 
-				pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
-				pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+				X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
+				X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 				long long tot_element_count_1 = pTensor1->GetCount();
 				long long tot_element_count_2 = pTensor2->GetCount();
 				if (tot_element_count_1 < tot_element_count_2)//make sure T1 has more elements than T2
@@ -408,7 +402,8 @@ namespace X
 
 					while (cur_element_count_1 < tot_element_count_1)
 					{
-						if (cur_element_count_1 % tot_element_count_2 == 0) 
+						//if (cur_element_count_1 % tot_element_count_2 == 0) 
+						if (cur_element_count_2 == tot_element_count_2) 
 						{
 							cur_element_count_2 = 0;
 						}
@@ -500,10 +495,8 @@ namespace X
 			}
 			else  //both tensors
 			{
-				X::Data::Tensor* pTensor1 = 0;
-				X::Data::Tensor* pTensor2 = 0; 
-				pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
-				pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+				X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
+				X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 				long long tot_element_count_1 = pTensor1->GetCount();
 				long long tot_element_count_2 = pTensor2->GetCount();
 				if (tot_element_count_1 < tot_element_count_2)//make sure T1 has more elements than T2
@@ -535,7 +528,8 @@ namespace X
 
 					while (cur_element_count_1 < tot_element_count_1)
 					{
-						if (cur_element_count_1 % tot_element_count_2 == 0) 
+						//if (cur_element_count_1 % tot_element_count_2 == 0) 
+						if (cur_element_count_2 == tot_element_count_2) 
 						{
 							cur_element_count_2 = 0;
 						}

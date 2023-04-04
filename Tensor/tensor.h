@@ -58,20 +58,6 @@ namespace X
 			TensorDataType m_dataType;
 
 		public:
-			long long CalcItemOffset(std::vector<long long>& indices)
-			{
-				long long off = m_startItemOffet;
-				int idxCnt = (int)indices.size();
-				//std::cout << "In CalcItemOffset(), indices.size = " << idxCnt << std::endl;
-				for (int i = 0; i < idxCnt; i++)
-				{
-					auto& dim = m_dims[i];
-					off += (indices[i] + dim.offset) * dim.dimProd;
-					//std::cout << "In CalcItemOffset(),indices[" <<i<<"]="<<indices[i] << std::endl;
-				}
-				off *= GetItemSize();
-				return off;
-			}
 			long long GetItemSize()
 			{
 				long long size = 1;
@@ -112,7 +98,6 @@ namespace X
 				}
 				return size;
 			}
-		public:
 			long long GetCount()
 			{
 				long long itemCnt = 1;
@@ -130,6 +115,20 @@ namespace X
 					itemCnt *= d.stride;
 				}
 				return itemCnt;
+			}
+			long long CalcItemOffset(std::vector<long long>& indices)
+			{
+				long long off = m_startItemOffet;
+				int idxCnt = (int)indices.size();
+				//std::cout << "In CalcItemOffset(), indices.size = " << idxCnt << std::endl;
+				for (int i = 0; i < idxCnt; i++)
+				{
+					auto& dim = m_dims[i];
+					off += (indices[i] + dim.offset) * dim.dimProd;
+					//std::cout << "In CalcItemOffset(),indices[" <<i<<"]="<<indices[i] << std::endl;
+				}
+				off *= GetItemSize();
+				return off;
 			}
 			void DeepCopyDataFromList(List* pList,std::vector<long long>& indices,int level);
 			void CalcDimProd()
