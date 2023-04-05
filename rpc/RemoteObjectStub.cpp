@@ -329,7 +329,7 @@ namespace X
 		stream >> objId;
 		stream >> memId;
 		stream >> argNum;
-		X::ARGS params;
+		X::ARGS params(argNum);
 		for (int i = 0; i < argNum; i++)
 		{
 			X::Value v;
@@ -345,7 +345,7 @@ namespace X
 			stream >> key;
 			X::Value v;
 			v.FromBytes(&stream);
-			kwParams.emplace(std::make_pair(key, v));
+			kwParams.Add(key.c_str(), v,true);
 		}
 		bool haveTrailer = false;
 		stream >> haveTrailer;

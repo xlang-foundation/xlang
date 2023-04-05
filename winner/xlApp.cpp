@@ -36,7 +36,7 @@ namespace XWin
 			if (callable.IsObject())
 			{
 				X::Value retVal;
-				X::ARGS args;
+				X::ARGS args(0);
 				X::KWARGS kwargs;
 				callable.GetObj()->Call(nullptr,nullptr,args, kwargs, retVal);
 			}

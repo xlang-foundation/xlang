@@ -24,7 +24,7 @@ namespace X
 	class XPackage;
 	struct HandlerInfo
 	{
-		EventHandler Handler = nullptr;
+		EventHandler Handler;
 		X::Data::Function* FuncHandler = nullptr;
 		int OwnerThreadId = -1;
 		long cookie = 0;
@@ -40,7 +40,7 @@ namespace X
 		Locker m_lockHandlers;
 		long m_lastCookie = 0;
 		std::vector<HandlerInfo> m_handlers;
-		OnEventHandlerChanged m_changeHandler =nullptr;
+		OnEventHandlerChanged m_changeHandler;
 	public:
 		inline void Fire(int evtIndex,X::ARGS& params, X::KWARGS& kwargs)
 		{
@@ -122,9 +122,9 @@ namespace X
 			int threadId = -1;
 			for (auto& k : kwargs)
 			{
-				if (k.first == "tid")
+				if (k.Match("tid"))
 				{
-					threadId = (int)k.second.GetLongLong();
+					threadId = (int)k.val.GetLongLong();
 					if (!inMain)
 					{//for event excuted in main thread,
 					 //need to pass tid, not main thread,
@@ -132,7 +132,7 @@ namespace X
 						continue;
 					}
 				}
-				Set(k.first.c_str(), k.second);
+				Set(k.key, k.val);
 			}
 			if (inMain)
 			{
@@ -217,7 +217,8 @@ namespace X
 			int tid = (int)GetThreadID();
 			m_lockHandlers.Lock();
 			long cookie = ++m_lastCookie;
-			m_handlers.push_back(HandlerInfo{ nullptr,pFuncHandler,tid,cookie });
+			EventHandler dummy;
+			m_handlers.push_back(HandlerInfo{ dummy,pFuncHandler,tid,cookie });
 			cnt = (int)m_handlers.size();
 			m_lockHandlers.Unlock();
 			if (m_changeHandler)

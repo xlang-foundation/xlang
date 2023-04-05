@@ -1,6 +1,5 @@
 #ifndef _X_LOAD_H_
 #define _X_LOAD_H_
-#include <vector>
 #include <string>
 
 namespace X

@@ -177,7 +177,7 @@ namespace X
 			{
 				return true;
 			}
-			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, ARGS& vals) override
+			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 			{
 				long long offset = (long long)pos;
 				if (offset >= mMap.size())

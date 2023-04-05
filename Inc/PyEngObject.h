@@ -247,6 +247,15 @@ public:
 			g_pPyHost->KVSet(m_p,(Object)kv.first,(Object)kv.second);
 		}
 	}
+	template <typename VALUE>
+	Object(X::Port::StringMap<VALUE> kvMap)
+	{
+		m_p = g_pPyHost->NewDict();
+		for (auto kv : kvMap)
+		{
+			g_pPyHost->KVSet(m_p, (Object)kv.key, (Object)kv.val);
+		}
+	}
 	template <typename KEY, typename VALUE>
 	Object(std::unordered_map <KEY, VALUE> kvMap)
 	{
@@ -580,8 +589,7 @@ public:
 	}
 	bool Contain(const char* key)
 	{
-		std::string strKey(key);
-		return g_pPyHost->DictContain(m_p, strKey);
+		return g_pPyHost->DictContain(m_p, key);
 	}
 	bool Enum(long long& pos, Object& key, Object& val)
 	{
@@ -620,8 +628,17 @@ public:
 	{
 		m_data = (ItemData_Type*)g_pPyHost->GetDataPtr(m_p);
 		int itemType = 0;
-		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize,
-			m_dims, m_strides);
+		X::Port::vector<unsigned long long> dims;
+		X::Port::vector<unsigned long long> strides;
+		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize,dims, strides);
+		for (auto d:dims)
+		{
+			m_dims.push_back(d);
+		}
+		for (auto d : strides)
+		{
+			m_strides.push_back(d);
+		}
 		m_itemdatatype = (JIT_DATA_TYPES)itemType;
 		int a = 1;
 		m_dimProd.push_back(a);
@@ -649,8 +666,17 @@ public:
 		SetItemType();
 		m_p = g_pPyHost->NewArray(nd, dims, (int)m_itemdatatype);
 		int itemType = 0;
-		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize,
-			m_dims, m_strides);
+		X::Port::vector<unsigned long long> vecDims(0);
+		X::Port::vector<unsigned long long> vecStrides(0);
+		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize, vecDims, vecStrides);
+		for (auto d : vecDims)
+		{
+			m_dims.push_back(d);
+		}
+		for (auto d : vecStrides)
+		{
+			m_strides.push_back(d);
+		}
 		m_data = (ItemData_Type*)g_pPyHost->GetDataPtr(m_p);
 	}
 	Array(int nd, unsigned long long* dims,int itemDataType)
@@ -670,8 +696,17 @@ public:
 		m_itemdatatype = (JIT_DATA_TYPES)itemDataType;
 		m_p = g_pPyHost->NewArray(nd, dims, (int)m_itemdatatype);
 		int itemType = 0;
-		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize,
-			m_dims, m_strides);
+		X::Port::vector<unsigned long long> vecDims(0);
+		X::Port::vector<unsigned long long> vecStrides(0);
+		g_pPyHost->GetDataDesc(m_p, itemType, m_itemsize, vecDims, vecStrides);
+		for (auto d : vecDims)
+		{
+			m_dims.push_back(d);
+		}
+		for (auto d : vecStrides)
+		{
+			m_strides.push_back(d);
+		}
 		m_data = (ItemData_Type*)g_pPyHost->GetDataPtr(m_p);
 	}
 	template<typename... index>

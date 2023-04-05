@@ -2,10 +2,9 @@
 #define _X_HOST_H_
 #include "value.h"
 #include "xload.h"
-#include <vector>
 #include <string>
-#include <unordered_map>
-#include <functional>
+#include "xport.h"
+
 
 namespace X
 {
@@ -31,20 +30,21 @@ namespace X
 	typedef XPackage* (*PackageCreator)();
 	typedef void (*PackageCleanup)(void* pContextObj);
 	typedef XProxy* (*XProxyCreator)(std::string& url);
-	typedef std::vector<X::Value> ARGS;
-	typedef std::unordered_map<std::string, X::Value> KWARGS;
+	typedef X::Port::vector<X::Value> ARGS;
+	typedef X::Port::StringMap<X::Value> KWARGS;
+	
 	//todo: evaluate performace change to use std::function
 	typedef bool (*U_FUNC_bak) (XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, Value& retValue);
 	typedef void(*CLEANUP)();
-	using U_FUNC = std::function<bool(XRuntime* rt, XObj* pContext,
+	using U_FUNC = X::Port::Function<bool(XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, Value& retValue)>;
-	using U_FUNC_EX = std::function<bool(XRuntime* rt, XObj* pContext,
+	using U_FUNC_EX = X::Port::Function<bool(XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, X::Value& trailer,Value& retValue)>;
-	using EventHandler = std::function<void(XRuntime* rt, XObj* pContext,
+	using EventHandler = X::Port::Function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;
-	using OnEventHandlerChanged = std::function<void(bool AddOrRemove,int handlerCnt)>;
-	using Tensor_OperatorHandler = std::function<void(X::ARGS& inputs, X::Value& retVal)>;
+	using OnEventHandlerChanged = X::Port::Function<void(bool AddOrRemove,int handlerCnt)>;
+	using Tensor_OperatorHandler = X::Port::Function<void(X::ARGS& inputs, X::Value& retVal)>;
 
 	typedef bool (*UI_THREAD_RUN_HANDLER) (X::Value& callable,void* pContext);
 

@@ -30,9 +30,9 @@ namespace X
 							{
 								bool bPost = false;
 								auto kwIt = kwParams.find("post");
-								if (kwIt != kwParams.end())
+								if (kwIt)
 								{
-									bPost = (bool)kwIt->second;
+									bPost = (bool)kwIt->val;
 								}
 								if (params.size() > 0)
 								{

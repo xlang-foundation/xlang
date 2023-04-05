@@ -137,7 +137,7 @@ namespace X
 					continue;
 				}
 				XlangRuntime* rt = X::G::I().Threading(nullptr);
-				X::ARGS params;
+				X::ARGS params(0);
 				X::KWARGS kwargs;
 				X::Value retValue;
 				params.push_back(v);

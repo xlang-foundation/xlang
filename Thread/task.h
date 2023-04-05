@@ -20,6 +20,10 @@ namespace X
 		X::Value m_retValue;
 
 	public:
+		Task() :m_params(0)
+		{
+
+		}
 		void SetTaskPool(X::Value& pool)
 		{
 			m_taskPool = pool;

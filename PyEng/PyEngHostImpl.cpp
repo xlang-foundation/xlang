@@ -1,8 +1,22 @@
 #include "PyEngHostImpl.h"
 #include "utility.h"
-#include "PyEngObject.h"
 #include "PyFunc.h"
 #include <iostream>
+
+//trick for win32 compile to avoid using pythonnn_d.lib
+#ifdef _DEBUG
+#undef _DEBUG
+extern "C"
+{
+#include "Python.h"
+}
+#define _DEBUG
+#else
+extern "C"
+{
+#include "Python.h"
+}
+#endif
 
 //each cpp file has to call this line
 extern "C"
@@ -20,6 +34,7 @@ static void LoadNumpy()
 	}
 }
 #define SURE_NUMPY_API() LoadNumpy()
+
 
 GrusPyEngHost::GrusPyEngHost()
 {
@@ -403,13 +418,13 @@ PyEngObjectPtr GrusPyEngHost::Import(const char* key)
 //and the from part above is the module name
 bool GrusPyEngHost::ImportWithFromList(
 	const char* moduleName,
-	std::vector<std::string>& fromList,
-	std::vector<PyEngObjectPtr>& subs)
+	X::Port::vector<const char*>& fromList,
+	X::Port::vector<PyEngObjectPtr>& subs)
 {
 	PyObject* pFromArgs = PyTuple_New(fromList.size());
 	for (auto& from : fromList)
 	{
-		auto* pFromOb = PyUnicode_FromString(from.c_str());
+		auto* pFromOb = PyUnicode_FromString(from);
 		PyTuple_SetItem(pFromArgs, 0, pFromOb);
 	}
 	auto* pModule = PyImport_ImportModuleLevel(moduleName,
@@ -419,9 +434,10 @@ bool GrusPyEngHost::ImportWithFromList(
 	if (pModule)
 	{
 		bOK = true;
+		subs.resize((int)fromList.size());
 		for (auto& from : fromList)
 		{
-			auto* pSubOb = PyObject_GetAttrString(pModule, from.c_str());//New reference
+			auto* pSubOb = PyObject_GetAttrString(pModule, from);//New reference
 			subs.push_back(pSubOb);//if it is null, also pust into list for caller
 		}
 	}
@@ -460,8 +476,8 @@ void* GrusPyEngHost::GetDataPtr(PyEngObjectPtr obj)
 
 bool GrusPyEngHost::GetDataDesc(PyEngObjectPtr obj,
 	int& itemDataType, int& itemSize,
-	std::vector<unsigned long long>& dims,
-	std::vector<unsigned long long>& strides)
+	X::Port::vector<unsigned long long>& dims,
+	X::Port::vector<unsigned long long>& strides)
 {
 	SURE_NUMPY_API();
 	PyObject* pOb = (PyObject*)obj;
@@ -471,7 +487,10 @@ bool GrusPyEngHost::GetDataDesc(PyEngObjectPtr obj,
 		PyArray_Descr* pDesc = PyArray_DTYPE(pArrayOb);
 		itemSize = (int)PyArray_ITEMSIZE(pArrayOb);
 		itemDataType = pDesc->type_num;
-		for (int i = 0; i < PyArray_NDIM(pArrayOb); i++)
+		auto dimSize = PyArray_NDIM(pArrayOb);
+		dims.resize(dimSize);
+		strides.resize(dimSize);
+		for (int i = 0; i < dimSize; i++)
 		{
 			dims.push_back(PyArray_DIM(pArrayOb,i));
 			strides.push_back(PyArray_STRIDE(pArrayOb,i));
@@ -488,10 +507,13 @@ bool GrusPyEngHost::IsDict(PyEngObjectPtr obj)
 	return PyDict_Check((PyObject*)obj);
 }
 bool GrusPyEngHost::DictContain(PyEngObjectPtr dict,
-	std::string& strKey)
+	const char* strKey)
 {
-	return PyDict_Check((PyObject*)dict) &&
-		PyDict_Contains((PyObject*)dict, (PyObject*)PyEng::Object(strKey).ref());
+	PyObject* keyOb = (PyObject*)g_pPyHost->from_str(strKey);
+	bool bContain = PyDict_Check((PyObject*)dict) &&
+		PyDict_Contains((PyObject*)dict, keyOb);
+	g_pPyHost->Release(keyOb);
+	return bContain;
 }
 bool GrusPyEngHost::IsArray(PyEngObjectPtr obj)
 {

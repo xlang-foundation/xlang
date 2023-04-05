@@ -75,7 +75,7 @@ namespace X
 						if (pObj->GetType() == ObjType::Function)
 						{
 							auto* pFuncObj = dynamic_cast<Data::Function*>(pObj);
-							ARGS params;
+							ARGS params(1);
 							KWARGS kwparams;
 							params.push_back(v_l);
 							bRet = pFuncObj->Call(rt, pContext,params, kwparams, v);
@@ -110,7 +110,7 @@ namespace X
 					LValue lValue0 = nullptr;
 					bool bOK = DotProcess(rt, pContext, val_l, pairL, callList, &lValue0);
 
-					ARGS params;
+					ARGS params(0);
 					KWARGS kwParams;
 					if (R)
 					{

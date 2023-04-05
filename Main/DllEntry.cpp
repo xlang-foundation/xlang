@@ -120,10 +120,10 @@ PyEngObjectPtr Xlang_CallFunc_Impl(
 	PyEngObjectPtr args,
 	PyEngObjectPtr kwargs)
 {
-	X::ARGS xArgs;
 	X::KWARGS xKwArgs;
 	PyEng::Object pyArgs(args,true);
 	long long cnt = pyArgs.GetCount();
+	X::ARGS xArgs((int)cnt);
 	for (long long i = 0; i < cnt; i++)
 	{
 		X::Value xVal;

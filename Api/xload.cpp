@@ -26,7 +26,7 @@
 #define UNLOADLIB(handle) dlclose(handle)
 #endif
 #include <sstream>
-
+#include <vector>
 
 namespace X
 {

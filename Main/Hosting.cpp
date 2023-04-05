@@ -31,7 +31,7 @@ namespace X
 	};
 	bool Hosting::PostRunFragmentInMainThread(AST::ModuleObject* pModuleObj, std::string& code)
 	{
-		X::ARGS params0;
+		X::ARGS params0(2);
 		params0.push_back(X::Value(pModuleObj));
 		params0.push_back(X::Value(code));
 		EventSystem::I().AddEventTask([this](X::ARGS params)
@@ -315,14 +315,14 @@ namespace X
 		bool stopOnEntry = false;
 		std::string onFinishExpr;
 		auto it = kwParams.find("stopOnEntry");
-		if (it != kwParams.end())
+		if (it)
 		{
-			stopOnEntry = it->second.GetBool();
+			stopOnEntry = it->val.GetBool();
 		}
 		it = kwParams.find("onFinish");
-		if (it != kwParams.end())
+		if (it)
 		{
-			onFinishExpr = it->second.ToString();
+			onFinishExpr = it->val.ToString();
 		}
 
 		AST::Module* pTopModule = QueryModule(moduleKey);

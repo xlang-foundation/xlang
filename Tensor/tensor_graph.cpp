@@ -96,9 +96,10 @@ namespace X
 		public:
 			GraphBuildContext()
 			{
+				Tensor_OperatorHandler dummy;
 				for (int i = 0; i < (int)Tensor_Operator::Count; i++)
 				{
-					m_Handlers.push_back(nullptr);
+					m_Handlers.push_back(dummy);
 				}
 			}
 			Tensor_OperatorHandler QueryHandler(int idx)
@@ -168,7 +169,7 @@ namespace X
 						if (valFunc.IsObject())
 						{
 							XObj* pObjHandler = valFunc.GetObj();
-							X::ARGS args;
+							X::ARGS args(0);
 							X::KWARGS kwargs;
 							X::Value valTensorOp;
 							pObjHandler->Call(nullptr, pPackage, args, kwargs, valTensorOp);
@@ -254,7 +255,7 @@ namespace X
 						auto opHandler = QueryRegisteredOpHandler(pBuildContext, pContext, (int)op);
 						if (opHandler)
 						{
-							X::ARGS inputs;
+							X::ARGS inputs(2);
 							inputs.push_back(leftValue);
 							inputs.push_back(rightValue);
 							X::Value retValue(pTensor);
@@ -272,7 +273,7 @@ namespace X
 						if (pOp->IsUnaryOp())
 						{
 							auto opHandler = pOp->GetOpHandler();
-							X::ARGS inputs;
+							X::ARGS inputs(1);
 							inputs.push_back(leftValue);
 							X::Value retValue(pTensor);
 							//put this handler into runlist
@@ -291,7 +292,7 @@ namespace X
 				auto opHandler = QueryRegisteredOpHandler(pBuildContext, pContext, (int)op);
 				if (opHandler)
 				{
-					X::ARGS inputs;
+					X::ARGS inputs(2);
 					inputs.push_back(leftValue);
 					inputs.push_back(rightValue);
 					X::Value retValue(pTensor);
@@ -310,7 +311,7 @@ namespace X
 				{
 					TensorOperator* pOp = dynamic_cast<TensorOperator*>(opValue.GetObj());
 					auto opHandler = pOp->GetOpHandler();
-					X::ARGS inputs;
+					X::ARGS inputs(2);
 					inputs.push_back(leftValue_LowLevel);
 					inputs.push_back(rightValue);
 					X::Value retValue(pTensor);

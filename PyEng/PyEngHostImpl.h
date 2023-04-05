@@ -1,23 +1,6 @@
 #pragma once
 #include "singleton.h"
 #include "PyEngHost.h"
-#include "Locker.h"
-#include <unordered_map>
-
-//trick for win32 compile to avoid using pythonnn_d.lib
-#ifdef _DEBUG
-#undef _DEBUG
-extern "C"
-{
-#include "Python.h"
-}
-#define _DEBUG
-#else
-extern "C"
-{
-#include "Python.h"
-}
-#endif
 
 class GrusPyEngHost :
 	public PyEngHost,
@@ -70,8 +53,8 @@ public:
 	virtual PyEngObjectPtr NewArray(int nd, unsigned long long* dims, int itemDataType) override;
 	virtual PyEngObjectPtr Import(const char* key) override;
 	virtual bool ImportWithFromList(const char* moduleName,
-		std::vector<std::string>& fromList, 
-		std::vector<PyEngObjectPtr>& subs) override;
+		X::Port::vector<const char*>& fromList, 
+		X::Port::vector<PyEngObjectPtr>& subs) override;
 	virtual void Release(PyEngObjectPtr obj) override;
 
 	virtual int AddRef(PyEngObjectPtr obj) override;
@@ -82,8 +65,8 @@ public:
 
 	virtual bool GetDataDesc(PyEngObjectPtr obj, 
 		int& itemDataType, int& itemSize,
-		std::vector<unsigned long long>& dims, 
-		std::vector<unsigned long long>& strides) override;
+		X::Port::vector<unsigned long long>& dims, 
+		X::Port::vector<unsigned long long>& strides) override;
 
 	virtual long long to_longlong(PyEngObjectPtr pVar) override;
 	virtual PyEngObjectPtr from_longlong(long long val) override;
@@ -91,7 +74,7 @@ public:
 	virtual PyEngObjectPtr from_double(double val) override;
 	virtual bool IsNone(PyEngObjectPtr obj) override;
 	virtual bool IsDict(PyEngObjectPtr obj) override;
-	virtual bool DictContain(PyEngObjectPtr dict,std::string& strKey) override;
+	virtual bool DictContain(PyEngObjectPtr dict,const char* strKey) override;
 	virtual PyEngObjectPtr GetIter(PyEngObjectPtr obj) override;
 	virtual PyEngObjectPtr GetIterNext(PyEngObjectPtr iterator) override;
 	virtual bool IsArray(PyEngObjectPtr obj) override;

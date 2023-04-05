@@ -206,7 +206,7 @@ bool Block::RunFromLine(XRuntime* rt, XObj* pContext,
 			bool bOK = exp->Exec((XlangRuntime*)rt, action,pContext, v0);
 			if (bOK)
 			{
-				X::ARGS args_p;
+				X::ARGS args_p(1);
 				args_p.push_back(v0);
 				X::KWARGS kwArgs_p;
 				X::Value retValue_p;
@@ -309,7 +309,7 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 		{
 			if (v0.IsObject())
 			{
-				ARGS params;
+				ARGS params(0);
 				KWARGS kwParams;
 				X::Value retBoolValue;
 				if (v0.GetObj()->Call(rt, pContext, 

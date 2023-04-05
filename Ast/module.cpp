@@ -99,15 +99,18 @@ bool Module::HitBreakpoint(int line)
 	if (bHit)
 	{
 		KWARGS kwParams;
-		kwParams.emplace(std::make_pair("tid", hitSessionTid));
-		kwParams.emplace(std::make_pair("action","notify"));
+		X::Value valTid(hitSessionTid);
+		kwParams.Add("tid", valTid);
+		X::Value valAction("notify");
+		kwParams.Add("action", valAction);
 		const int online_len = 1000;
 		char strBuf[online_len];
 		SPRINTF(strBuf, online_len, "[{\"HitBreakpoint\":%d}]", line);
-		kwParams.emplace(std::make_pair("param", strBuf));
+		X::Value valParam(strBuf);
+		kwParams.Add("param", valParam);
 		std::cout << "HitBreakpoint in line:" << line << std::endl;
 		std::string evtName("devops.dbg");
-		ARGS params;
+		ARGS params(0);
 		X::EventSystem::I().Fire(nullptr,nullptr,evtName,params,kwParams);
 	}
 	return bHit;

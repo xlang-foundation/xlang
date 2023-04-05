@@ -1,4 +1,3 @@
-
-def func1(info:string):
-    print(info)
-func1("Hello Xlang")
+ num = 10
+ for i in range(num):
+   print("i=",i)

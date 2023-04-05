@@ -10,7 +10,7 @@ namespace AST
 {
 bool XClass::Call(XlangRuntime* rt,
 	XObj* pContext,
-	std::vector<Value>& params, 
+	ARGS& params, 
 	KWARGS& kwParams,
 	Value& retValue)
 {

@@ -19,7 +19,6 @@ namespace X
 			httplib::Response& res)
 		{
 			bool bHandled = false;
-			ARGS params0;
 			HttpRequest* pHttpReq = new HttpRequest((void*)&req);
 			X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq));
 
@@ -31,7 +30,7 @@ namespace X
 				std::smatch matches;
 				if (std::regex_search(url, matches, pat.rule))
 				{
-					X::ARGS params;
+					X::ARGS params(matches.size()-1+ pat.params.size());
 					for (size_t i = 1; i < matches.size(); ++i)
 					{
 						std::cout << i << ": '" << matches[i].str() << "'\n";
@@ -42,12 +41,12 @@ namespace X
 					{
 						params.push_back(param);
 					}
-					X::KWARGS kwargs;
-					kwargs.emplace(std::make_pair("req", valReq));
-					kwargs.emplace(std::make_pair("res", valResp));
+					X::KWARGS kwargs(pat.kwParams.size()+2);
+					kwargs.Add("req", valReq);
+					kwargs.Add("res", valResp);
 					for (auto& it : pat.kwParams)
 					{
-						kwargs.emplace(it);
+						kwargs.Add(it);
 					}
 					X::Value retValue;
 					bool bCallOK = pat.handler.GetObj()->Call(X::g_pXHost->GetCurrentRuntime(),
@@ -161,7 +160,7 @@ namespace X
 			{
 				if (pHandler)
 				{
-					ARGS params0;
+					ARGS params0(2);
 					HttpRequest* pHttpReq = new HttpRequest((void*)&req);
 					params0.push_back(X::Value(pHttpReq->APISET().GetProxy(pHttpReq)));
 
@@ -215,7 +214,7 @@ namespace X
 			X::Value& p0 = params[0];
 			if (p0.IsObject() && p0.GetObj()->GetType() == ObjType::Expr)
 			{
-				X::ARGS params0;
+				X::ARGS params0(0);
 				X::KWARGS kwParams0;
 				X::Value exprValue;
 				if (p0.GetObj()->Call(rt, pContext, params0, kwParams0, exprValue))
@@ -227,15 +226,15 @@ namespace X
 			{
 				url = p0.ToString();
 			}
-			X::ARGS params1;
 			int p_size = (int)params.size();
+			X::ARGS params1(p_size);
 			for (int i = 1; i < p_size; i++)
 			{
 				X::Value realVal;
 				X::Value& pi = params[i];
 				if (pi.IsObject() && pi.GetObj()->GetType() == ObjType::Expr)
 				{
-					X::ARGS params0;
+					X::ARGS params0(0);
 					X::KWARGS kwParams0;
 					X::Value exprValue;
 					if (pi.GetObj()->Call(rt, pContext, params0, kwParams0, exprValue))
@@ -249,6 +248,7 @@ namespace X
 				}
 				params1.push_back(realVal);
 			}
+			params1.Close();
 			auto url_reg = TranslateUrlToReqex(url);
 			m_patters.push_back(UrlPattern{ url,std::regex(url_reg),params1,kwParams,trailer });
 

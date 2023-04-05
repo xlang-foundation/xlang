@@ -62,7 +62,7 @@ namespace AST
 			}
 		}
 		virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override;
-		inline virtual bool SetArry(XlangRuntime* rt, XObj* pContext, ARGS& ary) override
+		inline virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
 		{
 			if (ary.size() == 0)
 			{

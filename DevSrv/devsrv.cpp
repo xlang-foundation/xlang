@@ -24,8 +24,12 @@ namespace X
 				ARGS& params, KWARGS& kwParams,
 				X::Value& retValue)
 		{
-			auto action = kwParams["action"];
-			std::string strAction = action;
+			std::string strAction;
+			auto it0 = kwParams.find("action");
+			if (it0)
+			{
+				strAction = it0->val.ToString();
+			}
 			std::string notifyInfo;
 			if (strAction == "end")
 			{
@@ -33,8 +37,11 @@ namespace X
 			}
 			else if (strAction == "notify")
 			{
-				auto param = kwParams["param"];
-				notifyInfo = "$notify$" + param.ToString();
+				auto it2 = kwParams.find("param");
+				if (it2)
+				{
+					notifyInfo = "$notify$" + it2->val.ToString();
+				}
 			}
 			notiLock.Lock();
 			notis.push_back(notifyInfo);

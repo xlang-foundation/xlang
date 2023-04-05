@@ -446,15 +446,15 @@ namespace X
 			}
 			std::string strCmd;
 			auto it = kwParams.find("cmd");
-			if (it != kwParams.end())
+			if (it)
 			{
-				strCmd = it->second.ToString();
+				strCmd = it->val.ToString();
 			}
 			X::Value valParam;
 			it = kwParams.find("param");
-			if (it != kwParams.end())
+			if (it)
 			{
-				valParam = it->second;
+				valParam = it->val;
 			}
 			if (strCmd == "Stack")
 			{
@@ -485,9 +485,9 @@ namespace X
 			{
 				int frameId = 0;
 				auto it2 = kwParams.find("frameId");
-				if (it2 != kwParams.end())
+				if (it2)
 				{
-					frameId = (int)it2->second.GetLongLong();
+					frameId = (int)it2->val.GetLongLong();
 				}
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				pCmdInfo->m_frameId = frameId;
