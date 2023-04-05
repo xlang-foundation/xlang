@@ -313,12 +313,6 @@ namespace X
 			bool bIsNum = false;
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
 
-			auto it_proc_tensor_display = [pRetVal](std::vector<long long>& indices)
-			{
-				X::Value val = pRetVal->GetDataWithIndices(indices);
-				std::cout << "in Add()::it_proc_tensor_display(), item in retVal ="<< val.GetLongLong() << std::endl;
-			};
-
 			AutoLock(m_lock);
 
 			if (!IsTensor1 && !IsTensor2)
@@ -381,15 +375,6 @@ namespace X
 				}
 
 				pRetVal->CreateBaseOnTensor(pTensor1);
-				auto it_proc_tensor_add = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices)
-				{
-					X::Value val = pTensor1->GetDataWithIndices(indices);
-					X::Value val_operand = pTensor2->GetDataWithIndices(indices);
-					std::cout << "In it_proc_tensor_add(),val1="<<val.GetLongLong()<<",val2 ="<<val_operand.GetLongLong()<< std::endl;
-					val += val_operand;
-					std::cout << "In it_proc_tensor_add(), new val ="<< val.GetLongLong() << std::endl;
-					pRetVal->SetDataWithIndices(indices, val);
-				};
 				bIsAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
 				std::cout << "In tensor_cpu.h::Add(), IsTensorAddableNew = " << bIsAddable << std::endl;
 				if (bIsAddable)
@@ -418,8 +403,9 @@ namespace X
 						cur_element_count_2 ++;
 					}
 				} //bIsAddable
-			}
-		}
+			} // both tensors
+		}// Add
+
 		void Minus(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "In tensor_cpu.h::Minus()" << std::endl;
@@ -438,12 +424,6 @@ namespace X
 			bool bIsAddable =false;
 			bool bIsNum = false;
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-
-			auto it_proc_tensor_display = [pRetVal](std::vector<long long>& indices)
-			{
-				X::Value val = pRetVal->GetDataWithIndices(indices);
-				std::cout << "in Minus()::it_proc_tensor_display(), item in retVal ="<< val.GetLongLong() << std::endl;
-			};
 
 			AutoLock(m_lock);
 
@@ -507,15 +487,6 @@ namespace X
 				}
 
 				pRetVal->CreateBaseOnTensor(pTensor1);
-				auto it_proc_tensor_minus = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices)
-				{
-					X::Value val = pTensor1->GetDataWithIndices(indices);
-					X::Value val_operand = pTensor2->GetDataWithIndices(indices);
-					std::cout << "In it_proc_tensor_Minus(),val1="<<val.GetLongLong()<<",val2 ="<<val_operand.GetLongLong()<< std::endl;
-					val -= val_operand;
-					std::cout << "In it_proc_tensor_Minus(), new val ="<< val.GetLongLong() << std::endl;
-					pRetVal->SetDataWithIndices(indices, val);
-				};
 				bIsAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
 				std::cout << "In tensor_cpu.h::Minus(), IsTensorAddableNew = " << bIsAddable << std::endl;
 				if (bIsAddable)
@@ -544,11 +515,193 @@ namespace X
 						cur_element_count_2 ++;
 					}
 				} //bIsAddable
-			}
-
-		}
+			}//both tensors
+		} // Minus
 
 		void Multiply(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		{
+			bool IsTensor1 = IsTensor (input1);
+			bool IsTensor2 = IsTensor (input2);
+			bool bIsAddable =false;
+			bool bIsNum = false;
+			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
+
+			AutoLock(m_lock);
+
+			if (!IsTensor1 && !IsTensor2)
+			{
+				std::cout << "In tensor_cpu.h::Multiply(), none is tensor, returned 2 =" << std::endl;
+				return;  //todo, error handling
+			}
+			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
+			{
+				std::cout << "In tensor_cpu.h::Multiply(), input1 is tensor, input2 is not a tensor" << std::endl;
+				//std::cout << "In tensor_cpu.h::Multiply(), input2 is " << input2.ToString()<< std::endl;
+				if (!IsNum(input2))	//the other must be a number
+					return;
+				X::Value input = input2;
+				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
+				pRetVal->CreateBaseOnTensor(pTensor);
+				auto it_proc_scaler_add = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				{
+					X::Value val = pTensor->GetDataWithIndices(indices);
+					val *= input;
+					pRetVal->SetDataWithIndices(indices, val);
+				};
+				//std::tie (bIsAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
+				//if (!bIsAddable)
+				//	return;
+				pTensor->IterateAll(it_proc_scaler_add);
+			}
+			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
+				std::cout << "In tensor_cpu.h::Multiply(), input1 is not a tensor, input2 is a tensor" << std::endl;
+				if (!IsNum(input1))	//the other must be a number
+					return;
+				X::Value input = input1;
+				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+				pRetVal->CreateBaseOnTensor(pTensor);
+				auto it_proc_scaler_add = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				{
+					X::Value val = pTensor->GetDataWithIndices(indices);
+					val *= input;
+					pRetVal->SetDataWithIndices(indices, val);
+				};
+				//std::tie (bIsAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
+				//if (!bIsAddable)
+				//	return;
+				pTensor->IterateAll(it_proc_scaler_add);
+			}
+			else  //both tensors
+			{
+				X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
+				X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+				long long tot_element_count_1 = pTensor1->GetCount();
+				long long tot_element_count_2 = pTensor2->GetCount();
+				if (tot_element_count_1 < tot_element_count_2)//make sure T1 has more elements than T2
+				{	
+					X::Data::Tensor* temp_t = pTensor1;
+					pTensor1 = pTensor2;
+					pTensor2 = temp_t;
+				}
+				pRetVal->CreateBaseOnTensor(pTensor1);
+				bIsAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
+				std::cout << "In tensor_cpu.h::Multiply(), IsTensorAddableNew = " << bIsAddable << std::endl;
+				if (bIsAddable)
+				{
+					X::Value val_1, val_2, val_ret;
+					long long tot_element_count_1 = pTensor1->GetCount();
+					long long tot_element_count_2 = pTensor2->GetCount();
+					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
+					std::cout << "In Multiply(), total elements in t1 ="<<tot_element_count_1<<", total elements in t2 ="<<tot_element_count_2<< std::endl;
+
+					while (cur_element_count_1 < tot_element_count_1)
+					{
+						//if (cur_element_count_1 % tot_element_count_2 == 0) 
+						if (cur_element_count_2 == tot_element_count_2) 
+						{
+							cur_element_count_2 = 0;
+						}
+						std::cout << "In Multiply(), current index1 ="<<cur_element_count_1<<", current index2 ="<<cur_element_count_2<< std::endl;
+						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
+						val_2 = pTensor1->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
+						std::cout << "In Multiply(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
+						val_ret = val_1.GetLongLong() * val_2.GetLongLong();
+						std::cout << "In Multiply(), new val1="<<val_ret.GetLongLong()<< std::endl;
+						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						cur_element_count_1 ++;
+						cur_element_count_2 ++;
+					}
+				} //bIsAddable
+				else 
+				{//tensor only, verified in IsAddable()
+					X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
+					X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+					auto it_proc_tensor_mul = [pTensor1, pTensor2, pRetVal]()
+					{
+						std::cout << "In it_proc_tensor_mul()"<< std::endl;
+						//Matrix1 (m,n), Matrix2 (u,v), n = u, after production, new Matrix shape (m,v)
+						int m = pTensor1->GetDims()[0].size; //rows of matrix1
+						int n = pTensor1->GetDims()[1].size; //columns of matrix1
+						int u = pTensor2->GetDims()[0].size; //rows of matrix2
+						int v = pTensor2->GetDims()[1].size; //columns of matrix2
+						int i, j, k;
+						X::Value val_1, val_2, val;
+						std::vector<long long> indices1, indices2, indices;
+						indices.resize(2);
+						indices1.resize(2);
+						indices2.resize(2);
+						for ( i = 0; i < m; i++) {
+							for (j = 0; j < v; j ++) {
+								indices[0] = i;
+								indices[1] = j;
+								val = 0;
+								for (k =0; k<n; k++) { //c(i,j) = a(i,0)*b(0,j)+ a(i,1)*b(1,j)+ ...+a(i,n-1)*b(n-1,j)
+									indices1[0] = i;
+									indices1[1] = k;
+									indices2[0] = k;
+									indices2[1] = j;
+									val_1 = pTensor1->GetDataWithIndices(indices1);
+									val_2 = pTensor2->GetDataWithIndices(indices2);								
+									val += val_1.GetLongLong() * val_2.GetLongLong();
+									std::cout<<"i="<<i<<",j="<<j<<",k="<<k<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
+								}
+								std::cout<<"i="<<i<<",j="<<j<<",val="<<val.GetLongLong()<< std::endl;
+								pRetVal->SetDataWithIndices(indices, val);
+							}
+						}
+					};
+					auto it_proc_tensor_mul_vector = [pTensor1, pTensor2, pRetVal]()
+					{
+						std::cout << "In it_proc_tensor_mul_vector()"<< std::endl;
+						//Input 1 - Matrix (m,n), Input2 - vector (n), result is a linear map vector(m)
+						int m = pTensor1->GetDims()[0].size; //rows of matrix2
+						int n = pTensor1->GetDims()[1].size; //columns of matrix2
+						int v = pTensor2->GetDims()[0].size; //vector
+						if (n!=v)  //To do, error handling
+							return;
+
+						std::vector<int> dims;
+						dims.push_back(m);
+						pRetVal->SetShape(dims);
+
+						int i, j;
+						X::Value val_1, val_2, val;
+						std::vector<long long> indices1, indices2, indices;
+						indices.resize(1);
+						indices1.resize(2);
+						indices2.resize(1);
+
+						for (i = 0; i < m; i ++) {
+							indices[0] = i;
+							val = 0;
+							for ( j = 0; j < n; j++) {//Ret(i) = sigma {matrix[i,j]*Vector[j]}
+								indices1[0] = i;
+								indices1[1] = j;
+								indices2[0] = j;
+								val_1 = pTensor1->GetDataWithIndices(indices1);
+								val_2 = pTensor2->GetDataWithIndices(indices2);								
+								val += val_1.GetLongLong() * val_2.GetLongLong();
+								std::cout<<"i="<<i<<",j="<<j<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
+							}
+							pRetVal->SetDataWithIndices(indices, val);
+							std::cout<<"After Set data, i="<<i<<",val="<<val.GetLongLong()<< std::endl;
+						}
+					};
+
+					if (pTensor1->GetDimCount() == 2 && pTensor2->GetDimCount() == 2) //both are 2D matrixes 
+						it_proc_tensor_mul();
+					else if (pTensor1->GetDimCount() == 1 && pTensor2->GetDimCount() == 2)
+						it_proc_tensor_mul_vector();
+					else if (pTensor1->GetDimCount() == 2 && pTensor2->GetDimCount() == 1)
+						it_proc_tensor_mul_vector();
+					else
+						std::cout<<"Tensor multiplication can't be performed"<< std::endl;
+			
+				}// matrix 
+			} // both tensors
+		} //Multiply
+
+		void MultiplyOld(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "In tensor_cpu.h::Multiply() =" << std::endl;
 			bool bIsAddable =false;
