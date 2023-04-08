@@ -2,6 +2,7 @@
 
 #include <string.h> //for memcpy
 #include <utility>
+
 /*
  Xlang API will cross Shared Library boundary, so avoid to use STL
  this head file include replacement of STL
@@ -39,6 +40,10 @@ namespace X
 			destroy_fn_t destroy_f;
 			char* data_ptr =nullptr;
 			size_t data_size=0;
+
+			//for debug
+			int m_duplicatedCount = 1;
+			Function* copy_from = nullptr;
 		public:
 			Function()
 				: invoke_f(nullptr)
@@ -64,6 +69,8 @@ namespace X
 				, destroy_f(rhs.destroy_f)
 				, data_size(rhs.data_size)
 			{
+				m_duplicatedCount = rhs.m_duplicatedCount + 1;
+				copy_from = (Function*)&rhs;
 				if (this->invoke_f)
 				{
 					this->data_ptr = new char[this->data_size];
@@ -76,6 +83,8 @@ namespace X
 			}
 			inline void operator = (const Function& v)
 			{
+				copy_from = (Function*)&v;
+				m_duplicatedCount = v.m_duplicatedCount + 1;
 				invoke_f = v.invoke_f;
 				construct_f = v.construct_f;
 				destroy_f = v.destroy_f;
@@ -92,6 +101,7 @@ namespace X
 				{
 					this->destroy_f(this->data_ptr);
 					delete data_ptr;
+					data_ptr = nullptr;
 				}
 			}
 			R operator()(Args... args) const

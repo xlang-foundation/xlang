@@ -35,26 +35,30 @@ namespace X
 			}
 			void Init()
 			{
+				char* pTest100 = new char[7000];
 				m_stackFrame = new AST::StackFrame(this);
 				m_stackFrame->SetVarCount(3);
-
+				char* pTest101 = new char[70];
+				char* pTest2 = new char[7000];
 				std::string strName;
 				{
+					char* pTest3 = new char[7000];
 					strName = "remove";
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"remove(index)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								List* pObj = dynamic_cast<List*>(pContext);
-								long long idx = params[0];
-								pObj->Remove(idx);
-								retValue = Value(true);
-								return true;
-							}));
-					auto* pFuncObj = new Function(extFunc);
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						long long idx = params[0];
+						pObj->Remove(idx);
+						retValue = Value(true);
+						return true;
+					};
+					char* pTest = new char[7000];
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = nullptr;// new AST::ExternFunc(strName, "remove(index)", func);
+					auto* pFuncObj = new X::Data::Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
 					Value funcVal(pFuncObj);
@@ -120,17 +124,23 @@ namespace X
 				return true;
 			}
 		};
-		static ListScope _listScope;
+		static ListScope* _listScope = nullptr;
 		void List::cleanup()
 		{
-			_listScope.clean();
+			_listScope->clean();
+			delete _listScope;
+			_listScope = nullptr;
 		}
 		List::List() :
 			XList(0),
 			Object()
 		{
 			m_t = ObjType::List;
-			m_bases.push_back(&_listScope);
+			if (_listScope == nullptr)
+			{
+				_listScope = new ListScope();
+			}
+			m_bases.push_back(_listScope);
 
 		}
 		bool List::Call(XRuntime* rt, XObj* pContext,

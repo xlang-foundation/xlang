@@ -75,15 +75,21 @@ namespace X
 				return true;
 			}
 		};
-		static DictScope _dictScope;
+		static DictScope* _dictScope = nullptr;
 		void Dict::cleanup()
 		{
-			_dictScope.clean();
+			_dictScope->clean();
+			delete _dictScope;
+			_dictScope = nullptr;
 		}
 		Dict::Dict() :XDict(0)
 		{
 			m_t = ObjType::Dict;
-			m_bases.push_back(&_dictScope);
+			if (_dictScope == nullptr)
+			{
+				_dictScope = new DictScope();
+			}
+			m_bases.push_back(_dictScope);
 		}
 		List* Dict::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,

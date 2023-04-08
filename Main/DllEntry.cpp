@@ -28,6 +28,7 @@
 #include "future.h"
 #include "tensor.h"
 #include "utility.h"
+#include "set.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -335,6 +336,7 @@ void XLangStaticUnload()
 	X::Data::Dict::cleanup();
 	X::Data::Tensor::cleanup();
 	X::Data::Future::cleanup();
+	X::Data::Function::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 	Hosting::I().Cleanup();
 	G::I().Check();
@@ -348,6 +350,7 @@ void XLangUnload()
 	X::Data::Str::cleanup();
 	X::Data::List::cleanup();
 	X::Data::Dict::cleanup();
+	X::Data::mSet::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 
 	if (g_pXload->GetConfig().enablePython)

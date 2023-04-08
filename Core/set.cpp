@@ -121,17 +121,26 @@ namespace X
 				return true;
 			}
 		};
-		static SetScope _SetScope;
+		static SetScope* _SetScope = nullptr;
 		void mSet::cleanup()
 		{
-			_SetScope.clean();
+			if (_SetScope)
+			{
+				_SetScope->clean();
+				delete _SetScope;
+				_SetScope = nullptr;
+			}
 		}
 		mSet::mSet() :
 			XSet(0),
 			Object()
 		{
 			m_t = ObjType::Set;
-			m_bases.push_back(&_SetScope);
+			if (_SetScope == nullptr)
+			{
+				_SetScope = new SetScope();
+			}
+			m_bases.push_back(_SetScope);
 
 		}
 		bool mSet::Call(XRuntime* rt, XObj* pContext,

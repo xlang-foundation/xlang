@@ -61,23 +61,29 @@ namespace X
 				return nullptr;
 			}
 		};
-		static FunctionOp _function_op;
+		static FunctionOp* _function_op = nullptr;
 		void Function::cleanup()
 		{
-			_function_op.clean();
+			_function_op->clean();
+			delete _function_op;
+			_function_op = nullptr;
 		}
 		void Function::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_function_op);
+			if (_function_op == nullptr)
+			{
+				_function_op = new FunctionOp();
+			}
+			bases.push_back(_function_op);
 		}
 		int Function::QueryMethod(const char* name, bool* pKeepRawParams)
 		{
-			return _function_op.QueryMethod(name);
+			return _function_op->QueryMethod(name);
 		}
 		bool Function::GetIndexValue(int idx, Value& v)
 		{
-			return _function_op.Get(nullptr, nullptr, idx, v);
+			return _function_op->Get(nullptr, nullptr, idx, v);
 		}
 		Function::Function(AST::Func* p, bool bOwnIt)
 		{

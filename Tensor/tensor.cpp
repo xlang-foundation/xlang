@@ -212,10 +212,12 @@ namespace X
 				return true;
 			}
 		};
-		static TensorScope _TensorScope;
+		static TensorScope* _TensorScope = nullptr;
 		void Tensor::cleanup()
 		{
-			_TensorScope.clean();
+			_TensorScope->clean();
+			delete _TensorScope;
+			_TensorScope = nullptr;
 		}
 
 		Tensor::Tensor():XTensor(0),
@@ -581,11 +583,15 @@ namespace X
 			//SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
-		AST::Scope* Tensor::GetBaseScope() { return &_TensorScope; }
+		AST::Scope* Tensor::GetBaseScope() { return _TensorScope; }
 		void Tensor::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_TensorScope);
+			if (_TensorScope == nullptr)
+			{
+				_TensorScope = new TensorScope();
+			}
+			bases.push_back(_TensorScope);
 		}
 		bool Tensor::Multiply(const X::Value& r, X::Value& retVal)
 		{

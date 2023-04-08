@@ -70,9 +70,9 @@ namespace X
 		virtual XPackage* CreatePackage(APISetBase* pAPISet,void* pRealObj) = 0;
 		virtual XPackage* CreatePackageProxy(XPackage* pPackage,void* pRealObj) = 0;
 		virtual XEvent* CreateXEvent(const char* name) = 0;
-		virtual XFunc* CreateFunction(const char* name, U_FUNC func,X::XObj* pContext=nullptr) = 0;
-		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext = nullptr) = 0;
-		virtual XProp* CreateProp(const char* name, U_FUNC setter, U_FUNC getter) = 0;
+		virtual XFunc* CreateFunction(const char* name, U_FUNC& func,X::XObj* pContext=nullptr) = 0;
+		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX& func, X::XObj* pContext = nullptr) = 0;
+		virtual XProp* CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter) = 0;
 		virtual std::string StringifyString(const std::string& str) = 0;
 		virtual XBin* CreateBin(char* data, size_t size,bool bOwnData) = 0;
 		virtual X::XLStream* CreateStream(const char* buf=nullptr,long long size=0) = 0;
