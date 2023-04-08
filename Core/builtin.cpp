@@ -43,6 +43,7 @@
 #include "taskpool.h"
 #include "tensor.h"
 #include "tensor_cpu.h"
+#include "xport.h"
 
 namespace X
 {
@@ -95,7 +96,7 @@ bool U_Print(X::XRuntime* rt, X::XObj* pContext,
 			X::XObj* pObj = outputPrimitive.primitive.GetObj();
 			if (pObj)
 			{
-				X::ARGS params_p;
+				X::ARGS params_p(0);
 				X::KWARGS kwargs_p;
 				params_p.push_back(allOut);
 				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,
@@ -200,9 +201,9 @@ bool U_Run(X::XRuntime* rt, X::XObj* pContext,
 	else
 	{
 		auto it = kwParams.find("ModuleKey");
-		if (it != kwParams.end())
+		if (it != nullptr)
 		{
-			key = it->second.GetLongLong();
+			key = it->val.GetLongLong();
 		}
 	}
 	return X::Hosting::I().Run(key, kwParams, retValue);
@@ -251,8 +252,11 @@ bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 			{
 				unsigned long long mKey = 0;
-				auto valKey = kwParams["ModuleKey"];
-				mKey = valKey.GetLongLong();
+				auto it = kwParams.find("ModuleKey");
+				if (it)
+				{
+					mKey = it->val.GetLongLong();
+				}
 				X::Hosting::I().Run(mKey, kwParams, retValue);
 			});
 	}
@@ -261,7 +265,7 @@ bool U_RunInMain(X::XRuntime* rt, X::XObj* pContext,
 	{
 		key = params[0].GetLongLong();
 		X::Value valKey(key);
-		kwParams.emplace(std::make_pair("ModuleKey", valKey));
+		kwParams.Add("ModuleKey", valKey);
 	}
 	pEvt->FireInMain(rt,pContext,params,kwParams);
 	pEvt->DecRef();
@@ -317,18 +321,18 @@ bool U_Sleep(X::XRuntime* rt, X::XObj* pContext,
 		else
 		{
 			auto it = kwParams.find("time");
-			if (it != kwParams.end())
+			if (it)
 			{
-				t = it->second.GetLongLong();
+				t = it->val.GetLongLong();
 			}
 		}
 	}
 	else
 	{//must put into kwargs with time=t
 		auto it = kwParams.find("time");
-		if (it != kwParams.end())
+		if (it)
 		{
-			t = it->second.GetLongLong();
+			t = it->val.GetLongLong();
 		}
 	}
 	MS_SLEEP((int)t);
@@ -374,7 +378,7 @@ bool U_GetModuleFromKey(X::XRuntime* rt, X::XObj* pContext,
 	{
 		key = params[0].GetLongLong();
 		X::Value valKey(key);
-		kwParams.emplace(std::make_pair("ModuleKey", valKey));
+		kwParams.Add("ModuleKey", valKey);
 	}
 	if (key == 0)
 	{
@@ -544,8 +548,12 @@ bool U_ToString(X::XRuntime* rt, XObj* pContext,
 		retValue = X::Value(false);
 		return false;
 	}
-	auto formatFlag = kwParams["format"];
-	bool bFmt = formatFlag.IsTrue();
+	bool bFmt = false;
+	auto it = kwParams.find("format");
+	if (it)
+	{
+		bFmt = it->val.IsTrue();
+	}
 	auto retStr = params[0].ToString(bFmt);
 	retValue = X::Value(retStr);
 	return true;
@@ -642,7 +650,7 @@ bool U_TaskRun(X::XRuntime* rt, XObj* pContext,
 {
 	//if params has a TaskPool, will get it
 	X::Value taskPool;
-	ARGS params0;
+	ARGS params0(params.size());
 	for (auto& p : params)
 	{
 		if (p.IsObject() && p.GetObj()->GetType() == ObjType::TaskPool)
@@ -654,15 +662,15 @@ bool U_TaskRun(X::XRuntime* rt, XObj* pContext,
 			params0.push_back(p);
 		}
 	}
+	params0.Close();
 	if (taskPool.IsInvalid())
 	{
-		std::string keyPool("TaskPool");
-		auto it = kwParams.find(keyPool);
-		if (it != kwParams.end())
+		auto it = kwParams.find("TaskPool");
+		if (it)
 		{
-			if (it->second.IsObject())
+			if (it->val.IsObject())
 			{
-				taskPool = it->second;
+				taskPool = it->val;
 			}
 		}
 	}
@@ -762,19 +770,24 @@ bool U_FireEvent(X::XRuntime* rt, XObj* pContext,
 		return false;
 	}
 	std::string name = params[0].ToString();
-	params.erase(params.begin());
+	ARGS newParams(params.size()-1);
+	for (int i = 1; i < params.size(); i++)
+	{
+		newParams.push_back(params[i]);
+	}
 	bool inMain = false;
-	if (kwParams.find("tid") == kwParams.end())
+	if (!kwParams.find("tid"))
 	{
 		int tid = (int)GetThreadID();
-		kwParams.emplace(std::make_pair("tid", tid));
+		X::Value varTid(tid);
+		kwParams.Add("tid", varTid);
 	}
 	auto it = kwParams.find("mainthread");
-	if (it != kwParams.end())
+	if (it)
 	{
-		inMain = it->second.IsTrue();
+		inMain = it->val.IsTrue();
 	}
-	X::EventSystem::I().Fire(rt,pContext,name, params,kwParams, inMain);
+	X::EventSystem::I().Fire(rt,pContext,name, newParams,kwParams, inMain);
 	retValue = X::Value(true);
 	return true;
 }
@@ -925,7 +938,7 @@ bool U_Each(X::XRuntime* rt, XObj* pContext,
 		X::AST::Func* pFunc = pFuncObj->GetFunc();
 
 		X::Value retVal;
-		ARGS params_to_cb;
+		ARGS params_to_cb(params.size()-1+2);
 		params_to_cb.push_back(keyOrIdx);
 		params_to_cb.push_back(val);
 		for (int i = 1; i < params.size(); i++)
@@ -935,7 +948,7 @@ bool U_Each(X::XRuntime* rt, XObj* pContext,
 		pFunc->Call(rt, pContext, params_to_cb, kwParams, retVal);
 		return retVal;
 	};
-	ARGS params_proc;
+	ARGS params_proc(params.size());
 
 	X::Data::Object* pObj = nullptr;
 	if (pContext == nullptr)
@@ -964,6 +977,7 @@ bool U_Each(X::XRuntime* rt, XObj* pContext,
 			params_proc.push_back(params[i]);
 		}
 	}
+	params_proc.Close();
 	if (pObj)
 	{
 		pObj->Iterate(rt, pContext,proc, params_proc, kwParams,retValue);
@@ -1178,19 +1192,17 @@ bool U_CreateTaskPool(X::XRuntime* rt, XObj* pContext,
 	}
 	else
 	{
-		std::string keyNum("max_task_num");
-		auto it = kwParams.find(keyNum);
-		if (it != kwParams.end())
+		auto it = kwParams.find("max_task_num");
+		if (it)
 		{
-			num = (int)it->second;
+			num = (int)it->val;
 		}
 	}
 	bool bRunInUI = false;
-	std::string keyInUIThread("run_in_ui");
-	auto it = kwParams.find(keyInUIThread);
-	if (it != kwParams.end())
+	auto it = kwParams.find("run_in_ui");
+	if (it)
 	{
-		bRunInUI = (bool)it->second;
+		bRunInUI = (bool)it->val;
 	}
 	pPool->SetThreadNum(num);
 	pPool->SetInUIThread(bRunInUI);
@@ -1231,9 +1243,9 @@ bool U_CreateTensor(X::XRuntime* rt, XObj* pContext,
 
 	std::string name;
 	auto it = kwParams.find(Tensor_Name);
-	if (it != kwParams.end())
+	if (it)
 	{
-		name = it->second.ToString();
+		name = it->val.ToString();
 	}
 	pTensor->SetName(name);
 	//if there is init data, will skip shape
@@ -1245,9 +1257,9 @@ bool U_CreateTensor(X::XRuntime* rt, XObj* pContext,
 
 	int dtype = (int)X::TensorDataType::FLOAT;
 	it = kwParams.find(Tensor_DType);
-	if (it != kwParams.end())
+	if (it)
 	{
-		dtype = (int)it->second;
+		dtype = (int)it->val;
 	}
 	else if(initData.IsValid())
 	{
@@ -1268,17 +1280,18 @@ bool U_CreateTensor(X::XRuntime* rt, XObj* pContext,
 		}
 	}
 	pTensor->SetDataType((X::TensorDataType)dtype);
-	std::vector<int> shapes;
+	Port::vector<int> shapes(0);
 	it = kwParams.find(Tensor_Shape);
-	if (it != kwParams.end())
+	if (it)
 	{
-		auto val = it->second;
+		auto val = it->val;
 		if (val.IsObject())
 		{
 			if (val.GetObj()->GetType() == ObjType::List)
 			{
 				List valList(val);
 				auto size = valList.Size();
+				shapes.resize(size);
 				for (long long i = 0; i < size; i++)
 				{
 					shapes.push_back((int)valList->Get(i));

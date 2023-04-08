@@ -30,9 +30,9 @@ namespace X
 							{
 								bool bPost = false;
 								auto kwIt = kwParams.find("post");
-								if (kwIt != kwParams.end())
+								if (kwIt)
 								{
-									bPost = (bool)kwIt->second;
+									bPost = (bool)kwIt->val;
 								}
 								if (params.size() > 0)
 								{
@@ -123,16 +123,20 @@ namespace X
 				return true;
 			}
 		};
-		static ModuleOp _module_op;
+		static ModuleOp* _module_op = nullptr;
 		void ModuleObject::GetBaseScopes(std::vector<Scope*>& bases)
 		{
+			if (_module_op == nullptr)
+			{
+				_module_op = new ModuleOp();
+			}
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_module_op);
+			bases.push_back(_module_op);
 			bases.push_back(m_pModule);
 		}
 		int ModuleObject::QueryMethod(const char* name, bool* pKeepRawParams)
 		{
-			int idx = _module_op.QueryMethod(name);
+			int idx = _module_op->QueryMethod(name);
 			if (idx >= 0)
 			{
 				return -2-idx;//start from -2,then -3...
@@ -147,7 +151,7 @@ namespace X
 		{
 			if (idx <= -2)
 			{
-				return _module_op.Get(nullptr, nullptr, -idx-2, v);
+				return _module_op->Get(nullptr, nullptr, -idx-2, v);
 			}
 			else
 			{
@@ -156,7 +160,9 @@ namespace X
 		}
 		void ModuleObject::cleanup()
 		{
-			_module_op.clean();
+			_module_op->clean();
+			delete _module_op;
+			_module_op = nullptr;
 		}
 		Scope* ModuleObject::GetParentScope()
 		{

@@ -11,11 +11,13 @@ namespace X
 		{
 			if (e->m_type != ObType::List)
 			{
+				params.resize(1);
 				params.push_back(Value(new Data::Expr(e)));
 			}
 			else
 			{
 				auto& list = (dynamic_cast<List*>(e))->GetList();
+				params.resize(list.size());
 				for (auto i : list)
 				{
 					params.push_back(Value(new Data::Expr(i)));
@@ -62,7 +64,7 @@ namespace X
 					{
 						return bOK;
 					}
-					ARGS params;
+					ARGS params(0);
 					KWARGS kwParams;
 					auto* pairR = pPairOp->GetR();
 					if (pairR)

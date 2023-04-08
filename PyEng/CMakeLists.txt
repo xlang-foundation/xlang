@@ -57,7 +57,6 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VER
 FILE(GLOB SRC *.cpp)
 FILE(GLOB Out_SRC ../utils/utility.cpp)
 
-
 add_library(${PROJECT_NAME} 
 	SHARED
     ${Out_SRC}

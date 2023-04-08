@@ -49,7 +49,7 @@ namespace X
 				bool bOK = false;
 				if (m_getter)
 				{
-					ARGS param;
+					ARGS param(0);
 					KWARGS kwParam;
 					bOK = m_getter->Call(rt0, pContext, param, kwParam, v);
 				}

@@ -121,17 +121,26 @@ namespace X
 				return true;
 			}
 		};
-		static SetScope _SetScope;
+		static SetScope* _SetScope = nullptr;
 		void mSet::cleanup()
 		{
-			_SetScope.clean();
+			if (_SetScope)
+			{
+				_SetScope->clean();
+				delete _SetScope;
+				_SetScope = nullptr;
+			}
 		}
 		mSet::mSet() :
 			XSet(0),
 			Object()
 		{
 			m_t = ObjType::Set;
-			m_bases.push_back(&_SetScope);
+			if (_SetScope == nullptr)
+			{
+				_SetScope = new SetScope();
+			}
+			m_bases.push_back(_SetScope);
 
 		}
 		bool mSet::Call(XRuntime* rt, XObj* pContext,
@@ -143,9 +152,9 @@ namespace X
 			//memory allocation
 			for (auto it : kwParams)
 			{
-				if (it.first == "size")
+				if (it.Match("size"))
 				{
-					long long size = it.second.GetLongLong();
+					long long size = it.val.GetLongLong();
 					AutoLock(m_lock);
 					m_data.resize(size);
 					break;
@@ -153,9 +162,9 @@ namespace X
 			}
 			for (auto it : kwParams)
 			{
-				if (it.first == "init")
+				if (it.Match("init"))
 				{
-					auto v0 = it.second;
+					auto v0 = it.val;
 					if (v0.IsObject() 
 						&& v0.GetObj()->GetType() ==ObjType::Str
 						&& v0.ToString().find("rand")==0)

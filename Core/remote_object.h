@@ -101,7 +101,7 @@ namespace X
 		bool SetValue(XlangRuntime* rt, XObj* pContext,X::Value& val)
 		{
 			X::Value retValue;
-			ARGS params;
+			ARGS params(1);
 			params.push_back(val);
 			KWARGS kwParams;
 			X::Value dummyTrailer;
@@ -128,7 +128,7 @@ namespace X
 			//as trailer
 			if (m_KeepRawParams && params.size() >0)
 			{
-				ARGS params0;
+				ARGS params0(params.size() - 1);
 				for (int i = 0; i < (params.size() - 1);i++)
 				{
 					params0.push_back(params[i]);

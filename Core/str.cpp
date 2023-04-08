@@ -276,14 +276,20 @@ namespace X
 			}
 		};
 
-		static StrOp _strop;
+		static StrOp* _strop =nullptr;
 		void Str::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
-			bases.push_back(&_strop);
+			if (_strop == nullptr)
+			{
+				_strop = new StrOp();
+			}
+			bases.push_back(_strop);
 		}
 		void Str::cleanup()
 		{
-			_strop.clean();
+			_strop->clean();
+			delete _strop;
+			_strop = nullptr;
 		}
 		bool Str::Iterate(X::XRuntime* rt, XObj* pContext,
 			IterateProc proc, ARGS& params, KWARGS& kwParams,

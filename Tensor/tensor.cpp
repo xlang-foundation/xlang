@@ -83,39 +83,39 @@ namespace X
 									long long llMax = LLONG_MAX;
 									TensorDataType dt = TensorDataType::DOUBLE;
 									auto it = kwParams.find(Tensor_DType);
-									if (it != kwParams.end())
+									if (it)
 									{
-										dt = (TensorDataType)(int)it->second;
+										dt = (TensorDataType)(int)it->val;
 									}
 									if (dt == TensorDataType::DOUBLE)
 									{
 										it = kwParams.find(Tensor_Max);
-										if (it != kwParams.end())
+										if (it)
 										{
-											dMax = (double)it->second;
+											dMax = (double)it->val;
 										}
 										it = kwParams.find(Tensor_Min);
-										if (it != kwParams.end())
+										if (it)
 										{
-											dMin = (double)it->second;
+											dMin = (double)it->val;
 										}
 									}
 									else
 									{
 										it = kwParams.find(Tensor_Max);
-										if (it != kwParams.end())
+										if (it)
 										{
-											llMax = (long long)it->second;
+											llMax = (long long)it->val;
 										}
 										it = kwParams.find(Tensor_Min);
-										if (it != kwParams.end())
+										if (it)
 										{
-											llMin = (long long)it->second;
+											llMin = (long long)it->val;
 										}
 									}
 									Tensor* pNewTensor = new Tensor();
 									pNewTensor->SetDataType(dt);
-									std::vector<int> dims(axesCnt);
+									Port::vector<int> dims(axesCnt);
 									for (int i = 0; i < axesCnt; i++)
 									{
 										dims[i]=(int)pList->Get(i);
@@ -212,10 +212,12 @@ namespace X
 				return true;
 			}
 		};
-		static TensorScope _TensorScope;
+		static TensorScope* _TensorScope = nullptr;
 		void Tensor::cleanup()
 		{
-			_TensorScope.clean();
+			_TensorScope->clean();
+			delete _TensorScope;
+			_TensorScope = nullptr;
 		}
 
 		Tensor::Tensor():XTensor(0),
@@ -581,11 +583,15 @@ namespace X
 			//SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
-		AST::Scope* Tensor::GetBaseScope() { return &_TensorScope; }
+		AST::Scope* Tensor::GetBaseScope() { return _TensorScope; }
 		void Tensor::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_TensorScope);
+			if (_TensorScope == nullptr)
+			{
+				_TensorScope = new TensorScope();
+			}
+			bases.push_back(_TensorScope);
 		}
 		bool Tensor::Multiply(const X::Value& r, X::Value& retVal)
 		{

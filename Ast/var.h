@@ -64,7 +64,7 @@ public:
 		}
 		return m_scope->Set(rt, pContext, Index, v);
 	}
-	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, ARGS& ary) override
+	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
 	{
 		//only take the first one 
 		if (ary.size() == 0)

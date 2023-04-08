@@ -32,7 +32,7 @@ bool PairOp::ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValu
 		}
 		else
 		{
-			ARGS params;
+			ARGS params(0);
 			KWARGS kwParams;
 			if (R)
 			{

@@ -57,3 +57,6 @@ srv.listen("::1", 8088) if use this , nodejs can't connect to
 change to srv.listen("::", 8088) or
 srv.listen("0.0.0.0", 8088)
 is OK
+# 4/7/2023
+find a bug: if xlang use c++ Compiler such as ver 20, and other app embeded xlang
+with lower version compiler, will crash, it happened on Linux

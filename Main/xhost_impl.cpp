@@ -115,7 +115,7 @@ namespace X
 		pEvt->IncRef();
 		return dynamic_cast<XEvent*>(pEvt);
 	}
-	XFunc* XHost_Impl::CreateFunction(const char* name,U_FUNC func, X::XObj* pContext)
+	XFunc* XHost_Impl::CreateFunction(const char* name,U_FUNC& func, X::XObj* pContext)
 	{
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"",func, pContext);
@@ -123,7 +123,7 @@ namespace X
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
-	XFunc* XHost_Impl::CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext)
+	XFunc* XHost_Impl::CreateFunctionEx(const char* name, U_FUNC_EX& func, X::XObj* pContext)
 	{
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
@@ -131,7 +131,7 @@ namespace X
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
-	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC setter, U_FUNC getter)
+	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter)
 	{
 		std::string strName(name);
 		std::string strSetName = "set_" + strName;

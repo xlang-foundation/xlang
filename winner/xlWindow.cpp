@@ -149,7 +149,7 @@ namespace XWin
             if (evt == BN_CLICKED)
             {
                 Button* pButton = (Button*)GetWindowLongPtr(childWnd, GWLP_USERDATA);
-                X::ARGS params;
+                X::ARGS params(0);
                 X::KWARGS kwargs;
                 if (pButton)
                 {
@@ -169,7 +169,7 @@ namespace XWin
             if (pWindow)
             {
                 pWindow->OnSize();
-                X::ARGS params;
+                X::ARGS params(0);
                 X::KWARGS kwargs;
                 pWindow->Fire(1, params, kwargs);
             }
@@ -177,7 +177,7 @@ namespace XWin
         break;
         case WM_PAINT:
         {
-            X::ARGS params;
+            X::ARGS params(0);
             X::KWARGS kwargs;
 #if 0
             pWindow->Fire(0, params, kwargs);

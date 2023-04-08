@@ -50,7 +50,7 @@ namespace X
 		return oId;
 	}
 	X::Value XLangProxy::UpdateItemValue(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
-		std::vector<std::string>& IdList, int id_offset,
+		Port::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val)
 	{
 		if (!CheckConnectReadyStatus())
@@ -80,7 +80,7 @@ namespace X
 		return retVal;
 	}
 	bool XLangProxy::FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
-		std::vector<std::string>& IdList, int id_offset,
+		Port::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count, Value& retList)
 	{
 		if (!CheckConnectReadyStatus())
@@ -210,8 +210,8 @@ namespace X
 		stream << (int)kwParams.size();
 		for (auto& kw : kwParams)
 		{
-			stream << kw.first;
-			kw.second.ToBytes(&stream);
+			stream << kw.key;
+			kw.val.ToBytes(&stream);
 		}
 		//set flag to show if there is a trailer
 		stream << trailer.IsValid();

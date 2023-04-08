@@ -55,7 +55,7 @@ public:
 	virtual void Add(Expression* item) override;
 	virtual bool Call(XlangRuntime* rt,
 		XObj* pContext,
-		std::vector<Value>& params,
+		ARGS& params,
 		KWARGS& kwParams,
 		Value& retValue);
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,

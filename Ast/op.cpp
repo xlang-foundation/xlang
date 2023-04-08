@@ -143,6 +143,8 @@ namespace AST
 
 	bool Operator::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
 	{
+		std::vector<X::Value> vecParam;
+		std::vector<std::pair<std::string,X::Value>> vecKwParam;
 		auto proc = [&](Expression* i)
 		{
 			bool bOK = true;
@@ -158,7 +160,7 @@ namespace AST
 				bOK = valExpr->Exec(rt,action,nullptr, v0);
 				if (bOK)
 				{
-					kwParams.emplace(std::make_pair(strVarName, v0));
+					vecKwParam.push_back(std::make_pair(strVarName,v0));
 				}
 			}
 			else
@@ -168,7 +170,7 @@ namespace AST
 				bOK = i->Exec(rt,action,nullptr, v0);
 				if (bOK)
 				{
-					params.push_back(v0);
+					vecParam.push_back(v0);
 				}
 			}
 			return bOK;
@@ -188,6 +190,22 @@ namespace AST
 				{
 					break;
 				}
+			}
+		}
+		if (vecParam.size() > 0)
+		{
+			params.resize(vecParam.size());
+			for (auto& v : vecParam)
+			{
+				params.push_back(v);
+			}
+		}
+		if (vecKwParam.size() > 0)
+		{
+			kwParams.resize(vecKwParam.size());
+			for (auto& item : vecKwParam)
+			{
+				kwParams.Add(item.first.c_str(), item.second, true);
 			}
 		}
 		return bOK;

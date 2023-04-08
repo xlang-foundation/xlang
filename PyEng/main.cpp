@@ -1,5 +1,21 @@
 #include "PyEngHostImpl.h"
-#include "PyEngObject.h"
+#include <string>
+
+//trick for win32 compile to avoid using pythonnn_d.lib
+#ifdef _DEBUG
+#undef _DEBUG
+extern "C"
+{
+#include "Python.h"
+}
+#define _DEBUG
+#else
+extern "C"
+{
+#include "Python.h"
+}
+#endif
+
 #if (WIN32)
 #define X_EXPORT __declspec(dllexport) 
 #else
@@ -9,7 +25,6 @@
 
 
 PyEngHost* g_pPyHost = nullptr;
-
 
 enum class TraceEvent
 {
@@ -26,9 +41,13 @@ int x_Py_tracefunc(PyObject* self,
 	struct _frame* frame,
 	int event, PyObject* args)
 {
-	PyEng::Object objFrame(frame,true);
-	auto fileName = (std::string)objFrame["f_code.co_filename"];
-	int line = (int)objFrame["f_lineno"];
+	auto coFileName = g_pPyHost->Get(frame, "f_code.co_filename");
+	auto szFileName = g_pPyHost->to_str(coFileName);
+	std::string fileName(szFileName);
+	g_pPyHost->Free(szFileName);
+	auto pyLineOb = g_pPyHost->Get(frame, "f_lineno");
+	int line = g_pPyHost->to_int(pyLineOb);
+
 	TraceEvent te = (TraceEvent)event;
 	switch (te)
 	{
