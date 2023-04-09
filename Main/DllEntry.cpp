@@ -373,14 +373,15 @@ void XLangUnload()
 	G::I().Check();
 	DestoryXHost();
 }
-
+}
 #if __TEST__
 #include "yaml_parser.h"
 
 void test()
 {
 	std::string strData;
-	bool bOK = LoadStringFromFile(g_pXload->GetConfig().fileName, strData);
+	std::string strFileName(X::g_pXload->GetConfig().fileName);
+	bool bOK = LoadStringFromFile(strFileName, strData);
 	X::Text::YamlParser yml;
 	yml.Init();
 	yml.LoadFromString((char*)strData.c_str(), (int)strData.size());
@@ -388,7 +389,6 @@ void test()
 
 }
 #endif
-}
 
 /**********************Dll Entry************************************/
 #if (WIN32)
@@ -431,7 +431,6 @@ extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 	const char* engPath = new char[strFolderPath.length() + 1];
 	memcpy((char*)engPath, strFolderPath.data(), strFolderPath.length() + 1);
 	X::g_pXload->GetConfig().xlangEnginePath = engPath;
-
 	auto* pXHost = X::CreatXHost();
 	*pXHostHolder = pXHost;
 }

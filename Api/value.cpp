@@ -25,7 +25,7 @@ namespace X
 		}
 		else if (right.IsObject())
 		{
-			done = right.GetObj()->Multiply(this, ret);
+			done = right.GetObj()->Multiply(*this, ret);
 		}
 		if (!done)
 		{
@@ -45,7 +45,7 @@ namespace X
 		}
 		else if (right.IsObject())
 		{
-			done = right.GetObj()->Add(this, ret);
+			done = right.GetObj()->Add(*this, ret);
 		}
 		if (!done)
 		{
@@ -73,7 +73,7 @@ namespace X
 		else if (right.IsObject())
 		{
 			//for case:this Value is not an object, just right side is an object
-			done = right.GetObj()->Minuend(this, ret);
+			done = right.GetObj()->Minuend(*this, ret);
 		}
 		if (!done)
 		{

@@ -287,9 +287,12 @@ namespace X
 		}
 		void Str::cleanup()
 		{
-			_strop->clean();
-			delete _strop;
-			_strop = nullptr;
+			if (_strop)
+			{
+				_strop->clean();
+				delete _strop;
+				_strop = nullptr;
+			}
 		}
 		bool Str::Iterate(X::XRuntime* rt, XObj* pContext,
 			IterateProc proc, ARGS& params, KWARGS& kwParams,

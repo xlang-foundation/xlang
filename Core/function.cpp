@@ -64,9 +64,12 @@ namespace X
 		static FunctionOp* _function_op = nullptr;
 		void Function::cleanup()
 		{
-			_function_op->clean();
-			delete _function_op;
-			_function_op = nullptr;
+			if (_function_op)
+			{
+				_function_op->clean();
+				delete _function_op;
+				_function_op = nullptr;
+			}
 		}
 		void Function::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{

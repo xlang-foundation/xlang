@@ -25,6 +25,7 @@
 #include "BlockStream.h"
 #include "xpackage.h"
 #include "json.h"
+#include "yaml.h"
 #include "html.h"
 #include "metascope.h"
 #include "attribute.h"
@@ -1317,6 +1318,7 @@ bool Builtin::RegisterInternals()
 	X::Value valBuiltinPack(pBuiltinPack);
 	X::Manager::I().Register("builtin", valBuiltinPack);
 	X::RegisterPackage<X::JsonWrapper>("json");
+	X::RegisterPackage<X::YamlWrapper>("yaml");
 	X::RegisterPackage<X::HtmlWrapper>("html");
 	X::RegisterPackage<X::DevOps::DebugService>("xdb");
 	X::RegisterPackage<X::CpuTensor>("CpuTensor");

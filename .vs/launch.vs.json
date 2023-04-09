@@ -12,7 +12,7 @@
       "args_test2": [ "C:\\ToGithub\\XF\\xlang\\test\\tensor\\test2.x" ],
       "args_simple101": [ "C:\\ToGithub\\XF\\xlang\\test\\misc\\simple101.x" ],
       "args_class_event": [ "C:\\ToGithub\\XF\\xlang\\test\\misc\\class_event.x" ],
-      "args_yaml": [ "C:\\Dev\\X\\test\\yaml_data.yml" ],
+      "args_test01": [ "C:\\ToGithub\\XF\\xlang\\Text\\test\\yaml_test.x" ],
       "argsXXXXX": [ "C:\\Dev\\X\\test\\objcount_test.x" ],
       "args-simple": [ "-enable_python", "C:\\Dev\\X\\test\\misc\\simple.x" ],
       "args_func": [ "C:\\Dev\\X\\test\\pythontest\\func_test.x" ],
