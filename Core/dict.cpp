@@ -78,9 +78,12 @@ namespace X
 		static DictScope* _dictScope = nullptr;
 		void Dict::cleanup()
 		{
-			_dictScope->clean();
-			delete _dictScope;
-			_dictScope = nullptr;
+			if (_dictScope)
+			{
+				_dictScope->clean();
+				delete _dictScope;
+				_dictScope = nullptr;
+			}
 		}
 		Dict::Dict() :XDict(0)
 		{

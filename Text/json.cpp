@@ -3,7 +3,7 @@
 #include "utility.h"
 #include "port.h"
 
-//TODO: for security, diable any funtion call inside json string or file
+//TODO: for security, disable any function call inside json string or file
 
 namespace X
 {

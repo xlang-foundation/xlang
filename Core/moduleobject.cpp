@@ -160,9 +160,12 @@ namespace X
 		}
 		void ModuleObject::cleanup()
 		{
-			_module_op->clean();
-			delete _module_op;
-			_module_op = nullptr;
+			if (_module_op)
+			{
+				_module_op->clean();
+				delete _module_op;
+				_module_op = nullptr;
+			}
 		}
 		Scope* ModuleObject::GetParentScope()
 		{

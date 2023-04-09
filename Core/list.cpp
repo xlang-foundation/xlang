@@ -127,9 +127,12 @@ namespace X
 		static ListScope* _listScope = nullptr;
 		void List::cleanup()
 		{
-			_listScope->clean();
-			delete _listScope;
-			_listScope = nullptr;
+			if (_listScope)
+			{
+				_listScope->clean();
+				delete _listScope;
+				_listScope = nullptr;
+			}
 		}
 		List::List() :
 			XList(0),
