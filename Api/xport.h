@@ -222,7 +222,7 @@ namespace X
 				T val;
 				bool ownKey = false;//if need to release key
 				int next=-1;//have same first char will be linked,but use index in m_data
-				~MapItem()
+				void Free()
 				{
 					if (ownKey && key)
 					{
@@ -290,6 +290,11 @@ namespace X
 			{
 				if (m_data)
 				{
+					for (int i = 0; i < m_size; i++)
+					{
+						auto& item = m_data[i];
+						item.Free();
+					}
 					delete[] m_data;
 				}
 			}
@@ -398,23 +403,23 @@ namespace X
 				MapItem* pMatchedItem = nullptr;
 				for (int i = 0; i < m_size; i++)
 				{
-					MapItem& item = m_data[i];
-					if (c == item.key[0])
+					MapItem* item = &m_data[i];
+					if (c == item->key[0])
 					{
-						if (item.next == -1)
+						if (item->next == -1)
 						{
-							pMatchedItem = &item;
+							pMatchedItem = item;
 							break;
 						}
 						//if there is a bucket,loop to do exact match
-						while (item.next>=0)
+						while (item->next>=0)
 						{
-							if (matchKeys(key, item.key))
+							if (matchKeys(key, item->key))
 							{
-								pMatchedItem = &item;
+								pMatchedItem = item;
 								break;
 							}
-							item = m_data[item.next];
+							item = &m_data[item->next];
 						}
 						if (pMatchedItem)
 						{

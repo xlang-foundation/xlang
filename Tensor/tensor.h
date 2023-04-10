@@ -64,7 +64,12 @@ namespace X
 				for (int i = 0; i < idxCnt; i++)
 				{
 					auto& dim = m_dims[i];
-					off += (indices[i] + dim.offset) * dim.dimProd;
+					auto newIndex = indices[i] + dim.offset;
+					if (newIndex < 0 || newIndex>=dim.stride) //todo: check with multiple slices
+					{
+						return -1;//out of range, it is valid, but will ask caller to return invalid
+					}
+					off += newIndex * dim.dimProd;
 				}
 				off *= GetItemSize();
 				return off;

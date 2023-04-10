@@ -281,20 +281,9 @@ namespace X
 						auto& idxInfo = IdxAry[i];
 						newDimInfo.offset = dimInfo.offset+idxInfo.i;
 						//stride keep same,because the memory is from the first tensor
-						long long newSize = 0;
-						if (idxInfo.j < 0 && idxInfo.i>0)
-						{
-							newSize = dimInfo.size + idxInfo.j - idxInfo.i + 1;
-						}
-						else if (idxInfo.j > 0 && idxInfo.i < 0)
-						{
-							newSize = idxInfo.j - (dimInfo.size + idxInfo.i) + 1;
-						}
-						else
-						{
-							newSize = idxInfo.j - idxInfo.i + 1;
-						}
-						newDimInfo.size = newSize;
+						//we support this way: t2 = t0[0,0,-2:2,-3:3]
+						//if index less than 0, mean out of range, just return invalid
+						newDimInfo.size = idxInfo.j - idxInfo.i + 1;;
 					}
 					else
 					{
@@ -312,6 +301,10 @@ namespace X
 		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
 		{
 			long long addr = CalcItemOffset(indices);
+			if (addr < 0)
+			{
+				return X::Value();
+			}
 			X::Value retVal;
 			char* pAddr = m_data + addr;
 			switch (m_dataType)
@@ -590,15 +583,18 @@ namespace X
 			//SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
-		AST::Scope* Tensor::GetBaseScope() { return _TensorScope; }
-		void Tensor::GetBaseScopes(std::vector<AST::Scope*>& bases)
-		{
-			Object::GetBaseScopes(bases);
+		inline AST::Scope* Tensor::GetBaseScope() 
+		{ 
 			if (_TensorScope == nullptr)
 			{
 				_TensorScope = new TensorScope();
 			}
-			bases.push_back(_TensorScope);
+			return _TensorScope;
+		}
+		void Tensor::GetBaseScopes(std::vector<AST::Scope*>& bases)
+		{
+			Object::GetBaseScopes(bases);
+			bases.push_back(GetBaseScope());
 		}
 		bool Tensor::Multiply(const X::Value& r, X::Value& retVal)
 		{
