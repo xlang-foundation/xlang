@@ -76,7 +76,7 @@ namespace X
 				auto it2 = proxyInfo.Instances.find(url);
 				if (it2 == proxyInfo.Instances.end())
 				{
-					pProxy = proxyInfo.creator(endpoint_url);
+					pProxy = proxyInfo.creator(endpoint_url.c_str());
 					proxyInfo.Instances.emplace(std::make_pair(url,pProxy));
 				}
 				else

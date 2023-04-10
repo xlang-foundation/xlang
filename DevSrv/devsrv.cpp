@@ -62,8 +62,7 @@ namespace X
 					if (X::g_pXHost)
 					{
 						X::Value retVal;
-						std::string moduleName("devops_run.x");
-						X::g_pXHost->RunCode(moduleName, code, retVal);
+						X::g_pXHost->RunCode("devops_run.x", code.c_str(),(int)code.size(), retVal);
 						if (retVal.IsObject() && retVal.GetObj()->GetType() == ObjType::Str)
 						{
 							retData = retVal.ToString();

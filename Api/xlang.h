@@ -2,7 +2,6 @@
 #define _X_LANG_H_
 
 #include <string>
-#include <exception>
 #include "value.h"
 #include "xhost.h"
 

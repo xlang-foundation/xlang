@@ -216,8 +216,7 @@ void XLangStaticRun(std::string code)
 {
 	X::Value retVal;
 	std::vector<std::string> passInParams;
-	std::string moduleName("default");
-	Hosting::I().Run(moduleName, code.c_str(),
+	Hosting::I().Run("default", code.c_str(),
 		(int)code.size(),
 		passInParams,
 		retVal);
@@ -252,7 +251,6 @@ void XLangRun()
 	if (inlineCode)
 	{
 		Value retVal;
-		std::string strFileName = "inline_code";
 		HasCode = true;
 		code = inlineCode;
 		ReplaceAll(code, "\\n", "\n");
@@ -263,7 +261,7 @@ void XLangRun()
 			std::string strPassInParams(g_pXload->GetConfig().passInParams);
 			passInParams = split(strPassInParams, '\n');
 		}
-		Hosting::I().Run(strFileName, inlineCode,
+		Hosting::I().Run("inline_code", inlineCode,
 			(int)strlen(inlineCode),
 			passInParams,
 			retVal);
@@ -304,7 +302,7 @@ void XLangRun()
 			{
 				strFileName = fileName;
 			}
-			Hosting::I().Run(strFileName, code.c_str(), (int)code.size(),
+			Hosting::I().Run(strFileName.c_str(), code.c_str(), (int)code.size(),
 				passInParams,
 				retVal);
 			if (retVal.IsValid())

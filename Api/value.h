@@ -1,7 +1,7 @@
 #pragma once
 
+//ABI check,string used here just for local usage, not cross ABI
 #include <string>
-
 #include "xport.h"
 
 namespace X 

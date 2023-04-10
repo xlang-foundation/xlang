@@ -22,7 +22,7 @@ namespace X
 	public:
 		XLangProxy();
 		~XLangProxy();
-		void SetUrl(std::string& url);
+		void SetUrl(const char* url);
 		virtual ROBJ_ID QueryRootObject(std::string& name);
 		virtual X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
 			bool& KeepRawParams);
