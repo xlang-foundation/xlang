@@ -1,6 +1,5 @@
 #include "devsrv.h"
 #include "xhost.h"
-#include "xpackage.h"
 
 #if (WIN32)
 #define X_EXPORT __declspec(dllexport) 

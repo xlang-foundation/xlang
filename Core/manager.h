@@ -19,7 +19,6 @@ namespace X
 		struct PackageInfo
 		{
 			PackageCreator creator = nullptr;
-			APISetBase* apiset = nullptr;
 			Value package;
 		};
 		struct XProxyInfo
@@ -77,7 +76,7 @@ namespace X
 				auto it2 = proxyInfo.Instances.find(url);
 				if (it2 == proxyInfo.Instances.end())
 				{
-					pProxy = proxyInfo.creator(endpoint_url);
+					pProxy = proxyInfo.creator(endpoint_url.c_str());
 					proxyInfo.Instances.emplace(std::make_pair(url,pProxy));
 				}
 				else
@@ -88,21 +87,17 @@ namespace X
 			m_proxyMapLock.Unlock();
 			return pProxy;
 		}
-		bool Register(const char* name, APISetBase* pAPISet,PackageCreator creator)
+		bool Register(const char* name,PackageCreator creator)
 		{
-			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,pAPISet,Value()}));
-			return true;
-		}
-		bool Register(const char* name, APISetBase* pAPISet,Value& objPackage)
-		{
-			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,pAPISet,objPackage }));
+			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,Value()}));
 			return true;
 		}
 		bool Register(const char* name,Value& objPackage)
 		{
-			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,nullptr,objPackage }));
+			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,objPackage }));
 			return true;
 		}
+
 		bool QueryPackage(std::string& name,Value& valPack)
 		{
 			bool bHave = false;

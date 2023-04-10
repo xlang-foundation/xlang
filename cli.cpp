@@ -16,11 +16,12 @@ namespace X
 			std::getline(std::cin, input);
 			if (input == "!code")
 			{
-				std::string code;
-				bool bOK = host->GetInteractiveCode(code);
-				if (bOK)
+				const char* pStrCode =  host->GetInteractiveCode();
+				if (pStrCode)
 				{
-					std::cout << code<<std::endl;
+					std::string code = pStrCode;
+					host->ReleaseString(pStrCode);
+					std::cout << code <<std::endl;
 				}
 				std::cout << prompt;
 				continue;
@@ -30,7 +31,7 @@ namespace X
 				break;
 			}
 			X::Value retValue;
-			bool bOK = host->RunCodeLine(input, retValue);
+			bool bOK = host->RunCodeLine(input.c_str(),(int)input.size(),retValue);
 			if (!bOK)
 			{
 

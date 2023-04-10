@@ -2,7 +2,6 @@
 #define _X_LANG_H_
 
 #include <string>
-#include <exception>
 #include "value.h"
 #include "xhost.h"
 
@@ -39,6 +38,18 @@ namespace X
 		Table,
 		RemoteObject,
 		PyProxyObject
+	};
+
+	//For XPackage
+	enum class PackageMemberType
+	{
+		Func,
+		FuncEx,
+		Prop,
+		Const,
+		ObjectEvent,
+		Class,
+		ClassInstance,
 	};
 #define Internal_Reserve(cls_name)  cls_name(int){}
 
@@ -439,7 +450,7 @@ namespace X
 	{
 	public:
 		virtual void SetPackageCleanupFunc(PackageCleanup func) = 0;
-		virtual int AddMethod(const char* name,bool keepRawParams =false) = 0;
+		virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) = 0;
 		virtual void* GetEmbedObj() = 0;
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(int idx, Value& v) = 0;

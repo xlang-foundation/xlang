@@ -11,7 +11,7 @@ namespace X
 {
 	void XLangProxyManager::Register()
 	{
-		Manager::I().RegisterProxy("lrpc",[](std::string& url) {
+		Manager::I().RegisterProxy("lrpc",[](const char* url) {
 			XLangProxy* pProxy = new XLangProxy();
 			pProxy->SetUrl(url);
 			pProxy->Start();
@@ -22,9 +22,9 @@ namespace X
 	{
 		m_pConnectWait = new XWait(false);
 	}
-	void XLangProxy::SetUrl(std::string& url)
+	void XLangProxy::SetUrl(const char* url)
 	{
-		SCANF(url.c_str(), "%d", &m_port);
+		SCANF(url, "%d", &m_port);
 	}
 	XLangProxy::~XLangProxy()
 	{

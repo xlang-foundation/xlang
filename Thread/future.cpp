@@ -40,25 +40,26 @@ namespace X
 				std::string strName;
 				{
 					strName = "get";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						bool bOK = false;
+						if (params.size() > 0)
+						{
+							Future* pObj = dynamic_cast<Future*>(pContext);
+							bOK = pObj->GetResult(retValue, params[0]);
+						}
+						else
+						{
+							retValue = Value(bOK);
+						}
+						return bOK;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"get(timeout)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								bool bOK = false;
-								if (params.size() > 0)
-								{
-									Future* pObj = dynamic_cast<Future*>(pContext);
-									bOK = pObj->GetResult(retValue, params[0]);
-								}
-								else
-								{
-									retValue = Value(bOK);
-								}
-								return bOK;
-							}));
+						"get(timeout)",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -67,22 +68,23 @@ namespace X
 				}
 				{
 					strName = "then";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						if (params.size() > 0)
+						{
+							Future* pObj = dynamic_cast<Future*>(pContext);
+							pObj->SetThenProc(params[0]);
+						}
+						//still return this Future Object to setup chain calls
+						retValue = X::Value(pContext);
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"then(callable)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								if (params.size() > 0)
-								{
-									Future* pObj = dynamic_cast<Future*>(pContext);
-									pObj->SetThenProc(params[0]);
-								}
-								//still return this Future Object to setup chain calls
-								retValue = X::Value(pContext);
-								return true;
-							}));
+						"then(callable)",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -107,16 +109,25 @@ namespace X
 				return true;
 			}
 		};
-		static FutureScope _FutureScope;
+		static FutureScope* _FutureScope = nullptr;
 
 		void Future::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
+			if (_FutureScope == nullptr)
+			{
+				_FutureScope = new FutureScope();
+			}
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_FutureScope);
+			bases.push_back(_FutureScope);
 		}
 		void Future::cleanup()
 		{
-			_FutureScope.clean();
+			if (_FutureScope)
+			{
+				_FutureScope->clean();
+				delete _FutureScope;
+				_FutureScope = nullptr;
+			}
 		}
 		void Future::SetVal(X::Value& v)
 		{
@@ -137,7 +148,7 @@ namespace X
 					continue;
 				}
 				XlangRuntime* rt = X::G::I().Threading(nullptr);
-				X::ARGS params(0);
+				X::ARGS params(1);
 				X::KWARGS kwargs;
 				X::Value retValue;
 				params.push_back(v);

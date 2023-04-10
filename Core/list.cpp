@@ -66,18 +66,18 @@ namespace X
 				}
 				{
 					strName = "clear";
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"clear()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								List* pObj = dynamic_cast<List*>(pContext);
-								pObj->Clear();
-								retValue = Value(true);
-								return true;
-							}));
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						pObj->Clear();
+						retValue = Value(true);
+						return true;
+					};
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"clear()",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -86,19 +86,20 @@ namespace X
 				}
 				{
 					strName = "size";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						std::cout << "List.Size" << std::endl;
+						List* pObj = dynamic_cast<List*>(pContext);
+						retValue = Value(pObj->Size());
+						std::cout << "List.Size->End" << std::endl;
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"size()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								std::cout << "List.Size" << std::endl;
-								List* pObj = dynamic_cast<List*>(pContext);
-								retValue = Value(pObj->Size());
-								std::cout << "List.Size->End" << std::endl;
-								return true;
-							}));
+						"size()",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);

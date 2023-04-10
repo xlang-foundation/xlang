@@ -2,7 +2,6 @@
 #define _X_HOST_H_
 #include "value.h"
 #include "xload.h"
-#include <string>
 #include "xport.h"
 
 
@@ -26,10 +25,9 @@ namespace X
 	class XProxy;
 	class XCustomScope;
 	class XRuntime;
-	class APISetBase;
 	typedef XPackage* (*PackageCreator)();
 	typedef void (*PackageCleanup)(void* pContextObj);
-	typedef XProxy* (*XProxyCreator)(std::string& url);
+	typedef XProxy* (*XProxyCreator)(const char* url);
 	typedef X::Port::vector<X::Value> ARGS;
 	typedef X::Port::StringMap<X::Value> KWARGS;
 	
@@ -54,8 +52,8 @@ namespace X
 		virtual void AddSysCleanupFunc(CLEANUP f) = 0;
 		virtual XRuntime* CreateRuntime() = 0;
 		virtual XRuntime* GetCurrentRuntime() = 0;
-		virtual bool RegisterPackage(const char* name, APISetBase* pAPISet,PackageCreator creator) = 0;
-		virtual bool RegisterPackage(const char* name, APISetBase* pAPISet,Value& objPackage) = 0;
+		virtual bool RegisterPackage(const char* name,PackageCreator creator) = 0;
+		virtual bool RegisterPackage(const char* name,Value& objPackage) = 0;
 		virtual XObj* QueryMember(XRuntime* rt, XObj* pObj, const char* name) = 0;
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
@@ -67,13 +65,14 @@ namespace X
 		virtual XTensorGraph* CreateTensorGraph() = 0;
 		virtual XSet* CreateSet() = 0;
 		virtual XComplex* CreateComplex() = 0;
-		virtual XPackage* CreatePackage(APISetBase* pAPISet,void* pRealObj) = 0;
+		virtual XPackage* CreatePackage(void* pRealObj) = 0;
 		virtual XPackage* CreatePackageProxy(XPackage* pPackage,void* pRealObj) = 0;
 		virtual XEvent* CreateXEvent(const char* name) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC& func,X::XObj* pContext=nullptr) = 0;
 		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX& func, X::XObj* pContext = nullptr) = 0;
 		virtual XProp* CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter) = 0;
-		virtual std::string StringifyString(const std::string& str) = 0;
+		virtual const char* StringifyString(const char* str) = 0;
+		virtual void ReleaseString(const char* str) = 0;
 		virtual XBin* CreateBin(char* data, size_t size,bool bOwnData) = 0;
 		virtual X::XLStream* CreateStream(const char* buf=nullptr,long long size=0) = 0;
 		virtual void ReleaseStream(X::XLStream* pStream) = 0;
@@ -82,9 +81,9 @@ namespace X
 		virtual bool ToBytes(X::Value& input, X::Value& output) = 0;
 		virtual bool FromBytes(X::Value& input, X::Value& output) = 0;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
-		virtual bool RunCode(std::string& moduleName, std::string& code, X::Value& retVal) = 0;
-		virtual bool RunCodeLine(std::string& codeLine, X::Value& retVal) = 0;
-		virtual bool GetInteractiveCode(std::string& code) = 0;
+		virtual bool RunCode(const char* moduleName,const char* code, int codeSize,X::Value& retVal) = 0;
+		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal) = 0;
+		virtual const char* GetInteractiveCode() = 0;
 		virtual long OnEvent(const char* evtName, EventHandler handler) = 0;
 		virtual void OffEvent(const char* evtName, long Cookie) = 0;
 		virtual Value GetAttr(const X::Value& v, const char* attrName) = 0;

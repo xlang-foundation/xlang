@@ -75,7 +75,7 @@ namespace X
 			return pModule;
 		}
 		AppEventCode HandleAppEvent(int signum);
-		AST::Module* Load(std::string& moduleName,
+		AST::Module* Load(const char* moduleName,
 			const char* code, int size,unsigned long long& moduleKey);
 		AST::Module* LoadWithScope(AST::Scope* pScope,const char* code, int size);
 		X::Value NewModule();
@@ -89,7 +89,7 @@ namespace X
 		bool Run(AST::Module* pTopModule,X::Value& retVal,
 			std::vector<std::string>& passInParams,
 			bool stopOnEntry = false);
-		bool Run(std::string& moduleName,
+		bool Run(const char* moduleName,
 			const char* code, int size,
 			std::vector<std::string>& passInParams,
 			X::Value& retVal);

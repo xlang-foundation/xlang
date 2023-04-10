@@ -18,7 +18,7 @@ namespace X
 		{
 			X::Value retVal;
 			std::vector<std::string> passInParams;
-			Hosting::I().Run(m_moduleName,m_code.c_str(),
+			Hosting::I().Run(m_moduleName.c_str(), m_code.c_str(),
 				(int)m_code.size(), passInParams,retVal);
 		}
 	public:
@@ -122,7 +122,7 @@ namespace X
 		auto* pModuleObj = new X::AST::ModuleObject(pTopModule);
 		return X::Value(pModuleObj);
 	}
-	AST::Module* Hosting::Load(std::string& moduleName,
+	AST::Module* Hosting::Load(const char* moduleName,
 		const char* code, int size, unsigned long long& moduleKey)
 	{
 		Parser parser;
@@ -135,7 +135,8 @@ namespace X
 		pTopModule->IncRef();
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);
-		pTopModule->SetModuleName(moduleName);
+		std::string strModuleName(moduleName);
+		pTopModule->SetModuleName(strModuleName);
 		moduleKey = AddModule(pTopModule);
 		return pTopModule;
 	}
@@ -293,7 +294,7 @@ namespace X
 		}
 		return (m_pInteractiveModule !=nullptr);
 	}
-	bool Hosting::Run(std::string& moduleName,
+	bool Hosting::Run(const char* moduleName,
 		const char* code, int size, 
 		std::vector<std::string>& passInParams,
 		X::Value& retVal)
@@ -336,10 +337,9 @@ namespace X
 		Unload(pTopModule);
 		if (!onFinishExpr.empty())
 		{
-			std::string moduleName("Cleanup.x");
 			X::Value valRet0;
 			std::vector<std::string> passInParams;
-			Run(moduleName, onFinishExpr.c_str(), (int)onFinishExpr.size(), passInParams,valRet0);
+			Run("Cleanup.x", onFinishExpr.c_str(), (int)onFinishExpr.size(), passInParams,valRet0);
 		}
 		return bOK;
 	}

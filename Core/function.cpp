@@ -18,18 +18,18 @@ namespace X
 				//API: getcode
 				{
 					std::string name("getcode");
-					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						"retVal = getcode()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							ARGS& params,
-							KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								Function* pFuncObj = dynamic_cast<Function*>(pContext);
-								auto code = pFuncObj->GetFunc()->getcode(false);
-								retValue = X::Value(code);
-								return true;
-							}));
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						ARGS& params,
+						KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						Function* pFuncObj = dynamic_cast<Function*>(pContext);
+						auto code = pFuncObj->GetFunc()->getcode(false);
+						retValue = X::Value(code);
+						return true;
+					};
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = new AST::ExternFunc(name,"retVal = getcode()",func);
 					auto* pFuncObj = new Data::Function(extFunc, true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}

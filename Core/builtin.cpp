@@ -23,7 +23,6 @@
 #include "event.h"
 #include "bin.h"
 #include "BlockStream.h"
-#include "xpackage.h"
 #include "json.h"
 #include "yaml.h"
 #include "html.h"
@@ -147,7 +146,7 @@ bool U_Load(X::XRuntime* rt, X::XObj* pContext,
 		moduleFile)), std::istreambuf_iterator<char>());
 	moduleFile.close();
 	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load(fileName, code.c_str(), (int)code.size(), moduleKey);
+	X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
 	retValue = X::Value(moduleKey);
 	return true;
 }
@@ -162,9 +161,8 @@ bool U_LoadS(X::XRuntime* rt, X::XObj* pContext,
 		return false;
 	}
 	std::string code = params[0].ToString();
-	std::string moduleName = "default";
 	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load(moduleName, code.c_str(), (int)code.size(), moduleKey);
+	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey);
 	retValue = X::Value(moduleKey);
 	return true;
 }
@@ -222,7 +220,7 @@ bool U_RunCode(X::XRuntime* rt, X::XObj* pContext,
 	std::string moduleName = params[0].ToString();
 	std::string code = params[1].ToString();
 	std::vector<std::string> passInParams;
-	return X::Hosting::I().Run(moduleName, code.c_str(), 
+	return X::Hosting::I().Run(moduleName.c_str(), code.c_str(),
 		(int)code.size(), passInParams,retValue);
 }
 bool U_RunFragmentCode(X::XRuntime* rt, X::XObj* pContext,
@@ -486,9 +484,7 @@ bool Builtin::RegisterWithScope(const char* name, X::U_FUNC func,
 	bool regToMeta)
 {
 	std::string strName(name);
-	AST::ExternFunc* extFunc = new AST::ExternFunc(
-		strName, doc,
-		(X::U_FUNC)func);
+	AST::ExternFunc* extFunc = new AST::ExternFunc(strName, doc,func);
 	auto* pFuncObj = new Data::Function(extFunc, true);
 	pFuncObj->SetExtraScope(pScope);
 	pFuncObj->IncRef();
@@ -511,9 +507,7 @@ bool Builtin::Register(const char* name, X::U_FUNC func,
 	bool regToMeta)
 {
 	std::string strName(name);
-	AST::ExternFunc* extFunc = new AST::ExternFunc(
-		strName, doc,
-		(X::U_FUNC)func);
+	AST::ExternFunc* extFunc = new AST::ExternFunc(strName, doc,func);
 	auto* pFuncObj = new Data::Function(extFunc,true);
 	pFuncObj->IncRef();
 	m_lock.Lock();
@@ -1379,7 +1373,7 @@ bool Builtin::RegisterInternals()
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)
 {
 }
-int Builtin::AddMethod(const char* name, bool keepRawParams)
+int Builtin::AddMember(PackageMemberType type, const char* name, const char* doc, bool keepRawParams)
 {
 	return 0;
 }

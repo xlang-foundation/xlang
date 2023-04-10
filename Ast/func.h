@@ -287,7 +287,7 @@ public:
 
 	}
 	ExternFunc(std::string& funcName, const char* doc,
-		U_FUNC func, XObj* pContext = nullptr)
+		U_FUNC& func, XObj* pContext = nullptr)
 	{
 		m_funcName = funcName;
 		if (doc)
@@ -302,7 +302,7 @@ public:
 			m_pContext->IncRef();
 		}
 	}
-	ExternFunc(std::string& funcName, U_FUNC_EX func, XObj* pContext = nullptr)
+	ExternFunc(std::string& funcName, U_FUNC_EX& func, XObj* pContext = nullptr)
 	{
 		m_funcName = funcName;
 		m_func_ex = func;

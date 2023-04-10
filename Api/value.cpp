@@ -257,7 +257,7 @@ namespace X
 	template<>
 	void V<XPackage>::Create(void* pRealObj)
 	{
-		SetObj(g_pXHost->CreatePackage(nullptr,pRealObj));
+		SetObj(g_pXHost->CreatePackage(pRealObj));
 	}
 	template<>
 	template<>
@@ -474,13 +474,26 @@ namespace X
 			str = x.obj->ToString(WithFormat);
 			if (WithFormat && x.obj->GetType() == ObjType::Str)
 			{
-				str= g_pXHost->StringifyString(str);
+				const char* pNewStr= g_pXHost->StringifyString(str.c_str());
+				if (pNewStr)
+				{
+					str = pNewStr;
+					g_pXHost->ReleaseString(pNewStr);
+				}
 			}
 		}
 			break;
 		case ValueType::Str:
 			str = std::string((char*)x.str, flags);
-			if (WithFormat) str = g_pXHost->StringifyString(str);
+			if (WithFormat)
+			{
+				const char* pNewStr = g_pXHost->StringifyString(str.c_str());
+				if (pNewStr)
+				{
+					str = pNewStr;
+					g_pXHost->ReleaseString(pNewStr);
+				}
+			}
 			break;
 		default:
 			break;
