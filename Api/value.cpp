@@ -257,7 +257,7 @@ namespace X
 	template<>
 	void V<XPackage>::Create(void* pRealObj)
 	{
-		SetObj(g_pXHost->CreatePackage(nullptr,pRealObj));
+		SetObj(g_pXHost->CreatePackage(pRealObj));
 	}
 	template<>
 	template<>

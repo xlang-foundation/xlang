@@ -23,7 +23,6 @@
 #include "event.h"
 #include "bin.h"
 #include "BlockStream.h"
-#include "xpackage.h"
 #include "json.h"
 #include "yaml.h"
 #include "html.h"
@@ -486,9 +485,7 @@ bool Builtin::RegisterWithScope(const char* name, X::U_FUNC func,
 	bool regToMeta)
 {
 	std::string strName(name);
-	AST::ExternFunc* extFunc = new AST::ExternFunc(
-		strName, doc,
-		(X::U_FUNC)func);
+	AST::ExternFunc* extFunc = new AST::ExternFunc(strName, doc,func);
 	auto* pFuncObj = new Data::Function(extFunc, true);
 	pFuncObj->SetExtraScope(pScope);
 	pFuncObj->IncRef();
@@ -511,9 +508,7 @@ bool Builtin::Register(const char* name, X::U_FUNC func,
 	bool regToMeta)
 {
 	std::string strName(name);
-	AST::ExternFunc* extFunc = new AST::ExternFunc(
-		strName, doc,
-		(X::U_FUNC)func);
+	AST::ExternFunc* extFunc = new AST::ExternFunc(strName, doc,func);
 	auto* pFuncObj = new Data::Function(extFunc,true);
 	pFuncObj->IncRef();
 	m_lock.Lock();
@@ -1379,7 +1374,7 @@ bool Builtin::RegisterInternals()
 void Builtin::SetPackageCleanupFunc(PackageCleanup func)
 {
 }
-int Builtin::AddMethod(const char* name, bool keepRawParams)
+int Builtin::AddMember(PackageMemberType type, const char* name, const char* doc, bool keepRawParams)
 {
 	return 0;
 }

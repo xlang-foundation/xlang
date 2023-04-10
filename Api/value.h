@@ -97,6 +97,9 @@ bool Value::operator op (const Value& r) const\
 	return bRet;\
 }
 
+//review 4/10/2023
+//ABI issue with Value, different compiler may generate different layout of members
+//TODO:change to use struct to wrap its members
 #define BOOL_FLAG -10
 #define CHAR_FLAG -20
 class Value

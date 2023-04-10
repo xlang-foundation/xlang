@@ -42,17 +42,18 @@ namespace X
 				std::string strName;
 				{
 					strName = "run";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						TensorGraph* pGraph = dynamic_cast<TensorGraph*>(pContext);
+						retValue = X::Value(pGraph->Run(params, kwParams));
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"graph.run()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								TensorGraph* pGraph = dynamic_cast<TensorGraph*>(pContext);
-								retValue = X::Value(pGraph->Run(params, kwParams));
-								return true;
-							}));
+						"graph.run()",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -77,15 +78,24 @@ namespace X
 				return true;
 			}
 		};
-		static TensorGraphScope _TensorGraphScope;
+		static TensorGraphScope* _TensorGraphScope = nullptr;
 		void TensorGraph::cleanup()
 		{
-			_TensorGraphScope.clean();
+			if (_TensorGraphScope)
+			{
+				_TensorGraphScope->clean();
+				delete _TensorGraphScope;
+				_TensorGraphScope = nullptr;
+			}
 		}
 		void TensorGraph::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
+			if (_TensorGraphScope == nullptr)
+			{
+				_TensorGraphScope = new TensorGraphScope();
+			}
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_TensorGraphScope);
+			bases.push_back(_TensorGraphScope);
 		}
 
 		class GraphBuildContext

@@ -39,6 +39,10 @@ namespace X
 			if (dllSearchPath) delete dllSearchPath;
 		}
 	};
+//review 4/10/2023
+//ABI issue with XLoad, different compiler may generate different layout of members
+//TODO:change to use struct to wrap its members
+
 	class XLoad
 	{
 		//context

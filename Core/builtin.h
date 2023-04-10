@@ -52,7 +52,7 @@ namespace X {
 
 		// Inherited via XPackage
 		virtual void SetPackageCleanupFunc(PackageCleanup func) override;
-		virtual int AddMethod(const char* name, bool keepRawParams) override;
+		virtual int AddMember(PackageMemberType type, const char* name, const char* doc, bool keepRawParams = false) override;
 		virtual int QueryMethod(const char* name, bool* pKeepRawParams) override;
 		virtual void* GetEmbedObj() override;
 		virtual bool Init(int varNum) override;

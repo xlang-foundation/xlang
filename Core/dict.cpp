@@ -40,17 +40,17 @@ namespace X
 				std::string strName;
 				{
 					strName = "has";
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"has(key)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								Dict* pObj = dynamic_cast<Dict*>(pContext);
-								retValue = Value(pObj->Has(params[0]));
-								return true;
-							}));
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						retValue = Value(pObj->Has(params[0]));
+						return true;
+					};
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"has(key)",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);

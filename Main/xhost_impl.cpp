@@ -57,13 +57,13 @@ namespace X
 		pStrObj->IncRef();
 		return pStrObj;
 	}
-	bool XHost_Impl::RegisterPackage(const char* name, APISetBase* pAPISet,PackageCreator creator)
+	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator)
 	{
-		return X::Manager::I().Register(name,pAPISet,creator);
+		return X::Manager::I().Register(name,creator);
 	}
-	bool XHost_Impl::RegisterPackage(const char* name, APISetBase* pAPISet,Value& objPackage)
+	bool XHost_Impl::RegisterPackage(const char* name,Value& objPackage)
 	{
-		return X::Manager::I().Register(name,pAPISet,objPackage);
+		return X::Manager::I().Register(name,objPackage);
 	}
 	XObj* XHost_Impl::QueryMember(XRuntime* rt, XObj* pObj, const char* name)
 	{
@@ -95,10 +95,9 @@ namespace X
 		std::string strName(name);
 		return X::Manager::I().QueryAndCreatePackage((XlangRuntime*)rt,strName, objPackage);
 	}
-	XPackage* XHost_Impl::CreatePackage(APISetBase* pAPISet,void* pRealObj)
+	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
 		auto* pPack = new AST::Package(pRealObj);
-		pPack->SetAPISet(pAPISet);
 		pPack->Scope::IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}

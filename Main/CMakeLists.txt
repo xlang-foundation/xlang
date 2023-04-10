@@ -1,6 +1,8 @@
 ﻿# CMakeList.txt : CMake project for X-Lang-Engine, include source and define
 # project specific logic here.
 #
+cmake_minimum_required (VERSION 3.20)
+
 project ("xlang_eng")
 
 add_compile_definitions(XLANG_ENG_DBG=1)
@@ -54,6 +56,14 @@ if (WIN32)
 else()
     target_link_libraries(${PROJECT_NAME} pthread dl)
 endif()
+
+#[[
+
+if (CMAKE_VERSION VERSION_GREATER 3.12)
+  set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
+endif()
+]]
+
 
 #[[
 add_library(${PROJECT_NAME}.mini SHARED 
