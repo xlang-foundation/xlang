@@ -7,12 +7,13 @@
 
 namespace X
 {
-	class APISetBase;
 namespace AST
 {
 	struct MemberIndexInfo
 	{
 		std::string name;
+		std::string doc;
+		PackageMemberType type;
 		int Index = -1;
 		bool KeepRawParams =false;//treat last parameter as bytes, don't do decoding
 	};
@@ -21,7 +22,6 @@ class Package :
 	virtual public Data::Object,
 	virtual public Scope
 {
-	APISetBase* m_pAPISet = nullptr;
 	void* m_pObject = nullptr;
 	StackFrame* m_stackFrame = nullptr;
 	std::vector<MemberIndexInfo> m_memberInfos;
@@ -34,7 +34,7 @@ class Package :
 	void UnloadAddedModules();
 	Locker m_lock;
 public:
-	APISetBase* GetAPISet() { return m_pAPISet; }
+	inline std::vector<MemberIndexInfo>& GetMemberInfo() { return m_memberInfos; }
 	Package(void* pObj):
 		Data::Object(), Scope()
 	{
@@ -56,10 +56,6 @@ public:
 	void Unlock()
 	{
 		m_lock.Unlock();
-	}
-	void SetAPISet(APISetBase* p)
-	{
-		m_pAPISet = p;
 	}
 	virtual bool RunCodeWithThisScope(std::string& code) override;
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
@@ -88,9 +84,11 @@ public:
 			m_funcPackageCleanup(pObj);
 		}
 	}
-	inline virtual int AddMethod(const char* name, bool keepRawParams=false) override
+	inline virtual int AddMember(PackageMemberType type, const char* name,
+		const char* doc, bool keepRawParams = false) override
 	{
 		std::string strName(name);
+		std::string strDoc(doc);
 		int idx =  Scope::AddOrGet(strName, false);
 		int size = (int)m_memberInfos.size();
 		if (size <= idx)
@@ -99,11 +97,11 @@ public:
 			{
 				m_memberInfos.push_back({});
 			}
-			m_memberInfos.push_back({ name,idx,keepRawParams });
+			m_memberInfos.push_back({ strName,strDoc,type,idx,keepRawParams });
 		}
 		else
 		{
-			m_memberInfos[idx] = { name,idx,keepRawParams };
+			m_memberInfos[idx] = { strName,strDoc,type,idx,keepRawParams };
 		}
 		return idx;
 	}
@@ -282,9 +280,9 @@ public:
 		}
 		//m_pPackage->Unlock();
 	}
-	inline virtual int AddMethod(const char* name, bool keepRawParams = false) override
+	inline virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) override
 	{
-		return m_pPackage->AddMethod(name, keepRawParams);
+		return m_pPackage->AddMember(type,name,doc,keepRawParams);
 	}
 	inline virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
 	{

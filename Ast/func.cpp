@@ -151,7 +151,7 @@ bool Func::CallEx(XRuntime* rt, XObj* pContext,
 	X::Value& trailer,
 	X::Value& retValue)
 {
-	kwParams.emplace(std::make_pair("origin", trailer));
+	kwParams.Add("origin", trailer);
 	return Call(rt,pContext,params,kwParams,retValue);
 }
 Module* Func::GetMyModule()
@@ -172,7 +172,7 @@ Module* Func::GetMyModule()
 }
 bool Func::Call(XRuntime* rt0,
 	XObj* pContext,
-	std::vector<Value>& params,
+	ARGS& params,
 	KWARGS& kwParams,
 	Value& retValue)
 {
@@ -186,7 +186,8 @@ bool Func::Call(XRuntime* rt0,
 	StackFrame* frame = new StackFrame(this);
 	for (auto& kw : kwParams)
 	{
-		Scope::AddOrGet((std::string&)kw.first, false);
+		std::string strKey(kw.key);
+		Scope::AddOrGet(strKey, false);
 	}
 	rt->PushFrame(frame,GetVarNum());
 	//Add this if This is not null
@@ -208,10 +209,11 @@ bool Func::Call(XRuntime* rt0,
 	}
 	for (auto& kw : kwParams)
 	{
-		int idx = Scope::AddOrGet((std::string&)kw.first, false);
+		std::string strKey(kw.key);
+		int idx = Scope::AddOrGet(strKey, false);
 		if (idx >= 0)
 		{
-			Scope::Set(rt, pContext, idx, kw.second);
+			Scope::Set(rt, pContext, idx, kw.val);
 		}
 	}
 	Value v0;

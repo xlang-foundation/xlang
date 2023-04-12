@@ -1,7 +1,13 @@
 #pragma once
 #include "xlang.h"
 #include "xhost.h"
+#include <vector>
+#include <utility>
 
+/*  ABI
+this file use g_pXHost as bridge to XLang Core module
+make sure no other dependences except  g_pXHost
+*/
 namespace X
 {
 	namespace MetaInfo
@@ -41,7 +47,7 @@ namespace X
 			});
 		if (instance == nullptr)
 		{
-			X::g_pXHost->RegisterPackage(pack_name, &apiset, []()
+			X::g_pXHost->RegisterPackage(pack_name,[]()
 				{
 					impl_pack_class* pPackImpl = new impl_pack_class();
 			return impl_pack_class::APISET().GetProxy(pPackImpl);
@@ -51,7 +57,7 @@ namespace X
 		{
 			auto* pXPack = impl_pack_class::APISET().GetPack();
 			X::Value v0(dynamic_cast<X::XObj*>(pXPack));
-			X::g_pXHost->RegisterPackage(pack_name, &apiset, v0);
+			X::g_pXHost->RegisterPackage(pack_name,v0);
 		}
 		return apiset.GetPack();
 	}
@@ -116,19 +122,9 @@ namespace X
 	class APISetBase
 	{
 	public:
-		enum MemberType
-		{
-			Func,
-			FuncEx,
-			Prop,
-			Const,
-			ObjectEvent,
-			Class,
-			ClassInstance,
-		};
 		struct MemberInfo
 		{
-			MemberType type;
+			PackageMemberType type;
 			std::string name;
 			X::Value constVal;
 			X::U_FUNC func;
@@ -223,11 +219,11 @@ namespace X
 		}
 		void AddConst(const char* name, X::Value val)
 		{
-			m_members.push_back(MemberInfo{ MemberType::Const,name,val });
+			m_members.push_back(MemberInfo{ PackageMemberType::Const,name,val });
 		}
 		void AddEvent(const char* name)
 		{
-			m_members.push_back(MemberInfo{ MemberType::ObjectEvent,name });
+			m_members.push_back(MemberInfo{ PackageMemberType::ObjectEvent,name });
 		}
 		template<std::size_t Parameter_Num, class Class_T>
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
@@ -236,9 +232,9 @@ namespace X
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc);
-
+			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
-				MemberType::Class,class_name,X::Value(),
+				PackageMemberType::Class,class_name,X::Value(),
 				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -253,7 +249,7 @@ namespace X
 						}
 						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
 						return true;
-					}),nullptr });
+					}),dummy });
 		}
 		template<std::size_t Parameter_Num, class Class_T, class Parent_T>
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
@@ -263,8 +259,10 @@ namespace X
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc);
 
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
-				MemberType::Class,class_name,X::Value(),
+				PackageMemberType::Class,class_name,X::Value(),
 				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -288,7 +286,7 @@ namespace X
 						}
 						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),dummy,dummyEx,false,std::string(doc) });
 		}
 		template<class Class_T, class Parent_T>
 		void AddVarClass(const char* class_name, const char* doc = "")
@@ -296,8 +294,10 @@ namespace X
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
 			apiset.Create(nullptr);
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
-				MemberType::Class,class_name,X::Value(),
+				PackageMemberType::Class,class_name,X::Value(),
 				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -314,7 +314,7 @@ namespace X
 						cls = new Class_T(pParentObj,params, kwParams);
 						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),dummy,dummyEx,false,std::string(doc) });
 		}
 		template<class Class_T>
 		void AddVarClass(const char* class_name,
@@ -323,21 +323,25 @@ namespace X
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
 			apiset.Create(nullptr);
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
-				MemberType::Class,class_name,X::Value(),
+				PackageMemberType::Class,class_name,X::Value(),
 				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
 						Class_T* cls = new Class_T(params, kwParams);
 						retValue = X::Value(Class_T::APISET().GetProxy(cls),false);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),dummy,dummyEx,false,std::string(doc) });
 		}
 		template<std::size_t Parameter_Num, typename F>
 		void AddFunc(const char* func_name, F f, const char* doc = "")
 		{
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
-				MemberType::Func,func_name,X::Value(),
+				PackageMemberType::Func,func_name,X::Value(),
 				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -346,13 +350,14 @@ namespace X
 						auto _retVal = HelpFuncs::VarCall<Parameter_Num>(pThis,f,params);
 						retValue = X::Value(_retVal);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),dummy,dummyEx,false,std::string(doc) });
 		}
 		template<std::size_t Parameter_Num, typename F>
 		void AddFuncEx(const char* func_name, F f, const char* doc = "")
 		{
+			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
-				MemberType::FuncEx,func_name,X::Value(),nullptr,nullptr,
+				PackageMemberType::FuncEx,func_name,X::Value(),dummy,dummy,
 				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
@@ -366,8 +371,10 @@ namespace X
 		template<std::size_t Parameter_Num, typename F>
 		void AddRTFunc(const char* func_name, F f, const char* doc = "")
 		{
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
-				MemberType::Func,func_name,X::Value(),
+				PackageMemberType::Func,func_name,X::Value(),
 				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -376,13 +383,14 @@ namespace X
 						auto _retVal = HelpFuncs::VarCall_Extra<Parameter_Num>(rt, pContext,pThis,f,params);
 						retValue = X::Value(_retVal);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),dummy,dummyEx,false,std::string(doc) });
 		}
 		template<typename F>
 		void AddVarFuncEx(const char* func_name, F f, const char* doc = "")
 		{
+			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
-				MemberType::FuncEx,func_name,X::Value(),nullptr,nullptr,
+				PackageMemberType::FuncEx,func_name,X::Value(),dummy,dummy,
 				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
@@ -395,8 +403,9 @@ namespace X
 		template<typename F>
 		void AddRawParamFunc(const char* func_name, F f, const char* doc = "")
 		{
+			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
-				MemberType::FuncEx,func_name,X::Value(),nullptr,nullptr,
+				PackageMemberType::FuncEx,func_name,X::Value(),dummy,dummy,
 				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
@@ -409,8 +418,10 @@ namespace X
 		template<typename F>
 		void AddVarFunc(const char* func_name, F f, const char* doc = "")
 		{
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
-				MemberType::Func,func_name,X::Value(),
+				PackageMemberType::Func,func_name,X::Value(),
 				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -418,13 +429,14 @@ namespace X
 						auto* pThis = (T*)pPackage->GetEmbedObj();
 						(pThis->*f)(rt, pContext, params, kwParams, retValue);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),dummy,dummyEx,false,std::string(doc) });
 		}
 		template<typename PTMV>
 		void AddProp0(const char* func_name, PTMV var)
 		{
+			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,X::Value(),
+				PackageMemberType::Prop,func_name,X::Value(),
 				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -451,7 +463,7 @@ namespace X
 		void AddPropWithType(const char* func_name, PTMV var)
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,X::Value(),
+				PackageMemberType::Prop,func_name,X::Value(),
 				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -472,11 +484,11 @@ namespace X
 					})
 				});
 		}
-		void AddPropL(const char* func_name, std::function<void(T* pThis, X::Value)> setF,
-			std::function<X::Value(T* pThis)> getF)
+		void AddPropL(const char* func_name, const X::Port::Function<void(T* pThis, X::Value)> setF,
+			const X::Port::Function<X::Value(T* pThis)> getF)
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,X::Value(),
+				PackageMemberType::Prop,func_name,X::Value(),
 				(X::U_FUNC)([setF](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -499,9 +511,10 @@ namespace X
 		template<typename GETF>
 		void AddProp(const char* func_name, GETF get)
 		{
+			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,X::Value(),
-				nullptr,
+				PackageMemberType::Prop,func_name,X::Value(),
+				dummy,
 				(X::U_FUNC)([get](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -516,7 +529,7 @@ namespace X
 		void AddProp(const char* func_name, SETF set, GETF get)
 		{
 			m_members.push_back(MemberInfo{
-				MemberType::Prop,func_name,X::Value(),
+				PackageMemberType::Prop,func_name,X::Value(),
 				(X::U_FUNC)([set](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -540,9 +553,11 @@ namespace X
 		bool AddTensorUnaryOp(const char* name, F f,const char* doc = "")
 		{
 			m_bHaveTensorOps = true;
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			//add func with name to return a TensorOperator
 			m_members.push_back(MemberInfo{
-				MemberType::Func,name,X::Value(),
+				PackageMemberType::Func,name,X::Value(),
 				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -561,7 +576,7 @@ namespace X
 						pTensorOp->SetName(strName);
 						retValue = X::Value(pTensorOp);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),dummy,dummyEx,false,std::string(doc) });
 			return true;
 		}
 		template<typename F>
@@ -569,8 +584,10 @@ namespace X
 		{
 			m_bHaveTensorOps = true;
 			//add func with name to return a TensorOperator
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
-				MemberType::Func,name,X::Value(),
+				PackageMemberType::Func,name,X::Value(),
 				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -589,14 +606,16 @@ namespace X
 						pTensorOp->SetName(strName);
 						retValue = X::Value(pTensorOp);
 						return true;
-					}),nullptr,nullptr,false,std::string(doc) });
+					}),dummy,dummyEx,false,std::string(doc) });
 			return true;
 		}
 		inline void RegisterToTensorSystem()
 		{
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
 			//add a funcation graph for this Package
 			m_members.push_back(MemberInfo{
-				MemberType::Func,"graph",X::Value(),
+				PackageMemberType::Func,"graph",X::Value(),
 				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
@@ -606,7 +625,7 @@ namespace X
 						pTensorGraph->Create(pContext,params, kwParams);
 						retValue = X::Value(pTensorGraph);
 						return true;
-					}),nullptr,nullptr,false,
+					}),dummy,dummyEx,false,
 				std::string("create tensor graph, packageInstance.graph(t1,t2,...tn)")});
 		}
 		bool Create(T* thisObj, PackageCleanup cleanFunc = nullptr)
@@ -627,7 +646,7 @@ namespace X
 				memberNum += (int)b->Members().size();;
 			}
 
-			auto* pPackage = X::g_pXHost->CreatePackage(this, thisObj);
+			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
 			//if object created by outside,thisObj will not be NULL
 			//then don't need to be deleted by XPackage
 			if (thisObj == nullptr)
@@ -645,37 +664,37 @@ namespace X
 			{
 				for (auto& m : b->Members())
 				{
-					int idx = pPackage->AddMethod(m.name.c_str(), m.keepRawParams);
+					int idx = pPackage->AddMember(m.type,m.name.c_str(),m.doc.c_str(), m.keepRawParams);
 					X::Value v0;
 					switch (m.type)
 					{
-					case MemberType::Class:
-					case MemberType::Func:
+					case PackageMemberType::Class:
+					case PackageMemberType::Func:
 					{
 						auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
 						auto* pFuncObj = X::g_pXHost->CreateFunction(m.name.c_str(), m.func, pObjFun);
 						v0 = X::Value(pFuncObj, false);
 					}
 					break;
-					case MemberType::FuncEx:
+					case PackageMemberType::FuncEx:
 					{
 						auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
 						auto* pFuncObj = X::g_pXHost->CreateFunctionEx(m.name.c_str(), m.func_ex, pObjFun);
 						v0 = X::Value(pFuncObj, false);
 					}
 					break;
-					case MemberType::Prop:
+					case PackageMemberType::Prop:
 					{
 						auto* pPropObj = X::g_pXHost->CreateProp(m.name.c_str(), m.func, m.func2);
 						v0 = X::Value(pPropObj, false);
 					}
 					break;
-					case MemberType::Const:
+					case PackageMemberType::Const:
 					{
 						v0 = m.constVal;
 					}
 					break;
-					case MemberType::ObjectEvent:
+					case PackageMemberType::ObjectEvent:
 					{
 						auto* pEvtObj = X::g_pXHost->CreateXEvent(m.name.c_str());
 						v0 = X::Value(pEvtObj, false);

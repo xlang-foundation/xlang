@@ -83,8 +83,7 @@ namespace X
 				for (auto& f : m_funclist)
 				{
 					int idx = AddOrGet(f.name, false);
-					auto* pFuncObj = X::g_pXHost->CreateFunction(f.name.c_str(),
-						(X::U_FUNC)f.func);
+					auto* pFuncObj = X::g_pXHost->CreateFunction(f.name.c_str(),f.func);
 					X::Value v0(dynamic_cast<X::XObj*>(pFuncObj));
 					m_stackFrame->Set(idx, v0);
 				}

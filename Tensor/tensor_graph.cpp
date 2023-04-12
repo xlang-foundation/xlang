@@ -42,17 +42,18 @@ namespace X
 				std::string strName;
 				{
 					strName = "run";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						TensorGraph* pGraph = dynamic_cast<TensorGraph*>(pContext);
+						retValue = X::Value(pGraph->Run(params, kwParams));
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"graph.run()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								TensorGraph* pGraph = dynamic_cast<TensorGraph*>(pContext);
-								retValue = X::Value(pGraph->Run(params, kwParams));
-								return true;
-							}));
+						"graph.run()",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -77,15 +78,24 @@ namespace X
 				return true;
 			}
 		};
-		static TensorGraphScope _TensorGraphScope;
+		static TensorGraphScope* _TensorGraphScope = nullptr;
 		void TensorGraph::cleanup()
 		{
-			_TensorGraphScope.clean();
+			if (_TensorGraphScope)
+			{
+				_TensorGraphScope->clean();
+				delete _TensorGraphScope;
+				_TensorGraphScope = nullptr;
+			}
 		}
 		void TensorGraph::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
+			if (_TensorGraphScope == nullptr)
+			{
+				_TensorGraphScope = new TensorGraphScope();
+			}
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_TensorGraphScope);
+			bases.push_back(_TensorGraphScope);
 		}
 
 		class GraphBuildContext
@@ -96,9 +106,10 @@ namespace X
 		public:
 			GraphBuildContext()
 			{
+				Tensor_OperatorHandler dummy;
 				for (int i = 0; i < (int)Tensor_Operator::Count; i++)
 				{
-					m_Handlers.push_back(nullptr);
+					m_Handlers.push_back(dummy);
 				}
 			}
 			Tensor_OperatorHandler QueryHandler(int idx)
@@ -168,7 +179,7 @@ namespace X
 						if (valFunc.IsObject())
 						{
 							XObj* pObjHandler = valFunc.GetObj();
-							X::ARGS args;
+							X::ARGS args(0);
 							X::KWARGS kwargs;
 							X::Value valTensorOp;
 							pObjHandler->Call(nullptr, pPackage, args, kwargs, valTensorOp);
@@ -254,7 +265,7 @@ namespace X
 						auto opHandler = QueryRegisteredOpHandler(pBuildContext, pContext, (int)op);
 						if (opHandler)
 						{
-							X::ARGS inputs;
+							X::ARGS inputs(2);
 							inputs.push_back(leftValue);
 							inputs.push_back(rightValue);
 							X::Value retValue(pTensor);
@@ -272,7 +283,7 @@ namespace X
 						if (pOp->IsUnaryOp())
 						{
 							auto opHandler = pOp->GetOpHandler();
-							X::ARGS inputs;
+							X::ARGS inputs(1);
 							inputs.push_back(leftValue);
 							X::Value retValue(pTensor);
 							//put this handler into runlist
@@ -291,7 +302,7 @@ namespace X
 				auto opHandler = QueryRegisteredOpHandler(pBuildContext, pContext, (int)op);
 				if (opHandler)
 				{
-					X::ARGS inputs;
+					X::ARGS inputs(2);
 					inputs.push_back(leftValue);
 					inputs.push_back(rightValue);
 					X::Value retValue(pTensor);
@@ -310,7 +321,7 @@ namespace X
 				{
 					TensorOperator* pOp = dynamic_cast<TensorOperator*>(opValue.GetObj());
 					auto opHandler = pOp->GetOpHandler();
-					X::ARGS inputs;
+					X::ARGS inputs(2);
 					inputs.push_back(leftValue_LowLevel);
 					inputs.push_back(rightValue);
 					X::Value retValue(pTensor);

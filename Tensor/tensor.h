@@ -56,7 +56,6 @@ namespace X
 			int m_startItemOffet = 0;// unit is sizeof data type
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
-
 		public:
 			long long GetItemSize()
 			{
@@ -187,8 +186,9 @@ namespace X
 			{
 				return m_dims[dimIdx].size;
 			}
-			virtual void SetShape(std::vector<int> shapes) override
-			{	
+			
+			virtual void SetShape(Port::vector<int> shapes) override
+			{
 				m_dims.clear();
 				for (auto i : shapes)
 				{
@@ -233,7 +233,13 @@ namespace X
 				{
 					return true;
 				}
-				SetShape (shapes);
+				Port::vector<int> port_shapes(0);
+				int shape_size = shapes.size();
+				port_shapes.resize(shape_size);
+				for (int i = 0; i < shape_size; i++)
+					port_shapes.push_back(shapes[i]);
+
+				SetShape (port_shapes);
 				CalcDimProd();
 				long long totalSize = GetCount() * GetItemSize();
 				if (totalSize > 0)
@@ -319,13 +325,13 @@ namespace X
 			//keep use same memory
 			inline X::Value reshape(X::Value& listOfShape)
 			{
-
-				std::vector<int> shapes;
+				Port::vector<int> shapes(0);
 				int shapeCount = 1;
 				if (listOfShape.IsList())
 				{
 					X::Data::List* pList = dynamic_cast<X::Data::List*>(listOfShape.GetObj());
 					int axesCnt = (int)pList->Size();
+					shapes.resize(axesCnt);
 					for (int i = 0; i < axesCnt; i++)
 					{
 						int s = (int)pList->Get(i);
@@ -360,7 +366,7 @@ namespace X
 				Tensor* pNewTensor = new Tensor();
 				pNewTensor->SetDataType(dt);
 				int dimCnt = (int)m_dims.size();
-				std::vector<int> dims;
+				Port::vector<int> dims(dimCnt);
 				for (int i = 0; i < dimCnt; i++)
 				{
 					dims.push_back((int)m_dims[i].size);

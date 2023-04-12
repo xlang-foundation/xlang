@@ -53,8 +53,9 @@ namespace X
 				//for python: from module_name_here import sub1, sub2...
 				//from part is the module, and import parts are subs inside
 				//this module
-				std::vector<PyEngObjectPtr> subs;
-				std::vector<std::string> fromList({ name });
+				X::Port::vector<PyEngObjectPtr> subs(0);
+				X::Port::vector<const char*> fromList(1);
+				fromList.push_back(name.c_str());
 				bool bOK = g_pPyHost->ImportWithFromList(fromPath.c_str(),
 					fromList, subs);
 				if (bOK && subs.size()>0)
@@ -158,7 +159,8 @@ namespace X
 			ARGS& params, KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			PyEng::Tuple objParams(params);
+			std::vector<X::Value> aryValues(params.Data(), params.Data() + params.size());
+			PyEng::Tuple objParams(aryValues);
 			PyEng::Object objKwParams(kwParams);
 			auto obj0 = (PyEng::Object)m_obj.Call(objParams, objKwParams);
 			PyProxyObject* pProxyObj = new PyProxyObject(obj0);

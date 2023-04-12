@@ -262,7 +262,7 @@ public:
 		return retIdx;
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext,
-		std::vector<Value>& params,
+		ARGS& params,
 		KWARGS& kwParams,
 		Value& retValue);
 	virtual bool CallEx(XRuntime* rt, XObj* pContext,
@@ -278,8 +278,8 @@ class ExternFunc
 {
 	std::string m_funcName;
 	std::string m_doc;
-	U_FUNC m_func =nullptr;
-	U_FUNC_EX m_func_ex = nullptr;
+	U_FUNC m_func;
+	U_FUNC_EX m_func_ex;
 	XObj* m_pContext = nullptr;
 public:
 	ExternFunc()
@@ -287,7 +287,7 @@ public:
 
 	}
 	ExternFunc(std::string& funcName, const char* doc,
-		U_FUNC func, XObj* pContext = nullptr)
+		U_FUNC& func, XObj* pContext = nullptr)
 	{
 		m_funcName = funcName;
 		if (doc)
@@ -302,7 +302,7 @@ public:
 			m_pContext->IncRef();
 		}
 	}
-	ExternFunc(std::string& funcName, U_FUNC_EX func, XObj* pContext = nullptr)
+	ExternFunc(std::string& funcName, U_FUNC_EX& func, XObj* pContext = nullptr)
 	{
 		m_funcName = funcName;
 		m_func_ex = func;
@@ -360,7 +360,7 @@ public:
 		}
 	}
 	inline virtual bool Call(XRuntime* rt, XObj* pContext,
-		std::vector<Value>& params,
+		ARGS& params,
 		KWARGS& kwParams,
 		Value& retValue) override
 	{

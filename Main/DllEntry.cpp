@@ -1,7 +1,6 @@
 
 #include "builtin.h"
 #include "manager.h"
-#include "xpackage.h"
 #include "runtime.h"
 #include "json.h"
 #include "Hosting.h"
@@ -28,6 +27,7 @@
 #include "future.h"
 #include "tensor.h"
 #include "utility.h"
+#include "set.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -120,10 +120,10 @@ PyEngObjectPtr Xlang_CallFunc_Impl(
 	PyEngObjectPtr args,
 	PyEngObjectPtr kwargs)
 {
-	X::ARGS xArgs;
 	X::KWARGS xKwArgs;
 	PyEng::Object pyArgs(args,true);
 	long long cnt = pyArgs.GetCount();
+	X::ARGS xArgs((int)cnt);
 	for (long long i = 0; i < cnt; i++)
 	{
 		X::Value xVal;
@@ -216,8 +216,7 @@ void XLangStaticRun(std::string code)
 {
 	X::Value retVal;
 	std::vector<std::string> passInParams;
-	std::string moduleName("default");
-	Hosting::I().Run(moduleName, code.c_str(),
+	Hosting::I().Run("default", code.c_str(),
 		(int)code.size(),
 		passInParams,
 		retVal);
@@ -252,7 +251,6 @@ void XLangRun()
 	if (inlineCode)
 	{
 		Value retVal;
-		std::string strFileName = "inline_code";
 		HasCode = true;
 		code = inlineCode;
 		ReplaceAll(code, "\\n", "\n");
@@ -263,7 +261,7 @@ void XLangRun()
 			std::string strPassInParams(g_pXload->GetConfig().passInParams);
 			passInParams = split(strPassInParams, '\n');
 		}
-		Hosting::I().Run(strFileName, inlineCode,
+		Hosting::I().Run("inline_code", inlineCode,
 			(int)strlen(inlineCode),
 			passInParams,
 			retVal);
@@ -304,7 +302,7 @@ void XLangRun()
 			{
 				strFileName = fileName;
 			}
-			Hosting::I().Run(strFileName, code.c_str(), (int)code.size(),
+			Hosting::I().Run(strFileName.c_str(), code.c_str(), (int)code.size(),
 				passInParams,
 				retVal);
 			if (retVal.IsValid())
@@ -335,6 +333,7 @@ void XLangStaticUnload()
 	X::Data::Dict::cleanup();
 	X::Data::Tensor::cleanup();
 	X::Data::Future::cleanup();
+	X::Data::Function::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 	Hosting::I().Cleanup();
 	G::I().Check();
@@ -348,6 +347,7 @@ void XLangUnload()
 	X::Data::Str::cleanup();
 	X::Data::List::cleanup();
 	X::Data::Dict::cleanup();
+	X::Data::mSet::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 
 	if (g_pXload->GetConfig().enablePython)
@@ -370,14 +370,15 @@ void XLangUnload()
 	G::I().Check();
 	DestoryXHost();
 }
-
+}
 #if __TEST__
 #include "yaml_parser.h"
 
 void test()
 {
 	std::string strData;
-	bool bOK = LoadStringFromFile(g_pXload->GetConfig().fileName, strData);
+	std::string strFileName(X::g_pXload->GetConfig().fileName);
+	bool bOK = LoadStringFromFile(strFileName, strData);
 	X::Text::YamlParser yml;
 	yml.Init();
 	yml.LoadFromString((char*)strData.c_str(), (int)strData.size());
@@ -385,7 +386,6 @@ void test()
 
 }
 #endif
-}
 
 /**********************Dll Entry************************************/
 #if (WIN32)
@@ -428,7 +428,6 @@ extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 	const char* engPath = new char[strFolderPath.length() + 1];
 	memcpy((char*)engPath, strFolderPath.data(), strFolderPath.length() + 1);
 	X::g_pXload->GetConfig().xlangEnginePath = engPath;
-
 	auto* pXHost = X::CreatXHost();
 	*pXHostHolder = pXHost;
 }

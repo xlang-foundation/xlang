@@ -373,7 +373,8 @@ namespace X
 				std::cout << "In tensor_cpu.h::Add(), IsTensorAddableNew = " << bAddable << std::endl;
 				if (bAddable)
 				{
-					X::Value val_1, val_2, val_ret;
+					//X::Value val_1, val_2, val_ret;
+					X::Value val_1, val_2;
 					long long tot_element_count_1 = pTensor1->GetCount();
 					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
@@ -390,9 +391,12 @@ namespace X
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
 						//std::cout << "In Add(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
-						val_ret = val_1.GetLongLong() + val_2.GetLongLong();
+						//val_ret = val_1.GetLongLong() + val_2.GetLongLong();
 						//std::cout << "In Add(), new val1="<<val_ret.GetLongLong()<< std::endl;
-						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						//val_ret = val_1 + val_2;
+						//pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						val_1 += val_2;
+						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
 						cur_element_count_1 ++;
 						cur_element_count_2 ++;
 					}
@@ -437,7 +441,7 @@ namespace X
 				auto it_proc_scaler_minus = [pTensor, input, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val += input;
+					val += input;  //t1-10 is changed to t1+(-10)
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				//std::tie (bAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
@@ -456,8 +460,8 @@ namespace X
 				pRetVal->CreateBaseOnTensor(pTensor);
 				auto it_proc_scaler_minus = [pTensor, input, pRetVal](std::vector<long long>& indices)
 				{
-					X::Value val = pTensor->GetDataWithIndices(indices);
-					//val = input - val;
+					X::Value val = input;
+					val -= pTensor->GetDataWithIndices(indices);
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				//std::tie (bAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
@@ -483,7 +487,8 @@ namespace X
 				std::cout << "In tensor_cpu.h::Minus(), IsTensorAddableNew = " << bAddable << std::endl;
 				if (bAddable)
 				{
-					X::Value val_1, val_2, val_ret;
+					//X::Value val_1, val_2, val_ret;
+					X::Value val_1, val_2;
 					long long tot_element_count_1 = pTensor1->GetCount();
 					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
@@ -500,9 +505,12 @@ namespace X
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
 						//std::cout << "In Minus(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
-						val_ret = val_1.GetLongLong() - val_2.GetLongLong();
+						//val_ret = val_1.GetLongLong() - val_2.GetLongLong();
 						//std::cout << "In Minus(), new val1="<<val_ret.GetLongLong()<< std::endl;
-						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						//val_ret = val_1 - val_2;
+						//pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						val_1 -= val_2;
+						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
 						cur_element_count_1 ++;
 						cur_element_count_2 ++;
 					}
@@ -583,7 +591,8 @@ namespace X
 				std::cout << "In tensor_cpu.h::Multiply(), IsTensorAddableNew = " << bAddable << std::endl;
 				if (bAddable)
 				{
-					X::Value val_1, val_2, val_ret;
+					//X::Value val_1, val_2, val_ret;
+					X::Value val_1, val_2;
 					long long tot_element_count_1 = pTensor1->GetCount();
 					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
@@ -600,9 +609,12 @@ namespace X
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
 						//std::cout << "In Multiply(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
-						val_ret = val_1.GetLongLong() * val_2.GetLongLong();
+						//val_ret = val_1.GetLongLong() * val_2.GetLongLong();
 						//std::cout << "In Multiply(), new val1="<<val_ret.GetLongLong()<< std::endl;
-						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						//val_ret = val_1 * val_2;
+						//pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						val_1 *= val_2;
+						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
 						cur_element_count_1 ++;
 						cur_element_count_2 ++;
 					}
@@ -653,7 +665,8 @@ namespace X
 								indices2[1] = j;
 								val_1 = pTensor1->GetDataWithIndices(indices1);
 								val_2 = pTensor2->GetDataWithIndices(indices2);								
-								val += val_1.GetLongLong() * val_2.GetLongLong();
+								//val += val_1.GetLongLong() * val_2.GetLongLong();
+								val += val_1 * val_2;
 								//std::cout<<"i="<<i<<",j="<<j<<",k="<<k<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
 							}
 							//std::cout<<"i="<<i<<",j="<<j<<",val="<<val.GetLongLong()<< std::endl;
@@ -671,7 +684,8 @@ namespace X
 					if (n!=v)  //To do, error handling
 						return;
 
-					std::vector<int> dims;
+					//std::vector<int> dims;
+					Port::vector<int> dims(1);
 					dims.push_back(m);
 					pRetVal->SetShape(dims);
 
@@ -692,7 +706,8 @@ namespace X
 							indices2[0] = j;
 							val_1 = pTensor1->GetDataWithIndices(indices1);
 							val_2 = pTensor2->GetDataWithIndices(indices2);								
-							val += val_1.GetLongLong() * val_2.GetLongLong();
+							//val += val_1.GetLongLong() * val_2.GetLongLong();
+							val += val_1 * val_2;
 							//std::cout<<"i="<<i<<",j="<<j<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
 						}
 						pRetVal->SetDataWithIndices(indices, val);
@@ -715,6 +730,8 @@ namespace X
 
 		void Divide(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
+			std::cout << "in tensor_cpu.h::Divide()" << std::endl;
+
 			bool IsTensor1 = IsTensor (input1);
 			bool IsTensor2 = IsTensor (input2);
 			bool bAddable =false;
@@ -783,7 +800,8 @@ namespace X
 				std::cout << "In tensor_cpu.h::Divide(), IsTensorAddableNew = " << bAddable << std::endl;
 				if (bAddable)
 				{
-					X::Value val_1, val_2, val_ret;
+					//X::Value val_1, val_2, val_ret;
+					X::Value val_1, val_2;
 					long long tot_element_count_1 = pTensor1->GetCount();
 					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
@@ -800,9 +818,13 @@ namespace X
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
 						//std::cout << "In Divide(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
-						val_ret = val_1.GetLongLong() / val_2.GetLongLong();
+						//val_ret = val_1.GetLongLong() / val_2.GetLongLong();
+						//val_ret = val_1 / val_2;
 						//std::cout << "In Divide(), new val1="<<val_ret.GetLongLong()<< std::endl;
-						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						val_1 /= val_2;
+						//val_ret = val_1;
+						//pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
+						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
 						cur_element_count_1 ++;
 						cur_element_count_2 ++;
 					}

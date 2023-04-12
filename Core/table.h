@@ -305,7 +305,7 @@ public:
 		}
 		return strOut;
 	}
-	bool FillWithList(ARGS& params)
+	bool FillWithList(std::vector<X::Value>& params)
 	{
 		int colNum = (int)m_cols.size();
 		if (colNum == 0)
@@ -337,7 +337,8 @@ public:
 		KWARGS& kwParams,
 		X::Value& retValue) override
 	{
-		FillWithList(params);
+		std::vector<X::Value> aryValues(params.Data(), params.Data()+params.size());
+		FillWithList(aryValues);
 		retValue = X::Value(this);
 		return true;
 	}
@@ -397,7 +398,7 @@ public:
 		rObj->DecRef();
 		return true;
 	}
-	bool GetRow(long long rowId, KWARGS& kwargs)
+	bool GetRow(long long rowId, std::unordered_map<std::string, X::Value>& kwargs)
 	{
 		auto find = m_rowMap.find(rowId);
 		if (find == m_rowMap.end())
@@ -413,7 +414,7 @@ public:
 		}
 		return true;
 	}
-	long long  InsertRow(KWARGS kwargs)
+	long long  InsertRow(std::unordered_map<std::string, X::Value> kwargs)
 	{
 		long long rowID = m_lastRowId++;
 		size_t r = m_rowIDcol.ary->Add(rowID);
@@ -447,7 +448,7 @@ public:
 			{"Age",40+i},
 			{"Weight",137.3+i},
 				});
-			KWARGS vals;
+			std::unordered_map<std::string, X::Value> vals;
 			GetRow(rowId, vals);
 		}
 		DeleteRow(10);
@@ -461,7 +462,7 @@ public:
 			{"Age",40 + i},
 			{"Weight",137.3 + i},
 				});
-			KWARGS vals;
+			std::unordered_map<std::string, X::Value> vals;
 			GetRow(rowId, vals);
 			int c = 0;
 		}

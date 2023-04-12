@@ -40,17 +40,17 @@ namespace X
 				std::string strName;
 				{
 					strName = "has";
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"has(key)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								Dict* pObj = dynamic_cast<Dict*>(pContext);
-								retValue = Value(pObj->Has(params[0]));
-								return true;
-							}));
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						retValue = Value(pObj->Has(params[0]));
+						return true;
+					};
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"has(key)",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -75,15 +75,24 @@ namespace X
 				return true;
 			}
 		};
-		static DictScope _dictScope;
+		static DictScope* _dictScope = nullptr;
 		void Dict::cleanup()
 		{
-			_dictScope.clean();
+			if (_dictScope)
+			{
+				_dictScope->clean();
+				delete _dictScope;
+				_dictScope = nullptr;
+			}
 		}
 		Dict::Dict() :XDict(0)
 		{
 			m_t = ObjType::Dict;
-			m_bases.push_back(&_dictScope);
+			if (_dictScope == nullptr)
+			{
+				_dictScope = new DictScope();
+			}
+			m_bases.push_back(_dictScope);
 		}
 		List* Dict::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,

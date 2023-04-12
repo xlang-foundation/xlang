@@ -57,13 +57,13 @@ namespace X
 		pStrObj->IncRef();
 		return pStrObj;
 	}
-	bool XHost_Impl::RegisterPackage(const char* name, APISetBase* pAPISet,PackageCreator creator)
+	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator)
 	{
-		return X::Manager::I().Register(name,pAPISet,creator);
+		return X::Manager::I().Register(name,creator);
 	}
-	bool XHost_Impl::RegisterPackage(const char* name, APISetBase* pAPISet,Value& objPackage)
+	bool XHost_Impl::RegisterPackage(const char* name,Value& objPackage)
 	{
-		return X::Manager::I().Register(name,pAPISet,objPackage);
+		return X::Manager::I().Register(name,objPackage);
 	}
 	XObj* XHost_Impl::QueryMember(XRuntime* rt, XObj* pObj, const char* name)
 	{
@@ -95,10 +95,9 @@ namespace X
 		std::string strName(name);
 		return X::Manager::I().QueryAndCreatePackage((XlangRuntime*)rt,strName, objPackage);
 	}
-	XPackage* XHost_Impl::CreatePackage(APISetBase* pAPISet,void* pRealObj)
+	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
 		auto* pPack = new AST::Package(pRealObj);
-		pPack->SetAPISet(pAPISet);
 		pPack->Scope::IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}
@@ -115,7 +114,7 @@ namespace X
 		pEvt->IncRef();
 		return dynamic_cast<XEvent*>(pEvt);
 	}
-	XFunc* XHost_Impl::CreateFunction(const char* name,U_FUNC func, X::XObj* pContext)
+	XFunc* XHost_Impl::CreateFunction(const char* name,U_FUNC& func, X::XObj* pContext)
 	{
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"",func, pContext);
@@ -123,7 +122,7 @@ namespace X
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
-	XFunc* XHost_Impl::CreateFunctionEx(const char* name, U_FUNC_EX func, X::XObj* pContext)
+	XFunc* XHost_Impl::CreateFunctionEx(const char* name, U_FUNC_EX& func, X::XObj* pContext)
 	{
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
@@ -131,7 +130,7 @@ namespace X
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
-	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC setter, U_FUNC getter)
+	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter)
 	{
 		std::string strName(name);
 		std::string strSetName = "set_" + strName;
@@ -195,9 +194,17 @@ namespace X
 		pComplex->IncRef();
 		return pComplex;
 	}
-	std::string XHost_Impl::StringifyString(const std::string& str)
+	const char* XHost_Impl::StringifyString(const char* str)
 	{
-		return ::StringifyString(str);
+		std::string outStr =  ::StringifyString(str);
+		auto len = outStr.size() + 1;
+		char* pNewStr = new char[len];//must use ReleaseString to delete it
+		memcpy(pNewStr, outStr.data(), len);
+		return (const char*)pNewStr;
+	}
+	void XHost_Impl::ReleaseString(const char* str)
+	{
+		delete str;
 	}
 	XBin* XHost_Impl::CreateBin(char* data, size_t size, bool bOwnData)
 	{
@@ -282,19 +289,24 @@ namespace X
 		stream >> v;
 		return true;
 	}
-	bool XHost_Impl::RunCode(std::string& moduleName, std::string& code, X::Value& retVal)
+	bool XHost_Impl::RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal)
 	{
 		std::vector<std::string> passInParams;
-		return X::Hosting::I().Run(moduleName, code.c_str(),
-			(int)code.size(), passInParams,retVal);
+		return X::Hosting::I().Run(moduleName, code,
+			codeSize, passInParams,retVal);
 	}
-	bool XHost_Impl::RunCodeLine(std::string& codeLine, X::Value& retVal)
+	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal)
 	{
-		return X::Hosting::I().RunCodeLine(codeLine.c_str(), (int)codeLine.size(), retVal);
+		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal);
 	}
-	bool XHost_Impl::GetInteractiveCode(std::string& code)
+	const char* XHost_Impl::GetInteractiveCode()
 	{
-		return X::Hosting::I().GetInteractiveCode(code);
+		std::string code;
+		X::Hosting::I().GetInteractiveCode(code);
+		auto len = code.size() + 1;
+		char* pNewStr = new char[len];//must use ReleaseString to delete it
+		memcpy(pNewStr, code.data(), len);
+		return (const char*)pNewStr;
 	}
 
 	long XHost_Impl::OnEvent(const char* evtName, EventHandler handler)

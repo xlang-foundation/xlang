@@ -420,6 +420,10 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_Reqular-2);
 	RegOP("and", "or")
 		.SetPrecedence(Precedence_Reqular-1);
+	//for example for in range(num), in needs have 
+	//less Precedence than range which takes Precedence_Reqular
+	RegOP("in")
+		.SetPrecedence(Precedence_Reqular - 1);
 	//
 	RegOP("[", "]", "{", "}", "(",")")
 		.SetPrecedence(Precedence_High);

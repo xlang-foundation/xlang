@@ -2,9 +2,6 @@
 #define _X_LANG_H_
 
 #include <string>
-#include <vector>
-#include <unordered_map>
-#include <exception>
 #include "value.h"
 #include "xhost.h"
 
@@ -41,6 +38,18 @@ namespace X
 		Table,
 		RemoteObject,
 		PyProxyObject
+	};
+
+	//For XPackage
+	enum class PackageMemberType
+	{
+		Func,
+		FuncEx,
+		Prop,
+		Const,
+		ObjectEvent,
+		Class,
+		ClassInstance,
 	};
 #define Internal_Reserve(cls_name)  cls_name(int){}
 
@@ -247,7 +256,7 @@ namespace X
 		}
 		inline X::Value operator()()
 		{
-			X::ARGS params;
+			X::ARGS params(0);
 			X::KWARGS kwargs;
 			X::Value v0;
 			Call(m_cxt->rt, m_cxt->m_parent, params, kwargs, v0);
@@ -338,7 +347,7 @@ namespace X
 		virtual char* GetData() = 0;
 		virtual int GetDimCount() = 0;
 		virtual long long GetDimSize(int dimIdx) = 0;
-		virtual void SetShape(std::vector<int> shapes) = 0;
+		virtual void SetShape(Port::vector<int> shapes) = 0;
 		virtual void SetDataType(TensorDataType t) = 0;
 		virtual TensorDataType GetDataType() = 0;
 		virtual bool Create(X::Value& initData) = 0;
@@ -441,7 +450,7 @@ namespace X
 	{
 	public:
 		virtual void SetPackageCleanupFunc(PackageCleanup func) = 0;
-		virtual int AddMethod(const char* name,bool keepRawParams =false) = 0;
+		virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) = 0;
 		virtual void* GetEmbedObj() = 0;
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(int idx, Value& v) = 0;

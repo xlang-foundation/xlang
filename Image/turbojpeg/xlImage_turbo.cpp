@@ -84,7 +84,10 @@ namespace X {
 					break;
 				}
 				X::Tensor tensor;
-				std::vector<int> shapes({ (int)height,(int)width, pixSize });
+				Port::vector<int> shapes(3);
+				shapes.push_back((int)height);
+				shapes.push_back((int)width);
+				shapes.push_back(pixSize);
 				tensor->SetShape(shapes);
 				tensor->SetDataType(X::TensorDataType::UBYTE);
 				X::Value initData;

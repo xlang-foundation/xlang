@@ -58,7 +58,7 @@ namespace Data {
 			IncRef();
 			return this;
 		}
-		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos,ARGS& vals)
+		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals)
 		{
 			return true;
 		}

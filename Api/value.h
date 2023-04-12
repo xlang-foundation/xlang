@@ -1,7 +1,8 @@
 #pragma once
 
+//ABI check,string used here just for local usage, not cross ABI
 #include <string>
-#include <vector>
+#include "xport.h"
 
 namespace X 
 {
@@ -96,6 +97,9 @@ bool Value::operator op (const Value& r) const\
 	return bRet;\
 }
 
+//review 4/10/2023
+//ABI issue with Value, different compiler may generate different layout of members
+//TODO:change to use struct to wrap its members
 #define BOOL_FLAG -10
 #define CHAR_FLAG -20
 class Value
@@ -109,7 +113,7 @@ class Value
 		char* str;
 		XObj* obj;
 	}x;
-	Value ObjCall(std::vector<X::Value>& params);
+	Value ObjCall(Port::vector<X::Value>& params);
 	Value QueryMember(const char* key);
 public:
 	inline bool IsInvalid()
@@ -418,7 +422,7 @@ public:
 		}
 		const int size = sizeof...(args);
 		Value vals[size] = { args... };
-		std::vector<X::Value> params;
+		Port::vector<X::Value> params(size);
 		for (int i = 0; i < size; i++)
 		{
 			params.push_back(vals[i]);
@@ -431,7 +435,7 @@ public:
 		{
 			return Value();
 		}
-		std::vector<X::Value> params;
+		Port::vector<X::Value> params(0);
 		return ObjCall(params);
 	}
 	inline Value operator[](const char* key)

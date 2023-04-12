@@ -191,7 +191,7 @@ public:
 		return false;
 	}
 	virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) { return true; }
-	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, ARGS& ary) { return true; }
+	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) { return true; }
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue=nullptr)
 	{
 		return false;

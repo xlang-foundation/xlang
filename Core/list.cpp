@@ -35,26 +35,30 @@ namespace X
 			}
 			void Init()
 			{
+				char* pTest100 = new char[7000];
 				m_stackFrame = new AST::StackFrame(this);
 				m_stackFrame->SetVarCount(3);
-
+				char* pTest101 = new char[70];
+				char* pTest2 = new char[7000];
 				std::string strName;
 				{
+					char* pTest3 = new char[7000];
 					strName = "remove";
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"remove(index)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								List* pObj = dynamic_cast<List*>(pContext);
-								long long idx = params[0];
-								pObj->Remove(idx);
-								retValue = Value(true);
-								return true;
-							}));
-					auto* pFuncObj = new Function(extFunc);
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						long long idx = params[0];
+						pObj->Remove(idx);
+						retValue = Value(true);
+						return true;
+					};
+					char* pTest = new char[7000];
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = nullptr;// new AST::ExternFunc(strName, "remove(index)", func);
+					auto* pFuncObj = new X::Data::Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
 					Value funcVal(pFuncObj);
@@ -62,18 +66,18 @@ namespace X
 				}
 				{
 					strName = "clear";
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"clear()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								List* pObj = dynamic_cast<List*>(pContext);
-								pObj->Clear();
-								retValue = Value(true);
-								return true;
-							}));
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						pObj->Clear();
+						retValue = Value(true);
+						return true;
+					};
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"clear()",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -82,19 +86,20 @@ namespace X
 				}
 				{
 					strName = "size";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						std::cout << "List.Size" << std::endl;
+						List* pObj = dynamic_cast<List*>(pContext);
+						retValue = Value(pObj->Size());
+						std::cout << "List.Size->End" << std::endl;
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"size()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								std::cout << "List.Size" << std::endl;
-								List* pObj = dynamic_cast<List*>(pContext);
-								retValue = Value(pObj->Size());
-								std::cout << "List.Size->End" << std::endl;
-								return true;
-							}));
+						"size()",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -120,17 +125,26 @@ namespace X
 				return true;
 			}
 		};
-		static ListScope _listScope;
+		static ListScope* _listScope = nullptr;
 		void List::cleanup()
 		{
-			_listScope.clean();
+			if (_listScope)
+			{
+				_listScope->clean();
+				delete _listScope;
+				_listScope = nullptr;
+			}
 		}
 		List::List() :
 			XList(0),
 			Object()
 		{
 			m_t = ObjType::List;
-			m_bases.push_back(&_listScope);
+			if (_listScope == nullptr)
+			{
+				_listScope = new ListScope();
+			}
+			m_bases.push_back(_listScope);
 
 		}
 		bool List::Call(XRuntime* rt, XObj* pContext,
@@ -142,9 +156,9 @@ namespace X
 			//memory allocation
 			for (auto it : kwParams)
 			{
-				if (it.first == "size")
+				if (it.Match("size"))
 				{
-					long long size = it.second.GetLongLong();
+					long long size = it.val.GetLongLong();
 					AutoLock(m_lock);
 					m_data.resize(size);
 					break;
@@ -152,9 +166,9 @@ namespace X
 			}
 			for (auto it : kwParams)
 			{
-				if (it.first == "init")
+				if (it.Match("init"))
 				{
-					auto v0 = it.second;
+					auto v0 = it.val;
 					if (v0.IsObject() 
 						&& v0.GetObj()->GetType() ==ObjType::Str
 						&& v0.ToString().find("rand")==0)

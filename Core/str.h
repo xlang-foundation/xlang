@@ -165,7 +165,7 @@ namespace Data
 			retList = splitWithChars(m_s, delims.c_str());
 			return true;
 		}
-		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, ARGS& vals) override
+		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 		{
 			long long it = (long long)pos;
 			X::Value val0;

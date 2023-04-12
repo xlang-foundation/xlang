@@ -11,7 +11,7 @@ namespace X
 {
 	void XLangProxyManager::Register()
 	{
-		Manager::I().RegisterProxy("lrpc",[](std::string& url) {
+		Manager::I().RegisterProxy("lrpc",[](const char* url) {
 			XLangProxy* pProxy = new XLangProxy();
 			pProxy->SetUrl(url);
 			pProxy->Start();
@@ -22,9 +22,9 @@ namespace X
 	{
 		m_pConnectWait = new XWait(false);
 	}
-	void XLangProxy::SetUrl(std::string& url)
+	void XLangProxy::SetUrl(const char* url)
 	{
-		SCANF(url.c_str(), "%d", &m_port);
+		SCANF(url, "%d", &m_port);
 	}
 	XLangProxy::~XLangProxy()
 	{
@@ -50,7 +50,7 @@ namespace X
 		return oId;
 	}
 	X::Value XLangProxy::UpdateItemValue(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
-		std::vector<std::string>& IdList, int id_offset,
+		Port::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val)
 	{
 		if (!CheckConnectReadyStatus())
@@ -80,7 +80,7 @@ namespace X
 		return retVal;
 	}
 	bool XLangProxy::FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
-		std::vector<std::string>& IdList, int id_offset,
+		Port::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count, Value& retList)
 	{
 		if (!CheckConnectReadyStatus())
@@ -210,8 +210,8 @@ namespace X
 		stream << (int)kwParams.size();
 		for (auto& kw : kwParams)
 		{
-			stream << kw.first;
-			kw.second.ToBytes(&stream);
+			stream << kw.key;
+			kw.val.ToBytes(&stream);
 		}
 		//set flag to show if there is a trailer
 		stream << trailer.IsValid();

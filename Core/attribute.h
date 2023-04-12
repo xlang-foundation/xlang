@@ -23,9 +23,10 @@ namespace X
 			}
 			void CovertToDict(KWARGS& kwargs)
 			{
+				kwargs.resize(m_attrs.size());
 				for (auto& it : m_attrs)
 				{
-					kwargs.emplace(it);
+					kwargs.Add(it.first.c_str(), it.second, true);
 				}
 			}
 			void Set(std::string name,X::Value& v)

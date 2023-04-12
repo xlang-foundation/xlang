@@ -143,7 +143,7 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 		if (bOK)
 		{
 			unsigned long long moduleKey = 0;
-			auto* pSubModule = Hosting::I().Load(loadXModuleFileName, 
+			auto* pSubModule = Hosting::I().Load(loadXModuleFileName.c_str(),
 				code.c_str(), (int)code.size(), moduleKey);
 			if (pSubModule)
 			{

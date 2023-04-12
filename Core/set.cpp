@@ -42,19 +42,20 @@ namespace X
 				std::string strName;
 				{
 					strName = "remove";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						mSet* pObj = dynamic_cast<mSet*>(pContext);
+						long long idx = params[0];
+						pObj->Remove(idx);
+						retValue = Value(true);
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"remove(index)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								mSet* pObj = dynamic_cast<mSet*>(pContext);
-								long long idx = params[0];
-								pObj->Remove(idx);
-								retValue = Value(true);
-								return true;
-							}));
+						"remove(index)",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -63,18 +64,19 @@ namespace X
 				}
 				{
 					strName = "clear";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						mSet* pObj = dynamic_cast<mSet*>(pContext);
+						pObj->Clear();
+						retValue = Value(true);
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"clear()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								mSet* pObj = dynamic_cast<mSet*>(pContext);
-								pObj->Clear();
-								retValue = Value(true);
-								return true;
-							}));
+						"clear()",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -83,19 +85,20 @@ namespace X
 				}
 				{
 					strName = "size";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						std::cout << "Set.Size" << std::endl;
+						mSet* pObj = dynamic_cast<mSet*>(pContext);
+						retValue = Value(pObj->Size());
+						std::cout << "Set.Size->End" << std::endl;
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"size()",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								std::cout << "Set.Size" << std::endl;
-								mSet* pObj = dynamic_cast<mSet*>(pContext);
-								retValue = Value(pObj->Size());
-								std::cout << "Set.Size->End" << std::endl;
-								return true;
-							}));
+						"size()",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -121,17 +124,26 @@ namespace X
 				return true;
 			}
 		};
-		static SetScope _SetScope;
+		static SetScope* _SetScope = nullptr;
 		void mSet::cleanup()
 		{
-			_SetScope.clean();
+			if (_SetScope)
+			{
+				_SetScope->clean();
+				delete _SetScope;
+				_SetScope = nullptr;
+			}
 		}
 		mSet::mSet() :
 			XSet(0),
 			Object()
 		{
 			m_t = ObjType::Set;
-			m_bases.push_back(&_SetScope);
+			if (_SetScope == nullptr)
+			{
+				_SetScope = new SetScope();
+			}
+			m_bases.push_back(_SetScope);
 
 		}
 		bool mSet::Call(XRuntime* rt, XObj* pContext,
@@ -143,9 +155,9 @@ namespace X
 			//memory allocation
 			for (auto it : kwParams)
 			{
-				if (it.first == "size")
+				if (it.Match("size"))
 				{
-					long long size = it.second.GetLongLong();
+					long long size = it.val.GetLongLong();
 					AutoLock(m_lock);
 					m_data.resize(size);
 					break;
@@ -153,9 +165,9 @@ namespace X
 			}
 			for (auto it : kwParams)
 			{
-				if (it.first == "init")
+				if (it.Match("init"))
 				{
-					auto v0 = it.second;
+					auto v0 = it.val;
 					if (v0.IsObject() 
 						&& v0.GetObj()->GetType() ==ObjType::Str
 						&& v0.ToString().find("rand")==0)

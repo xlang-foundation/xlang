@@ -3,16 +3,15 @@
 #include "utility.h"
 #include "port.h"
 
-//TODO: for security, diable any funtion call inside json string or file
+//TODO: for security, disable any function call inside json string or file
 
 namespace X
 {
 	X::Value JsonWrapper::LoadFromString(std::string jsonStr)
 	{
-		std::string fileName = "inline_code";
 		X::Value retValue;
 		std::vector<std::string> passInParams;
-		X::Hosting::I().Run(fileName, jsonStr.c_str(),
+		X::Hosting::I().Run("inline_code", jsonStr.c_str(),
 			(int)jsonStr.size(), passInParams,retValue);
 		return retValue;
 	}
@@ -33,7 +32,7 @@ namespace X
 			retValue = X::Value(false);
 		}
 		std::vector<std::string> passInParams;
-		X::Hosting::I().Run(fileName, jsonStr.c_str(),
+		X::Hosting::I().Run(fileName.c_str(), jsonStr.c_str(),
 			(int)jsonStr.size(), passInParams,retValue);
 		return retValue;
 	}

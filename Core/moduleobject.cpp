@@ -21,72 +21,75 @@ namespace X
 				//API: runfragment
 				{
 					std::string name("runfragment");
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						ARGS& params,
+						KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						bool bPost = false;
+						auto kwIt = kwParams.find("post");
+						if (kwIt)
+						{
+							bPost = (bool)kwIt->val;
+						}
+						if (params.size() > 0)
+						{
+							std::string code;
+							auto& v0 = params[0];
+							std::string codePack;
+							if (v0.IsObject()
+								&& v0.GetObj()->GetType() == ObjType::Function)
+							{
+								auto* pFuncObj = dynamic_cast<X::Data::Function*>(v0.GetObj());
+								code = pFuncObj->GetFunc()->GetCode();
+							}
+							else
+							{
+								code = v0.ToString();
+							}
+							auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
+							if (bPost)
+							{
+								Hosting::I().PostRunFragmentInMainThread(pModuleObj, code);
+							}
+							else
+							{
+								return Hosting::I().RunFragmentInModule(pModuleObj,
+									code.c_str(), code.size(), retValue);
+							}
+						}
+						else
+						{
+							retValue = X::Value(true);
+							return true;
+						}
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
 						"retVal = runfragment(code[,post = True|False])",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							ARGS& params,
-							KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								bool bPost = false;
-								auto kwIt = kwParams.find("post");
-								if (kwIt != kwParams.end())
-								{
-									bPost = (bool)kwIt->second;
-								}
-								if (params.size() > 0)
-								{
-									std::string code;
-									auto& v0 = params[0];
-									std::string codePack;
-									if (v0.IsObject()
-										&& v0.GetObj()->GetType() == ObjType::Function)
-									{
-										auto* pFuncObj = dynamic_cast<X::Data::Function*>(v0.GetObj());
-										code = pFuncObj->GetFunc()->GetCode();
-									}
-									else
-									{
-										code = v0.ToString();
-									}
-									auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
-									if (bPost)
-									{
-										Hosting::I().PostRunFragmentInMainThread(pModuleObj, code);
-									}
-									else
-									{
-										return Hosting::I().RunFragmentInModule(pModuleObj,
-											code.c_str(), code.size(), retValue);
-									}
-								}
-								else
-								{
-									retValue = X::Value(true);
-									return true;
-								}
-							}));
+						func);
 					auto* pFuncObj = new Data::Function(extFunc, true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
 				//API: setprimitive
 				{
 					std::string name("setprimitive");
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						ARGS& params,
+						KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						if (params.size() == 2)
+						{
+							std::string name = params[0].ToString();
+							auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
+							pModuleObj->M()->SetPrimitive(name, params[1], rt);
+						}
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						"setprimitive(name,obj)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							ARGS& params,
-							KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								if (params.size() == 2)
-								{
-									std::string name = params[0].ToString();
-									auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
-									pModuleObj->M()->SetPrimitive(name, params[1],rt);
-								}
-								return true;
-							}));
+						"setprimitive(name,obj)",func);
 					auto* pFuncObj = new Data::Function(extFunc, true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
@@ -123,16 +126,20 @@ namespace X
 				return true;
 			}
 		};
-		static ModuleOp _module_op;
+		static ModuleOp* _module_op = nullptr;
 		void ModuleObject::GetBaseScopes(std::vector<Scope*>& bases)
 		{
+			if (_module_op == nullptr)
+			{
+				_module_op = new ModuleOp();
+			}
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_module_op);
+			bases.push_back(_module_op);
 			bases.push_back(m_pModule);
 		}
 		int ModuleObject::QueryMethod(const char* name, bool* pKeepRawParams)
 		{
-			int idx = _module_op.QueryMethod(name);
+			int idx = _module_op->QueryMethod(name);
 			if (idx >= 0)
 			{
 				return -2-idx;//start from -2,then -3...
@@ -147,7 +154,7 @@ namespace X
 		{
 			if (idx <= -2)
 			{
-				return _module_op.Get(nullptr, nullptr, -idx-2, v);
+				return _module_op->Get(nullptr, nullptr, -idx-2, v);
 			}
 			else
 			{
@@ -156,7 +163,12 @@ namespace X
 		}
 		void ModuleObject::cleanup()
 		{
-			_module_op.clean();
+			if (_module_op)
+			{
+				_module_op->clean();
+				delete _module_op;
+				_module_op = nullptr;
+			}
 		}
 		Scope* ModuleObject::GetParentScope()
 		{

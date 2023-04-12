@@ -64,87 +64,88 @@ namespace X
 				std::string strName;
 				{
 					strName = "randwithshape";
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"randwithshape(shapes in list)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+						auto& p0 = params[0];
+						if (p0.IsList())
+						{
+							List* pList = dynamic_cast<List*>(p0.GetObj());
+							int axesCnt = (int)pList->Size();
+							double dMin = 0;
+							double dMax = 1;
+							long long llMin = LLONG_MIN;
+							long long llMax = LLONG_MAX;
+							TensorDataType dt = TensorDataType::DOUBLE;
+							auto it = kwParams.find(Tensor_DType);
+							if (it)
 							{
-								Tensor* pObj = dynamic_cast<Tensor*>(pContext);
-								auto& p0 = params[0];
-								if (p0.IsList())
+								dt = (TensorDataType)(int)it->val;
+							}
+							if (dt == TensorDataType::DOUBLE)
+							{
+								it = kwParams.find(Tensor_Max);
+								if (it)
 								{
-									List* pList = dynamic_cast<List*>(p0.GetObj());
-									int axesCnt = (int)pList->Size();
-									double dMin = 0;
-									double dMax = 1;
-									long long llMin = LLONG_MIN;
-									long long llMax = LLONG_MAX;
-									TensorDataType dt = TensorDataType::DOUBLE;
-									auto it = kwParams.find(Tensor_DType);
-									if (it != kwParams.end())
-									{
-										dt = (TensorDataType)(int)it->second;
-									}
-									if (dt == TensorDataType::DOUBLE)
-									{
-										it = kwParams.find(Tensor_Max);
-										if (it != kwParams.end())
-										{
-											dMax = (double)it->second;
-										}
-										it = kwParams.find(Tensor_Min);
-										if (it != kwParams.end())
-										{
-											dMin = (double)it->second;
-										}
-									}
-									else
-									{
-										it = kwParams.find(Tensor_Max);
-										if (it != kwParams.end())
-										{
-											llMax = (long long)it->second;
-										}
-										it = kwParams.find(Tensor_Min);
-										if (it != kwParams.end())
-										{
-											llMin = (long long)it->second;
-										}
-									}
-									Tensor* pNewTensor = new Tensor();
-									pNewTensor->SetDataType(dt);
-									std::vector<int> dims(axesCnt);
-									for (int i = 0; i < axesCnt; i++)
-									{
-										dims[i]=(int)pList->Get(i);
-									}
-									pNewTensor->SetShape(dims);
-									X::Value initData;
-									pNewTensor->Create(initData);
-									auto it_proc = [pNewTensor,dMin,dMax](std::vector<long long>& indices)
-									{
-										X::Value val = randDouble(dMin, dMax);
-										pNewTensor->SetDataWithIndices(indices, val);
-									};
-									auto it_proc_int64 = [pNewTensor,llMin,llMax](std::vector<long long>& indices)
-									{
-										X::Value val= rand64(llMin,llMax);
-										pNewTensor->SetDataWithIndices(indices, val);
-									};
-									if (dt == TensorDataType::DOUBLE)
-									{
-										pNewTensor->IterateAll(it_proc);
-									}
-									else
-									{
-										pNewTensor->IterateAll(it_proc_int64);
-									}
-									retValue = X::Value(pNewTensor);
+									dMax = (double)it->val;
 								}
-								return true;
-							}));
+								it = kwParams.find(Tensor_Min);
+								if (it)
+								{
+									dMin = (double)it->val;
+								}
+							}
+							else
+							{
+								it = kwParams.find(Tensor_Max);
+								if (it)
+								{
+									llMax = (long long)it->val;
+								}
+								it = kwParams.find(Tensor_Min);
+								if (it)
+								{
+									llMin = (long long)it->val;
+								}
+							}
+							Tensor* pNewTensor = new Tensor();
+							pNewTensor->SetDataType(dt);
+							Port::vector<int> dims(axesCnt);
+							for (int i = 0; i < axesCnt; i++)
+							{
+								dims[i] = (int)pList->Get(i);
+							}
+							pNewTensor->SetShape(dims);
+							X::Value initData;
+							pNewTensor->Create(initData);
+							auto it_proc = [pNewTensor, dMin, dMax](std::vector<long long>& indices)
+							{
+								X::Value val = randDouble(dMin, dMax);
+								pNewTensor->SetDataWithIndices(indices, val);
+							};
+							auto it_proc_int64 = [pNewTensor, llMin, llMax](std::vector<long long>& indices)
+							{
+								X::Value val = rand64(llMin, llMax);
+								pNewTensor->SetDataWithIndices(indices, val);
+							};
+							if (dt == TensorDataType::DOUBLE)
+							{
+								pNewTensor->IterateAll(it_proc);
+							}
+							else
+							{
+								pNewTensor->IterateAll(it_proc_int64);
+							}
+							retValue = X::Value(pNewTensor);
+						}
+						return true;
+					};
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
+						"randwithshape(shapes in list)",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -153,17 +154,18 @@ namespace X
 				}
 				{
 					strName = "astype";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+						retValue = pObj->asType((int)params[0]);
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"astype(type)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								Tensor* pObj = dynamic_cast<Tensor*>(pContext);
-								retValue = pObj->asType((int)params[0]);
-								return true;
-							}));
+						"astype(type)",func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -172,22 +174,24 @@ namespace X
 				}
 				{
 					strName = "reshape";
+					auto f = [](X::XRuntime* rt, XObj* pContext,
+						X::ARGS& params,
+						X::KWARGS& kwParams,
+						X::Value& retValue)
+					{
+						if (params.size() == 0)
+						{
+							retValue = X::Value();
+							return true;
+						}
+						Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+						retValue = pObj->reshape(params[0]);
+						return true;
+					};
+					X::U_FUNC func(f);
 					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
 						"reshape(list of shape: [10,40,10], need to have same amount of items)",
-						(X::U_FUNC)([](X::XRuntime* rt, XObj* pContext,
-							X::ARGS& params,
-							X::KWARGS& kwParams,
-							X::Value& retValue)
-							{
-								if (params.size() == 0)
-								{
-									retValue = X::Value();
-									return true;
-								}
-								Tensor* pObj = dynamic_cast<Tensor*>(pContext);
-								retValue = pObj->reshape(params[0]);
-								return true;
-							}));
+						func);
 					auto* pFuncObj = new Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);
@@ -212,10 +216,15 @@ namespace X
 				return true;
 			}
 		};
-		static TensorScope _TensorScope;
+		static TensorScope* _TensorScope = nullptr;
 		void Tensor::cleanup()
 		{
-			_TensorScope.clean();
+			if (_TensorScope)
+			{
+				_TensorScope->clean();
+				delete _TensorScope;
+				_TensorScope = nullptr;
+			}
 		}
 
 		Tensor::Tensor():XTensor(0),
@@ -272,20 +281,9 @@ namespace X
 						auto& idxInfo = IdxAry[i];
 						newDimInfo.offset = dimInfo.offset+idxInfo.i;
 						//stride keep same,because the memory is from the first tensor
-						long long newSize = 0;
-						if (idxInfo.j < 0 && idxInfo.i>0)
-						{
-							newSize = dimInfo.size + idxInfo.j - idxInfo.i + 1;
-						}
-						else if (idxInfo.j > 0 && idxInfo.i < 0)
-						{
-							newSize = idxInfo.j - (dimInfo.size + idxInfo.i) + 1;
-						}
-						else
-						{
-							newSize = idxInfo.j - idxInfo.i + 1;
-						}
-						newDimInfo.size = newSize;
+						//we support this way: t2 = t0[0,0,-2:2,-3:3]
+						//if index less than 0, mean out of range, just return invalid
+						newDimInfo.size = idxInfo.j - idxInfo.i + 1;;
 					}
 					else
 					{
@@ -307,6 +305,10 @@ namespace X
 			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
 
 			long long addr = CalcItemOffset(indices);
+			if (addr < 0)
+			{
+				return X::Value();
+			}
 			X::Value retVal;
 			char* pAddr = m_data + addr;
 			switch (m_dataType)
@@ -715,11 +717,18 @@ namespace X
 			//SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
-		AST::Scope* Tensor::GetBaseScope() { return &_TensorScope; }
+		inline AST::Scope* Tensor::GetBaseScope() 
+		{ 
+			if (_TensorScope == nullptr)
+			{
+				_TensorScope = new TensorScope();
+			}
+			return _TensorScope;
+		}
 		void Tensor::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(&_TensorScope);
+			bases.push_back(GetBaseScope());
 		}
 		bool Tensor::Multiply(const X::Value& r, X::Value& retVal)
 		{

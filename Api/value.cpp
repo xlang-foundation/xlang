@@ -25,7 +25,7 @@ namespace X
 		}
 		else if (right.IsObject())
 		{
-			done = right.GetObj()->Multiply(this, ret);
+			done = right.GetObj()->Multiply(*this, ret);
 		}
 		if (!done)
 		{
@@ -45,7 +45,7 @@ namespace X
 		}
 		else if (right.IsObject())
 		{
-			done = right.GetObj()->Add(this, ret);
+			done = right.GetObj()->Add(*this, ret);
 		}
 		if (!done)
 		{
@@ -73,7 +73,7 @@ namespace X
 		else if (right.IsObject())
 		{
 			//for case:this Value is not an object, just right side is an object
-			done = right.GetObj()->Minuend(this, ret);
+			done = right.GetObj()->Minuend(*this, ret);
 		}
 		if (!done)
 		{
@@ -257,7 +257,7 @@ namespace X
 	template<>
 	void V<XPackage>::Create(void* pRealObj)
 	{
-		SetObj(g_pXHost->CreatePackage(nullptr,pRealObj));
+		SetObj(g_pXHost->CreatePackage(pRealObj));
 	}
 	template<>
 	template<>
@@ -327,7 +327,7 @@ namespace X
 			SetObj(v0.GetObj());
 		}
 	}
-	Value Value::ObjCall(std::vector<X::Value>& params)
+	Value Value::ObjCall(Port::vector<X::Value>& params)
 	{
 		auto* pObj = GetObj();
 		if (pObj == nullptr || pObj->GetContext() == nullptr)
@@ -474,13 +474,26 @@ namespace X
 			str = x.obj->ToString(WithFormat);
 			if (WithFormat && x.obj->GetType() == ObjType::Str)
 			{
-				str= g_pXHost->StringifyString(str);
+				const char* pNewStr= g_pXHost->StringifyString(str.c_str());
+				if (pNewStr)
+				{
+					str = pNewStr;
+					g_pXHost->ReleaseString(pNewStr);
+				}
 			}
 		}
 			break;
 		case ValueType::Str:
 			str = std::string((char*)x.str, flags);
-			if (WithFormat) str = g_pXHost->StringifyString(str);
+			if (WithFormat)
+			{
+				const char* pNewStr = g_pXHost->StringifyString(str.c_str());
+				if (pNewStr)
+				{
+					str = pNewStr;
+					g_pXHost->ReleaseString(pNewStr);
+				}
+			}
 			break;
 		default:
 			break;
