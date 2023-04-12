@@ -11,4 +11,4 @@ print(t_g)
 t_g.run()
 print("after graph run, t1-t2=", t11)
 
-#expected sum is = [[[0,0],[2,2]], [[4,4],[6,6]],[[8,8],[10,10]]]
+#expected t1-t2= Tensor(size=(3,2,2),[0,0,0,0,4,4,4,4,8,8,8,8])

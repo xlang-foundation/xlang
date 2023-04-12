@@ -292,9 +292,6 @@ namespace X
 
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
-			std::cout << "In tensor_cpu.h::Add()" << std::endl;
-			std::cout << "In tensor_cpu.h::Add(), input1 is " << input1.ToString()<< std::endl;
-			std::cout << "In tensor_cpu.h::Add(), input2 is " << input2.ToString()<< std::endl;
 
 			//if (!IsTensor(retVal)) {
 			//	std::cout << "In tensor_cpu.h::Add(),returned" << std::endl;
@@ -311,12 +308,10 @@ namespace X
 
 			if (!IsTensor1 && !IsTensor2)
 			{
-				std::cout << "In tensor_cpu.h::Add(), none is tensor, returned 2 =" << std::endl;
 				return;  //todo, error handling
 			}
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
-				std::cout << "In tensor_cpu.h::Add(), input1 is tensor, input2 is not a tensor" << std::endl;
 				//std::cout << "In tensor_cpu.h::Add(), input2 is " << input2.ToString()<< std::endl;
 
 				if (!IsNum(input2))	//the other must be a number
@@ -337,7 +332,6 @@ namespace X
 				pTensor->IterateAll(it_proc_scaler_add);
 			}
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
-				std::cout << "In tensor_cpu.h::Add(), input1 is not a tensor, input2 is a tensor" << std::endl;
 				if (!IsNum(input1))	//the other must be a number
 					return;
 				X::Value& input = input1;
@@ -370,7 +364,6 @@ namespace X
 
 				pRetVal->CreateBaseOnTensor(pTensor1);
 				bAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
-				std::cout << "In tensor_cpu.h::Add(), IsTensorAddableNew = " << bAddable << std::endl;
 				if (bAddable)
 				{
 					//X::Value val_1, val_2, val_ret;
@@ -378,23 +371,15 @@ namespace X
 					long long tot_element_count_1 = pTensor1->GetCount();
 					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
-					std::cout << "In Add(), total elements in t1 ="<<tot_element_count_1<<", total elements in t2 ="<<tot_element_count_2<< std::endl;
 
 					while (cur_element_count_1 < tot_element_count_1)
 					{
-						//if (cur_element_count_1 % tot_element_count_2 == 0) 
 						if (cur_element_count_2 == tot_element_count_2) 
 						{
 							cur_element_count_2 = 0;
 						}
-						//std::cout << "In Add(), current index1 ="<<cur_element_count_1<<", current index2 ="<<cur_element_count_2<< std::endl;
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
-						//std::cout << "In Add(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
-						//val_ret = val_1.GetLongLong() + val_2.GetLongLong();
-						//std::cout << "In Add(), new val1="<<val_ret.GetLongLong()<< std::endl;
-						//val_ret = val_1 + val_2;
-						//pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
 						val_1 += val_2;
 						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
 						cur_element_count_1 ++;
@@ -406,10 +391,6 @@ namespace X
 
 		void Minus(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
-			std::cout << "In tensor_cpu.h::Minus()" << std::endl;
-			std::cout << "In tensor_cpu.h::Minus(), input1 is " << input1.ToString()<< std::endl;
-			std::cout << "In tensor_cpu.h::Minus(), input2 is " << input2.ToString()<< std::endl;
-
 			//if (!IsTensor(retVal)) {
 			//	std::cout << "In tensor_cpu.h::Minus(),returned" << std::endl;
 		 	//	return;
@@ -425,12 +406,10 @@ namespace X
 
 			if (!IsTensor1 && !IsTensor2)
 			{
-				std::cout << "In tensor_cpu.h::Minus(), none is tensor, returned 2 =" << std::endl;
 				return;  //todo, error handling
 			}
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
-				std::cout << "In tensor_cpu.h::Minus(), input1 is tensor, input2 is not a tensor" << std::endl;
 				if (!IsNum(input2))	//the other must be a number
 					return;
 				X::Value& input = input2;
@@ -450,7 +429,6 @@ namespace X
 				pTensor->IterateAll(it_proc_scaler_minus);
 			}
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
-				std::cout << "In tensor_cpu.h::Minus(), input1 is not a tensor, input2 is a tensor" << std::endl;
 				if (!IsNum(input1))	//the other must be a number
 					return;
 				X::Value& input = input1;
@@ -484,7 +462,6 @@ namespace X
 
 				pRetVal->CreateBaseOnTensor(pTensor1);
 				bAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
-				std::cout << "In tensor_cpu.h::Minus(), IsTensorAddableNew = " << bAddable << std::endl;
 				if (bAddable)
 				{
 					//X::Value val_1, val_2, val_ret;
@@ -492,7 +469,6 @@ namespace X
 					long long tot_element_count_1 = pTensor1->GetCount();
 					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
-					std::cout << "In Minus(), total elements in t1 ="<<tot_element_count_1<<", total elements in t2 ="<<tot_element_count_2<< std::endl;
 
 					while (cur_element_count_1 < tot_element_count_1)
 					{
@@ -504,11 +480,6 @@ namespace X
 						//std::cout << "In Minus(), current index1 ="<<cur_element_count_1<<", current index2 ="<<cur_element_count_2<< std::endl;
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
-						//std::cout << "In Minus(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
-						//val_ret = val_1.GetLongLong() - val_2.GetLongLong();
-						//std::cout << "In Minus(), new val1="<<val_ret.GetLongLong()<< std::endl;
-						//val_ret = val_1 - val_2;
-						//pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
 						val_1 -= val_2;
 						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
 						cur_element_count_1 ++;
@@ -520,9 +491,6 @@ namespace X
 
 		void Multiply(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
-			std::cout << "In tensor_cpu.h::Multiply()" << std::endl;
-			std::cout << "In tensor_cpu.h::Multiply(), input1 is " << input1.ToString()<< std::endl;
-			std::cout << "In tensor_cpu.h::Multiply(), input2 is " << input2.ToString()<< std::endl;
 			bool IsTensor1 = IsTensor (input1);
 			bool IsTensor2 = IsTensor (input2);
 			bool bAddable =false;
@@ -533,12 +501,10 @@ namespace X
 
 			if (!IsTensor1 && !IsTensor2)
 			{
-				std::cout << "In tensor_cpu.h::Multiply(), none is tensor, returned 2 =" << std::endl;
 				return;  //todo, error handling
 			}
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
-				std::cout << "In tensor_cpu.h::Multiply(), input1 is tensor, input2 is not a tensor" << std::endl;
 				//std::cout << "In tensor_cpu.h::Multiply(), input2 is " << input2.ToString()<< std::endl;
 				if (!IsNum(input2))	//the other must be a number
 					return;
@@ -557,7 +523,6 @@ namespace X
 				pTensor->IterateAll(it_proc_scaler_add);
 			}
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
-				std::cout << "In tensor_cpu.h::Multiply(), input1 is not a tensor, input2 is a tensor" << std::endl;
 				if (!IsNum(input1))	//the other must be a number
 					return;
 				X::Value& input = input1;
@@ -588,7 +553,6 @@ namespace X
 				}
 				pRetVal->CreateBaseOnTensor(pTensor1);
 				bAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
-				std::cout << "In tensor_cpu.h::Multiply(), IsTensorAddableNew = " << bAddable << std::endl;
 				if (bAddable)
 				{
 					//X::Value val_1, val_2, val_ret;
@@ -596,7 +560,6 @@ namespace X
 					long long tot_element_count_1 = pTensor1->GetCount();
 					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
-					std::cout << "In Multiply(), total elements in t1 ="<<tot_element_count_1<<", total elements in t2 ="<<tot_element_count_2<< std::endl;
 
 					while (cur_element_count_1 < tot_element_count_1)
 					{
@@ -605,14 +568,8 @@ namespace X
 						{
 							cur_element_count_2 = 0;
 						}
-						//std::cout << "In Multiply(), current index1 ="<<cur_element_count_1<<", current index2 ="<<cur_element_count_2<< std::endl;
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
-						//std::cout << "In Multiply(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
-						//val_ret = val_1.GetLongLong() * val_2.GetLongLong();
-						//std::cout << "In Multiply(), new val1="<<val_ret.GetLongLong()<< std::endl;
-						//val_ret = val_1 * val_2;
-						//pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
 						val_1 *= val_2;
 						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
 						cur_element_count_1 ++;
@@ -625,21 +582,14 @@ namespace X
 
 		void Matmul(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
-			std::cout << "in tensor_cpu.h::Matmul()" << std::endl;
 			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 			X::Data::Tensor* pRetVal  = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-
 			bool bMulable = IsProdTensor(*pTensor1, *pTensor2);
-			std::cout << "In tensor_cpu.h::Matmul(), bMulable = " << bMulable << std::endl;
-
-			if (bMulable)	
-			
+			if (bMulable)			
 			{//tensor only, verified in IsAddable()
-
 				auto it_proc_tensor_mul_matrix = [pTensor1, pTensor2, pRetVal]()
 				{
-					std::cout << "In it_proc_tensor_mul_matrix()"<< std::endl;
 					//Matrix1 (m,n), Matrix2 (u,v), n = u, after production, new Matrix shape (m,v)
 					int m = pTensor1->GetDims()[0].size; //rows of matrix1
 					int n = pTensor1->GetDims()[1].size; //columns of matrix1
@@ -665,25 +615,22 @@ namespace X
 								indices2[1] = j;
 								val_1 = pTensor1->GetDataWithIndices(indices1);
 								val_2 = pTensor2->GetDataWithIndices(indices2);								
-								//val += val_1.GetLongLong() * val_2.GetLongLong();
-								val += val_1 * val_2;
-								//std::cout<<"i="<<i<<",j="<<j<<",k="<<k<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
+								val_1 *= val_2;
+								val += val_1;
 							}
-							//std::cout<<"i="<<i<<",j="<<j<<",val="<<val.GetLongLong()<< std::endl;
 							pRetVal->SetDataWithIndices(indices, val);
 						}
 					}
 				};
 				auto it_proc_tensor_mul_vector = [pTensor1, pTensor2, pRetVal]()
 				{
-					std::cout << "In it_proc_tensor_mul_vector()"<< std::endl;
-					//Input 1 - Matrix (m,n), Input2 - vector (n), result is a linear map vector(m)
 					int m = pTensor1->GetDims()[0].size; //rows of matrix2
 					int n = pTensor1->GetDims()[1].size; //columns of matrix2
 					int v = pTensor2->GetDims()[0].size; //vector
 					if (n!=v)  //To do, error handling
 						return;
 
+					pRetVal->CreateBaseOnTensor(pTensor2);
 					//std::vector<int> dims;
 					Port::vector<int> dims(1);
 					dims.push_back(m);
@@ -695,8 +642,6 @@ namespace X
 					indices.resize(1);
 					indices1.resize(2);
 					indices2.resize(1);
-					pRetVal->CreateBaseOnTensor(pTensor1);
-
 					for (i = 0; i < m; i ++) {
 						indices[0] = i;
 						val = 0;
@@ -706,12 +651,10 @@ namespace X
 							indices2[0] = j;
 							val_1 = pTensor1->GetDataWithIndices(indices1);
 							val_2 = pTensor2->GetDataWithIndices(indices2);								
-							//val += val_1.GetLongLong() * val_2.GetLongLong();
-							val += val_1 * val_2;
-							//std::cout<<"i="<<i<<",j="<<j<<",val_1="<<val_1.GetLongLong()<<",val_2="<<val_2.GetLongLong()<<",val="<<val.GetLongLong()<< std::endl;
+							val_1 *= val_2;
+							val += val_1;
 						}
 						pRetVal->SetDataWithIndices(indices, val);
-						//std::cout<<"After Set data, i="<<i<<",val="<<val.GetLongLong()<< std::endl;
 					}
 				};
 
@@ -724,6 +667,7 @@ namespace X
 				else
 					std::cout<<"Tensor multiplication can't be performed"<< std::endl;
 		
+
 			}// matrix 
 
 		} //matmul
