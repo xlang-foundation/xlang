@@ -550,6 +550,8 @@ namespace X
 					X::Data::Tensor* temp_t = pTensor1;
 					pTensor1 = pTensor2;
 					pTensor2 = temp_t;
+					tot_element_count_1 = pTensor1->GetCount();
+					tot_element_count_2 = pTensor2->GetCount();
 				}
 				pRetVal->CreateBaseOnTensor(pTensor1);
 				bAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
@@ -557,8 +559,6 @@ namespace X
 				{
 					//X::Value val_1, val_2, val_ret;
 					X::Value val_1, val_2;
-					long long tot_element_count_1 = pTensor1->GetCount();
-					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
 
 					while (cur_element_count_1 < tot_element_count_1)
@@ -738,6 +738,8 @@ namespace X
 					X::Data::Tensor* temp_t = pTensor1;
 					pTensor1 = pTensor2;
 					pTensor2 = temp_t;
+					tot_element_count_1 = pTensor1->GetCount();
+					tot_element_count_2 = pTensor2->GetCount();
 				}
 				pRetVal->CreateBaseOnTensor(pTensor1);
 				bAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
@@ -746,8 +748,6 @@ namespace X
 				{
 					//X::Value val_1, val_2, val_ret;
 					X::Value val_1, val_2;
-					long long tot_element_count_1 = pTensor1->GetCount();
-					long long tot_element_count_2 = pTensor2->GetCount();
 					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
 					std::cout << "In Divide(), total elements in t1 ="<<tot_element_count_1<<", total elements in t2 ="<<tot_element_count_2<< std::endl;
 
@@ -776,6 +776,70 @@ namespace X
 
 			} // both tensors
 		} //Divide
+
+		void Conv2d(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		{
+			std::cout << "in tensor_cpu.h::conv2d()" << std::endl;
+			//we need the mode - full, same, valid
+			
+			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());  
+			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
+			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
+
+			int m = pTensor1->GetDims()[0].size; //rows of matrix1
+			int n = pTensor1->GetDims()[1].size; //columns of matrix1
+			int u = pTensor2->GetDims()[0].size; //rows of matrix2
+			int v = pTensor2->GetDims()[1].size; //columns of matrix2
+
+			if ( m+u-1 < 0 || n+v-1 < 0)
+				return;
+
+			pRetVal->CreateBaseOnTensor(pTensor1);
+			Port::vector<int> dims(2);
+			dims.push_back(m+u-1);
+			dims.push_back(n+v-1);
+			pRetVal->SetShape(dims);
+
+			int i, j, k, l;
+			X::Value val_1, val_2, val;
+			std::vector<long long> indices1, indices2, indices;
+	
+			for ( i = 0; i < m+u-1; i++) {
+				for (j = 0; j < n+v-1; j ++) {
+					indices[0] = i;
+					indices[1] = j;
+					val = 0;
+					for (k = 0; k < m; k++) { 
+						for (l = 0; l < n; l++) { 
+							if (i-k >=0 && i-k < u && j-l>=0 && j-l < v) 
+							{
+								indices1[0] = k;
+								indices1[1] = l;
+								indices2[0] = i-k;
+								indices2[1] = j-l;
+								val_1 = pTensor1->GetDataWithIndices(indices1);
+								val_2 = pTensor2->GetDataWithIndices(indices2);								
+								val_1 *= val_2;
+								val += val_1;
+							} //if
+						} //for l
+					} //for k
+					pRetVal->SetDataWithIndices(indices, val);
+				}//for j
+			}//for i
+		}
+
+		void Relu(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		{
+			std::cout << "in tensor_cpu.h::Relu()" << std::endl;
+
+		}
+
+		void MaxPool2d(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		{
+			std::cout << "in tensor_cpu.h::MaxPool2d()" << std::endl;
+
+		}
 
 	}; //class CpuTensor
 } //namespace X
