@@ -2,6 +2,7 @@
 #include "xlang.h"
 #include "xhost.h"
 #include <vector>
+#include <typeinfo>
 #include <utility>
 
 /*  ABI

@@ -22,5 +22,5 @@ add_library(${PROJECT_NAME}
 if(WIN32)
 target_link_libraries(${PROJECT_NAME} "turbojpeg-static-vc64")
 else()
-target_link_libraries(${PROJECT_NAME} PUBLIC "libturbojpeg-linux-x64.a")
+target_link_libraries(${PROJECT_NAME} PUBLIC "libturbojpeg-linux-${CMAKE_SYSTEM_PROCESSOR}.a")
 endif()
