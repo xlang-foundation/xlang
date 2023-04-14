@@ -21,6 +21,8 @@ namespace X
 			APISET().AddTensorBinaryOp("mul", &CpuTensor::Multiply);
 			APISET().AddTensorBinaryOp("div", &CpuTensor::Divide);
 			APISET().AddTensorBinaryOp("matmul", &CpuTensor::Matmul);
+			APISET().AddTensorBinaryOp("matmul", &CpuTensor::Matmul);
+			APISET().AddTensorBinaryOp("conv2d", &CpuTensor::Conv2d);
 			APISET().AddTensorUnaryOp("permute", &CpuTensor::Permute);
 		END_PACKAGE
 	private:
@@ -633,9 +635,9 @@ namespace X
 
 					std::vector<int> dims;
 					dims.push_back(m);
-					pRetVal->CreateBaseOnShape(dims);
 					TensorDataType dataType = pTensor1->GetDataType();
 					pRetVal->SetDataType(dataType);
+					pRetVal->CreateBaseOnShape(dims);
 
 					int i, j;
 					X::Value val_1, val_2, val;
@@ -795,11 +797,12 @@ namespace X
 			if ( m+u-1 < 0 || n+v-1 < 0)
 				return;
 
-			pRetVal->CreateBaseOnTensor(pTensor1);
-			Port::vector<int> dims(2);
+			std::vector<int> dims;
 			dims.push_back(m+u-1);
 			dims.push_back(n+v-1);
-			pRetVal->SetShape(dims);
+			TensorDataType dataType = pTensor1->GetDataType();
+			pRetVal->SetDataType(dataType);
+			pRetVal->CreateBaseOnShape(dims);
 
 			int i, j, k, l;
 			X::Value val_1, val_2, val;
@@ -807,17 +810,23 @@ namespace X
 	
 			for ( i = 0; i < m+u-1; i++) {
 				for (j = 0; j < n+v-1; j ++) {
-					indices[0] = i;
-					indices[1] = j;
+					//indices[0] = i;
+					//indices[1] = j;
+					indices.push_back(i);
+					indices.push_back(j);
 					val = 0;
 					for (k = 0; k < m; k++) { 
 						for (l = 0; l < n; l++) { 
 							if (i-k >=0 && i-k < u && j-l>=0 && j-l < v) 
 							{
-								indices1[0] = k;
-								indices1[1] = l;
-								indices2[0] = i-k;
-								indices2[1] = j-l;
+								//indices1[0] = k;
+								//indices1[1] = l;
+								//indices2[0] = i-k;
+								//indices2[1] = j-l;
+								indices1.push_back(k);
+								indices1.push_back(l);
+								indices2.push_back(i-k);
+								indices2.push_back(j-l);
 								val_1 = pTensor1->GetDataWithIndices(indices1);
 								val_2 = pTensor2->GetDataWithIndices(indices2);								
 								val_1 *= val_2;
