@@ -34,6 +34,27 @@ namespace X
 		}
 		return ret;
 	}
+	Value Value::operator/ (const Value& right)
+	{
+		Value ret;
+		bool done = false;
+		if (t == ValueType::Object)
+		{
+			X::XObj* pObj = GetObj();
+			done = pObj->Divide(right, ret);
+		}
+		else if (right.IsObject())
+		{
+			//for case:this Value is not an object, just right side is an object
+			done = right.GetObj()->Divided(*this, ret);
+		}
+		if (!done)
+		{
+			ret = this;
+			ret /= right;
+		}
+		return ret;
+	}
 	Value Value::operator+ (const Value& right)
 	{
 		Value ret;
