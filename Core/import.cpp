@@ -204,8 +204,10 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		{
 			if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
 			{
-				pMyScope->AddAndSet(rt, pContext, varName, v);
-				//rt->M()->Add(rt, varName, nullptr, v);
+				if (pMyScope)
+				{
+					pMyScope->AddAndSet(rt, pContext, varName, v);
+				}
 				continue;
 			}
 		}
@@ -217,8 +219,10 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 				im.name,v);
 			if (bOK)
 			{
-				pMyScope->AddAndSet(rt, pContext, varName, v);
-				//rt->M()->Add(rt, varName, nullptr, v);
+				if (pMyScope)
+				{
+					pMyScope->AddAndSet(rt, pContext, varName, v);
+				}
 				continue;
 			}
 		}
@@ -230,8 +234,10 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 				im.name, v);
 			if (bOK)
 			{
-				pMyScope->AddAndSet(rt, pContext, varName, v);
-				//rt->M()->Add(rt, varName, nullptr, v);
+				if (pMyScope)
+				{
+					pMyScope->AddAndSet(rt, pContext, varName, v);
+				}
 				continue;
 			}
 		}
@@ -243,7 +249,10 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		{
 			ModuleObject* pModuleObj = new ModuleObject(pSubModule);
 			v = Value(pModuleObj);
-			pMyScope->AddAndSet(rt, pContext, varName, v);
+			if (pMyScope)
+			{
+				pMyScope->AddAndSet(rt, pContext, varName, v);
+			}
 			//rt->M()->Add(rt, varName, nullptr, v);
 			continue;
 		}
@@ -269,7 +278,10 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 				new Data::PyProxyObject(rt, pContext,
 					moduleName, m_path, curPath);
 			v = Value(pProxyObj);
-			pMyScope->AddAndSet(rt, pContext, varName, v);
+			if (pMyScope)
+			{
+				pMyScope->AddAndSet(rt, pContext, varName, v);
+			}
 			//rt->M()->Add(rt, varName, nullptr, v);
 		}
 	}
