@@ -8,7 +8,8 @@
 #include "tensor_expression.h"
 #include <iostream>
 #include "list.h"
-#include <unistd.h>
+#include "port.h"
+
 namespace X
 {
 	class CpuTensor

@@ -1,6 +1,6 @@
 #include "http.h"
 #include "httplib.h"
-
+#include <iterator>
 
 namespace X
 {

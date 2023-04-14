@@ -409,6 +409,7 @@ public:
 		}
 	}
 	virtual Value operator* (const Value& right);
+	virtual Value operator / (const Value& right);
 	virtual Value operator + (const Value& right);
 	virtual Value operator - (const Value& right);
 	virtual void operator += (const Value& v);
