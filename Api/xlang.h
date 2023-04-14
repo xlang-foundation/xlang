@@ -188,6 +188,15 @@ namespace X
 		{
 			return false;
 		}
+		virtual bool Divide(const X::Value& r, X::Value& retVal)
+		{
+			return false;
+		}
+		//for case leftValue / this_Object
+		virtual bool Divided(const X::Value& leftValue, X::Value& retVal)
+		{
+			return false;
+		}
 		virtual bool Add(const X::Value& r, X::Value& retVal)
 		{
 			return false;
