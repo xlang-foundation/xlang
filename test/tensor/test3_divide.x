@@ -6,29 +6,29 @@ print("t1 =", t1)
 print("t2 =", t2)
 print ("***************************************************************")
 
-#to multiply a number
-t3 = t1/2
+#to divide by a number
+t3 = t2/2
 #t1 =t1*10
 #t1 = 2*t1
 t_g = T.graph(t3)
 t_g.run()
-print("t1/2=", t3)
+print("t2/2=", t3)
 #expected result 
 #Tensor(size=(3,3),[20,40,60,80,100,120,140,160,180])
 print ("***************************************************************")
 
-#to multiply a number
-t1/=2
+#to divide by a number
+t2/=2
 #t1 =t1*10
 #t1 = 2*t1
-t_g = T.graph(t1)
+t_g = T.graph(t2)
 t_g.run()
-print("t1/2=", t1)
+print("t2/2=", t2)
 #expected result 
 #Tensor(size=(3,3),[20,40,60,80,100,120,140,160,180])
 print ("***************************************************************")
 
-#to multiply a tensor to a tensor
+#to divide a tensor by a tensor
 t3 = t2 / t1
 #t1*t2
 #t1.MUL(t2)
