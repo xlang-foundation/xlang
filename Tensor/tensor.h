@@ -56,24 +56,7 @@ namespace X
 			int m_startItemOffet = 0;// unit is sizeof data type
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
-
-			long long CalcItemOffset(std::vector<long long>& indices)
-			{
-				long long off = m_startItemOffet;
-				int idxCnt = (int)indices.size();
-				for (int i = 0; i < idxCnt; i++)
-				{
-					auto& dim = m_dims[i];
-					auto newIndex = indices[i] + dim.offset;
-					if (newIndex < 0 || newIndex>=dim.stride) //todo: check with multiple slices
-					{
-						return -1;//out of range, it is valid, but will ask caller to return invalid
-					}
-					off += newIndex * dim.dimProd;
-				}
-				off *= GetItemSize();
-				return off;
-			}
+		public:
 			long long GetItemSize()
 			{
 				long long size = 1;
@@ -132,6 +115,20 @@ namespace X
 				}
 				return itemCnt;
 			}
+			long long CalcItemOffset(std::vector<long long>& indices)
+			{
+				long long off = m_startItemOffet;
+				int idxCnt = (int)indices.size();
+				//std::cout << "In CalcItemOffset(), indices.size = " << idxCnt << std::endl;
+				for (int i = 0; i < idxCnt; i++)
+				{
+					auto& dim = m_dims[i];
+					off += (indices[i] + dim.offset) * dim.dimProd;
+					//std::cout << "In CalcItemOffset(),indices[" <<i<<"]="<<indices[i] << std::endl;
+				}
+				off *= GetItemSize();
+				return off;
+			}
 			void DeepCopyDataFromList(List* pList,std::vector<long long>& indices,int level);
 			void CalcDimProd()
 			{
@@ -189,8 +186,10 @@ namespace X
 			{
 				return m_dims[dimIdx].size;
 			}
+			
 			virtual void SetShape(Port::vector<int> shapes) override
 			{
+				m_dims.clear();
 				for (auto i : shapes)
 				{
 					m_dims.push_back(TensorDim{0,i,i});
@@ -217,6 +216,30 @@ namespace X
 					newDim.stride = newDim.size;
 					m_dims.push_back(newDim);
 				}
+				CalcDimProd();
+				long long totalSize = GetCount() * GetItemSize();
+				if (totalSize > 0)
+				{
+					m_data = new char[totalSize];
+					m_dataSize = totalSize;
+				}
+				return true;
+			}
+			//used by tensorOP to allocate data bases on pBaseTensor
+			bool CreateBaseOnShape(std::vector<int> shapes)
+			{
+				//if m_data allocated,means already created
+				if (m_data)
+				{
+					return true;
+				}
+				Port::vector<int> port_shapes(0);
+				int shape_size = shapes.size();
+				port_shapes.resize(shape_size);
+				for (int i = 0; i < shape_size; i++)
+					port_shapes.push_back(shapes[i]);
+
+				SetShape (port_shapes);
 				CalcDimProd();
 				long long totalSize = GetCount() * GetItemSize();
 				if (totalSize > 0)
@@ -295,7 +318,9 @@ namespace X
 				return newTensor;
 			}
 			void SetDataWithIndices(std::vector<long long>& indices, X::Value& val);
+			void SetDataWithOffset(long long addr, X::Value& val);
 			X::Value GetDataWithIndices(std::vector<long long>& indices);
+			X::Value GetDataWithOffset(long long addr);
 
 			//keep use same memory
 			inline X::Value reshape(X::Value& listOfShape)

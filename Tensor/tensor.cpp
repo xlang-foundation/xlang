@@ -300,6 +300,10 @@ namespace X
 		
 		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
 		{
+			//std::cout << "In GetDataWithIndices(), indices.size = " << indices.size();
+			//for (auto i = 0; i < indices.size(); i++)
+			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
+
 			long long addr = CalcItemOffset(indices);
 			if (addr < 0)
 			{
@@ -354,11 +358,141 @@ namespace X
 			default:
 				break;
 			}
+			//std::cout << ", val = "<<retVal.GetLongLong();
+			//std::cout << std::endl;
+
 			return retVal;
 		}
+		X::Value Tensor::GetDataWithOffset(long long addr)
+		{
+			//std::cout << "In GetDataWithOffset(), indices.size = " << indices.size();
+			//for (auto i = 0; i < indices.size(); i++)
+			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
+
+			X::Value retVal;
+			char* pAddr = m_data + addr;
+			switch (m_dataType)
+			{
+			case X::TensorDataType::BOOL:
+				retVal = X::Value((bool)*(char*)pAddr);
+				break;
+			case X::TensorDataType::BYTE:
+				//convert to int to avoid X::Value(char) eat it
+				retVal = X::Value((int)*(char*)pAddr);
+				break;
+			case X::TensorDataType::UBYTE:
+				//convert to int to avoid X::Value(char) eat it
+				retVal = X::Value((int)*(unsigned char*)pAddr);
+				break;
+			case X::TensorDataType::SHORT:
+				retVal = X::Value((int)*(short*)pAddr);
+				break;
+			case X::TensorDataType::USHORT:
+				retVal = X::Value((int)*(unsigned short*)pAddr);
+				break;
+			case X::TensorDataType::HALFFLOAT:
+				retVal = X::Value((float)*(short*)pAddr);
+				break;
+			case X::TensorDataType::INT:
+				retVal = X::Value(*(int*)pAddr);
+				break;
+			case X::TensorDataType::UINT:
+				retVal = X::Value(*(unsigned int*)pAddr);
+				break;
+			case X::TensorDataType::LONGLONG:
+				retVal = X::Value(*(long long*)pAddr);
+				break;
+			case X::TensorDataType::ULONGLONG:
+				retVal = X::Value(*(unsigned long long*)pAddr);
+				break;
+			case X::TensorDataType::FLOAT:
+				retVal = X::Value(*(float*)pAddr);
+				break;
+			case X::TensorDataType::DOUBLE:
+				retVal = X::Value(*(double*)pAddr);
+				break;
+			case X::TensorDataType::CFLOAT:
+				break;
+			case X::TensorDataType::CDOUBLE:
+				break;
+			default:
+				break;
+			}
+			//std::cout << ", val = "<<retVal.GetLongLong();
+			//std::cout << std::endl;
+
+			return retVal;
+		}
+
 		void Tensor::SetDataWithIndices(std::vector<long long>& indices,X::Value& val)
 		{
+			//std::cout << "In SetDataWithIndices(), indices.size = " << indices.size();
+			//for (auto i = 0; i < indices.size(); i++)
+			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
+			//std::cout << ", Val = " << val.GetLongLong();
+			//std::cout << std::endl;
+
 			long long addr = CalcItemOffset(indices);
+			X::Value retVal;
+			char* pAddr = m_data + addr;
+			//Set value to this addr 
+			switch (m_dataType)
+			{
+			case X::TensorDataType::BOOL:
+				*(char*)pAddr = (char)(bool)val;
+				break;
+			case X::TensorDataType::BYTE:
+				*(char*)pAddr = (char)(int)val;
+				break;
+			case X::TensorDataType::UBYTE:
+				*(unsigned char*)pAddr = (unsigned char)(int)val;
+				break;
+			case X::TensorDataType::SHORT:
+				*(short*)pAddr = (short)(int)val;
+				break;
+			case X::TensorDataType::USHORT:
+				*(unsigned short*)pAddr = (unsigned short)(int)val;
+				break;
+			case X::TensorDataType::HALFFLOAT:
+				*(unsigned short*)pAddr = (unsigned short)(float)val;
+				break;
+			case X::TensorDataType::INT:
+				*(int*)pAddr = (int)val;
+				break;
+			case X::TensorDataType::UINT:
+				*(unsigned int*)pAddr = (unsigned int)val;
+				break;
+			case X::TensorDataType::LONGLONG:
+				*(long long*)pAddr = (long long)val;
+				break;
+			case X::TensorDataType::ULONGLONG:
+				*(unsigned long long*)pAddr = (unsigned long long)val;
+				break;
+			case X::TensorDataType::FLOAT:
+				*(float*)pAddr = (float)val;
+				break;
+			case X::TensorDataType::DOUBLE:
+				*(double*)pAddr = (double)val;
+				break;
+			case X::TensorDataType::CFLOAT:
+				//todo:
+				break;
+			case X::TensorDataType::CDOUBLE:
+				//todo:
+				break;
+			default:
+				break;
+			}
+
+		}
+		void Tensor::SetDataWithOffset(long long addr,X::Value& val)
+		{
+			//std::cout << "In SetDataWithIndices(), indices.size = " << indices.size();
+			//for (auto i = 0; i < indices.size(); i++)
+			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
+			//std::cout << ", Val = " << val.GetLongLong();
+			//std::cout << std::endl;
+
 			X::Value retVal;
 			char* pAddr = m_data + addr;
 			//Set value to this addr 
