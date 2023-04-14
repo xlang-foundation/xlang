@@ -624,17 +624,18 @@ namespace X
 				};
 				auto it_proc_tensor_mul_vector = [pTensor1, pTensor2, pRetVal]()
 				{
-					int m = pTensor1->GetDims()[0].size; //rows of matrix2
-					int n = pTensor1->GetDims()[1].size; //columns of matrix2
+					int m = pTensor1->GetDims()[0].size; //rows of matrix
+					int n = pTensor1->GetDims()[1].size; //columns of matrix
 					int v = pTensor2->GetDims()[0].size; //vector
 					if (n!=v)  //To do, error handling
 						return;
 
-					pRetVal->CreateBaseOnTensor(pTensor2);
-					//std::vector<int> dims;
-					Port::vector<int> dims(1);
+
+					std::vector<int> dims;
 					dims.push_back(m);
-					pRetVal->SetShape(dims);
+					pRetVal->CreateBaseOnShape(dims);
+					TensorDataType dataType = pTensor1->GetDataType();
+					pRetVal->SetDataType(dataType);
 
 					int i, j;
 					X::Value val_1, val_2, val;
@@ -833,13 +834,28 @@ namespace X
 		{
 			std::cout << "in tensor_cpu.h::Relu()" << std::endl;
 
-		}
+		} //Relu
+
 
 		void MaxPool2d(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "in tensor_cpu.h::MaxPool2d()" << std::endl;
+			/*
+			for (size_t y = 0; y < out_height; ++y) {
+				for (size_t x = 0; x < out_width; ++x) {
+					for (size_t i = 0; i < pool_y; ++i) {
+						for (size_t j = 0; j < pool_x; ++j) {
+							for (size_t c = 0; c < depth; ++c) {
+								float value = in[y * pool_y + i][x * pool_x + j][c];
+								out[y][x][c] = max(out[y][x][c], value);
+							}
+						}
+					}
+				}
+			}
+			*/
 
-		}
+		}  // MaxPool2d
 
 	}; //class CpuTensor
 } //namespace X
