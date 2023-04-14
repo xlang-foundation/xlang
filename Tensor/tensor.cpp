@@ -300,10 +300,6 @@ namespace X
 		
 		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
 		{
-			//std::cout << "In GetDataWithIndices(), indices.size = " << indices.size();
-			//for (auto i = 0; i < indices.size(); i++)
-			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
-
 			long long addr = CalcItemOffset(indices);
 			if (addr < 0)
 			{
@@ -358,17 +354,10 @@ namespace X
 			default:
 				break;
 			}
-			//std::cout << ", val = "<<retVal.GetLongLong();
-			//std::cout << std::endl;
-
 			return retVal;
 		}
 		X::Value Tensor::GetDataWithOffset(long long addr)
 		{
-			//std::cout << "In GetDataWithOffset(), indices.size = " << indices.size();
-			//for (auto i = 0; i < indices.size(); i++)
-			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
-
 			X::Value retVal;
 			char* pAddr = m_data + addr;
 			switch (m_dataType)
@@ -418,20 +407,11 @@ namespace X
 			default:
 				break;
 			}
-			//std::cout << ", val = "<<retVal.GetLongLong();
-			//std::cout << std::endl;
-
 			return retVal;
 		}
 
 		void Tensor::SetDataWithIndices(std::vector<long long>& indices,X::Value& val)
 		{
-			//std::cout << "In SetDataWithIndices(), indices.size = " << indices.size();
-			//for (auto i = 0; i < indices.size(); i++)
-			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
-			//std::cout << ", Val = " << val.GetLongLong();
-			//std::cout << std::endl;
-
 			long long addr = CalcItemOffset(indices);
 			X::Value retVal;
 			char* pAddr = m_data + addr;
@@ -487,12 +467,6 @@ namespace X
 		}
 		void Tensor::SetDataWithOffset(long long addr,X::Value& val)
 		{
-			//std::cout << "In SetDataWithIndices(), indices.size = " << indices.size();
-			//for (auto i = 0; i < indices.size(); i++)
-			//	std::cout << ", indice[" <<i<<"] = "<<indices[i];
-			//std::cout << ", Val = " << val.GetLongLong();
-			//std::cout << std::endl;
-
 			X::Value retVal;
 			char* pAddr = m_data + addr;
 			//Set value to this addr 
