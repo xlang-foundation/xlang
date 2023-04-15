@@ -22,6 +22,8 @@ namespace X
 			APISET().AddTensorBinaryOp("mul", &CpuTensor::Multiply);
 			APISET().AddTensorBinaryOp("div", &CpuTensor::Divide);
 			APISET().AddTensorBinaryOp("matmul", &CpuTensor::Matmul);
+			APISET().AddTensorBinaryOp("matmul", &CpuTensor::Matmul);
+			APISET().AddTensorBinaryOp("conv2d", &CpuTensor::Conv2d);
 			APISET().AddTensorUnaryOp("permute", &CpuTensor::Permute);
 		END_PACKAGE
 	private:
@@ -634,9 +636,9 @@ namespace X
 
 					std::vector<int> dims;
 					dims.push_back(m);
-					pRetVal->CreateBaseOnShape(dims);
 					TensorDataType dataType = pTensor1->GetDataType();
 					pRetVal->SetDataType(dataType);
+					pRetVal->CreateBaseOnShape(dims);
 
 					int i, j;
 					X::Value val_1, val_2, val;
@@ -720,8 +722,8 @@ namespace X
 				pRetVal->CreateBaseOnTensor(pTensor);
 				auto it_proc_scaler_div = [pTensor, input, pRetVal](std::vector<long long>& indices)
 				{
-					X::Value val = pTensor->GetDataWithIndices(indices);
-					val /= input;
+					X::Value val = input;
+					val /= pTensor->GetDataWithIndices(indices);
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				//std::tie (bAddable, bIsNum) = IsNumAddable(*pTensor1, input2);
@@ -796,20 +798,26 @@ namespace X
 			if ( m+u-1 < 0 || n+v-1 < 0)
 				return;
 
-			pRetVal->CreateBaseOnTensor(pTensor1);
-			Port::vector<int> dims(2);
+			std::vector<int> dims;
 			dims.push_back(m+u-1);
 			dims.push_back(n+v-1);
-			pRetVal->SetShape(dims);
+			TensorDataType dataType = pTensor1->GetDataType();
+			pRetVal->SetDataType(dataType);
+			pRetVal->CreateBaseOnShape(dims);
 
 			int i, j, k, l;
 			X::Value val_1, val_2, val;
 			std::vector<long long> indices1, indices2, indices;
-	
+			indices.resize(2);
+			indices1.resize(2);
+			indices2.resize(2);
+
 			for ( i = 0; i < m+u-1; i++) {
 				for (j = 0; j < n+v-1; j ++) {
 					indices[0] = i;
 					indices[1] = j;
+					//indices.push_back(i);
+					//indices.push_back(j);
 					val = 0;
 					for (k = 0; k < m; k++) { 
 						for (l = 0; l < n; l++) { 
@@ -819,6 +827,10 @@ namespace X
 								indices1[1] = l;
 								indices2[0] = i-k;
 								indices2[1] = j-l;
+								//indices1.push_back(k);
+								//indices1.push_back(l);
+								//indices2.push_back(i-k);
+								//indices2.push_back(j-l);
 								val_1 = pTensor1->GetDataWithIndices(indices1);
 								val_2 = pTensor2->GetDataWithIndices(indices2);								
 								val_1 *= val_2;
