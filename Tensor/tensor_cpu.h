@@ -816,8 +816,6 @@ namespace X
 				for (j = 0; j < n+v-1; j ++) {
 					indices[0] = i;
 					indices[1] = j;
-					//indices.push_back(i);
-					//indices.push_back(j);
 					val = 0;
 					for (k = 0; k < m; k++) { 
 						for (l = 0; l < n; l++) { 
@@ -827,10 +825,6 @@ namespace X
 								indices1[1] = l;
 								indices2[0] = i-k;
 								indices2[1] = j-l;
-								//indices1.push_back(k);
-								//indices1.push_back(l);
-								//indices2.push_back(i-k);
-								//indices2.push_back(j-l);
 								val_1 = pTensor1->GetDataWithIndices(indices1);
 								val_2 = pTensor2->GetDataWithIndices(indices2);								
 								val_1 *= val_2;
