@@ -465,12 +465,12 @@ namespace X
 			break;
 		case ValueType::Int64:
 		{
-			if (flags == BOOL_FLAG)
+			if (flags & (int)ValueSubType::BOOL)
 			{
 				if(WithFormat) str = (x.l == 1) ? "true" : "false";//Json likes it
 				else str = (x.l == 1) ? "True" : "False";
 			}
-			else if (flags == CHAR_FLAG)
+			else if (flags & (int)ValueSubType::CHAR)
 			{
 				str = (char)x.l;
 			}

@@ -100,11 +100,22 @@ bool Value::operator op (const Value& r) const\
 //review 4/10/2023
 //ABI issue with Value, different compiler may generate different layout of members
 //TODO:change to use struct to wrap its members
-#define BOOL_FLAG -10
-#define CHAR_FLAG -20
+
+enum class ValueSubType
+{
+	NONE = 0,//if as this, means value's type is ValueType, no sub type
+	BOOL = 1,
+	CHAR = 2,
+	UCHAR =3,
+	SHORT =4,
+	USHORT =5,
+	INT = 8,
+	UINT =9,
+	FLOAT =10,
+};
 class Value
 {
-	int flags = 0;
+	int flags = 0;//last 4 bits as subtype
 	ValueType t= ValueType::Invalid;
 	union
 	{
@@ -150,18 +161,18 @@ public:
 	inline Value(bool b)
 	{//use 1 as true and 0 as false, set flag to -1
 		t = ValueType::Int64;
-		flags = BOOL_FLAG;
+		flags &= (int)ValueSubType::BOOL;
 		x.l = b ? 1 : 0;
 	}
 	inline void AsBool()
 	{
-		flags = BOOL_FLAG;
+		flags &= (int)ValueSubType::BOOL;
 		x.l = x.l>0?1 : 0;
 	}
 	inline Value(char c)
 	{
 		t = ValueType::Int64;
-		flags = CHAR_FLAG;
+		flags &= (int)ValueSubType::CHAR;
 		x.l = c;
 	}
 	inline Value(int l)
