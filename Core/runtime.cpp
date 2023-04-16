@@ -55,9 +55,10 @@ namespace X
 				continue;
 			}
 
-			ARGS params(1);
+			ARGS params(0);
 			if (pad.UsingDataBinding)
 			{
+				params.resize(2);
 				params.push_back(bindingString);
 				if (ValList.IsInvalid())
 				{
@@ -73,6 +74,7 @@ namespace X
 			}
 			else
 			{
+				params.resize(1);
 				params.push_back(fmtString);
 			}
 			KWARGS kwargs;
