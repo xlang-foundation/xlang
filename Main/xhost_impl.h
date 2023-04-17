@@ -15,7 +15,7 @@ namespace X
 		virtual XStr* CreateStr(const char* data, int size) override;
 		virtual bool RegisterPackage(const char* name,PackageCreator creator) override;
 		virtual bool RegisterPackage(const char* name,Value& objPackage) override;
-		virtual XObj* QueryMember(XRuntime* rt, XObj* pObj, const char* name) override;
+		virtual Value QueryMember(XRuntime* rt, XObj* pObj, const char* name) override;
 		virtual bool QueryPackage(XRuntime* rt, const char* name, Value& objPackage) override;
 		virtual XPackage* CreatePackage(void* pRealObj) override;
 		virtual XPackage* CreatePackageProxy(XPackage* pPackage, void* pRealObj) override;

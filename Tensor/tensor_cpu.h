@@ -22,7 +22,6 @@ namespace X
 			APISET().AddTensorBinaryOp("mul", &CpuTensor::Multiply);
 			APISET().AddTensorBinaryOp("div", &CpuTensor::Divide);
 			APISET().AddTensorBinaryOp("matmul", &CpuTensor::Matmul);
-			APISET().AddTensorBinaryOp("matmul", &CpuTensor::Matmul);
 			APISET().AddTensorBinaryOp("conv2d", &CpuTensor::Conv2d);
 			APISET().AddTensorUnaryOp("permute", &CpuTensor::Permute);
 		END_PACKAGE

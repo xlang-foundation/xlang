@@ -18,7 +18,7 @@ pushWritepad(sqlite)
 %SELECT * FROM company;
 
 db = sqlite.Database("example.db")
-stmt = db.Statement("SELECT * FROM company");
+stmt = db.statement("SELECT * FROM company");
 while sqlite.ROW == stmt.step():
 	x = stmt.get(1)
 	print(x)
