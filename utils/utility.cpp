@@ -441,3 +441,9 @@ bool LoadStringFromFile(std::string& fileName, std::string& content)
 	content = data;
 	return true;
 }
+const char* GetABIString(std::string& str)
+{
+	char* retStr = new char[str.size() + 1];
+	memcpy(retStr, str.data(), str.size() + 1);
+	return retStr;
+}

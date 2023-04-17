@@ -104,7 +104,7 @@ namespace X
 					f.close()
 					return x+y
 			)";
-			APISET().GetPack()->RunCodeWithThisScope(code);
+			APISET().GetPack()->RunCodeWithThisScope(code.c_str());
 		}
 		void SetModule(X::Value curModule)
 		{

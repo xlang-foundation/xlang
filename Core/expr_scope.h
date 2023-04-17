@@ -20,7 +20,7 @@ namespace X
 			// Inherited via Scope
 			virtual int AddOrGet(std::string& name, bool bGetOnly) override
 			{
-				return m_customScope->Query(name);
+				return m_customScope->Query(name.c_str());
 			}
 			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 			{

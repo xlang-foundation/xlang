@@ -111,7 +111,10 @@ namespace X
 				X::XModule* pModule = dynamic_cast<X::XModule*>(m_curModule.GetObj());
 				if (pModule)
 				{
-					return pModule->GetPath();
+					auto path = pModule->GetPath();
+					std::string strPath(path);
+					g_pXHost->ReleaseString(path);
+					return strPath;
 				}
 				else
 				{

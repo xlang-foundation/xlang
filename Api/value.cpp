@@ -492,7 +492,9 @@ namespace X
 		case ValueType::Object:
 		if(x.obj)
 		{
-			str = x.obj->ToString(WithFormat);
+			auto str_abi = x.obj->ToString(WithFormat);
+			str = str_abi;
+			X::g_pXHost->ReleaseString(str_abi);
 			if (WithFormat && x.obj->GetType() == ObjType::Str)
 			{
 				const char* pNewStr= g_pXHost->StringifyString(str.c_str());
@@ -543,7 +545,9 @@ namespace X
 			auto* pObj = GetObj();
 			if (pObj)
 			{
-				strType = pObj->GetTypeString();
+				const char* retStrType = pObj->GetTypeString();
+				strType = std::string(retStrType);
+				g_pXHost->ReleaseString(retStrType);
 			}
 			else
 			{

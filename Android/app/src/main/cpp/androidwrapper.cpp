@@ -88,8 +88,7 @@ namespace X
         }
         void AndroidWrapper::AddPlugins()
         {
-            std::string code(Android_Plugin_Code);
-            APISET().GetPack()->RunCodeWithThisScope(code);
+            APISET().GetPack()->RunCodeWithThisScope(Android_Plugin_Code);
         }
         Color::Color(X::ARGS& params, X::KWARGS& kwParams)
         {
@@ -99,7 +98,9 @@ namespace X
                 auto* pObj = p0.GetObj();
                 if(pObj->GetType() == ObjType::Str)
                 {
-                    std::string name = pObj->ToString();
+                    auto str_abi= pObj->ToString();
+                    std::string name(str_abi);
+                    X::g_pXHost->ReleaseString(str_abi);
                     std::transform(name.begin(),
                                    name.end(), name.begin(),
                                    [](unsigned char c) { return std::toupper(c); });

@@ -92,9 +92,9 @@ namespace X
 			}
 			m_loadedModules.clear();
 		}
-		bool Package::RunCodeWithThisScope(std::string& code)
+		bool Package::RunCodeWithThisScope(const char* code)
 		{
-			auto* pTopModule = X::Hosting::I().LoadWithScope(this, code.c_str(), code.size());
+			auto* pTopModule = X::Hosting::I().LoadWithScope(this, code,strlen(code));
 			m_loadedModules.push_back(pTopModule);
 			//change StackFrame VarCount
 			m_stackFrame->SetVarCount(GetVarNum());
@@ -321,7 +321,9 @@ namespace X
 						auto* pEvtObj = dynamic_cast<X::ObjectEvent*>(val.GetObj());
 						if (pEvtObj)
 						{
-							std::string strVal = pEvtObj->ToString();
+							auto str_abi = pEvtObj->ToString();
+							std::string strVal = str_abi;
+							X::g_pXHost->ReleaseString(str_abi);
 							val = strVal;
 						}
 					}

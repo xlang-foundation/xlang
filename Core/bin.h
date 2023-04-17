@@ -53,13 +53,13 @@ namespace X
 				stream.CopyTo(m_data, m_size);
 				return true;
 			}
-			virtual bool FromString(std::string& strCoded) override
+			virtual bool FromString(const char* strCoded) override
 			{
 				if (m_data)
 				{
 					delete m_data;
 				}
-				auto size = strCoded.size();
+				auto size = strlen(strCoded);
 				if (size > 2 && strCoded[0] == 'b' && strCoded[1] == '\'')
 				{
 					m_data = new char[size];//bytes converted from thi string,
@@ -105,7 +105,7 @@ namespace X
 					return false;
 				}
 			}
-			virtual std::string ToString(bool WithFormat = false) override
+			virtual const char* ToString(bool WithFormat = false) override
 			{
 				std::string retStr="b'";
 				for (size_t i = 0; i < m_size; i++)
@@ -124,7 +124,7 @@ namespace X
 					}
 				}
 				retStr += "'";
-				return retStr;
+				return GetABIString(retStr);
 			}
 			virtual char* Data() override { return m_data; }
 			inline virtual long long  Size()  override { return m_size; }

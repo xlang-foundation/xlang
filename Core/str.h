@@ -59,16 +59,16 @@ namespace Data
 			stream >> m_s;
 			return true;
 		}
-		inline virtual std::string ToString(bool WithFormat = false) override
+		inline virtual const char* ToString(bool WithFormat = false) override
 		{
-			return m_s;
+			return GetABIString(m_s);
 		}
 		virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
 			IterateProc proc, ARGS& params, KWARGS& kwParams,
 			X::Value& retValue) override;
 		virtual int cmp(X::Value* r)
 		{
-			return m_s.compare(r->ToString());;
+			return m_s.compare(r->ToString());
 		}
 		virtual size_t Hash() override
 		{
@@ -94,7 +94,9 @@ namespace Data
 					}
 					else
 					{
-						m_s += pObj->ToString();
+						auto str_abi = pObj->ToString();
+						m_s += str_abi;
+						g_pXHost->ReleaseString(str_abi);
 					}
 				}
 			}

@@ -357,7 +357,7 @@ namespace X
 			}
 			return true;
 		}
-		std::string TensorGraph::ToString(bool WithFormat)
+		const char* TensorGraph::ToString(bool WithFormat)
 		{
 			std::string outStr;
 			int steps = (int)m_runItems.size();
@@ -416,7 +416,7 @@ namespace X
 				}
 				outStr += lineOut + "\r\n";
 			}
-			return outStr;
+			return GetABIString(outStr);
 		}
 	}
 }

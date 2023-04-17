@@ -204,7 +204,9 @@ namespace X {
 				if (pModule)
 				{
 					auto path = pModule->GetPath();
-					url = path + "\\" + url;
+					std::string strPath(path);
+					url = strPath + "\\" + url;
+					X::g_pXHost->ReleaseString(path);
 				}
 			}
 			m_url = url;

@@ -33,7 +33,7 @@ namespace X {
 		{
 			m_lock.Unlock();
 		}
-		virtual bool RunCodeWithThisScope(std::string& code) override
+		virtual bool RunCodeWithThisScope(const char* code) override
 		{
 			return true;
 		}
