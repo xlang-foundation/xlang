@@ -54,7 +54,7 @@ namespace X
 		virtual XRuntime* GetCurrentRuntime() = 0;
 		virtual bool RegisterPackage(const char* name,PackageCreator creator) = 0;
 		virtual bool RegisterPackage(const char* name,Value& objPackage) = 0;
-		virtual XObj* QueryMember(XRuntime* rt, XObj* pObj, const char* name) = 0;
+		virtual Value QueryMember(XRuntime* rt, XObj* pObj, const char* name) = 0;
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;

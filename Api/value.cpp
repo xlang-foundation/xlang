@@ -351,16 +351,16 @@ namespace X
 	Value Value::ObjCall(Port::vector<X::Value>& params)
 	{
 		auto* pObj = GetObj();
-		if (pObj == nullptr || pObj->GetContext() == nullptr)
+		if (pObj == nullptr || pObj->RT() == nullptr)
 		{
 			return Value();
 		}
 		KWARGS kwargs;
 		Value v0;
-		pObj->Call(pObj->GetContext()->rt, pObj->GetContext()->m_parent, params, kwargs, v0);
+		pObj->Call(pObj->RT(), pObj->Parent(), params, kwargs, v0);
 		if (v0.IsObject())
 		{
-			v0.GetObj()->SetContext(pObj->GetContext()->rt, pObj->GetContext()->m_parent);
+			v0.GetObj()->SetContext(pObj->RT(), pObj->Parent());
 		}
 		return v0;
 	}
@@ -368,7 +368,7 @@ namespace X
 	{
 		if (IsObject())
 		{
-			return Value(GetObj()->Member(key),false);
+			return GetObj()->Member(key);
 		}
 		else
 		{

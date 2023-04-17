@@ -18,7 +18,9 @@ namespace X
 				APISET().AddFunc<1>("open", &SqliteDB::Open);
 				APISET().AddFunc<0>("close", &SqliteDB::Close);
 				APISET().AddFunc<1>("exec", &SqliteDB::ExecSQL);
-				APISET().AddClass<1, Database::DBStatement, SqliteDB>("Statement");
+				APISET().AddFunc<0>("beginTransaction", &SqliteDB::BeginTransaction);
+				APISET().AddFunc<0>("endTransaction", &SqliteDB::EndTransaction);
+				APISET().AddClass<1, Database::DBStatement, SqliteDB>("statement");
 			END_PACKAGE
 		public:
 			SqliteDB();
@@ -30,6 +32,14 @@ namespace X
 			sqlite3* db()
 			{
 				return mdb;
+			}
+			bool BeginTransaction()
+			{
+				return SQLITE_OK == ExecSQL("BEGIN TRANSACTION;");
+			}
+			bool EndTransaction()
+			{
+				return SQLITE_OK == ExecSQL("END TRANSACTION;");
 			}
 			int ExecSQL(std::string sql);
 		private:
