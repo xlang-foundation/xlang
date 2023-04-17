@@ -298,9 +298,10 @@ namespace X
 			}
 			virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 				KWARGS& kwParams, X::Value& retValue) override;
-			virtual std::string ToString(bool WithFormat = false) override
+			virtual const char* ToString(bool WithFormat = false) override
 			{
-				return (std::string)m_obj;
+				std::string retStr = (std::string)m_obj;
+				return GetABIString(retStr);
 			}
 			virtual long long Size() override;
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,

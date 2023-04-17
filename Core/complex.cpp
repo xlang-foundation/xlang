@@ -124,7 +124,8 @@ namespace X
 			}
 			return *this;
 		}		
-		std::string Complex::ToString(bool WithFormat){ 		
+		const char* Complex::ToString(bool WithFormat)
+		{ 		
 			std::string strOut;
 			if (m_real != 0) {
 				strOut += std::to_string(m_real);
@@ -138,7 +139,7 @@ namespace X
 			else if (m_real== 0) {
 				strOut = "0";				
 			}
-			return strOut;
+			return GetABIString(strOut);
 		}
 	}
 }

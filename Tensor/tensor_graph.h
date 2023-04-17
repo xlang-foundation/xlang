@@ -40,7 +40,7 @@ namespace X
 			virtual void Create(XObj* pContext,X::ARGS& params, X::KWARGS& kwParams) override;
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 			bool Run(X::ARGS& params, X::KWARGS& kwParams);
-			virtual std::string ToString(bool WithFormat = false) override;
+			virtual const char* ToString(bool WithFormat = false) override;
 		};
 	}
 }

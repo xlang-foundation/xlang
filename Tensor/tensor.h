@@ -436,7 +436,7 @@ namespace X
 			virtual bool Create(X::Value& initData) override;
 			static AST::Scope* GetBaseScope();
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
-			virtual std::string ToString(bool WithFormat = false) override
+			virtual const char* ToString(bool WithFormat = false) override
 			{
 				AutoLock(m_lock);
 				std::string strShapes;
@@ -522,7 +522,7 @@ namespace X
 				strOut += "]";
 				strOut += ")";
 
-				return strOut;
+				return GetABIString(strOut);
 			}
 			
 		};

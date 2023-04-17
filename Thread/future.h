@@ -46,12 +46,13 @@ namespace X
 				return false;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
-			virtual std::string ToString(bool WithFormat = false)
+			virtual const char* ToString(bool WithFormat = false)
 			{
 				char v[1000];
 				snprintf(v, sizeof(v), "Future:%llu",
 					(long long)this);
-				return v;
+				std::string retStr(v);
+				return GetABIString(retStr);
 			}
 		};
 	}

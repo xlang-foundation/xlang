@@ -279,7 +279,7 @@ public:
 		}
 		return *this;
 	}
-	virtual std::string ToString(bool WithFormat = false) override
+	virtual const char* ToString(bool WithFormat = false) override
 	{
 		const int online_len = 1000;
 		char convertBuf[online_len];
@@ -303,7 +303,7 @@ public:
 			}
 			strOut += "\n";
 		}
-		return strOut;
+		return GetABIString(strOut);
 	}
 	bool FillWithList(std::vector<X::Value>& params)
 	{

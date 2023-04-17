@@ -47,7 +47,7 @@ namespace X
 			{
 				return m_func ? m_func->GetDoc() : "";
 			}
-			virtual std::string ToString(bool WithFormat = false) override
+			virtual const char* ToString(bool WithFormat = false) override
 			{
 				std::string strRet= m_func->GetNameString();
 				if (strRet.empty())
@@ -61,7 +61,7 @@ namespace X
 				{
 					strRet = "\"" + strRet + "\"";
 				}
-				return strRet;
+				return GetABIString(strRet);
 			}
 			AST::Func* GetFunc() { return m_func; }
 			virtual bool Call(XRuntime* rt, XObj* pContext,

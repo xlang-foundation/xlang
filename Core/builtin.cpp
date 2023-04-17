@@ -1154,7 +1154,9 @@ bool U_RunNewInstance(X::XRuntime* rt, XObj* pContext,
 			stream.FullCopyTo(pData, size);
 			X::Data::Binary* pBinOut = new X::Data::Binary(pData, size, true);
 			pBinOut->IncRef();
-			codePack = pBinOut->ToString();
+			auto str_abi = pBinOut->ToString();
+			codePack = str_abi;
+			X::g_pXHost->ReleaseString(str_abi);
 			std::cout << codePack << std::endl;
 			pBinOut->DecRef();
 		}

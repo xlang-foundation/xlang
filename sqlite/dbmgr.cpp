@@ -229,7 +229,7 @@ namespace X
 					pCursor->SetDb(&m_db);
 					pCursor->SetBindings(BindingDataList);
 					X::Value val = X::Value(pCursor->APISET().GetProxy(pCursor),false);
-					rt->AddVar(varName, val);
+					rt->AddVar(varName.c_str(), val);
 					m_cursors.push_back(pCursor);
 				}
 				else

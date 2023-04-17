@@ -28,13 +28,15 @@ namespace X
 			static void cleanup();
 			Module* M() { return m_pModule; }
 			virtual void GetBaseScopes(std::vector<Scope*>& bases) override;
-			virtual std::string GetFileName() override
+			virtual const char* GetFileName() override
 			{
-				return m_pModule ? m_pModule->GetModuleName() : "";
+				std::string str =  m_pModule ? m_pModule->GetModuleName() : "";
+				return GetABIString(str);
 			}
-			virtual std::string GetPath() override
+			virtual const char* GetPath() override
 			{
-				return m_pModule ? m_pModule->GetModulePath() : "";
+				std::string str = m_pModule ? m_pModule->GetModulePath() : "";
+				return GetABIString(str);
 			}
 			virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override;
 			virtual bool GetIndexValue(int idx, Value& v) override;

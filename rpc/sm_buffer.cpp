@@ -225,15 +225,11 @@ namespace X
 
 #else
         // ftok to generate unique key
-        key_t msgkey = PAS_MSG_KEY;
+        key_t msgkey = port;
         printf("msgsnd with Key:0x%x\n", msgkey);
         int msgid = msgget(msgkey, 0666);
         //msgsnd to send message
         msgsnd(msgid, &message, sizeof(message), 0);
-        auto size = msgrcv(msgid, &message, sizeof(message), 0, 0);
-        if (size > 0)
-        {
-        }
 #endif
         return true;
     }

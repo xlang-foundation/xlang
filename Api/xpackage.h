@@ -574,7 +574,7 @@ namespace X
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,true);
 						std::string strName(name);
-						pTensorOp->SetName(strName);
+						pTensorOp->SetName(strName.c_str());
 						retValue = X::Value(pTensorOp);
 						return true;
 					}),dummy,dummyEx,false,std::string(doc) });
@@ -604,7 +604,7 @@ namespace X
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,false);
 						std::string strName(name);
-						pTensorOp->SetName(strName);
+						pTensorOp->SetName(strName.c_str());
 						retValue = X::Value(pTensorOp);
 						return true;
 					}),dummy,dummyEx,false,std::string(doc) });

@@ -579,7 +579,7 @@ namespace X
 				if (lastDimIndex < (dimCount - 1))
 				{
 					//still return Tensor as ValueType
-					Data::Str* pStrType = new Data::Str(GetTypeString());
+					Data::Str* pStrType = new Data::Str(GetObjectTypeString());
 					dict->Set("Type", X::Value(pStrType));
 					X::Value objId((unsigned long long)dynamic_cast<XObj*>(this));
 					dict->Set("Value", objId);

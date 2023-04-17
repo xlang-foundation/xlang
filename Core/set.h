@@ -206,7 +206,7 @@ public:
 		}
 		return true;
 	}
-	virtual std::string ToString(bool WithFormat = false) override
+	virtual const char* ToString(bool WithFormat = false) override
 	{
 		AutoLock(m_lock);
 		std::string strSet = "{\n";
@@ -226,7 +226,7 @@ public:
 			}
 		}
 		strSet += "}";
-		return strSet;
+		return GetABIString(strSet);
 	}
 	inline virtual long long Size() override 
 	{

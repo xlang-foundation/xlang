@@ -46,12 +46,13 @@ namespace X {
 			{
 				return m_obj ? m_obj->CalcCallables(rt, pContext, callables) : false;
 			}
-			virtual std::string ToString(bool WithFormat = false)
+			virtual const char* ToString(bool WithFormat = false)
 			{
 				char v[1000];
 				snprintf(v, sizeof(v), "Class:%s@0x%llx",
 					m_obj->GetNameString().c_str(), (unsigned long long)this);
-				return v;
+				std::string retStr(v);
+				return GetABIString(retStr);
 			}
 			inline AST::StackFrame* GetStack()
 			{

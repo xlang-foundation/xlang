@@ -35,3 +35,4 @@ bool file_search(std::string folder,
 	std::vector<std::string>& outFiles,bool findAll=false);
 bool IsAbsPath(std::string& strPath);
 bool LoadStringFromFile(std::string& fileName, std::string& content);
+const char* GetABIString(std::string& str);//return a string with ABI safety, this pointer will be released by g_pHost func

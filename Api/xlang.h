@@ -97,14 +97,14 @@ namespace X
 		virtual int IncRef() { return 0; }
 		virtual int DecRef() { return 0; }
 		virtual ObjType GetType() { return ObjType::Base; }
-		virtual std::string GetTypeString() { return ""; }
+		virtual const char* GetTypeString() { return ""; }
 		virtual long long Size() { return 0; }
 		virtual size_t Hash() { return 0; }
-		virtual std::string ToString(bool WithFormat = false) 
+		virtual const char* ToString(bool WithFormat = false) 
 		{
-			return "";
+			return nullptr;
 		}
-		virtual bool FromString(std::string& strCoded)
+		virtual bool FromString(const char* strCoded)
 		{
 			return true;
 		}
@@ -221,14 +221,14 @@ namespace X
 	{
 	public:
 		virtual bool CreateEmptyModule() = 0;
-		virtual bool AddVar(std::string& name, X::Value& val) = 0;
+		virtual bool AddVar(const char* name, X::Value& val) = 0;
 	};
 	class XModule :
 		virtual public XObj
 	{
 	public:
-		virtual std::string GetFileName() = 0;
-		virtual std::string GetPath() = 0;
+		virtual const char* GetFileName() = 0;
+		virtual const char* GetPath() = 0;
 	};
 	class XConstExpr :
 		virtual public XObj
@@ -312,7 +312,7 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XTensorOperator)
-		virtual void SetName(std::string& n) = 0;
+		virtual void SetName(const char* n) = 0;
 	};
 	class XTensorGraph :
 		virtual public XObj
@@ -390,7 +390,7 @@ namespace X
 		}
 		void SetScope(void* p) { m_embedScope = p; }
 		void* GetScope() { return m_embedScope; }
-		virtual int Query(std::string& name) = 0;
+		virtual int Query(const char* name) = 0;
 		virtual bool Get(int idx, X::Value& v) = 0;
 		virtual bool Set(int idx, X::Value& v) = 0;
 	};
@@ -404,7 +404,7 @@ namespace X
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(int idx, Value& v) = 0;
 		virtual void RemoveALl() = 0;
-		virtual bool RunCodeWithThisScope(std::string& code) = 0;
+		virtual bool RunCodeWithThisScope(const char* code) = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)
 	{

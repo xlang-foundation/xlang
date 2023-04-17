@@ -28,7 +28,7 @@ namespace X
 			virtual Complex& operator-=( X::Value& val) override;
 			virtual Complex& operator*=( X::Value& val) override;
 			virtual Complex& operator/=( X::Value& val) override;
-			virtual std::string ToString(bool WithFormat = false) override;
+			virtual const char* ToString(bool WithFormat = false) override;
 		};
 	}
 }
