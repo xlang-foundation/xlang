@@ -141,7 +141,7 @@ namespace X
 #elif __ANDROID__
 
 #else
-        key_t key = (mPort !=0)?PAS_MSG_KEY:mPort;
+        key_t key = (mPort ==0)?PAS_MSG_KEY:mPort;
         int msgid;
         msgid = msgget(key, 0666 | IPC_CREAT);
         mMsgLock.Lock();
