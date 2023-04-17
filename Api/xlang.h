@@ -196,10 +196,10 @@ namespace X
 			}
 			X::KWARGS kwargs;
 			X::Value v0;
-			Call(m_cxt->rt,m_cxt->m_parent,params, kwargs,v0);
+			Call(m_rt,m_parent,params, kwargs,v0);
 			if (v0.IsObject())
 			{
-				v0.GetObj()->SetContext(m_cxt->rt, m_cxt->m_parent);
+				v0.GetObj()->SetContext(m_rt,m_parent);
 			}
 			return v0;
 		}
