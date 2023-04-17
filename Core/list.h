@@ -169,7 +169,7 @@ public:
 		}
 		return true;
 	}
-	virtual std::string ToString(bool WithFormat = false) override
+	virtual const char* ToString(bool WithFormat = false) override
 	{
 		AutoLock(m_lock);
 		std::string strList = "[\n";
@@ -189,7 +189,7 @@ public:
 			}
 		}
 		strList += "]";
-		return strList;
+		return GetABIString(strList);
 	}
 	inline virtual long long Size() override 
 	{

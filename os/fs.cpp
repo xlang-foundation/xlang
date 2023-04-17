@@ -29,10 +29,12 @@ namespace X
 			if (pModule)
 			{
 				auto path = pModule->GetPath();
+				std::string strPah(path);
+				g_pXHost->ReleaseString(path);
 #if (WIN32)
-				fileName = path + "\\" + fileName;
+				fileName = strPah + "\\" + fileName;
 #else
-				fileName = path + "/" + fileName;
+				fileName = strPah + "/" + fileName;
 #endif
 			}
 		}

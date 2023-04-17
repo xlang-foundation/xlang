@@ -26,7 +26,7 @@ namespace X
 				}
 				//todo: make m_desc from val
 			}
-			virtual std::string ToString(bool WithFormat = false) override
+			virtual const char* ToString(bool WithFormat = false) override
 			{
 				std::string strType;
 				switch (m_valType)
@@ -132,7 +132,7 @@ namespace X
 				default:
 					break;
 				}
-				return strType;
+				return GetABIString(strType);
 			}
 		};
 	}

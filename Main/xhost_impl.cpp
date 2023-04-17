@@ -65,14 +65,14 @@ namespace X
 	{
 		return X::Manager::I().Register(name,objPackage);
 	}
-	XObj* XHost_Impl::QueryMember(XRuntime* rt, XObj* pObj, const char* name)
+	Value XHost_Impl::QueryMember(XRuntime* rt, XObj* pObj, const char* name)
 	{
 		Data::Object* pRealObj = dynamic_cast<Data::Object*>(pObj);
 		if (pRealObj == nullptr)
 		{
-			return nullptr;
+			return X::Value();
 		}
-		XObj* pRetObj = nullptr;
+		X::Value retValue;
 		AST::Scope* pScope = dynamic_cast<AST::Scope*>(pRealObj);
 		if (pScope)
 		{
@@ -80,15 +80,10 @@ namespace X
 			int idx = pScope->AddOrGet(strName, true);
 			if (idx >= 0)
 			{
-				Value v0;
-				pScope->Get((XlangRuntime*)rt, pRealObj, idx, v0);
-				pRetObj = (XObj*)v0;
-				//(XObj*) doesn't add refcount
-				//so add here
-				pRetObj->IncRef();
+				pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);
 			}
 		}
-		return pRetObj;
+		return retValue;
 	}
 	bool XHost_Impl::QueryPackage(XRuntime* rt, const char* name, Value& objPackage)
 	{
@@ -255,11 +250,7 @@ namespace X
 		}
 		Data::Binary* pBin = dynamic_cast<Data::Binary*>(input.GetObj());
 		X::BlockStream stream(pBin->Data(), pBin->Size(),false);
-		if (pBin->GetContext())
-		{
-			stream.ScopeSpace().SetContext((XlangRuntime*)pBin->GetContext()->rt,
-				pBin->GetContext()->m_parent);
-		}
+		stream.ScopeSpace().SetContext((XlangRuntime*)pBin->RT(), pBin->Parent());
 		stream >> output;
 		return true;
 	}

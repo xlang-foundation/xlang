@@ -57,7 +57,7 @@ public:
 	{
 		m_lock.Unlock();
 	}
-	virtual bool RunCodeWithThisScope(std::string& code) override;
+	virtual bool RunCodeWithThisScope(const char* code) override;
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;
@@ -191,7 +191,7 @@ class PackageProxy :
 	{
 		m_funcPackageCleanup = func;
 	}
-	virtual bool RunCodeWithThisScope(std::string& code) override
+	virtual bool RunCodeWithThisScope(const char* code) override
 	{
 		return true;
 	}

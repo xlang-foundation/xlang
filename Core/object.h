@@ -134,7 +134,15 @@ namespace Data {
 		{
 			return false;
 		}
-		virtual std::string GetTypeString()
+		//GetTypeString will cross dll, so,return a pointer not std::string
+		//and this point will released by call g_pHost func 
+		virtual const char* GetTypeString() override
+		{
+			std::string typeName = GetObjectTypeString();
+			return GetABIString(typeName);
+		}
+		//todo: should impl. into individual class  with virtual
+		inline std::string GetObjectTypeString()
 		{
 			switch (m_t)
 			{
@@ -203,12 +211,13 @@ namespace Data {
 		{
 			return true;
 		}
-		virtual std::string ToString(bool WithFormat = false)
+		virtual const char* ToString(bool WithFormat = false) override
 		{
 			char v[1000];
 			snprintf(v, sizeof(v), "Object:0x%llx",
 				(unsigned long long)this);
-			return v;
+			std::string retStr(v);
+			return GetABIString(retStr);
 		}
 		virtual Object& operator +=(X::Value& r)
 		{

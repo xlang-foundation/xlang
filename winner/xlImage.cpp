@@ -4,7 +4,6 @@
 #include "singleton.h"
 #include "xlApp.h"
 
-
 //ref
 //http://www.nuonsoft.com/blog/2011/10/17/introduction-to-wic-how-to-use-wic-to-load-an-image-and-draw-it-with-gdi/
 
@@ -39,7 +38,9 @@ namespace XWin
 			if (pModule)
 			{
 				auto path = pModule->GetPath();
-				url = path + "\\" + url;
+				std::string strPath(path);
+				X::g_pXHost->ReleaseString(path);
+				url = strPath + "\\" + url;
 			}
 		}
 		m_url = url;

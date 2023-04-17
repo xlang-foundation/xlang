@@ -141,7 +141,7 @@ namespace X
 				}
 				return true;
 			}
-			virtual std::string ToString(bool WithFormat = false) override
+			virtual const char* ToString(bool WithFormat = false) override
 			{
 				std::string strOut = "{\n";
 				int cnt = (int)mMap.size();
@@ -168,7 +168,7 @@ namespace X
 					i++;
 				}
 				strOut += "}";
-				return strOut;
+				return GetABIString(strOut);
 			}
 			virtual bool Call(XRuntime* rt, XObj* pContext,
 				ARGS& params,

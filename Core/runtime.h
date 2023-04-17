@@ -78,9 +78,10 @@ public:
 	{
 		return m_stackBottom ? m_stackBottom->SetVarCount(cnt) : false;
 	}
-	inline virtual bool AddVar(std::string& name, X::Value& val) override
+	inline virtual bool AddVar(const char* name, X::Value& val) override
 	{
-		return m_stackBottom ? m_stackBottom->AddVar(this,name, val) : false;
+		std::string strName(name);
+		return m_stackBottom ? m_stackBottom->AddVar(this, strName, val) : false;
 	}
 	inline void SetM(AST::Module* m) { m_pModule = m; }
 	inline AST::Module* M() { return m_pModule; }

@@ -3,6 +3,8 @@
 #include "xpackage.h"
 #include "xlang.h"
 #include "singleton.h"
+#include "dbop.h"
+#include "sqlite/sqlite3.h"
 
 struct sqlite3;
 
@@ -12,22 +14,38 @@ namespace X
 	{
 		class SqliteDB
 		{
+			BEGIN_PACKAGE(SqliteDB)
+				APISET().AddFunc<1>("open", &SqliteDB::Open);
+				APISET().AddFunc<0>("close", &SqliteDB::Close);
+				APISET().AddFunc<1>("exec", &SqliteDB::ExecSQL);
+				APISET().AddFunc<0>("beginTransaction", &SqliteDB::BeginTransaction);
+				APISET().AddFunc<0>("endTransaction", &SqliteDB::EndTransaction);
+				APISET().AddClass<1, Database::DBStatement, SqliteDB>("statement");
+			END_PACKAGE
 		public:
 			SqliteDB();
+			SqliteDB(std::string dbPath);
 			~SqliteDB();
 
-			void Open(std::string& dbPath);
-			void Close();
+			bool Open(std::string dbPath);
+			bool Close();
 			sqlite3* db()
 			{
 				return mdb;
+			}
+			bool BeginTransaction()
+			{
+				return SQLITE_OK == ExecSQL("BEGIN TRANSACTION;");
+			}
+			bool EndTransaction()
+			{
+				return SQLITE_OK == ExecSQL("END TRANSACTION;");
 			}
 			int ExecSQL(std::string sql);
 		private:
 			sqlite3* mdb = nullptr;
 			std::string mDbPath;
 		};
-		class DBStatement;
 		class Cursor
 		{
 			SqliteDB* m_db = nullptr;
@@ -38,7 +56,7 @@ namespace X
 			BEGIN_PACKAGE(Cursor)
 				APISET().AddFunc<0>("fetch",&Cursor::fetch);
 				APISET().AddProp("cols", &Cursor::GetCols);
-				END_PACKAGE
+			END_PACKAGE
 		bool Open();
 		public:
 			Cursor(std::string strSql)
@@ -66,9 +84,16 @@ namespace X
 			SqliteDB m_db;
 			std::string m_curPath;
 			BEGIN_PACKAGE(Manager)
+				APISET().AddConst("OK", SQLITE_OK);
+				APISET().AddConst("ERROR", SQLITE_ERROR);
+				APISET().AddConst("ABORT", SQLITE_ABORT);
+				APISET().AddConst("BUSY", SQLITE_BUSY);
+				APISET().AddConst("ROW", SQLITE_ROW);
+				APISET().AddConst("DONE", SQLITE_DONE);
 				APISET().AddFunc<0>("WritePadUseDataBinding",
 					&Manager::WritePadUseDataBinding);
 				APISET().AddRTFunc<2>("WritePad", &Manager::WritePad);
+				APISET().AddClass<1, SqliteDB>("Database");
 				APISET().AddClass<1, Cursor>("Cursor");
 			END_PACKAGE
 			bool RunSQLStatement(X::XRuntime* rt, X::XObj* pContext,
@@ -86,7 +111,10 @@ namespace X
 				X::XModule* pModule = dynamic_cast<X::XModule*>(m_curModule.GetObj());
 				if (pModule)
 				{
-					return pModule->GetPath();
+					auto path = pModule->GetPath();
+					std::string strPath(path);
+					g_pXHost->ReleaseString(path);
+					return strPath;
 				}
 				else
 				{

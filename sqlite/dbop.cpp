@@ -10,17 +10,17 @@ namespace X
 		DBStatement::DBStatement()
 		{
 		}
-
-		DBStatement::DBStatement(SqliteDB* pdb,const char* strSql)
+		DBStatement::DBStatement(SqliteDB* pdb,std::string sql)
 		{
 			statecode = sqlite3_prepare(
 				pdb->db(),
-				strSql,
+				sql.c_str(),
 				-1,
 				&stmt,
 				0  // Pointer to unused portion of stmt
 			);
 		}
+
 
 		DBStatement::~DBStatement()
 		{
@@ -29,6 +29,15 @@ namespace X
 				sqlite3_finalize(stmt);
 				stmt = nullptr;
 			}
+		}
+		bool DBStatement::Close()
+		{
+			if (stmt)
+			{
+				sqlite3_finalize(stmt);
+				stmt = nullptr;
+			}
+			return true;
 		}
 		bool DBStatement::bind(int idx, X::Value& val)
 		{
@@ -193,9 +202,9 @@ namespace X
 			return (DBState)statecode;
 		}
 
-		void DBStatement::reset()
+		bool DBStatement::reset()
 		{
-			sqlite3_reset(stmt);
+			return SQLITE_OK == sqlite3_reset(stmt);
 		}
 		bool DBStatement::getValue(int idx, X::Value& val)
 		{//SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, or SQLITE_NULL

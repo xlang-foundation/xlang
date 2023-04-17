@@ -195,7 +195,9 @@ namespace X
 					{
 						auto* pObj = dynamic_cast<Object*>(pContext);
 						auto* pStrObj = dynamic_cast<Str*>(pObj);
-						std::string strVal = pStrObj->ToString();
+						auto str_abi = pStrObj->ToString();
+						std::string strVal(str_abi);
+						g_pXHost->ReleaseString(str_abi);
 						std::transform(strVal.begin(),
 							strVal.end(), strVal.begin(),
 							[](unsigned char c) { return std::toupper(c); });
@@ -244,7 +246,9 @@ namespace X
 						std::string pattern = params[0].ToString();
 						const std::regex r(pattern);
 						std::string target = params[1].ToString();
-						std::string org_str = pStrObj->ToString();
+						auto str_abi = pStrObj->ToString();
+						std::string org_str = str_abi;
+						g_pXHost->ReleaseString(str_abi);
 						std::stringstream result;
 						std::regex_replace(std::ostream_iterator<char>(result),
 							org_str.begin(), org_str.end(), r, target);

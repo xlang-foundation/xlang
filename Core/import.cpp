@@ -51,6 +51,22 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 			bHaveDll = true;
 		}
 	}
+	//check dll search path
+	if (!bHaveDll && g_pXload->GetConfig().dllSearchPath)
+	{
+		std::string dllSearchPath(g_pXload->GetConfig().dllSearchPath);
+		std::vector<std::string> paths = split(dllSearchPath, '\n');
+		for (auto& p : paths) 
+		{
+			bRet = file_search(p,LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
+			if (bRet && candiateFiles.size() > 0)
+			{
+				loadDllName = candiateFiles[0];
+				bHaveDll = true;
+				break;
+			}
+		}
+	}
 	if (!bHaveDll && !curModulePath.empty())
 	{
 		bRet = file_search(curModulePath, LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
@@ -228,7 +244,11 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		}
 		else
 		{
-			std::string curPath = rt->M()->GetModulePath();
+			std::string curPath;
+			if (rt->M())
+			{
+				curPath = rt->M()->GetModulePath();
+			}
 			bool bLoaded = FindAndLoadExtensions(rt,curPath, m_path);
 			bool bOK = Manager::I().QueryAndCreatePackage(rt,
 				im.name, v);

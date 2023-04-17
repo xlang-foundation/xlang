@@ -26,7 +26,7 @@ namespace X
 			{
 
 			}
-			virtual inline void SetName(std::string& n) override
+			virtual inline void SetName(const char* n) override
 			{
 				m_name = n;
 			}

@@ -1,7 +1,6 @@
 #ifndef _X_LANG_H_
 #define _X_LANG_H_
 
-#include <string>
 #include "value.h"
 #include "xhost.h"
 
@@ -53,32 +52,19 @@ namespace X
 	};
 #define Internal_Reserve(cls_name)  cls_name(int){}
 
-	struct XObj_Context
-	{
-		XRuntime* rt = nullptr;
-		XObj* m_parent = nullptr;
-	};
 	class XObj
 	{
 	protected:
-		XObj_Context* m_cxt = nullptr;
+		XRuntime* m_rt = nullptr;
+		XObj* m_parent = nullptr;
+
 		inline void SetRT(XRuntime* rt)
 		{
-			if (m_cxt == nullptr)
-			{
-				m_cxt = new XObj_Context;
-			}
-			m_cxt->rt = rt;
+			m_rt = rt;
 		}
 		inline void SetParent(XObj* p)
 		{
-			m_cxt->m_parent = p;
-#if PARENT_REF_CHANGE
-			if (m_cxt->m_parent)
-			{
-				m_cxt->m_parent->IncRef();
-			}
-#endif
+			m_parent = p;
 		}
 		
 	public:
@@ -88,67 +74,20 @@ namespace X
 		}
 		~XObj()
 		{
-			if (m_cxt)
-			{
-#if PARENT_REF_CHANGE
-				if (m_cxt->m_parent)
-				{
-					m_cxt->m_parent->DecRef();
-				}
-#endif
-				delete m_cxt;
-			}
 		}
 		void SetContext(XRuntime* rt, XObj* pa)
 		{
-			if (m_cxt)
-			{
-#if PARENT_REF_CHANGE
-				if (m_cxt->m_parent)
-				{
-					m_cxt->m_parent->DecRef();
-				}
-#endif
-				delete m_cxt;
-			}
-			m_cxt = new XObj_Context();
-			m_cxt->rt = rt;
-			m_cxt->m_parent = pa;
-#if PARENT_REF_CHANGE
-			if (pa)
-			{
-				pa->IncRef();
-			}
-#endif
+			m_rt = rt;
+			m_parent = pa;
 		}
-		XObj_Context* GetContext() { return m_cxt; }
+		XRuntime* RT() { return m_rt; }
+		XObj* Parent() { return m_parent; }
 		XObj& operator=(const XObj& o)
 		{
-			if (m_cxt)
-			{
-#if PARENT_REF_CHANGE
-				if (m_cxt->m_parent)
-				{
-					m_cxt->m_parent->DecRef();
-				}
-#endif
-				delete m_cxt;
-			}
-			if (o.m_cxt)
-			{
-				m_cxt = new XObj_Context;
-				m_cxt->rt = o.m_cxt->rt;
-				m_cxt->m_parent = o.m_cxt->m_parent;
-#if PARENT_REF_CHANGE
-				if (m_cxt->m_parent)
-				{
-					m_cxt->m_parent->IncRef();
-				}
-#endif
-			}
+			m_rt = o.m_rt;
+			m_parent = o.m_parent;
 			return *this;
 		}
-		inline bool WithContext() { return m_cxt != nullptr; }
 		virtual XObj* Clone() { return nullptr; }
 
 		virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) { return -1; };
@@ -157,14 +96,14 @@ namespace X
 		virtual int IncRef() { return 0; }
 		virtual int DecRef() { return 0; }
 		virtual ObjType GetType() { return ObjType::Base; }
-		virtual std::string GetTypeString() { return ""; }
+		virtual const char* GetTypeString() { return ""; }
 		virtual long long Size() { return 0; }
 		virtual size_t Hash() { return 0; }
-		virtual std::string ToString(bool WithFormat = false) 
+		virtual const char* ToString(bool WithFormat = false) 
 		{
-			return "";
+			return nullptr;
 		}
-		virtual bool FromString(std::string& strCoded)
+		virtual bool FromString(const char* strCoded)
 		{
 			return true;
 		}
@@ -231,18 +170,18 @@ namespace X
 			return 0;
 		}
 		//API Wrapper
-		inline XObj* Member(XRuntime* rt,const char* name)
+		inline Value Member(XRuntime* rt,const char* name)
 		{
-			XObj* pObj = g_pXHost->QueryMember(rt,this, name);
-			if (pObj)
+			X::Value retVal = g_pXHost->QueryMember(rt,this, name);
+			if (retVal.IsObject())
 			{
-				pObj->SetContext(rt, this);
+				retVal.GetObj()->SetContext(rt, this);
 			}
-			return pObj;
+			return retVal;
 		}
-		inline XObj* Member(const char* name)
+		inline Value Member(const char* name)
 		{
-			return Member(m_cxt->rt, name);
+			return Member(m_rt, name);
 		}
 		template<typename... VarList>
 		X::Value operator()(VarList... args)
@@ -256,10 +195,10 @@ namespace X
 			}
 			X::KWARGS kwargs;
 			X::Value v0;
-			Call(m_cxt->rt,m_cxt->m_parent,params, kwargs,v0);
+			Call(m_rt,m_parent,params, kwargs,v0);
 			if (v0.IsObject())
 			{
-				v0.GetObj()->SetContext(m_cxt->rt, m_cxt->m_parent);
+				v0.GetObj()->SetContext(m_rt,m_parent);
 			}
 			return v0;
 		}
@@ -268,10 +207,10 @@ namespace X
 			X::ARGS params(0);
 			X::KWARGS kwargs;
 			X::Value v0;
-			Call(m_cxt->rt, m_cxt->m_parent, params, kwargs, v0);
+			Call(m_rt,m_parent, params, kwargs, v0);
 			if (v0.IsObject())
 			{
-				v0.GetObj()->SetContext(m_cxt->rt, m_cxt->m_parent);
+				v0.GetObj()->SetContext(m_rt,m_parent);
 			}
 			return v0;
 		}
@@ -281,14 +220,14 @@ namespace X
 	{
 	public:
 		virtual bool CreateEmptyModule() = 0;
-		virtual bool AddVar(std::string& name, X::Value& val) = 0;
+		virtual bool AddVar(const char* name, X::Value& val) = 0;
 	};
 	class XModule :
 		virtual public XObj
 	{
 	public:
-		virtual std::string GetFileName() = 0;
-		virtual std::string GetPath() = 0;
+		virtual const char* GetFileName() = 0;
+		virtual const char* GetPath() = 0;
 	};
 	class XConstExpr :
 		virtual public XObj
@@ -372,7 +311,7 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XTensorOperator)
-		virtual void SetName(std::string& n) = 0;
+		virtual void SetName(const char* n) = 0;
 	};
 	class XTensorGraph :
 		virtual public XObj
@@ -404,12 +343,12 @@ namespace X
 		Value Get()
 		{
 			Value v0;
-			GetPropValue(m_cxt->rt, m_cxt->m_parent, v0);
+			GetPropValue(m_rt,m_parent, v0);
 			return v0;
 		}
 		bool Set(Value& v)
 		{
-			return SetPropValue(m_cxt->rt, m_cxt->m_parent, v);
+			return SetPropValue(m_rt,m_parent, v);
 		}
 	};
 	class XEvent :
@@ -450,7 +389,7 @@ namespace X
 		}
 		void SetScope(void* p) { m_embedScope = p; }
 		void* GetScope() { return m_embedScope; }
-		virtual int Query(std::string& name) = 0;
+		virtual int Query(const char* name) = 0;
 		virtual bool Get(int idx, X::Value& v) = 0;
 		virtual bool Set(int idx, X::Value& v) = 0;
 	};
@@ -464,7 +403,7 @@ namespace X
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(int idx, Value& v) = 0;
 		virtual void RemoveALl() = 0;
-		virtual bool RunCodeWithThisScope(std::string& code) = 0;
+		virtual bool RunCodeWithThisScope(const char* code) = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)
 	{

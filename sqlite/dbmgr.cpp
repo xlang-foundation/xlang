@@ -13,7 +13,19 @@ namespace X
 		SqliteDB::SqliteDB()
 		{
 		}
-
+		SqliteDB::SqliteDB(std::string dbPath)
+		{
+			if (dbPath.find(".") == std::string::npos)
+			{
+				dbPath = dbPath + ".db";
+			}
+			if (!IsAbsPath(dbPath))
+			{
+				auto path = Manager::I().GetCurrentPath();
+				dbPath = path + Path_Sep_S + dbPath;
+			}
+			Open(dbPath);
+		}
 		SqliteDB::~SqliteDB()
 		{
 		}
@@ -217,7 +229,7 @@ namespace X
 					pCursor->SetDb(&m_db);
 					pCursor->SetBindings(BindingDataList);
 					X::Value val = X::Value(pCursor->APISET().GetProxy(pCursor),false);
-					rt->AddVar(varName, val);
+					rt->AddVar(varName.c_str(), val);
 					m_cursors.push_back(pCursor);
 				}
 				else
@@ -227,7 +239,7 @@ namespace X
 			}
 			return X::Value(bOK);
 		}
-		void SqliteDB::Open(std::string& dbPath)
+		bool SqliteDB::Open(std::string dbPath)
 		{
 			Close();
 			mDbPath = dbPath;
@@ -244,15 +256,17 @@ namespace X
 			{
 				mdb = db;
 			}
+			return true;
 		}
 
-		void SqliteDB::Close()
+		bool SqliteDB::Close()
 		{
 			if (mdb)
 			{
 				sqlite3_close(mdb);
 				mdb = nullptr;
 			}
+			return true;
 		}
 		int exec_callback(void* NotUsed, int argc, char** argv, char** azColName)
 		{

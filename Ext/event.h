@@ -59,18 +59,20 @@ namespace X
 		{
 			m_name = name;
 		}
-		virtual std::string ToString(bool WithFormat = false)
+		virtual const char* ToString(bool WithFormat = false)
 		{
 			std::string retVal;
 			for (auto& handleInfo : m_handlers)
 			{
 				if (handleInfo.FuncHandler)
 				{
-					retVal+=handleInfo.FuncHandler->ToString();
+					auto str_abi = handleInfo.FuncHandler->ToString();
+					retVal+= str_abi;
+					g_pXHost->ReleaseString(str_abi);
 					retVal += "\r\n";
 				}
 			}
-			return retVal;
+			return GetABIString(retVal);
 		}
 		virtual XObj* Clone() override
 		{

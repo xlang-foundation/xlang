@@ -351,16 +351,16 @@ namespace X
 	Value Value::ObjCall(Port::vector<X::Value>& params)
 	{
 		auto* pObj = GetObj();
-		if (pObj == nullptr || pObj->GetContext() == nullptr)
+		if (pObj == nullptr || pObj->RT() == nullptr)
 		{
 			return Value();
 		}
 		KWARGS kwargs;
 		Value v0;
-		pObj->Call(pObj->GetContext()->rt, pObj->GetContext()->m_parent, params, kwargs, v0);
+		pObj->Call(pObj->RT(), pObj->Parent(), params, kwargs, v0);
 		if (v0.IsObject())
 		{
-			v0.GetObj()->SetContext(pObj->GetContext()->rt, pObj->GetContext()->m_parent);
+			v0.GetObj()->SetContext(pObj->RT(), pObj->Parent());
 		}
 		return v0;
 	}
@@ -368,7 +368,7 @@ namespace X
 	{
 		if (IsObject())
 		{
-			return Value(GetObj()->Member(key),false);
+			return GetObj()->Member(key);
 		}
 		else
 		{
@@ -465,12 +465,12 @@ namespace X
 			break;
 		case ValueType::Int64:
 		{
-			if (flags == BOOL_FLAG)
+			if (flags & (int)ValueSubType::BOOL)
 			{
 				if(WithFormat) str = (x.l == 1) ? "true" : "false";//Json likes it
 				else str = (x.l == 1) ? "True" : "False";
 			}
-			else if (flags == CHAR_FLAG)
+			else if (flags & (int)ValueSubType::CHAR)
 			{
 				str = (char)x.l;
 			}
@@ -492,7 +492,9 @@ namespace X
 		case ValueType::Object:
 		if(x.obj)
 		{
-			str = x.obj->ToString(WithFormat);
+			auto str_abi = x.obj->ToString(WithFormat);
+			str = str_abi;
+			X::g_pXHost->ReleaseString(str_abi);
 			if (WithFormat && x.obj->GetType() == ObjType::Str)
 			{
 				const char* pNewStr= g_pXHost->StringifyString(str.c_str());
@@ -543,7 +545,9 @@ namespace X
 			auto* pObj = GetObj();
 			if (pObj)
 			{
-				strType = pObj->GetTypeString();
+				const char* retStrType = pObj->GetTypeString();
+				strType = std::string(retStrType);
+				g_pXHost->ReleaseString(retStrType);
 			}
 			else
 			{
