@@ -1,7 +1,6 @@
 #ifndef _X_LANG_H_
 #define _X_LANG_H_
 
-#include <string>
 #include "value.h"
 #include "xhost.h"
 
