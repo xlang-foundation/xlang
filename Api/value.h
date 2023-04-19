@@ -127,6 +127,7 @@ class Value
 	Value ObjCall(Port::vector<X::Value>& params);
 	Value QueryMember(const char* key);
 public:
+	inline bool IsLong() { return t == ValueType::Int64; }
 	inline bool IsInvalid()
 	{
 		return (t == ValueType::Invalid);

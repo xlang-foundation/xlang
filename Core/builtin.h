@@ -51,6 +51,9 @@ namespace X {
 		bool RegisterInternals();
 
 		// Inherited via XPackage
+		virtual void SetPackageAccessor(PackageAccessor func) override
+		{
+		}
 		virtual void SetPackageCleanupFunc(PackageCleanup func) override;
 		virtual int AddMember(PackageMemberType type, const char* name, const char* doc, bool keepRawParams = false) override;
 		virtual int QueryMethod(const char* name, bool* pKeepRawParams) override;

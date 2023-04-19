@@ -26,6 +26,11 @@ class Package :
 	StackFrame* m_stackFrame = nullptr;
 	std::vector<MemberIndexInfo> m_memberInfos;
 	PackageCleanup m_funcPackageCleanup = nullptr;
+	PackageAccessor m_funcAccessor;
+	virtual void SetPackageAccessor(PackageAccessor func) override
+	{
+		m_funcAccessor = func;
+	}
 	virtual void SetPackageCleanupFunc(PackageCleanup func) override
 	{
 		m_funcPackageCleanup = func;
@@ -48,6 +53,10 @@ public:
 		{
 			Cleanup(m_pObject);
 		}
+	}
+	PackageAccessor GetAccessor()
+	{
+		return m_funcAccessor;
 	}
 	void Lock()
 	{
@@ -196,6 +205,9 @@ class PackageProxy :
 		return true;
 	}
 public:
+	virtual void SetPackageAccessor(PackageAccessor func) override
+	{
+	}
 	PackageProxy(Package* pPack,void* pObj) :
 		Data::Object(), Scope()
 	{
@@ -261,6 +273,19 @@ public:
 	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val) override;
+	inline virtual bool Get(XlangRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry,X::Value& val)override
+	{
+		if (m_pPackage)
+		{
+			auto func = m_pPackage->GetAccessor();
+			if (func)
+			{
+				val = func(rt, pContext,IdxAry);
+				return true;
+			}
+		}
+		return false;
+	}
 	virtual long long Size()
 	{
 		return m_pPackage->Size();
