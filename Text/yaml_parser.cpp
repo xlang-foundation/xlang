@@ -93,10 +93,10 @@ namespace X
 				ch = getChar();
 				if (ch == ' ')
 				{
-					while (ch == ' ')
-					{
-						ch = getChar();
-					}
+					//while (ch == ' ')
+					//{
+					//	ch = getChar();
+					//}
 					start = getPos()-1;
 					YamlNode* pMyParentNode = GetParentNode(pCurNode, status);
 					//new sequence node
@@ -211,11 +211,12 @@ namespace X
 				char quote_char = ch;
 				char prev_ch = ch;
 				ch = getChar();
-				while (ch != quote_char || prev_ch == '\\')//for case \" or \' inside quotes
+				while (ch != quote_char || (prev_ch == '\\' && ch == quote_char))//for case \" or \' inside quotes
 				{
 					prev_ch = ch;
 					ch = getChar();
 				}
+				ch = ch;
 			}
 			else if (ch == '#' && getPrevChar()!='\\')//not like \#
 			{//scan until meet end of line

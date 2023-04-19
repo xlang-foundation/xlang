@@ -383,21 +383,29 @@ namespace X
 				return X::Value(pNewTensor);
 
 			}
-			
-			inline void IterateAll(TensorIterateProc proc)
+			inline void IterateAll(TensorIterateProc proc,int dimSize =0)
 			{
 				std::vector<long long> indices;
-				indices.resize(m_dims.size());
-				IterateLoop(indices, proc, 0);
+				if (dimSize == 0)
+				{
+					dimSize = m_dims.size();
+				}
+				indices.resize(dimSize);
+				IterateLoop(indices, proc, dimSize-1,0);
 			}
 			//before call,indices need has same size of m_dims
-			inline void IterateLoop(std::vector<long long>&indices, TensorIterateProc proc,int level=0)
+			inline void IterateLoop(std::vector<long long>&indices, 
+				TensorIterateProc proc,int IterateToDim,int level=0)
 			{
 				if (m_dims.size() == 0)
 				{
 					return;
 				}
 				int lastDim = (int)m_dims.size()-1;
+				if (lastDim > IterateToDim)
+				{
+					lastDim = IterateToDim;
+				}
 				auto& dim = m_dims[level];
 				for (long long i = 0; i < dim.size; i++)
 				{
@@ -408,7 +416,7 @@ namespace X
 					}
 					else
 					{
-						IterateLoop(indices, proc, level + 1);
+						IterateLoop(indices, proc, IterateToDim,level + 1);
 					}
 				}
 			}

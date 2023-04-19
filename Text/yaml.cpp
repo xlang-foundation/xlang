@@ -126,7 +126,16 @@ namespace X
 			else
 			{
 				std::string strIdx = idx.ToString();
-				pCurNode = pCurNode->FindNode(strIdx);
+				auto* pNode0 = pCurNode->FindNode(strIdx);
+				if (pNode0 == nullptr)
+				{
+					auto* pValueNode = pCurNode->GetValueNode();
+					if (pValueNode)
+					{
+						pNode0 = pValueNode->FindNode(strIdx);
+					}
+				}
+				pCurNode = pNode0;
 			}
 		}
 		if (bFind)
