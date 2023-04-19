@@ -761,34 +761,117 @@ namespace X
 						{
 							cur_element_count_2 = 0;
 						}
-						//std::cout << "In Divide(), current index1 ="<<cur_element_count_1<<", current index2 ="<<cur_element_count_2<< std::endl;
 						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
 						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
-						//std::cout << "In Divide(), val1="<<val_1.GetLongLong()<<",val2 ="<<val_2.GetLongLong()<< std::endl;
-						//val_ret = val_1.GetLongLong() / val_2.GetLongLong();
-						//val_ret = val_1 / val_2;
-						//std::cout << "In Divide(), new val1="<<val_ret.GetLongLong()<< std::endl;
 						val_1 /= val_2;
-						//val_ret = val_1;
-						//pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_ret);
 						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
 						cur_element_count_1 ++;
 						cur_element_count_2 ++;
 					}
 				} //bAddable
-
 			} // both tensors
 		} //Divide
 
-		void Conv2d(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		void Conv2d_old(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
-			std::cout << "in tensor_cpu.h::conv2d()" << std::endl;
-			//we need the mode - full, same, valid
 			
 			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());  
 			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
 
+			int m = pTensor1->GetDims()[0].size; //rows of matrix1
+			int n = pTensor1->GetDims()[1].size; //columns of matrix1
+			int u = pTensor2->GetDims()[0].size; //rows of matrix2
+			int v = pTensor2->GetDims()[1].size; //columns of matrix2
+
+			if ( m+u-1 < 0 || n+v-1 < 0)
+				return;
+
+			std::vector<int> dims;
+			dims.push_back(m+u-1);
+			dims.push_back(n+v-1);
+			TensorDataType dataType = pTensor1->GetDataType();
+			pRetVal->SetDataType(dataType);
+			pRetVal->CreateBaseOnShape(dims);
+
+			int i, j, k, l;
+			X::Value val_1, val_2, val;
+			std::vector<long long> indices1, indices2, indices;
+			indices.resize(2);
+			indices1.resize(2);
+			indices2.resize(2);
+
+			for ( i = 0; i < m+u-1; i++) {
+				for (j = 0; j < n+v-1; j ++) {
+					indices[0] = i;
+					indices[1] = j;
+					val = 0;
+					for (k = 0; k < m; k++) { 
+						for (l = 0; l < n; l++) { 
+							if (i-k >=0 && i-k < u && j-l>=0 && j-l < v) 
+							{
+								indices1[0] = k;
+								indices1[1] = l;
+								indices2[0] = i-k;
+								indices2[1] = j-l;
+								val_1 = pTensor1->GetDataWithIndices(indices1);
+								val_2 = pTensor2->GetDataWithIndices(indices2);								
+								val_1 *= val_2;
+								val += val_1;
+							} //if
+						} //for l
+					} //for k
+					pRetVal->SetDataWithIndices(indices, val);
+				}//for j
+			}//for i
+		}
+
+		void Conv2d(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		{
+			std::cout << "in tensor_cpu.h::conv2d()" << std::endl;
+			
+			auto input_channels = kwParams.find("input_channels");  
+			auto output_channels = kwParams.find("output_channels");  
+			auto stride = kwParams.find("stride");  
+			auto dilation = kwParams.find("dilation");  
+			auto conv_mode = kwParams.find("conv_mode");  //- full, same, valid
+			auto padding = kwParams.find("padding");
+			auto padding_mode = kwParams.find("padding_mode");
+			auto bias = kwParams.find("bias");
+
+			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());  
+			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
+			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
+			X::Value input_matrix, weight_matrix;
+
+			std::vector<Data::TensorIndex> IdxAry;
+			IdxAry.push_back({0,1});  //matrix only
+
+			pTensor1->Get(IdxAry, input_matrix);
+			pTensor2->Get(IdxAry, weight_matrix);
+
+			int m = pTensor1->GetDims()[0].size; //rows of matrix1
+			int n = pTensor1->GetDims()[1].size; //columns of matrix1
+			int u = pTensor2->GetDims()[0].size; //rows of matrix2
+			int v = pTensor2->GetDims()[1].size; //columns of matrix2
+
+			if ( m+u-1 < 0 || n+v-1 < 0)
+				return;
+
+			std::vector<int> dims;
+			dims.push_back(m+u-1);
+			dims.push_back(n+v-1);
+			TensorDataType dataType = pTensor1->GetDataType();
+			pRetVal->SetDataType(dataType);
+			pRetVal->CreateBaseOnShape(dims);
+
+			Conv2d_internal(pTensor1, pTensor2, pRetVal);
+
+		}
+
+		void Conv2d_internal(X::Data::Tensor* pTensor1 , X::Data::Tensor* pTensor2, X::Data::Tensor* pRetVal)
+		{
+			
 			int m = pTensor1->GetDims()[0].size; //rows of matrix1
 			int n = pTensor1->GetDims()[1].size; //columns of matrix1
 			int u = pTensor2->GetDims()[0].size; //rows of matrix2
