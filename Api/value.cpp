@@ -14,6 +14,21 @@ namespace X
 	COMPARE_OP_IMPL(>= )
 	COMPARE_OP_IMPL(<= )
 	
+	template<typename... VarList>
+	Value Value::Query(VarList... args)
+	{
+		const int size = sizeof...(args);
+		Value vals[size] = { args... };
+		Port::vector<X::Value> IdxAry(size);
+		for (int i = 0; i < size; i++)
+		{
+			IdxAry.push_back(vals[i]);
+		}
+		XObj* pObj = GetObj();
+		X::Value retVal;
+		pObj->Get(X::g_pXHost->GetCurrentRuntime(), pObj, IdxAry, retVal);
+		return retVal;
+	}
 	Value Value::operator* (const Value& right)
 	{
 		Value ret;
