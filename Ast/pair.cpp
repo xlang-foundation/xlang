@@ -219,7 +219,7 @@ bool PairOp::GetItemFromPackage(XlangRuntime* rt, XObj* pContext,
 	}
 	if (bOK)
 	{
-		bOK =  pPackage->Get(rt, pPackage,IdxAry, v);
+		bOK = dynamic_cast<X::XObj*>(pPackage)->Get(rt, pPackage, IdxAry, v);
 	}
 	return bOK;
 }

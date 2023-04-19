@@ -92,7 +92,7 @@ namespace X
 
 		virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) { return -1; };
 		virtual bool GetIndexValue(int idx, Value& v) { return false; };
-
+		virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry, X::Value& val) { return false; }
 		virtual int IncRef() { return 0; }
 		virtual int DecRef() { return 0; }
 		virtual ObjType GetType() { return ObjType::Base; }
