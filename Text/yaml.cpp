@@ -3,17 +3,37 @@
 #include "utility.h"
 #include "Hosting.h"
 #include "port.h"
+#include "list.h"
 
 namespace X
 {
+	YamlWrapper::~YamlWrapper()
+	{
+		if (m_parser)
+		{
+			delete m_parser;
+		}
+	}
 	X::Value YamlWrapper::LoadFromString(std::string yamlStr)
 	{
-		X::Value retValue;
-		Text::YamlParser yml;
-		yml.Init();
-		yml.LoadFromString((char*)yamlStr.c_str(), (int)yamlStr.size());
-		yml.Parse();
-		return retValue;
+		if (m_parser)
+		{
+			delete m_parser;
+			m_parser = nullptr;
+		}
+		Text::YamlParser* ymlP = new Text::YamlParser();
+		ymlP->Init();
+		ymlP->LoadFromString((char*)yamlStr.c_str(), (int)yamlStr.size());
+		bool bOK = ymlP->Parse();
+		if (!bOK)
+		{
+			return X::Value(false);
+		}
+		m_parser = ymlP;
+		auto* rootNode = ymlP->GetRoot();
+		X::XPackageValue<YamlNodeWrapper> valNode;
+		(*valNode).SetNode(rootNode);
+		return valNode;
 	}
 	X::Value  YamlWrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,
 		std::string fileName)
@@ -24,18 +44,172 @@ namespace X
 			std::string curPath = pRt->M()->GetModulePath();
 			fileName = curPath + Path_Sep_S + fileName;
 		}
-		X::Value retValue;
 		std::string yamlStr;
 		bool bOK = LoadStringFromFile(fileName, yamlStr);
 		if (!bOK)
 		{
-			retValue = X::Value(false);
+			return X::Value(false);
 		}
-		Text::YamlParser yml;
-		yml.Init();
-		yml.LoadFromString((char*)yamlStr.c_str(), (int)yamlStr.size());
-		yml.Parse();
-
-		return retValue;
+		return LoadFromString(yamlStr);
 	}
+	X::Value YamlNodeWrapper::getNodevalue(Text::YamlNode* pNode)
+	{
+		if (pNode)
+		{
+			if (pNode->IsSingleValueType())
+			{
+				return X::Value(pNode->GetValue());
+			}
+			else
+			{
+				auto* pValueNode = pNode->GetValueNode();
+				if (pValueNode)
+				{
+					if (pValueNode->IsSingleValueType())
+					{
+						return X::Value(pValueNode->GetValue());
+					}
+					else
+					{
+						X::XPackageValue<YamlNodeWrapper> valNode;
+						(*valNode).SetNode(pValueNode);
+						return valNode;
+					}
+				}
+				else
+				{
+					return getNodeChildren(pNode);
+				}
+			}
+		}
+		else
+		{
+			return X::Value();
+		}
+	}
+	X::Value YamlNodeWrapper::Access(X::Port::vector<X::Value>& IdxAry)
+	{
+		Text::YamlNode* pCurNode = m_pNode;
+		Text::YamlNode* pFindNode = nullptr;
+		bool bFind = true;
+		for (auto& idx : IdxAry)
+		{
+			if (pCurNode == nullptr)
+			{
+				bFind = false;
+				break;
+			}
+			if (idx.IsLong())
+			{
+				int nIdx = (int)idx.GetLongLong();
+				int itemCount = pCurNode->GetChildrenCount();
+				if (itemCount > nIdx)
+				{
+					pCurNode = pCurNode->GetChild(nIdx);
+				}
+				else
+				{
+					auto* pValueNode = pCurNode->GetValueNode();
+					int itemCount = pValueNode->GetChildrenCount();
+					if (itemCount > nIdx)
+					{
+						pCurNode = pValueNode->GetChild(nIdx);
+					}
+					else
+					{//error
+						pCurNode = nullptr;
+						bFind = false;
+						break;
+					}
+				}
+			}
+			else
+			{
+				std::string strIdx = idx.ToString();
+				pCurNode = pCurNode->FindNode(strIdx);
+			}
+		}
+		if (bFind)
+		{
+			if (pCurNode)
+			{
+				return getNodevalue(pCurNode);
+			}
+			else
+			{
+				return X::Value();
+			}
+		}
+		return X::Value();
+	}
+	X::Value YamlNodeWrapper::get_parent()
+	{
+		if (m_pNode)
+		{
+			X::XPackageValue<YamlNodeWrapper> valNode;
+			(*valNode).SetNode(m_pNode->Parent());
+			return valNode;
+		}
+		else
+		{
+			return X::Value();
+		}
+	}
+
+	X::Value YamlNodeWrapper::get_key()
+	{
+		if (m_pNode)
+		{
+			if (m_pNode->IsSingleValueType())
+			{
+				return X::Value();
+			}
+			else
+			{
+				return X::Value(m_pNode->GetValue());
+			}
+		}
+		else
+		{
+			return X::Value();
+		}
+	}
+
+	X::Value YamlNodeWrapper::get_value()
+	{
+		return getNodevalue(m_pNode);
+	}
+
+	X::Value YamlNodeWrapper::get_size()
+	{
+		if (m_pNode)
+		{
+			return X::Value(m_pNode->GetChildrenCount());
+		}
+		else
+		{
+			return X::Value(0);
+		}
+	}
+	X::Value YamlNodeWrapper::getNodeChildren(Text::YamlNode* pNode)
+	{
+		if (pNode == nullptr)
+		{
+			return X::Value();
+		}
+		X::List list;
+		auto& nodes = pNode->GetChildren();
+		for (auto* node : nodes)
+		{
+			X::XPackageValue<YamlNodeWrapper> valNode;
+			(*valNode).SetNode(node);
+			list += valNode;
+		}
+		return list;
+	}
+	X::Value YamlNodeWrapper::get_children()
+	{
+		return getNodeChildren(m_pNode);
+	}
+
 }

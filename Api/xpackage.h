@@ -159,7 +159,22 @@ namespace X
 	class XPackageAPISet :
 		public APISetBase
 	{
+		PackageAccessor m_accessor;
 	public:
+		void SetAccessor(PackageAccessor a)
+		{
+			m_accessor = a;
+		}
+		template<typename F>
+		void SetAccessor(F f)
+		{
+			m_accessor = [f](X::XRuntime* rt, X::XObj* pContext,X::Port::vector<X::Value>& IdxAry)
+			{
+				auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
+				auto* pThis = (T*)pPackage->GetEmbedObj();
+				return (pThis->*f)(IdxAry);
+			};
+		}
 		bool IsCreated() { return m_alreadyCallBuild; }
 		inline virtual XPackage* GetPack() override { return m_xPack; }
 		inline virtual XPackage* GetProxy(void* pRealObj) override
@@ -660,6 +675,7 @@ namespace X
 				}
 				pPackage->SetPackageCleanupFunc(cleanFunc);
 			}
+			pPackage->SetPackageAccessor(m_accessor);
 			pPackage->Init(memberNum);
 			for (auto* b : bases)
 			{

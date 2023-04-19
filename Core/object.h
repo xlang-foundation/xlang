@@ -245,6 +245,7 @@ namespace Data {
 			}
 			return 0;
 		}
+		virtual bool Get(XlangRuntime* rt, XObj* pContext,X::Port::vector<X::Value>& IdxAry,X::Value& val) { return false; }
 		virtual bool Get(long long idx, X::Value& val) { return false; }
 		virtual bool Set(long long idx, X::Value& val) { return false; }
 		virtual bool Set(Value valIdx, X::Value& val) { return false; }

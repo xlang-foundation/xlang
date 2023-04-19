@@ -3,6 +3,9 @@
 #include <functional>
 #include <unordered_map>
 #include <vector>
+#include <string>
+#include "utility.h"
+
 namespace X
 {
 	namespace Text
@@ -68,6 +71,10 @@ namespace X
 					delete m_valueNode;
 				}
 			}
+			bool IsSingleValueType()
+			{
+				return (m_valueNode == nullptr) && (m_children.size() == 0);
+			}
 			void SetStartPos(char* p,int lineNo)
 			{
 				m_start_pos = p;
@@ -120,6 +127,38 @@ namespace X
 				m_valueNode = pNode;
 				m_valueNode->SetParent(this);
 			}
+			inline int GetChildrenCount()
+			{
+				return (int)m_children.size();
+			}
+			inline std::vector<YamlNode*>& GetChildren()
+			{
+				return m_children;
+			}
+			inline YamlNode* GetChild(int idx)
+			{
+				if (idx < 0 || idx >= m_children.size())
+				{
+					return nullptr;
+				}
+				return m_children[idx];
+			}
+			inline YamlNode* GetValueNode()
+			{
+				return m_valueNode;
+			}
+			inline std::string GetValue()
+			{
+				if (m_type == YamlNodeType::Doc)
+				{
+					return "";
+				}
+				else
+				{
+					 std::string strValue(m_start_pos, m_end_pos);
+					 return trim(strValue);
+				}
+			}
 			YamlNode* Parent() { return m_parent; }
 			YamlNode* ValueNode() { return m_valueNode; }
 			void Add(YamlNode* pNode)
@@ -135,6 +174,17 @@ namespace X
 			}
 			YamlNodeType Type() { return m_type; }
 			bool IsNullStartPos() { return m_start_pos == nullptr; }
+			YamlNode* FindNode(std::string keyName)
+			{
+				for (auto* pNode : m_children)
+				{
+					if (pNode->GetValue() == keyName)
+					{
+						return pNode;
+					}
+				}
+				return nullptr;
+			}
 		};
 		class YamlParser
 		{
@@ -186,6 +236,7 @@ namespace X
 			bool LoadFromString(char* code, int size);
 			bool Parse();
 			void Cleanup();
+			YamlNode* GetRoot() { return m_root; }
 		};
 	}
 }

@@ -156,7 +156,7 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 		{
 			Value v1;
 			ExecAction action;
-			if (e->Exec(rt,action, pContext, v1))
+			if (e->Exec(rt, action, pContext, v1))
 			{
 				IdxAry.push_back(v1.GetLongLong());
 			}
@@ -171,7 +171,7 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 	{
 		Value vIdx;
 		ExecAction action;
-		bOK = R->Exec(rt,action, pContext, vIdx);
+		bOK = R->Exec(rt, action, pContext, vIdx);
 		IdxAry.push_back(vIdx.GetLongLong());
 	}
 	if (bOK)
@@ -183,6 +183,50 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 	}
 	return bOK;
 }
+bool PairOp::GetItemFromPackage(XlangRuntime* rt, XObj* pContext,
+	Data::Object* pPackage, Expression* r,
+	Value& v, LValue* lValue)
+{
+	bool bOK = true;
+	//Get Index
+	X::Port::vector<X::Value> IdxAry(0);
+	if (R->m_type == ObType::List)
+	{
+		auto& list = (dynamic_cast<List*>(R))->GetList();
+		IdxAry.resize(list.size());
+		for (auto e : list)
+		{
+			Value v1;
+			ExecAction action;
+			if (e->Exec(rt,action, pContext, v1))
+			{
+				IdxAry.push_back(v1);
+			}
+			else
+			{
+				bOK = false;
+				break;
+			}
+		}
+	}
+	else
+	{
+		IdxAry.resize(1);
+		Value vIdx;
+		ExecAction action;
+		bOK = R->Exec(rt,action, pContext, vIdx);
+		IdxAry.push_back(vIdx);
+	}
+	if (bOK)
+	{
+		bOK =  pPackage->Get(rt, pPackage,IdxAry, v);
+	}
+	return bOK;
+}
+//we can split this impl. into Object's derived classes, but 
+//that will increase its vtable and Object's memory size will become bigger
+// also if do that way, we need to run expression for R in these classes
+//so still keep here
 bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = false;
@@ -198,6 +242,10 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 		auto pDataObj = dynamic_cast<Data::Object*>(v0.GetObj());
 		switch (pDataObj->GetType())
 		{
+		case X::ObjType::Package:
+			bOK = GetItemFromPackage(rt, pContext,
+				pDataObj, R, v, lValue);
+			break;
 		case X::ObjType::List:
 			bOK = GetItemFromList(rt, pContext, 
 				dynamic_cast<Data::List*>(pDataObj), R, v, lValue);
