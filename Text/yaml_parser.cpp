@@ -1,5 +1,6 @@
 #include "yaml_parser.h"
 #include <iostream>
+#include <string.h>
 
 //https://yaml.org/spec/1.1/#id857181
 
