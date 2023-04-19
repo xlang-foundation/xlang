@@ -58,7 +58,8 @@ namespace X
 		{
 			if (pNode->IsSingleValueType())
 			{
-				return X::Value(pNode->GetValue());
+				std::string strValue = pNode->GetValue();
+				return X::Value(strValue);
 			}
 			else
 			{

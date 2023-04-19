@@ -451,8 +451,20 @@ public:
 		Port::vector<X::Value> params(0);
 		return ObjCall(params);
 	}
+	Value GetObjectValue(Port::vector<X::Value>& IdxAry);
+	template<typename... VarList>
+	Value Query(VarList... args)
+	{
+		const int size = sizeof...(args);
+		Value vals[size] = { args... };
+		Port::vector<X::Value> IdxAry(size);
+		for (int i = 0; i < size; i++)
+		{
+			IdxAry.push_back(vals[i]);
+		}
+		return GetObjectValue(IdxAry);
+	}
 
-	template<typename... VarList> Value Query(VarList... args);
 	inline Value operator[](const char* key)
 	{
 		return QueryMember(key);
