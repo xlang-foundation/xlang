@@ -18,6 +18,9 @@ namespace AST
 		bool GetItemFromList(XlangRuntime* rt, XObj* pContext,
 			Data::List* pDataList, Expression* r,
 			Value& v, LValue* lValue);
+		bool GetItemFromPackage(XlangRuntime* rt, XObj* pContext,
+			Data::Object* pPackage, Expression* r,
+			Value& v, LValue* lValue);
 		bool GetItemFromTensor(XlangRuntime* rt, XObj* pContext,
 			Data::Tensor* pTensor, Expression* r,
 			Value& v, LValue* lValue);

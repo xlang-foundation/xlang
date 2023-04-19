@@ -383,32 +383,57 @@ namespace X
 				return X::Value(pNewTensor);
 
 			}
-			
+			//indices array needs to have all left side indices + (rightDimCount)
+			inline void IterateRight(TensorIterateProc proc, std::vector<long long>& indices,int rightDimCount)
+			{
+				int dimSize = m_dims.size();
+				int startDim = dimSize - rightDimCount;
+				std::vector<int> dimList;
+				for (int i = startDim; i < dimSize; i++)
+				{
+					dimList.push_back(i);
+				}
+				IterateLoop(indices, startDim, proc, dimList, 0);
+			}
+			inline void IterateLeft(TensorIterateProc proc,int leftDimCount)
+			{
+				std::vector<long long> indices;
+				indices.resize(leftDimCount);
+				std::vector<int> dimList;
+				for (int i = 0; i < leftDimCount; i++)
+				{
+					dimList.push_back(i);
+				}
+				IterateLoop(indices, 0,proc, dimList, 0);
+			}
 			inline void IterateAll(TensorIterateProc proc)
 			{
 				std::vector<long long> indices;
-				indices.resize(m_dims.size());
-				IterateLoop(indices, proc, 0);
+				int dimSize = m_dims.size();
+				indices.resize(dimSize);
+				std::vector<int> dimList;
+				for (int i = 0; i < dimSize; i++)
+				{
+					dimList.push_back(i);
+				}
+				IterateLoop(indices,0,proc,dimList,0);
 			}
 			//before call,indices need has same size of m_dims
-			inline void IterateLoop(std::vector<long long>&indices, TensorIterateProc proc,int level=0)
+			inline void IterateLoop(std::vector<long long>&indices,int Offset,
+				TensorIterateProc proc, std::vector<int>& dimList ,int level=0)
 			{
-				if (m_dims.size() == 0)
-				{
-					return;
-				}
-				int lastDim = (int)m_dims.size()-1;
-				auto& dim = m_dims[level];
+				auto lastLevel = dimList.size()-1;
+				auto& dim = m_dims[dimList[level]];
 				for (long long i = 0; i < dim.size; i++)
 				{
-					indices[level] = i;
-					if (lastDim == level)
+					indices[Offset+level] = i;
+					if (lastLevel == level)
 					{
 						proc(indices);
 					}
 					else
 					{
-						IterateLoop(indices, proc, level + 1);
+						IterateLoop(indices, Offset,proc, dimList,level + 1);
 					}
 				}
 			}

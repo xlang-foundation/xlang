@@ -22,7 +22,12 @@ namespace X
 		}
 		bool YamlParser::LoadFromString(char* code, int size)
 		{
-			m_data = code;
+			if (m_data)
+			{
+				delete m_data;
+			}
+			m_data = new char[size];
+			memcpy(m_data,code,size);
 			m_size = size;
 			return true;
 		}
@@ -33,6 +38,10 @@ namespace X
 				pCurNode = new YamlNode(nullptr, status);
 				pCurNode->SetType(YamlNodeType::Doc);
 				status.rootNode = pCurNode;
+				return pCurNode;
+			}
+			else if (pCurNode->Type() == YamlNodeType::Doc)
+			{
 				return pCurNode;
 			}
 			if (status.pair_count > 0)
@@ -58,10 +67,12 @@ namespace X
 			}
 			return pMyParentNode;
 		}
+
 		YamlNode* YamlParser::Scan(YamlNode* pCurNode, Status& status)
 		{
-			char ch = getChar();
+			//start points ch
 			auto start = getPos();
+			char ch = getChar();
 			if (status.NewLine)
 			{//Count leading space
 				while (ch == ' ' || ch == '\t')
@@ -82,7 +93,11 @@ namespace X
 				ch = getChar();
 				if (ch == ' ')
 				{
-					start = getPos();
+					//while (ch == ' ')
+					//{
+					//	ch = getChar();
+					//}
+					start = getPos()-1;
 					YamlNode* pMyParentNode = GetParentNode(pCurNode, status);
 					//new sequence node
 					YamlNode* pNewNode = new YamlNode(start,status);
@@ -114,6 +129,7 @@ namespace X
 					}
 					else
 					{
+
 						//treat as Key starts from var:start
 						YamlNode* pNewNode = new YamlNode(start, status);
 						pNewNode->SetLeadingInfo(status.LeadingSpaces,
@@ -168,12 +184,12 @@ namespace X
 			else if (ch == '}' ||ch ==']')
 			{
 				status.pair_count--;
-				pCurNode->SetEndPos(start - 1, status.lineNo);
+				pCurNode->SetEndPos(start, status.lineNo);
 				pCurNode = pCurNode->Parent();
 			}
 			else if(ch ==':')
 			{
-				pCurNode->SetEndPos(start-1, status.lineNo);
+				pCurNode->SetEndPos(start, status.lineNo);
 				start = getPos();
 				YamlNode* pNewNode = new YamlNode(start, status);
 				pCurNode->SetValueNode(pNewNode);
@@ -181,9 +197,9 @@ namespace X
 			}
 			else if (ch == '\n')
 			{//end line
-				if (status.pair_count == 0)
+				if (status.pair_count == 0 && pCurNode)
 				{
-					pCurNode->SetEndPos(start - 1, status.lineNo);
+					pCurNode->SetEndPos(start, status.lineNo);
 				}
 				status.NewLine = true;
 				status.LeadingSpaces = 0;
@@ -195,11 +211,12 @@ namespace X
 				char quote_char = ch;
 				char prev_ch = ch;
 				ch = getChar();
-				while (ch != quote_char || prev_ch == '\\')//for case \" or \' inside quotes
+				while (ch != quote_char || (prev_ch == '\\' && ch == quote_char))//for case \" or \' inside quotes
 				{
 					prev_ch = ch;
 					ch = getChar();
 				}
+				ch = ch;
 			}
 			else if (ch == '#' && getPrevChar()!='\\')//not like \#
 			{//scan until meet end of line
@@ -207,7 +224,7 @@ namespace X
 				bool curIsClosed = pCurNode?pCurNode->IsClosed():false;
 				if (pCurNode && !curIsClosed)
 				{
-					pCurNode->SetEndPos(start - 1, status.lineNo);
+					pCurNode->SetEndPos(start, status.lineNo);
 				}
 				char* commment_start = start;
 				while (ch != '\n')
@@ -267,7 +284,7 @@ namespace X
 				}
 				catch (eventType e)
 				{
-					std::cout << (int)e << std::endl;
+					//std::cout << (int)e << std::endl;
 					break;
 				}
 				if (pRootNode == nullptr)
@@ -296,6 +313,10 @@ namespace X
 			{
 				delete m_root;
 				m_root = nullptr;
+			}
+			if (m_data)
+			{
+				delete m_data;
 			}
 		}
 	}
