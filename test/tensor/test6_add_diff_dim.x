@@ -7,7 +7,7 @@ import CpuTensor as T
 t11 = t1+t2
 print("before graph run, t1+t2=", t11)
 t_g = T.graph(t11)
-print(t_g)
+#print(t_g)
 t_g.run()
 print("after graph run, t1+t2=", t11)
 
