@@ -37,7 +37,8 @@ namespace X
 		}
 		if (!done)
 		{
-			ret = this;
+			ret = *this;
+			ret.Clone();
 			ret *= right;
 		}
 		return ret;
@@ -58,7 +59,8 @@ namespace X
 		}
 		if (!done)
 		{
-			ret = this;
+			ret = *this;
+			ret.Clone();
 			ret /= right;
 		}
 		return ret;
@@ -78,7 +80,8 @@ namespace X
 		}
 		if (!done)
 		{
-			ret = this;
+			ret = *this;
+			ret.Clone();
 			ret += right;
 		}
 		return ret;
@@ -106,7 +109,8 @@ namespace X
 		}
 		if (!done)
 		{
-			ret = this;
+			ret = *this;
+			ret.Clone();
 			ret -= right;
 		}
 		return ret;

@@ -10,6 +10,11 @@ namespace AST
 {
 void Func::ScopeLayout()
 {
+	if (m_PassScopeLayout)
+	{
+		return;
+	}
+	m_PassScopeLayout = true;
 	std::string thisKey("this");
 	Scope* pMyScope = GetScope();
 	//for lambda function, no Name,so skip it when m_Name.size ==0

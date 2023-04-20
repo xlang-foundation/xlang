@@ -20,6 +20,8 @@ class Func :
 	virtual public Scope
 {
 protected:
+	bool m_PassScopeLayout = false;//in lambda case, will run ScopeLayout multiple time
+	//use this to avoid it
 	std::vector<Decorator*> m_decors;
 	String m_Name = { nil,0 };
 	bool m_NameNeedRelease = false;

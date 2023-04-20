@@ -407,7 +407,7 @@ void Register(OpRegistry* reg)
 	//so leading op such as if while for need to 
 	//have lower Precedence as >,== etc.
 	//todo: check other op also,
-	RegOP("if","while","for")
+	RegOP("if","elif","else","while","for")
 		.SetPrecedence(Precedence_Reqular-2);
 	RegOP("and", "or")
 		.SetPrecedence(Precedence_Reqular-1);
