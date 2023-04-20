@@ -173,7 +173,7 @@ namespace X
 			}
 			else if (ch == ',')
 			{
-				pCurNode->SetEndPos(start - 1, status.lineNo);
+				pCurNode->SetEndPos(start - 1, status.lineNo, status.inQuote);
 				YamlNode* pMyParentNode = pCurNode->Parent();
 				YamlNode* pNewNode = new YamlNode(start, status);
 				pNewNode->SetParent(pMyParentNode);
@@ -185,12 +185,12 @@ namespace X
 			else if (ch == '}' ||ch ==']')
 			{
 				status.pair_count--;
-				pCurNode->SetEndPos(start, status.lineNo);
+				pCurNode->SetEndPos(start, status.lineNo, status.inQuote);
 				pCurNode = pCurNode->Parent();
 			}
 			else if(ch ==':')
 			{
-				pCurNode->SetEndPos(start, status.lineNo);
+				pCurNode->SetEndPos(start, status.lineNo, status.inQuote);
 				start = getPos();
 				YamlNode* pNewNode = new YamlNode(start, status);
 				pCurNode->SetValueNode(pNewNode);
@@ -200,15 +200,17 @@ namespace X
 			{//end line
 				if (status.pair_count == 0 && pCurNode)
 				{
-					pCurNode->SetEndPos(start, status.lineNo);
+					pCurNode->SetEndPos(start, status.lineNo, status.inQuote);
 				}
 				status.NewLine = true;
+				status.inQuote = false;
 				status.LeadingSpaces = 0;
 				status.LeadingTabs = 0;
 				status.lineNo += 1;
 			}
 			else if ( (ch == '"' || ch=='\'') && getPrevChar() != '\\')
 			{//scan all quoted string
+				status.inQuote = true;
 				char quote_char = ch;
 				char prev_ch = ch;
 				ch = getChar();
@@ -217,7 +219,6 @@ namespace X
 					prev_ch = ch;
 					ch = getChar();
 				}
-				ch = ch;
 			}
 			else if (ch == '#' && getPrevChar()!='\\')//not like \#
 			{//scan until meet end of line
@@ -225,7 +226,7 @@ namespace X
 				bool curIsClosed = pCurNode?pCurNode->IsClosed():false;
 				if (pCurNode && !curIsClosed)
 				{
-					pCurNode->SetEndPos(start, status.lineNo);
+					pCurNode->SetEndPos(start, status.lineNo, status.inQuote);
 				}
 				char* commment_start = start;
 				while (ch != '\n')
@@ -247,6 +248,7 @@ namespace X
 				}
 				//end line
 				status.NewLine = true;
+				status.inQuote = false;
 				status.LeadingSpaces = 0;
 				status.LeadingTabs = 0;
 				status.lineNo += 1;
@@ -303,7 +305,7 @@ namespace X
 			}
 			if (pCurNode && !pCurNode->IsClosed())
 			{
-				pCurNode->SetEndPos(getPos(), status.lineNo);
+				pCurNode->SetEndPos(getPos(), status.lineNo, status.inQuote);
 			}
 			m_root = pRootNode;
 			return true;

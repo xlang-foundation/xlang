@@ -4,6 +4,7 @@
 #include "Hosting.h"
 #include "port.h"
 #include "list.h"
+#include "number.h"
 
 namespace X
 {
@@ -52,6 +53,28 @@ namespace X
 		}
 		return LoadFromString(yamlStr);
 	}
+
+	static X::Value ConvertToValue(std::string& strValue)
+	{
+		double dVal = 0;
+		long long llVal = 0;
+		X::String xs{ (char*)strValue.c_str(),(int)strValue.size() };
+		auto state = ParseNumber(xs, dVal, llVal);
+		X::Value retVal;
+		if (state == X::ParseState::Long_Long)
+		{
+			retVal = X::Value(llVal);
+		}
+		else if (state == X::ParseState::Double)
+		{
+			retVal = X::Value(dVal);
+		}
+		else
+		{
+			retVal = X::Value(strValue);
+		}
+		return retVal;
+	}
 	X::Value YamlNodeWrapper::getNodevalue(Text::YamlNode* pNode)
 	{
 		if (pNode)
@@ -59,7 +82,14 @@ namespace X
 			if (pNode->IsSingleValueType())
 			{
 				std::string strValue = pNode->GetValue();
-				return X::Value(strValue);
+				if (pNode->HaveQuote())
+				{
+					return X::Value(strValue);
+				}
+				else
+				{
+					return ConvertToValue(strValue);
+				}
 			}
 			else
 			{
@@ -69,7 +99,15 @@ namespace X
 					if (pValueNode->IsSingleValueType())
 					{
 						std::string strValue = pValueNode->GetValue();
-						return X::Value(strValue);
+						if (pValueNode->HaveQuote())
+						{
+							return X::Value(strValue);
+						}
+						else
+						{
+							return ConvertToValue(strValue);
+						}
+
 					}
 					else
 					{

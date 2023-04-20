@@ -162,18 +162,18 @@ public:
 	inline Value(bool b)
 	{//use 1 as true and 0 as false, set flag to -1
 		t = ValueType::Int64;
-		flags &= (int)ValueSubType::BOOL;
+		flags |= (int)ValueSubType::BOOL;
 		x.l = b ? 1 : 0;
 	}
 	inline void AsBool()
 	{
-		flags &= (int)ValueSubType::BOOL;
+		flags |= (int)ValueSubType::BOOL;
 		x.l = x.l>0?1 : 0;
 	}
 	inline Value(char c)
 	{
 		t = ValueType::Int64;
-		flags &= (int)ValueSubType::CHAR;
+		flags |= (int)ValueSubType::CHAR;
 		x.l = c;
 	}
 	inline Value(int l)

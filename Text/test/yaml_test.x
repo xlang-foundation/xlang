@@ -2,10 +2,11 @@ import yaml
 
 y = "
 ---
- key:1
- search_path: 
-  - path1
-  - path2
+name: 'this is a name'
+port: 3145
+search_path: 
+ - path1
+ - path2
 "
 
 k = yaml.loads(y)

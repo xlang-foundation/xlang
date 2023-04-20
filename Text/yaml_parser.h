@@ -21,6 +21,7 @@ namespace X
 		struct Status
 		{
 			YamlNode* rootNode = nullptr;
+			bool inQuote = false;
 			bool NewLine = false;
 			int lineNo = 1;
 			int LeadingSpaces = 0;
@@ -35,6 +36,7 @@ namespace X
 		protected:
 			char* m_start_pos =nullptr;
 			char* m_end_pos = nullptr;
+			bool m_inQuote = false;
 			int m_startLineNo = 0;
 			int m_endLineNo = 0;
 			std::vector<YamlNode*> m_children;
@@ -71,6 +73,10 @@ namespace X
 					delete m_valueNode;
 				}
 			}
+			inline bool HaveQuote()
+			{
+				return m_inQuote;
+			}
 			bool IsSingleValueType()
 			{
 				return (m_valueNode == nullptr) && (m_children.size() == 0);
@@ -80,14 +86,15 @@ namespace X
 				m_start_pos = p;
 				m_startLineNo = lineNo;
 			}
-			void SetEndPos(char* p, int lineNo)
+			void SetEndPos(char* p, int lineNo,bool inQuote)
 			{
 				if(m_valueNode)
 				{ 
-					m_valueNode->SetEndPos(p, lineNo);
+					m_valueNode->SetEndPos(p, lineNo, inQuote);
 				}
 				else
 				{
+					m_inQuote = inQuote;
 					m_end_pos = p;
 					m_endLineNo = lineNo;
 				}
