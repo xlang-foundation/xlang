@@ -894,7 +894,6 @@ namespace X
 						auto it_proc_tensor_add_a = [pTensor1, pTensor2, pRetVal, leftDimCount, &indices1](std::vector<long long>& indices2) 
 						{
 							X::Value val, val_1, val_2;
-							std::cout << "	";
 							for (int i = 0; i < indices2.size(); i++) 
 								indices1[leftDimCount+i] = indices2[i];
 
@@ -906,7 +905,21 @@ namespace X
 						indices1.resize(tensor1_dims);
 						pTensor2->IterateAll(it_proc_tensor_add_a);
 					};
-					pTensor1->IterateLeft(it_proc_tensor_add, leftDimCount);
+					auto it_proc_tensor_add_b = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices) 
+					{
+						X::Value val, val_1, val_2;
+						val_1 = pTensor1->GetDataWithIndices(indices);
+						val_2 = pTensor2->GetDataWithIndices(indices);
+						val_1 /= val_2;
+						pRetVal->SetDataWithIndices(indices, val_1);
+					};
+
+					if (leftDimCount > 0) 
+						pTensor1->IterateLeft(it_proc_tensor_add, leftDimCount);
+					else 
+						pTensor1->IterateAll(it_proc_tensor_add_b);
+
+					
 				} //bAddable
 			} // both tensors
 		} //Divide
