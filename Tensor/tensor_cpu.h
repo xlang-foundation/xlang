@@ -658,99 +658,6 @@ namespace X
 			} // both tensors
 		} //Multiply
 
-		void Matmul(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
-		{
-			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
-			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
-			X::Data::Tensor* pRetVal  = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-			bool bMulable = IsProdTensor(*pTensor1, *pTensor2);
-			if (bMulable)			
-			{//tensor only, verified in IsAddable()
-				auto it_proc_tensor_mul_matrix = [pTensor1, pTensor2, pRetVal]()
-				{
-					//Matrix1 (m,n), Matrix2 (u,v), n = u, after production, new Matrix shape (m,v)
-					int m = pTensor1->GetDims()[0].size; //rows of matrix1
-					int n = pTensor1->GetDims()[1].size; //columns of matrix1
-					int u = pTensor2->GetDims()[0].size; //rows of matrix2
-					int v = pTensor2->GetDims()[1].size; //columns of matrix2
-					int i, j, k;
-					X::Value val_1, val_2, val;
-					std::vector<long long> indices1, indices2, indices;
-					indices.resize(2);
-					indices1.resize(2);
-					indices2.resize(2);
-					pRetVal->CreateBaseOnTensor(pTensor1);
-
-					for ( i = 0; i < m; i++) {
-						for (j = 0; j < v; j ++) {
-							indices[0] = i;
-							indices[1] = j;
-							val = 0;
-							for (k =0; k<n; k++) { //c(i,j) = a(i,0)*b(0,j)+ a(i,1)*b(1,j)+ ...+a(i,n-1)*b(n-1,j)
-								indices1[0] = i;
-								indices1[1] = k;
-								indices2[0] = k;
-								indices2[1] = j;
-								val_1 = pTensor1->GetDataWithIndices(indices1);
-								val_2 = pTensor2->GetDataWithIndices(indices2);								
-								val_1 *= val_2;
-								val += val_1;
-							}
-							pRetVal->SetDataWithIndices(indices, val);
-						}
-					}
-				};
-				auto it_proc_tensor_mul_vector = [pTensor1, pTensor2, pRetVal]()
-				{
-					int m = pTensor1->GetDims()[0].size; //rows of matrix
-					int n = pTensor1->GetDims()[1].size; //columns of matrix
-					int v = pTensor2->GetDims()[0].size; //vector
-					if (n!=v)  //To do, error handling
-						return;
-
-
-					std::vector<int> dims;
-					dims.push_back(m);
-					TensorDataType dataType = pTensor1->GetDataType();
-					pRetVal->SetDataType(dataType);
-					pRetVal->CreateBaseOnShape(dims);
-
-					int i, j;
-					X::Value val_1, val_2, val;
-					std::vector<long long> indices1, indices2, indices;
-					indices.resize(1);
-					indices1.resize(2);
-					indices2.resize(1);
-					for (i = 0; i < m; i ++) {
-						indices[0] = i;
-						val = 0;
-						for ( j = 0; j < n; j++) {//Ret(i) = sigma {matrix[i,j]*Vector[j]}
-							indices1[0] = i;
-							indices1[1] = j;
-							indices2[0] = j;
-							val_1 = pTensor1->GetDataWithIndices(indices1);
-							val_2 = pTensor2->GetDataWithIndices(indices2);								
-							val_1 *= val_2;
-							val += val_1;
-						}
-						pRetVal->SetDataWithIndices(indices, val);
-					}
-				};
-
-				if (pTensor1->GetDimCount() == 2 && pTensor2->GetDimCount() == 2) //both are 2D matrixes 
-					it_proc_tensor_mul_matrix();
-				else if (pTensor1->GetDimCount() == 1 && pTensor2->GetDimCount() == 2)
-					it_proc_tensor_mul_vector();
-				else if (pTensor1->GetDimCount() == 2 && pTensor2->GetDimCount() == 1)
-					it_proc_tensor_mul_vector();
-				else
-					std::cout<<"Tensor multiplication can't be performed"<< std::endl;
-		
-
-			}// matrix 
-
-		} //matmul
-
 		void Divide(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			bool IsTensor1 = IsTensor (input1);
@@ -871,6 +778,99 @@ namespace X
 				} //bAddable
 			} // both tensors
 		} //Divide
+
+		void Matmul(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		{
+			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
+			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
+			X::Data::Tensor* pRetVal  = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
+			bool bMulable = IsProdTensor(*pTensor1, *pTensor2);
+			if (bMulable)			
+			{//tensor only, verified in IsAddable()
+				auto it_proc_tensor_mul_matrix = [pTensor1, pTensor2, pRetVal]()
+				{
+					//Matrix1 (m,n), Matrix2 (u,v), n = u, after production, new Matrix shape (m,v)
+					int m = pTensor1->GetDims()[0].size; //rows of matrix1
+					int n = pTensor1->GetDims()[1].size; //columns of matrix1
+					int u = pTensor2->GetDims()[0].size; //rows of matrix2
+					int v = pTensor2->GetDims()[1].size; //columns of matrix2
+					int i, j, k;
+					X::Value val_1, val_2, val;
+					std::vector<long long> indices1, indices2, indices;
+					indices.resize(2);
+					indices1.resize(2);
+					indices2.resize(2);
+					pRetVal->CreateBaseOnTensor(pTensor1);
+
+					for ( i = 0; i < m; i++) {
+						for (j = 0; j < v; j ++) {
+							indices[0] = i;
+							indices[1] = j;
+							val = 0;
+							for (k =0; k<n; k++) { //c(i,j) = a(i,0)*b(0,j)+ a(i,1)*b(1,j)+ ...+a(i,n-1)*b(n-1,j)
+								indices1[0] = i;
+								indices1[1] = k;
+								indices2[0] = k;
+								indices2[1] = j;
+								val_1 = pTensor1->GetDataWithIndices(indices1);
+								val_2 = pTensor2->GetDataWithIndices(indices2);								
+								val_1 *= val_2;
+								val += val_1;
+							}
+							pRetVal->SetDataWithIndices(indices, val);
+						}
+					}
+				};
+				auto it_proc_tensor_mul_vector = [pTensor1, pTensor2, pRetVal]()
+				{
+					int m = pTensor1->GetDims()[0].size; //rows of matrix
+					int n = pTensor1->GetDims()[1].size; //columns of matrix
+					int v = pTensor2->GetDims()[0].size; //vector
+					if (n!=v)  //To do, error handling
+						return;
+
+
+					std::vector<int> dims;
+					dims.push_back(m);
+					TensorDataType dataType = pTensor1->GetDataType();
+					pRetVal->SetDataType(dataType);
+					pRetVal->CreateBaseOnShape(dims);
+
+					int i, j;
+					X::Value val_1, val_2, val;
+					std::vector<long long> indices1, indices2, indices;
+					indices.resize(1);
+					indices1.resize(2);
+					indices2.resize(1);
+					for (i = 0; i < m; i ++) {
+						indices[0] = i;
+						val = 0;
+						for ( j = 0; j < n; j++) {//Ret(i) = sigma {matrix[i,j]*Vector[j]}
+							indices1[0] = i;
+							indices1[1] = j;
+							indices2[0] = j;
+							val_1 = pTensor1->GetDataWithIndices(indices1);
+							val_2 = pTensor2->GetDataWithIndices(indices2);								
+							val_1 *= val_2;
+							val += val_1;
+						}
+						pRetVal->SetDataWithIndices(indices, val);
+					}
+				};
+
+				if (pTensor1->GetDimCount() == 2 && pTensor2->GetDimCount() == 2) //both are 2D matrixes 
+					it_proc_tensor_mul_matrix();
+				else if (pTensor1->GetDimCount() == 1 && pTensor2->GetDimCount() == 2)
+					it_proc_tensor_mul_vector();
+				else if (pTensor1->GetDimCount() == 2 && pTensor2->GetDimCount() == 1)
+					it_proc_tensor_mul_vector();
+				else
+					std::cout<<"Tensor multiplication can't be performed"<< std::endl;
+		
+
+			}// matrix 
+
+		} //matmul
 
 		void Conv2d_old(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
