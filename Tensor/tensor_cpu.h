@@ -291,93 +291,6 @@ namespace X
 			}	
 			return true;
 		}
-
-		void Add_old(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
-		{
-			bool IsTensor1 = IsTensor (input1);
-			bool IsTensor2 = IsTensor (input2);
-			bool bAddable =false;
-			bool bIsNum = false;
-			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-
-			AutoLock(m_lock);
-
-			if (!IsTensor1 && !IsTensor2)
-			{
-				return;  //todo, error handling
-			}
-			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
-			{
-
-				if (!IsNum(input2))	//the other must be a number
-					return;
-				X::Value& input = input2;
-				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
-
-				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_add = [pTensor, input, pRetVal](std::vector<long long>& indices)
-				{
-					X::Value val = pTensor->GetDataWithIndices(indices);
-					val += input;
-					pRetVal->SetDataWithIndices(indices, val);
-				};
-				pTensor->IterateAll(it_proc_scaler_add);
-			}
-			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
-				if (!IsNum(input1))	//the other must be a number
-					return;
-				X::Value& input = input1;
-				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
-
-				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_add = [pTensor, input, pRetVal](std::vector<long long>& indices)
-				{
-					X::Value val = pTensor->GetDataWithIndices(indices);
-					val += input;
-					pRetVal->SetDataWithIndices(indices, val);
-				};
-				pTensor->IterateAll(it_proc_scaler_add);
-			}
-			else  //both tensors
-			{
-				X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
-				X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
-				long long tot_element_count_1 = pTensor1->GetCount();
-				long long tot_element_count_2 = pTensor2->GetCount();
-				if (tot_element_count_1 < tot_element_count_2)//make sure T1 has more elements than T2
-				{	
-					X::Data::Tensor* temp_t = pTensor1;
-					pTensor1 = pTensor2;
-					pTensor2 = temp_t;
-				}
-
-				pRetVal->CreateBaseOnTensor(pTensor1);
-				bAddable = IsTensorAddableNew(*pTensor1, *pTensor2);
-				if (bAddable)
-				{
-					//X::Value val_1, val_2, val_ret;
-					X::Value val_1, val_2;
-					long long tot_element_count_1 = pTensor1->GetCount();
-					long long tot_element_count_2 = pTensor2->GetCount();
-					long long cur_element_count_1 = 0, cur_element_count_2 = 0; 
-
-					while (cur_element_count_1 < tot_element_count_1)
-					{
-						if (cur_element_count_2 == tot_element_count_2) 
-						{
-							cur_element_count_2 = 0;
-						}
-						val_1 = pTensor1->GetDataWithOffset(cur_element_count_1*pTensor1->GetItemSize());
-						val_2 = pTensor2->GetDataWithOffset(cur_element_count_2*pTensor2->GetItemSize());
-						val_1 += val_2;
-						pRetVal->SetDataWithOffset(cur_element_count_1*pTensor2->GetItemSize(), val_1);
-						cur_element_count_1 ++;
-						cur_element_count_2 ++;
-					}
-				} //bAddable
-			} // both tensors
-		}// Add
-
 		void Add(X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
 			bool IsTensor1 = IsTensor (input1);
@@ -481,7 +394,20 @@ namespace X
 						indices1.resize(tensor1_dims);
 						pTensor2->IterateAll(it_proc_tensor_add_a);
 					};
-					pTensor1->IterateLeft(it_proc_tensor_add, leftDimCount);
+					auto it_proc_tensor_add_b = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices) 
+					{
+						X::Value val, val_1, val_2;
+						val_1 = pTensor1->GetDataWithIndices(indices);
+						val_2 = pTensor2->GetDataWithIndices(indices);
+						val_1 += val_2;
+						pRetVal->SetDataWithIndices(indices, val_1);
+					};
+
+					if (leftDimCount > 0) 
+						pTensor1->IterateLeft(it_proc_tensor_add, leftDimCount);
+					else 
+						pTensor1->IterateAll(it_proc_tensor_add_b);
+
 
 				} //bAddable
 			} // both tensors
@@ -577,9 +503,9 @@ namespace X
 					int leftDimCount = pTensor1->GetDimCount() - pTensor2->GetDimCount();
 					int tensor1_dims = pTensor1->GetDimCount();
 
-					auto it_proc_tensor_add = [pTensor1, pTensor2, tensor1_dims, leftDimCount, pRetVal](std::vector<long long>& indices1)
+					auto it_proc_tensor_minus = [pTensor1, pTensor2, tensor1_dims, leftDimCount, pRetVal](std::vector<long long>& indices1)
 					{
-						auto it_proc_tensor_add_a = [pTensor1, pTensor2, pRetVal, leftDimCount, &indices1](std::vector<long long>& indices2) 
+						auto it_proc_tensor_minus_a = [pTensor1, pTensor2, pRetVal, leftDimCount, &indices1](std::vector<long long>& indices2) 
 						{
 							X::Value val, val_1, val_2;
 							std::cout << "	";
@@ -592,9 +518,21 @@ namespace X
 							pRetVal->SetDataWithIndices(indices1, val_1);
 						};
 						indices1.resize(tensor1_dims);
-						pTensor2->IterateAll(it_proc_tensor_add_a);
+						pTensor2->IterateAll(it_proc_tensor_minus_a);
 					};
-					pTensor1->IterateLeft(it_proc_tensor_add, leftDimCount);
+					auto it_proc_tensor_minus_b = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices) 
+					{
+						X::Value val, val_1, val_2;
+						val_1 = pTensor1->GetDataWithIndices(indices);
+						val_2 = pTensor2->GetDataWithIndices(indices);
+						val_1 -= val_2;
+						pRetVal->SetDataWithIndices(indices, val_1);
+					};
+
+					if (leftDimCount > 0) 
+						pTensor1->IterateLeft(it_proc_tensor_minus, leftDimCount);
+					else 
+						pTensor1->IterateAll(it_proc_tensor_minus_b);
 
 				} //bAddable
 			}//both tensors
@@ -684,9 +622,9 @@ namespace X
 					int leftDimCount = pTensor1->GetDimCount() - pTensor2->GetDimCount();
 					int tensor1_dims = pTensor1->GetDimCount();
 
-					auto it_proc_tensor_add = [pTensor1, pTensor2, tensor1_dims, leftDimCount, pRetVal](std::vector<long long>& indices1)
+					auto it_proc_tensor_mul = [pTensor1, pTensor2, tensor1_dims, leftDimCount, pRetVal](std::vector<long long>& indices1)
 					{
-						auto it_proc_tensor_add_a = [pTensor1, pTensor2, pRetVal, leftDimCount, &indices1](std::vector<long long>& indices2) 
+						auto it_proc_tensor_mul_a = [pTensor1, pTensor2, pRetVal, leftDimCount, &indices1](std::vector<long long>& indices2) 
 						{
 							X::Value val, val_1, val_2;
 							std::cout << "	";
@@ -699,9 +637,21 @@ namespace X
 							pRetVal->SetDataWithIndices(indices1, val_1);
 						};
 						indices1.resize(tensor1_dims);
-						pTensor2->IterateAll(it_proc_tensor_add_a);
+						pTensor2->IterateAll(it_proc_tensor_mul_a);
 					};
-					pTensor1->IterateLeft(it_proc_tensor_add, leftDimCount);
+					auto it_proc_tensor_mul_b = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices) 
+					{
+						X::Value val, val_1, val_2;
+						val_1 = pTensor1->GetDataWithIndices(indices);
+						val_2 = pTensor2->GetDataWithIndices(indices);
+						val_1 *= val_2;
+						pRetVal->SetDataWithIndices(indices, val_1);
+					};
+
+					if (leftDimCount > 0) 
+						pTensor1->IterateLeft(it_proc_tensor_mul, leftDimCount);
+					else 
+						pTensor1->IterateAll(it_proc_tensor_mul_b);
 
 				} //bAddable
 
@@ -889,9 +839,9 @@ namespace X
 					int leftDimCount = pTensor1->GetDimCount() - pTensor2->GetDimCount();
 					int tensor1_dims = pTensor1->GetDimCount();
 
-					auto it_proc_tensor_add = [pTensor1, pTensor2, tensor1_dims, leftDimCount, pRetVal](std::vector<long long>& indices1)
+					auto it_proc_tensor_div = [pTensor1, pTensor2, tensor1_dims, leftDimCount, pRetVal](std::vector<long long>& indices1)
 					{
-						auto it_proc_tensor_add_a = [pTensor1, pTensor2, pRetVal, leftDimCount, &indices1](std::vector<long long>& indices2) 
+						auto it_proc_tensor_div_a = [pTensor1, pTensor2, pRetVal, leftDimCount, &indices1](std::vector<long long>& indices2) 
 						{
 							X::Value val, val_1, val_2;
 							for (int i = 0; i < indices2.size(); i++) 
@@ -903,9 +853,9 @@ namespace X
 							pRetVal->SetDataWithIndices(indices1, val_1);
 						};
 						indices1.resize(tensor1_dims);
-						pTensor2->IterateAll(it_proc_tensor_add_a);
+						pTensor2->IterateAll(it_proc_tensor_div_a);
 					};
-					auto it_proc_tensor_add_b = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices) 
+					auto it_proc_tensor_div_b = [pTensor1, pTensor2, pRetVal](std::vector<long long>& indices) 
 					{
 						X::Value val, val_1, val_2;
 						val_1 = pTensor1->GetDataWithIndices(indices);
@@ -915,11 +865,9 @@ namespace X
 					};
 
 					if (leftDimCount > 0) 
-						pTensor1->IterateLeft(it_proc_tensor_add, leftDimCount);
+						pTensor1->IterateLeft(it_proc_tensor_div, leftDimCount);
 					else 
-						pTensor1->IterateAll(it_proc_tensor_add_b);
-
-					
+						pTensor1->IterateAll(it_proc_tensor_div_b);				
 				} //bAddable
 			} // both tensors
 		} //Divide
