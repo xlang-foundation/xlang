@@ -24,19 +24,25 @@ namespace X
 #endif
 		if (!IsAbsPath)
 		{
-			auto m = FileSystem::I().GetModule();
-			X::XModule* pModule = dynamic_cast<X::XModule*>(m.GetObj());
-			if (pModule)
 			{
-				auto path = pModule->GetPath();
-				std::string strPah(path);
-				g_pXHost->ReleaseString(path);
+				//std::cout << "Before Set Module" << std::endl;
+				auto m = FileSystem::I().GetModule();
+				//std::cout << "After Set Module" << std::endl;
+				X::XModule* pModule = dynamic_cast<X::XModule*>(m.GetObj());
+				auto p = pModule->GetPath();
+				g_pXHost->ReleaseString(p);
+			}
+			//std::cout << "End Set Module" << std::endl;
+			auto& modulePath = FileSystem::I().GetModulePath();
+			if (!modulePath.empty())
+			{
 #if (WIN32)
-				fileName = strPah + "\\" + fileName;
+				fileName = modulePath + "\\" + fileName;
 #else
-				fileName = strPah + "/" + fileName;
+				fileName = modulePath + "/" + fileName;
 #endif
 			}
+			
 		}
 		m_fileName = fileName;
 		m_IsBinary = (std::string::npos != mode.find_first_of('b'));

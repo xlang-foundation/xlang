@@ -218,7 +218,8 @@ public:
 			m_stackFrame = new StackFrame(this);
 			//? multiple threads will cause crash
 			//so lock here to try
-			//m_pPackage->Lock();
+			//todo: check here, was commented out line below, shawn@4/21/2023
+			m_pPackage->Lock();
 			auto* pBaseStack = m_pPackage->GetStack();
 			int cnt = pBaseStack->GetVarCount();
 			m_stackFrame->SetVarCount(cnt);
@@ -237,7 +238,7 @@ public:
 				}
 				m_stackFrame->Set(i, v0);
 			}
-			//m_pPackage->Unlock();
+			m_pPackage->Unlock();
 		}
 		m_pObject = pObj;
 		m_t = X::ObjType::Package;

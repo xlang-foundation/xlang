@@ -10,7 +10,7 @@ namespace X
 	{
 		AttributeBag* Object::GetAttrBag()
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (m_aBag == nullptr)
 			{
 				m_aBag = new AttributeBag();
@@ -19,7 +19,7 @@ namespace X
 		}
 		void Object::DeleteAttrBag()
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (m_aBag)
 			{
 				delete m_aBag;

@@ -85,16 +85,11 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 			Data::Object* pObj0 = dynamic_cast<Data::Object*>(v0.GetObj());
 			if (pObj0 && pObj0->GetType() == X::ObjType::Function)
 			{
-				Data::Function* pFuncObj = dynamic_cast<Data::Function*>(pObj0);
-				if (pFuncObj)
+				if (pCallList == nil)
 				{
-					Func* func = pFuncObj->GetFunc();
-					if (func)
-					{
-						if (pCallList == nil) pCallList = new Data::FuncCalls();
-						pCallList->Add(pContext, func, nil);
-					}
+					pCallList = new Data::FuncCalls();
 				}
+				pCallList->Add(pContext, v0, nil);
 			}
 			else
 			{

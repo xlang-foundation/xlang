@@ -12,12 +12,7 @@ namespace X
 		}
 		inline virtual int Release()
 		{
-			int ref = --m_ref;
-			if (ref == 0)
-			{
-				delete this;
-			}
-			return ref;
+			return --m_ref;
 		}
 	public:
 		inline int Ref() { return m_ref; }

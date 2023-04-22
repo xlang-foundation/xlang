@@ -76,6 +76,10 @@ namespace X
 			}
 		};
 		static DictScope* _dictScope = nullptr;
+		void Dict::Init()
+		{
+			_dictScope = new DictScope();
+		}
 		void Dict::cleanup()
 		{
 			if (_dictScope)
@@ -88,17 +92,13 @@ namespace X
 		Dict::Dict() :XDict(0)
 		{
 			m_t = ObjType::Dict;
-			if (_dictScope == nullptr)
-			{
-				_dictScope = new DictScope();
-			}
 			m_bases.push_back(_dictScope);
 		}
 		List* Dict::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (id_offset < IdList.size())
 			{
 				Value key(IdList[id_offset++]);
@@ -171,7 +171,7 @@ namespace X
 			std::vector<std::string>& IdList, int id_offset,
 			std::string itemName, X::Value& val)
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (id_offset < IdList.size())
 			{
 				Value key(IdList[id_offset++]);

@@ -274,7 +274,7 @@ namespace X
 			{
                 m_objHost = m_env->NewGlobalRef(h);
                 return;
-				AutoLock(m_mapLock);
+				AutoLock lock(m_mapLock);
 				unsigned long tid = GetThreadID();
 				auto it = m_objHostMap.find(tid);
 				if(it !=m_objHostMap.end())
@@ -292,7 +292,7 @@ namespace X
 			jobject GetHost()
 			{
                 return m_objHost;
-				AutoLock(m_mapLock);
+				AutoLock lock(m_mapLock);
 				unsigned long tid = GetThreadID();
 				auto it = m_objHostMap.find(tid);
 				if(it !=m_objHostMap.end())

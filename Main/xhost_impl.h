@@ -42,6 +42,7 @@ namespace X
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal) override;
+		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
 		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal) override;
 		virtual const char* GetInteractiveCode() override;
 		virtual long OnEvent(const char* evtName, EventHandler handler) override;

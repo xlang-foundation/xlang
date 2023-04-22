@@ -226,7 +226,7 @@ namespace X
 			{
 				url = p0.ToString();
 			}
-			int p_size = (int)params.size();
+			int p_size = (int)params.size()-1;
 			X::ARGS params1(p_size);
 			for (int i = 1; i < p_size; i++)
 			{

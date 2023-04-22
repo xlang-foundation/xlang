@@ -92,7 +92,7 @@ bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, 
 				auto pid = GetPID();
 				std::cout << "Error Occurs in line:" << line <<",pid:" << pid<<std::endl;
 				auto code = i->GetCode();
-				std::cout << code << std::endl;
+				std::cout <<"*** " << code << std::endl;
 			}
 			if (v0.IsValid() && (i == last))
 			{
@@ -173,7 +173,7 @@ bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, 
 			auto pid = GetPID();
 			std::cout << "Error Occurs in line:" << line << ",pid:" << pid << std::endl;
 			auto code = i->GetCode();
-			std::cout <<code<< std::endl;
+			std::cout <<"*** " << code << std::endl;
 			//break;
 		}
 		if (v0.IsValid() && (i == last))

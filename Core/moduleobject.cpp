@@ -127,12 +127,21 @@ namespace X
 			}
 		};
 		static ModuleOp* _module_op = nullptr;
+		void ModuleObject::Init()
+		{
+			_module_op = new ModuleOp();
+		}
+		void ModuleObject::cleanup()
+		{
+			if (_module_op)
+			{
+				_module_op->clean();
+				delete _module_op;
+				_module_op = nullptr;
+			}
+		}
 		void ModuleObject::GetBaseScopes(std::vector<Scope*>& bases)
 		{
-			if (_module_op == nullptr)
-			{
-				_module_op = new ModuleOp();
-			}
 			Object::GetBaseScopes(bases);
 			bases.push_back(_module_op);
 			bases.push_back(m_pModule);
@@ -159,15 +168,6 @@ namespace X
 			else
 			{
 				return m_pModule->Get(nullptr, this, idx, v);
-			}
-		}
-		void ModuleObject::cleanup()
-		{
-			if (_module_op)
-			{
-				_module_op->clean();
-				delete _module_op;
-				_module_op = nullptr;
 			}
 		}
 		Scope* ModuleObject::GetParentScope()

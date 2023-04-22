@@ -40,7 +40,7 @@ namespace X
 			std::string itemName, X::Value& val)
 		{
 			X::Value retVal = val;
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (id_offset < IdList.size())
 			{
 				auto& strId = IdList[id_offset++];
@@ -99,7 +99,7 @@ namespace X
 			//change StackFrame VarCount
 			m_stackFrame->SetVarCount(GetVarNum());
 			X::Value retVal;
-			std::vector<std::string> passInParams;
+			std::vector<X::Value> passInParams;
 			bool bOK = X::Hosting::I().Run(pTopModule, retVal, passInParams);
 			return bOK;
 		}
@@ -107,7 +107,7 @@ namespace X
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (id_offset < IdList.size())
 			{
 				auto& key = IdList[id_offset++];
@@ -207,7 +207,7 @@ namespace X
 			std::string itemName, X::Value& val)
 		{
 			X::Value retVal = val;
-			AutoLock(m_lock);
+			AutoLock autoLock(Object::m_lock);
 			if (id_offset < IdList.size())
 			{
 				auto& strId = IdList[id_offset++];
@@ -255,7 +255,7 @@ namespace X
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(Object::m_lock);
 			if (id_offset < IdList.size())
 			{
 				auto& strId = IdList[id_offset++];

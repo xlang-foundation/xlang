@@ -6,6 +6,7 @@ namespace X {
 	namespace AST {
 		bool StackFrame::AddVar(XlangRuntime* rt,std::string& name, X::Value& val)
 		{
+			AutoLock lock(m_lock);
 			m_pScope->AddAndSet(rt, nullptr, name, val);
 			return true;
 		}

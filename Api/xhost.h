@@ -85,6 +85,7 @@ namespace X
 		virtual bool FromBytes(X::Value& input, X::Value& output) = 0;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
 		virtual bool RunCode(const char* moduleName,const char* code, int codeSize,X::Value& retVal) = 0;
+		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
 		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal) = 0;
 		virtual const char* GetInteractiveCode() = 0;
 		virtual long OnEvent(const char* evtName, EventHandler handler) = 0;

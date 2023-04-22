@@ -14,6 +14,7 @@ namespace Data
 	protected:
 		std::string m_s;
 	public:
+		static void Init();
 		static void cleanup();
 		Str() :XStr(0)
 		{
@@ -172,7 +173,7 @@ namespace Data
 			long long it = (long long)pos;
 			X::Value val0;
 			long long nPos = it;
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (it >= (long long)m_s.size())
 			{
 				return false;

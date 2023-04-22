@@ -25,11 +25,12 @@ namespace X
 			std::vector<AST::Scope*> m_bases;
 			Dict_MAP mMap;
 		public:
+			static void Init();
 			static void cleanup();
 			Dict();
 			~Dict()
 			{
-				AutoLock(m_lock);
+				AutoLock autoLock(m_lock);
 				mMap.clear();
 				m_bases.clear();
 			}
@@ -203,7 +204,7 @@ namespace X
 				IterateProc proc, ARGS& params, KWARGS& kwParams,
 				X::Value& retValue) override
 			{
-				AutoLock(m_lock);
+				AutoLock autoLock(m_lock);
 				
 				for (auto& it: mMap)
 				{

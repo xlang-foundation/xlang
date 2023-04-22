@@ -31,13 +31,13 @@ namespace X
 			}
 			void Set(std::string name,X::Value& v)
 			{
-				AutoLock(m_lock);
+				AutoLock autoLock(m_lock);
 				m_attrs[name] = v;
 			}
 			X::Value Get(std::string name)
 			{
 				X::Value retVal;
-				AutoLock(m_lock);
+				AutoLock autoLock(m_lock);
 				auto it = m_attrs.find(name);
 				if (it != m_attrs.end())
 				{
@@ -47,7 +47,7 @@ namespace X
 			}
 			void Delete(std::string name)
 			{
-				AutoLock(m_lock);
+				AutoLock autoLock(m_lock);
 				auto it = m_attrs.find(name);
 				if (it != m_attrs.end())
 				{

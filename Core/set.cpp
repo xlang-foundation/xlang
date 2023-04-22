@@ -125,6 +125,10 @@ namespace X
 			}
 		};
 		static SetScope* _SetScope = nullptr;
+		void mSet::Init()
+		{
+			_SetScope = new SetScope();
+		}
 		void mSet::cleanup()
 		{
 			if (_SetScope)
@@ -139,10 +143,6 @@ namespace X
 			Object()
 		{
 			m_t = ObjType::Set;
-			if (_SetScope == nullptr)
-			{
-				_SetScope = new SetScope();
-			}
 			m_bases.push_back(_SetScope);
 
 		}
@@ -158,7 +158,7 @@ namespace X
 				if (it.Match("size"))
 				{
 					long long size = it.val.GetLongLong();
-					AutoLock(m_lock);
+					AutoLock autoLock(m_lock);
 					m_data.resize(size);
 					break;
 				}
@@ -176,7 +176,7 @@ namespace X
 						double d1 = 0;
 						double d2 = 1;
 						SCANF(strV.c_str(),"rand(%lf,%lf)",&d1,&d2);
-						AutoLock(m_lock);
+						AutoLock autoLock(m_lock);
 						for (auto& v : m_data)
 						{
 							v = randDouble(d1,d2);
@@ -184,7 +184,7 @@ namespace X
 					}
 					else
 					{
-						AutoLock(m_lock);
+						AutoLock autoLock(m_lock);
 						for (auto& v : m_data)
 						{
 							v = v0;
@@ -201,7 +201,7 @@ namespace X
 			std::vector<std::string>& IdSet, int id_offset,
 			long long startIndex, long long count)
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (id_offset < IdSet.size())
 			{
 				unsigned long long index = 0;

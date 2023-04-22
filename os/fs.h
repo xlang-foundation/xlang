@@ -93,6 +93,7 @@ namespace X
 		public Singleton<FileSystem>
 	{
 		X::Value m_curModule;
+		std::string m_curModulePath;
 	public:
 		void Run()
 		{
@@ -108,9 +109,24 @@ namespace X
 		}
 		void SetModule(X::Value curModule)
 		{
+			X::XModule* pModule = dynamic_cast<X::XModule*>(curModule.GetObj());
+			if (pModule)
+			{
+				auto path = pModule->GetPath();
+				m_curModulePath = path;
+				g_pXHost->ReleaseString(path);
+			}
 			m_curModule = curModule;
+			std::cout << "*****SetModule****" << std::endl;
 		}
-		X::Value& GetModule() { return m_curModule; }
+		std::string& GetModulePath()
+		{
+			return m_curModulePath;
+		}
+		X::Value& GetModule() 
+		{ 
+			return m_curModule; 
+		}
 		BEGIN_PACKAGE(FileSystem)
 			APISET().AddClass<2, File>("File");
 		END_PACKAGE

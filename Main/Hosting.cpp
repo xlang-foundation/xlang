@@ -13,19 +13,20 @@ namespace X
 	{
 		std::string m_moduleName;
 		std::string m_code;
+		std::vector<X::Value> m_passInParams;
 		// Inherited via GThread
 		virtual void run() override
 		{
 			X::Value retVal;
-			std::vector<std::string> passInParams;
 			Hosting::I().Run(m_moduleName.c_str(), m_code.c_str(),
-				(int)m_code.size(), passInParams,retVal);
+				(int)m_code.size(), m_passInParams,retVal);
 		}
 	public:
-		Backend(std::string& moduleName,std::string& code)
+		Backend(std::string& moduleName,std::string& code, std::vector<X::Value>& passInParams)
 		{
 			m_moduleName = moduleName;
 			m_code = code;
+			m_passInParams = passInParams;
 		}
 
 	};
@@ -43,10 +44,9 @@ namespace X
 			}, params0);
 		return true;
 	}
-	bool Hosting::RunAsBackend(std::string& moduleName, std::string& code,
-		std::vector<std::string>& passInParams)
+	bool Hosting::RunAsBackend(std::string& moduleName, std::string& code, std::vector<X::Value>& args)
 	{
-		Backend* pBackend = new Backend(moduleName,code);
+		Backend* pBackend = new Backend(moduleName,code, args);
 		pBackend->Start();
 		return true;
 	}
@@ -191,7 +191,7 @@ namespace X
 
 	}
 	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
-		std::vector<std::string>& passInParams,
+		std::vector<X::Value>& passInParams,
 		bool stopOnEntry)
 	{
 		pTopModule->SetArgs(passInParams);
@@ -296,7 +296,7 @@ namespace X
 	}
 	bool Hosting::Run(const char* moduleName,
 		const char* code, int size, 
-		std::vector<std::string>& passInParams,
+		std::vector<X::Value>& passInParams,
 		X::Value& retVal)
 	{
 		unsigned long long moduleKey = 0;
@@ -332,13 +332,13 @@ namespace X
 			retVal = X::Value(false);
 			return false;
 		}
-		std::vector<std::string> passInParams;
+		std::vector<X::Value> passInParams;
 		bool bOK = Run(pTopModule, retVal, passInParams,stopOnEntry);
 		Unload(pTopModule);
 		if (!onFinishExpr.empty())
 		{
 			X::Value valRet0;
-			std::vector<std::string> passInParams;
+			std::vector<X::Value> passInParams;
 			Run("Cleanup.x", onFinishExpr.c_str(), (int)onFinishExpr.size(), passInParams,valRet0);
 		}
 		return bOK;

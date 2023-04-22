@@ -46,7 +46,7 @@ namespace Data {
 		}
 		inline virtual int IncRef()
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			return ObjRef::AddRef();
 		}
 		inline void SetExtraScope(AST::Scope* pScope)
@@ -74,8 +74,18 @@ namespace Data {
 		void DeleteAttrBag();
 		inline virtual int DecRef()
 		{
-			AutoLock(m_lock);
-			return ObjRef::Release();
+			m_lock.Lock();
+			int ref = ObjRef::Release();
+			if (ref == 0)
+			{
+				m_lock.Unlock();
+				delete this;
+			}
+			else
+			{
+				m_lock.Unlock();
+			}
+			return ref;
 		}
 		inline void ExternLock()
 		{

@@ -15,11 +15,6 @@ public:
 class AutoLock
 {
 public:
-	AutoLock() :
-		m_lock(nullptr)
-	{
-	}
-
 	AutoLock(Locker& lk)
 	{
 		m_lock = &lk;

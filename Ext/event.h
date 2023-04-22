@@ -97,7 +97,7 @@ namespace X
 			KWARGS& kwParams, X::Value& retValue) override;
 		virtual ObjectEvent& operator +=(X::Value& r) override
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (r.IsObject())
 			{
 				auto* pObjHandler = dynamic_cast<X::Data::Object*>(r.GetObj());

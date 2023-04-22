@@ -219,7 +219,7 @@ bool U_RunCode(X::XRuntime* rt, X::XObj* pContext,
 	}
 	std::string moduleName = params[0].ToString();
 	std::string code = params[1].ToString();
-	std::vector<std::string> passInParams;
+	std::vector<X::Value> passInParams;
 	return X::Hosting::I().Run(moduleName.c_str(), code.c_str(),
 		(int)code.size(), passInParams,retValue);
 }
@@ -466,7 +466,7 @@ void Builtin::Cleanup()
 }
 Data::Function* Builtin::Find(std::string& name)
 {
-	AutoLock(m_lock);
+	AutoLock autoLock(m_lock);
 	auto it = m_mapNameToIndex.find(name);
 	if (it != m_mapNameToIndex.end())
 	{
@@ -1381,7 +1381,7 @@ int Builtin::AddMember(PackageMemberType type, const char* name, const char* doc
 }
 int Builtin::QueryMethod(const char* name, bool* pKeepRawParams)
 {
-	AutoLock(m_lock);
+	AutoLock autoLock(m_lock);
 	auto it = m_mapNameToIndex.find(name);
 	if (it != m_mapNameToIndex.end())
 	{
@@ -1406,7 +1406,7 @@ bool Builtin::SetIndexValue(int idx, Value& v)
 }
 bool Builtin::GetIndexValue(int idx, Value& v)
 {
-	AutoLock(m_lock);
+	AutoLock autoLock(m_lock);
 	v = X::Value(m_Funcs[idx].funcObj);
 	return true;
 }
