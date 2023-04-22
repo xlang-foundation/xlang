@@ -119,12 +119,10 @@ namespace X
 			{
 				long long off = m_startItemOffet;
 				int idxCnt = (int)indices.size();
-				//std::cout << "In CalcItemOffset(), indices.size = " << idxCnt << std::endl;
 				for (int i = 0; i < idxCnt; i++)
 				{
 					auto& dim = m_dims[i];
 					off += (indices[i] + dim.offset) * dim.dimProd;
-					//std::cout << "In CalcItemOffset(),indices[" <<i<<"]="<<indices[i] << std::endl;
 				}
 				off *= GetItemSize();
 				return off;
@@ -410,6 +408,8 @@ namespace X
 			{
 				std::vector<long long> indices;
 				int dimSize = m_dims.size();
+				if (dimSize == 0)
+					return;
 				indices.resize(dimSize);
 				std::vector<int> dimList;
 				for (int i = 0; i < dimSize; i++)
