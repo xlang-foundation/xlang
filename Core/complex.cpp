@@ -24,7 +24,7 @@ namespace X
 			m_imaginary = val.m_imaginary;
 		}
 		Complex& Complex::operator+=(X::Value& val){
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (val.IsObject())
 			{
 				auto* pObj = val.GetObj();
@@ -44,7 +44,7 @@ namespace X
 			return *this;
 		} 
 		Complex& Complex::operator-=(X::Value& val){
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (val.IsObject())
 			{
 				auto* pObj = val.GetObj();
@@ -64,7 +64,7 @@ namespace X
 			return *this;
 		} 
 		Complex& Complex::operator*=(X::Value& val){
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (val.IsObject())
 			{
 				auto* pObj = val.GetObj();
@@ -89,7 +89,7 @@ namespace X
 		} 
 
 		Complex& Complex::operator/=(X::Value& val){
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (val.IsObject())
 			{
 				auto* pObj = val.GetObj();

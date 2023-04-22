@@ -87,14 +87,13 @@ namespace X
 		bool GetInteractiveCode(std::string& code);
 		bool Unload(AST::Module* pTopModule);
 		bool Run(AST::Module* pTopModule,X::Value& retVal,
-			std::vector<std::string>& passInParams,
+			std::vector<X::Value>& passInParams,
 			bool stopOnEntry = false);
 		bool Run(const char* moduleName,
 			const char* code, int size,
-			std::vector<std::string>& passInParams,
+			std::vector<X::Value>& passInParams,
 			X::Value& retVal);
-		bool RunAsBackend(std::string& moduleName,std::string& code,
-			std::vector<std::string>& passInParams);
+		bool RunAsBackend(std::string& moduleName,std::string& code,std::vector<X::Value>& args);
 		bool PostRunFragmentInMainThread(AST::ModuleObject* pModuleObj,std::string& code);
 	};
 }

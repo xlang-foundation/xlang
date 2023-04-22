@@ -542,7 +542,7 @@ namespace X
 			std::vector<std::string>& IdList, int id_offset, 
 			long long startIndex, long long count)
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			int idSize = (int)IdList.size();
 			std::vector<long long> indices;
 			for(int i= id_offset;i< idSize;i++)

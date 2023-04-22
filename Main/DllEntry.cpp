@@ -215,15 +215,24 @@ void XLangStaticLoad()
 void XLangStaticRun(std::string code)
 {
 	X::Value retVal;
-	std::vector<std::string> passInParams;
+	std::vector<X::Value> passInParams;
 	Hosting::I().Run("default", code.c_str(),
 		(int)code.size(),
 		passInParams,
 		retVal);
 }
-
+static void XLangInternalInit()
+{
+	X::Data::Str::Init();
+	X::AST::ModuleObject::Init();
+	X::Data::List::Init();
+	X::Data::Dict::Init();
+	X::Data::mSet::Init();
+	X::AST::MetaScope().I().Init();
+}
 void XLangRun()
 {
+	XLangInternalInit();
 	if (g_pXload->GetConfig().enablePython)
 	{
 		LoadPythonEngine();
@@ -238,11 +247,15 @@ void XLangRun()
 	ScriptsManager::I().Run();
 	XLangProxyManager::I().Register();
 
-	std::vector<std::string> passInParams;
+	std::vector<X::Value> passInParams;
 	if (g_pXload->GetConfig().passInParams)
 	{
 		std::string strPassInParams(g_pXload->GetConfig().passInParams);
-		passInParams = split(strPassInParams, '\n');
+		auto strParams = split(strPassInParams, '\n');
+		for (auto& s : strParams)
+		{
+			passInParams.push_back(s);
+		}
 	}
 	bool HasCode = false;
 	std::string code;
@@ -255,11 +268,15 @@ void XLangRun()
 		code = inlineCode;
 		ReplaceAll(code, "\\n", "\n");
 		ReplaceAll(code, "\\t", "\t");
-		std::vector<std::string> passInParams;
+		std::vector<X::Value> passInParams;
 		if (g_pXload->GetConfig().passInParams)
 		{
 			std::string strPassInParams(g_pXload->GetConfig().passInParams);
-			passInParams = split(strPassInParams, '\n');
+			auto strParams = split(strPassInParams, '\n');
+			for (auto& s : strParams)
+			{
+				passInParams.push_back(s);
+			}
 		}
 		Hosting::I().Run("inline_code", inlineCode,
 			(int)strlen(inlineCode),
@@ -289,7 +306,13 @@ void XLangRun()
 			{
 				strFileName = fileName;
 			}
-			Hosting::I().RunAsBackend(strFileName, code,passInParams);
+			int pSize = (int)passInParams.size();
+			std::vector<X::Value> params;
+			for (int i = 0; i < pSize; i++)
+			{
+				params.push_back(passInParams[i]);
+			}
+			Hosting::I().RunAsBackend(strFileName, code, params);
 			std::cout << "Running in background" << std::endl;
 			EventSystem::I().Loop();
 			enterEventLoop = false;

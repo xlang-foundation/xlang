@@ -25,6 +25,7 @@ namespace X
 			~ModuleObject()
 			{
 			}
+			static void Init();
 			static void cleanup();
 			Module* M() { return m_pModule; }
 			virtual void GetBaseScopes(std::vector<Scope*>& bases) override;

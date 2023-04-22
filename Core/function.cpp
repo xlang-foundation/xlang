@@ -88,7 +88,7 @@ namespace X
 		{
 			return _function_op->Get(nullptr, nullptr, idx, v);
 		}
-		Function::Function(AST::Func* p, bool bOwnIt)
+		Function::Function(AST::Func* p, bool bOwnIt):Object()
 		{
 			m_ownFunc = bOwnIt;
 			m_t = ObjType::Function;

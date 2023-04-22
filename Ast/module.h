@@ -38,15 +38,24 @@ class CommandInfo:
 public:
 	inline virtual int IncRef()
 	{
-		AutoLock(_lock);
+		AutoLock lock(_lock);
 		return ObjRef::AddRef();
 	}
 	inline virtual int DecRef()
 	{
-		AutoLock(m_lock);
-		return ObjRef::Release();
+		_lock.Lock();
+		int ref = ObjRef::Release();
+		if (ref == 0)
+		{
+			_lock.Unlock();
+			delete this;
+		}
+		else
+		{
+			_lock.Unlock();
+		}
+		return ref;
 	}
-
 	dbg dbgType;
 
 	void* m_callContext = nullptr;
@@ -94,7 +103,7 @@ class Module :
 	std::vector<std::string> m_allCode;
 	StackFrame* m_stackFrame = nullptr;
 	//Parameters
-	std::vector<std::string> m_args;
+	std::vector<X::Value> m_args;
 	//for debug
 	//Locker m_addCommandLock;
 	bool m_inDebug = false;
@@ -140,11 +149,11 @@ public:
 	{
 		return m_stackFrame;
 	}
-	void SetArgs(std::vector<std::string>& args)
+	void SetArgs(std::vector<X::Value>& args)
 	{
 		m_args = args;
 	}
-	std::vector<std::string>& GetArgs()
+	std::vector<X::Value>& GetArgs()
 	{
 		return m_args;
 	}

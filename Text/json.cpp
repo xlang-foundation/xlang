@@ -10,7 +10,7 @@ namespace X
 	X::Value JsonWrapper::LoadFromString(std::string jsonStr)
 	{
 		X::Value retValue;
-		std::vector<std::string> passInParams;
+		std::vector<X::Value> passInParams;
 		X::Hosting::I().Run("inline_code", jsonStr.c_str(),
 			(int)jsonStr.size(), passInParams,retValue);
 		return retValue;
@@ -31,7 +31,7 @@ namespace X
 		{
 			retValue = X::Value(false);
 		}
-		std::vector<std::string> passInParams;
+		std::vector<X::Value> passInParams;
 		X::Hosting::I().Run(fileName.c_str(), jsonStr.c_str(),
 			(int)jsonStr.size(), passInParams,retValue);
 		return retValue;

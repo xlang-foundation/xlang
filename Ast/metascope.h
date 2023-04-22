@@ -17,6 +17,10 @@ namespace X
 			{
 				m_stack = new StackFrame();
 			}
+			void Init()
+			{
+
+			}
 			void Cleanup()
 			{
 				if (m_stack)

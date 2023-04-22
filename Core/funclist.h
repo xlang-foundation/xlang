@@ -10,7 +10,7 @@ namespace Data
 struct VectorCall
 {
 	X::Value contextObj;
-	AST::Func* m_func = nil;
+	X::Value m_func;
 	X::LValue m_lVal = nil;
 	X::XObj* GetContext() { return contextObj.GetObj(); }
 };
@@ -20,7 +20,7 @@ class FuncCalls :
 protected:
 	std::vector<VectorCall> m_list;
 public:
-	FuncCalls()
+	FuncCalls():Object(), XObj()
 	{
 		m_t = ObjType::FuncCalls;
 	}
@@ -34,13 +34,16 @@ public:
 		bool bHave = false;
 		for (auto& it : m_list)
 		{
-			bHave |= it.m_func?
-				it.m_func->CalcCallables(rt, it.GetContext(), callables)
-				: false;
+			bool bCallable = false;
+			if (it.m_func.IsObject())
+			{
+				bCallable = it.m_func.GetObj() - CalcCallables(rt, it.GetContext(), callables);
+			}
+			bHave |= bCallable;
 		}
 		return bHave;
 	}
-	void Add(XObj* pContext, AST::Func* func, X::LValue lVal)
+	void Add(XObj* pContext, X::Value& func, X::LValue lVal)
 	{
 		m_list.push_back(VectorCall{ pContext ,func,lVal });
 	}
@@ -64,7 +67,7 @@ public:
 		if (m_list.size() == 1)
 		{
 			auto& fc = m_list[0];
-			return fc.m_func->CallEx(rt,
+			return fc.m_func.GetObj()->CallEx(rt,
 				fc.GetContext(),
 				params, kwParams, trailer,retValue);
 		}
@@ -73,7 +76,7 @@ public:
 		for (auto& fc : m_list)
 		{
 			X::Value v0;
-			bool bOK = fc.m_func->CallEx(rt,
+			bool bOK = fc.m_func.GetObj()->CallEx(rt,
 				fc.GetContext(),
 				params, kwParams, trailer, v0);
 			if (bOK)
@@ -103,7 +106,7 @@ public:
 		if (m_list.size() == 1)
 		{
 			auto& fc = m_list[0];
-			return fc.m_func->Call(rt,
+			return fc.m_func.GetObj()->Call(rt,
 				fc.GetContext(),
 				params, kwParams, retValue);
 		}
@@ -112,7 +115,7 @@ public:
 		for (auto& fc : m_list)
 		{
 			X::Value v0;
-			bool bOK = fc.m_func->Call(rt,
+			bool bOK = fc.m_func.GetObj()->Call(rt,
 				fc.GetContext(),
 				params, kwParams, v0);
 			if (bOK)

@@ -13,7 +13,7 @@ namespace X
 		for (auto it : m_scripts)
 		{
 			std::string fileName = it.first;
-			std::vector<std::string> passInParams;
+			std::vector<X::Value> passInParams;
 			Hosting::I().RunAsBackend(fileName,it.second.code, passInParams);
 		}
 	}

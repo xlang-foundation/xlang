@@ -463,7 +463,7 @@ namespace X
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 			virtual const char* ToString(bool WithFormat = false) override
 			{
-				AutoLock(m_lock);
+				AutoLock autoLock(m_lock);
 				std::string strShapes;
 				std::string strElements;
 				char v[1000];

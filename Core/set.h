@@ -19,12 +19,13 @@ protected:
 	std::vector<X::LValue> m_ptrs;																																																																																																																										
 	std::vector<AST::Scope*> m_bases;
 public:
+	static void Init();
 	static void cleanup();
 	mSet();
 	mSet(std::vector<std::string>& strs) :
 		mSet()
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		for (auto& s : strs)
 		{
 			m_data.push_back(X::Value(new Str(s.c_str(), (int)s.size())));
@@ -33,7 +34,7 @@ public:
 	mSet(X::ARGS& params) :
 		mSet()
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		for (auto& param : params)
 		{
 			m_data.push_back(param);
@@ -41,7 +42,7 @@ public:
 	}
 	~mSet()
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		m_bases.clear();
 		m_ptrs.clear();
 		m_data.clear();
@@ -72,7 +73,7 @@ public:
 		IterateProc proc, ARGS& params, KWARGS& kwParams,
 		X::Value& retValue) override
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (m_useLValue)
 		{
 			for (size_t i = 0; i < m_ptrs.size(); i++)
@@ -94,7 +95,7 @@ public:
 	}
 	void Each(EnumProc proc)
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (m_useLValue)
 		{
 			for (size_t i = 0; i < m_ptrs.size(); i++)
@@ -126,7 +127,7 @@ public:
 	}
 	virtual mSet& operator +=(X::Value& r) override
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (r.IsObject())
 		{
 			Object* pObj = dynamic_cast<Object*>(r.GetObj());
@@ -153,7 +154,7 @@ public:
 
 	mSet& operator -=(X::Value& r) 
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (r.IsObject())
 		{
 			Object* pObj = dynamic_cast<Object*>(r.GetObj());
@@ -180,7 +181,7 @@ public:
 
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		Object::ToBytes(rt,pContext,stream);
 		size_t size = Size();
 		stream << size;
@@ -194,7 +195,7 @@ public:
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		//TODO:need to pass runtime,and calculate base class for some objects
 		size_t size;
 		stream >> size;
@@ -208,7 +209,7 @@ public:
 	}
 	virtual const char* ToString(bool WithFormat = false) override
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		std::string strSet = "{\n";
 		size_t size = Size();
 		for (size_t i = 0; i < size; i++)
@@ -230,12 +231,12 @@ public:
 	}
 	inline virtual long long Size() override 
 	{
-		AutoLock(m_lock);	
+		AutoLock autoLock(m_lock);	
 		return m_useLValue ? m_ptrs.size() : m_data.size();
 	}
 	inline void Clear()
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		m_bases.clear();
 		m_ptrs.clear();
 		m_data.clear();
@@ -256,7 +257,7 @@ public:
 		KWARGS& kwParams,X::Value& retValue) override;
 	inline void Add(X::LValue p)
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		bool isDup = false;
 		for (size_t i = 0; i < m_ptrs.size(); i++)
 		{
@@ -271,7 +272,7 @@ public:
 	}
 	inline void Add(X::Value v)
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		bool isDup = false;
 		for (size_t i = 0; i < m_data.size(); i++)
 		{
@@ -285,7 +286,7 @@ public:
 	}
 	inline void Add(XlangRuntime* rt, X::Value& v)
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (v.IsObject())
 		{
 			Object* obj = dynamic_cast<Object*>(v.GetObj());
@@ -324,7 +325,7 @@ public:
 
 	inline void Remove(X::LValue p)
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		for (size_t i = 0; i < m_ptrs.size(); i++)
 		{
 			if (p == (X::LValue) (*m_ptrs[i])) {
@@ -335,7 +336,7 @@ public:
 	}
 	inline void Remove(X::Value v)
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		for (size_t i = 0; i < m_data.size(); i++)
 		{
 			if (v == (X::Value) (m_data[i])) {
@@ -346,7 +347,7 @@ public:
 	}
 	inline void Remove(XlangRuntime* rt, X::Value& v)
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (v.IsObject())
 		{
 			Object* obj = dynamic_cast<Object*>(v.GetObj());
@@ -423,7 +424,7 @@ public:
 		long long startIndex, long long count) override;
 	inline bool Set(X::Value& v) 
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (m_useLValue)
 		 	m_ptrs.push_back(v);
 		else
@@ -432,7 +433,7 @@ public:
 	}
 	inline virtual bool Set(long long index, X::Value& v) override
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (m_useLValue)
 		{
 			X::LValue l = m_ptrs[index];
@@ -452,7 +453,7 @@ public:
 		long long it = (long long)pos;
 		X::Value val0;
 		long long nPos = it;
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (m_useLValue)
 		{
 			if (it >= (long long)m_ptrs.size())
@@ -487,7 +488,7 @@ public:
 	inline bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{
-		AutoLock(m_lock);
+		AutoLock autoLock(m_lock);
 		if (m_useLValue)
 		{
 			if (idx >= (long long)m_ptrs.size())

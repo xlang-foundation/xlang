@@ -299,8 +299,6 @@ namespace X
 			bool bIsNum = false;
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
 
-			AutoLock(m_lock);
-
 			if (!IsTensor1 && !IsTensor2)
 			{
 				return;  //todo, error handling
@@ -420,8 +418,6 @@ namespace X
 			bool bAddable =false;
 			bool bIsNum = false;
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-
-			AutoLock(m_lock);
 
 			if (!IsTensor1 && !IsTensor2)
 			{
@@ -546,8 +542,6 @@ namespace X
 			bool bIsNum = false;
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
 
-			AutoLock(m_lock);
-
 			if (!IsTensor1 && !IsTensor2)
 			{
 				return;  //todo, error handling
@@ -665,8 +659,6 @@ namespace X
 			bool bAddable =false;
 			bool bIsNum = false;
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-
-			AutoLock(m_lock);
 
 			if (!IsTensor1 && !IsTensor2)
 			{

@@ -91,10 +91,8 @@ namespace X
 						X::KWARGS& kwParams,
 						X::Value& retValue)
 					{
-						std::cout << "List.Size" << std::endl;
 						List* pObj = dynamic_cast<List*>(pContext);
 						retValue = Value(pObj->Size());
-						std::cout << "List.Size->End" << std::endl;
 						return true;
 					};
 					X::U_FUNC func(f);
@@ -126,6 +124,10 @@ namespace X
 			}
 		};
 		static ListScope* _listScope = nullptr;
+		void List::Init()
+		{
+			_listScope = new ListScope();
+		}
 		void List::cleanup()
 		{
 			if (_listScope)
@@ -140,10 +142,6 @@ namespace X
 			Object()
 		{
 			m_t = ObjType::List;
-			if (_listScope == nullptr)
-			{
-				_listScope = new ListScope();
-			}
 			m_bases.push_back(_listScope);
 
 		}
@@ -159,7 +157,7 @@ namespace X
 				if (it.Match("size"))
 				{
 					long long size = it.val.GetLongLong();
-					AutoLock(m_lock);
+					AutoLock autoLock(m_lock);
 					m_data.resize(size);
 					break;
 				}
@@ -177,7 +175,7 @@ namespace X
 						double d1 = 0;
 						double d2 = 1;
 						SCANF(strV.c_str(),"rand(%lf,%lf)",&d1,&d2);
-						AutoLock(m_lock);
+						AutoLock autoLock(m_lock);
 						for (auto& v : m_data)
 						{
 							v = randDouble(d1,d2);
@@ -185,7 +183,7 @@ namespace X
 					}
 					else
 					{
-						AutoLock(m_lock);
+						AutoLock autoLock(m_lock);
 						for (auto& v : m_data)
 						{
 							v = v0;
@@ -201,7 +199,7 @@ namespace X
 			std::vector<std::string>& IdList, int id_offset,
 			std::string itemName, X::Value& val)
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (id_offset < IdList.size())
 			{
 				unsigned long long index = 0;
@@ -228,7 +226,7 @@ namespace X
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(m_lock);
 			if (id_offset < IdList.size())
 			{
 				unsigned long long index = 0;

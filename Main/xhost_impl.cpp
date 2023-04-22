@@ -282,9 +282,21 @@ namespace X
 	}
 	bool XHost_Impl::RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal)
 	{
-		std::vector<std::string> passInParams;
+		std::vector<X::Value> passInParams;
 		return X::Hosting::I().Run(moduleName, code,
 			codeSize, passInParams,retVal);
+	}
+	bool XHost_Impl::RunModuleInThread(const char* moduleName, 
+		const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs)
+	{
+		std::string strModuleName(moduleName);
+		std::string strCode(code, codeSize);
+		std::vector<X::Value> passinParams;
+		for (auto& a : args)
+		{
+			passinParams.push_back(a);
+		}
+		return X::Hosting::I().RunAsBackend(strModuleName, strCode, passinParams);
 	}
 	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal)
 	{

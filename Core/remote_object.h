@@ -58,6 +58,7 @@ namespace X
 
 			return Data::Object::DecRef();
 		}
+
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
@@ -81,7 +82,7 @@ namespace X
 		}
 		virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(Object::m_lock);
 			Object::ToBytes(rt, pContext, stream);
 			stream << m_remote_Parent_Obj_id;
 			stream << m_remote_Obj_id;
@@ -89,7 +90,7 @@ namespace X
 		}
 		virtual bool FromBytes(X::XLangStream& stream) override
 		{
-			AutoLock(m_lock);
+			AutoLock autoLock(Object::m_lock);
 			stream >> m_remote_Parent_Obj_id;
 			stream >> m_remote_Obj_id;
 			return true;

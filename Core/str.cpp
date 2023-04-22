@@ -290,13 +290,13 @@ namespace X
 		};
 
 		static StrOp* _strop =nullptr;
-		void Str::GetBaseScopes(std::vector<AST::Scope*>& bases)
+		inline void Str::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
-			if (_strop == nullptr)
-			{
-				_strop = new StrOp();
-			}
 			bases.push_back(_strop);
+		}
+		void Str::Init()
+		{
+			_strop = new StrOp();
 		}
 		void Str::cleanup()
 		{
