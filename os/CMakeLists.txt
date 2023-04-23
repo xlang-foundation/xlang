@@ -16,3 +16,7 @@ add_library(${PROJECT_NAME}
 	${Main_SRC}
 )
 
+if (WIN32)
+else()
+    target_link_libraries(${PROJECT_NAME} uuid)
+endif()
