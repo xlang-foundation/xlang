@@ -919,35 +919,27 @@ namespace X
 		}
 
 
-		void Transpose(X::Data::Tensor* pTensor, X::Data::Tensor* pRetVal)
+		void Transpose(X::Data::Tensor* pTensor, X::Data::Tensor* pTensorTran, long long u, long long v)
 		{
 			//X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input.GetObj());  
 			//X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
 
-			int m = pTensor->GetDims()[0].size; //rows of matrix1
-			int n = pTensor->GetDims()[1].size; //columns of matrix1
 
-			std::vector<int> dims;
-			dims.push_back(n);
-			dims.push_back(m);
-			TensorDataType dataType = pTensor->GetDataType();
-			pRetVal->SetDataType(dataType);
-			pRetVal->CreateBaseOnShape(dims);
-
-			auto it_proc_tensor_transpose = [pTensor, pRetVal, m, n](std::vector<long long>& indices1) 
+			auto it_proc_tensor_transpose = [pTensor, pTensorTran, u, v](std::vector<long long>& indices2) 
 			{
-				X::Value val_1;
-				val_1 = pTensor->GetDataWithIndices(indices1);
-				std::cout << "input index (" << indices1[0] << "," << indices1[1] <<")" ;
+				X::Value val_2;
+				val_2 = pTensor->GetDataWithIndices(indices2);
+				std::cout << "input index (" << indices2[0] << "," << indices2[1] <<"), val =" << val_2.GetLongLong();
 				std::vector<long long> indices;
 				indices.resize(2);
-				indices[0] = m - 1 - indices1[0];
-				indices[1] = n - 1 - indices1[1];
+				indices[0] = u - 1 - indices2[0];
+				indices[1] = v - 1 - indices2[1];
 				std::cout << ", output index (" << indices[0] << "," << indices[1] <<")" ;
-				std::cout << ", val = " << val_1.GetLongLong() << std::endl ;
-				pRetVal->SetDataWithIndices(indices, val_1);
+				std::cout << ", val = " << val_2.GetLongLong() << std::endl ;
+				pTensorTran->SetDataWithIndices(indices, val_2);
 			};
 
+			std::cout << "input u = " << u << ", v = " << v << std::endl;
 			pTensor->IterateAll(it_proc_tensor_transpose);
 
 		}
@@ -969,41 +961,41 @@ namespace X
 			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());  
 			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-			X::Value input_matrix, weight_matrix;
 
+			X::Value input_matrix, weight_matrix;
 			std::vector<Data::TensorIndex> IdxAry;
 			IdxAry.push_back({0,1});  //matrix only
-
 			pTensor1->Get(IdxAry, input_matrix);
 			pTensor2->Get(IdxAry, weight_matrix);
 
-			Transpose(pTensor2, pRetVal); 
-			//pRetVal->ToString();
-			
-
-			/*	
 			int m = pTensor1->GetDims()[0].size; //rows of matrix1
 			int n = pTensor1->GetDims()[1].size; //columns of matrix1
-			int u = pTensor2->GetDims()[0].size; //rows of matrix2
-			int v = pTensor2->GetDims()[1].size; //columns of matrix2
-
-			if ( m+u-1 < 0 || n+v-1 < 0)
-				return;
+			int u = pTensor2->GetDims()[0].size; //rows of matrix1
+			int v = pTensor2->GetDims()[1].size; //columns of matrix1
 
 			std::vector<int> dims;
-			dims.push_back(m+u-1);
-			dims.push_back(n+v-1);
+			dims.push_back(m);
+			dims.push_back(n);
 			TensorDataType dataType = pTensor1->GetDataType();
-			pRetVal->SetDataType(dataType);
 			pRetVal->CreateBaseOnShape(dims);
-			*/
+			pRetVal->SetDataType(dataType);
 
-			Conv2d_internal(pTensor1, pTensor2, pRetVal, /*(int)padding*/ 0);
+			//X::Data::Tensor* pTensor2t = new X::Data::Tensor(*pTensor2); 
+			X::Data::Tensor* pTensor2t = new X::Data::Tensor(); 
+			TensorDataType dataType2 = pTensor2->GetDataType();
+			pTensor2t->CreateBaseOnTensor(pTensor2);
+			pTensor2t->SetDataType(dataType2);
+			Transpose(pTensor2, pTensor2t, u, v); 
+
+			Conv2d_internal(pTensor1, pTensor2t, pRetVal, /*(int)padding*/ 0);
 
 		}
 
 		void Conv2d_internal(X::Data::Tensor* pTensor1 , X::Data::Tensor* pTensor2, X::Data::Tensor* pRetVal, int padding = 0)
 		{
+
+			std::cout << "in tensor_cpu.h::Conv2d_internal()" << std::endl;
+
 			padding = 0;	
 			int m = pTensor1->GetDims()[0].size; //rows of matrix1
 			int n = pTensor1->GetDims()[1].size; //columns of matrix1
@@ -1022,14 +1014,16 @@ namespace X
 			pRetVal->SetDataType(dataType);
 			pRetVal->CreateBaseOnShape(dims);
 
+			/*
 			int i, j, k, l;
 			X::Value val_1, val_2, val;
 			std::vector<long long> indices1, indices2, indices;
 			indices.resize(2);
 			indices1.resize(2);
 			indices2.resize(2);
+			*/
 
-			/*			
+			/*			method 1, full conv
 			for ( i = 0; i < m+u-1; i++) {
 				for (j = 0; j < n+v-1; j ++) {
 					indices[0] = i;
@@ -1055,7 +1049,8 @@ namespace X
 			}//for i
 			*/
 
-			//same
+			//  method 2, same conv
+			/*
 			for ( i = 0; i < m; i++) 
 			{
 				for (j = 0; j < n; j ++) 
@@ -1063,6 +1058,7 @@ namespace X
 					indices[0] = i;
 					indices[1] = j;
 					val = 0;  //C(i,j) = Sigma(k) Sigma (l) Matrix1(k,l)*Matrix2(i-k+1, j-l+1)
+					 		  //C(i,j) = Sigma(k) Sigma (l) Matrix1(k,l)*Matrix2(i-k, j-l)  // k,l from -1 
 					for (k = 0; k < u; k++) 
 					{ 
 						for (l = 0; l < v; l++) 
@@ -1093,26 +1089,37 @@ namespace X
 					std::cout << "                           " <<"i  =" << i << ", j = " <<j << ", val = " << val.GetLongLong() <<std::endl;							
 				}//for j
 			}//for i
-
-
-			/*
-			auto it_proc_tensor_conv2d = [pTensor1, pTensor2, tensor1_dims, leftDimCount, pRetVal](std::vector<long long>& indices1)
-			{
-				X::Value val, val_1, val_2;
-				for (int i = 0; i < indices2.size(); i++) 
-					indices1[leftDimCount+i] = indices2[i];
-
-				val_1 = pTensor1->GetDataWithIndices(indices1);
-				val_2 = pTensor2->GetDataWithIndices(indices2);
-				val_1 /= val_2;
-				pRetVal->SetDataWithIndices(indices1, val_1);
-				indices1.resize(tensor1_dims);
-				pTensor2->IterateAll(it_proc_tensor_conv2d_a);
-			};
-
-			pTensor1->IterateAll(it_proc_tensor_conv2d);	
 			*/
 
+			auto it_proc_tensor_conv2d = [pTensor1, pTensor2, pRetVal, m,n,u,v, padding](std::vector<long long>& indices)
+			{
+				std::cout << "      m =" << m << ", n = " << n <<", u = " << u <<", v = " << v << std::endl;
+				X::Value val;
+				auto it_proc_tensor_conv2d_a = [pTensor1, pTensor2, pRetVal, indices, m,n,u,v, padding, &val](std::vector<long long>& indices2) 
+				{
+					X::Value val_1, val_2;
+					val_2 = pTensor2->GetDataWithIndices(indices2);
+					std::cout << "Weight matrix(" << indices2[0] << "," << indices2[1] <<") = " << val_2.GetLongLong() << "  |  ";
+					std::vector<long long> indices1;
+					indices1.resize(2);
+					indices1[0] = indices[0] + indices2[0] - (u/2);
+					indices1[1] = indices[1] + indices2[1] - (v/2);
+					if (indices1[0] >= 0 && indices1[1] >= 0 && indices1[0] < m && indices1[1] < n)
+						val_1 = pTensor1->GetDataWithIndices(indices1);
+					else
+						val_1 = padding; 
+					std::cout << "Input matrix(" << indices1[0] << "," << indices1[1] <<") = " << val_1.GetLongLong() << "  |  ";
+					val_1 *= val_2;
+					val += val_1;
+					std::cout << "val_1 *= val_2 = " << val_1.GetLongLong() << ", val = " << val.GetLongLong() << std::endl;
+
+				};
+				pTensor2->IterateAll(it_proc_tensor_conv2d_a);
+				pRetVal->SetDataWithIndices(indices, val);
+				std::cout << "       Output matrix(" << indices[0] << "," << indices[1] <<") = " << val.GetLongLong() << std::endl;
+
+			};
+			pRetVal->IterateAll(it_proc_tensor_conv2d);				
 		}
 
 		void Relu(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
