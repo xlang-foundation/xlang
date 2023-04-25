@@ -116,6 +116,13 @@ namespace X
 			T* m_data = nullptr;
 			int m_size = 0;
 			int m_curPos = 0;
+			inline void Copy(T* dst, T* src, int size)
+			{
+				for (int i = 0; i < m_size; i++)
+				{
+					dst[i] = src[i];
+				}
+			}
 		public:
 			class iterator 
 			{
@@ -141,7 +148,7 @@ namespace X
 				if (m_size > 0)
 				{
 					m_data = new T[m_size];
-					memcpy(m_data, v.m_data, sizeof(T) * m_size);
+					Copy(m_data, v.m_data, m_size);
 				}
 			}
 			~vector()
@@ -163,7 +170,7 @@ namespace X
 				if (m_size > 0)
 				{
 					m_data = new T[m_size];
-					memcpy(m_data,v.m_data,sizeof(T)*m_size);
+					Copy(m_data, v.m_data, m_size);
 				}
 			}
 			inline void push_back(T v)
@@ -180,7 +187,7 @@ namespace X
 						int copySize = size > m_size ? m_size : size;
 						if (copySize > 0)
 						{
-							memcpy(pNewData, m_data, sizeof(T) * copySize);
+							Copy(pNewData, m_data, copySize);
 						}
 						if (m_data)
 						{
