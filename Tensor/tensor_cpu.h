@@ -917,14 +917,10 @@ namespace X
 				}//for j
 			}//for i
 		}
-
-
 		void Transpose(X::Data::Tensor* pTensor, X::Data::Tensor* pTensorTran, long long u, long long v)
 		{
 			//X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input.GetObj());  
 			//X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-
-
 			auto it_proc_tensor_transpose = [pTensor, pTensorTran, u, v](std::vector<long long>& indices2) 
 			{
 				X::Value val_2;
@@ -938,14 +934,10 @@ namespace X
 				std::cout << ", val = " << val_2.GetLongLong() << std::endl ;
 				pTensorTran->SetDataWithIndices(indices, val_2);
 			};
-
 			std::cout << "input u = " << u << ", v = " << v << std::endl;
 			pTensor->IterateAll(it_proc_tensor_transpose);
-
 		}
-
-
-		void Conv2d(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		void Conv2d_old2(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "in tensor_cpu.h::conv2d()" << std::endl;
 			
@@ -962,11 +954,14 @@ namespace X
 			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
 			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
 
+			/*
 			X::Value input_matrix, weight_matrix;
 			std::vector<Data::TensorIndex> IdxAry;
 			IdxAry.push_back({0,1});  //matrix only
 			pTensor1->Get(IdxAry, input_matrix);
 			pTensor2->Get(IdxAry, weight_matrix);
+			*/
+
 
 			int m = pTensor1->GetDims()[0].size; //rows of matrix1
 			int n = pTensor1->GetDims()[1].size; //columns of matrix1
@@ -1120,6 +1115,117 @@ namespace X
 
 			};
 			pRetVal->IterateAll(it_proc_tensor_conv2d);				
+		}
+
+		void Conv2d(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		{
+			std::cout << "in tensor_cpu.h::conv2d()" << std::endl;
+			
+			auto input_channels = kwParams.find("input_channels");  
+			auto output_channels = kwParams.find("output_channels");  
+			auto stride = kwParams.find("stride");  
+			auto dilation = kwParams.find("dilation");  
+			auto conv_mode = kwParams.find("conv_mode");  //- full, same, valid
+			auto padding = kwParams.find("padding");
+			auto padding_mode = kwParams.find("padding_mode");
+			auto bias = kwParams.find("bias");
+
+			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());  
+			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
+			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
+
+			/*
+			X::Value input_matrix, weight_matrix;
+			std::vector<Data::TensorIndex> IdxAry;
+			IdxAry.push_back({0,1});  //matrix only
+			pTensor1->Get(IdxAry, input_matrix);
+			pTensor2->Get(IdxAry, weight_matrix);
+			*/
+
+			int tensor1_dims = pTensor1->GetDimCount();
+			int tensor2_dims = pTensor2->GetDimCount();
+			int leftDimCount = pTensor1->GetDimCount() - pTensor2->GetDimCount();
+
+			int m,n,u,v = 0;
+			if (tensor1_dims >= 2)
+			{
+				pTensor1->GetDims()[tensor1_dims - 2].size; //rows of matrix1
+				pTensor1->GetDims()[tensor1_dims - 1].size; //columns of matrix1
+			}
+			if (tensor1_dims >= 2)
+			{
+				pTensor2->GetDims()[tensor2_dims - 2].size; //rows of matrix2
+				pTensor2->GetDims()[tensor2_dims - 1].size; //columns of matrix2
+			}
+
+			
+			//std::vector<int> dims;
+			//dims.push_back(m);
+			//dims.push_back(n);
+			//TensorDataType dataType = pTensor1->GetDataType();
+			//pRetVal->CreateBaseOnShape(dims);
+			//pRetVal->SetDataType(dataType);
+			pRetVal->CreateBaseOnTensor(pTensor1);
+
+			// assume tensor2 is just a matrix for now
+			//X::Data::Tensor* pTensor2t = new X::Data::Tensor(*pTensor2); 
+			X::Data::Tensor* pTensor2t = new X::Data::Tensor(); 
+			TensorDataType dataType2 = pTensor2->GetDataType();
+			pTensor2t->CreateBaseOnTensor(pTensor2);
+			pTensor2t->SetDataType(dataType2);
+			Transpose(pTensor2, pTensor2t, u, v); 
+
+			// 
+
+			auto it_proc_tensor_conv2d = [pTensor1, pTensor2t, m,n,u,v, padding, tensor1_dims, leftDimCount, pRetVal](std::vector<long long>& indices1)
+			{
+				auto it_proc_tensor_conv2d_new = [pTensor1, pTensor2t, pRetVal, m,n,u,v, padding](std::vector<long long>& indices)
+				{
+					std::cout << "      m =" << m << ", n = " << n <<", u = " << u <<", v = " << v << std::endl;
+					X::Value val;
+					auto it_proc_tensor_conv2d_a = [pTensor1, pTensor2t, pRetVal, indices, m,n,u,v, padding, &val](std::vector<long long>& indices2) 
+					{
+						X::Value val_1, val_2;
+						val_2 = pTensor2t->GetDataWithIndices(indices2);
+						std::cout << "Weight matrix(" << indices2[0] << "," << indices2[1] <<") = " << val_2.GetLongLong() << "  |  ";
+						std::vector<long long> indices1;
+						indices1.resize(2);
+						indices1[0] = indices[0] + indices2[0] - (u/2);
+						indices1[1] = indices[1] + indices2[1] - (v/2);
+						if (indices1[0] >= 0 && indices1[1] >= 0 && indices1[0] < m && indices1[1] < n)
+							val_1 = pTensor1->GetDataWithIndices(indices1);
+						else
+							val_1 = padding; 
+						std::cout << "Input matrix(" << indices1[0] << "," << indices1[1] <<") = " << val_1.GetLongLong() << "  |  ";
+						val_1 *= val_2;
+						val += val_1;
+						std::cout << "val_1 *= val_2 = " << val_1.GetLongLong() << ", val = " << val.GetLongLong() << std::endl;
+
+					};
+					pTensor2t->IterateAll(it_proc_tensor_conv2d_a);
+					pRetVal->SetDataWithIndices(indices, val);
+					std::cout << "       Output matrix(" << indices[0] << "," << indices[1] <<") = " << val.GetLongLong() << std::endl;
+
+				};
+				indices1.resize(tensor1_dims);
+				pTensor2t->IterateAll(it_proc_tensor_conv2d_new);
+			};
+
+			auto it_proc_tensor_conv2d_b = [pTensor1, pTensor2,pTensor2t, pRetVal](std::vector<long long>& indices) 
+			{
+				X::Value val, val_1, val_2;
+				val_1 = pTensor1->GetDataWithIndices(indices);
+				val_2 = pTensor2->GetDataWithIndices(indices);
+				val_1 /= val_2;
+				pRetVal->SetDataWithIndices(indices, val_1);
+			};
+
+			if (leftDimCount > 0) 
+				pTensor1->IterateLeft(it_proc_tensor_conv2d, leftDimCount);
+			else 
+				pTensor1->IterateAll(it_proc_tensor_conv2d_b);				
+
+
 		}
 
 		void Relu(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
