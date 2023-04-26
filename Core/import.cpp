@@ -211,8 +211,10 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 				auto* remoteObj = new RemoteObject(proxy);
 				remoteObj->SetObjName(im.name);
 				v = Value(dynamic_cast<XObj*>(remoteObj));
-				pMyScope->AddAndSet(rt, pContext, varName, v);
-				//rt->M()->Add(rt, varName, nullptr, v);
+				if (pMyScope)
+				{
+					pMyScope->AddAndSet(rt, pContext, varName, v);
+				}
 				continue;
 			}
 		}
