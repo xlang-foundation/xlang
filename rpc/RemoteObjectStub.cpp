@@ -384,11 +384,9 @@ namespace X
 			X::ROBJ_ID retId = {0,0};
 			if (valRet.IsObject())
 			{
-				if (valRet.GetObj()->GetType() == ObjType::Str)
-				{
-
-				}
-				else
+				auto tp = valRet.GetObj()->GetType();
+				//for str and Bin object, directly put into stream
+				if (tp  != ObjType::Str && tp!= ObjType::Binary)
 				{
 					auto pRetObj = valRet.GetObj();
 					retId = ConvertXObjToId(pRetObj);

@@ -336,7 +336,12 @@ namespace X
 		Value v0;
 		if (g_pXHost->Import(rt, moduleName, from, thru, v0))
 		{
-			SetObj(v0.GetObj());
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
 		}
 	}
 	template<>
