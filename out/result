@@ -1,0 +1,550 @@
+t1 = Tensor(size=(3,4,4),[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56
+t2 = Tensor(size=(3,3),[1,6,5,8,3,4,7,2,9
+***********************************************************************
+in tensor_cpu.h::conv2d()
+input u = 3, v = 3
+input index (0,0), val =1, output index (2,2), val = 1
+input index (0,1), val =6, output index (2,1), val = 6
+input index (0,2), val =5, output index (2,0), val = 5
+input index (1,0), val =8, output index (1,2), val = 8
+input index (1,1), val =3, output index (1,1), val = 3
+input index (1,2), val =4, output index (1,0), val = 4
+input index (2,0), val =7, output index (0,2), val = 7
+input index (2,1), val =2, output index (0,1), val = 2
+input index (2,2), val =9, output index (0,0), val = 9
+it_proc_tensor_conv2d_a called - 0
+      m =4, n = 4, u = 3, v = 3
+it_proc_tensor_conv2d_b called - 0, indices1[0] = 0, indices1[1] = 0, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(0,-1,-1,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,1,) = 2  |  Input matrix(0,-1,0,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,2,) = 7  |  Input matrix(0,-1,1,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(1,0,) = 4  |  Input matrix(0,0,-1,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(1,1,) = 3  |  Input matrix(0,0,0,) = 1  |  val_1 *= val_2 = 3, val = 3
+Weight matrix(1,2,) = 8  |  Input matrix(0,0,1,) = 2  |  val_1 *= val_2 = 16, val = 19
+Weight matrix(2,0,) = 5  |  Input matrix(0,1,-1,) = 4  |  val_1 *= val_2 = 20, val = 39
+Weight matrix(2,1,) = 6  |  Input matrix(0,1,0,) = 5  |  val_1 *= val_2 = 30, val = 69
+Weight matrix(2,2,) = 1  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 6, val = 75
+Output matrix(,0,0,0) = 75
+it_proc_tensor_conv2d_b called - 1, indices1[0] = 0, indices1[1] = 0, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(0,-1,0,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,1,) = 2  |  Input matrix(0,-1,1,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,2,) = 7  |  Input matrix(0,-1,2,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(1,0,) = 4  |  Input matrix(0,0,0,) = 1  |  val_1 *= val_2 = 4, val = 4
+Weight matrix(1,1,) = 3  |  Input matrix(0,0,1,) = 2  |  val_1 *= val_2 = 6, val = 10
+Weight matrix(1,2,) = 8  |  Input matrix(0,0,2,) = 3  |  val_1 *= val_2 = 24, val = 34
+Weight matrix(2,0,) = 5  |  Input matrix(0,1,0,) = 5  |  val_1 *= val_2 = 25, val = 59
+Weight matrix(2,1,) = 6  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 36, val = 95
+Weight matrix(2,2,) = 1  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 7, val = 102
+Output matrix(,0,0,1) = 102
+it_proc_tensor_conv2d_b called - 2, indices1[0] = 0, indices1[1] = 0, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(0,-1,1,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,1,) = 2  |  Input matrix(0,-1,2,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,2,) = 7  |  Input matrix(0,-1,3,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(1,0,) = 4  |  Input matrix(0,0,1,) = 2  |  val_1 *= val_2 = 8, val = 8
+Weight matrix(1,1,) = 3  |  Input matrix(0,0,2,) = 3  |  val_1 *= val_2 = 9, val = 17
+Weight matrix(1,2,) = 8  |  Input matrix(0,0,3,) = 4  |  val_1 *= val_2 = 32, val = 49
+Weight matrix(2,0,) = 5  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 30, val = 79
+Weight matrix(2,1,) = 6  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 42, val = 121
+Weight matrix(2,2,) = 1  |  Input matrix(0,1,3,) = 8  |  val_1 *= val_2 = 8, val = 129
+Output matrix(,0,0,2) = 129
+it_proc_tensor_conv2d_b called - 3, indices1[0] = 0, indices1[1] = 0, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(0,-1,2,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,1,) = 2  |  Input matrix(0,-1,3,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,2,) = 7  |  Input matrix(0,-1,4,) = 1  |  val_1 *= val_2 = 7, val = 7
+Weight matrix(1,0,) = 4  |  Input matrix(0,0,2,) = 3  |  val_1 *= val_2 = 12, val = 19
+Weight matrix(1,1,) = 3  |  Input matrix(0,0,3,) = 4  |  val_1 *= val_2 = 12, val = 31
+Weight matrix(1,2,) = 8  |  Input matrix(0,0,4,) = 5  |  val_1 *= val_2 = 40, val = 71
+Weight matrix(2,0,) = 5  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 35, val = 106
+Weight matrix(2,1,) = 6  |  Input matrix(0,1,3,) = 8  |  val_1 *= val_2 = 48, val = 154
+Weight matrix(2,2,) = 1  |  Input matrix(0,1,4,) = 9  |  val_1 *= val_2 = 9, val = 163
+Output matrix(,0,0,3) = 163
+it_proc_tensor_conv2d_b called - 4, indices1[0] = 0, indices1[1] = 1, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(0,0,-1,) = 0  |  val_1 *= val_2 = 0, val = 0
+Weight matrix(0,1,) = 2  |  Input matrix(0,0,0,) = 1  |  val_1 *= val_2 = 2, val = 2
+Weight matrix(0,2,) = 7  |  Input matrix(0,0,1,) = 2  |  val_1 *= val_2 = 14, val = 16
+Weight matrix(1,0,) = 4  |  Input matrix(0,1,-1,) = 4  |  val_1 *= val_2 = 16, val = 32
+Weight matrix(1,1,) = 3  |  Input matrix(0,1,0,) = 5  |  val_1 *= val_2 = 15, val = 47
+Weight matrix(1,2,) = 8  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 48, val = 95
+Weight matrix(2,0,) = 5  |  Input matrix(0,2,-1,) = 8  |  val_1 *= val_2 = 40, val = 135
+Weight matrix(2,1,) = 6  |  Input matrix(0,2,0,) = 9  |  val_1 *= val_2 = 54, val = 189
+Weight matrix(2,2,) = 1  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 10, val = 199
+Output matrix(,0,1,0) = 199
+it_proc_tensor_conv2d_b called - 5, indices1[0] = 0, indices1[1] = 1, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(0,0,0,) = 1  |  val_1 *= val_2 = 9, val = 9
+Weight matrix(0,1,) = 2  |  Input matrix(0,0,1,) = 2  |  val_1 *= val_2 = 4, val = 13
+Weight matrix(0,2,) = 7  |  Input matrix(0,0,2,) = 3  |  val_1 *= val_2 = 21, val = 34
+Weight matrix(1,0,) = 4  |  Input matrix(0,1,0,) = 5  |  val_1 *= val_2 = 20, val = 54
+Weight matrix(1,1,) = 3  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 18, val = 72
+Weight matrix(1,2,) = 8  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 56, val = 128
+Weight matrix(2,0,) = 5  |  Input matrix(0,2,0,) = 9  |  val_1 *= val_2 = 45, val = 173
+Weight matrix(2,1,) = 6  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 60, val = 233
+Weight matrix(2,2,) = 1  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 11, val = 244
+Output matrix(,0,1,1) = 244
+it_proc_tensor_conv2d_b called - 6, indices1[0] = 0, indices1[1] = 1, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(0,0,1,) = 2  |  val_1 *= val_2 = 18, val = 18
+Weight matrix(0,1,) = 2  |  Input matrix(0,0,2,) = 3  |  val_1 *= val_2 = 6, val = 24
+Weight matrix(0,2,) = 7  |  Input matrix(0,0,3,) = 4  |  val_1 *= val_2 = 28, val = 52
+Weight matrix(1,0,) = 4  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 24, val = 76
+Weight matrix(1,1,) = 3  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 21, val = 97
+Weight matrix(1,2,) = 8  |  Input matrix(0,1,3,) = 8  |  val_1 *= val_2 = 64, val = 161
+Weight matrix(2,0,) = 5  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 50, val = 211
+Weight matrix(2,1,) = 6  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 66, val = 277
+Weight matrix(2,2,) = 1  |  Input matrix(0,2,3,) = 12  |  val_1 *= val_2 = 12, val = 289
+Output matrix(,0,1,2) = 289
+it_proc_tensor_conv2d_b called - 7, indices1[0] = 0, indices1[1] = 1, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(0,0,2,) = 3  |  val_1 *= val_2 = 27, val = 27
+Weight matrix(0,1,) = 2  |  Input matrix(0,0,3,) = 4  |  val_1 *= val_2 = 8, val = 35
+Weight matrix(0,2,) = 7  |  Input matrix(0,0,4,) = 5  |  val_1 *= val_2 = 35, val = 70
+Weight matrix(1,0,) = 4  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 28, val = 98
+Weight matrix(1,1,) = 3  |  Input matrix(0,1,3,) = 8  |  val_1 *= val_2 = 24, val = 122
+Weight matrix(1,2,) = 8  |  Input matrix(0,1,4,) = 9  |  val_1 *= val_2 = 72, val = 194
+Weight matrix(2,0,) = 5  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 55, val = 249
+Weight matrix(2,1,) = 6  |  Input matrix(0,2,3,) = 12  |  val_1 *= val_2 = 72, val = 321
+Weight matrix(2,2,) = 1  |  Input matrix(0,2,4,) = 13  |  val_1 *= val_2 = 13, val = 334
+Output matrix(,0,1,3) = 334
+it_proc_tensor_conv2d_b called - 8, indices1[0] = 0, indices1[1] = 2, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(0,1,-1,) = 4  |  val_1 *= val_2 = 36, val = 36
+Weight matrix(0,1,) = 2  |  Input matrix(0,1,0,) = 5  |  val_1 *= val_2 = 10, val = 46
+Weight matrix(0,2,) = 7  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 42, val = 88
+Weight matrix(1,0,) = 4  |  Input matrix(0,2,-1,) = 8  |  val_1 *= val_2 = 32, val = 120
+Weight matrix(1,1,) = 3  |  Input matrix(0,2,0,) = 9  |  val_1 *= val_2 = 27, val = 147
+Weight matrix(1,2,) = 8  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 80, val = 227
+Weight matrix(2,0,) = 5  |  Input matrix(0,3,-1,) = 12  |  val_1 *= val_2 = 60, val = 287
+Weight matrix(2,1,) = 6  |  Input matrix(0,3,0,) = 13  |  val_1 *= val_2 = 78, val = 365
+Weight matrix(2,2,) = 1  |  Input matrix(0,3,1,) = 14  |  val_1 *= val_2 = 14, val = 379
+Output matrix(,0,2,0) = 379
+it_proc_tensor_conv2d_b called - 9, indices1[0] = 0, indices1[1] = 2, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(0,1,0,) = 5  |  val_1 *= val_2 = 45, val = 45
+Weight matrix(0,1,) = 2  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 12, val = 57
+Weight matrix(0,2,) = 7  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 49, val = 106
+Weight matrix(1,0,) = 4  |  Input matrix(0,2,0,) = 9  |  val_1 *= val_2 = 36, val = 142
+Weight matrix(1,1,) = 3  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 30, val = 172
+Weight matrix(1,2,) = 8  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 88, val = 260
+Weight matrix(2,0,) = 5  |  Input matrix(0,3,0,) = 13  |  val_1 *= val_2 = 65, val = 325
+Weight matrix(2,1,) = 6  |  Input matrix(0,3,1,) = 14  |  val_1 *= val_2 = 84, val = 409
+Weight matrix(2,2,) = 1  |  Input matrix(0,3,2,) = 15  |  val_1 *= val_2 = 15, val = 424
+Output matrix(,0,2,1) = 424
+it_proc_tensor_conv2d_b called - 10, indices1[0] = 0, indices1[1] = 2, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(0,1,1,) = 6  |  val_1 *= val_2 = 54, val = 54
+Weight matrix(0,1,) = 2  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 14, val = 68
+Weight matrix(0,2,) = 7  |  Input matrix(0,1,3,) = 8  |  val_1 *= val_2 = 56, val = 124
+Weight matrix(1,0,) = 4  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 40, val = 164
+Weight matrix(1,1,) = 3  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 33, val = 197
+Weight matrix(1,2,) = 8  |  Input matrix(0,2,3,) = 12  |  val_1 *= val_2 = 96, val = 293
+Weight matrix(2,0,) = 5  |  Input matrix(0,3,1,) = 14  |  val_1 *= val_2 = 70, val = 363
+Weight matrix(2,1,) = 6  |  Input matrix(0,3,2,) = 15  |  val_1 *= val_2 = 90, val = 453
+Weight matrix(2,2,) = 1  |  Input matrix(0,3,3,) = 16  |  val_1 *= val_2 = 16, val = 469
+Output matrix(,0,2,2) = 469
+it_proc_tensor_conv2d_b called - 11, indices1[0] = 0, indices1[1] = 2, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(0,1,2,) = 7  |  val_1 *= val_2 = 63, val = 63
+Weight matrix(0,1,) = 2  |  Input matrix(0,1,3,) = 8  |  val_1 *= val_2 = 16, val = 79
+Weight matrix(0,2,) = 7  |  Input matrix(0,1,4,) = 9  |  val_1 *= val_2 = 63, val = 142
+Weight matrix(1,0,) = 4  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 44, val = 186
+Weight matrix(1,1,) = 3  |  Input matrix(0,2,3,) = 12  |  val_1 *= val_2 = 36, val = 222
+Weight matrix(1,2,) = 8  |  Input matrix(0,2,4,) = 13  |  val_1 *= val_2 = 104, val = 326
+Weight matrix(2,0,) = 5  |  Input matrix(0,3,2,) = 15  |  val_1 *= val_2 = 75, val = 401
+Weight matrix(2,1,) = 6  |  Input matrix(0,3,3,) = 16  |  val_1 *= val_2 = 96, val = 497
+Weight matrix(2,2,) = 1  |  Input matrix(0,3,4,) = 21  |  val_1 *= val_2 = 21, val = 518
+Output matrix(,0,2,3) = 518
+it_proc_tensor_conv2d_b called - 12, indices1[0] = 0, indices1[1] = 3, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(0,2,-1,) = 8  |  val_1 *= val_2 = 72, val = 72
+Weight matrix(0,1,) = 2  |  Input matrix(0,2,0,) = 9  |  val_1 *= val_2 = 18, val = 90
+Weight matrix(0,2,) = 7  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 70, val = 160
+Weight matrix(1,0,) = 4  |  Input matrix(0,3,-1,) = 12  |  val_1 *= val_2 = 48, val = 208
+Weight matrix(1,1,) = 3  |  Input matrix(0,3,0,) = 13  |  val_1 *= val_2 = 39, val = 247
+Weight matrix(1,2,) = 8  |  Input matrix(0,3,1,) = 14  |  val_1 *= val_2 = 112, val = 359
+Weight matrix(2,0,) = 5  |  Input matrix(0,4,-1,) = 16  |  val_1 *= val_2 = 80, val = 439
+Weight matrix(2,1,) = 6  |  Input matrix(0,4,0,) = 21  |  val_1 *= val_2 = 126, val = 565
+Weight matrix(2,2,) = 1  |  Input matrix(0,4,1,) = 22  |  val_1 *= val_2 = 22, val = 587
+Output matrix(,0,3,0) = 587
+it_proc_tensor_conv2d_b called - 13, indices1[0] = 0, indices1[1] = 3, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(0,2,0,) = 9  |  val_1 *= val_2 = 81, val = 81
+Weight matrix(0,1,) = 2  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 20, val = 101
+Weight matrix(0,2,) = 7  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 77, val = 178
+Weight matrix(1,0,) = 4  |  Input matrix(0,3,0,) = 13  |  val_1 *= val_2 = 52, val = 230
+Weight matrix(1,1,) = 3  |  Input matrix(0,3,1,) = 14  |  val_1 *= val_2 = 42, val = 272
+Weight matrix(1,2,) = 8  |  Input matrix(0,3,2,) = 15  |  val_1 *= val_2 = 120, val = 392
+Weight matrix(2,0,) = 5  |  Input matrix(0,4,0,) = 21  |  val_1 *= val_2 = 105, val = 497
+Weight matrix(2,1,) = 6  |  Input matrix(0,4,1,) = 22  |  val_1 *= val_2 = 132, val = 629
+Weight matrix(2,2,) = 1  |  Input matrix(0,4,2,) = 23  |  val_1 *= val_2 = 23, val = 652
+Output matrix(,0,3,1) = 652
+it_proc_tensor_conv2d_b called - 14, indices1[0] = 0, indices1[1] = 3, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(0,2,1,) = 10  |  val_1 *= val_2 = 90, val = 90
+Weight matrix(0,1,) = 2  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 22, val = 112
+Weight matrix(0,2,) = 7  |  Input matrix(0,2,3,) = 12  |  val_1 *= val_2 = 84, val = 196
+Weight matrix(1,0,) = 4  |  Input matrix(0,3,1,) = 14  |  val_1 *= val_2 = 56, val = 252
+Weight matrix(1,1,) = 3  |  Input matrix(0,3,2,) = 15  |  val_1 *= val_2 = 45, val = 297
+Weight matrix(1,2,) = 8  |  Input matrix(0,3,3,) = 16  |  val_1 *= val_2 = 128, val = 425
+Weight matrix(2,0,) = 5  |  Input matrix(0,4,1,) = 22  |  val_1 *= val_2 = 110, val = 535
+Weight matrix(2,1,) = 6  |  Input matrix(0,4,2,) = 23  |  val_1 *= val_2 = 138, val = 673
+Weight matrix(2,2,) = 1  |  Input matrix(0,4,3,) = 24  |  val_1 *= val_2 = 24, val = 697
+Output matrix(,0,3,2) = 697
+it_proc_tensor_conv2d_b called - 15, indices1[0] = 0, indices1[1] = 3, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(0,2,2,) = 11  |  val_1 *= val_2 = 99, val = 99
+Weight matrix(0,1,) = 2  |  Input matrix(0,2,3,) = 12  |  val_1 *= val_2 = 24, val = 123
+Weight matrix(0,2,) = 7  |  Input matrix(0,2,4,) = 13  |  val_1 *= val_2 = 91, val = 214
+Weight matrix(1,0,) = 4  |  Input matrix(0,3,2,) = 15  |  val_1 *= val_2 = 60, val = 274
+Weight matrix(1,1,) = 3  |  Input matrix(0,3,3,) = 16  |  val_1 *= val_2 = 48, val = 322
+Weight matrix(1,2,) = 8  |  Input matrix(0,3,4,) = 21  |  val_1 *= val_2 = 168, val = 490
+Weight matrix(2,0,) = 5  |  Input matrix(0,4,2,) = 23  |  val_1 *= val_2 = 115, val = 605
+Weight matrix(2,1,) = 6  |  Input matrix(0,4,3,) = 24  |  val_1 *= val_2 = 144, val = 749
+Weight matrix(2,2,) = 1  |  Input matrix(0,4,4,) = 25  |  val_1 *= val_2 = 25, val = 774
+Output matrix(,0,3,3) = 774
+it_proc_tensor_conv2d_a called - 1
+      m =4, n = 4, u = 3, v = 3
+it_proc_tensor_conv2d_b called - 16, indices1[0] = 1, indices1[1] = 0, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(1,-1,-1,) = 12  |  val_1 *= val_2 = 108, val = 108
+Weight matrix(0,1,) = 2  |  Input matrix(1,-1,0,) = 13  |  val_1 *= val_2 = 26, val = 134
+Weight matrix(0,2,) = 7  |  Input matrix(1,-1,1,) = 14  |  val_1 *= val_2 = 98, val = 232
+Weight matrix(1,0,) = 4  |  Input matrix(1,0,-1,) = 16  |  val_1 *= val_2 = 64, val = 296
+Weight matrix(1,1,) = 3  |  Input matrix(1,0,0,) = 21  |  val_1 *= val_2 = 63, val = 359
+Weight matrix(1,2,) = 8  |  Input matrix(1,0,1,) = 22  |  val_1 *= val_2 = 176, val = 535
+Weight matrix(2,0,) = 5  |  Input matrix(1,1,-1,) = 24  |  val_1 *= val_2 = 120, val = 655
+Weight matrix(2,1,) = 6  |  Input matrix(1,1,0,) = 25  |  val_1 *= val_2 = 150, val = 805
+Weight matrix(2,2,) = 1  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 26, val = 831
+Output matrix(,1,0,0) = 831
+it_proc_tensor_conv2d_b called - 17, indices1[0] = 1, indices1[1] = 0, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(1,-1,0,) = 13  |  val_1 *= val_2 = 117, val = 117
+Weight matrix(0,1,) = 2  |  Input matrix(1,-1,1,) = 14  |  val_1 *= val_2 = 28, val = 145
+Weight matrix(0,2,) = 7  |  Input matrix(1,-1,2,) = 15  |  val_1 *= val_2 = 105, val = 250
+Weight matrix(1,0,) = 4  |  Input matrix(1,0,0,) = 21  |  val_1 *= val_2 = 84, val = 334
+Weight matrix(1,1,) = 3  |  Input matrix(1,0,1,) = 22  |  val_1 *= val_2 = 66, val = 400
+Weight matrix(1,2,) = 8  |  Input matrix(1,0,2,) = 23  |  val_1 *= val_2 = 184, val = 584
+Weight matrix(2,0,) = 5  |  Input matrix(1,1,0,) = 25  |  val_1 *= val_2 = 125, val = 709
+Weight matrix(2,1,) = 6  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 156, val = 865
+Weight matrix(2,2,) = 1  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 27, val = 892
+Output matrix(,1,0,1) = 892
+it_proc_tensor_conv2d_b called - 18, indices1[0] = 1, indices1[1] = 0, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(1,-1,1,) = 14  |  val_1 *= val_2 = 126, val = 126
+Weight matrix(0,1,) = 2  |  Input matrix(1,-1,2,) = 15  |  val_1 *= val_2 = 30, val = 156
+Weight matrix(0,2,) = 7  |  Input matrix(1,-1,3,) = 16  |  val_1 *= val_2 = 112, val = 268
+Weight matrix(1,0,) = 4  |  Input matrix(1,0,1,) = 22  |  val_1 *= val_2 = 88, val = 356
+Weight matrix(1,1,) = 3  |  Input matrix(1,0,2,) = 23  |  val_1 *= val_2 = 69, val = 425
+Weight matrix(1,2,) = 8  |  Input matrix(1,0,3,) = 24  |  val_1 *= val_2 = 192, val = 617
+Weight matrix(2,0,) = 5  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 130, val = 747
+Weight matrix(2,1,) = 6  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 162, val = 909
+Weight matrix(2,2,) = 1  |  Input matrix(1,1,3,) = 28  |  val_1 *= val_2 = 28, val = 937
+Output matrix(,1,0,2) = 937
+it_proc_tensor_conv2d_b called - 19, indices1[0] = 1, indices1[1] = 0, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(1,-1,2,) = 15  |  val_1 *= val_2 = 135, val = 135
+Weight matrix(0,1,) = 2  |  Input matrix(1,-1,3,) = 16  |  val_1 *= val_2 = 32, val = 167
+Weight matrix(0,2,) = 7  |  Input matrix(1,-1,4,) = 21  |  val_1 *= val_2 = 147, val = 314
+Weight matrix(1,0,) = 4  |  Input matrix(1,0,2,) = 23  |  val_1 *= val_2 = 92, val = 406
+Weight matrix(1,1,) = 3  |  Input matrix(1,0,3,) = 24  |  val_1 *= val_2 = 72, val = 478
+Weight matrix(1,2,) = 8  |  Input matrix(1,0,4,) = 25  |  val_1 *= val_2 = 200, val = 678
+Weight matrix(2,0,) = 5  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 135, val = 813
+Weight matrix(2,1,) = 6  |  Input matrix(1,1,3,) = 28  |  val_1 *= val_2 = 168, val = 981
+Weight matrix(2,2,) = 1  |  Input matrix(1,1,4,) = 29  |  val_1 *= val_2 = 29, val = 1010
+Output matrix(,1,0,3) = 1010
+it_proc_tensor_conv2d_b called - 20, indices1[0] = 1, indices1[1] = 1, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(1,0,-1,) = 16  |  val_1 *= val_2 = 144, val = 144
+Weight matrix(0,1,) = 2  |  Input matrix(1,0,0,) = 21  |  val_1 *= val_2 = 42, val = 186
+Weight matrix(0,2,) = 7  |  Input matrix(1,0,1,) = 22  |  val_1 *= val_2 = 154, val = 340
+Weight matrix(1,0,) = 4  |  Input matrix(1,1,-1,) = 24  |  val_1 *= val_2 = 96, val = 436
+Weight matrix(1,1,) = 3  |  Input matrix(1,1,0,) = 25  |  val_1 *= val_2 = 75, val = 511
+Weight matrix(1,2,) = 8  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 208, val = 719
+Weight matrix(2,0,) = 5  |  Input matrix(1,2,-1,) = 28  |  val_1 *= val_2 = 140, val = 859
+Weight matrix(2,1,) = 6  |  Input matrix(1,2,0,) = 29  |  val_1 *= val_2 = 174, val = 1033
+Weight matrix(2,2,) = 1  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 30, val = 1063
+Output matrix(,1,1,0) = 1063
+it_proc_tensor_conv2d_b called - 21, indices1[0] = 1, indices1[1] = 1, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(1,0,0,) = 21  |  val_1 *= val_2 = 189, val = 189
+Weight matrix(0,1,) = 2  |  Input matrix(1,0,1,) = 22  |  val_1 *= val_2 = 44, val = 233
+Weight matrix(0,2,) = 7  |  Input matrix(1,0,2,) = 23  |  val_1 *= val_2 = 161, val = 394
+Weight matrix(1,0,) = 4  |  Input matrix(1,1,0,) = 25  |  val_1 *= val_2 = 100, val = 494
+Weight matrix(1,1,) = 3  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 78, val = 572
+Weight matrix(1,2,) = 8  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 216, val = 788
+Weight matrix(2,0,) = 5  |  Input matrix(1,2,0,) = 29  |  val_1 *= val_2 = 145, val = 933
+Weight matrix(2,1,) = 6  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 180, val = 1113
+Weight matrix(2,2,) = 1  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 31, val = 1144
+Output matrix(,1,1,1) = 1144
+it_proc_tensor_conv2d_b called - 22, indices1[0] = 1, indices1[1] = 1, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(1,0,1,) = 22  |  val_1 *= val_2 = 198, val = 198
+Weight matrix(0,1,) = 2  |  Input matrix(1,0,2,) = 23  |  val_1 *= val_2 = 46, val = 244
+Weight matrix(0,2,) = 7  |  Input matrix(1,0,3,) = 24  |  val_1 *= val_2 = 168, val = 412
+Weight matrix(1,0,) = 4  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 104, val = 516
+Weight matrix(1,1,) = 3  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 81, val = 597
+Weight matrix(1,2,) = 8  |  Input matrix(1,1,3,) = 28  |  val_1 *= val_2 = 224, val = 821
+Weight matrix(2,0,) = 5  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 150, val = 971
+Weight matrix(2,1,) = 6  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 186, val = 1157
+Weight matrix(2,2,) = 1  |  Input matrix(1,2,3,) = 32  |  val_1 *= val_2 = 32, val = 1189
+Output matrix(,1,1,2) = 1189
+it_proc_tensor_conv2d_b called - 23, indices1[0] = 1, indices1[1] = 1, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(1,0,2,) = 23  |  val_1 *= val_2 = 207, val = 207
+Weight matrix(0,1,) = 2  |  Input matrix(1,0,3,) = 24  |  val_1 *= val_2 = 48, val = 255
+Weight matrix(0,2,) = 7  |  Input matrix(1,0,4,) = 25  |  val_1 *= val_2 = 175, val = 430
+Weight matrix(1,0,) = 4  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 108, val = 538
+Weight matrix(1,1,) = 3  |  Input matrix(1,1,3,) = 28  |  val_1 *= val_2 = 84, val = 622
+Weight matrix(1,2,) = 8  |  Input matrix(1,1,4,) = 29  |  val_1 *= val_2 = 232, val = 854
+Weight matrix(2,0,) = 5  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 155, val = 1009
+Weight matrix(2,1,) = 6  |  Input matrix(1,2,3,) = 32  |  val_1 *= val_2 = 192, val = 1201
+Weight matrix(2,2,) = 1  |  Input matrix(1,2,4,) = 33  |  val_1 *= val_2 = 33, val = 1234
+Output matrix(,1,1,3) = 1234
+it_proc_tensor_conv2d_b called - 24, indices1[0] = 1, indices1[1] = 2, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(1,1,-1,) = 24  |  val_1 *= val_2 = 216, val = 216
+Weight matrix(0,1,) = 2  |  Input matrix(1,1,0,) = 25  |  val_1 *= val_2 = 50, val = 266
+Weight matrix(0,2,) = 7  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 182, val = 448
+Weight matrix(1,0,) = 4  |  Input matrix(1,2,-1,) = 28  |  val_1 *= val_2 = 112, val = 560
+Weight matrix(1,1,) = 3  |  Input matrix(1,2,0,) = 29  |  val_1 *= val_2 = 87, val = 647
+Weight matrix(1,2,) = 8  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 240, val = 887
+Weight matrix(2,0,) = 5  |  Input matrix(1,3,-1,) = 32  |  val_1 *= val_2 = 160, val = 1047
+Weight matrix(2,1,) = 6  |  Input matrix(1,3,0,) = 33  |  val_1 *= val_2 = 198, val = 1245
+Weight matrix(2,2,) = 1  |  Input matrix(1,3,1,) = 34  |  val_1 *= val_2 = 34, val = 1279
+Output matrix(,1,2,0) = 1279
+it_proc_tensor_conv2d_b called - 25, indices1[0] = 1, indices1[1] = 2, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(1,1,0,) = 25  |  val_1 *= val_2 = 225, val = 225
+Weight matrix(0,1,) = 2  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 52, val = 277
+Weight matrix(0,2,) = 7  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 189, val = 466
+Weight matrix(1,0,) = 4  |  Input matrix(1,2,0,) = 29  |  val_1 *= val_2 = 116, val = 582
+Weight matrix(1,1,) = 3  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 90, val = 672
+Weight matrix(1,2,) = 8  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 248, val = 920
+Weight matrix(2,0,) = 5  |  Input matrix(1,3,0,) = 33  |  val_1 *= val_2 = 165, val = 1085
+Weight matrix(2,1,) = 6  |  Input matrix(1,3,1,) = 34  |  val_1 *= val_2 = 204, val = 1289
+Weight matrix(2,2,) = 1  |  Input matrix(1,3,2,) = 35  |  val_1 *= val_2 = 35, val = 1324
+Output matrix(,1,2,1) = 1324
+it_proc_tensor_conv2d_b called - 26, indices1[0] = 1, indices1[1] = 2, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(1,1,1,) = 26  |  val_1 *= val_2 = 234, val = 234
+Weight matrix(0,1,) = 2  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 54, val = 288
+Weight matrix(0,2,) = 7  |  Input matrix(1,1,3,) = 28  |  val_1 *= val_2 = 196, val = 484
+Weight matrix(1,0,) = 4  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 120, val = 604
+Weight matrix(1,1,) = 3  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 93, val = 697
+Weight matrix(1,2,) = 8  |  Input matrix(1,2,3,) = 32  |  val_1 *= val_2 = 256, val = 953
+Weight matrix(2,0,) = 5  |  Input matrix(1,3,1,) = 34  |  val_1 *= val_2 = 170, val = 1123
+Weight matrix(2,1,) = 6  |  Input matrix(1,3,2,) = 35  |  val_1 *= val_2 = 210, val = 1333
+Weight matrix(2,2,) = 1  |  Input matrix(1,3,3,) = 36  |  val_1 *= val_2 = 36, val = 1369
+Output matrix(,1,2,2) = 1369
+it_proc_tensor_conv2d_b called - 27, indices1[0] = 1, indices1[1] = 2, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(1,1,2,) = 27  |  val_1 *= val_2 = 243, val = 243
+Weight matrix(0,1,) = 2  |  Input matrix(1,1,3,) = 28  |  val_1 *= val_2 = 56, val = 299
+Weight matrix(0,2,) = 7  |  Input matrix(1,1,4,) = 29  |  val_1 *= val_2 = 203, val = 502
+Weight matrix(1,0,) = 4  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 124, val = 626
+Weight matrix(1,1,) = 3  |  Input matrix(1,2,3,) = 32  |  val_1 *= val_2 = 96, val = 722
+Weight matrix(1,2,) = 8  |  Input matrix(1,2,4,) = 33  |  val_1 *= val_2 = 264, val = 986
+Weight matrix(2,0,) = 5  |  Input matrix(1,3,2,) = 35  |  val_1 *= val_2 = 175, val = 1161
+Weight matrix(2,1,) = 6  |  Input matrix(1,3,3,) = 36  |  val_1 *= val_2 = 216, val = 1377
+Weight matrix(2,2,) = 1  |  Input matrix(1,3,4,) = 41  |  val_1 *= val_2 = 41, val = 1418
+Output matrix(,1,2,3) = 1418
+it_proc_tensor_conv2d_b called - 28, indices1[0] = 1, indices1[1] = 3, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(1,2,-1,) = 28  |  val_1 *= val_2 = 252, val = 252
+Weight matrix(0,1,) = 2  |  Input matrix(1,2,0,) = 29  |  val_1 *= val_2 = 58, val = 310
+Weight matrix(0,2,) = 7  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 210, val = 520
+Weight matrix(1,0,) = 4  |  Input matrix(1,3,-1,) = 32  |  val_1 *= val_2 = 128, val = 648
+Weight matrix(1,1,) = 3  |  Input matrix(1,3,0,) = 33  |  val_1 *= val_2 = 99, val = 747
+Weight matrix(1,2,) = 8  |  Input matrix(1,3,1,) = 34  |  val_1 *= val_2 = 272, val = 1019
+Weight matrix(2,0,) = 5  |  Input matrix(1,4,-1,) = 36  |  val_1 *= val_2 = 180, val = 1199
+Weight matrix(2,1,) = 6  |  Input matrix(1,4,0,) = 41  |  val_1 *= val_2 = 246, val = 1445
+Weight matrix(2,2,) = 1  |  Input matrix(1,4,1,) = 42  |  val_1 *= val_2 = 42, val = 1487
+Output matrix(,1,3,0) = 1487
+it_proc_tensor_conv2d_b called - 29, indices1[0] = 1, indices1[1] = 3, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(1,2,0,) = 29  |  val_1 *= val_2 = 261, val = 261
+Weight matrix(0,1,) = 2  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 60, val = 321
+Weight matrix(0,2,) = 7  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 217, val = 538
+Weight matrix(1,0,) = 4  |  Input matrix(1,3,0,) = 33  |  val_1 *= val_2 = 132, val = 670
+Weight matrix(1,1,) = 3  |  Input matrix(1,3,1,) = 34  |  val_1 *= val_2 = 102, val = 772
+Weight matrix(1,2,) = 8  |  Input matrix(1,3,2,) = 35  |  val_1 *= val_2 = 280, val = 1052
+Weight matrix(2,0,) = 5  |  Input matrix(1,4,0,) = 41  |  val_1 *= val_2 = 205, val = 1257
+Weight matrix(2,1,) = 6  |  Input matrix(1,4,1,) = 42  |  val_1 *= val_2 = 252, val = 1509
+Weight matrix(2,2,) = 1  |  Input matrix(1,4,2,) = 43  |  val_1 *= val_2 = 43, val = 1552
+Output matrix(,1,3,1) = 1552
+it_proc_tensor_conv2d_b called - 30, indices1[0] = 1, indices1[1] = 3, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(1,2,1,) = 30  |  val_1 *= val_2 = 270, val = 270
+Weight matrix(0,1,) = 2  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 62, val = 332
+Weight matrix(0,2,) = 7  |  Input matrix(1,2,3,) = 32  |  val_1 *= val_2 = 224, val = 556
+Weight matrix(1,0,) = 4  |  Input matrix(1,3,1,) = 34  |  val_1 *= val_2 = 136, val = 692
+Weight matrix(1,1,) = 3  |  Input matrix(1,3,2,) = 35  |  val_1 *= val_2 = 105, val = 797
+Weight matrix(1,2,) = 8  |  Input matrix(1,3,3,) = 36  |  val_1 *= val_2 = 288, val = 1085
+Weight matrix(2,0,) = 5  |  Input matrix(1,4,1,) = 42  |  val_1 *= val_2 = 210, val = 1295
+Weight matrix(2,1,) = 6  |  Input matrix(1,4,2,) = 43  |  val_1 *= val_2 = 258, val = 1553
+Weight matrix(2,2,) = 1  |  Input matrix(1,4,3,) = 44  |  val_1 *= val_2 = 44, val = 1597
+Output matrix(,1,3,2) = 1597
+it_proc_tensor_conv2d_b called - 31, indices1[0] = 1, indices1[1] = 3, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(1,2,2,) = 31  |  val_1 *= val_2 = 279, val = 279
+Weight matrix(0,1,) = 2  |  Input matrix(1,2,3,) = 32  |  val_1 *= val_2 = 64, val = 343
+Weight matrix(0,2,) = 7  |  Input matrix(1,2,4,) = 33  |  val_1 *= val_2 = 231, val = 574
+Weight matrix(1,0,) = 4  |  Input matrix(1,3,2,) = 35  |  val_1 *= val_2 = 140, val = 714
+Weight matrix(1,1,) = 3  |  Input matrix(1,3,3,) = 36  |  val_1 *= val_2 = 108, val = 822
+Weight matrix(1,2,) = 8  |  Input matrix(1,3,4,) = 41  |  val_1 *= val_2 = 328, val = 1150
+Weight matrix(2,0,) = 5  |  Input matrix(1,4,2,) = 43  |  val_1 *= val_2 = 215, val = 1365
+Weight matrix(2,1,) = 6  |  Input matrix(1,4,3,) = 44  |  val_1 *= val_2 = 264, val = 1629
+Weight matrix(2,2,) = 1  |  Input matrix(1,4,4,) = 45  |  val_1 *= val_2 = 45, val = 1674
+Output matrix(,1,3,3) = 1674
+it_proc_tensor_conv2d_a called - 2
+      m =4, n = 4, u = 3, v = 3
+it_proc_tensor_conv2d_b called - 32, indices1[0] = 2, indices1[1] = 0, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(2,-1,-1,) = 32  |  val_1 *= val_2 = 288, val = 288
+Weight matrix(0,1,) = 2  |  Input matrix(2,-1,0,) = 33  |  val_1 *= val_2 = 66, val = 354
+Weight matrix(0,2,) = 7  |  Input matrix(2,-1,1,) = 34  |  val_1 *= val_2 = 238, val = 592
+Weight matrix(1,0,) = 4  |  Input matrix(2,0,-1,) = 36  |  val_1 *= val_2 = 144, val = 736
+Weight matrix(1,1,) = 3  |  Input matrix(2,0,0,) = 41  |  val_1 *= val_2 = 123, val = 859
+Weight matrix(1,2,) = 8  |  Input matrix(2,0,1,) = 42  |  val_1 *= val_2 = 336, val = 1195
+Weight matrix(2,0,) = 5  |  Input matrix(2,1,-1,) = 44  |  val_1 *= val_2 = 220, val = 1415
+Weight matrix(2,1,) = 6  |  Input matrix(2,1,0,) = 45  |  val_1 *= val_2 = 270, val = 1685
+Weight matrix(2,2,) = 1  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 46, val = 1731
+Output matrix(,2,0,0) = 1731
+it_proc_tensor_conv2d_b called - 33, indices1[0] = 2, indices1[1] = 0, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(2,-1,0,) = 33  |  val_1 *= val_2 = 297, val = 297
+Weight matrix(0,1,) = 2  |  Input matrix(2,-1,1,) = 34  |  val_1 *= val_2 = 68, val = 365
+Weight matrix(0,2,) = 7  |  Input matrix(2,-1,2,) = 35  |  val_1 *= val_2 = 245, val = 610
+Weight matrix(1,0,) = 4  |  Input matrix(2,0,0,) = 41  |  val_1 *= val_2 = 164, val = 774
+Weight matrix(1,1,) = 3  |  Input matrix(2,0,1,) = 42  |  val_1 *= val_2 = 126, val = 900
+Weight matrix(1,2,) = 8  |  Input matrix(2,0,2,) = 43  |  val_1 *= val_2 = 344, val = 1244
+Weight matrix(2,0,) = 5  |  Input matrix(2,1,0,) = 45  |  val_1 *= val_2 = 225, val = 1469
+Weight matrix(2,1,) = 6  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 276, val = 1745
+Weight matrix(2,2,) = 1  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 47, val = 1792
+Output matrix(,2,0,1) = 1792
+it_proc_tensor_conv2d_b called - 34, indices1[0] = 2, indices1[1] = 0, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(2,-1,1,) = 34  |  val_1 *= val_2 = 306, val = 306
+Weight matrix(0,1,) = 2  |  Input matrix(2,-1,2,) = 35  |  val_1 *= val_2 = 70, val = 376
+Weight matrix(0,2,) = 7  |  Input matrix(2,-1,3,) = 36  |  val_1 *= val_2 = 252, val = 628
+Weight matrix(1,0,) = 4  |  Input matrix(2,0,1,) = 42  |  val_1 *= val_2 = 168, val = 796
+Weight matrix(1,1,) = 3  |  Input matrix(2,0,2,) = 43  |  val_1 *= val_2 = 129, val = 925
+Weight matrix(1,2,) = 8  |  Input matrix(2,0,3,) = 44  |  val_1 *= val_2 = 352, val = 1277
+Weight matrix(2,0,) = 5  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 230, val = 1507
+Weight matrix(2,1,) = 6  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 282, val = 1789
+Weight matrix(2,2,) = 1  |  Input matrix(2,1,3,) = 48  |  val_1 *= val_2 = 48, val = 1837
+Output matrix(,2,0,2) = 1837
+it_proc_tensor_conv2d_b called - 35, indices1[0] = 2, indices1[1] = 0, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(2,-1,2,) = 35  |  val_1 *= val_2 = 315, val = 315
+Weight matrix(0,1,) = 2  |  Input matrix(2,-1,3,) = 36  |  val_1 *= val_2 = 72, val = 387
+Weight matrix(0,2,) = 7  |  Input matrix(2,-1,4,) = 41  |  val_1 *= val_2 = 287, val = 674
+Weight matrix(1,0,) = 4  |  Input matrix(2,0,2,) = 43  |  val_1 *= val_2 = 172, val = 846
+Weight matrix(1,1,) = 3  |  Input matrix(2,0,3,) = 44  |  val_1 *= val_2 = 132, val = 978
+Weight matrix(1,2,) = 8  |  Input matrix(2,0,4,) = 45  |  val_1 *= val_2 = 360, val = 1338
+Weight matrix(2,0,) = 5  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 235, val = 1573
+Weight matrix(2,1,) = 6  |  Input matrix(2,1,3,) = 48  |  val_1 *= val_2 = 288, val = 1861
+Weight matrix(2,2,) = 1  |  Input matrix(2,1,4,) = 49  |  val_1 *= val_2 = 49, val = 1910
+Output matrix(,2,0,3) = 1910
+it_proc_tensor_conv2d_b called - 36, indices1[0] = 2, indices1[1] = 1, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(2,0,-1,) = 36  |  val_1 *= val_2 = 324, val = 324
+Weight matrix(0,1,) = 2  |  Input matrix(2,0,0,) = 41  |  val_1 *= val_2 = 82, val = 406
+Weight matrix(0,2,) = 7  |  Input matrix(2,0,1,) = 42  |  val_1 *= val_2 = 294, val = 700
+Weight matrix(1,0,) = 4  |  Input matrix(2,1,-1,) = 44  |  val_1 *= val_2 = 176, val = 876
+Weight matrix(1,1,) = 3  |  Input matrix(2,1,0,) = 45  |  val_1 *= val_2 = 135, val = 1011
+Weight matrix(1,2,) = 8  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 368, val = 1379
+Weight matrix(2,0,) = 5  |  Input matrix(2,2,-1,) = 48  |  val_1 *= val_2 = 240, val = 1619
+Weight matrix(2,1,) = 6  |  Input matrix(2,2,0,) = 49  |  val_1 *= val_2 = 294, val = 1913
+Weight matrix(2,2,) = 1  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 50, val = 1963
+Output matrix(,2,1,0) = 1963
+it_proc_tensor_conv2d_b called - 37, indices1[0] = 2, indices1[1] = 1, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(2,0,0,) = 41  |  val_1 *= val_2 = 369, val = 369
+Weight matrix(0,1,) = 2  |  Input matrix(2,0,1,) = 42  |  val_1 *= val_2 = 84, val = 453
+Weight matrix(0,2,) = 7  |  Input matrix(2,0,2,) = 43  |  val_1 *= val_2 = 301, val = 754
+Weight matrix(1,0,) = 4  |  Input matrix(2,1,0,) = 45  |  val_1 *= val_2 = 180, val = 934
+Weight matrix(1,1,) = 3  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 138, val = 1072
+Weight matrix(1,2,) = 8  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 376, val = 1448
+Weight matrix(2,0,) = 5  |  Input matrix(2,2,0,) = 49  |  val_1 *= val_2 = 245, val = 1693
+Weight matrix(2,1,) = 6  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 300, val = 1993
+Weight matrix(2,2,) = 1  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 51, val = 2044
+Output matrix(,2,1,1) = 2044
+it_proc_tensor_conv2d_b called - 38, indices1[0] = 2, indices1[1] = 1, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(2,0,1,) = 42  |  val_1 *= val_2 = 378, val = 378
+Weight matrix(0,1,) = 2  |  Input matrix(2,0,2,) = 43  |  val_1 *= val_2 = 86, val = 464
+Weight matrix(0,2,) = 7  |  Input matrix(2,0,3,) = 44  |  val_1 *= val_2 = 308, val = 772
+Weight matrix(1,0,) = 4  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 184, val = 956
+Weight matrix(1,1,) = 3  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 141, val = 1097
+Weight matrix(1,2,) = 8  |  Input matrix(2,1,3,) = 48  |  val_1 *= val_2 = 384, val = 1481
+Weight matrix(2,0,) = 5  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 250, val = 1731
+Weight matrix(2,1,) = 6  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 306, val = 2037
+Weight matrix(2,2,) = 1  |  Input matrix(2,2,3,) = 52  |  val_1 *= val_2 = 52, val = 2089
+Output matrix(,2,1,2) = 2089
+it_proc_tensor_conv2d_b called - 39, indices1[0] = 2, indices1[1] = 1, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(2,0,2,) = 43  |  val_1 *= val_2 = 387, val = 387
+Weight matrix(0,1,) = 2  |  Input matrix(2,0,3,) = 44  |  val_1 *= val_2 = 88, val = 475
+Weight matrix(0,2,) = 7  |  Input matrix(2,0,4,) = 45  |  val_1 *= val_2 = 315, val = 790
+Weight matrix(1,0,) = 4  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 188, val = 978
+Weight matrix(1,1,) = 3  |  Input matrix(2,1,3,) = 48  |  val_1 *= val_2 = 144, val = 1122
+Weight matrix(1,2,) = 8  |  Input matrix(2,1,4,) = 49  |  val_1 *= val_2 = 392, val = 1514
+Weight matrix(2,0,) = 5  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 255, val = 1769
+Weight matrix(2,1,) = 6  |  Input matrix(2,2,3,) = 52  |  val_1 *= val_2 = 312, val = 2081
+Weight matrix(2,2,) = 1  |  Input matrix(2,2,4,) = 53  |  val_1 *= val_2 = 53, val = 2134
+Output matrix(,2,1,3) = 2134
+it_proc_tensor_conv2d_b called - 40, indices1[0] = 2, indices1[1] = 2, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(2,1,-1,) = 44  |  val_1 *= val_2 = 396, val = 396
+Weight matrix(0,1,) = 2  |  Input matrix(2,1,0,) = 45  |  val_1 *= val_2 = 90, val = 486
+Weight matrix(0,2,) = 7  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 322, val = 808
+Weight matrix(1,0,) = 4  |  Input matrix(2,2,-1,) = 48  |  val_1 *= val_2 = 192, val = 1000
+Weight matrix(1,1,) = 3  |  Input matrix(2,2,0,) = 49  |  val_1 *= val_2 = 147, val = 1147
+Weight matrix(1,2,) = 8  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 400, val = 1547
+Weight matrix(2,0,) = 5  |  Input matrix(2,3,-1,) = 52  |  val_1 *= val_2 = 260, val = 1807
+Weight matrix(2,1,) = 6  |  Input matrix(2,3,0,) = 53  |  val_1 *= val_2 = 318, val = 2125
+Weight matrix(2,2,) = 1  |  Input matrix(2,3,1,) = 54  |  val_1 *= val_2 = 54, val = 2179
+Output matrix(,2,2,0) = 2179
+it_proc_tensor_conv2d_b called - 41, indices1[0] = 2, indices1[1] = 2, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(2,1,0,) = 45  |  val_1 *= val_2 = 405, val = 405
+Weight matrix(0,1,) = 2  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 92, val = 497
+Weight matrix(0,2,) = 7  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 329, val = 826
+Weight matrix(1,0,) = 4  |  Input matrix(2,2,0,) = 49  |  val_1 *= val_2 = 196, val = 1022
+Weight matrix(1,1,) = 3  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 150, val = 1172
+Weight matrix(1,2,) = 8  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 408, val = 1580
+Weight matrix(2,0,) = 5  |  Input matrix(2,3,0,) = 53  |  val_1 *= val_2 = 265, val = 1845
+Weight matrix(2,1,) = 6  |  Input matrix(2,3,1,) = 54  |  val_1 *= val_2 = 324, val = 2169
+Weight matrix(2,2,) = 1  |  Input matrix(2,3,2,) = 55  |  val_1 *= val_2 = 55, val = 2224
+Output matrix(,2,2,1) = 2224
+it_proc_tensor_conv2d_b called - 42, indices1[0] = 2, indices1[1] = 2, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(2,1,1,) = 46  |  val_1 *= val_2 = 414, val = 414
+Weight matrix(0,1,) = 2  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 94, val = 508
+Weight matrix(0,2,) = 7  |  Input matrix(2,1,3,) = 48  |  val_1 *= val_2 = 336, val = 844
+Weight matrix(1,0,) = 4  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 200, val = 1044
+Weight matrix(1,1,) = 3  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 153, val = 1197
+Weight matrix(1,2,) = 8  |  Input matrix(2,2,3,) = 52  |  val_1 *= val_2 = 416, val = 1613
+Weight matrix(2,0,) = 5  |  Input matrix(2,3,1,) = 54  |  val_1 *= val_2 = 270, val = 1883
+Weight matrix(2,1,) = 6  |  Input matrix(2,3,2,) = 55  |  val_1 *= val_2 = 330, val = 2213
+Weight matrix(2,2,) = 1  |  Input matrix(2,3,3,) = 56  |  val_1 *= val_2 = 56, val = 2269
+Output matrix(,2,2,2) = 2269
+it_proc_tensor_conv2d_b called - 43, indices1[0] = 2, indices1[1] = 2, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(2,1,2,) = 47  |  val_1 *= val_2 = 423, val = 423
+Weight matrix(0,1,) = 2  |  Input matrix(2,1,3,) = 48  |  val_1 *= val_2 = 96, val = 519
+Weight matrix(0,2,) = 7  |  Input matrix(2,1,4,) = 49  |  val_1 *= val_2 = 343, val = 862
+Weight matrix(1,0,) = 4  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 204, val = 1066
+Weight matrix(1,1,) = 3  |  Input matrix(2,2,3,) = 52  |  val_1 *= val_2 = 156, val = 1222
+Weight matrix(1,2,) = 8  |  Input matrix(2,2,4,) = 53  |  val_1 *= val_2 = 424, val = 1646
+Weight matrix(2,0,) = 5  |  Input matrix(2,3,2,) = 55  |  val_1 *= val_2 = 275, val = 1921
+Weight matrix(2,1,) = 6  |  Input matrix(2,3,3,) = 56  |  val_1 *= val_2 = 336, val = 2257
+Weight matrix(2,2,) = 1  |  Input matrix(2,3,4,) = 0  |  val_1 *= val_2 = 0, val = 2257
+Output matrix(,2,2,3) = 2257
+it_proc_tensor_conv2d_b called - 44, indices1[0] = 2, indices1[1] = 3, indices1[2] = 0
+Weight matrix(0,0,) = 9  |  Input matrix(2,2,-1,) = 48  |  val_1 *= val_2 = 432, val = 432
+Weight matrix(0,1,) = 2  |  Input matrix(2,2,0,) = 49  |  val_1 *= val_2 = 98, val = 530
+Weight matrix(0,2,) = 7  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 350, val = 880
+Weight matrix(1,0,) = 4  |  Input matrix(2,3,-1,) = 52  |  val_1 *= val_2 = 208, val = 1088
+Weight matrix(1,1,) = 3  |  Input matrix(2,3,0,) = 53  |  val_1 *= val_2 = 159, val = 1247
+Weight matrix(1,2,) = 8  |  Input matrix(2,3,1,) = 54  |  val_1 *= val_2 = 432, val = 1679
+Weight matrix(2,0,) = 5  |  Input matrix(2,4,-1,) = 56  |  val_1 *= val_2 = 280, val = 1959
+Weight matrix(2,1,) = 6  |  Input matrix(2,4,0,) = 0  |  val_1 *= val_2 = 0, val = 1959
+Weight matrix(2,2,) = 1  |  Input matrix(2,4,1,) = 1025  |  val_1 *= val_2 = 1025, val = 2984
+Output matrix(,2,3,0) = 2984
+it_proc_tensor_conv2d_b called - 45, indices1[0] = 2, indices1[1] = 3, indices1[2] = 1
+Weight matrix(0,0,) = 9  |  Input matrix(2,2,0,) = 49  |  val_1 *= val_2 = 441, val = 441
+Weight matrix(0,1,) = 2  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 100, val = 541
+Weight matrix(0,2,) = 7  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 357, val = 898
+Weight matrix(1,0,) = 4  |  Input matrix(2,3,0,) = 53  |  val_1 *= val_2 = 212, val = 1110
+Weight matrix(1,1,) = 3  |  Input matrix(2,3,1,) = 54  |  val_1 *= val_2 = 162, val = 1272
+Weight matrix(1,2,) = 8  |  Input matrix(2,3,2,) = 55  |  val_1 *= val_2 = 440, val = 1712
+Weight matrix(2,0,) = 5  |  Input matrix(2,4,0,) = 0  |  val_1 *= val_2 = 0, val = 1712
+Weight matrix(2,1,) = 6  |  Input matrix(2,4,1,) = 1025  |  val_1 *= val_2 = 6150, val = 7862
+Weight matrix(2,2,) = 1  |  Input matrix(2,4,2,) = 94342503322480  |  val_1 *= val_2 = 94342503322480, val = 94342503330342
+Output matrix(,2,3,1) = 94342503330342
+it_proc_tensor_conv2d_b called - 46, indices1[0] = 2, indices1[1] = 3, indices1[2] = 2
+Weight matrix(0,0,) = 9  |  Input matrix(2,2,1,) = 50  |  val_1 *= val_2 = 450, val = 450
+Weight matrix(0,1,) = 2  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 102, val = 552
+Weight matrix(0,2,) = 7  |  Input matrix(2,2,3,) = 52  |  val_1 *= val_2 = 364, val = 916
+Weight matrix(1,0,) = 4  |  Input matrix(2,3,1,) = 54  |  val_1 *= val_2 = 216, val = 1132
+Weight matrix(1,1,) = 3  |  Input matrix(2,3,2,) = 55  |  val_1 *= val_2 = 165, val = 1297
+Weight matrix(1,2,) = 8  |  Input matrix(2,3,3,) = 56  |  val_1 *= val_2 = 448, val = 1745
+Weight matrix(2,0,) = 5  |  Input matrix(2,4,1,) = 1025  |  val_1 *= val_2 = 5125, val = 6870
+Weight matrix(2,1,) = 6  |  Input matrix(2,4,2,) = 94342503322480  |  val_1 *= val_2 = 566055019934880, val = 566055019941750
+Weight matrix(2,2,) = 1  |  Input matrix(2,4,3,) = 94342502985744  |  val_1 *= val_2 = 94342502985744, val = 660397522927494
+Output matrix(,2,3,2) = 660397522927494
+it_proc_tensor_conv2d_b called - 47, indices1[0] = 2, indices1[1] = 3, indices1[2] = 3
+Weight matrix(0,0,) = 9  |  Input matrix(2,2,2,) = 51  |  val_1 *= val_2 = 459, val = 459
+Weight matrix(0,1,) = 2  |  Input matrix(2,2,3,) = 52  |  val_1 *= val_2 = 104, val = 563
+Weight matrix(0,2,) = 7  |  Input matrix(2,2,4,) = 53  |  val_1 *= val_2 = 371, val = 934
+Weight matrix(1,0,) = 4  |  Input matrix(2,3,2,) = 55  |  val_1 *= val_2 = 220, val = 1154
+Weight matrix(1,1,) = 3  |  Input matrix(2,3,3,) = 56  |  val_1 *= val_2 = 168, val = 1322
+Weight matrix(1,2,) = 8  |  Input matrix(2,3,4,) = 0  |  val_1 *= val_2 = 0, val = 1322
+Weight matrix(2,0,) = 5  |  Input matrix(2,4,2,) = 94342503322480  |  val_1 *= val_2 = 471712516612400, val = 471712516613722
+Weight matrix(2,1,) = 6  |  Input matrix(2,4,3,) = 94342502985744  |  val_1 *= val_2 = 566055017914464, val = 1037767534528186
+Weight matrix(2,2,) = 1  |  Input matrix(2,4,4,) = 57  |  val_1 *= val_2 = 57, val = 1037767534528243
+Output matrix(,2,3,3) = 1037767534528243
+after graph run, t1*T.conv2d()*t2= Tensor(size=(3,4,4),[75,102,129,163,199,244,289,334,379,424,469,518,587,652,697,774,831,892,937,1010,1063,1144,1189,1234,1279,1324,1369,1418,1487,1552,1597,1674,1731,1792,1837,1910,1963,2044,2089,2134,2179,2224,2269,2257,2984,94342503330342,660397522927494,1037767534528243
+Left Objects:40
