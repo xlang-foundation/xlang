@@ -122,6 +122,8 @@ namespace X
 				for (int i = 0; i < idxCnt; i++)
 				{
 					auto& dim = m_dims[i];
+					if (indices[i] < 0 || indices[i] >= dim.size)
+						return -1;
 					off += (indices[i] + dim.offset) * dim.dimProd;
 				}
 				off *= GetItemSize();
