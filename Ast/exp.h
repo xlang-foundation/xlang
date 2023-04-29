@@ -396,7 +396,7 @@ public:
 		}
 		else
 		{
-			v0.SetF(m_digiNum);
+			v0.SetDigitNum(m_digiNum);
 		}
 		v = v0;
 		return true;

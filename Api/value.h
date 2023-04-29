@@ -115,7 +115,10 @@ enum class ValueSubType
 };
 class Value
 {
-	int flags = 0;//last 4 bits as subtype
+	//from high->low, second and third byte are digits number , mask is 0x00FFFF00 and shift >>8
+	//last 4 bits as subtype, mask is 0x0F
+	int flags = 0;
+
 	ValueType t= ValueType::Invalid;
 	union
 	{
@@ -353,6 +356,15 @@ public:
 	inline XObj* GetObj() const
 	{
 		return x.obj;
+	}
+	inline void SetDigitNum(int num)
+	{
+		int bits = (num << 8) & 0x00FFFF00;
+		flags |= bits;
+	}
+	inline int GetDigitNum()
+	{
+		return (flags & 0x00FFFF00) >> 8;
 	}
 	inline void SetF(int f)
 	{
