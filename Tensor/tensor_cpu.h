@@ -1244,8 +1244,6 @@ namespace X
 				pTensor1->IterateLeft(it_proc_tensor_conv2d_a, leftDimCount);
 			else 
 				pTensor1->IterateAll(it_proc_tensor_conv2d);				
-
-
 		}
 
 		void Relu(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value& retVal)
@@ -1263,24 +1261,111 @@ namespace X
 			pTensor->IterateAll(it_proc_scaler_Relu);
 		} //Relu
 
-
 		void MaxPool2d(X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "in tensor_cpu.h::MaxPool2d()" << std::endl;
-			/*
-			for (size_t y = 0; y < out_height; ++y) {
-				for (size_t x = 0; x < out_width; ++x) {
-					for (size_t i = 0; i < pool_y; ++i) {
-						for (size_t j = 0; j < pool_x; ++j) {
-							for (size_t c = 0; c < depth; ++c) {
-								float value = in[y * pool_y + i][x * pool_x + j][c];
-								out[y][x][c] = max(out[y][x][c], value);
-							}
-						}
-					}
-				}
+
+			auto kernel_size = kwParams.find("kernel_size");  
+			auto stride = kwParams.find("stride");  
+			auto padding = kwParams.find("padding");
+			auto dilation = kwParams.find("dilation");  
+			auto output_channels = kwParams.find("output_channels");  
+
+			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());  
+			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
+			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
+			int tensor1_dims = pTensor1->GetDimCount();
+			int tensor2_dims = pTensor2->GetDimCount();
+			int leftDimCount = pTensor1->GetDimCount() - pTensor2->GetDimCount();
+
+			int m,n,u,v = 0;
+			if (tensor1_dims >= 2)
+			{
+				m = pTensor1->GetDims()[tensor1_dims - 2].size; //rows of matrix1
+				n = pTensor1->GetDims()[tensor1_dims - 1].size; //columns of matrix1
 			}
-			*/
+			if (tensor1_dims >= 2)
+			{
+				u = pTensor2->GetDims()[tensor2_dims - 2].size; //rows of matrix2
+				v = pTensor2->GetDims()[tensor2_dims - 1].size; //columns of matrix2
+			}
+			
+			pRetVal->CreateBaseOnTensor(pTensor1);
+			X::Data::Tensor* pTensor2t = new X::Data::Tensor(); 
+			TensorDataType dataType2 = pTensor2->GetDataType();
+			pTensor2t->CreateBaseOnTensor(pTensor2);
+			pTensor2t->SetDataType(dataType2);
+			Transpose(pTensor2, pTensor2t, u, v); 
+
+			auto it_proc_tensor_MaxPool2d_a = [pTensor1, pTensor2t, pRetVal, m,n,u,v, padding, tensor1_dims, tensor2_dims](std::vector<long long>& indices1)
+			{
+				static int i =0;
+				std::cout << "it_proc_tensor_MaxPool2d_a called - " << i++ << std::endl;
+				std::cout << "      m =" << m << ", n = " << n <<", u = " << u <<", v = " << v << std::endl;
+
+				//std::vector<Data::TensorIndex> IdxAry;
+				//IdxAry.push_back({i:i, m-2,m-1});  //matrix only
+				//X::Value input_matrix;
+
+				auto it_proc_tensor_MaxPool2d_b = [pTensor1, pTensor2t, pRetVal, m,n,u,v, padding, tensor1_dims, tensor2_dims](std::vector<long long>& indices1)
+				{
+					static int j =0;
+					std::cout << "it_proc_tensor_MaxPool2d_b called - " << j++;
+					for (int k = 0; k < tensor1_dims; k++)
+						std::cout << ", indices1[" << k <<"] = " << indices1[k];
+					std::cout << std::endl;
+					X::Value val;
+					auto it_proc_tensor_MaxPool2d_c = [pTensor1, pTensor2t, indices1, m,n,u,v, padding, tensor1_dims, tensor2_dims, &val](std::vector<long long>& indices2) 
+					{
+						X::Value val_1, val_2;
+						val_2 = pTensor2t->GetDataWithIndices(indices2);
+						//std::cout << "Weight matrix(" << indices2[0] << "," << indices2[1] <<") = " << val_2.GetLongLong() << "  |  ";
+						std::cout << "Weight matrix(" ;
+						for (int k = 0; k < tensor2_dims; k++)
+							std::cout << indices2[k] << ",";
+						std::cout << ") = " << val_2.GetLongLong() << "  |  ";
+						std::vector<long long> indices1n;	
+						indices1n.resize(tensor1_dims);
+						for (int i = 0; i < tensor1_dims - 2; i++)
+							indices1n[i] = indices1[i];
+						indices1n[tensor1_dims-2] = indices1[tensor1_dims-2] + indices2[tensor2_dims-2] - (u/2);
+						indices1n[tensor1_dims-1] = indices1[tensor1_dims-1] + indices2[tensor2_dims-1] - (v/2);
+						if (indices1n[0] >= 0 && indices1n[1] >= 0 && indices1n[0] < m && indices1n[1] < n)
+					    	val_1 = pTensor1->GetDataWithIndices(indices1n);
+						else
+							val_1 = padding; 
+						std::cout << "Input matrix(" ;
+						for (int k = 0; k < tensor1_dims; k++)
+							std::cout << indices1n[k] << ",";
+						std::cout << ") = " << val_1.GetLongLong() << "  |  ";
+						val_1 *= val_2;
+						val += val_1;
+						std::cout << "val_1 *= val_2 = " << val_1.GetLongLong() << ", val = " << val.GetLongLong() << std::endl;
+					};
+					pTensor2t->IterateAll(it_proc_tensor_MaxPool2d_c);
+					pRetVal->SetDataWithIndices(indices1, val);
+					std::cout << "Output matrix(";
+					for (int k = 0; k < tensor1_dims; k++)
+						std::cout << "," << indices1[k];
+					std::cout << ") = " << val.GetLongLong() << std::endl;
+				};
+				indices1.resize(tensor1_dims);
+				pTensor1->IterateRight(it_proc_tensor_MaxPool2d_b, indices1, 2);
+			};
+
+			auto it_proc_tensor_MaxPool2d = [pTensor1, pTensor2,pTensor2t, pRetVal](std::vector<long long>& indices) 
+			{
+				X::Value val, val_1, val_2;
+				val_1 = pTensor1->GetDataWithIndices(indices);
+				val_2 = pTensor2->GetDataWithIndices(indices);
+				val_1 /= val_2;
+				pRetVal->SetDataWithIndices(indices, val_1);
+			};
+
+			if (leftDimCount > 0) 
+				pTensor1->IterateLeft(it_proc_tensor_MaxPool2d_a, leftDimCount);
+			else 
+				pTensor1->IterateAll(it_proc_tensor_MaxPool2d);	
 
 		}  // MaxPool2d
 
