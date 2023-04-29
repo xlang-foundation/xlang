@@ -31,7 +31,15 @@ void RegisterOps(OpRegistry* reg)
 	});
 	RegOP("-")
 	.SetUnaryop([](XlangRuntime* rt, AST::UnaryOp* op,X::Value& R, X::Value& v) {
-		v = X::Value(R.GetType() == ValueType::Double?0.0:(long long)0);//set to 0
+		//set to 0
+		if (R.GetType() == ValueType::Double)
+		{
+			v = X::Value(0.0);
+		}
+		else
+		{
+			v = X::Value(0);
+		}
 		v -= R;
 		return true;
 	})
@@ -59,7 +67,7 @@ void RegisterOps(OpRegistry* reg)
 #endif
 	RegOP(".")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
-		int cnt = R.GetF();
+		int cnt = R.GetDigitNum();
 		double d = (double)R.GetLongLong();
 		for (int i = 0; i < cnt; i++)
 		{

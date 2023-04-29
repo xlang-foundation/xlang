@@ -135,7 +135,7 @@ namespace X
 				m_dims[nd - 1].dimProd = a;
 				for (int i = nd - 1; i >= 1; i--)
 				{
-					//use stride instead of size becuase view of Tensor will change size 
+					//use stride instead of size because view of Tensor will change size 
 					//but stride keeps same as original
 					a *= m_dims[i].stride;
 					m_dims[i - 1].dimProd = a;
