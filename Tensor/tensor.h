@@ -420,6 +420,39 @@ namespace X
 				}
 				IterateLoop(indices,0,proc,dimList,0);
 			}
+			inline void IterateLoop(std::vector<long long>& indices, int Offset,
+				TensorIterateProc proc, std::vector<int>& dimList, std::vector<long long>& strides)
+			{
+				long long itemCount = 1;
+				int dimListCnt = (int)dimList.size();
+				//init indices to 0 with starting from offset
+				for (int i = Offset; i < indices.size(); i++)
+				{
+					auto dimIdex = dimList[i- Offset];
+					indices[dimIdex] = 0;
+					auto& d = m_dims[dimIdex];
+					itemCount *= d.size;
+				}
+				long long idx = 0;
+				while (idx++ < itemCount)
+				{
+					proc(indices);
+
+					auto lastDimListIdx = dimList[dimListCnt-1];
+					auto& d = m_dims[lastDimListIdx];
+					indices[lastDimListIdx]+= strides[lastDimListIdx];
+					while (indices[lastDimListIdx] == d.size)
+					{
+						indices[lastDimListIdx] = 0;
+						if (lastDimListIdx == 0)
+						{
+							break;
+						}
+						lastDimListIdx--;
+						indices[lastDimListIdx]+= strides[lastDimListIdx];
+					}
+				}
+			}
 			//before call,indices need has same size of m_dims
 			inline void IterateLoop(std::vector<long long>&indices,int Offset,
 				TensorIterateProc proc, std::vector<int>& dimList ,int level=0)
