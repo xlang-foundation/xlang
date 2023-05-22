@@ -28,3 +28,4 @@ endif()
 add_subdirectory("sqlite")
 add_subdirectory("Image")
 
+# add_subdirectory("all")
