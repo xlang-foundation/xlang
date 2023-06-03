@@ -2,6 +2,7 @@
 #include "service_def.h"
 #include "StubMgr.h"
 #include "utility.h"
+#include "manager.h"
 
 #if (WIN32)
 #include <windows.h>
@@ -172,6 +173,10 @@ namespace X
         RemoveMsgId();
         std::cout << "Exit MsgLoop" << std::endl;
 #endif
+        if (mPort != 0)
+        {
+            Manager::I().RemoveLrpcPort(mPort);
+        }
     }
 
     void MsgThread::RemoveMsgId()

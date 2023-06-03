@@ -181,6 +181,10 @@ namespace X
 		}
 		inline Value Member(const char* name)
 		{
+			if (m_rt == nullptr)
+			{
+				m_rt = g_pXHost->GetCurrentRuntime();
+			}
 			return Member(m_rt, name);
 		}
 		template<typename... VarList>

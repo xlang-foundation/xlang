@@ -60,6 +60,10 @@ public:
 		}
 		return outs;
 	}
+	inline virtual bool GetIndexValue(int idx, Value& v) override
+	{
+		return Get(idx, v);
+	}
 	virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
 		IterateProc proc, ARGS& params, KWARGS& kwParams,
 		X::Value& retValue) override

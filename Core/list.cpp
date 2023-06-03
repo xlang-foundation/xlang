@@ -35,14 +35,10 @@ namespace X
 			}
 			void Init()
 			{
-				char* pTest100 = new char[7000];
 				m_stackFrame = new AST::StackFrame(this);
 				m_stackFrame->SetVarCount(3);
-				char* pTest101 = new char[70];
-				char* pTest2 = new char[7000];
 				std::string strName;
 				{
-					char* pTest3 = new char[7000];
 					strName = "remove";
 					auto f = [](X::XRuntime* rt, XObj* pContext,
 						X::ARGS& params,
