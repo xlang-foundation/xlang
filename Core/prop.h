@@ -42,7 +42,14 @@ namespace X
 				KWARGS& kwParams,
 				X::Value& retValue) override
 			{
-				return SetPropValue(rt, pContext, params[0]);
+				if (params.size() == 0)
+				{
+					return GetPropValue(rt, pContext, retValue);
+				}
+				else
+				{
+					return SetPropValue(rt, pContext, params[0]);
+				}
 			}
 			bool GetPropValue(XRuntime* rt0, XObj* pContext, Value& v)
 			{

@@ -368,10 +368,12 @@ namespace X
 	bool XHost_Impl::Lrpc_Listen(int port, bool blockMode)
 	{
 		bool bOK = true;
+		Manager::I().AddLrpcPort(port);
 		MsgThread::I().SetPort(port);
 		if (blockMode)
 		{
 			MsgThread::I().run();
+			Manager::I().RemoveLrpcPort(port);
 		}
 		else
 		{

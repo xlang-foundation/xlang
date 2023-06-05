@@ -205,29 +205,33 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		}
 		if (!m_thruUrl.empty())
 		{
-			XProxy* proxy = Manager::I().QueryProxy(m_thruUrl);
-			if (proxy)
+			bool bFilterOut = false;
+			XProxy* proxy = Manager::I().QueryProxy(m_thruUrl, bFilterOut);
+			if (!bFilterOut) 
 			{
-				auto* remoteObj = new RemoteObject(proxy);
-				remoteObj->SetObjName(im.name);
-				v = Value(dynamic_cast<XObj*>(remoteObj));
-				if (pMyScope)
+				if (proxy)
 				{
-					pMyScope->AddAndSet(rt, pContext, varName, v);
+					auto* remoteObj = new RemoteObject(proxy);
+					remoteObj->SetObjName(im.name);
+					v = Value(dynamic_cast<XObj*>(remoteObj));
+					if (pMyScope)
+					{
+						pMyScope->AddAndSet(rt, pContext, varName, v);
+					}
 				}
+				//for proxy == nullptr, means some errors happened with this url
+				//just continue
 				continue;
 			}
 		}
-		else
+		//then try local import
+		if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
 		{
-			if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
+			if (pMyScope)
 			{
-				if (pMyScope)
-				{
-					pMyScope->AddAndSet(rt, pContext, varName, v);
-				}
-				continue;
+				pMyScope->AddAndSet(rt, pContext, varName, v);
 			}
+			continue;
 		}
 
 		//check if it is builtin

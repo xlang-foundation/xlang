@@ -50,10 +50,17 @@ namespace AST
 			}
 			else if (pObj->GetType() == X::ObjType::RemoteObject)
 			{
-				auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObj);
-				bOK = pRemoteObj->SetValue(rt, pContext,v_r);
-				v = Value(bOK);
-				return bOK;
+				//if Left side is a remote object, and right side is not a
+				//remote object, we treat as SetValue for this Left RemoteObject
+				//but for both sides are remote objects,treat as assign operator.
+				//TODO(Shawn 6/5/2023): But we need to consider more on this case.
+				if (!v_r.IsObject() || v_r.GetObj()->GetType() != X::ObjType::RemoteObject)
+				{
+					auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObj);
+					bOK = pRemoteObj->SetValue(rt, pContext, v_r);
+					v = Value(bOK);
+					return bOK;
+				}
 			}
 		}
 		if (lValue_L)

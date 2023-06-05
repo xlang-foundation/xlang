@@ -16,6 +16,9 @@ namespace X
 			pProxy->SetUrl(url);
 			pProxy->Start();
 			return dynamic_cast<XProxy*>(pProxy);
+			},
+			[](const char* url) {
+				return Manager::I().IsLrpcHostedByThisProcess(url);
 			});
 	}
 	XLangProxy::XLangProxy()

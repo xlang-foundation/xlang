@@ -131,6 +131,8 @@ class Value
 	Value QueryMember(const char* key);
 public:
 	inline bool IsLong() { return t == ValueType::Int64; }
+	inline bool IsDouble() { return t == ValueType::Double; }
+	inline bool IsNumber() { return IsLong() || IsDouble();}
 	inline bool IsInvalid()
 	{
 		return (t == ValueType::Invalid);
@@ -463,6 +465,7 @@ public:
 		Port::vector<X::Value> params(0);
 		return ObjCall(params);
 	}
+	Value GetItemValue(long long idx);
 	Value GetObjectValue(Port::vector<X::Value>& IdxAry);
 	template<typename... VarList>
 	Value Query(VarList... args)
@@ -476,7 +479,10 @@ public:
 		}
 		return GetObjectValue(IdxAry);
 	}
-
+	inline Value operator[](long long index)
+	{
+		return GetItemValue(index);
+	}
 	inline Value operator[](const char* key)
 	{
 		return QueryMember(key);

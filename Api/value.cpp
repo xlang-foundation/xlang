@@ -22,6 +22,13 @@ namespace X
 		pObj->Get(rt,pObj, IdxAry, retVal);
 		return retVal;
 	}
+	Value Value::GetItemValue(long long idx)
+	{
+		XObj* pObj = GetObj();
+		X::Value retVal;
+		pObj->GetIndexValue(idx, retVal);
+		return retVal;
+	}
 	Value Value::operator* (const Value& right)
 	{
 		Value ret;
