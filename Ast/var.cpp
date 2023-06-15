@@ -287,10 +287,35 @@ void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 	}
 }
 
+// if this var is inside a Decorator for example: 
+// @cantor.Task(NPU=1 and OS =='Windows')
+// or inside a function call for example: test_func2.run(i,20,TaskTag=i)
+// this var can't be left Value, because we used it as
+// expresion
+// so here we check if it is inisde a Pair
+
 void Var::ScopeLayout()
 {
 	Scope* pMyScope = GetScope();
 	int idx = -1;
+	if (m_isLeftValue)
+	{
+		bool IsInsideDecor = false;
+		auto pa = m_parent;
+		while (pa != nullptr)
+		{
+			if (pa->m_type == ObType::Pair)
+			{
+				IsInsideDecor = true;
+				break;
+			}
+			pa = pa->GetParent();
+		}
+		if (IsInsideDecor)
+		{
+			m_isLeftValue = false;
+		}
+	}
 	bool bIsLeftValue = m_isLeftValue;
 	while (pMyScope != nullptr && idx <0)
 	{
