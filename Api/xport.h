@@ -293,6 +293,32 @@ namespace X
 					}
 				}
 			}
+			void operator= (const StringMap<T>& v)
+			{
+				m_size = v.m_size;
+				if (m_size > 0)
+				{
+					m_data = new MapItem[m_size];
+					for (int i = 0; i < m_size; i++)
+					{
+						MapItem& newItem = m_data[i];
+						MapItem& oldItem = v.m_data[i];
+						if (!oldItem.ownKey)
+						{
+							newItem.key = oldItem.key;
+						}
+						else
+						{
+							int keyLen = strlen(oldItem.key) + 1;
+							newItem.key = new char[keyLen];
+							memcpy((char*)newItem.key, oldItem.key, keyLen);
+						}
+						newItem.val = oldItem.val;
+						newItem.ownKey = oldItem.ownKey;
+						newItem.next = oldItem.next;
+					}
+				}
+			}
 			~StringMap()
 			{
 				if (m_data)
