@@ -300,18 +300,18 @@ void Var::ScopeLayout()
 	int idx = -1;
 	if (m_isLeftValue)
 	{
-		bool IsInsideDecor = false;
+		bool IsInsidePair = false;
 		auto pa = m_parent;
 		while (pa != nullptr)
 		{
 			if (pa->m_type == ObType::Pair)
 			{
-				IsInsideDecor = true;
+				IsInsidePair = true;
 				break;
 			}
 			pa = pa->GetParent();
 		}
-		if (IsInsideDecor)
+		if (IsInsidePair)
 		{
 			m_isLeftValue = false;
 		}
