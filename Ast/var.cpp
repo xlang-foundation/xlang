@@ -5,6 +5,7 @@
 #include "prop.h"
 #include <iostream>
 #include "module.h"
+#include "expr_scope.h"
 
 namespace X
 {
@@ -194,7 +195,8 @@ namespace AST
 		//if Index is still -1, this case
 		//will happen in decor function
 		//just treat as local var
-		bool isExtern = (Index !=-1) && (m_scope != stream.ScopeSpace().GetCurrentScope());
+		bool isExtern = (Index != -1) && (dynamic_cast<X::Data::ExpressionScope*>(m_scope) == nullptr)
+			&& (m_scope != stream.ScopeSpace().GetCurrentScope());
 		stream << isExtern;
 		//check the value if it is external
 		if (isExtern)
@@ -292,7 +294,8 @@ void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 // or inside a function call for example: test_func2.run(i,20,TaskTag=i)
 // this var can't be left Value, because we used it as
 // expresion
-// so here we check if it is inisde a Pair
+// so here we check if it is inside a Pair
+//TODO(Shawn) 6/15/2023: check lambda function with { } some var define, if it is still correct
 
 void Var::ScopeLayout()
 {
@@ -300,18 +303,18 @@ void Var::ScopeLayout()
 	int idx = -1;
 	if (m_isLeftValue)
 	{
-		bool IsInsideDecor = false;
+		bool IsInsidePair = false;
 		auto pa = m_parent;
 		while (pa != nullptr)
 		{
 			if (pa->m_type == ObType::Pair)
 			{
-				IsInsideDecor = true;
+				IsInsidePair = true;
 				break;
 			}
 			pa = pa->GetParent();
 		}
-		if (IsInsideDecor)
+		if (IsInsidePair)
 		{
 			m_isLeftValue = false;
 		}
