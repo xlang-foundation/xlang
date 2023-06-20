@@ -309,7 +309,7 @@ namespace X
 						}
 						else
 						{
-							int keyLen = strlen(oldItem.key) + 1;
+							int keyLen = (int)strlen(oldItem.key) + 1;
 							newItem.key = new char[keyLen];
 							memcpy((char*)newItem.key, oldItem.key, keyLen);
 						}
