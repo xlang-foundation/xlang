@@ -58,6 +58,7 @@ typedef bool (*BinaryOpProc)(
 #define Precedence_LOW2 80
 #define Precedence_LOW1 60
 #define Precedence_VERYLOW 20
+#define Precedence_VERYVERYLOW 10
 #define Precedence_Min 0
 
 struct OpAction

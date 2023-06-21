@@ -27,7 +27,8 @@ namespace X
 	class XRuntime;
 	typedef XPackage* (*PackageCreator)();
 	typedef void (*PackageCleanup)(void* pContextObj);
-	
+	typedef bool (*PackageWaitFunc)(void* pContextObj,int timeout);
+
 	using PackageAccessor = X::Port::Function <X::Value(X::XRuntime* rt, 
 		X::XObj* pContext,X::Port::vector<X::Value>& IdxAry)>;
 	typedef XProxy* (*XProxyCreator)(const char* url);

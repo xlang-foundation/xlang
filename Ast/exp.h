@@ -51,6 +51,7 @@ enum class ObType
 	While,
 	If,
 	ExternDecl,
+	AwaitOp,
 	Thru,
 	Import,
 	NamespaceVar,

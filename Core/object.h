@@ -200,6 +200,10 @@ namespace Data {
 			}
 			return "None";
 		}
+		virtual bool wait(int timeout)
+		{
+			return true;
+		}
 		virtual AST::Scope* GetScope()
 		{
 			return nullptr;

@@ -13,6 +13,7 @@
 #include "op_registry.h"
 #include "namespace_var.h"
 #include "sql.h"
+#include "await.h"
 
 namespace X {
 
@@ -180,6 +181,11 @@ void Register(OpRegistry* reg)
 			auto op = new AST::For(opIndex);
 			return (AST::Operator*)op;
 		});
+	RegOP("await")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::AwaitOp(opIndex);
+		return (AST::Operator*)op;
+			});
 	RegOP("while")
 		.SetProcess([](Parser* p,short opIndex){
 			auto op = new AST::While(opIndex);
@@ -451,6 +457,8 @@ void Register(OpRegistry* reg)
 	//need to make : at least has same Precedence as ','
 	RegOP("\n",",")
 		.SetPrecedence(Precedence_VERYLOW);
+	RegOP("await")
+		.SetPrecedence(Precedence_VERYVERYLOW);
 	//for this case: t2 = t1[-20:120,-1:-3]
 	//minus needs to be cacluated before :, so let : is below regular which minus op has that Precedence
 	RegOP(":")

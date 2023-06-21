@@ -26,6 +26,7 @@ class Package :
 	StackFrame* m_stackFrame = nullptr;
 	std::vector<MemberIndexInfo> m_memberInfos;
 	PackageCleanup m_funcPackageCleanup = nullptr;
+	PackageWaitFunc m_funcPackageWait = nullptr;
 	PackageAccessor m_funcAccessor;
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{
@@ -34,6 +35,10 @@ class Package :
 	virtual void SetPackageCleanupFunc(PackageCleanup func) override
 	{
 		m_funcPackageCleanup = func;
+	}
+	virtual void SetPackageWaitFunc(PackageWaitFunc func) override
+	{
+		m_funcPackageWait = func;
 	}
 	std::vector<AST::Module*> m_loadedModules;//for adding xlang code
 	void UnloadAddedModules();
@@ -54,9 +59,22 @@ public:
 			Cleanup(m_pObject);
 		}
 	}
+	inline virtual bool wait(int timeout) override
+	{
+		bool bOK = true;
+		if (m_funcPackageWait)
+		{
+			bOK = m_funcPackageWait(m_pObject, timeout);
+		}
+		return bOK;
+	}
 	PackageAccessor GetAccessor()
 	{
 		return m_funcAccessor;
+	}
+	PackageWaitFunc GetWaitFunc()
+	{
+		return m_funcPackageWait;
 	}
 	void Lock()
 	{
@@ -200,6 +218,9 @@ class PackageProxy :
 	{
 		m_funcPackageCleanup = func;
 	}
+	virtual void SetPackageWaitFunc(PackageWaitFunc func) override
+	{
+	}
 	virtual bool RunCodeWithThisScope(const char* code) override
 	{
 		return true;
@@ -207,6 +228,15 @@ class PackageProxy :
 public:
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{
+	}
+	inline virtual bool wait(int timeout) override
+	{
+		bool bOK = true;
+		if (m_pPackage->GetWaitFunc())
+		{
+			bOK = m_pPackage->GetWaitFunc()(m_pObject, timeout);
+		}
+		return bOK;
 	}
 	PackageProxy(Package* pPack,void* pObj) :
 		Data::Object(), Scope()
