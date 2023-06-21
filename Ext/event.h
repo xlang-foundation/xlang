@@ -16,6 +16,7 @@
 #include <functional>
 #include "stackframe.h"
 #include "object_scope.h"
+#include "wait.h"
 
 namespace X
 {
@@ -41,18 +42,25 @@ namespace X
 		long m_lastCookie = 0;
 		std::vector<HandlerInfo> m_handlers;
 		OnEventHandlerChanged m_changeHandler;
+		Locker m_statusLock;
+		std::vector<XWait*> m_waits;
+		bool m_fired = false;
 	public:
 		inline void Fire(int evtIndex,X::ARGS& params, X::KWARGS& kwargs)
 		{
-			return m_APIs.Fire(evtIndex,params,kwargs);
+			SetFire();
+			m_APIs.Fire(evtIndex,params,kwargs);
 		}
-
+		inline virtual bool wait(int timeout) override
+		{
+			return WaitOn(timeout);
+		}
 		ObjectEvent() :Data::Object(), XObj(), ObjRef(), XEvent()
 		{
 			m_t = ObjType::ObjectEvent;
 			//auto x0 = typeid(this).name();
 			//auto x = typeid(&ObjectEvent::wait).name();
-			m_APIs.AddFunc<2>("wait", &ObjectEvent::wait);
+			m_APIs.AddFunc<1>("wait", &ObjectEvent::WaitOn);
 			m_APIs.Create();
 		}
 		ObjectEvent(std::string& name) :ObjectEvent()
@@ -89,9 +97,34 @@ namespace X
 			Object::GetBaseScopes(bases);
 			bases.push_back(m_APIs.GetScope());
 		}
-		double wait(int x,double y)
+		inline bool WaitOn(int timeout)
 		{
-			return x*10.1+y;
+			m_statusLock.Lock();
+			if (m_fired)
+			{
+				m_statusLock.Unlock();
+				return true;
+			}
+			XWait* pWait = new XWait();
+			m_waits.push_back(pWait);
+			m_statusLock.Unlock();
+			bool bOK = pWait->Wait(timeout);
+			m_statusLock.Lock();
+			for (auto it = m_waits.begin(); it != m_waits.end();)
+			{
+				if (*it == pWait)
+				{
+					it = m_waits.erase(it);
+					break;
+				}
+				else
+				{
+					++it;
+				}
+			}
+			m_statusLock.Unlock();
+			delete pWait;
+			return bOK;
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams, X::Value& retValue) override;
@@ -117,6 +150,16 @@ namespace X
 			{
 				pAttrBag->CovertToDict(kwargs);
 			}
+		}
+		void SetFire()
+		{
+			m_statusLock.Lock();
+			m_fired = true;
+			for (auto* pWait : m_waits)
+			{
+				pWait->Release();
+			}
+			m_statusLock.Unlock();
 		}
 		void Fire(X::XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwargs, bool inMain = false)
@@ -149,6 +192,7 @@ namespace X
 			ARGS& params, KWARGS& kwargs);
 		virtual void DoFire(XRuntime* rt, XObj* pContext, ARGS& params, KWARGS& kwargs) override
 		{
+			SetFire();
 			m_lockHandlers.Lock();
 			for (auto& it : m_handlers)
 			{

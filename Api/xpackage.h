@@ -42,7 +42,6 @@ namespace X
 		}
 		impl_pack_class::BuildAPI();
 		apiset.Create(instance);
-
 		X::g_pXHost->AddSysCleanupFunc([]() {
 			impl_pack_class::APISET().Cleanup();
 			});
@@ -243,11 +242,11 @@ namespace X
 		}
 		template<std::size_t Parameter_Num, class Class_T>
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
-			PackageCleanup cleanFunc = nullptr)
+			PackageCleanup cleanFunc = nullptr, PackageWaitFunc waitFunc = nullptr)
 		{
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
-			apiset.Create(class_inst, cleanFunc);
+			apiset.Create(class_inst, cleanFunc, waitFunc);
 			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Class,class_name,X::Value(),
@@ -269,11 +268,11 @@ namespace X
 		}
 		template<std::size_t Parameter_Num, class Class_T, class Parent_T>
 		void AddClass(const char* class_name, Class_T* class_inst = nullptr,
-			PackageCleanup cleanFunc = nullptr, const char* doc = "")
+			PackageCleanup cleanFunc = nullptr, PackageWaitFunc waitFunc = nullptr,const char* doc = "")
 		{
 			auto& apiset = Class_T::APISET();
 			Class_T::BuildAPI();
-			apiset.Create(class_inst, cleanFunc);
+			apiset.Create(class_inst, cleanFunc, waitFunc);
 
 			X::U_FUNC dummy;
 			X::U_FUNC_EX dummyEx;
@@ -644,7 +643,7 @@ namespace X
 					}),dummy,dummyEx,false,
 				std::string("create tensor graph, packageInstance.graph(t1,t2,...tn)")});
 		}
-		bool Create(T* thisObj, PackageCleanup cleanFunc = nullptr)
+		bool Create(T* thisObj, PackageCleanup cleanFunc = nullptr, PackageWaitFunc waitFunc = nullptr)
 		{
 			if (m_alreadyCallBuild)
 			{
@@ -675,6 +674,12 @@ namespace X
 				}
 				pPackage->SetPackageCleanupFunc(cleanFunc);
 			}
+			else
+			{
+				//todo: check if it is correct to set __pPack_ here
+				thisObj->__pPack_ = pPackage;
+			}
+			pPackage->SetPackageWaitFunc(waitFunc);
 			pPackage->SetPackageAccessor(m_accessor);
 			pPackage->Init(memberNum);
 			for (auto* b : bases)

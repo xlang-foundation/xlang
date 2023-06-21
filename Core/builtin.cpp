@@ -786,6 +786,48 @@ bool U_FireEvent(X::XRuntime* rt, XObj* pContext,
 	retValue = X::Value(true);
 	return true;
 }
+bool U_Await(X::XRuntime* rt, XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	bool retVal = false;
+	if (pContext == nullptr)
+	{
+		int timeout = -1;
+		//check last parameter if it is number,as timeout
+		int size = params.size();
+		if (size > 0)
+		{
+			auto& v_last = params[size - 1];
+			if (v_last.IsNumber())
+			{
+				timeout = (int)v_last;
+				size--;
+			}
+			for (int i = 0; i < size; i++)
+			{
+				auto& v = params[i];
+				if (v.IsObject())
+				{
+					Data::Object* pObj = dynamic_cast<Data::Object*>(v.GetObj());
+					retVal = pObj->wait(timeout);
+				}
+			}
+		}
+	}
+	else
+	{
+		int timeout = -1;
+		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
+		if (params.size() >= 1)
+		{
+			timeout = (int)params[0];
+		}
+		retVal = pObj->wait(timeout);
+	}
+	retValue = X::Value(retVal);
+	return true;
+}
 bool U_AddPath(X::XRuntime* rt, XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1342,6 +1384,7 @@ bool Builtin::RegisterInternals()
 	Register("mainrun", (X::U_FUNC)U_RunInMain, params);
 	Register("on", (X::U_FUNC)U_OnEvent, params);
 	Register("fire", (X::U_FUNC)U_FireEvent, params);
+	Register("wait", (X::U_FUNC)U_Await, params,"wait on an event or task",true);
 	Register("addpath", (X::U_FUNC)U_AddPath, params);
 	Register("removepath", (X::U_FUNC)U_RemovePath, params);
 	Register("tostring", (X::U_FUNC)U_ToString, params);
@@ -1372,9 +1415,7 @@ bool Builtin::RegisterInternals()
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 	return true;
 }
-void Builtin::SetPackageCleanupFunc(PackageCleanup func)
-{
-}
+
 int Builtin::AddMember(PackageMemberType type, const char* name, const char* doc, bool keepRawParams)
 {
 	return 0;

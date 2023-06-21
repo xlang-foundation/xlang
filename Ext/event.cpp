@@ -13,6 +13,7 @@ namespace X
 	void ObjectEvent::FireInMain(X::XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwargs)
 	{
+		SetFire();
 		EventSystem::I().FireInMain(this,rt,pContext,params,kwargs);
 	}
 }
