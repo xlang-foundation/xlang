@@ -424,12 +424,21 @@ namespace X
 	class XPackageValue
 	{
 		T* m_obj = nullptr;
+		bool m_ownObj = false;
 	public:
 		XPackageValue()
 		{
 			m_obj = new T();
+			m_ownObj = true;
 		}
-		XPackageValue(T* p)
+		~XPackageValue()
+		{
+			if (m_ownObj && m_obj)
+			{
+				delete m_obj;
+			}
+		}
+		XPackageValue(T* p) //only used in Android 
 		{
 			m_obj = p;
 		}
@@ -456,11 +465,15 @@ namespace X
 				}
 			}
 		}
-		operator Value() const
+		operator Value()
 		{
 			if (m_obj)
 			{
-				X::XPackage* pPackage = m_obj->APISET().GetProxy(m_obj);
+				auto& apiset = m_obj->APISET();
+				X::XPackage* pPackage = apiset.GetProxy(m_obj);
+				//only be used onece, if convert to Value, then don't do again
+				//set this flag to avoid delete m_obj during deconstruction  
+				m_ownObj = false;
 				return Value(dynamic_cast<X::XObj*>(pPackage),false);
 			}
 			else

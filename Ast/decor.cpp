@@ -31,6 +31,30 @@ namespace X
 			{
 				return false;
 			}
+			if (R->m_type == ObType::Pair)
+			{
+				//for this case, we skip L, means
+				//we just accept syntac @(exp_list),
+				//and for case @name(exp_list), we skip name
+				PairOp* pPairOp = dynamic_cast<PairOp*>(R);
+				ARGS args(0);
+				KWARGS kwParams;
+				auto* pairR = pPairOp->GetR();
+				if (pairR)
+				{
+					bool bOK = GetParamList(rt, pairR, args, kwParams);
+					if (bOK)
+					{
+						X::List li;
+						for (auto& a : args)
+						{
+							li += a;
+						}
+						v = li;
+						return bOK;
+					}
+				}
+			}
 			auto* pR = dynamic_cast<BinaryOp*>(R);
 			if (pR->GetL() && pR->GetL()->m_type == ObType::Var)
 			{
@@ -48,7 +72,7 @@ namespace X
 		{
 			if (pContext == nullptr)
 			{
-				return RunExp(rt,v,lValue);//not called from decorated objct
+				return RunExp(rt,v,lValue);//not called from decorated objects
 			}
 			bool bOK = true;
 			if (R->m_type == ObType::Pair)

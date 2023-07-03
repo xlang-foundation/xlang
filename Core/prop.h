@@ -31,7 +31,8 @@ namespace X
 				bool bOK = false;
 				if (m_setter)
 				{
-					ARGS param{ v };
+					ARGS param(1);
+					param.push_back(v);
 					KWARGS kwParam;
 					Value retVal;
 					bOK = m_setter->Call(rt0, pContext, param, kwParam, retVal);
