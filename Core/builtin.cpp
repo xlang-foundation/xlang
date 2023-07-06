@@ -1355,11 +1355,11 @@ bool Builtin::RegisterInternals()
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
 	X::Value valBuiltinPack(pBuiltinPack);
 	X::Manager::I().Register("builtin", valBuiltinPack);
-	X::RegisterPackage<X::JsonWrapper>("json");
-	X::RegisterPackage<X::YamlWrapper>("yaml");
-	X::RegisterPackage<X::HtmlWrapper>("html");
-	X::RegisterPackage<X::DevOps::DebugService>("xdb");
-	X::RegisterPackage<X::CpuTensor>("CpuTensor");
+	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(),"json");
+	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml");
+	X::RegisterPackage<X::HtmlWrapper>(m_libName.c_str(), "html");
+	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
+	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
 
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");

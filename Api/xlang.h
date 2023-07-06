@@ -410,6 +410,7 @@ namespace X
 		virtual bool SetIndexValue(int idx, Value& v) = 0;
 		virtual void RemoveALl() = 0;
 		virtual bool RunCodeWithThisScope(const char* code) = 0;
+		virtual void SetAPISet(void* pApiSet) = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)
 	{

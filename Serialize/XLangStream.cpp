@@ -350,7 +350,17 @@ namespace X
 				assert(false);
 				break;
 			case X::ObjType::Package:
-				assert(false);
+			{
+				//pair with PackageProxy::ToBytes
+				std::string strPackUri;
+				(*this) >> strPackUri;
+				X::Value varPackCreate = g_pXHost->CreatePackageWithUri(strPackUri.c_str());
+				if (varPackCreate.IsObject())
+				{
+					pObjToRestore = dynamic_cast<X::Data::Object*>(varPackCreate.GetObj());
+					pObjToRestore->IncRef();
+				}
+			}
 				break;
 			case X::ObjType::ModuleObject:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));

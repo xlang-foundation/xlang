@@ -421,37 +421,14 @@ extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 {
 	std::string strFullPath;
 	std::string strFolderPath;
-#if (WIN32)
-	HMODULE  hModule = NULL;
-	GetModuleHandleEx(
-		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-		(LPCTSTR)Load,
-		&hModule);
-	char path[MAX_PATH];
-	GetModuleFileName(hModule, path, MAX_PATH);
-	std::string strPath(path);
-	strFullPath = strPath;
-	auto pos = strPath.rfind("\\");
-	if (pos != std::string::npos)
-	{
-		strFolderPath = strPath.substr(0, pos);
-	}
-#else
-	Dl_info dl_info;
-	dladdr((void*)Load, &dl_info);
-	std::string strPath = dl_info.dli_fname;
-	strFullPath = strPath;
-	auto pos = strPath.rfind("/");
-	if (pos != std::string::npos)
-	{
-		strFolderPath = strPath.substr(0, pos);
-	}
-#endif
+	std::string strLibName;
+	GetCurLibInfo(Load, strFullPath, strFolderPath, strLibName);
 	X::g_pXload = (X::XLoad*)pXload;
 	const char* engPath = new char[strFolderPath.length() + 1];
 	memcpy((char*)engPath, strFolderPath.data(), strFolderPath.length() + 1);
 	X::g_pXload->GetConfig().xlangEnginePath = engPath;
 	auto* pXHost = X::CreatXHost();
+	X::Builtin::I().SetLibName(strLibName);
 	*pXHostHolder = pXHost;
 }
 extern "C"  X_EXPORT void Run()
