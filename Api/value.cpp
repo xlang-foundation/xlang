@@ -372,6 +372,21 @@ namespace X
 			SetObj(v0.GetObj());
 		}
 	}
+	Value Value::ObjCall(Port::vector<X::Value>& params, Port::StringMap<X::Value>& kwParams)
+	{
+		auto* pObj = GetObj();
+		if (pObj == nullptr || pObj->RT() == nullptr)
+		{
+			return Value();
+		}
+		Value v0;
+		pObj->Call(pObj->RT(), pObj->Parent(), params, kwParams, v0);
+		if (v0.IsObject())
+		{
+			v0.GetObj()->SetContext(pObj->RT(), pObj->Parent());
+		}
+		return v0;
+	}
 	Value Value::ObjCall(Port::vector<X::Value>& params)
 	{
 		auto* pObj = GetObj();

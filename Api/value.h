@@ -127,7 +127,6 @@ class Value
 		char* str;
 		XObj* obj;
 	}x;
-	Value ObjCall(Port::vector<X::Value>& params);
 	Value QueryMember(const char* key);
 public:
 	inline bool IsLong() { return t == ValueType::Int64; }
@@ -448,6 +447,10 @@ public:
 	virtual Value operator - (const Value& right);
 	virtual void operator += (const Value& v);
 	virtual void operator -= (const Value& v);
+
+	Value ObjCall(Port::vector<X::Value>& params);
+	Value ObjCall(Port::vector<X::Value>& params,Port::StringMap<X::Value>& kwParams);
+
 	template<typename... VarList>
 	Value operator()(VarList... args)
 	{
