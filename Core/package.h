@@ -22,12 +22,16 @@ class Package :
 	virtual public Data::Object,
 	virtual public Scope
 {
+	//Meta data for this package
+	void* m_apiset = nullptr;
+
 	void* m_pObject = nullptr;
 	StackFrame* m_stackFrame = nullptr;
 	std::vector<MemberIndexInfo> m_memberInfos;
 	PackageCleanup m_funcPackageCleanup = nullptr;
 	PackageWaitFunc m_funcPackageWait = nullptr;
 	PackageAccessor m_funcAccessor;
+
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{
 		m_funcAccessor = func;
@@ -58,6 +62,14 @@ public:
 		{
 			Cleanup(m_pObject);
 		}
+	}
+	virtual void SetAPISet(void* pApiSet) override
+	{
+		m_apiset = pApiSet;
+	}
+	inline void* GetAPISet()
+	{
+		return m_apiset;
 	}
 	inline virtual bool wait(int timeout) override
 	{
@@ -214,6 +226,7 @@ class PackageProxy :
 	StackFrame* m_stackFrame = nullptr;
 	Package* m_pPackage = nullptr;
 	PackageCleanup m_funcPackageCleanup = nullptr;
+
 	virtual void SetPackageCleanupFunc(PackageCleanup func) override
 	{
 		m_funcPackageCleanup = func;
@@ -298,6 +311,9 @@ public:
 		}
 		//m_pPackage->Unlock();
 	}
+	virtual void SetAPISet(void* pApiSet) override {}
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override;
+	virtual bool FromBytes(X::XLangStream& stream) override;
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;

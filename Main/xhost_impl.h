@@ -17,6 +17,7 @@ namespace X
 		virtual bool RegisterPackage(const char* name,Value& objPackage) override;
 		virtual Value QueryMember(XRuntime* rt, XObj* pObj, const char* name) override;
 		virtual bool QueryPackage(XRuntime* rt, const char* name, Value& objPackage) override;
+		virtual Value CreatePackageWithUri(const char* packageUri) override;
 		virtual XPackage* CreatePackage(void* pRealObj) override;
 		virtual XPackage* CreatePackageProxy(XPackage* pPackage, void* pRealObj) override;
 		virtual XEvent* CreateXEvent(const char* name) override;
@@ -41,6 +42,8 @@ namespace X
 		virtual bool FromBytes(X::Value& input, X::Value& output) override;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
+		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) override;
+		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) override;
 		virtual bool RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal) override;
 		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
 		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal) override;

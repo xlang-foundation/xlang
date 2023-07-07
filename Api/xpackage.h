@@ -33,13 +33,15 @@ namespace X
 		}
 	}
 	template<class impl_pack_class>
-	XPackage* RegisterPackage(const char* pack_name, impl_pack_class* instance = nullptr)
+	XPackage* RegisterPackage(const char* libName,const char* pack_name, impl_pack_class* instance = nullptr)
 	{
 		auto& apiset = impl_pack_class::APISET();
 		if (apiset.IsCreated())
 		{
 			return apiset.GetPack();
 		}
+		apiset.SetLibName(libName);
+		apiset.SetName(pack_name);
 		impl_pack_class::BuildAPI();
 		apiset.Create(instance);
 		X::g_pXHost->AddSysCleanupFunc([]() {
@@ -50,7 +52,7 @@ namespace X
 			X::g_pXHost->RegisterPackage(pack_name,[]()
 				{
 					impl_pack_class* pPackImpl = new impl_pack_class();
-			return impl_pack_class::APISET().GetProxy(pPackImpl);
+					return impl_pack_class::APISET().GetProxy(pPackImpl);
 				});
 		}
 		else
@@ -121,6 +123,7 @@ namespace X
 
 	class APISetBase
 	{
+		APISetBase* m_parent = nullptr;
 	public:
 		struct MemberInfo
 		{
@@ -134,13 +137,39 @@ namespace X
 			std::string doc;
 		};
 	protected:
+		std::string m_libName;//for this module's shared lib's name without ext name
+		std::string m_Name;//Package Name
 		bool m_bHaveTensorOps = false;
 		std::vector<MemberInfo> m_members;
 		std::vector<int> __events;//index no
 		std::vector<APISetBase*> m_bases;
 		XPackage* m_xPack = nullptr;
 		bool m_alreadyCallBuild = false;
+
+		PackageGetContentSizeFunc m_funcGetContentSize = nullptr;
+		PackageToBytesFunc m_funcToBytes = nullptr;
+		PackageFromBytesFunc m_funcFromBytes = nullptr;
 	public:
+		void SetPackageContentProc(
+			PackageGetContentSizeFunc sizeFunc,
+			PackageToBytesFunc toBytesFunc,
+			PackageFromBytesFunc fromBytesFunc)
+		{
+			m_funcGetContentSize = sizeFunc;
+			m_funcToBytes = toBytesFunc;
+			m_funcFromBytes = fromBytesFunc;
+		}
+		inline PackageGetContentSizeFunc GetSizeFunc() { return m_funcGetContentSize; }
+		inline PackageToBytesFunc GetToBytesFunc() { return m_funcToBytes; }
+		inline PackageFromBytesFunc GetFromBytesFunc() { return m_funcFromBytes; }
+		inline void SetParent(APISetBase* pParent)
+		{
+			m_parent = pParent;
+		}
+		inline APISetBase* GetParent()
+		{
+			return m_parent;
+		}
 		void CollectBases(std::vector<APISetBase*>& bases)
 		{
 			for (auto* p : m_bases)
@@ -149,6 +178,22 @@ namespace X
 			}
 			//derived class's same name member will override base's
 			bases.push_back(this);
+		}
+		inline void SetLibName(const char* name)
+		{
+			m_libName = name;
+		}
+		inline const char* GetLibName()
+		{
+			return m_libName.c_str();
+		}
+		inline void SetName(const char* name)
+		{
+			m_Name = name;
+		}
+		inline const char* GetName()
+		{
+			return m_Name.c_str();
 		}
 		inline auto& Members() { return m_members; }
 		virtual XPackage* GetPack() = 0;
@@ -245,6 +290,8 @@ namespace X
 			PackageCleanup cleanFunc = nullptr, PackageWaitFunc waitFunc = nullptr)
 		{
 			auto& apiset = Class_T::APISET();
+			apiset.SetParent(&T::APISET());
+			apiset.SetName(class_name);
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc, waitFunc);
 			X::U_FUNC dummy;
@@ -271,6 +318,7 @@ namespace X
 			PackageCleanup cleanFunc = nullptr, PackageWaitFunc waitFunc = nullptr,const char* doc = "")
 		{
 			auto& apiset = Class_T::APISET();
+			apiset.SetParent(&T::APISET());
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc, waitFunc);
 
@@ -662,6 +710,7 @@ namespace X
 			}
 
 			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
+			pPackage->SetAPISet((void*)&T::APISET());
 			//if object created by outside,thisObj will not be NULL
 			//then don't need to be deleted by XPackage
 			if (thisObj == nullptr)

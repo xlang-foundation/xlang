@@ -26,8 +26,12 @@ namespace X
 	class XCustomScope;
 	class XRuntime;
 	typedef XPackage* (*PackageCreator)();
+	typedef long long (*PackageGetContentSizeFunc)(void* pContextObj);
+	typedef bool (*PackageToBytesFunc)(void* pContextObj, X::XLStream* pStream);
+	typedef bool (*PackageFromBytesFunc)(void* pContextObj, X::XLStream* pStream);
 	typedef void (*PackageCleanup)(void* pContextObj);
 	typedef bool (*PackageWaitFunc)(void* pContextObj,int timeout);
+
 
 	using PackageAccessor = X::Port::Function <X::Value(X::XRuntime* rt, 
 		X::XObj* pContext,X::Port::vector<X::Value>& IdxAry)>;
@@ -70,6 +74,7 @@ namespace X
 		virtual XTensorGraph* CreateTensorGraph() = 0;
 		virtual XSet* CreateSet() = 0;
 		virtual XComplex* CreateComplex() = 0;
+		virtual Value CreatePackageWithUri(const char* packageUri) = 0;
 		virtual XPackage* CreatePackage(void* pRealObj) = 0;
 		virtual XPackage* CreatePackageProxy(XPackage* pPackage,void* pRealObj) = 0;
 		virtual XEvent* CreateXEvent(const char* name) = 0;
@@ -86,6 +91,8 @@ namespace X
 		virtual bool ToBytes(X::Value& input, X::Value& output) = 0;
 		virtual bool FromBytes(X::Value& input, X::Value& output) = 0;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
+		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) = 0;
+		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) = 0;
 		virtual bool RunCode(const char* moduleName,const char* code, int codeSize,X::Value& retVal) = 0;
 		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
 		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal) = 0;

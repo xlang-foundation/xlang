@@ -90,6 +90,25 @@ namespace X
 		std::string strName(name);
 		return X::Manager::I().QueryAndCreatePackage((XlangRuntime*)rt,strName, objPackage);
 	}
+	Value XHost_Impl::CreatePackageWithUri(const char* packageUri)
+	{
+		X::Value varPackage;
+		std::string uri(packageUri);
+		auto parts = split(uri, '|');
+		if (parts.size() < 2)
+		{
+			return varPackage;
+		}
+
+		if (g_pXHost->Import(GetCurrentRuntime(), parts[1].c_str(), parts[0].c_str(), nullptr, varPackage))
+		{
+			for (int i = 2; i < parts.size(); i++)
+			{
+				varPackage = varPackage[parts[i].c_str()]();
+			}
+		}
+		return varPackage;
+	}
 	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
 		auto* pPack = new AST::Package(pRealObj);
@@ -279,6 +298,18 @@ namespace X
 		stream.SetProvider(pStreamExternal);
 		stream >> v;
 		return true;
+	}
+	bool XHost_Impl::WriteToStream(char* data, long long size, X::XLStream* pStream)
+	{
+		X::XLangStream stream;
+		stream.SetProvider(pStream);
+		return stream.append(data,size);
+	}
+	bool XHost_Impl::ReadFromStream(char* buffer, long long size, X::XLStream* pStream)
+	{
+		X::XLangStream stream;
+		stream.SetProvider(pStream);
+		return stream.CopyTo(buffer, size);
 	}
 	bool XHost_Impl::RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal)
 	{

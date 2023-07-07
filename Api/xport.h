@@ -177,6 +177,15 @@ namespace X
 			{
 				m_data[m_curPos++] = v;
 			}
+			void clear()
+			{
+				m_size = 0;
+				if (m_data)
+				{
+					delete[] m_data;
+					m_data = nullptr;
+				}
+			}
 			inline void resize(int size)
 			{
 				if (size != m_size)

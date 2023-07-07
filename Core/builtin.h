@@ -20,6 +20,7 @@ namespace X {
 		public XPackage,
 		public Singleton<Builtin>
 	{
+		std::string m_libName;
 		Locker m_lock;
 		std::unordered_map<std::string,int> m_mapNameToIndex;
 		std::vector<BuiltinFuncInfo> m_Funcs;
@@ -37,6 +38,10 @@ namespace X {
 		{
 			return true;
 		}
+		void SetLibName(std::string& name)
+		{
+			m_libName = name;
+		}
 		void Cleanup();
 		Data::Function* Find(std::string& name);
 		bool Register(const char* name, X::U_FUNC func,
@@ -51,17 +56,10 @@ namespace X {
 		bool RegisterInternals();
 
 		// Inherited via XPackage
-		virtual void SetPackageAccessor(PackageAccessor func) override
-		{
-		}
-		virtual void SetPackageCleanupFunc(PackageCleanup func) override
-		{
-
-		}
-		virtual void SetPackageWaitFunc(PackageWaitFunc func) override
-		{
-
-		}
+		virtual void SetPackageAccessor(PackageAccessor func) override {}
+		virtual void SetPackageCleanupFunc(PackageCleanup func) override {}
+		virtual void SetPackageWaitFunc(PackageWaitFunc func) override {}
+		virtual void SetAPISet(void* pApiSet) override {}
 		virtual int AddMember(PackageMemberType type, const char* name, const char* doc, bool keepRawParams = false) override;
 		virtual int QueryMethod(const char* name, bool* pKeepRawParams) override;
 		virtual void* GetEmbedObj() override;

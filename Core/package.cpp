@@ -6,6 +6,7 @@
 #include "port.h"
 #include "utility.h"
 #include "Hosting.h"
+#include "xpackage.h"
 
 namespace X
 {
@@ -250,6 +251,79 @@ namespace X
 				}
 			}
 			return retVal;
+		}
+		bool PackageProxy::ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
+		{
+			APISetBase* pAPISet = nullptr;
+			std::string strPackUri;
+			if (m_pPackage)
+			{
+				pAPISet = (APISetBase*)m_pPackage->GetAPISet();
+				//encoding uri for this package
+				APISetBase* pAPISet0 = pAPISet;
+				while (pAPISet0)
+				{
+					if (strPackUri.empty())
+					{
+						strPackUri = pAPISet0->GetName();
+					}
+					else
+					{
+						strPackUri = std::string(pAPISet0->GetName()) + '|' + strPackUri;
+					}
+					APISetBase* pAPISet1 = pAPISet0->GetParent();
+					//check if it is the top package
+					if (pAPISet1 == nullptr)
+					{
+						strPackUri = std::string(pAPISet0->GetLibName()) + '|' + strPackUri;
+						break;
+					}
+					else
+					{
+						pAPISet0 = pAPISet1;
+					}
+				}
+			}
+			//pack URI
+			stream << strPackUri;
+			//pack size if no this package loaded, can skip this package's content
+			long long size = 0;
+			if (pAPISet)
+			{
+				auto sizeFunc = pAPISet->GetSizeFunc();
+				if (sizeFunc)
+				{
+					size = sizeFunc(m_pObject);
+				}
+			}
+			stream << size;
+			if (pAPISet)
+			{
+				auto toBytesFunc = pAPISet->GetToBytesFunc();
+				if (toBytesFunc)
+				{
+					toBytesFunc(m_pObject, &stream);
+				}
+			}
+
+
+			return true;
+		}
+		bool PackageProxy::FromBytes(X::XLangStream& stream)
+		{
+			bool bOK = true;
+			long long size = 0;
+			stream >> size;
+			APISetBase* pAPISet = (APISetBase*)m_pPackage->GetAPISet();
+			if (pAPISet)
+			{
+				auto fromBytesFunc = pAPISet->GetFromBytesFunc();
+				if (fromBytesFunc)
+				{
+					bOK = fromBytesFunc(m_pObject, &stream);
+				}
+			}
+			return bOK;
 		}
 		X::Data::List* PackageProxy::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
