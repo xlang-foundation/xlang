@@ -155,6 +155,14 @@ public:
 		}
 
 	}
+	inline void Clear()
+	{
+		if (t == ValueType::Object)
+		{
+			ReleaseObject(x.obj);
+		}
+		t = ValueType::Invalid;
+	}
 	inline Value()
 	{
 		t = ValueType::Invalid;

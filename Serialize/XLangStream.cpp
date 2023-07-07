@@ -330,15 +330,19 @@ namespace X
 			{
 			case X::ObjType::Str:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Str());
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::Binary:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Binary(nullptr,0,true));
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::Expr:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Expr(nullptr));
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::Function:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Function());
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::MetaFunction:
 				assert(false);
@@ -364,15 +368,18 @@ namespace X
 				break;
 			case X::ObjType::ModuleObject:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::Future:
 				assert(false);
 				break;
 			case X::ObjType::List:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::List());
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::Dict:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Dict());
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::TableRow:
 				assert(false);
@@ -382,6 +389,7 @@ namespace X
 				break;
 			case X::ObjType::RemoteObject:
 				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::PyProxyObject:
 				assert(false);
@@ -392,7 +400,7 @@ namespace X
 			if (pObjToRestore)
 			{
 				pObjToRestore->FromBytes(*this);
-				v = dynamic_cast<XObj*>(pObjToRestore);
+				v = X::Value(dynamic_cast<XObj*>(pObjToRestore),false);
 			}
 		}
 		break;
