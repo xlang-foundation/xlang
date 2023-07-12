@@ -60,7 +60,11 @@ public:
 		if (Index == -1)
 		{
 			ScopeLayout();
-			assert(Index != -1 && m_scope != nullptr);
+			//still not find, return false
+			if (Index == -1)
+			{
+				return false;
+			}
 		}
 		return m_scope->Set(rt, pContext, Index, v);
 	}

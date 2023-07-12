@@ -10,7 +10,7 @@ namespace X
 		void* m_uiThreadRunContext = nullptr;
 	public:
 		virtual void AddSysCleanupFunc(CLEANUP f) override;
-		virtual XRuntime* CreateRuntime() override;
+		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) override;
 		virtual XRuntime* GetCurrentRuntime() override;
 		virtual XStr* CreateStr(const char* data, int size) override;
 		virtual bool RegisterPackage(const char* name,PackageCreator creator) override;

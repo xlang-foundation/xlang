@@ -41,9 +41,22 @@ namespace X
 	{
 		Manager::I().AddCleanupFunc(f);
 	}
-	XRuntime* XHost_Impl::CreateRuntime()
+	XRuntime* XHost_Impl::CreateRuntime(bool bAddTopModule)
 	{
 		XlangRuntime* rt = new XlangRuntime();
+		if (bAddTopModule)
+		{
+			AST::Module* pTopModule = new AST::Module();
+			pTopModule->IncRef();
+			pTopModule->ScopeLayout();
+
+			rt->SetM(pTopModule);
+			pTopModule->SetRT(rt);
+			AST::StackFrame* pModuleFrame = pTopModule->GetStack();
+			pModuleFrame->SetLine(pTopModule->GetStartLine());
+			pTopModule->AddBuiltins(rt);
+			rt->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+		}
 		G::I().BindRuntimeToThread(rt);
 		return dynamic_cast<XRuntime*>(rt);
 	}

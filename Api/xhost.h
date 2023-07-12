@@ -59,7 +59,7 @@ namespace X
 	{
 	public:
 		virtual void AddSysCleanupFunc(CLEANUP f) = 0;
-		virtual XRuntime* CreateRuntime() = 0;
+		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) = 0;
 		virtual XRuntime* GetCurrentRuntime() = 0;
 		virtual bool RegisterPackage(const char* name,PackageCreator creator) = 0;
 		virtual bool RegisterPackage(const char* name,Value& objPackage) = 0;
