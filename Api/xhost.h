@@ -19,6 +19,7 @@ namespace X
 	class XTensorOperator;
 	class XTensorGraph;
 	class XSet;
+	class XStruct;
 	class XComplex;
 	class XBin;
 	class XRemoteObject;
@@ -70,6 +71,7 @@ namespace X
 		virtual XDict* CreateDict() = 0;
 		virtual XList* CreateList() = 0;
 		virtual XTensor* CreateTensor() = 0;
+		virtual XStruct* CreateStruct(char* data,int size, bool asRef) = 0;
 		virtual XTensorOperator* CreateTensorOperator(Tensor_OperatorHandler op, bool isUnaryOp) = 0;
 		virtual XTensorGraph* CreateTensorGraph() = 0;
 		virtual XSet* CreateSet() = 0;

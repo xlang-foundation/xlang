@@ -33,6 +33,7 @@ namespace X
 		TensorGraph,
 		Complex,
 		Set,
+		Struct,
 		TableRow,
 		Table,
 		RemoteObject,
@@ -170,7 +171,7 @@ namespace X
 			return 0;
 		}
 		//API Wrapper
-		inline Value Member(XRuntime* rt,const char* name)
+		inline virtual Value Member(XRuntime* rt,const char* name)
 		{
 			X::Value retVal = g_pXHost->QueryMember(rt,this, name);
 			if (retVal.IsObject())
@@ -277,6 +278,14 @@ namespace X
 	public:
 		Internal_Reserve(XSet)
 	};
+	class XStruct :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XStruct)
+		virtual char* Data() = 0;
+	};
+
 	enum class TensorDataType
 	{
 		BOOL = 0,
@@ -503,6 +512,7 @@ namespace X
 		int m_code = 0;
 	};
 	using Str = V<XStr>;
+	using Struct = V<XStruct>;
 	using Dict = V<XDict>;
 	using List = V<XList>;
 	using Tensor = V<XTensor>;

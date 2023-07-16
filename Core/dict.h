@@ -38,6 +38,12 @@ namespace X
 			{
 				return mMap.size();
 			}
+			virtual Value Member(XRuntime* rt, const char* name) override
+			{
+				X::Value val;
+				Get(X::Value(name), val);
+				return val;
+			}
 			virtual void Set(X::Value& key, X::Value& val) override
 			{
 				mMap.emplace(std::make_pair(key, val));

@@ -319,6 +319,7 @@ namespace X
 		{
 			auto& apiset = Class_T::APISET();
 			apiset.SetParent(&T::APISET());
+			apiset.SetName(class_name);
 			Class_T::BuildAPI();
 			apiset.Create(class_inst, cleanFunc, waitFunc);
 
@@ -355,6 +356,8 @@ namespace X
 		void AddVarClass(const char* class_name, const char* doc = "")
 		{
 			auto& apiset = Class_T::APISET();
+			apiset.SetParent(&T::APISET());
+			apiset.SetName(class_name);
 			Class_T::BuildAPI();
 			apiset.Create(nullptr);
 			X::U_FUNC dummy;
@@ -384,6 +387,8 @@ namespace X
 			const char* doc = "")
 		{
 			auto& apiset = Class_T::APISET();
+			apiset.SetParent(&T::APISET());
+			apiset.SetName(class_name);
 			Class_T::BuildAPI();
 			apiset.Create(nullptr);
 			X::U_FUNC dummy;
