@@ -21,6 +21,7 @@
 #include "tensor.h"
 #include "tensorop.h"
 #include "tensor_graph.h"
+#include "struct.h"
 
 namespace X 
 {
@@ -189,6 +190,12 @@ namespace X
 		auto* pTensor = new X::Data::Tensor();
 		pTensor->IncRef();
 		return pTensor;
+	}
+	XStruct* XHost_Impl::CreateStruct(char* data,int size, bool asRef)
+	{
+		auto* pStruct = new X::Data::XlangStruct(data,size,asRef);
+		pStruct->IncRef();
+		return pStruct;
 	}
 	XTensorOperator* XHost_Impl::CreateTensorOperator(Tensor_OperatorHandler op, bool isUnaryOp)
 	{

@@ -283,6 +283,12 @@ namespace X
 	}
 	template<>
 	template<>
+	void V<XStruct>::Create(char* data,int size,bool asRef)
+	{
+		SetObj(g_pXHost->CreateStruct(data, size,asRef));
+	}
+	template<>
+	template<>
 	void V<XStr>::Create(const char* s,int size)
 	{
 		SetObj(g_pXHost->CreateStr(s,size));
