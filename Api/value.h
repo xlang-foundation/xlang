@@ -203,6 +203,11 @@ public:
 		t = ValueType::Int64;
 		x.l = l;
 	}
+	inline Value(unsigned long l)
+	{
+		t = ValueType::Int64;
+		x.l = l;
+	}
 	inline Value(long long l)
 	{
 		t = ValueType::Int64;
@@ -318,6 +323,10 @@ public:
 	operator unsigned int() const
 	{
 		return (t == ValueType::Int64) ? (unsigned int)x.l : (unsigned int)x.d;
+	}
+	operator unsigned long() const
+	{
+		return (t == ValueType::Int64) ? (unsigned long)x.l : (unsigned long)x.d;
 	}
 	operator std::string()
 	{
