@@ -226,10 +226,14 @@ namespace X
 			T* pTObj = (T*)pRealObj;
 			if (pTObj->__pPack_)
 			{
+				//todo: check here 7/21/2023
+				pTObj->__pPack_->IncRef();
 				return pTObj->__pPack_;
 			}
 			auto* pPack = g_pXHost->CreatePackageProxy(m_xPack, pRealObj);
 			pTObj->__pPack_ = pPack;
+			//todo: check here 7/21/2023
+			pPack->IncRef();
 			return pPack;
 		}
 		void Cleanup()
