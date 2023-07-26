@@ -36,3 +36,6 @@
 #define MS_SLEEP(t)  usleep((t)*1000)
 #define US_SLEEP(t) usleep(t)
 #endif
+
+
+#define LIST_PASS_PROCESS_SIZE 100

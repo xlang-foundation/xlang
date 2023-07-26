@@ -221,19 +221,22 @@ namespace X
 		}
 		bool IsCreated() { return m_alreadyCallBuild; }
 		inline virtual XPackage* GetPack() override { return m_xPack; }
+		//GetProxy will return XPackage with One RefCount, caller needs to release it
 		inline virtual XPackage* GetProxy(void* pRealObj) override
 		{
 			T* pTObj = (T*)pRealObj;
 			if (pTObj->__pPack_)
 			{
+				XPackage* pPack = pTObj->__pPack_;
 				//todo: check here 7/21/2023
-				pTObj->__pPack_->IncRef();
-				return pTObj->__pPack_;
+				pPack->IncRef();
+				return pPack;
 			}
 			auto* pPack = g_pXHost->CreatePackageProxy(m_xPack, pRealObj);
 			pTObj->__pPack_ = pPack;
 			//todo: check here 7/21/2023
-			pPack->IncRef();
+			//already have one ref from CreatePackageProxy call
+			//pPack->IncRef();
 			return pPack;
 		}
 		void Cleanup()
@@ -753,6 +756,7 @@ namespace X
 					{
 						auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
 						auto* pFuncObj = X::g_pXHost->CreateFunction(m.name.c_str(), m.func, pObjFun);
+						pFuncObj->SetContext(nullptr, pPackage);
 						v0 = X::Value(pFuncObj, false);
 					}
 					break;
@@ -760,12 +764,14 @@ namespace X
 					{
 						auto* pObjFun = dynamic_cast<X::XObj*>(pPackage);
 						auto* pFuncObj = X::g_pXHost->CreateFunctionEx(m.name.c_str(), m.func_ex, pObjFun);
+						pFuncObj->SetContext(nullptr, pPackage);
 						v0 = X::Value(pFuncObj, false);
 					}
 					break;
 					case PackageMemberType::Prop:
 					{
 						auto* pPropObj = X::g_pXHost->CreateProp(m.name.c_str(), m.func, m.func2);
+						pPropObj->SetContext(nullptr,pPackage);
 						v0 = X::Value(pPropObj, false);
 					}
 					break;
@@ -777,6 +783,7 @@ namespace X
 					case PackageMemberType::ObjectEvent:
 					{
 						auto* pEvtObj = X::g_pXHost->CreateXEvent(m.name.c_str());
+						pEvtObj->SetContext(nullptr, pPackage);
 						v0 = X::Value(pEvtObj, false);
 						__events.push_back(idx);
 					}

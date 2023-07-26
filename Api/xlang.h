@@ -259,6 +259,7 @@ namespace X
 	public:
 		Internal_Reserve(XList)
 		virtual Value Get(long long idx) = 0;
+		virtual void AddItem(X::Value& v) = 0;
 	};
 	class XDict :
 		virtual public XObj
