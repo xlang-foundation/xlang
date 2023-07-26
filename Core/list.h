@@ -38,6 +38,10 @@ public:
 		m_ptrs.clear();
 		m_data.clear();
 	}
+	inline virtual void AddItem(X::Value& v) override
+	{
+		Add(v);
+	}
 	template<typename T>
 	std::vector<T> Map(EnumProc proc)
 	{
