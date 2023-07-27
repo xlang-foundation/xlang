@@ -10,7 +10,7 @@ class another_class():
     def test():
         print("from base_class's test()")
 
-class test_class(base_class,another_class):
+class test_class(another_class,base_class):
  prop1:int=1
  prop2:str='prop2_orgi'
  
@@ -29,6 +29,7 @@ class test_class(base_class,another_class):
      return rand()
 
 x0 = test_class()
+x0.test(10,20)
 x0.prop1 =[](size=2)
 x0.prop1[0] =1000
 x0.prop1[1] =1000

@@ -278,7 +278,7 @@ namespace X
 			// Inherited via Scope
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*>& callables) override;
-			virtual int AddOrGet(std::string& name, bool bGetOnly) override;
+			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
 			virtual bool Set(XlangRuntime* rt, XObj* pContext, 
 				int idx, X::Value& v) override
 			{

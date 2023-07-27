@@ -277,11 +277,11 @@ void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 		Scope* s = dynamic_cast<Scope*>(it);
 		if (s)
 		{
-			int idx = s->AddOrGet(strName,
-				!m_isLeftValue);
+			Scope* pRightScope = nullptr;
+			int idx = s->AddOrGet(strName,!m_isLeftValue,&pRightScope);
 			if (idx != -1)
 			{//use the scope to find this name as its scope
-				m_scope = s;
+				m_scope = (pRightScope == nullptr) ? s : pRightScope;
 				Index = idx;
 				break;
 			}
@@ -323,8 +323,8 @@ void Var::ScopeLayout()
 	while (pMyScope != nullptr && idx <0)
 	{
 		std::string strName(Name.s, Name.size);
-		idx = pMyScope->AddOrGet(strName,
-			!m_isLeftValue);
+		Scope* pRightScope = nullptr;
+		idx = pMyScope->AddOrGet(strName,!m_isLeftValue,&pRightScope);
 		if (idx == (int)ScopeVarIndex::EXTERN)
 		{//for extern var, always looking up parent scopes
 			bIsLeftValue = false;
@@ -336,7 +336,7 @@ void Var::ScopeLayout()
 		}
 		if (idx >=0)
 		{//use the scope to find this name as its scope
-			m_scope = pMyScope;
+			m_scope = (pRightScope==nullptr)?pMyScope: pRightScope;
 			break;
 		}
 		pMyScope = pMyScope->GetParentScope();

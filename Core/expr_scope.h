@@ -18,7 +18,7 @@ namespace X
 			XCustomScope* m_customScope = nullptr;
 			virtual Scope* GetParentScope() override { return nullptr; }
 			// Inherited via Scope
-			virtual int AddOrGet(std::string& name, bool bGetOnly) override
+			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
 			{
 				return m_customScope->Query(name.c_str());
 			}

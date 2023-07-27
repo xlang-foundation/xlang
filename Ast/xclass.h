@@ -14,7 +14,7 @@ class XClass
 {
 	Func* m_constructor = nil;
 	AST::StackFrame* m_stackFrame = nullptr;//to hold non-instance properties
-	std::vector<XClass*> m_bases;
+	std::vector<Value> m_bases;
 	XClass* FindBase(XlangRuntime* rt, std::string& strName);
 public:
 	XClass() :
@@ -29,10 +29,30 @@ public:
 			delete m_stackFrame;
 		}
 	}
+	inline int QueryConstructor()
+	{
+		auto it = m_Vars.find(GetNameString());
+		if (it != m_Vars.end())
+		{
+			return it->second;
+		}
+		it = m_Vars.find("constructor");
+		if (it != m_Vars.end())
+		{
+			return it->second;
+		}
+		it = m_Vars.find("__init__");
+		if (it != m_Vars.end())
+		{
+			return it->second;
+		}
+		return -1;
+	}
 	inline StackFrame* GetClassStack()
 	{
 		return m_stackFrame;
 	}
+	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
 	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
 	{
 		int idx = AddOrGet(name, false);
@@ -49,7 +69,7 @@ public:
 	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override;
 	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override;
-	inline std::vector<XClass*>& GetBases() { return m_bases; }
+	inline std::vector<Value>& GetBases() { return m_bases; }
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;

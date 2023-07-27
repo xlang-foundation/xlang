@@ -42,6 +42,10 @@ namespace X {
 		{
 			m_libName = name;
 		}
+		virtual bool IsSamePackage(XPackage* pPack) override
+		{
+			return false;
+		}
 		void Cleanup();
 		Data::Function* Find(std::string& name);
 		bool Register(const char* name, X::U_FUNC func,

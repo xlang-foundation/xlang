@@ -82,7 +82,7 @@ namespace X
 		virtual XEvent* CreateXEvent(const char* name) = 0;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC& func,X::XObj* pContext=nullptr) = 0;
 		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX& func, X::XObj* pContext = nullptr) = 0;
-		virtual XProp* CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter) = 0;
+		virtual XProp* CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter,XObj* pContext) = 0;
 		virtual const char* StringifyString(const char* str) = 0;
 		virtual void ReleaseString(const char* str) = 0;
 		virtual XBin* CreateBin(char* data, size_t size,bool bOwnData) = 0;

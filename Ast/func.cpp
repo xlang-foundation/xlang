@@ -3,6 +3,7 @@
 #include "function.h"
 #include <string>
 #include "glob.h"
+#include "xclass_object.h"
 
 namespace X
 {
@@ -228,6 +229,11 @@ bool Func::Call(XRuntime* rt0,
 	retValue = frame->GetReturnValue();
 	delete frame;
 	return true;
+}
+XObj* ExternFunc::GetRightContextForClass(XObj* pContext)
+{
+	auto* pXClassObject = dynamic_cast<Data::XClassObject*>(pContext);
+	return pXClassObject->QueryBaseObjForPackage(m_pContext);
 }
 }
 }

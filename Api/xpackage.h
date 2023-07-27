@@ -770,7 +770,7 @@ namespace X
 					break;
 					case PackageMemberType::Prop:
 					{
-						auto* pPropObj = X::g_pXHost->CreateProp(m.name.c_str(), m.func, m.func2);
+						auto* pPropObj = X::g_pXHost->CreateProp(m.name.c_str(), m.func, m.func2, pPackage);
 						pPropObj->SetContext(nullptr,pPackage);
 						v0 = X::Value(pPropObj, false);
 					}

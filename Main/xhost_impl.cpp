@@ -158,14 +158,14 @@ namespace X
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
-	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter)
+	XProp* XHost_Impl::CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter, XObj* pContext)
 	{
 		std::string strName(name);
 		std::string strSetName = "set_" + strName;
 		std::string strGetName = "get_" + strName;
 
-		AST::ExternFunc* extFunc_set = new AST::ExternFunc(strSetName,"", setter);
-		AST::ExternFunc* extFunc_get = new AST::ExternFunc(strGetName,"", getter);
+		AST::ExternFunc* extFunc_set = new AST::ExternFunc(strSetName,"", setter,pContext);
+		AST::ExternFunc* extFunc_get = new AST::ExternFunc(strGetName,"", getter, pContext);
 		auto* pPropObj = new X::Data::PropObject(extFunc_set, extFunc_get);
 		pPropObj->IncRef();
 		return dynamic_cast<XProp*>(pPropObj);

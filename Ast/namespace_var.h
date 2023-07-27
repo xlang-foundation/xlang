@@ -57,12 +57,12 @@ namespace X
 				}
 
 			}
-			virtual int AddOrGet(std::string& name, bool bGetOnly)
+			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr)
 			{
 				if (m_obj.IsObject())
 				{
 					auto* pNameObj = dynamic_cast<Data::NamespaceVarObject*>(m_obj.GetObj());
-					int idx = pNameObj->AddOrGet(name, bGetOnly);
+					int idx = pNameObj->AddOrGet(name, bGetOnly,ppRightScope);
 					if (idx >= 0)
 					{
 						pNameObj->AddSlotTo(idx);
