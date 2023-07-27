@@ -44,6 +44,11 @@ class Package :
 	{
 		m_funcPackageWait = func;
 	}
+	virtual bool IsSamePackage(XPackage* pPack) override
+	{
+		Package* pPackage = dynamic_cast<Package*>(pPack);
+		return (pPackage->m_apiset == m_apiset);
+	}
 	std::vector<AST::Module*> m_loadedModules;//for adding xlang code
 	void UnloadAddedModules();
 	Locker m_lock;
@@ -238,6 +243,11 @@ class PackageProxy :
 	{
 		return true;
 	}
+	virtual bool IsSamePackage(XPackage* pPack) override
+	{
+		Package* pPackage = dynamic_cast<Package*>(pPack);
+		return (m_pPackage->GetAPISet() == pPackage->GetAPISet());
+	}
 public:
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{
@@ -337,7 +347,7 @@ public:
 	{
 		return m_pPackage->Size();
 	}
-	virtual int AddOrGet(std::string& name, bool bGetOnly)
+	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
 	{
 		return m_pPackage->AddOrGet(name, bGetOnly);
 	}

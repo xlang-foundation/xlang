@@ -143,7 +143,7 @@ namespace X
 			callables.push_back(dynamic_cast<AST::Scope*>(this));
 			return true;
 		}
-		int PyProxyObject::AddOrGet(std::string& name, bool bGetOnly)
+		int PyProxyObject::AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope)
 		{
 			int idx = AST::Scope::AddOrGet(name, false);
 			m_stackFrame->SetVarCount(GetVarNum());

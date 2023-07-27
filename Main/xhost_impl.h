@@ -23,7 +23,7 @@ namespace X
 		virtual XEvent* CreateXEvent(const char* name) override;
 		virtual XFunc* CreateFunction(const char* name, U_FUNC& func, X::XObj* pContext = nullptr) override;
 		virtual XFunc* CreateFunctionEx(const char* name, U_FUNC_EX& func, X::XObj* pContext = nullptr) override;
-		virtual XProp* CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter) override;
+		virtual XProp* CreateProp(const char* name, U_FUNC& setter, U_FUNC& getter, XObj* pContext) override;
 		virtual XDict* CreateDict() override;
 		virtual XList* CreateList() override;
 		virtual XTensor* CreateTensor() override;

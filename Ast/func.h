@@ -10,6 +10,7 @@
 #include "xlang.h"
 #include "def.h"
 
+
 #define _pack_decor_ 0
 namespace X
 {
@@ -258,9 +259,9 @@ public:
 			RetType->SetParent(this);
 		}
 	}
-	virtual int AddOrGet(std::string& name, bool bGetOnly)
+	virtual int AddOrGet(std::string& name, bool bGetOnly,Scope** ppRightScope=nullptr) override
 	{
-		int retIdx = Scope::AddOrGet(name, bGetOnly);
+		int retIdx = Scope::AddOrGet(name, bGetOnly, ppRightScope);
 		return retIdx;
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext,
@@ -361,13 +362,30 @@ public:
 			return false;
 		}
 	}
+	XObj* GetRightContextForClass(XObj* pContext);
 	inline virtual bool Call(XRuntime* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		Value& retValue) override
 	{
-		return m_func ? m_func(rt,
-			pContext==nullptr? m_pContext: pContext, 
+		//TODO:Shawn 7/27/2023, need to double check here
+		// for class inherit from Native Package, the pContext will point XClassObject
+		//but for func call, m_pContext should be Package
+		XObj* pPassInContext;
+		if (pContext == nullptr)
+		{
+			pPassInContext = m_pContext;
+		}
+		else if (pContext->GetType() == ObjType::XClassObject 
+			&& m_pContext && m_pContext->GetType() == ObjType::Package)
+		{
+			pPassInContext = GetRightContextForClass(pContext);
+		}
+		else
+		{
+			pPassInContext = pContext;
+		}
+		return m_func ? m_func(rt, pPassInContext,
 			params, kwParams, retValue) : 
 			(
 				m_func_ex ? m_func_ex(rt,

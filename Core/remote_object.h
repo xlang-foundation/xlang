@@ -160,7 +160,7 @@ namespace X
 				m_remote_Obj_id, m_memmberId,
 				params, kwParams, trailer,retValue);
 		}
-		virtual int AddOrGet(std::string& name, bool bGetOnly) override
+		virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
 		{
 			int idx = Scope::AddOrGet(name, bGetOnly);
 			if (idx == (int)X::AST::ScopeVarIndex::INVALID)

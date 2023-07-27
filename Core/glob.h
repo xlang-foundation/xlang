@@ -46,6 +46,10 @@ namespace X {
 				pRet = dynamic_cast<XRuntime*>(it->second);
 			}
 			((Locker*)m_lockRTMap)->Unlock();
+			if (pRet == nullptr)
+			{
+				pRet =  MakeThreadRuntime(tid, nullptr);
+			}
 			return pRet;
 		}
 		inline XlangRuntime* Threading(XlangRuntime* fromRt)

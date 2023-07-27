@@ -12,11 +12,11 @@ namespace X
 		{
 		protected:
 			Scope* m_realScope = nullptr;
-			virtual int AddOrGet(std::string& name, bool bGetOnly)
+			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr)
 			{
 				if (m_realScope)
 				{
-					return m_realScope->AddOrGet(name, bGetOnly);
+					return m_realScope->AddOrGet(name, bGetOnly,ppRightScope);
 				}
 				return -1;
 			}

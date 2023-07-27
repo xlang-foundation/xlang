@@ -239,13 +239,17 @@ public:
 	}
 	inline void MakeCommonBases(
 		AST::Expression* pThisBase,
-		std::vector<AST::XClass*>& bases_0)
+		std::vector<Value>& bases_0)
 	{
 		if (m_bases.empty())//first item
 		{//append all
-			for (auto it : bases_0)
+			for (auto &it : bases_0)
 			{
-				m_bases.push_back(dynamic_cast<AST::Scope*>(it));
+				if (it.IsObject())
+				{
+					Data::Object* pRealObj = dynamic_cast<Data::Object*>(it.GetObj());
+					pRealObj->GetBaseScopes(m_bases);
+				}
 			}
 			m_bases.push_back(dynamic_cast<AST::Scope*>(pThisBase));
 		}
@@ -301,7 +305,7 @@ public:
 			}
 			else if (obj->GetType() == ObjType::Function)
 			{
-				std::vector<AST::XClass*> dummy;
+				std::vector<Value> dummy;
 				MakeCommonBases(rt->M(), dummy);
 			}
 		}
@@ -328,7 +332,7 @@ public:
 			}
 			else if (obj->GetType() == ObjType::Function)
 			{
-				std::vector<AST::XClass*> dummy;
+				std::vector<Value> dummy;
 				MakeCommonBases(rt->M(), dummy);
 			}
 		}

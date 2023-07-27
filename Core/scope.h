@@ -104,13 +104,13 @@ public:
 	virtual Scope* GetParentScope()= 0;
 	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext,std::string& name, Value& v)
 	{
-		int idx = AddOrGet(name, false);
+		int idx = AddOrGet(name, false,nullptr);
 		if (idx >= 0)
 		{
 			rt->DynSet(this, pContext, idx, v);
 		}
 	}
-	virtual int AddOrGet(std::string& name, bool bGetOnly)
+	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{//Always append,no remove, so new item's index is size of m_Vars;
 		//check extern map first,if it is extern var
 		//just return -1 to make caller look up to parent scopes

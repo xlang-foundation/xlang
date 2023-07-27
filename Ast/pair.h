@@ -59,7 +59,7 @@ namespace AST
 					}
 				}
 			}
-			else
+			else if(R)
 			{
 				R->SetIsLeftValue(b);
 			}

@@ -421,6 +421,7 @@ namespace X
 		virtual void RemoveALl() = 0;
 		virtual bool RunCodeWithThisScope(const char* code) = 0;
 		virtual void SetAPISet(void* pApiSet) = 0;
+		virtual bool IsSamePackage(XPackage* pPack) = 0;
 	};
 	inline long OnEvent(const char* evtName, EventHandler handler)
 	{

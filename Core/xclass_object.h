@@ -29,6 +29,7 @@ namespace X {
 					delete m_stackFrame;
 				}
 			}
+
 			virtual long long Size() override
 			{
 				return m_obj ? m_obj->GetVarNum() : 0;
@@ -36,7 +37,17 @@ namespace X {
 			inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 			{
 				Object::GetBaseScopes(bases);
-				bases.push_back(GetClassObj());
+				auto* pAst_Cls = GetClassObj();
+				auto& cls_bases = pAst_Cls->GetBases();
+				for (auto& v : cls_bases)
+				{
+					if (v.IsObject())
+					{
+						Data::Object* pRealObj = dynamic_cast<Data::Object*>(v.GetObj());
+						pRealObj->GetBaseScopes(bases);
+					}
+				}
+				bases.push_back(pAst_Cls);
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
@@ -53,6 +64,35 @@ namespace X {
 					m_obj->GetNameString().c_str(), (unsigned long long)this);
 				std::string retStr(v);
 				return GetABIString(retStr);
+			}
+			inline XObj* QueryBaseObjForPackage(XObj* pPackage)
+			{
+				XPackage* pXPackage = dynamic_cast<XPackage*>(pPackage);
+				if (pXPackage == nullptr)
+				{
+					return nullptr;
+				}
+				XObj* pRetObj = nullptr;
+				auto* pAst_Cls = GetClassObj();
+				auto& cls_bases = pAst_Cls->GetBases();
+				for (auto& v : cls_bases)
+				{
+					if (v.IsObject())
+					{
+						auto* pXObj = v.GetObj();
+						if (pXObj->GetType() == ObjType::Package)
+						{
+							XPackage* pXPackage_V = dynamic_cast<XPackage*>(pXObj);
+							if (pXPackage_V->IsSamePackage(pXPackage))
+							{
+								pRetObj = pXObj;
+								break;
+							}
+						}
+					}
+				}
+				return pRetObj;
+
 			}
 			inline AST::StackFrame* GetStack()
 			{
