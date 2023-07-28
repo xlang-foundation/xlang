@@ -215,6 +215,19 @@ namespace X
 		}
 		return -1;
 	}
+	void XLoad::EventLoop()
+	{
+		if (xlangLibHandler == nullptr)
+		{
+			return;
+		}
+		typedef void (*EventLoop)();
+		EventLoop loop = (EventLoop)GetProc(xlangLibHandler, "EventLoop");
+		if (loop)
+		{
+			loop();
+		}
+	}
 	int XLoad::Run()
 	{
 		if (xlangLibHandler == nullptr)

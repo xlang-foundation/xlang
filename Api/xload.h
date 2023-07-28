@@ -57,6 +57,7 @@ namespace X
 		int Load(Config* pCfg);
 		void Unload();
 		int Run();
+		void EventLoop();
 		inline void SetXLangLibHandler(void* handle) { xlangLibHandler = handle; }
 		inline void SetPythonLibHandler(void* handle) { pythonLibHandle = handle; }
 		inline void SetDevopsLibHandler(void* handle) { devopsLibHandler = handle; }
