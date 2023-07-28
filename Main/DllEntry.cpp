@@ -435,6 +435,10 @@ extern "C"  X_EXPORT void Run()
 {
 	X::XLangRun();
 }
+extern "C"  X_EXPORT void EventLoop()
+{
+	X::EventSystem::I().Loop();
+}
 extern "C"  X_EXPORT void Unload()
 {
 	X::XLangUnload();
