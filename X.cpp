@@ -116,6 +116,11 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 				paramCfg.config.enablePython = true;
 				i++;
 			}
+			else if (s == "-enable_python_debug" || s == "-python_debug")
+			{
+				paramCfg.config.enablePythonDebug = true;
+				i++;
+			}
 			else if (s == "-run_as_backend" || s == "-backend")
 			{
 				paramCfg.config.runAsBackend = true;

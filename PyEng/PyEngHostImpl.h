@@ -52,6 +52,7 @@ public:
 	virtual PyEngObjectPtr NewDict() override;
 	virtual PyEngObjectPtr NewArray(int nd, unsigned long long* dims, int itemDataType) override;
 	virtual PyEngObjectPtr Import(const char* key) override;
+	virtual PyEngObjectPtr ImportWithPreloadRequired(const char* key) override;
 	virtual bool ImportWithFromList(const char* moduleName,
 		X::Port::vector<const char*>& fromList, 
 		X::Port::vector<PyEngObjectPtr>& subs) override;

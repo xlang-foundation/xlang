@@ -2,6 +2,7 @@
 #include "utility.h"
 #include "PyFunc.h"
 #include <iostream>
+#include "port.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -412,10 +413,62 @@ PyEngObjectPtr GrusPyEngHost::Import(const char* key)
 	auto* pOb = PyImport_ImportModule(key);
 	return (PyEngObjectPtr)pOb;
 }
+
+
+//deal with import cv2 case, emebed Python bugs: need to preload cv2.pyd at least in Windows
+PyEngObjectPtr GrusPyEngHost::ImportWithPreloadRequired(const char* key)
+{
+	auto load = [key](std::string& path) {
+		std::string fullPath = path + Path_Sep_S + key+ Path_Sep_S+key;
+#if (WIN32)
+		fullPath += ".pyd";
+#else
+		fullPath += ".so";
+#endif
+		return LOADLIB(fullPath.c_str());
+	};
+	//check if there is pyd file in site-package folder
+	PyObject* pSiteModule = PyImport_ImportModule("site");
+	if (!pSiteModule) 
+	{
+		PyErr_Print();
+		return nullptr;
+	}
+	PyObject* pSitePackagesPath = PyObject_CallMethod(pSiteModule, "getsitepackages", nullptr);
+	if (!pSitePackagesPath)
+	{
+		Py_DECREF(pSiteModule);
+		PyErr_Print();
+		return nullptr;
+	}
+	void* handleLoaded = nullptr;
+	// Enumerate and convert the paths to strings
+	Py_ssize_t listSize = PyList_Size(pSitePackagesPath);
+	for (Py_ssize_t i = 0; i < listSize; ++i) 
+	{
+		PyObject* pPathItem = PyList_GetItem(pSitePackagesPath, i);
+		std::string sitePackagesPath = ConvertFromObject(pPathItem);
+		auto handle = load(sitePackagesPath);
+		if (handle)
+		{
+			handleLoaded = handle;
+			break;
+		}
+	}
+	Py_DECREF(pSiteModule);
+	Py_DECREF(pSitePackagesPath);
+	auto* pOb = PyImport_ImportModule(key);
+	if (handleLoaded)
+	{
+		UNLOADLIB(handleLoaded);
+	}
+	return (PyEngObjectPtr)pOb;
+}
 //for this use case
 //from moduleName import sub1,sub2....
 //in fact, sub1,sub2... are the from list
 //and the from part above is the module name
+
 bool GrusPyEngHost::ImportWithFromList(
 	const char* moduleName,
 	X::Port::vector<const char*>& fromList,

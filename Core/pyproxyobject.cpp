@@ -8,6 +8,18 @@ namespace X
 {
 	namespace Data
 	{
+		#define PRELOAD_TAG "preload"
+
+		//Shawn 8/4/2023, for embeded python, import cv2 has bugs,
+		//can't import them in, but other modules like numpy are OK to import
+		//workaround is preloading cv2.pyd from [python_folder]lib\site-packages\cv2\cv2.pyd
+		// so we use this syntax to import cv2
+		//  from preload import cv2
+		//then in this GrusPyEngHost, will check from is equal to 'preload' or not
+		//if it is, then find the native package's pyd file, load this lib
+		// we think maybe this bug just in Windows
+		//so just do in windows platform,for others, skip it
+
 		PyProxyObject* PyObjectCache::QueryModule(std::string& fileName)
 		{
 			std::string strFileName = fileName;
@@ -27,6 +39,7 @@ namespace X
 			std::string curPath)
 			:PyProxyObject()
 		{
+			static std::string preloadTag(PRELOAD_TAG);
 			m_proxyType = PyProxyType::Module;
 			m_name = name;
 			m_path = curPath;
@@ -46,6 +59,10 @@ namespace X
 				sys["path.insert"](0, m_path);
 				m_obj = g_pPyHost->Import(name.c_str());
 				sys["path.remove"](m_path);
+			}
+			else if (fromPath == preloadTag)
+			{
+				m_obj = g_pPyHost->ImportWithPreloadRequired(name.c_str());
 			}
 			else
 			{
