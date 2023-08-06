@@ -56,6 +56,7 @@ public:
 		X::Port::vector<unsigned long long>& dims,
 		X::Port::vector<unsigned long long>& strides) = 0;
 	virtual PyEngObjectPtr Import(const char* key) = 0;
+	virtual PyEngObjectPtr ImportWithPreloadRequired(const char* key) = 0;
 	virtual bool ImportWithFromList(const char* moduleName,
 		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) = 0;
 	virtual bool IsNone(PyEngObjectPtr obj) = 0;

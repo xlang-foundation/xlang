@@ -11,6 +11,7 @@
 
 namespace X 
 {
+	extern XLoad* g_pXload;
 namespace AST 
 {
 void Module::SetDebug(bool b,XlangRuntime* runtime)
@@ -19,8 +20,11 @@ void Module::SetDebug(bool b,XlangRuntime* runtime)
 	if (b)
 	{
 		runtime->SetTrace(Dbg::xTraceFunc);
-		PyEng::Object objRT((unsigned long long)runtime);
-		PyEng::Object::SetTrace(Dbg::PythonTraceFunc,objRT);
+		if (g_pXload->GetConfig().enablePythonDebug)
+		{
+			PyEng::Object objRT((unsigned long long)runtime);
+			PyEng::Object::SetTrace(Dbg::PythonTraceFunc,objRT);
+		}
 	}
 	else
 	{
