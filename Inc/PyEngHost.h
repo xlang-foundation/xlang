@@ -49,7 +49,7 @@ public:
 	virtual PyEngObjectPtr NewList(long long size) = 0;
 	virtual PyEngObjectPtr NewTuple(long long size) = 0;
 	virtual PyEngObjectPtr NewDict() = 0;
-	virtual PyEngObjectPtr NewArray(int nd, unsigned long long* dims, int itemDataType) = 0;
+	virtual PyEngObjectPtr NewArray(int nd, unsigned long long* dims, int itemDataType,void* data) = 0;
 	virtual void* GetDataPtr(PyEngObjectPtr obj) = 0;
 	virtual bool GetDataDesc(PyEngObjectPtr obj, 
 		int& itemDataType,int& itemSize,

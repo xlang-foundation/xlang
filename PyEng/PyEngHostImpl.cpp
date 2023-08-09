@@ -393,15 +393,22 @@ PyEngObjectPtr GrusPyEngHost::NewDict()
 	return (PyEngObjectPtr)PyDict_New();
 }
 
-PyEngObjectPtr GrusPyEngHost::NewArray(int nd, unsigned long long* dims, int itemDataType)
+PyEngObjectPtr GrusPyEngHost::NewArray(int nd, unsigned long long* dims, int itemDataType,void* data)
 {
 	SURE_NUMPY_API();
-
-	auto aryData = (PyArrayObject*)PyArray_SimpleNew(
-		nd,
-		(npy_intp *)dims,
-		itemDataType);
-	return (PyEngObjectPtr)aryData;
+	
+	PyEngObjectPtr aryData = nullptr;
+	if (data == nullptr)
+	{
+		aryData = (PyArrayObject*)PyArray_SimpleNew(
+			nd, (npy_intp*)dims, itemDataType);
+	}
+	else
+	{
+		aryData = (PyArrayObject*)PyArray_SimpleNewFromData(
+			nd,(npy_intp*)dims,itemDataType, data);
+	}
+	return aryData;
 }
 void GrusPyEngHost::SetTrace(Python_TraceFunc func,
 	PyEngObjectPtr args)

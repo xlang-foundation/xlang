@@ -65,6 +65,7 @@ namespace X
 		virtual void RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler, void* pContext) override;
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() override;
 		virtual void* GetUIThreadRunContext() override;
+		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();
