@@ -132,6 +132,7 @@ public:
 	inline bool IsLong() { return t == ValueType::Int64; }
 	inline bool IsDouble() { return t == ValueType::Double; }
 	inline bool IsNumber() { return IsLong() || IsDouble();}
+	inline bool IsBool() { return IsLong() && (flags & (int)ValueSubType::BOOL); }
 	inline bool IsInvalid()
 	{
 		return (t == ValueType::Invalid);

@@ -206,6 +206,17 @@ namespace X
 			virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
 				std::string itemName, X::Value& val) override;
+			virtual void Enum(XDict::Dict_Enum proc) override
+			{
+				AutoLock autoLock(m_lock);
+
+				for (auto& it : mMap)
+				{
+					X::Value key(it.first);
+					X::Value val(it.second);
+					proc(key, val);
+				}
+			}
 			virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
 				IterateProc proc, ARGS& params, KWARGS& kwParams,
 				X::Value& retValue) override
