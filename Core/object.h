@@ -253,7 +253,8 @@ namespace Data {
 		virtual int cmp(X::Value* r)
 		{
 			if (r->GetType() == ValueType::None ||
-				r->GetType() == ValueType::Invalid)
+				r->GetType() == ValueType::Invalid ||
+				!r->IsTrue())
 			{
 				return 1;//object is nor None,
 			}

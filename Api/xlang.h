@@ -265,8 +265,10 @@ namespace X
 		virtual public XObj
 	{
 	public:
+		using Dict_Enum = X::Port::Function<void(X::Value& key, X::Value& val)>;
 		Internal_Reserve(XDict)
 		virtual void Set(X::Value& key, X::Value& val) = 0;
+		virtual void Enum(Dict_Enum proc) = 0;
 		inline void Set(const char* key, X::Value val)
 		{
 			X::Value k(key);

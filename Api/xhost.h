@@ -115,6 +115,7 @@ namespace X
 		virtual void RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler,void* pContext) = 0;
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() = 0;
 		virtual void* GetUIThreadRunContext() =0;
+		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) = 0;
 	};
 	extern XHost* g_pXHost;
 }

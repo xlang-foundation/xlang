@@ -625,6 +625,8 @@ namespace X
 		case ValueType::Object:
 			sizeRet = (x.obj != nullptr ? x.obj->Size() : 0);
 			break;
+		case ValueType::Str:
+			sizeRet = flags;
 		default:
 			break;
 		}

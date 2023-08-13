@@ -22,6 +22,8 @@
 #include "tensorop.h"
 #include "tensor_graph.h"
 #include "struct.h"
+#include "PyEngObject.h"
+#include "pyproxyobject.h"
 
 namespace X 
 {
@@ -517,5 +519,21 @@ namespace X
 	void* XHost_Impl::GetUIThreadRunContext()
 	{
 		return m_uiThreadRunContext;
+	}
+	X::Value XHost_Impl::CreateNdarray(int nd, 
+		unsigned long long* dims, int itemDataType, void* data)
+	{
+		if (g_pPyHost == nullptr)
+		{
+			return X::Value();
+		}
+		auto objPtr = g_pPyHost->NewArray(nd, dims, itemDataType, data);
+		if (objPtr == nullptr)
+		{
+			return X::Value();
+		}
+		PyEng::Object pyObj(objPtr);
+		auto* pProxyObj = new Data::PyProxyObject(pyObj);
+		return  Value(pProxyObj);
 	}
 }

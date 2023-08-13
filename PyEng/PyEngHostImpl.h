@@ -50,7 +50,7 @@ public:
 	virtual PyEngObjectPtr NewTuple (long long size) override;
 	virtual PyEngObjectPtr NewList(long long size) override;
 	virtual PyEngObjectPtr NewDict() override;
-	virtual PyEngObjectPtr NewArray(int nd, unsigned long long* dims, int itemDataType) override;
+	virtual PyEngObjectPtr NewArray(int nd, unsigned long long* dims, int itemDataType,void* data) override;
 	virtual PyEngObjectPtr Import(const char* key) override;
 	virtual PyEngObjectPtr ImportWithPreloadRequired(const char* key) override;
 	virtual bool ImportWithFromList(const char* moduleName,

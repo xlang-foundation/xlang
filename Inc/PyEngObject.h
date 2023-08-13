@@ -664,7 +664,7 @@ public:
 		}
 		m_size = a * m_dims[0];
 		SetItemType();
-		m_p = g_pPyHost->NewArray(nd, dims, (int)m_itemdatatype);
+		m_p = g_pPyHost->NewArray(nd, dims, (int)m_itemdatatype,nullptr);
 		int itemType = 0;
 		X::Port::vector<unsigned long long> vecDims(0);
 		X::Port::vector<unsigned long long> vecStrides(0);
@@ -694,7 +694,7 @@ public:
 		}
 		m_size = a * m_dims[0];
 		m_itemdatatype = (JIT_DATA_TYPES)itemDataType;
-		m_p = g_pPyHost->NewArray(nd, dims, (int)m_itemdatatype);
+		m_p = g_pPyHost->NewArray(nd, dims, (int)m_itemdatatype,nullptr);
 		int itemType = 0;
 		X::Port::vector<unsigned long long> vecDims(0);
 		X::Port::vector<unsigned long long> vecStrides(0);
