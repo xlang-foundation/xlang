@@ -6,7 +6,7 @@
 #include <iostream>
 #include "utility.h"
 
-extern bool U_Print(X::XRuntime* rt, X::XObj* pContext,
+extern bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue);
@@ -210,7 +210,7 @@ bool Block::RunFromLine(XRuntime* rt, XObj* pContext,
 				args_p.push_back(v0);
 				X::KWARGS kwArgs_p;
 				X::Value retValue_p;
-				U_Print(rt, pContext, args_p, kwArgs_p, retValue_p);
+				U_Print(rt, nullptr,pContext, args_p, kwArgs_p, retValue_p);
 			}
 			return bOK;
 		}

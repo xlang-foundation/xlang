@@ -4,6 +4,7 @@
 #include <vector>
 #include <typeinfo>
 #include <utility>
+#include <assert.h> 
 
 /*  ABI
 this file use g_pXHost as bridge to XLang Core module
@@ -118,6 +119,23 @@ namespace X
 		inline auto NewClass(FirstT first, T& a)
 		{
 			return NewClass_impl<FirstT, class_T>(first, a, Indices{});
+		}
+		inline X::XPackage* MakePackagePointer(X::XObj* pThis, X::XObj* pContext)
+		{
+			X::XPackage* pThisPackage = nullptr;
+			if (pContext && pContext->GetType() == X::ObjType::Package)
+			{
+				pThisPackage = dynamic_cast<X::XPackage*>(pContext);
+			}
+			else if (pThis && pThis->GetType() == X::ObjType::Package)
+			{
+				pThisPackage = dynamic_cast<X::XPackage*>(pThis);
+			}
+			else
+			{
+				assert(false);
+			}
+			return pThisPackage;
 		}
 	}
 
@@ -304,7 +322,7 @@ namespace X
 			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Class,class_name,X::Value(),
-				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
 						Class_T* cls = nullptr;
@@ -334,7 +352,7 @@ namespace X
 			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Class,class_name,X::Value(),
-				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([class_inst](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
 						Class_T* cls = nullptr;
@@ -371,7 +389,7 @@ namespace X
 			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Class,class_name,X::Value(),
-				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
 						Class_T* cls = nullptr;
@@ -402,7 +420,7 @@ namespace X
 			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Class,class_name,X::Value(),
-				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
 						Class_T* cls = new Class_T(params, kwParams);
@@ -417,12 +435,12 @@ namespace X
 			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Func,func_name,X::Value(),
-				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						auto _retVal = HelpFuncs::VarCall<Parameter_Num>(pThis,f,params);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						auto _retVal = HelpFuncs::VarCall<Parameter_Num>(tThis,f,params);
 						retValue = X::Value(_retVal);
 						return true;
 					}),dummy,dummyEx,false,std::string(doc) });
@@ -433,12 +451,12 @@ namespace X
 			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::FuncEx,func_name,X::Value(),dummy,dummy,
-				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						auto _retVal = HelpFuncs::VarCallEx<Parameter_Num>(pThis,f, trailer,params);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						auto _retVal = HelpFuncs::VarCallEx<Parameter_Num>(tThis,f, trailer,params);
 						retValue = X::Value(_retVal);
 						return true;
 					}),false,std::string(doc) });
@@ -450,12 +468,12 @@ namespace X
 			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Func,func_name,X::Value(),
-				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						auto _retVal = HelpFuncs::VarCall_Extra<Parameter_Num>(rt, pContext,pThis,f,params);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						auto _retVal = HelpFuncs::VarCall_Extra<Parameter_Num>(rt, pContext,tThis,f,params);
 						retValue = X::Value(_retVal);
 						return true;
 					}),dummy,dummyEx,false,std::string(doc) });
@@ -466,12 +484,12 @@ namespace X
 			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::FuncEx,func_name,X::Value(),dummy,dummy,
-				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						(pThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						(tThis->*f)(rt, pThis,pContext, params, kwParams, trailer, retValue);
 						return true;
 					}),false,std::string(doc) });
 		}
@@ -481,12 +499,12 @@ namespace X
 			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::FuncEx,func_name,X::Value(),dummy,dummy,
-				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC_EX)([f](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& trailer,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						(pThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						(tThis->*f)(rt, pContext, params, kwParams, trailer, retValue);
 						return true;
 					}),true,std::string(doc) });
 		}
@@ -497,12 +515,12 @@ namespace X
 			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Func,func_name,X::Value(),
-				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						(pThis->*f)(rt, pContext, params, kwParams, retValue);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						(tThis->*f)(rt, pContext, params, kwParams, retValue);
 						return true;
 					}),dummy,dummyEx,false,std::string(doc) });
 		}
@@ -512,21 +530,21 @@ namespace X
 			X::U_FUNC dummy;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Prop,func_name,X::Value(),
-				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						(pThis->*var) = params[0];
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						(tThis->*var) = params[0];
 						retValue = X::Value(true);
 						return true;
 					}),
-				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						retValue = X::Value(pThis->*var);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						retValue = X::Value(tThis->*var);
 						return true;
 					})
 				});
@@ -539,22 +557,22 @@ namespace X
 		{
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Prop,func_name,X::Value(),
-				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
 						VAR_TYPE _v = params[0];
-						(pThis->*var) = _v;
+						(tThis->*var) = _v;
 						retValue = X::Value(true);
 						return true;
 					}),
-				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([var](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						retValue = X::Value(pThis->*var);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						retValue = X::Value(tThis->*var);
 						return true;
 					})
 				});
@@ -564,21 +582,21 @@ namespace X
 		{
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Prop,func_name,X::Value(),
-				(X::U_FUNC)([setF](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([setF](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						setF(pThis,params[0]);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* pThisOfT = (T*)pPackage->GetEmbedObj();
+						setF(pThisOfT,params[0]);
 						retValue = X::Value(true);
 						return true;
 					}),
-				(X::U_FUNC)([getF](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([getF](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						retValue = getF(pThis);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* pThisOfT = (T*)pPackage->GetEmbedObj();
+						retValue = getF(pThisOfT);
 						return true;
 					})
 				});
@@ -590,12 +608,12 @@ namespace X
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Prop,func_name,X::Value(),
 				dummy,
-				(X::U_FUNC)([get](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([get](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						retValue = X::Value((pThis->*get)());
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						retValue = X::Value((tThis->*get)());
 						return true;
 					})
 				});
@@ -605,21 +623,21 @@ namespace X
 		{
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Prop,func_name,X::Value(),
-				(X::U_FUNC)([set](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([set](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						(pThis->*set)(params[0]);
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						(tThis->*set)(params[0]);
 						retValue = X::Value(true);
 						return true;
 					}),
-				(X::U_FUNC)([get](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([get](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						retValue = X::Value((pThis->*get)());
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						retValue = X::Value((tThis->*get)());
 						return true;
 					})
 				});
@@ -633,18 +651,18 @@ namespace X
 			//add func with name to return a TensorOperator
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Func,name,X::Value(),
-				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						Tensor_OperatorHandler handler= [pThis, f, params, kwParams]
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						Tensor_OperatorHandler handler= [tThis, f, params, kwParams]
 						(X::ARGS& inputs, X::Value& retVal)
 						{
 							//todo: check performace impact
 							X::ARGS params0 = params;
 							X::KWARGS kwParams0 = kwParams;
-							(pThis->*f)(params0, kwParams0, inputs[0], retVal);
+							(tThis->*f)(params0, kwParams0, inputs[0], retVal);
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,true);
 						std::string strName(name);
@@ -663,18 +681,18 @@ namespace X
 			X::U_FUNC_EX dummyEx;
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Func,name,X::Value(),
-				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
-						Tensor_OperatorHandler handler= [pThis, f, params, kwParams]
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						Tensor_OperatorHandler handler= [tThis, f, params, kwParams]
 						(X::ARGS& inputs, X::Value& retVal)
 						{
 							//todo: check performace impact
 							X::ARGS params0 = params;
 							X::KWARGS kwParams0 = kwParams;
-							(pThis->*f)(params0, kwParams0, inputs[0], inputs[1], retVal);
+							(tThis->*f)(params0, kwParams0, inputs[0], inputs[1], retVal);
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,false);
 						std::string strName(name);
@@ -691,11 +709,11 @@ namespace X
 			//add a funcation graph for this Package
 			m_members.push_back(MemberInfo{
 				PackageMemberType::Func,"graph",X::Value(),
-				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pContext,
+				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = dynamic_cast<X::XPackage*>(pContext);
-						auto* pThis = (T*)pPackage->GetEmbedObj();
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
 						auto* pTensorGraph = X::g_pXHost->CreateTensorGraph();
 						pTensorGraph->Create(pContext,params, kwParams);
 						retValue = X::Value(pTensorGraph);

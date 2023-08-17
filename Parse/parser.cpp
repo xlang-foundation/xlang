@@ -96,6 +96,8 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 			}
 			else
 			{
+				//for func or class, we need to re-calc line info bases on body's last item
+				curBlock->ReCalcHintWithBody();
 				delete pCurBlockState;
 				m_stackBlocks.pop();
 			}

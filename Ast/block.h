@@ -94,6 +94,15 @@ public:
 	{
 		return Body.size();
 	}
+	//using Body's last expression's line number to get the end line number
+	inline void ReCalcHintWithBody()
+	{
+		if (Body.size() > 0)
+		{
+			auto& last = Body[Body.size() - 1];
+			ReCalcHint(last);
+		}
+	}
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		UnaryOp::ToBytes(rt,pContext,stream);

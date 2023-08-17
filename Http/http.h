@@ -70,7 +70,7 @@ namespace X
 		bool Listen(std::string srvName, int port);
 		bool Stop();
 		bool Get(std::string pattern, X::Value& valHandler);
-		bool Route(X::XRuntime* rt, X::XObj* pContext,
+		bool Route(X::XRuntime* rt, X::XObj* pThis,X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams,
 			X::Value& trailer, X::Value& retValue);
 	};

@@ -40,7 +40,7 @@ namespace X
 				std::string strName;
 				{
 					strName = "get";
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis,XObj* pContext,
 						X::ARGS& params,
 						X::KWARGS& kwParams,
 						X::Value& retValue)
@@ -68,7 +68,7 @@ namespace X
 				}
 				{
 					strName = "then";
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						X::ARGS& params,
 						X::KWARGS& kwParams,
 						X::Value& retValue)

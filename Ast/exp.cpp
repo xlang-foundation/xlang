@@ -110,7 +110,11 @@ Expression* Expression::CreateByType(ObType t)
 		pExp = new Block();
 		break;
 	case ObType::Class:
-		pExp = new XClass();
+	{
+		auto* pXClass = new XClass();
+		pXClass->CreateNecessaryItems();
+		pExp = pXClass;
+	}
 		break;
 	case ObType::From:
 		pExp = new From();

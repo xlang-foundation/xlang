@@ -29,12 +29,22 @@ namespace X
         friend class XLangStream;
         std::unordered_map<unsigned long long, void*> m_map;
         AST::Scope* m_curScope = nullptr;
+        //for function inside class, we need to record class scope to
+        //let this.item get the right scope
+        //used for checking if it is extern or not
+        //for this.item, item will not be extern
+
+        AST::Scope* m_curClassScope = nullptr;
         XlangRuntime* m_rt = nullptr;
         XObj* m_pContext = nullptr;
     public:
         void SetCurrentScope(AST::Scope* p)
         {
             m_curScope = p;
+        }
+        void SetCurrentClassScope(AST::Scope* p)
+        {
+            m_curClassScope = p;
         }
         void SetContext(XlangRuntime* rt, XObj* pContext)
         {
@@ -46,6 +56,10 @@ namespace X
         AST::Scope* GetCurrentScope()
         {
             return m_curScope;
+        }
+        AST::Scope* GetCurrentClassScope()
+        {
+            return m_curClassScope;
         }
         void Add(unsigned long long id, void* addr)
         {

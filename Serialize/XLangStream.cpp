@@ -349,7 +349,8 @@ namespace X
 				assert(false);
 				break;
 			case X::ObjType::XClassObject:
-				assert(false);
+				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::XClassObject());
+				pObjToRestore->IncRef();
 				break;
 			case X::ObjType::FuncCalls:
 				assert(false);

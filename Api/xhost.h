@@ -45,9 +45,9 @@ namespace X
 	typedef bool (*U_FUNC_bak) (XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwParams, Value& retValue);
 	typedef void(*CLEANUP)();
-	using U_FUNC = X::Port::Function<bool(XRuntime* rt, XObj* pContext,
+	using U_FUNC = X::Port::Function<bool(XRuntime* rt, XObj* pThis,XObj* pContext,
 		ARGS& params, KWARGS& kwParams, Value& retValue)>;
-	using U_FUNC_EX = X::Port::Function<bool(XRuntime* rt, XObj* pContext,
+	using U_FUNC_EX = X::Port::Function<bool(XRuntime* rt, XObj* pThis,XObj* pContext,
 		ARGS& params, KWARGS& kwParams, X::Value& trailer,Value& retValue)>;
 	using EventHandler = X::Port::Function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;

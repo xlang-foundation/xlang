@@ -196,7 +196,8 @@ namespace AST
 		//will happen in decor function
 		//just treat as local var
 		bool isExtern = (Index != -1) && (dynamic_cast<X::Data::ExpressionScope*>(m_scope) == nullptr)
-			&& (m_scope != stream.ScopeSpace().GetCurrentScope());
+			&& (m_scope != stream.ScopeSpace().GetCurrentScope())
+			&& (m_scope != stream.ScopeSpace().GetCurrentClassScope());
 		stream << isExtern;
 		//check the value if it is external
 		if (isExtern)

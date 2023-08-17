@@ -32,7 +32,7 @@ namespace X
 				};
 				{
 					std::string name("find");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt,XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -57,7 +57,7 @@ namespace X
 				}
 				{
 					std::string name("rfind");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt,XObj* pThis,XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -82,7 +82,7 @@ namespace X
 				}
 				{
 					std::string name("slice");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -113,7 +113,7 @@ namespace X
 				}
 				{
 					std::string name("size");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -132,7 +132,7 @@ namespace X
 				}
 				{
 					std::string name("split");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -160,7 +160,7 @@ namespace X
 				}
 				{
 					std::string name("splitWithChars");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -188,7 +188,7 @@ namespace X
 				}
 				{
 					std::string name("toupper");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -213,7 +213,7 @@ namespace X
 				}
 				{
 					std::string name("tolower");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -236,7 +236,7 @@ namespace X
 				}
 				{
 					std::string name("regex_replace");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)

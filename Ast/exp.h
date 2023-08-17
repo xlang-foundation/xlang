@@ -598,6 +598,20 @@ public:
 		if (Name) delete Name;
 		if (Type) delete Type;
 	}
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+	{
+		Expression::ToBytes(rt, pContext, stream);
+		SaveToStream(rt, pContext, Name, stream);
+		SaveToStream(rt, pContext, Type, stream);
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		Expression::FromBytes(stream);
+		Name = BuildFromStream<Expression>(stream);
+		Type = BuildFromStream<Expression>(stream);
+		return true;
+	}
 	inline Expression* GetName() { return Name; }
 	inline Expression* GetType() { return Type; }
 	bool Parse(std::string& strVarName,

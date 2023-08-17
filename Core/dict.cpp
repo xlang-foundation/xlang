@@ -40,7 +40,7 @@ namespace X
 				std::string strName;
 				{
 					strName = "has";
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, X::XObj* pThis,X::XObj* pContext,
 						X::ARGS& params,
 						X::KWARGS& kwParams,
 						X::Value& retValue)
