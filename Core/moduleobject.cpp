@@ -21,7 +21,7 @@ namespace X
 				//API: runfragment
 				{
 					std::string name("runfragment");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis,XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)
@@ -74,7 +74,7 @@ namespace X
 				//API: setprimitive
 				{
 					std::string name("setprimitive");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)

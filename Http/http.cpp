@@ -202,7 +202,7 @@ namespace X
 			url.begin(), url.end(), r, target);
 		return result.str();
 	}
-	bool HttpServer::Route(X::XRuntime* rt, X::XObj* pContext,
+	bool HttpServer::Route(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		X::ARGS& params, X::KWARGS& kwParams,
 		X::Value& trailer, X::Value& retValue)
 	{

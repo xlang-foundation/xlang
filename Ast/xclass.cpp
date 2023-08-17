@@ -43,6 +43,7 @@ void XClass::ScopeLayout()
 		}
 	}
 }
+
 XClass* XClass::FindBase(XlangRuntime* rt, std::string& strName)
 {
 	XClass* pBase = nullptr;

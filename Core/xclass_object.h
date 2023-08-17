@@ -10,11 +10,15 @@ namespace X {
 			AST::XClass* m_obj = nullptr;
 			AST::StackFrame* m_stackFrame = nullptr;
 		public:
-			XClassObject(AST::XClass* p)
+			XClassObject()
 			{
 				m_t = ObjType::XClassObject;
-				m_obj = p;
 				m_stackFrame = new AST::StackFrame((AST::Scope*)this);
+			}
+			XClassObject(AST::XClass* p):
+				XClassObject()
+			{
+				m_obj = p;
 				m_stackFrame->SetVarCount(p->GetVarNum());
 				auto* pClassStack = p->GetClassStack();
 				if (pClassStack)
@@ -29,7 +33,20 @@ namespace X {
 					delete m_stackFrame;
 				}
 			}
-
+			virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
+			{
+				//TODO:check here
+				AST::Expression exp;
+				exp.SaveToStream(rt, pContext, m_obj, stream);
+				return true;
+			}
+			virtual bool FromBytes(X::XLangStream& stream)
+			{
+				//TODO:check here
+				AST::Expression exp;
+				m_obj = exp.BuildFromStream<AST::XClass>(stream);
+				return true;
+			}
 			virtual long long Size() override
 			{
 				return m_obj ? m_obj->GetVarNum() : 0;

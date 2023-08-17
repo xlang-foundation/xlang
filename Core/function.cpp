@@ -18,7 +18,7 @@ namespace X
 				//API: getcode
 				{
 					std::string name("getcode");
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis,XObj* pContext,
 						ARGS& params,
 						KWARGS& kwParams,
 						X::Value& retValue)

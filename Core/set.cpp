@@ -42,7 +42,7 @@ namespace X
 				std::string strName;
 				{
 					strName = "remove";
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						X::ARGS& params,
 						X::KWARGS& kwParams,
 						X::Value& retValue)
@@ -64,7 +64,7 @@ namespace X
 				}
 				{
 					strName = "clear";
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						X::ARGS& params,
 						X::KWARGS& kwParams,
 						X::Value& retValue)
@@ -85,7 +85,7 @@ namespace X
 				}
 				{
 					strName = "size";
-					auto f = [](X::XRuntime* rt, XObj* pContext,
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 						X::ARGS& params,
 						X::KWARGS& kwParams,
 						X::Value& retValue)

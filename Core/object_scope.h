@@ -63,11 +63,11 @@ namespace X
 			{
 				m_funclist.push_back(FuncInfo{
 					func_name,
-					(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pContext,
+					(X::U_FUNC)([f](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 						X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 						{
-							auto* pThis = dynamic_cast<T*>(pContext);
-							auto _retVal = VarCall<Parameter_Num>(pThis,f,params);
+							auto* pTContext = dynamic_cast<T*>(pContext);
+							auto _retVal = VarCall<Parameter_Num>(pTContext,f,params);
 							retValue = X::Value(_retVal);
 							return true;
 						}) });

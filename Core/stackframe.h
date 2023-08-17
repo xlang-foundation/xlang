@@ -2,6 +2,7 @@
 #include "def.h"
 #include "value.h"
 #include "lvalue.h"
+#include "XLangStream.h"
 #include <iostream>
 #include "Locker.h"
 
@@ -49,6 +50,29 @@ public:
 #endif
 			delete[] m_Values;
 		}
+	}
+	bool ToBytes(X::XLangStream& stream)
+	{
+		m_lock.Lock();
+		stream << m_varCnt;
+		for (int i = 0; i < m_varCnt; i++)
+		{
+			stream << m_Values[i];
+		}
+		m_lock.Unlock();
+		return true;
+	}
+	bool FromBytes(X::XLangStream& stream)
+	{
+		m_lock.Lock();
+		stream >> m_varCnt;
+		m_Values = new X::Value[m_varCnt];
+		for (int i = 0; i < m_varCnt; i++)
+		{
+			stream >> m_Values[i];
+		}
+		m_lock.Unlock();
+		return true;
 	}
 	bool AddVar(XlangRuntime* rt,std::string& name, X::Value& val);
 	inline virtual int GetStartLine() { return m_lineStart; }

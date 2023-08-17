@@ -347,13 +347,13 @@ public:
 	{
 		if (m_func_ex)
 		{
-			return m_func_ex(rt,
+			return m_func_ex(rt, m_pContext,
 				pContext == nullptr ? m_pContext : pContext, params,
 				kwParams, trailer, retValue);
 		}
 		else if (m_func)
 		{
-			return m_func(rt,
+			return m_func(rt, m_pContext,
 				pContext == nullptr ? m_pContext : pContext,
 				params, kwParams, retValue);
 		}
@@ -385,10 +385,10 @@ public:
 		{
 			pPassInContext = pContext;
 		}
-		return m_func ? m_func(rt, pPassInContext,
+		return m_func ? m_func(rt, pPassInContext, pContext,
 			params, kwParams, retValue) : 
 			(
-				m_func_ex ? m_func_ex(rt,
+				m_func_ex ? m_func_ex(rt, m_pContext,
 					pContext == nullptr ? m_pContext : pContext, params,
 					kwParams, params[0], retValue) : false
 			);
