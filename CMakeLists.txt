@@ -27,5 +27,5 @@ add_subdirectory("winner")
 endif()
 add_subdirectory("sqlite")
 add_subdirectory("Image")
-
+add_subdirectory("WebCore")
 # add_subdirectory("all")
