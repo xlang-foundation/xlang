@@ -14,7 +14,7 @@ namespace X
         public:
             BEGIN_PACKAGE(HttpRequest)
                 APISET().AddFunc<2>("setHeader", &HttpRequest::setHeader);
-            APISET().AddFunc<1>("sendRequest", &HttpRequest::sendRequest);
+                APISET().AddFunc<1>("sendRequest", &HttpRequest::sendRequest);
             END_PACKAGE
                 HttpRequest(const std::string url);
             ~HttpRequest();
