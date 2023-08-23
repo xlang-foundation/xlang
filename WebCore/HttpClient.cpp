@@ -1,5 +1,8 @@
 //to avoid winsock head file issue
 //put all boost include ahead others
+
+#if !(WIN32)
+
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
@@ -125,9 +128,17 @@ namespace X
         {
             return ((HttpRequestHandler*)m_pImpl)->setHeader(name, value);
         }
-        std::string HttpRequest::sendRequest(const std::string body_content)
+        bool HttpRequest::sendRequest(const std::string body_content)
         {
-            return ((HttpRequestHandler*)m_pImpl)->sendRequest(body_content);
+            //todo: work with right lib like libcurl
+            auto ret =  ((HttpRequestHandler*)m_pImpl)->sendRequest(body_content);
+            return true;
+        }
+        X::Value HttpRequest::readResponse()
+        {
+            return X::Value();
         }
     }
 }
+
+#endif
