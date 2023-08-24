@@ -90,6 +90,10 @@ public:
 		}
 		Body.clear();
 	}
+	inline std::vector<Expression*>& GetBody()
+	{
+		return Body;
+	}
 	long long GetBodySize()
 	{
 		return Body.size();

@@ -259,6 +259,15 @@ public:
 			RetType->SetParent(this);
 		}
 	}
+	inline Expression* GetRetType()
+	{
+		return RetType;
+	}
+	inline Expression* GetParams()
+	{
+		return Params;
+	}
+	
 	virtual int AddOrGet(std::string& name, bool bGetOnly,Scope** ppRightScope=nullptr) override
 	{
 		int retIdx = Scope::AddOrGet(name, bGetOnly, ppRightScope);

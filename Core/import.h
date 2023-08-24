@@ -304,6 +304,18 @@ class Import :
 		std::string& curModulePath, std::string& loadingModuleName,
 		Module** ppSubModule);
 public:
+	inline From* GetFrom()
+	{
+		return m_from;
+	}
+	inline ThruOp* GetThru()
+	{
+		return m_thru;
+	}
+	inline Expression* GetImports()
+	{
+		return m_imports;
+	}
 	Import() :
 		Operator()
 	{

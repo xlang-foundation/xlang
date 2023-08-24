@@ -408,6 +408,12 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		switch (idx)
 		{
 		case TokenLineComment:
+		{
+				AST::InlineComment* v = new AST::InlineComment(s.s, s.size);
+				v->SetParent(pModule);
+				v->SetHint(one.lineStart, one.lineEnd, one.charPos, one.charStart, one.charEnd);
+				pModule->AddInlineComment(v);
+		}
 			break;
 		case TokenFeedOp:
 			{
