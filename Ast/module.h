@@ -115,7 +115,8 @@ class Module :
 	std::vector<CommandInfo*> m_commands;
 	Locker m_lockBreakpoints;
 	std::vector<BreakPointInfo> m_breakpoints;
-
+	//only keep for AST Query
+	std::vector<X::AST::InlineComment*> m_inlineComments;
 public:
 	Module() :
 		Scope(),
@@ -124,6 +125,14 @@ public:
 		m_type = ObType::Module;
 		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	void AddInlineComment(X::AST::InlineComment* pExp)
+	{
+		m_inlineComments.push_back(pExp);
+	}
+	std::vector<X::AST::InlineComment*>& GetInlineComments()
+	{
+		return m_inlineComments;
 	}
 	void SetPrimitive(std::string& name, Value& valObj,XRuntime* rt)
 	{
@@ -305,6 +314,12 @@ public:
 		m_lockCommands.Unlock();
 		m_commandWait.Release();
 		delete m_stackFrame;
+
+		for (auto it : m_inlineComments)
+		{
+			delete it;
+		}
+		m_inlineComments.clear();
 	}
 	virtual Scope* GetParentScope() override
 	{

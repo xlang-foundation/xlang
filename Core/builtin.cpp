@@ -44,6 +44,7 @@
 #include "tensor.h"
 #include "tensor_cpu.h"
 #include "xport.h"
+#include "ast.h"
 
 namespace X
 {
@@ -1375,7 +1376,8 @@ bool Builtin::RegisterInternals()
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
 	X::Value valBuiltinPack(pBuiltinPack);
 	X::Manager::I().Register("builtin", valBuiltinPack);
-	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(),"json");
+	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
+	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
 	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml");
 	X::RegisterPackage<X::HtmlWrapper>(m_libName.c_str(), "html");
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");

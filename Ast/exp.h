@@ -16,6 +16,7 @@ namespace AST
 enum class ObType
 {
 	Base,
+	InlineComment,
 	Assign,
 	BinaryOp,
 	UnaryOp,
@@ -228,6 +229,25 @@ public:
 		const char* s_in,int size,std::string& outStr,bool UseBindMode,
 		std::vector<X::Value>& bind_data_list);
 	ObType m_type = ObType::Base;
+};
+//only keep for AST Query
+class InlineComment:
+	virtual public Expression
+{
+	char* m_s = nil;
+	int m_size = 0;
+public:
+	InlineComment() :Expression()
+	{
+	}
+	InlineComment(char* s, int size):
+		InlineComment()
+	{
+		m_type = ObType::InlineComment;
+		m_s = s;
+		m_size = size;
+	}
+	std::string GetString() { return std::string(m_s,m_size); }
 };
 class Str :
 	virtual public Expression
