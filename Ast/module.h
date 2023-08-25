@@ -120,6 +120,9 @@ class Module :
 public:
 	Module() :
 		Scope(),
+		Operator(),
+		Expression(),
+		UnaryOp(),
 		Block()
 	{
 		m_type = ObType::Module;

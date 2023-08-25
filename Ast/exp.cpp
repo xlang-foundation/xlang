@@ -110,11 +110,7 @@ Expression* Expression::CreateByType(ObType t)
 		pExp = new Block();
 		break;
 	case ObType::Class:
-	{
-		auto* pXClass = new XClass();
-		pXClass->CreateNecessaryItems();
-		pExp = pXClass;
-	}
+		pExp = new XClass();
 		break;
 	case ObType::From:
 		pExp = new From();
@@ -200,6 +196,48 @@ bool Expression::FromBytes(X::XLangStream& stream)
 	stream >> m_lineEnd;
 	stream >> m_charPos;
 	return true;
+}
+bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+{
+	bool bOK = true;
+	if (Name)
+	{
+		//if it is left value, for example inside a class
+		//as class's attribute.
+		if (Name->IsLeftValue())
+		{
+			//we get this case inside a class
+			// var_name:Type = value
+			//and we will get var_name as Name
+			//but we get Type = value as assign expression as Type
+			//so we will use same logic but with changing Type'L with Name
+			if (Type)
+			{
+				if (Type->m_type == ObType::Assign)
+				{
+					auto* pTypeAssign = dynamic_cast<Assign*>(Type);
+					auto* L_keep = pTypeAssign->GetL();
+					pTypeAssign->SetL(Name);
+					bOK = pTypeAssign->Exec(rt, action, pContext, v, lValue);
+					//restore back
+					pTypeAssign->SetL(L_keep);
+				}
+				else
+				{
+					bOK = Name->Exec(rt, action, pContext, v, lValue);
+				}
+			}
+			else
+			{
+				bOK = Name->Exec(rt, action, pContext, v, lValue);
+			}
+		}
+		else
+		{
+			bOK = Name->Exec(rt, action, pContext, v);
+		}
+	}
+	return bOK;
 }
 bool Param::Parse(std::string& strVarName, 
 	std::string& strVarType, Value& defaultValue)

@@ -24,6 +24,50 @@ bool XClass::Call(XlangRuntime* rt,
 	obj->DecRef();
 	return true;
 }
+bool XClass::FromBytes(X::XLangStream& stream)
+{
+	Block::FromBytes(stream);
+	Params = BuildFromStream<List>(stream);
+	if (Params)
+	{
+		Params->SetParent(this);
+	}
+	RetType = BuildFromStream<Expression>(stream);
+	if (RetType)
+	{
+		RetType->SetParent(this);
+	}
+
+	//decoding itself
+	stream >> m_Name.size;
+	if (m_Name.size > 0)
+	{
+		m_Name.s = new char[m_Name.size];
+		stream.CopyTo(m_Name.s, m_Name.size);
+		m_NameNeedRelease = true;
+	}
+	int paramCnt = 0;
+	stream >> paramCnt;
+	for (int i = 0; i < paramCnt; i++)
+	{
+		int idx;
+		stream >> idx;
+		m_IndexofParamList.push_back(idx);
+	}
+	stream >> m_Index >> m_IndexOfThis >> m_needSetHint;
+	Scope::FromBytes(stream);
+	ScopeLayout();
+	XObj* pContext = stream.ScopeSpace().Context();
+	X::Data::XClassObject* pClassObj = dynamic_cast<X::Data::XClassObject*>(pContext);
+	pClassObj->AssignClass(this);
+
+	ExecAction  action;
+	X::Value retObj;
+	Exec_i(stream.ScopeSpace().RT(), action, pContext,retObj);
+
+	return true;
+}
+
 void XClass::ScopeLayout()
 {
 	Scope* pMyScope = GetScope();
@@ -141,11 +185,24 @@ bool XClass::Get(XlangRuntime* rt,XObj* pContext, int idx, Value& v, LValue* lVa
 	}
 	return true;
 }
-bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LValue* lValue)
+bool XClass::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+{
+	bool bOK = Exec_i(rt, action, pContext, v, lValue);
+	Data::XClassObject* cls = new Data::XClassObject(this);
+	Value v0(cls);
+	if (m_scope)
+	{
+		bOK = m_scope->Set(rt, pContext, m_Index, v0);
+	}
+	v = v0;
+	return bOK;
+}
+
+bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
 	m_stackFrame = new StackFrame(this);
 	m_stackFrame->SetVarCount((int)m_Vars.size());
-	if (m_Index == -1)
+	if (m_Index == -1 || m_scope == nullptr)
 	{
 		ScopeLayout();
 		if (m_Index == -1)
@@ -153,6 +210,7 @@ bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, L
 			return false;
 		}
 	}
+	//then check back constructor,destructor
 	int nConstructorIndex = QueryConstructor();
 	Block::Exec(rt, action, pContext, v, lValue);
 	if (nConstructorIndex >= 0)
@@ -168,11 +226,6 @@ bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, L
 			}
 		}
 	}
-	//then check back constructor,destructor
-	Data::XClassObject* cls = new Data::XClassObject(this);
-	Value v0(cls);
-	bool bOK = m_scope->Set(rt,pContext,m_Index, v0);
-	v = v0;
 
 	//prcoess base classes
 	if (Params)
@@ -182,7 +235,7 @@ bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, L
 		{
 			Value paramObj;
 			ExecAction action0;
-			bOK = i->Exec(rt, action0, pContext, paramObj);
+			bool bOK = i->Exec(rt, action0, pContext, paramObj);
 			if (paramObj.IsObject())
 			{
 				auto ty = paramObj.GetObj()->GetType();
@@ -200,7 +253,8 @@ bool XClass::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, L
 			m_bases.push_back(paramObj);
 		}
 	}
-	return bOK;
+
+	return true;
 }
 void XClass::Add(Expression* item)
 {

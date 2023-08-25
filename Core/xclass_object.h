@@ -15,7 +15,7 @@ namespace X {
 				m_t = ObjType::XClassObject;
 				m_stackFrame = new AST::StackFrame((AST::Scope*)this);
 			}
-			XClassObject(AST::XClass* p):
+			XClassObject(AST::XClass* p) :
 				XClassObject()
 			{
 				m_obj = p;
@@ -25,6 +25,11 @@ namespace X {
 				{
 					m_stackFrame->Copy(pClassStack);
 				}
+			}
+			void AssignClass(AST::XClass* p)
+			{
+				m_obj = p;
+				m_stackFrame->SetVarCount(p->GetVarNum());
 			}
 			~XClassObject()
 			{
@@ -38,13 +43,16 @@ namespace X {
 				//TODO:check here
 				AST::Expression exp;
 				exp.SaveToStream(rt, pContext, m_obj, stream);
+				m_stackFrame->ToBytes(stream);
 				return true;
 			}
 			virtual bool FromBytes(X::XLangStream& stream)
 			{
-				//TODO:check here
+				//pass this as XClass's Object
+				stream.ScopeSpace().SetContext(this);
 				AST::Expression exp;
 				m_obj = exp.BuildFromStream<AST::XClass>(stream);
+				m_stackFrame->FromBytes(stream);
 				return true;
 			}
 			virtual long long Size() override

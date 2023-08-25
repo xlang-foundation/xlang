@@ -587,6 +587,8 @@ bool U_FromBytes(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	}
 	auto* pBin = dynamic_cast<X::Data::Binary*>(param.GetObj());
 	X::BlockStream stream(pBin->Data(), (STREAM_SIZE)pBin->Size(),false);
+	auto* pXLangRt = (X::XlangRuntime*)rt;
+	stream.ScopeSpace().SetContext(pXLangRt, pContext);
 	stream >> retValue;
 	return true;
 }

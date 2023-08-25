@@ -283,8 +283,17 @@ namespace X
 		case X::ValueType::Object:
 		{
 			X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(v.GetObj());
-			(*this) << (char)pObj->GetType();
-			pObj->ToBytes(m_scope_space.m_rt, m_scope_space.m_pContext,*this);
+			//save pObj as Id and with a flag to indicate it's a object embeded here or just
+			//a reference to an object
+			unsigned long long id = (unsigned long long)pObj;
+			(*this) << id;
+			bool bRef = (m_scope_space.Query(id) != nullptr);
+			(*this) << bRef;
+			if (!bRef)
+			{
+				(*this) << (char)pObj->GetType();
+				pObj->ToBytes(m_scope_space.m_rt, m_scope_space.m_pContext, *this);
+			}
 		}
 		break;
 		case X::ValueType::Str:
@@ -324,89 +333,101 @@ namespace X
 			break;
 		case X::ValueType::Object:
 		{
-			(*this) >> ch;
-			X::ObjType objT = (X::ObjType)ch;
 			X::Data::Object* pObjToRestore = nullptr;
-			switch (objT)
+			unsigned long long id;
+			(*this) >> id;
+			bool bRef;
+			(*this) >> bRef;
+			if (bRef)
 			{
-			case X::ObjType::Str:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Str());
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::Binary:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Binary(nullptr,0,true));
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::Expr:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Expr(nullptr));
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::Function:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Function());
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::MetaFunction:
-				assert(false);
-				break;
-			case X::ObjType::XClassObject:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::XClassObject());
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::FuncCalls:
-				assert(false);
-				break;
-			case X::ObjType::Package:
+				pObjToRestore = (X::Data::Object*)m_scope_space.Query(id);
+			}
+			else
 			{
-				//pair with PackageProxy::ToBytes
-				std::string strPackUri;
-				(*this) >> strPackUri;
-				X::Value varPackCreate = g_pXHost->CreatePackageWithUri(strPackUri.c_str());
-				if (varPackCreate.IsObject())
+				m_scope_space.Add(id, (void*)pObjToRestore);
+				(*this) >> ch;
+				X::ObjType objT = (X::ObjType)ch;
+				switch (objT)
 				{
-					pObjToRestore = dynamic_cast<X::Data::Object*>(varPackCreate.GetObj());
+				case X::ObjType::Str:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Str());
 					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::Binary:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Binary(nullptr, 0, true));
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::Expr:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Expr(nullptr));
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::Function:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Function());
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::MetaFunction:
+					assert(false);
+					break;
+				case X::ObjType::XClassObject:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::XClassObject());
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::FuncCalls:
+					assert(false);
+					break;
+				case X::ObjType::Package:
+				{
+					//pair with PackageProxy::ToBytes
+					std::string strPackUri;
+					(*this) >> strPackUri;
+					X::Value varPackCreate = g_pXHost->CreatePackageWithUri(strPackUri.c_str());
+					if (varPackCreate.IsObject())
+					{
+						pObjToRestore = dynamic_cast<X::Data::Object*>(varPackCreate.GetObj());
+						pObjToRestore->IncRef();
+					}
 				}
-			}
 				break;
-			case X::ObjType::ModuleObject:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::Future:
-				assert(false);
-				break;
-			case X::ObjType::List:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::List());
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::Dict:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Dict());
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::Struct:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::XlangStruct());
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::TableRow:
-				assert(false);
-				break;
-			case X::ObjType::Table:
-				assert(false);
-				break;
-			case X::ObjType::RemoteObject:
-				pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
-				pObjToRestore->IncRef();
-				break;
-			case X::ObjType::PyProxyObject:
-				assert(false);
-				break;
-			default:
-				break;
-			}
-			if (pObjToRestore)
-			{
-				pObjToRestore->FromBytes(*this);
-				v = X::Value(dynamic_cast<XObj*>(pObjToRestore),false);
+				case X::ObjType::ModuleObject:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::Future:
+					assert(false);
+					break;
+				case X::ObjType::List:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::List());
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::Dict:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Dict());
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::Struct:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::XlangStruct());
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::TableRow:
+					assert(false);
+					break;
+				case X::ObjType::Table:
+					assert(false);
+					break;
+				case X::ObjType::RemoteObject:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::PyProxyObject:
+					assert(false);
+					break;
+				default:
+					break;
+				}
+				if (pObjToRestore)
+				{
+					pObjToRestore->FromBytes(*this);
+					v = X::Value(dynamic_cast<XObj*>(pObjToRestore), false);
+				}
 			}
 		}
 		break;

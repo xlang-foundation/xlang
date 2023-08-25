@@ -103,14 +103,23 @@ public:
 		stream >> Id;
 		if (Id)
 		{
-			ObType ty;
-			stream >> ty;
-			pRetExp = CreateByType(ty);
-			if (pRetExp)
+			bool bIsRef = false;
+			stream >> bIsRef;
+			if (bIsRef)
 			{
-				//add it into map first, then child item can find parent
-				stream.ScopeSpace().Add(Id, pRetExp);
-				pRetExp->FromBytes(stream);
+				pRetExp = (Expression*)stream.ScopeSpace().Query(Id);
+			}
+			else
+			{
+				ObType ty;
+				stream >> ty;
+				pRetExp = CreateByType(ty);
+				if (pRetExp)
+				{
+					//add it into map first, then child item can find parent
+					stream.ScopeSpace().Add(Id, pRetExp);
+					pRetExp->FromBytes(stream);
+				}
 			}
 		}
 		return pRetExp?dynamic_cast<T*>(pRetExp):nullptr;
@@ -119,8 +128,17 @@ public:
 	{
 		if (pExp)
 		{
-			stream << pExp->ID();
-			pExp->ToBytes(rt,pContext,stream);
+			auto id = pExp->ID();
+			stream << id;
+			//bHaveIt acts as a flag to indicate if this expression is referenced 
+			//or will save itself after this flag
+			bool bHaveIt = (stream.ScopeSpace().Query(id) != nullptr);
+			stream << bHaveIt;
+			if (!bHaveIt)
+			{
+				stream.ScopeSpace().Add(id, pExp);
+				pExp->ToBytes(rt, pContext, stream);
+			}
 		}
 		else
 		{
@@ -637,15 +655,7 @@ public:
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
-	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr)
-	{
-		bool bOK = true;
-		if (Name)
-		{
-			bOK = Name->Exec(rt, action, pContext, v, lValue);
-		}
-		return bOK;
-	}
+	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr);
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
