@@ -16,7 +16,7 @@ namespace X
 		public:
 			Function() :XFunc(), Object()
 			{
-
+				m_t = ObjType::Function;
 			}
 			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);

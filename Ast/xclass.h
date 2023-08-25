@@ -29,14 +29,6 @@ public:
 			delete m_stackFrame;
 		}
 	}
-	inline bool CreateNecessaryItems()
-	{
-		if (m_stackFrame == nullptr)
-		{
-			m_stackFrame = new AST::StackFrame();
-		}
-		return true;
-	}
 	inline int QueryConstructor()
 	{
 		auto it = m_Vars.find(GetNameString());
@@ -94,43 +86,10 @@ public:
 		}
 		stream << m_Index << m_IndexOfThis << m_needSetHint;
 		Scope::ToBytes(rt, pContext, stream);
-		return true;
-	}
-	virtual bool FromBytes(X::XLangStream& stream) override
-	{
-		Block::FromBytes(stream);
-		Params = BuildFromStream<List>(stream);
-		if (Params)
-		{
-			Params->SetParent(this);
-		}
-		RetType = BuildFromStream<Expression>(stream);
-		if (RetType)
-		{
-			RetType->SetParent(this);
-		}
-
-		//decoding itself
-		stream >> m_Name.size;
-		if (m_Name.size > 0)
-		{
-			m_Name.s = new char[m_Name.size];
-			stream.CopyTo(m_Name.s, m_Name.size);
-			m_NameNeedRelease = true;
-		}
-		int paramCnt = 0;
-		stream >> paramCnt;
-		for (int i = 0; i < paramCnt; i++)
-		{
-			int idx;
-			stream >> idx;
-			m_IndexofParamList.push_back(idx);
-		}
-		stream >> m_Index >> m_IndexOfThis >> m_needSetHint;
-		Scope::FromBytes(stream);
 
 		return true;
 	}
+	virtual bool FromBytes(X::XLangStream& stream) override;
 	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
 	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
 	{
@@ -149,6 +108,7 @@ public:
 	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 		LValue* lValue = nullptr) override;
 	inline std::vector<Value>& GetBases() { return m_bases; }
+	virtual bool Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr);
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;

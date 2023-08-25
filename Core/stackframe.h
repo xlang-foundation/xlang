@@ -65,8 +65,13 @@ public:
 	bool FromBytes(X::XLangStream& stream)
 	{
 		m_lock.Lock();
+		auto oldCnt = m_varCnt;
 		stream >> m_varCnt;
-		m_Values = new X::Value[m_varCnt];
+		if (oldCnt != m_varCnt)
+		{
+			delete[] m_Values;
+			m_Values = new X::Value[m_varCnt];
+		}
 		for (int i = 0; i < m_varCnt; i++)
 		{
 			stream >> m_Values[i];

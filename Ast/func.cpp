@@ -117,7 +117,8 @@ std::string Func::getcode(bool includeHead)
 }
 bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
-	if (m_Index == -1)
+	//when build from stream, n_Index stored into Stream,but m_scope is not
+	if (m_Index == -1 || m_scope == nullptr)
 	{
 		ScopeLayout();
 		//for lambda function, no name, so skip this check

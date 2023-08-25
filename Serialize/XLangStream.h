@@ -51,6 +51,10 @@ namespace X
             m_rt = rt;
             m_pContext = pContext;
         }
+        void SetContext(XObj* pContext)
+        {
+            m_pContext = pContext;
+        }
         XlangRuntime* RT() { return m_rt; }
         XObj* Context() { return m_pContext; }
         AST::Scope* GetCurrentScope()
