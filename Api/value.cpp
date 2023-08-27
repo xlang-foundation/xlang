@@ -611,6 +611,15 @@ namespace X
 		}
 		return strType;
 	}
+	bool Value::CallAssignIfObjectSupport(const Value& v)
+	{
+		if (x.obj->SupportAssign())
+		{
+			x.obj->Assign(v);
+			return true;
+		}
+		return false;
+	}
 	long long Value::Size()
 	{
 		long long  sizeRet = 0;

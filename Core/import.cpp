@@ -6,6 +6,7 @@
 #include "Hosting.h"
 #include "moduleobject.h"
 #include "remote_object.h"
+#include "deferred_object.h"
 
 namespace X
 {
@@ -34,7 +35,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	//search xlang.app folder first
 	std::vector<std::string> candiateFiles;
 	bool bRet = file_search(g_pXload->GetConfig().appPath,
-		LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
+		LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
 	if (bRet && candiateFiles.size() > 0)
 	{
 		loadDllName = candiateFiles[0];
@@ -44,7 +45,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	if (!bHaveDll)
 	{
 		bRet = file_search(g_pXload->GetConfig().xlangEnginePath,
-			LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
+			LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
 		if (bRet && candiateFiles.size() > 0)
 		{
 			loadDllName = candiateFiles[0];
@@ -56,9 +57,9 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	{
 		std::string dllSearchPath(g_pXload->GetConfig().dllSearchPath);
 		std::vector<std::string> paths = split(dllSearchPath, '\n');
-		for (auto& p : paths) 
+		for (auto& p : paths)
 		{
-			bRet = file_search(p,LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
+			bRet = file_search(p, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
 				loadDllName = candiateFiles[0];
@@ -69,7 +70,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	}
 	if (!bHaveDll && !curModulePath.empty())
 	{
-		bRet = file_search(curModulePath, LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
+		bRet = file_search(curModulePath, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
 		if (bRet && candiateFiles.size() > 0)
 		{
 			loadDllName = candiateFiles[0];
@@ -82,7 +83,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 		rt->M()->GetSearchPaths(searchPaths);
 		for (auto& pa : searchPaths)
 		{
-			bRet = file_search(pa, LibPrefix+loadingModuleName + ShareLibExt, candiateFiles);
+			bRet = file_search(pa, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
 				loadDllName = candiateFiles[0];
@@ -94,7 +95,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	bool bOK = false;
 	if (bHaveDll)
 	{
-		typedef void (*LOAD)(void* pHost,X::Value module);
+		typedef void (*LOAD)(void* pHost, X::Value module);
 		void* libHandle = LOADLIB(loadDllName.c_str());
 		if (libHandle)
 		{
@@ -123,7 +124,7 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 		prefixPath = m_path;
 		ReplaceAll(prefixPath, ".", Path_Sep_S);
 	}
-	
+
 	std::vector<std::string> searchPaths;
 	searchPaths.push_back(curModulePath);
 	searchPaths.push_back(g_pXload->GetConfig().xlangEnginePath);
@@ -135,7 +136,7 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 		for (auto& pa : searchPaths)
 		{
 			std::vector<std::string> candiateFiles;
-			bool bRet = file_search(pa+ Path_Sep_S+ prefixPath, 
+			bool bRet = file_search(pa + Path_Sep_S + prefixPath,
 				loadingModuleName + ".x", candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
@@ -172,14 +173,15 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	}
 	return bOK;
 }
-bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, 
+
+bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 	Value& v, LValue* lValue)
 {
 	Scope* pMyScope = GetScope();
 	if (m_from)
 	{
 		Value v0;
-		if (m_from->Exec(rt,action, pContext, v0, nullptr))
+		if (m_from->Exec(rt, action, pContext, v0, nullptr))
 		{
 			m_path = v0.ToString();
 		}
@@ -187,131 +189,121 @@ bool X::AST::Import::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 	if (m_thru)
 	{
 		Value v0;
-		if (m_thru->Exec(rt,action, pContext, v0, nullptr))
+		if (m_thru->Exec(rt, action, pContext, v0, nullptr))
 		{
 			m_thruUrl = v0.ToString();
 		}
 	}
 	for (auto& im : m_importInfos)
 	{
-		std::string varName;
-		if (im.alias.empty())
+		//for deferred object, create a DeferredObject object to wrap the import info
+		//and set this object's value to current scope
+		std::string varName = im.alias.empty() ? im.name : im.alias;
+		bool bOK = false;
+		if (im.Deferred)
 		{
-			varName = im.name;
+			auto* deferredObj = new Data::DeferredObject();
+			deferredObj->SetImportInfo(this, &im);
+			v = Value(dynamic_cast<XObj*>(deferredObj));
+			bOK = true;
 		}
 		else
 		{
-			varName = im.alias;
+			bOK = LoadOneModule(rt, pMyScope, pContext, v, im, varName);
 		}
-		if (!m_thruUrl.empty())
+		if (bOK && pMyScope)
 		{
-			bool bFilterOut = false;
-			XProxy* proxy = Manager::I().QueryProxy(m_thruUrl, bFilterOut);
-			if (!bFilterOut) 
-			{
-				if (proxy)
-				{
-					auto* remoteObj = new RemoteObject(proxy);
-					remoteObj->SetObjName(im.name);
-					v = Value(dynamic_cast<XObj*>(remoteObj));
-					if (pMyScope)
-					{
-						pMyScope->AddAndSet(rt, pContext, varName, v);
-					}
-				}
-				//for proxy == nullptr, means some errors happened with this url
-				//just continue
-				continue;
-			}
-		}
-		//then try local import
-		if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
-		{
-			if (pMyScope)
-			{
-				pMyScope->AddAndSet(rt, pContext, varName, v);
-			}
-			continue;
-		}
-
-		//check if it is builtin
-		if (m_path.empty())
-		{
-			bool bOK = Manager::I().QueryAndCreatePackage(rt,
-				im.name,v);
-			if (bOK)
-			{
-				if (pMyScope)
-				{
-					pMyScope->AddAndSet(rt, pContext, varName, v);
-				}
-				continue;
-			}
-		}
-		else
-		{
-			std::string curPath;
-			if (rt->M())
-			{
-				curPath = rt->M()->GetModulePath();
-			}
-			bool bLoaded = FindAndLoadExtensions(rt,curPath, m_path);
-			bool bOK = Manager::I().QueryAndCreatePackage(rt,
-				im.name, v);
-			if (bOK)
-			{
-				if (pMyScope)
-				{
-					pMyScope->AddAndSet(rt, pContext, varName, v);
-				}
-				continue;
-			}
-		}
-		//Check if it is X module
-		std::string curPath = rt->M()->GetModulePath();
-		Module* pSubModule = nullptr;
-		bool bOK = FindAndLoadXModule(rt, curPath, im.name, &pSubModule);
-		if (bOK && pSubModule != nullptr)
-		{
-			ModuleObject* pModuleObj = new ModuleObject(pSubModule);
-			v = Value(pModuleObj);
-			if (pMyScope)
-			{
-				pMyScope->AddAndSet(rt, pContext, varName, v);
-			}
-			//rt->M()->Add(rt, varName, nullptr, v);
-			continue;
-		}
-		//then try Python Module
-		//reserved import for python builtins, such as open, close etc
-		//import python
-		//if get this import, if enablePython is false, 
-		//change to true and Load Python engine
-		std::string moduleName = im.name;
-		if (m_path.empty() && moduleName == "python")
-		{
-			if (!g_pXload->GetConfig().enablePython)
-			{
-				g_pXload->GetConfig().enablePython = true;
-				LoadPythonEngine();
-			}
-			moduleName = "builtins";
-			varName = "python";
-		}
-		if(g_pXload->GetConfig().enablePython)
-		{
-			auto* pProxyObj =
-				new Data::PyProxyObject(rt, pContext,
-					moduleName, m_path, curPath);
-			v = Value(pProxyObj);
-			if (pMyScope)
-			{
-				pMyScope->AddAndSet(rt, pContext, varName, v);
-			}
-			//rt->M()->Add(rt, varName, nullptr, v);
+			pMyScope->AddAndSet(rt, pContext, varName, v);
 		}
 	}
 	return true;
+}
+bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
+	XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange)
+{
+	if (!m_thruUrl.empty())
+	{
+		bool bFilterOut = false;
+		XProxy* proxy = Manager::I().QueryProxy(m_thruUrl, bFilterOut);
+		if (!bFilterOut)
+		{
+			if (proxy)
+			{
+				auto* remoteObj = new RemoteObject(proxy);
+				remoteObj->SetObjName(im.name);
+				v = Value(dynamic_cast<XObj*>(remoteObj));
+				return true;
+			}
+			//for proxy == nullptr, means some errors happened with this url
+			return false;
+		}
+	}
+	//then try local import
+	if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
+	{
+		return true;
+	}
+
+	//check if it is builtin
+	if (m_path.empty())
+	{
+		if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
+		{
+			return true;
+		}
+	}
+	else
+	{
+		std::string curPath;
+		if (rt->M())
+		{
+			curPath = rt->M()->GetModulePath();
+		}
+		bool bLoaded = FindAndLoadExtensions(rt, curPath, m_path);
+		if (bLoaded)
+		{
+			if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
+			{
+				return true;
+			}
+		}
+	}
+	//Check if it is X module
+	std::string curPath = rt->M()->GetModulePath();
+	Module* pSubModule = nullptr;
+	bool bOK = FindAndLoadXModule(rt, curPath, im.name, &pSubModule);
+	if (bOK && pSubModule != nullptr)
+	{
+		ModuleObject* pModuleObj = new ModuleObject(pSubModule);
+		v = Value(pModuleObj);
+		return true;
+	}
+	//then try Python Module
+	//reserved import for python builtins, such as open, close etc
+	//import python
+	//if get this import, if enablePython is false, 
+	//change to true and Load Python engine
+	std::string moduleName = im.name;
+	if (m_path.empty() && moduleName == "python")
+	{
+		if (!g_pXload->GetConfig().enablePython)
+		{
+			g_pXload->GetConfig().enablePython = true;
+			LoadPythonEngine();
+		}
+		moduleName = "builtins";
+		varNameForChange = "python";
+	}
+	if (g_pXload->GetConfig().enablePython)
+	{
+		auto* pProxyObj =
+			new Data::PyProxyObject(rt, pContext,
+				moduleName, m_path, curPath);
+		v = Value(pProxyObj);
+		return true;
+	}
+
+	return false;
 }
 std::string X::AST::Import::ConvertDotSeqToString(
 	X::AST::Expression* expr)
@@ -355,11 +347,26 @@ void X::AST::Import::ScopeLayout()
 		auto R0 = asOp->GetR();
 		std::string leftName;
 		std::string rightName;
+		bool isDeferred = false;
 		if (L0)
 		{
 			if (L0->m_type == ObType::Var)
 			{
 				leftName = (dynamic_cast<Var*>(L0))->GetNameString();
+			}
+			else if (L0->m_type == ObType::Deferred)
+			{
+				auto* pDeferred = dynamic_cast<DeferredOP*>(L0);
+				if (pDeferred->GetR())
+				{
+					auto* pVar = dynamic_cast<Var*>(pDeferred->GetR());
+					leftName = pVar->GetNameString();
+					isDeferred = true;
+				}
+				else
+				{
+					//error
+				}
 			}
 			else if (L0->m_type == ObType::Dot)
 			{
@@ -373,7 +380,21 @@ void X::AST::Import::ScopeLayout()
 		ImportInfo importInfo;
 		importInfo.name = leftName;
 		importInfo.alias = rightName;
+		importInfo.Deferred = isDeferred;
 		m_importInfos.push_back(importInfo);
+	};
+	auto proc_Deferred = [&](Expression* expr)
+	{
+		auto* pDeferred = dynamic_cast<DeferredOP*>(expr);
+		if (pDeferred->GetR())
+		{
+			auto name = (dynamic_cast<Var*>(pDeferred->GetR()))->GetNameString();
+			ImportInfo importInfo;
+			importInfo.name = name;
+			importInfo.Deferred = true;
+			m_importInfos.push_back(importInfo);
+		}
+
 	};
 	auto proc_Var = [&](Expression* expr)
 	{
@@ -396,6 +417,9 @@ void X::AST::Import::ScopeLayout()
 			case ObType::Var:
 				proc_Var(expr0);
 				break;
+			case ObType::Deferred:
+				proc_Deferred(expr0);
+				break;
 			default:
 				break;
 			}
@@ -413,6 +437,9 @@ void X::AST::Import::ScopeLayout()
 			break;
 		case ObType::Var:
 			proc_Var(m_imports);
+			break;
+		case ObType::Deferred:
+			proc_Deferred(m_imports);
 			break;
 		default:
 			break;

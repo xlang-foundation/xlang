@@ -258,6 +258,11 @@ void Register(OpRegistry* reg)
 		auto op = new AST::AsOp(opIndex);
 		return (AST::Operator*)op;
 			});
+	RegOP("deferred")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::DeferredOP(opIndex);
+		return (AST::Operator*)op;
+			});
 	RegOP("thru")
 		.SetProcess([](Parser* p, short opIndex) {
 		auto op = new AST::ThruOp(opIndex);
@@ -440,11 +445,15 @@ void Register(OpRegistry* reg)
 		.SetPrecedence(Precedence_Reqular + 1);
 	RegOP("as")
 		.SetPrecedence(Precedence_LOW2+1);
-
+	RegOP("deferred")
+		.SetPrecedence(Precedence_LOW2 + 1);
 	RegOP("thru")
 		.SetPrecedence(Precedence_LOW2-1);
+	//comma set to Precedence_VERYLOW, 
+	//for case import galaxy as t, earth as e
+	//we need to make import has lower Precedence than comma
 	RegOP("import")
-		.SetPrecedence(Precedence_LOW2 - 2);
+		.SetPrecedence(Precedence_VERYLOW - 1);
 
 	RegOP("extern", "nonlocal", "global")
 		.SetPrecedence(Precedence_LOW2);

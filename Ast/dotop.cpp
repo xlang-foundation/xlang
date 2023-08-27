@@ -13,11 +13,21 @@ namespace X
 {
 namespace AST
 {
-
 void DotOp::ScopeLayout()
 {
 	if (L) L->ScopeLayout();
 	//R will be decided in run stage
+
+	//in this stage, we also broadcast m_isLeftValue to R and its children
+	//TODO: but we need to verify its impacts on other cases
+
+	if(m_isLeftValue)
+	{
+		if (R)
+		{
+			R->SetIsLeftValue(true);
+		}
+	}
 }
 void DotOp::QueryBases(XlangRuntime* rt, Data::Object* pObj,
 	std::vector<Scope*>& bases)

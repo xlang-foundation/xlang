@@ -24,6 +24,11 @@ public:
 	{
 	}
 };
+
+//AsOp direived from BinaryOp, because we consider case below
+//import galaxy as g, number as np
+//here we need to combin left side name with right side name put 
+//into one operand
 class AsOp :
 	virtual public BinaryOp
 {
@@ -41,39 +46,81 @@ public:
 		m_type = ObType::As;
 	}
 	virtual bool OpWithOperands(
-		std::stack<AST::Expression*>& operands)
+		std::stack<AST::Expression*>& operands, int LeftTokenIndex) override
 	{
 		//pop all non-var operands, store back
 		//and in the end, push back again with same order
 		std::vector<AST::Expression*> non_vars;
+		//Find first var operand, and as its right operand
+		//during loop, put all non-var operands into non_vars
 		while (!operands.empty())
 		{
 			auto operand0 = operands.top();
+			operands.pop();
 			if (operand0->m_type == ObType::Var)
 			{
+				SetR(operand0);
 				break;
 			}
-			operands.pop();
 			non_vars.push_back(operand0);
 		}
-		if (!operands.empty())
+		//Find second var or Deferred operand, and as its left operand
+		//during loop,put all non-var or non-Deferred operands into non_vars
+		while (!operands.empty())
 		{
-			auto operandR = operands.top();
+			auto operand0 = operands.top();
 			operands.pop();
-			SetR(operandR);
-		}
-		if (!operands.empty())
-		{
-			auto operandL = operands.top();
-			operands.pop();
-			SetL(operandL);
+			if (operand0->m_type == ObType::Var || operand0->m_type == ObType::Deferred)
+			{
+				SetL(operand0);
+				break;
+			}
+			non_vars.push_back(operand0);
 		}
 		operands.push(this);
+		//push back non-var operands
 		for (auto rit = non_vars.rbegin(); rit != non_vars.rend(); ++rit)
 		{
 			operands.push(*rit);
 		}
 
+		return true;
+	}
+};
+//put deffered operator as a unary operator,
+//it will accept left side var as its operand
+//which means who deffered
+class DeferredOP :
+	virtual public UnaryOp
+{
+public:
+	DeferredOP() :
+		UnaryOp()
+	{
+		m_type = ObType::Deferred;
+	}
+	DeferredOP(short op) :
+		UnaryOp(op)
+	{
+		m_type = ObType::Deferred;
+	}
+	//eat left side var as its right operand
+	//because it is a unary operator,only has right operand
+	//and put itself into operands stack
+	virtual bool OpWithOperands(
+		std::stack<AST::Expression*>& operands,
+		int LeftTokenIndex)
+	{
+		if (!operands.empty())
+		{
+			auto operand0 = operands.top();
+			if (operand0->m_type == ObType::Var)
+			{
+				operands.pop();
+				SetR(operand0);
+			}
+		}
+		operands.push(this);
 		return true;
 	}
 };
@@ -286,6 +333,7 @@ struct ImportInfo
 	std::string name;
 	std::string alias;
 	std::string fileName;
+	bool Deferred = false;
 };
 class Import :
 	virtual public Operator
@@ -303,6 +351,8 @@ class Import :
 	bool FindAndLoadXModule(XlangRuntime* rt,
 		std::string& curModulePath, std::string& loadingModuleName,
 		Module** ppSubModule);
+	bool LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
+		XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange);
 public:
 	inline From* GetFrom()
 	{
@@ -345,6 +395,12 @@ public:
 	{
 		m_type = ObType::Import;
 	}
+	inline bool LoadModule(XlangRuntime* rt,XObj* pContext,Value& v,ImportInfo* pImportInfo)
+	{
+		Scope* pMyScope = GetScope();
+		std::string varName = pImportInfo->alias.empty() ? pImportInfo->name : pImportInfo->alias;
+		return LoadOneModule(rt,pMyScope,pContext, v, *pImportInfo, varName);
+	}
 	virtual int GetLeftMostCharPos() override
 	{
 		int pos = GetCharPos();
@@ -367,6 +423,7 @@ public:
 		}
 		return pos;
 	}
+
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 	{
