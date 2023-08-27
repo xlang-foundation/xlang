@@ -424,10 +424,15 @@ public:
 	inline ValueType GetType() { return t; }
 	inline void SetType(ValueType t0) { t = t0; }
 	inline int GetF() { return flags; }
+	bool CallAssignIfObjectSupport(const Value& v);
 	virtual inline void operator = (const Value& v)
 	{
 		if (IsObject())
 		{
+			if (CallAssignIfObjectSupport(v))
+			{
+				return;
+			}
 			ReleaseObject(x.obj);
 		}
 		flags = v.flags;

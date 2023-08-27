@@ -54,6 +54,7 @@ enum class ObType
 	ExternDecl,
 	AwaitOp,
 	Thru,
+	Deferred,
 	Import,
 	NamespaceVar,
 };

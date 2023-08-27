@@ -51,9 +51,8 @@ namespace X
 						retValue = Value(true);
 						return true;
 					};
-					char* pTest = new char[7000];
 					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = nullptr;// new AST::ExternFunc(strName, "remove(index)", func);
+					AST::ExternFunc* extFunc = new AST::ExternFunc(strName, "remove(index)", func);
 					auto* pFuncObj = new X::Data::Function(extFunc);
 					pFuncObj->IncRef();
 					int idx = AddOrGet(strName, false);

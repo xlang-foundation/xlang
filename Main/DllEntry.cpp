@@ -28,6 +28,7 @@
 #include "tensor.h"
 #include "utility.h"
 #include "set.h"
+#include "deferred_object.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -229,6 +230,7 @@ static void XLangInternalInit()
 	X::Data::Dict::Init();
 	X::Data::mSet::Init();
 	X::AST::MetaScope().I().Init();
+	X::Data::DeferredObject::Init();
 }
 void XLangRun()
 {

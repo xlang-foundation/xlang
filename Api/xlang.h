@@ -36,6 +36,7 @@ namespace X
 		Struct,
 		TableRow,
 		Table,
+		DeferredObject,
 		RemoteObject,
 		PyProxyObject
 	};
@@ -90,7 +91,8 @@ namespace X
 			return *this;
 		}
 		virtual XObj* Clone() { return nullptr; }
-
+		virtual bool SupportAssign() { return false; }
+		virtual void Assign(const X::Value& val) {}
 		virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) { return -1; };
 		virtual bool GetIndexValue(int idx, Value& v) { return false; };
 		virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry, X::Value& val) { return false; }
@@ -391,6 +393,12 @@ namespace X
 	{
 	public:
 		virtual void SetObjID(unsigned long pid,void* objid) = 0;
+	};
+	class XDeferredObject :
+		virtual public XObj
+	{
+	public:
+
 	};
 	class XCustomScope
 	{

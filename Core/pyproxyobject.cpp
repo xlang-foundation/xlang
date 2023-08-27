@@ -167,7 +167,7 @@ namespace X
 			auto obj0 = (PyEng::Object)m_obj[name.c_str()];
 			//check obj0 is a function or not
 
-			PyProxyObject* pProxyObj = new PyProxyObject(obj0,name);
+			PyProxyObject* pProxyObj = new PyProxyObject(m_obj,obj0,name);
 			X::Value v(pProxyObj);
 			m_stackFrame->Set(idx, v);
 			return idx;

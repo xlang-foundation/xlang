@@ -172,6 +172,10 @@ public:
 	}
 	Object(X::Value& v)
 	{
+		Assign(v);
+	}
+	inline void Assign(X::Value& v)
+	{
 		switch (v.GetType())
 		{
 		case X::ValueType::None:

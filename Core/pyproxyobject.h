@@ -67,6 +67,7 @@ namespace X
 			PyProxyObject* m_PyModule = nullptr;
 			PyProxyType m_proxyType = PyProxyType::None;
 			AST::StackFrame* m_stackFrame = nullptr;
+			PyEng::Object m_parent_obj;
 			PyEng::Object m_obj;
 			PyEng::Object m_pyFrameObject;
 			std::string m_name;
@@ -91,6 +92,15 @@ namespace X
 				PyProxyObject()
 			{
 				m_name = name;
+				m_proxyType = PyProxyType::Func;
+				m_obj = obj;
+			}
+			PyProxyObject(PyEng::Object& parent,PyEng::Object& obj, std::string& name) :
+				PyProxyObject()
+			{
+				m_name = name;
+				m_parent_obj = parent;
+				//todo: check here, it is not a func such as property
 				m_proxyType = PyProxyType::Func;
 				m_obj = obj;
 			}
@@ -144,6 +154,15 @@ namespace X
 			}
 			bool ToValue(X::Value& val);
 			static bool PyObjectToValue(PyEng::Object& pyObj, X::Value& val);
+
+			virtual bool SupportAssign() override { return true; }
+			virtual void Assign(const X::Value& val) override
+			{
+				PyEng::Object newObj((X::Value&)val);
+				m_parent_obj[m_name.c_str()] = newObj;
+				m_obj = newObj;
+			}
+
 			virtual std::string GetNameString() override
 			{
 				return m_name;

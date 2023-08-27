@@ -372,12 +372,16 @@ bool GrusPyEngHost::ContainKey(PyEngObjectPtr container, PyEngObjectPtr key)
 
 bool GrusPyEngHost::KVSet(PyEngObjectPtr container, PyEngObjectPtr key, PyEngObjectPtr val)
 {
-	bool bOK = false;
+	int  ret = 0;
 	if (PyDict_Check((PyObject*)container))
 	{
-		bOK = PyDict_SetItem((PyObject*)container, (PyObject*)key, (PyObject*)val);
+		ret = PyDict_SetItem((PyObject*)container, (PyObject*)key, (PyObject*)val);
 	}
-	return bOK;
+	else
+	{
+		ret = PyObject_SetAttrString((PyObject*)container, PyUnicode_AsUTF8((PyObject*)key), (PyObject*)val);
+	}
+	return ret>=0;
 }
 PyEngObjectPtr GrusPyEngHost::NewTuple(long long size)
 {
