@@ -159,6 +159,12 @@ public:
 		}
 		return idx;
 	}
+	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
+	{
+		//in this case, can't add new member, in init stage, will call Scope::AddOrGet directly
+		//add member
+		return Scope::AddOrGet(name, true, ppRightScope);
+	}
 	inline virtual MemberIndexInfo QueryMethod(std::string name)
 	{
 		int idx =  Scope::AddOrGet(name, true);
