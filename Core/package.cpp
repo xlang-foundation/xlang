@@ -252,36 +252,32 @@ namespace X
 			}
 			return retVal;
 		}
-		bool PackageProxy::ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
+		bool Package::ToBytesImpl(XlangRuntime* rt, void* pEmbededObject, X::XLangStream& stream)
 		{
-			APISetBase* pAPISet = nullptr;
+			APISetBase* pAPISet = (APISetBase*)GetAPISet();
 			std::string strPackUri;
-			if (m_pPackage)
+			//encoding uri for this package
+			APISetBase* pAPISet0 = pAPISet;
+			while (pAPISet0)
 			{
-				pAPISet = (APISetBase*)m_pPackage->GetAPISet();
-				//encoding uri for this package
-				APISetBase* pAPISet0 = pAPISet;
-				while (pAPISet0)
+				if (strPackUri.empty())
 				{
-					if (strPackUri.empty())
-					{
-						strPackUri = pAPISet0->GetName();
-					}
-					else
-					{
-						strPackUri = std::string(pAPISet0->GetName()) + '|' + strPackUri;
-					}
-					APISetBase* pAPISet1 = pAPISet0->GetParent();
-					//check if it is the top package
-					if (pAPISet1 == nullptr)
-					{
-						strPackUri = std::string(pAPISet0->GetLibName()) + '|' + strPackUri;
-						break;
-					}
-					else
-					{
-						pAPISet0 = pAPISet1;
-					}
+					strPackUri = pAPISet0->GetName();
+				}
+				else
+				{
+					strPackUri = std::string(pAPISet0->GetName()) + '|' + strPackUri;
+				}
+				APISetBase* pAPISet1 = pAPISet0->GetParent();
+				//check if it is the top package
+				if (pAPISet1 == nullptr)
+				{
+					strPackUri = std::string(pAPISet0->GetLibName()) + '|' + strPackUri;
+					break;
+				}
+				else
+				{
+					pAPISet0 = pAPISet1;
 				}
 			}
 			//pack URI
@@ -293,7 +289,7 @@ namespace X
 				auto sizeFunc = pAPISet->GetSizeFunc();
 				if (sizeFunc)
 				{
-					size = sizeFunc(m_pObject);
+					size = sizeFunc(pEmbededObject);
 				}
 			}
 			stream << size;
@@ -302,25 +298,25 @@ namespace X
 				auto toBytesFunc = pAPISet->GetToBytesFunc();
 				if (toBytesFunc)
 				{
-					toBytesFunc(m_pObject, &stream);
+					toBytesFunc(pEmbededObject, &stream);
 				}
 			}
 
 
 			return true;
 		}
-		bool PackageProxy::FromBytes(X::XLangStream& stream)
+		bool Package::FromBytesImpl(void* pEmbededObject,X::XLangStream& stream)
 		{
 			bool bOK = true;
 			long long size = 0;
 			stream >> size;
-			APISetBase* pAPISet = (APISetBase*)m_pPackage->GetAPISet();
+			APISetBase* pAPISet = (APISetBase*)GetAPISet();
 			if (pAPISet)
 			{
 				auto fromBytesFunc = pAPISet->GetFromBytesFunc();
 				if (fromBytesFunc)
 				{
-					bOK = fromBytesFunc(m_pObject, &stream);
+					bOK = fromBytesFunc(pEmbededObject, &stream);
 				}
 			}
 			return bOK;
