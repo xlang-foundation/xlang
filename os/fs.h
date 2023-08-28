@@ -97,6 +97,7 @@ namespace X
 	public:
 		void Run()
 		{
+#if 0
 			std::string code = R"(
 				xyz =10
 				abc ="this is a string"
@@ -106,6 +107,7 @@ namespace X
 					return x+y
 			)";
 			APISET().GetPack()->RunCodeWithThisScope(code.c_str());
+#endif
 		}
 		void SetModule(X::Value curModule)
 		{
@@ -117,7 +119,7 @@ namespace X
 				g_pXHost->ReleaseString(path);
 			}
 			m_curModule = curModule;
-			std::cout << "*****SetModule****" << std::endl;
+			//std::cout << "*****SetModule****" << std::endl;
 		}
 		std::string& GetModulePath()
 		{

@@ -29,6 +29,58 @@ namespace X
 			X::Value m_realObj;
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 			void RestoreDeferredObjectContent(XlangRuntime* pXlRt,Object* pRealObj);
+
+			virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+			{
+				bool bHaveImport = (m_from_Import != nullptr);
+				stream << bHaveImport;
+				if (bHaveImport)
+				{
+					AST::Expression exp;
+					exp.SaveToStream(rt, pContext, m_from_Import, stream);
+					stream << m_importInfo->type;
+					stream << m_importInfo->name;
+					stream << m_importInfo->alias;
+					stream << m_importInfo->fileName;
+					stream << m_importInfo->Deferred;
+				}
+				stream << m_IsProxy;
+				stream << m_realObj;
+				bool bHaveStackFrame = (m_stackFrame != nullptr);
+				stream << bHaveStackFrame;
+				if (bHaveStackFrame)
+				{
+					m_stackFrame->ToBytes(stream);
+				}
+				return true;
+			}
+			virtual bool FromBytes(X::XLangStream& stream) override
+			{
+				stream.ScopeSpace().SetContext(this);
+				bool bHaveImport = false;
+				stream >> bHaveImport;
+				if (bHaveImport)
+				{
+					AST::Expression exp;
+					m_from_Import = exp.BuildFromStream<AST::Import>(stream);
+					AST::ImportInfo info;
+					stream >> info.type;
+					stream >> info.name;
+					stream >> info.alias;
+					stream >> info.fileName;
+					stream >> info.Deferred;
+					m_importInfo = m_from_Import->FindMatchedImportInfo(info);
+				}
+				stream >> m_IsProxy;
+				stream >> m_realObj;
+				bool bHaveStackFrame = false;
+				stream >> bHaveStackFrame;
+				if (bHaveStackFrame)
+				{
+					m_stackFrame->FromBytes(stream);
+				}
+				return true;
+			}
 		public:
 			static void Init();
 			static void cleanup();

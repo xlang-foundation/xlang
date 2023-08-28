@@ -101,6 +101,16 @@ public:
 	{
 		m_lock.Unlock();
 	}
+	bool ToBytesImpl(XlangRuntime* rt, void* pEmbededObject, X::XLangStream& stream);
+	bool FromBytesImpl(void* pEmbededObject, X::XLangStream& stream);
+	inline virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+	{
+		return ToBytesImpl(rt,m_pObject, stream);
+	}
+	inline virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		return FromBytesImpl(m_pObject, stream);
+	}
 	virtual bool RunCodeWithThisScope(const char* code) override;
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
@@ -328,8 +338,14 @@ public:
 		//m_pPackage->Unlock();
 	}
 	virtual void SetAPISet(void* pApiSet) override {}
-	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override;
-	virtual bool FromBytes(X::XLangStream& stream) override;
+	inline virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+	{
+		return m_pPackage ? m_pPackage->ToBytesImpl(rt, m_pObject, stream) : false;
+	}
+	inline virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		return m_pPackage ? m_pPackage->FromBytesImpl(m_pObject, stream) : false;
+	}
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		long long startIndex, long long count) override;

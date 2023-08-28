@@ -366,6 +366,21 @@ public:
 	{
 		return m_imports;
 	}
+	inline ImportInfo* FindMatchedImportInfo(AST::ImportInfo& importInfo)
+	{
+		for (auto& im : m_importInfos)
+		{
+			if (im.type == importInfo.type &&
+				im.name == importInfo.name &&
+				im.alias == importInfo.alias &&
+				im.fileName == importInfo.fileName &&
+				im.Deferred == importInfo.Deferred)
+			{
+				return &im;
+			}
+		}
+		return nullptr;
+	}
 	Import() :
 		Operator()
 	{
@@ -441,7 +456,8 @@ public:
 			auto expr = operands.top();
 			if (expr->m_type == ObType::Var 
 				||expr->m_type == ObType::List
-				|| expr->m_type == ObType::As)
+				|| expr->m_type == ObType::As
+				|| expr->m_type == ObType::Deferred)
 			{
 				m_imports = expr;
 				operands.pop();
