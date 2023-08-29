@@ -59,8 +59,10 @@ bool XClass::FromBytes(X::XLangStream& stream)
 	ScopeLayout();
 	XObj* pContext = stream.ScopeSpace().Context();
 	X::Data::XClassObject* pClassObj = dynamic_cast<X::Data::XClassObject*>(pContext);
-	pClassObj->AssignClass(this);
-
+	if (pClassObj)
+	{
+		pClassObj->AssignClass(this);
+	}
 	ExecAction  action;
 	X::Value retObj;
 	Exec_i(stream.ScopeSpace().RT(), action, pContext,retObj);

@@ -49,10 +49,11 @@ namespace X {
 			virtual bool FromBytes(X::XLangStream& stream)
 			{
 				//pass this as XClass's Object
-				stream.ScopeSpace().SetContext(this);
+				auto* pPrevContext = stream.ScopeSpace().SetContext(this);
 				AST::Expression exp;
 				m_obj = exp.BuildFromStream<AST::XClass>(stream);
 				m_stackFrame->FromBytes(stream);
+				stream.ScopeSpace().SetContext(pPrevContext);
 				return true;
 			}
 			virtual long long Size() override

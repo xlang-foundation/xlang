@@ -56,7 +56,7 @@ namespace X
 			}
 			virtual bool FromBytes(X::XLangStream& stream) override
 			{
-				stream.ScopeSpace().SetContext(this);
+				auto* pPrevContext = stream.ScopeSpace().SetContext(this);
 				bool bHaveImport = false;
 				stream >> bHaveImport;
 				if (bHaveImport)
@@ -79,6 +79,7 @@ namespace X
 				{
 					m_stackFrame->FromBytes(stream);
 				}
+				stream.ScopeSpace().SetContext(pPrevContext);
 				return true;
 			}
 		public:
