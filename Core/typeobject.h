@@ -12,7 +12,14 @@ namespace X
 			std::string m_desc;
 			ValueType m_valType = ValueType::Invalid;
 			ObjType m_objType = ObjType::Base;
+
+			X::Value m_realObj;
+
+			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 		public:
+			static void Init();
+			static void cleanup();
+
 			TypeObject() :Object()
 			{
 				m_t = ObjType::Type;
@@ -24,7 +31,7 @@ namespace X
 				{
 					m_objType = val.GetObj()->GetType();
 				}
-				//todo: make m_desc from val
+				m_realObj = val;
 			}
 			virtual const char* ToString(bool WithFormat = false) override
 			{
@@ -134,6 +141,8 @@ namespace X
 				}
 				return GetABIString(strType);
 			}
+
+			X::Value GetMembers(X::XlangRuntime* rt);
 		};
 	}
 }

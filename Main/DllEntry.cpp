@@ -29,6 +29,7 @@
 #include "utility.h"
 #include "set.h"
 #include "deferred_object.h"
+#include "typeobject.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -231,6 +232,7 @@ static void XLangInternalInit()
 	X::Data::mSet::Init();
 	X::AST::MetaScope().I().Init();
 	X::Data::DeferredObject::Init();
+	X::Data::TypeObject::Init();
 }
 void XLangRun()
 {
@@ -359,6 +361,8 @@ void XLangStaticUnload()
 	X::Data::Tensor::cleanup();
 	X::Data::Future::cleanup();
 	X::Data::Function::cleanup();
+	X::Data::DeferredObject::cleanup();
+	X::Data::TypeObject::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 	Hosting::I().Cleanup();
 	G::I().Check();
@@ -374,6 +378,8 @@ void XLangUnload()
 	X::Data::Dict::cleanup();
 	X::Data::mSet::cleanup();
 	X::AST::MetaScope().I().Cleanup();
+	X::Data::DeferredObject::cleanup();
+	X::Data::TypeObject::cleanup();
 
 	if (g_pXload->GetConfig().enablePython)
 	{

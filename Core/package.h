@@ -265,6 +265,7 @@ class PackageProxy :
 		return (m_pPackage->GetAPISet() == pPackage->GetAPISet());
 	}
 public:
+	Package* GetPackage() { return m_pPackage; }
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{
 	}
