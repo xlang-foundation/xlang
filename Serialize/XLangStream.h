@@ -51,9 +51,11 @@ namespace X
             m_rt = rt;
             m_pContext = pContext;
         }
-        void SetContext(XObj* pContext)
+        XObj* SetContext(XObj* pContext)
         {
+            auto* pKeep = m_pContext;
             m_pContext = pContext;
+            return pKeep;
         }
         XlangRuntime* RT() { return m_rt; }
         XObj* Context() { return m_pContext; }

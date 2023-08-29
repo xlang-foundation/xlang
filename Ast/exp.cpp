@@ -112,6 +112,9 @@ Expression* Expression::CreateByType(ObType t)
 	case ObType::Class:
 		pExp = new XClass();
 		break;
+	case ObType::ActionOp:
+		pExp = new ActionOperator();
+		break;
 	case ObType::From:
 		pExp = new From();
 		break;

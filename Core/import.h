@@ -354,6 +354,42 @@ class Import :
 	bool LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 		XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange);
 public:
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+	{
+		Operator::ToBytes(rt, pContext, stream);
+		stream << m_path;
+		stream << m_thruUrl;
+		stream << m_importInfos.size();	
+		for (auto& i : m_importInfos)
+		{
+			stream << i.type;
+			stream << i.name;
+			stream << i.alias;
+			stream << i.fileName;
+			stream << i.Deferred;
+		};
+
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream) override
+	{
+		Operator::FromBytes(stream);
+		stream >> m_path;
+		stream >> m_thruUrl;
+		size_t size = 0;
+		stream >> size;
+		for (size_t i = 0; i < size; i++)
+		{
+			ImportInfo im;
+			stream >> im.type;
+			stream >> im.name;
+			stream >> im.alias;
+			stream >> im.fileName;
+			stream >> im.Deferred;
+			m_importInfos.push_back(im);
+		}
+		return true;
+	}
 	inline From* GetFrom()
 	{
 		return m_from;

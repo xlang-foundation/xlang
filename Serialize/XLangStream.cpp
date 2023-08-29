@@ -9,6 +9,7 @@
 #include "remote_object.h"
 #include "moduleobject.h"
 #include "struct.h"
+#include "deferred_object.h"
 
 namespace X 
 {
@@ -370,6 +371,10 @@ namespace X
 					break;
 				case X::ObjType::XClassObject:
 					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::XClassObject());
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::DeferredObject:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::DeferredObject());
 					pObjToRestore->IncRef();
 					break;
 				case X::ObjType::FuncCalls:
