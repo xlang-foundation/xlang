@@ -223,6 +223,11 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 {
 	if (!m_thruUrl.empty())
 	{
+		bool bFind = Manager::I().QueryPackage(im.name, v);
+		if (bFind)
+		{
+			return true;
+		}
 		bool bFilterOut = false;
 		XProxy* proxy = Manager::I().QueryProxy(m_thruUrl, bFilterOut);
 		if (!bFilterOut)
@@ -231,7 +236,9 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 			{
 				auto* remoteObj = new RemoteObject(proxy);
 				remoteObj->SetObjName(im.name);
+				//todo: need to check here
 				v = Value(dynamic_cast<XObj*>(remoteObj));
+				Manager::I().Register(im.name.c_str(), v);
 				return true;
 			}
 			//for proxy == nullptr, means some errors happened with this url

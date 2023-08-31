@@ -90,6 +90,13 @@ namespace X
 		}
 		virtual bool FromBytes(X::XLangStream& stream) override
 		{
+			//this case, this object from cache, so we don't need to restore from stream
+			//for some case in an application's root object, but this object also plays as
+			//a remote object in another process.
+			if (m_remote_Obj_id.objId !=0)
+			{
+				return true;
+			}
 			AutoLock autoLock(Object::m_lock);
 			stream >> m_remote_Parent_Obj_id;
 			stream >> m_remote_Obj_id;

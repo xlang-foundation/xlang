@@ -381,6 +381,13 @@ namespace X
 	{
 
 	};
+	class XLangClass :
+		virtual public XObj
+	{
+	public:
+		virtual int GetBaseClassCount() = 0;
+		virtual X::Value GetBaseClass(int idx) = 0;
+	};
 	class XPyObject :
 		virtual public XObj
 	{
@@ -534,6 +541,7 @@ namespace X
 	using Package = V<XPackage>;
 	using Event = V<XEvent>;
 	using Func = V<XFunc>;
+	using XlangClass = V<XLangClass>;
 	using Runtime = V<XRuntime>;
 }
 

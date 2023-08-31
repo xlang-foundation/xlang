@@ -345,6 +345,7 @@ namespace X
 			}
 			else
 			{
+				bool needToCallFromBytesFunc = true;
 				m_scope_space.Add(id, (void*)pObjToRestore);
 				(*this) >> ch;
 				X::ObjType objT = (X::ObjType)ch;
@@ -389,12 +390,26 @@ namespace X
 					if (varPackCreate.IsObject())
 					{
 						pObjToRestore = dynamic_cast<X::Data::Object*>(varPackCreate.GetObj());
+						//this is workaround for package in on side is a pacakge,
+						//but in the other side is a changed to remote object
+						if (pObjToRestore->GetType() != X::ObjType::Package)
+						{
+							//read out the size
+							long long skip_size = 0;
+							(*this) >> skip_size;
+							if (skip_size)
+							{
+								Skip(skip_size);
+							}
+							//Get a changed object instead of a package,we need to skip the following bytes
+							needToCallFromBytesFunc = false;
+						}
 						pObjToRestore->IncRef();
 					}
 				}
 				break;
 				case X::ObjType::ModuleObject:
-					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::AST::ModuleObject(nullptr));
 					pObjToRestore->IncRef();
 					break;
 				case X::ObjType::Future:
@@ -430,7 +445,10 @@ namespace X
 				}
 				if (pObjToRestore)
 				{
-					pObjToRestore->FromBytes(*this);
+					if (needToCallFromBytesFunc)
+					{
+						pObjToRestore->FromBytes(*this);
+					}
 					v = X::Value(dynamic_cast<XObj*>(pObjToRestore), false);
 				}
 			}
