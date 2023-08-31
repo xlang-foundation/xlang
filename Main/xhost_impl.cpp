@@ -99,6 +99,21 @@ namespace X
 				pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);
 			}
 		}
+		else
+		{
+			std::vector<AST::Scope*> scopes;
+			pRealObj->GetBaseScopes(scopes);
+			for (auto* pScope : scopes)
+			{
+				std::string strName(name);
+				int idx = pScope->AddOrGet(strName, true);
+				if (idx >= 0)
+				{
+					pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);
+					break;
+				}
+			}
+		}
 		return retValue;
 	}
 	bool XHost_Impl::QueryPackage(XRuntime* rt, const char* name, Value& objPackage)

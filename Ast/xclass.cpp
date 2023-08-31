@@ -15,6 +15,7 @@ bool XClass::Call(XlangRuntime* rt,
 	Value& retValue)
 {
 	Data::XClassObject* obj = new Data::XClassObject(this);
+	BuildBaseInstances(rt, obj);
 	obj->IncRef();
 	if (m_constructor)
 	{
@@ -66,7 +67,10 @@ bool XClass::FromBytes(X::XLangStream& stream)
 	ExecAction  action;
 	X::Value retObj;
 	Exec_i(stream.ScopeSpace().RT(), action, pContext,retObj);
-
+	if (pClassObj)
+	{
+		BuildBaseInstances(stream.ScopeSpace().RT(), pClassObj);
+	}
 	return true;
 }
 
@@ -256,6 +260,36 @@ bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value&
 		}
 	}
 
+	return true;
+}
+bool XClass::BuildBaseInstances(XlangRuntime* rt,XObj* pClassObj)
+{
+	if (Params)
+	{
+		auto& list = Params->GetList();
+		auto& bases = (dynamic_cast<X::Data::XClassObject*>(pClassObj))->GetBases();
+		for (auto i : list)
+		{
+			Value paramObj;
+			ExecAction action0;
+			bool bOK = i->Exec(rt, action0, pClassObj, paramObj);
+			if (paramObj.IsObject())
+			{
+				auto ty = paramObj.GetObj()->GetType();
+				if (ty == ObjType::Function || ty == ObjType::FuncCalls)
+				{
+					X::ARGS args(0);
+					X::KWARGS kwargs;
+					X::Value paramRealObj;
+					if (paramObj.GetObj()->Call(rt, nullptr, args, kwargs, paramRealObj))
+					{
+						paramObj = paramRealObj;
+					}
+				}
+			}
+			bases.push_back(paramObj);
+		}
+	}
 	return true;
 }
 void XClass::Add(Expression* item)
