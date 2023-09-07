@@ -1121,6 +1121,18 @@ bool U_To_XObj(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	return true;
 }
+bool U_GetModuleFileName(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	auto* pRuntime = dynamic_cast<XlangRuntime*>(rt);
+	if (pRuntime->M())
+	{
+		retValue = X::Value(pRuntime->M()->GetModuleName());
+	}
+	return true;
+}
 bool U_GetArgs(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1424,6 +1436,7 @@ bool Builtin::RegisterInternals()
 	Register("to_xlang", (X::U_FUNC)U_To_XObj, params, "to_xlang", true);
 
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
+	Register("get_module_filename", (X::U_FUNC)U_GetModuleFileName, params);
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
 	Register("get_modulebykey", (X::U_FUNC)U_GetModuleFromKey, params);
 	Register("run_new_instance", (X::U_FUNC)U_RunNewInstance, params);
