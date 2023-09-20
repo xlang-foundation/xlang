@@ -15,6 +15,12 @@ namespace X
 		void Register();
 	};
 	class SMSwapBuffer;
+
+	struct Call_Context
+	{
+		bool InUse = false;
+		XWait* pWait = nullptr;
+	};
 	class XLangProxy :
 		public X::XProxy,
 		public GThread2
@@ -43,6 +49,16 @@ namespace X
 		bool mRun = true;
 		virtual void run() override;
 		virtual void run2() override;
+
+		Locker m_CallContextLock;
+		std::vector<Call_Context*> mCallContexts;
+		Call_Context* GetCallContext();
+		inline void ReturnCallContext(Call_Context* pContext)
+		{
+			m_CallContextLock.Lock();
+			pContext->InUse = false;
+			m_CallContextLock.Unlock();
+		}
 	private:
 		long m_port = 0;
 		unsigned long mHostProcessId = 0;
@@ -54,21 +70,18 @@ namespace X
 		Locker m_ConnectLock;
 		bool m_bConnected = false;
 		XWait* m_pConnectWait = nullptr;
+		XWait* m_pCallReadyWait = nullptr;
 
 		SwapBufferStream mStream1;
 		SMSwapBuffer* mSMSwapBuffer1 = nullptr;
 		SwapBufferStream mStream2;
 		SMSwapBuffer* mSMSwapBuffer2 = nullptr;
+		XWait* m_pBuffer2ReadyWait = nullptr;
 
 		Locker mCallLock1;
-		SwapBufferStream& BeginCall(unsigned int callType);
-		SwapBufferStream& CommitCall();
+		SwapBufferStream& BeginCall(unsigned int callType, Call_Context** ppContext);
+		SwapBufferStream& CommitCall(Call_Context* pContext);
 		void FinishCall();
-
-		Locker mCallLock2;
-		SwapBufferStream& BeginCall2(unsigned int callType);
-		SwapBufferStream& CommitCall2();
-		void FinishCall2();
 
 		bool CheckConnectReadyStatus();
 		bool Connect();

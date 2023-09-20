@@ -28,16 +28,15 @@ namespace X
 		X::XObj* QueryObjWithName(std::string& name);
 		X::XObj* CovertIdToXObj(X::ROBJ_ID);
 		X::ROBJ_ID ConvertXObjToId(X::XObj* obj);
-		bool QueryRootObject(int channel, SwapBufferStream& stream, RemotingProc* pProc);
-		bool QueryMember(int channel, SwapBufferStream& stream, RemotingProc* pProc);
-		bool QueryMemberCount(int channel, SwapBufferStream& stream, RemotingProc* pProc);
-		bool FlatPack(int channel, SwapBufferStream& stream, RemotingProc* pProc);
-		bool UpdateItemValue(int channel, SwapBufferStream& stream, RemotingProc* pProc);
-		bool GetMemberObject(int channel, SwapBufferStream& stream, RemotingProc* pProc);
-		bool ReleaseObject(int channel, SwapBufferStream& stream, RemotingProc* pProc);
-		bool RCall(int channel, SwapBufferStream& stream, RemotingProc* pProc);
+		bool QueryRootObject(void* pCallContext,SwapBufferStream& stream, RemotingProc* pProc);
+		bool QueryMember(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
+		bool QueryMemberCount(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
+		bool FlatPack(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
+		bool UpdateItemValue(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
+		bool GetMemberObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
+		bool ReleaseObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
+		bool RCall(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
 		// Inherited via RemotingCallBase
-		virtual bool Call(int channel, unsigned int callId,
-			SwapBufferStream& stream, RemotingProc* pProc) override;
+		virtual bool Call(void* pCallContext,unsigned int callType,SwapBufferStream& stream, RemotingProc* pProc) override;
 	};
 }

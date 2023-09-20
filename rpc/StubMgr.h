@@ -5,6 +5,9 @@
 #include <vector>
 #include <unordered_map>
 #include "Locker.h"
+#include "gthread.h"
+#include <functional>
+#include "wait.h"
 
 namespace X
 {
@@ -13,15 +16,17 @@ namespace X
 	class RemotingProc
 	{
 	public:
-		virtual void NotifyBeforeCall(int channel, SwapBufferStream& stream) = 0;
-		virtual void NotifyAfterCall(int channel, SwapBufferStream& stream, bool callIsOk) = 0;
+		virtual void NotifyBeforeCall(SwapBufferStream& stream) = 0;
+		virtual void NotifyAfterCall(SwapBufferStream& stream, bool callIsOk) = 0;
+		virtual void FinishCall(void* pCallContext,SwapBufferStream& stream,bool callIsOk) = 0;
 		virtual unsigned long long GetSessionId() = 0;
 	};
 	class RemotingCallBase
 	{
 	public:
-		virtual bool Call(int channel,
-			unsigned int callId,
+		virtual bool Call(
+			void* pCallContext, 
+			unsigned int callType,
 			SwapBufferStream& stream,
 			RemotingProc* pProc) = 0;
 	};
@@ -33,6 +38,28 @@ namespace X
 		std::string funcName;
 		std::vector<std::string> inputTypes;
 		std::string retType;
+	};
+	using call_func = std::function<void()>;
+
+	class CallWorker :
+		public GThread
+	{
+		bool m_bRun = true;
+		bool m_bIdle = false;
+		XWait* m_pWait = nullptr;
+		call_func m_func;
+		// Inherited via GThread
+		virtual void run() override;
+	public:
+		CallWorker();
+		~CallWorker();
+		inline bool IsIdle() {return m_bIdle;}
+		inline void SetIdle(bool bIdle) { m_bIdle = bIdle; }
+		void Call(call_func func)
+		{
+			m_func = func;
+			m_pWait->Release();
+		}
 	};
 	class RemotingManager :
 		public Singleton<RemotingManager>
@@ -60,12 +87,34 @@ namespace X
 			mLockMapFuncs.Unlock();
 			return pFuncInfo;
 		}
+		CallWorker* GetIdleCallWorker()
+		{
+			CallWorker* pWorker = nullptr;
+			mLockCallWorkers.Lock();
+			for (auto it : mCallWorkers)
+			{
+				if (it->IsIdle())
+				{
+					pWorker = it;
+					break;
+				}
+			}
+			if (pWorker == nullptr)
+			{
+				pWorker = new CallWorker();
+				pWorker->Start();
+				mCallWorkers.push_back(pWorker);
+			}
+			pWorker->SetIdle(false);
+			mLockCallWorkers.Unlock();
+			return pWorker;
+		}
 	private:
 		Locker mStubLock;
 		unsigned long long mLastSessionID = 0;
 		std::vector<XLangStub*> mStubs;
-
-	private:
+		Locker mLockCallWorkers;
+		std::vector<CallWorker*> mCallWorkers;
 		Locker mLockMapFuncs;
 		std::unordered_map<unsigned int, RemoteFuncInfo*> mMapFuncs;
 	};

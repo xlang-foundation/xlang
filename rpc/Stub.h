@@ -31,7 +31,7 @@ namespace X
         bool mRun = true;
     };
     class XLangStub :
-        public GThread2,
+        public GThread,
         public RemotingProc
     {
     public:
@@ -63,12 +63,13 @@ namespace X
         void run2();
     private:
         StubWatch* m_pStubWatch;
-        void ReceiveCall(int channel, SMSwapBuffer* pSMSwapBuffer);
+        void ReceiveCall();
         unsigned long long mKey = 0;
         bool mRun = true;
         bool mInsideRecvCall1 = false;
         SMSwapBuffer* m_pSwapBuffer1 = nullptr;
         bool mInsideRecvCall2 = false;
+        Locker m_locker_buffer2;
         SMSwapBuffer* m_pSwapBuffer2 = nullptr;
     private:
         void PostSessionCleanupCommand(unsigned long long sid);
@@ -76,10 +77,11 @@ namespace X
         unsigned long long m_sessionId = 0;
         unsigned long m_clientPid = 0;
 
-        bool ShakeHandsCall(SMSwapBuffer* pSwapBuffer, SwapBufferStream& stream);
+        bool ShakeHandsCall(void* pCallContext,SwapBufferStream& stream);
         // Inherited via RemotingProc
-        virtual void NotifyBeforeCall(int channel, SwapBufferStream& stream) override;
-        virtual void NotifyAfterCall(int channel, SwapBufferStream& stream, bool callIsOk) override;
+        virtual void NotifyBeforeCall(SwapBufferStream& stream) override;
+        virtual void NotifyAfterCall(SwapBufferStream& stream, bool callIsOk) override;
+        virtual void FinishCall(void* pCallContext,SwapBufferStream& stream,bool callIsOk) override;
     };
 }
 #endif // _XLangStub_H

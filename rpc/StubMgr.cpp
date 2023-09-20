@@ -89,4 +89,22 @@ namespace X
         mStubLock.Unlock();
         delete pHostStub;
     }
+    void CallWorker::run()
+    {
+        while (m_bRun)
+        {
+            m_bIdle = false;
+            m_pWait->Wait(-1);
+            m_func();
+            m_bIdle = true;
+        }
+    }
+    CallWorker::CallWorker()
+    {
+        m_pWait = new XWait();
+    }
+    CallWorker::~CallWorker()
+    {
+        delete m_pWait;
+    }
 }

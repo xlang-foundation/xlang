@@ -69,7 +69,7 @@ namespace X
         long long size;//total size
         PayloadType payloadType;
         unsigned int blockSize;//this block size
-        unsigned int memberIndex;//Method Index or Prop Index
+        unsigned int callIndex;//CallIndex for ack
         unsigned int callType;
         void* context;
     };

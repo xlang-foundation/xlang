@@ -24,6 +24,8 @@ namespace X
 	XLangProxy::XLangProxy()
 	{
 		m_pConnectWait = new XWait(false);
+		m_pCallReadyWait = new XWait();
+		m_pBuffer2ReadyWait = new XWait();
 	}
 	void XLangProxy::SetUrl(const char* url)
 	{
@@ -32,6 +34,13 @@ namespace X
 	XLangProxy::~XLangProxy()
 	{
 		delete m_pConnectWait;
+		delete m_pCallReadyWait;
+		delete m_pBuffer2ReadyWait;
+		for(auto* item: mCallContexts)
+		{
+			delete item->pWait;
+			delete item;
+		}
 	}
 	ROBJ_ID XLangProxy::QueryRootObject(std::string& name)
 	{
@@ -40,9 +49,10 @@ namespace X
 			return {0,0};
 		}
 		X::ROBJ_ID oId = {0,0};
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryRootObject);
+		Call_Context* pContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryRootObject,&pContext);
 		stream << name;
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pContext);
 		bool bOK = false;
 		stream2 >> bOK;
 		if (bOK)
@@ -60,7 +70,8 @@ namespace X
 		{
 			return X::Value();
 		}
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue);
+		Call_Context* pContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue,&pContext);
 		stream << parentObjId;
 		stream << id;
 		stream << (int)IdList.size();
@@ -71,7 +82,7 @@ namespace X
 		stream << id_offset;
 		stream << itemName;
 		stream << val;
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pContext);
 		X::Value retVal;
 		bool bOK = false;
 		stream2 >> bOK;
@@ -90,7 +101,8 @@ namespace X
 		{
 			return false;
 		}
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack);
+		Call_Context* pContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack,&pContext);
 		stream << parentObjId;
 		stream << id;
 		stream << (int)IdList.size();
@@ -101,7 +113,7 @@ namespace X
 		stream << id_offset;
 		stream << startIndex;
 		stream << count;
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pContext);
 		bool bOK = false;
 		stream2 >> bOK;
 		if (bOK)
@@ -119,10 +131,11 @@ namespace X
 			return -1;
 		}
 		X::ROBJ_MEMBER_ID mId = -1;
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMember);
+		Call_Context* pContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMember,&pContext);
 		stream << id;
 		stream << name;
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pContext);
 		bool bOK = false;
 		stream2 >> bOK;
 		if (bOK)
@@ -139,9 +152,10 @@ namespace X
 		{
 			return -1;
 		}
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount);
+		Call_Context* pContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount,&pContext);
 		stream << id;
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pContext);
 		bool bOK = false;
 		stream2 >> bOK;
 		long long cnt = -1;
@@ -158,9 +172,10 @@ namespace X
 		{
 			return false;
 		}
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject);
+		Call_Context* pContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject,&pContext);
 		stream << id;
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pContext);
 		bool bOK = false;
 		stream2 >> bOK;
 		FinishCall();
@@ -173,10 +188,11 @@ namespace X
 			return {0,0};
 		}
 		X::ROBJ_ID oId = {0,0};
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject);
+		Call_Context* pContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject,&pContext);
 		stream << objid;
 		stream << memId;
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pContext);
 		bool bOK = false;
 		stream2 >> bOK;
 		if (bOK)
@@ -196,7 +212,8 @@ namespace X
 			return false;
 		}
 		X::ROBJ_ID oId = {0,0};
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call);
+		Call_Context* pCallContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call,&pCallContext);
 		stream.ScopeSpace().SetContext((XlangRuntime*)rt, pContext);
 
 		stream << parent_id;
@@ -223,7 +240,7 @@ namespace X
 			stream << trailer;
 		}
 
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pCallContext);
 		bool bOK = false;
 		stream2 >> bOK;
 		if (bOK)
@@ -247,24 +264,26 @@ namespace X
 		return bOK;
 	}
 
-	SwapBufferStream& XLangProxy::BeginCall(unsigned int callType)
+	SwapBufferStream& XLangProxy::BeginCall(unsigned int callType, Call_Context** ppContext)
 	{
 		mCallLock1.Lock();
 		mStream1.ReInit();
 		mSMSwapBuffer1->BeginWrite();
 
 		mStream1.SetSMSwapBuffer(mSMSwapBuffer1);
+		Call_Context* pContext = GetCallContext();
 		PayloadFrameHead& head = mSMSwapBuffer1->GetHead();
 		head.payloadType = PayloadType::Send;
 		head.size = 0;//update later
 		head.callType = callType;
-		head.memberIndex = 0;
-		head.context = nullptr;
+		head.callIndex = 0;
+		head.context = pContext;
+		*ppContext = pContext;
 
 		return mStream1;
 	}
 
-	SwapBufferStream& XLangProxy::CommitCall()
+	SwapBufferStream& XLangProxy::CommitCall(Call_Context* pContext)
 	{
 		PayloadFrameHead& head = mSMSwapBuffer1->GetHead();
 		//Deliver the last block
@@ -275,68 +294,27 @@ namespace X
 		//so keep as one block with blockSize
 		head.blockSize = (unsigned int)mStream1.GetPos().offset;
 		mSMSwapBuffer1->EndWrite();//Notify another side
-		//Fetch Result
-		mStream1.ReInit();
-		mStream1.SetSMSwapBuffer(mSMSwapBuffer1);
-		if (!mSMSwapBuffer1->BeginRead())//wait for results
-		{
-			throw XLangStreamException(-100);
-		}
-		mStream1.Refresh();
-
-		return mStream1;
-	}
-
-	void XLangProxy::FinishCall()
-	{
+		//read to make sure another side has read the data
+		mSMSwapBuffer1->BeginRead();
 		mSMSwapBuffer1->EndRead();
-		mCallLock1.Unlock();
-	}
-	SwapBufferStream& XLangProxy::BeginCall2(unsigned int callType)
-	{
-		mCallLock2.Lock();
-		mStream2.ReInit();
-		mSMSwapBuffer2->BeginWrite();
+		mCallLock1.Unlock();//unlock to let other call come in
 
-		mStream2.SetSMSwapBuffer(mSMSwapBuffer2);
-		PayloadFrameHead& head = mSMSwapBuffer2->GetHead();
-		head.payloadType = PayloadType::Send;
-		head.size = 0;//update later
-		head.callType = callType;
-		head.memberIndex = 0;
-		head.context = nullptr;
-
-		return mStream2;
-	}
-
-	SwapBufferStream& XLangProxy::CommitCall2()
-	{
-		PayloadFrameHead& head = mSMSwapBuffer2->GetHead();
-		//Deliver the last block
-		head.payloadType = PayloadType::SendLast;
-		head.size = mStream2.Size();
-		//use SwapBuffer is shared memory buffer,
-		//we assume it is not too big more then 2G
-		//so keep as one block with blockSize
-		head.blockSize = (unsigned int)mStream2.GetPos().offset;
-		mSMSwapBuffer2->EndWrite();//Notify another side
+		//Wait for pContext->Ready
+		pContext->pWait->Wait(-1);
+		ReturnCallContext(pContext);
 		//Fetch Result
 		mStream2.ReInit();
 		mStream2.SetSMSwapBuffer(mSMSwapBuffer2);
-		if (!mSMSwapBuffer2->BeginRead())//wait for results
-		{
-			throw XLangStreamException(-100);
-		}
 		mStream2.Refresh();
 
 		return mStream2;
 	}
 
-	void XLangProxy::FinishCall2()
+	void XLangProxy::FinishCall()
 	{
-		mSMSwapBuffer2->EndRead();
-		mCallLock2.Unlock();
+		m_pCallReadyWait->Release();
 	}
+
 	void XLangProxy::WaitToHostExit()
 	{
 #if (WIN32)
@@ -406,6 +384,55 @@ namespace X
 	}
 	void XLangProxy::run2()
 	{
+		bool bWaitOnBuffer2 = true;
+		while (mRun)
+		{
+			if (bWaitOnBuffer2)
+			{
+				m_pBuffer2ReadyWait->Wait(-1);
+				bWaitOnBuffer2 = false;
+			}
+			if (!mSMSwapBuffer2->BeginRead())
+			{
+				continue;
+			}
+			PayloadFrameHead& head = mSMSwapBuffer2->GetHead();
+			if (head.context)
+			{
+				Call_Context* pContext = (Call_Context*)head.context;
+				pContext->pWait->Release();
+			}
+			else
+			{//notify from server side
+
+			}
+			//wait for call read out its return data
+			m_pCallReadyWait->Wait(-1);
+			mSMSwapBuffer2->EndRead();
+			//do an empty write to notify server side can write again
+			mSMSwapBuffer2->BeginWrite();
+			mSMSwapBuffer2->EndWrite();
+		}
+	}
+	Call_Context* XLangProxy::GetCallContext()
+	{
+		Call_Context* pContext = nullptr;
+		m_CallContextLock.Lock();
+		for(auto* item: mCallContexts)
+		{
+			if (!item->InUse)
+			{
+				pContext = item;
+				pContext->InUse = true;
+				break;
+			}
+		}
+		pContext = new Call_Context();
+		pContext->InUse = true;
+		pContext->pWait = new XWait();
+		mCallContexts.push_back(pContext);
+		m_CallContextLock.Unlock();
+		return pContext;
 	}
 	bool XLangProxy::CheckConnectReadyStatus()
 	{
@@ -442,6 +469,7 @@ namespace X
 			bOK = mSMSwapBuffer2->ClientConnect(m_port, shmKey+1,SM_BUF_SIZE, timeoutMS, false);
 			if (bOK)
 			{
+				m_pBuffer2ReadyWait->Release();
 				ShapeHandsToServer();
 			}
 		}
@@ -454,9 +482,10 @@ namespace X
 	void XLangProxy::ShapeHandsToServer()
 	{
 		unsigned long pid_client = GetPID();
-		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::ShakeHands);
+		Call_Context* pContext = nullptr;
+		auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::ShakeHands,&pContext);
 		stream << pid_client;
-		auto& stream2 = CommitCall();
+		auto& stream2 = CommitCall(pContext);
 		bool bOK = false;
 		unsigned long pid_srv = 0;
 		unsigned long long sid = 0;

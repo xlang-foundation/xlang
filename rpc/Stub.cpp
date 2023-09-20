@@ -118,7 +118,7 @@ namespace X
 		while (mRun)
 		{
 			mInsideRecvCall1 = true;
-			ReceiveCall(1, m_pSwapBuffer1);
+			ReceiveCall();
 			mInsideRecvCall1 = false;
 		}
 	}
@@ -127,40 +127,84 @@ namespace X
 		while (mRun)
 		{
 			mInsideRecvCall2 = true;
-			ReceiveCall(2, m_pSwapBuffer2);
+			//ReceiveCall();
 			mInsideRecvCall2 = false;
 		}
 	}
-	void XLangStub::ReceiveCall(int channel, SMSwapBuffer* pSMSwapBuffer)
+	void XLangStub::ReceiveCall()
 	{
 		SwapBufferStream stream;
-		stream.SetSMSwapBuffer(pSMSwapBuffer);
-		if (!pSMSwapBuffer->BeginRead() || !mRun)
+		stream.SetSMSwapBuffer(m_pSwapBuffer1);
+		if (!m_pSwapBuffer1->BeginRead() || !mRun)
 		{
 			return;
 		}
 		stream.Refresh();
-		PayloadFrameHead& head = pSMSwapBuffer->GetHead();
+		PayloadFrameHead& head = m_pSwapBuffer1->GetHead();
 		bool bOK = false;
 		if (head.callType == (unsigned int)RPC_CALL_TYPE::ShakeHands)
 		{
-			bOK = ShakeHandsCall(pSMSwapBuffer, stream);
+			bOK = ShakeHandsCall(head.context,stream);
 		}
 		else
 		{
 			RemoteFuncInfo* pFuncInfo = RemotingManager::I().Get(head.callType);
 			if (pFuncInfo != nullptr && pFuncInfo->pHandler != nullptr)
 			{
-				bOK = pFuncInfo->pHandler->Call(channel, head.callType, stream, this);
+				bOK = pFuncInfo->pHandler->Call(head.context,head.callType, stream, this);
 			}
 			else
 			{//wrong call, also need to call lines below
-				NotifyBeforeCall(channel, stream);
-				NotifyAfterCall(channel, stream, false);
+				NotifyBeforeCall(stream);
+				NotifyAfterCall(stream, false);
+				FinishCall(head.context,stream, false);
 			}
 		}
-		if (bOK)
+
+	}
+
+	bool XLangStub::ShakeHandsCall(void* pCallContext, SwapBufferStream& stream)
+	{
+		unsigned long clientPid = 0;
+		stream >> clientPid;
+		std::cout << "XLangStub::ShakeHandsCall,clientPid=" << clientPid<<std::endl;
+		NotifyBeforeCall(stream);
+		m_clientPid = clientPid;
+		if (clientPid != 0)
 		{
+			WatchClientProcess(clientPid);
+		}
+		NotifyAfterCall(stream, true);
+		unsigned long pid = GetPID();
+		stream << pid;
+		stream << m_sessionId;
+		FinishCall(pCallContext,stream, true);
+		return true;
+	}
+
+	void XLangStub::NotifyBeforeCall(SwapBufferStream& stream)
+	{
+		m_pSwapBuffer1->EndRead();
+		//Empty Write to notify another side
+		m_pSwapBuffer1->BeginWrite();
+		m_pSwapBuffer1->EndWrite();
+	}
+
+	void XLangStub::NotifyAfterCall(SwapBufferStream& stream, bool callIsOk)
+	{
+		m_locker_buffer2.Lock();
+		//then we can write to another side
+		stream.ReInit();
+		stream.SetSMSwapBuffer(m_pSwapBuffer2);
+		m_pSwapBuffer2->BeginWrite();
+		stream << callIsOk;
+	}
+	void XLangStub::FinishCall(void* pCallContext,SwapBufferStream& stream,bool callIsOk)
+	{
+		if (callIsOk)
+		{
+			PayloadFrameHead& head = m_pSwapBuffer2->GetHead();
+
 			//Pack is End
 			//Deliver the last block
 			head.payloadType = PayloadType::SendLast;
@@ -169,38 +213,13 @@ namespace X
 			//we assume it is not too big more then 2G
 			//so keep as one block with blockSize
 			head.blockSize = (unsigned int)stream.GetPos().offset;
+			head.context = pCallContext;
 		}
-		pSMSwapBuffer->EndWrite();//Notify another side
-	}
-
-	bool XLangStub::ShakeHandsCall(SMSwapBuffer* pSwapBuffer, SwapBufferStream& stream)
-	{
-		unsigned long clientPid = 0;
-		stream >> clientPid;
-		std::cout << "XLangStub::ShakeHandsCall,clientPid=" << clientPid<<std::endl;
-		NotifyBeforeCall(1, stream);
-		m_clientPid = clientPid;
-		if (clientPid != 0)
-		{
-			WatchClientProcess(clientPid);
-		}
-		NotifyAfterCall(1, stream, true);
-		unsigned long pid = GetPID();
-		stream << pid;
-		stream << m_sessionId;
-		return true;
-	}
-
-	void XLangStub::NotifyBeforeCall(int channel, SwapBufferStream& stream)
-	{
-		(channel == 1 ? m_pSwapBuffer1 : m_pSwapBuffer2)->EndRead();
-	}
-
-	void XLangStub::NotifyAfterCall(int channel, SwapBufferStream& stream, bool callIsOk)
-	{
-		stream.ReInit();
-		stream.SetSMSwapBuffer(channel == 1 ? m_pSwapBuffer1 : m_pSwapBuffer2);
-		(channel == 1 ? m_pSwapBuffer1 : m_pSwapBuffer2)->BeginWrite();
-		stream << callIsOk;
+		//write back is finsihed
+		m_pSwapBuffer2->EndWrite();//Notify another side
+		//empty read to make sure another side read out previous data
+		m_pSwapBuffer2->BeginRead();
+		m_pSwapBuffer2->EndRead();
+		m_locker_buffer2.Unlock();
 	}
 }
