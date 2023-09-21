@@ -15,18 +15,22 @@ namespace X
 {
 	XLangStream::XLangStream()
 	{
-		m_streamKey = 0;// GrusJitHost::I().RegisterStream(this);
+		m_scope_space = new XScopeSpace();
+		m_bOwnScopeSpace = true;
+		m_streamKey = 0;
 	}
-
 	XLangStream::~XLangStream()
 	{
-		//GrusJitHost::I().UnregisterStream(m_streamKey);
 		if (m_pProvider)
 		{
 			m_pProvider->SetPos(GetPos());
 		}
 		m_size = 0;
 		curPos = { 0,0 };
+		if (m_bOwnScopeSpace)
+		{
+			delete m_scope_space;
+		}
 	}
 	bool XLangStream::FullCopyTo(char* buf, STREAM_SIZE bufSize)
 	{
@@ -288,12 +292,12 @@ namespace X
 			//a reference to an object
 			unsigned long long id = (unsigned long long)pObj;
 			(*this) << id;
-			bool bRef = (m_scope_space.Query(id) != nullptr);
+			bool bRef = (m_scope_space->Query(id) != nullptr);
 			(*this) << bRef;
 			if (!bRef)
 			{
 				(*this) << (char)pObj->GetType();
-				pObj->ToBytes(m_scope_space.m_rt, m_scope_space.m_pContext, *this);
+				pObj->ToBytes(m_scope_space->m_rt, m_scope_space->m_pContext, *this);
 			}
 		}
 		break;
@@ -341,12 +345,12 @@ namespace X
 			(*this) >> bRef;
 			if (bRef)
 			{
-				pObjToRestore = (X::Data::Object*)m_scope_space.Query(id);
+				pObjToRestore = (X::Data::Object*)m_scope_space->Query(id);
 			}
 			else
 			{
 				bool needToCallFromBytesFunc = true;
-				m_scope_space.Add(id, (void*)pObjToRestore);
+				m_scope_space->Add(id, (void*)pObjToRestore);
 				(*this) >> ch;
 				X::ObjType objT = (X::ObjType)ch;
 				switch (objT)

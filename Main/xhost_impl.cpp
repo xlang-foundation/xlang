@@ -276,6 +276,25 @@ namespace X
 		}
 		return dynamic_cast<X::XLStream*>(pStream);
 	}
+	X::XLStream* XHost_Impl::CreateStreamWithSameScopeSpace(X::XLStream* pRefStream, 
+		const char* buf,long long size)
+	{
+		X::XLangStream* pRefXlangStream = dynamic_cast<X::XLangStream*>(pRefStream);
+		X::BlockStream* pStream = nullptr;
+		if (buf == nullptr && size == 0)
+		{
+			pStream = new X::BlockStream();
+		}
+		else
+		{
+			pStream = new X::BlockStream((char*)buf, size, false);
+		}
+		if (pRefXlangStream)
+		{
+			pStream->UserRefScopeSpace(&pRefXlangStream->ScopeSpace());
+		}
+		return dynamic_cast<X::XLStream*>(pStream);
+	}
 	void XHost_Impl::ReleaseStream(X::XLStream* pStream)
 	{
 		auto* pBlockStream = dynamic_cast<X::BlockStream*>(pStream);

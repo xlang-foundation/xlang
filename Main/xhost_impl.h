@@ -37,6 +37,7 @@ namespace X
 		virtual void ReleaseString(const char* str) override;
 		virtual XBin* CreateBin(char* data, size_t size, bool bOwnData) override;
 		virtual X::XLStream* CreateStream(const char* buf=nullptr, long long size=0) override;
+		virtual X::XLStream* CreateStreamWithSameScopeSpace(X::XLStream* pRefStream, const char* buf = nullptr, long long size = 0) override;
 		virtual void ReleaseStream(X::XLStream* pStream) override;
 		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) override;
 		virtual bool ToBytes(X::Value& input, X::Value& output) override;
