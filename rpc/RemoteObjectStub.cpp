@@ -119,43 +119,43 @@ namespace X
 		auto pid = GetPID();
 		return X::ROBJ_ID{ pid,obj};
 	}
-	bool RemoteObjectStub::QueryRootObject(int channel,
-		SwapBufferStream& stream, RemotingProc* pProc)
+	bool RemoteObjectStub::QueryRootObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		std::string objName;
 		stream >> objName;
-		pProc->NotifyBeforeCall(channel, stream);
+		pProc->NotifyBeforeCall(stream);
 		auto pXObj = QueryObjWithName(objName);
 		bool bOK = (pXObj!=nullptr);
-		pProc->NotifyAfterCall(channel, stream, bOK);
+		pProc->NotifyAfterCall(stream, bOK);
 		if (bOK)
 		{
 			X::ROBJ_ID objId = ConvertXObjToId(pXObj);
 			stream << objId;
 		}
+		pProc->FinishCall(pCallContext,stream, bOK);
 		return true;
 	}
-	bool RemoteObjectStub::QueryMember(int channel,
-		SwapBufferStream& stream, RemotingProc* pProc)
+	bool RemoteObjectStub::QueryMember(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID objId;
 		std::string name;
 		stream >> objId;
 		stream >> name;
-		pProc->NotifyBeforeCall(channel, stream);
+		pProc->NotifyBeforeCall(stream);
 		auto pXObj = CovertIdToXObj(objId);
 		bool keepRawParams = false;
 		int idx = pXObj->QueryMethod(name.c_str(),&keepRawParams);
-		pProc->NotifyAfterCall(channel, stream, true);
+		pProc->NotifyAfterCall(stream, true);
 		stream << idx;
 		stream << keepRawParams;
+		pProc->FinishCall(pCallContext, stream, true);
 		return true;
 	}
-	bool RemoteObjectStub::QueryMemberCount(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	bool RemoteObjectStub::QueryMemberCount(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID objId;
 		stream >> objId;
-		pProc->NotifyBeforeCall(channel, stream);
+		pProc->NotifyBeforeCall(stream);
 		auto pXObj = CovertIdToXObj(objId);
 		long long size = 0;
 		bool bOK = false;
@@ -164,14 +164,15 @@ namespace X
 			size = pXObj->Size();
 			bOK = true;
 		}
-		pProc->NotifyAfterCall(channel, stream, bOK);
+		pProc->NotifyAfterCall(stream, bOK);
 		if (bOK)
 		{
 			stream << size;
 		}
+		pProc->FinishCall(pCallContext, stream, bOK);
 		return true;
 	}
-	bool RemoteObjectStub::FlatPack(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	bool RemoteObjectStub::FlatPack(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID parent_ObjId;
 		X::ROBJ_ID objId;
@@ -192,7 +193,7 @@ namespace X
 		stream >> id_offset;
 		stream >> startIndex;
 		stream >> count;
-		pProc->NotifyBeforeCall(channel, stream);
+		pProc->NotifyBeforeCall(stream);
 		X::XObj* pParentObj = nullptr;
 		if (parent_ObjId.objId != nullptr)
 		{
@@ -221,14 +222,15 @@ namespace X
 				}
 			}
 		}
-		pProc->NotifyAfterCall(channel, stream, bOK);
+		pProc->NotifyAfterCall(stream, bOK);
 		if (bOK)
 		{
 			stream << valPackList;
 		}
+		pProc->FinishCall(pCallContext, stream, bOK);
 		return true;
 	}
-	bool RemoteObjectStub::UpdateItemValue(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	bool RemoteObjectStub::UpdateItemValue(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID parent_ObjId;
 		X::ROBJ_ID objId;
@@ -249,7 +251,7 @@ namespace X
 		stream >> itemName;
 		X::Value newVal;
 		stream >> newVal;
-		pProc->NotifyBeforeCall(channel, stream);
+		pProc->NotifyBeforeCall(stream);
 		X::XObj* pParentObj = nullptr;
 		if (parent_ObjId.objId != nullptr)
 		{
@@ -276,36 +278,38 @@ namespace X
 				}
 			}
 		}
-		pProc->NotifyAfterCall(channel, stream, bOK);
+		pProc->NotifyAfterCall(stream, bOK);
 		if (bOK)
 		{
 			stream << retVal;
 		}
+		pProc->FinishCall(pCallContext, stream, bOK);
 		return true;
 	}
-	bool RemoteObjectStub::GetMemberObject(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	bool RemoteObjectStub::GetMemberObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID objId;
 		X::ROBJ_MEMBER_ID memId;
 		stream >> objId;
 		stream >> memId;
-		pProc->NotifyBeforeCall(channel, stream);
+		pProc->NotifyBeforeCall(stream);
 		auto pXObj = CovertIdToXObj(objId);
 		X::Value valObj;
 		bool bOK = pXObj->GetIndexValue(memId, valObj);
-		pProc->NotifyAfterCall(channel, stream, bOK);
+		pProc->NotifyAfterCall(stream, bOK);
 		if (bOK)
 		{
 			X::ROBJ_ID sub_objId = ConvertXObjToId(valObj.GetObj());
 			stream << sub_objId;
 		}
+		pProc->FinishCall(pCallContext, stream, bOK);
 		return true;
 	}
-	bool RemoteObjectStub::ReleaseObject(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+	bool RemoteObjectStub::ReleaseObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		X::ROBJ_ID objId;
 		stream >> objId;
-		pProc->NotifyBeforeCall(channel, stream);
+		pProc->NotifyBeforeCall(stream);
 		auto pXObj = CovertIdToXObj(objId);
 		if (pXObj->GetType() == ObjType::Function)
 		{
@@ -316,41 +320,53 @@ namespace X
 			}
 		}
 		pXObj->DecRef();
-		pProc->NotifyAfterCall(channel, stream, true);
+		pProc->NotifyAfterCall(stream, true);
+		pProc->FinishCall(pCallContext, stream, true);
 		return true;
 	}
-	bool RemoteObjectStub::RCall(int channel, SwapBufferStream& stream, RemotingProc* pProc)
+
+	struct CallInfo
 	{
 		X::ROBJ_ID parent_ObjId;
 		X::ROBJ_ID objId;
+		X::ARGS params;
+		X::KWARGS kwParams;
+		bool haveTrailer;
+		X::Value trailer;
+		CallInfo():params(0)
+		{
+
+		}
+	};
+	bool RemoteObjectStub::RCall(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
+	{
+		CallInfo* pCallInfo = new CallInfo();
 		X::ROBJ_MEMBER_ID memId;
 		int argNum = 0;
-		stream >> parent_ObjId;
-		stream >> objId;
+		stream >> pCallInfo->parent_ObjId;
+		stream >> pCallInfo->objId;
 		stream >> memId;
 		stream >> argNum;
-		X::ARGS params(argNum);
+		pCallInfo->params.resize(argNum);
 		for (int i = 0; i < argNum; i++)
 		{
 			X::Value v;
 			v.FromBytes(&stream);
-			params.push_back(v);
+			pCallInfo->params.push_back(v);
 		}
 		int kwNum = 0;
 		stream >> kwNum;
-		X::KWARGS kwParams;
+		pCallInfo->kwParams.resize(kwNum);
 		for (int i = 0; i < kwNum; i++)
 		{
 			std::string key;
 			stream >> key;
 			X::Value v;
 			v.FromBytes(&stream);
-			kwParams.Add(key.c_str(), v,true);
+			pCallInfo->kwParams.Add(key.c_str(), v,true);
 		}
-		bool haveTrailer = false;
-		stream >> haveTrailer;
-		X::Value trailer;
-		if (haveTrailer)
+		stream >> pCallInfo->haveTrailer;
+		if (pCallInfo->haveTrailer)
 		{
 			auto size0 = stream.CalcSize(stream.GetPos());
 			auto size1 = stream.CalcSize();
@@ -358,84 +374,94 @@ namespace X
 			char* pBinBuf = new char[trailerSize];
 			stream.CopyTo(pBinBuf, trailerSize);
 			Data::Binary* pTrailerBin = new Data::Binary(pBinBuf, trailerSize,true);
-			trailer = pTrailerBin;
+			pCallInfo->trailer = pTrailerBin;
 		}
-		pProc->NotifyBeforeCall(channel, stream);
-		X::XObj* pParentObj = nullptr;
-		if (parent_ObjId.objId != nullptr)
-		{
-			pParentObj = CovertIdToXObj(parent_ObjId);
-		}
-		auto pXObj = CovertIdToXObj(objId);
-		X::Value valRet;
+		pProc->NotifyBeforeCall(stream);
 
-		bool bOK = false;
-		if (haveTrailer)
+		auto callProc = [this, pCallInfo, pProc, pCallContext]()
 		{
-			bOK = pXObj->CallEx(m_rt, pParentObj, params, kwParams, trailer,valRet);
-		}
-		else
-		{
-			bOK = pXObj->Call(m_rt, pParentObj, params, kwParams, valRet);
-		}
-		pProc->NotifyAfterCall(channel, stream, bOK);
-		if (bOK)
-		{
-			X::ROBJ_ID retId = {0,0};
-			if (valRet.IsObject())
+			X::XObj* pParentObj = nullptr;
+			if (pCallInfo->parent_ObjId.objId != nullptr)
 			{
-				auto tp = valRet.GetObj()->GetType();
-				//for str and Bin object, directly put into stream
-				if (tp  != ObjType::Str && tp!= ObjType::Binary && tp!= ObjType::List)
+				pParentObj = CovertIdToXObj(pCallInfo->parent_ObjId);
+			}
+			auto pXObj = CovertIdToXObj(pCallInfo->objId);
+			X::Value valRet;
+
+			bool bOK = false;
+			if (pCallInfo->haveTrailer)
+			{
+				bOK = pXObj->CallEx(m_rt, pParentObj, 
+					pCallInfo->params, pCallInfo->kwParams, pCallInfo->trailer, valRet);
+			}
+			else
+			{
+				bOK = pXObj->Call(m_rt, pParentObj, pCallInfo->params, pCallInfo->kwParams, valRet);
+			}
+			delete pCallInfo;
+			SwapBufferStream stream;
+			pProc->NotifyAfterCall(stream, bOK);
+			if (bOK)
+			{
+				X::ROBJ_ID retId = { 0,0 };
+				if (valRet.IsObject())
 				{
-					auto pRetObj = valRet.GetObj();
-					retId = ConvertXObjToId(pRetObj);
+					auto tp = valRet.GetObj()->GetType();
+					//for str and Bin object, directly put into stream
+					if (tp != ObjType::Str && tp != ObjType::Binary && tp != ObjType::List)
+					{
+						auto pRetObj = valRet.GetObj();
+						retId = ConvertXObjToId(pRetObj);
+					}
+					else if (tp == ObjType::List && valRet.Size() > LIST_PASS_PROCESS_SIZE)
+					{
+						auto pRetObj = valRet.GetObj();
+						retId = ConvertXObjToId(pRetObj);
+					}
 				}
-				else if (tp == ObjType::List && valRet.Size() > LIST_PASS_PROCESS_SIZE)
-				{
-					auto pRetObj = valRet.GetObj();
-					retId = ConvertXObjToId(pRetObj);
+				stream << retId;
+				if (retId.objId == 0)
+				{//if not XPackage, return as value
+					valRet.ToBytes(&stream);
 				}
 			}
-			stream << retId;
-			if (retId.objId == 0)
-			{//if not XPackage, return as value
-				valRet.ToBytes(&stream);
-			}
-		}
+			pProc->FinishCall(pCallContext, stream, bOK);
+		};
+		auto* pWorker = RemotingManager::I().GetIdleCallWorker();
+		pWorker->Call(callProc);
 		return true;
 	}
 
-	bool RemoteObjectStub::Call(int channel, unsigned int callId,
+	bool RemoteObjectStub::Call(void* pCallContext, unsigned int nCallType,
 		SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		bool bOK = false;
-		RPC_CALL_TYPE callType = (RPC_CALL_TYPE)callId;
+		RPC_CALL_TYPE callType = (RPC_CALL_TYPE)nCallType;
 		switch (callType)
 		{
 		case RPC_CALL_TYPE::CantorProxy_QueryRootObject:
-			bOK = QueryRootObject(channel, stream, pProc);
+			bOK = QueryRootObject(pCallContext, stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_QueryMember:
-			bOK = QueryMember(channel, stream, pProc);
+			bOK = QueryMember(pCallContext, stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_QueryMemberCount:
-			bOK = QueryMemberCount(channel, stream, pProc);
+			bOK = QueryMemberCount(pCallContext, stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_FlatPack:
-			bOK = FlatPack(channel, stream, pProc);
+			bOK = FlatPack(pCallContext, stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_UpdateItemValue:
-			bOK = UpdateItemValue(channel, stream, pProc);
+			bOK = UpdateItemValue(pCallContext, stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_GetMemberObject:
-			bOK = GetMemberObject(channel, stream, pProc);
+			bOK = GetMemberObject(pCallContext,stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_ReleaseObject:
-			bOK = ReleaseObject(channel, stream, pProc);
+			bOK = ReleaseObject(pCallContext,stream, pProc);
 			break;
 		case RPC_CALL_TYPE::CantorProxy_Call:
-			bOK = RCall(channel, stream, pProc);
+			bOK = RCall(pCallContext,stream, pProc);
 			break;
 		default:
 			break;

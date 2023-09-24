@@ -87,14 +87,34 @@ namespace X
     class XLangStream :
         public XLStream
     {
-        XScopeSpace m_scope_space;
+        bool m_bOwnScopeSpace = false;
+        XScopeSpace* m_scope_space = nullptr;
     public:
         XLangStream();
         ~XLangStream();
 
-        XScopeSpace& ScopeSpace() { return m_scope_space; }
+        void UserRefScopeSpace(XScopeSpace* pRef)
+        {
+            if ((m_scope_space != nullptr) && m_bOwnScopeSpace)
+            {
+                delete m_scope_space;
+            }
+            m_scope_space = pRef;
+            m_bOwnScopeSpace = false;
+        }
+        XScopeSpace& ScopeSpace() { return *m_scope_space; }
         void SetProvider(XLStream* p)
         {
+            XLangStream* pXlangStream = dynamic_cast<XLangStream*>(p);
+            if (pXlangStream)
+            {
+                if ((m_scope_space != nullptr) && m_bOwnScopeSpace)
+                {
+                    delete m_scope_space;
+                    m_bOwnScopeSpace = false;
+                }
+                m_scope_space = &pXlangStream->ScopeSpace();
+            }
             m_pProvider = p;
             SetPos(p->GetPos());
         }

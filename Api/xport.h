@@ -327,6 +327,7 @@ namespace X
 						newItem.next = oldItem.next;
 					}
 				}
+				m_curPos = m_size;//move to end to make add as append
 			}
 			~StringMap()
 			{
@@ -409,16 +410,16 @@ namespace X
 				//check each item, find the bucket
 				for (int i = 0; i < pos; i++)
 				{
-					MapItem& item0 = m_data[i];
-					if (c == item0.key[0])
+					MapItem* item0 = &m_data[i];
+					if (c == item0->key[0])
 					{
 						//find the last item in the link
-						while (item0.next>=0)
+						while (item0->next>=0)
 						{
-							item0 = m_data[item0.next];
+							item0 = &m_data[item0->next];
 						}
 						//join the link of the bucket
-						item0.next = pos;
+						item0->next = pos;
 						break;
 					}
 				}
