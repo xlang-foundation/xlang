@@ -254,22 +254,51 @@ namespace X
 		}
 		bool Package::ToBytesImpl(XlangRuntime* rt, void* pEmbededObject, X::XLangStream& stream)
 		{
+			//store the pEmbededObject as Package's ID in ScopeSpace
+			//use this way to restore Package Object with same pEmbededObject
+			unsigned long long embededId = (unsigned long long)pEmbededObject;
+			stream << embededId;
+			auto* pRefPackObj = stream.ScopeSpace().Query(embededId);
+			bool bRefPackObj = (pRefPackObj != nullptr);
+			stream << bRefPackObj;
+			if (pRefPackObj)
+			{
+				return true;
+			}
+			//if first one, put into scopespacem and continue to store its content
+			stream.ScopeSpace().Add(embededId,(void*)this);
+
 			APISetBase* pAPISet = (APISetBase*)GetAPISet();
 			std::string strPackUri;
+
 			//encoding uri for this package
 			APISetBase* pAPISet0 = pAPISet;
+			void* pCurEmbededObj = pEmbededObject;
+			//Uri ={packName.[instanceIdentity]}+
 			while (pAPISet0)
 			{
+				std::string uriItem = pAPISet0->GetName();
+				if (pAPISet0->GetInstanceProc())
+				{
+					auto varInstanceIdentity = pAPISet0->GetInstanceProc()(pCurEmbededObj);
+					std::string strInstanceIdentity = varInstanceIdentity.ToString();
+					uriItem += "." + strInstanceIdentity;
+				}
+
 				if (strPackUri.empty())
 				{
-					strPackUri = pAPISet0->GetName();
+					strPackUri = uriItem;
 				}
 				else
 				{
-					strPackUri = std::string(pAPISet0->GetName()) + '|' + strPackUri;
+					strPackUri = uriItem + '|' + strPackUri;
 				}
 				APISetBase* pAPISet1 = pAPISet0->GetParent();
-				//check if it is the top package
+				if (pAPISet0->GetEmbededParentObjectProc())
+				{
+					pCurEmbededObj = pAPISet0->GetEmbededParentObjectProc()(pCurEmbededObj);
+				}
+				//for top package, append its libname
 				if (pAPISet1 == nullptr)
 				{
 					strPackUri = std::string(pAPISet0->GetLibName()) + '|' + strPackUri;

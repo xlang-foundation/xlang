@@ -24,6 +24,7 @@
 #include "struct.h"
 #include "PyEngObject.h"
 #include "pyproxyobject.h"
+#include <sstream>
 
 namespace X 
 {
@@ -121,8 +122,34 @@ namespace X
 		std::string strName(name);
 		return X::Manager::I().QueryAndCreatePackage((XlangRuntime*)rt,strName, objPackage);
 	}
-	Value XHost_Impl::CreatePackageWithUri(const char* packageUri)
+
+	X::Value ConvertToValue(std::string& str) 
 	{
+		std::istringstream ss(str);
+		int r0;
+		long long r1;
+		double r2;
+		if (ss >> r0)
+		{
+			return X::Value(r0);
+		}
+		else if( ss>>r1)
+		{
+			return X::Value(r1);
+		}
+		else if (ss >> r2)
+		{
+			return X::Value(r2);
+		}
+		else
+		{
+			return X::Value(str);
+		}
+	}
+
+	Value XHost_Impl::CreatePackageWithUri(const char* packageUri, X::XLStream* pStream)
+	{
+		XLangStream* pXStream = dynamic_cast<XLangStream*>(pStream);
 		X::Value varPackage;
 		std::string uri(packageUri);
 		auto parts = split(uri, '|');
@@ -135,7 +162,54 @@ namespace X
 		{
 			for (int i = 2; i < parts.size(); i++)
 			{
-				varPackage = varPackage[parts[i].c_str()]();
+				std::string item = parts[i];
+				auto pos = item.find('.');
+				//have pacakge instance Id encoded
+				if (pos != std::string::npos)
+				{
+					auto item_list = split(item, '.');
+					//skip first one which is package name
+					//second one is method name
+					// and then paramter to pass into this method
+					if (item_list.size() > 2)
+					{
+						int paramNum = item_list.size() - 2;
+						std::string methodName = item_list[1];
+						if (methodName == "ID")
+						{
+							unsigned long long ullId = 0;
+							SCANF(item_list[2].c_str(), "%llu", &ullId);
+							X::Data::Object* pPackObj = (X::Data::Object *)pXStream->ScopeSpace().Query(ullId);
+							if (pPackObj)
+							{
+								varPackage = X::Value(pPackObj);
+							}
+							else
+							{//if not in scope, create it
+								varPackage = varPackage[item_list[0].c_str()]();
+							}
+						}
+						else
+						{
+							auto method_call = varPackage[methodName.c_str()];
+							X::ARGS params(paramNum);
+							for (int i = 2; i < item_list.size(); i++)
+							{
+								std::string item = item_list[i];
+								params.push_back(ConvertToValue(item));
+							}
+							varPackage = method_call.ObjCall(params);
+						}
+					}
+					else
+					{
+						varPackage = varPackage[item.c_str()]();
+					}
+				}
+				else 
+				{
+					varPackage = varPackage[item.c_str()]();
+				}
 			}
 		}
 		return varPackage;

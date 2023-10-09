@@ -102,13 +102,14 @@ public:
 		return ScopeWaitingStatus::NoWaiting;
 	};
 	virtual Scope* GetParentScope()= 0;
-	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext,std::string& name, Value& v)
+	virtual int AddAndSet(XlangRuntime* rt, XObj* pContext,std::string& name, Value& v)
 	{
 		int idx = AddOrGet(name, false,nullptr);
 		if (idx >= 0)
 		{
 			rt->DynSet(this, pContext, idx, v);
 		}
+		return idx;
 	}
 	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{//Always append,no remove, so new item's index is size of m_Vars;

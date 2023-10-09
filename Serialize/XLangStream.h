@@ -218,6 +218,13 @@ namespace X
             curPos = { 0,0 };
             m_size = 0;
             m_InOverrideMode = false;
+
+            if ((m_scope_space != nullptr) && m_bOwnScopeSpace)
+            {
+                delete m_scope_space;
+                m_scope_space = new XScopeSpace();
+            }
+
         }
     protected:
         XLStream* m_pProvider = nullptr;//real impl.

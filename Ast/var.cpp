@@ -147,12 +147,12 @@ namespace AST
 		bool isExternFunc = false;
 		stream >> isExternFunc;
 		std::string varName = GetNameString();
+		m_scope = pCurScope;
 		Value v0;
 		if (objid == 0)
 		{
 			if (isExternFunc)
 			{
-				m_scope = pCurScope;
 				ScopeLayout();//find the index
 			}
 			else
@@ -160,7 +160,8 @@ namespace AST
 				stream >> v0;
 				if (pCurScope)
 				{
-					pCurScope->AddAndSet(rt, pContext, varName, v0);
+					//will modify Index to match with new top module
+					Index = pCurScope->AddAndSet(rt, pContext, varName, v0);
 				}
 			}
 		}
@@ -173,8 +174,13 @@ namespace AST
 				stream >> v0;
 				if (pCurScope)
 				{
-					pCurScope->AddAndSet(rt, pContext, varName, v0);
+					Index = pCurScope->AddAndSet(rt, pContext, varName, v0);
 				}
+			}
+			else
+			{
+				//find the index to match the new envirment
+				ScopeLayout();
 			}
 		}
 		m_scope = pCurScope;

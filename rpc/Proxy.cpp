@@ -239,7 +239,7 @@ namespace X
 		{
 			stream << trailer;
 		}
-		std::cout << "Before CommitCall" << std::endl;
+		//std::cout << "Before CommitCall" << std::endl;
 		auto& stream2 = CommitCall(pCallContext);
 		bool bOK = false;
 		stream2 >> bOK;
@@ -260,9 +260,9 @@ namespace X
 				pRetObj->DecRef();
 			}
 		}
-		std::cout << "After CommitCall and Before FinishCall" << std::endl;
+		//std::cout << "After CommitCall and Before FinishCall" << std::endl;
 		FinishCall();
-		std::cout << "After FinishCall" << std::endl;
+		//std::cout << "After FinishCall" << std::endl;
 		return bOK;
 	}
 
@@ -302,9 +302,9 @@ namespace X
 		mCallLock1.Unlock();//unlock to let other call come in
 
 		//Wait for pContext->Ready
-		std::cout << "In CommitCall before wait" << std::endl;
+		//std::cout << "In CommitCall before wait" << std::endl;
 		pContext->pWait->Wait(-1);
-		std::cout << "In CommitCall after wait" << std::endl;
+		//std::cout << "In CommitCall after wait" << std::endl;
 		ReturnCallContext(pContext);
 		//Fetch Result
 		mStream2.ReInit();
@@ -400,7 +400,7 @@ namespace X
 			{
 				continue;
 			}
-			std::cout << "Before wait" <<std::endl;
+			//std::cout << "Before wait" <<std::endl;
 			PayloadFrameHead& head = mSMSwapBuffer2->GetHead();
 			if (head.context)
 			{
@@ -413,7 +413,7 @@ namespace X
 			}
 			//wait for call read out its return data
 			m_pCallReadyWait->Wait(-1);
-			std::cout << "After wait" << std::endl;
+			//std::cout << "After wait" << std::endl;
 			mSMSwapBuffer2->EndRead();
 			//do an empty write to notify server side can write again
 			mSMSwapBuffer2->BeginWrite();

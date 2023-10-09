@@ -167,6 +167,8 @@ namespace X
 		PackageGetContentSizeFunc m_funcGetContentSize = nullptr;
 		PackageToBytesFunc m_funcToBytes = nullptr;
 		PackageFromBytesFunc m_funcFromBytes = nullptr;
+		PackageInstanceIdentity m_funcInstanceIdentity = nullptr;
+		PackageGetEmbededParentObject m_funcGetEmbededParentObject = nullptr;
 	public:
 		void SetPackageContentProc(
 			PackageGetContentSizeFunc sizeFunc,
@@ -176,6 +178,21 @@ namespace X
 			m_funcGetContentSize = sizeFunc;
 			m_funcToBytes = toBytesFunc;
 			m_funcFromBytes = fromBytesFunc;
+		}
+		void SetInstanceProc(PackageInstanceIdentity func)
+		{
+			m_funcInstanceIdentity = func;
+		}
+		inline PackageInstanceIdentity GetInstanceProc()
+		{
+			return m_funcInstanceIdentity;
+		}		void SetEmbededParentObjectProc(PackageGetEmbededParentObject func)
+		{
+			m_funcGetEmbededParentObject = func;
+		}
+		inline PackageGetEmbededParentObject GetEmbededParentObjectProc()
+		{
+			return m_funcGetEmbededParentObject;
 		}
 		inline PackageGetContentSizeFunc GetSizeFunc() { return m_funcGetContentSize; }
 		inline PackageToBytesFunc GetToBytesFunc() { return m_funcToBytes; }

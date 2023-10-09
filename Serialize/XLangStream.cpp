@@ -10,6 +10,7 @@
 #include "moduleobject.h"
 #include "struct.h"
 #include "deferred_object.h"
+#include "funclist.h"
 
 namespace X 
 {
@@ -296,6 +297,8 @@ namespace X
 			(*this) << bRef;
 			if (!bRef)
 			{
+				//add here to avoid recursive call with ToBytes in this object
+				m_scope_space->Add(id, pObj);
 				(*this) << (char)pObj->GetType();
 				pObj->ToBytes(m_scope_space->m_rt, m_scope_space->m_pContext, *this);
 			}
@@ -346,11 +349,11 @@ namespace X
 			if (bRef)
 			{
 				pObjToRestore = (X::Data::Object*)m_scope_space->Query(id);
+				v = X::Value(dynamic_cast<XObj*>(pObjToRestore), true);
 			}
 			else
 			{
 				bool needToCallFromBytesFunc = true;
-				m_scope_space->Add(id, (void*)pObjToRestore);
 				(*this) >> ch;
 				X::ObjType objT = (X::ObjType)ch;
 				switch (objT)
@@ -383,17 +386,32 @@ namespace X
 					pObjToRestore->IncRef();
 					break;
 				case X::ObjType::FuncCalls:
-					assert(false);
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::FuncCalls());
+					pObjToRestore->IncRef();
 					break;
 				case X::ObjType::Package:
 				{
+					//for package, we have 8 bytes embededID followed by a bool flag
+					//to indicate if this is a reference to a package or a embeded package
+					unsigned long long embedId;
+					(*this) >> embedId;
+					bool bRefPackObj = false;
+					(*this) >> bRefPackObj;
+					if (bRefPackObj)
+					{
+						pObjToRestore = (X::Data::Object*)m_scope_space->Query(embedId);
+						needToCallFromBytesFunc = false;
+						break; //break the switch
+					}
+
 					//pair with PackageProxy::ToBytes
 					std::string strPackUri;
 					(*this) >> strPackUri;
-					X::Value varPackCreate = g_pXHost->CreatePackageWithUri(strPackUri.c_str());
+					X::Value varPackCreate = g_pXHost->CreatePackageWithUri(strPackUri.c_str(),this);
 					if (varPackCreate.IsObject())
 					{
 						pObjToRestore = dynamic_cast<X::Data::Object*>(varPackCreate.GetObj());
+						m_scope_space->Add(embedId, (void*)pObjToRestore);
 						//this is workaround for package in on side is a pacakge,
 						//but in the other side is a changed to remote object
 						if (pObjToRestore->GetType() != X::ObjType::Package)
@@ -447,6 +465,7 @@ namespace X
 				default:
 					break;
 				}
+				m_scope_space->Add(id, (void*)pObjToRestore);
 				if (pObjToRestore)
 				{
 					if (needToCallFromBytesFunc)

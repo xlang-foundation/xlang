@@ -330,7 +330,7 @@ public:
 	}
 	virtual void ScopeLayout() override;
 	void AddBuiltins(XlangRuntime* rt);
-	inline void Add(XlangRuntime* rt, std::string& name,
+	inline int Add(XlangRuntime* rt, std::string& name,
 		XObj* pContext, Value& v)
 	{
 		int idx = AddOrGet(name, false);
@@ -343,11 +343,12 @@ public:
 			}
 			Set(rt, pContext, idx, v);
 		}
+		return idx;
 	}
 	// Inherited via Scope
-	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
+	inline virtual int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
 	{
-		Add(rt,name, pContext,v);
+		return Add(rt,name, pContext,v);
 	}
 	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 	{

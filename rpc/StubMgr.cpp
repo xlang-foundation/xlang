@@ -93,8 +93,8 @@ namespace X
     {
         while (m_bRun)
         {
-            m_bIdle = false;
             m_pWait->Wait(-1);
+            m_bIdle = false;
             m_func();
             m_bIdle = true;
         }

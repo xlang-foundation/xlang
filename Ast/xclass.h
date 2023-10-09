@@ -91,7 +91,7 @@ public:
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override;
 	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
-	virtual void AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
+	virtual int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
 	{
 		int idx = AddOrGet(name, false);
 		if (idx >= 0)
@@ -103,6 +103,7 @@ public:
 			}
 			Set(rt, pContext, idx, v);
 		}
+		return idx;
 	}
 	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override;
 	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
