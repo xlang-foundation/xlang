@@ -28,6 +28,35 @@ public:
 	{
 		return m_list;
 	}
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
+	{
+		Object::ToBytes(rt, pContext, stream);
+		m_lock.Lock();
+		stream << (int)m_list.size();
+		for (auto& it : m_list)
+		{
+			stream << it.contextObj;
+			stream << it.m_func;
+			//todo: m_lVal?
+		}
+		m_lock.Unlock();
+		return true;
+	}
+	virtual bool FromBytes(X::XLangStream& stream)
+	{
+		int size = 0;
+		stream >> size;
+		m_lock.Lock();
+		for (int i = 0; i < size; i++)
+		{
+			VectorCall vc;
+			stream >> vc.contextObj;
+			stream >> vc.m_func;
+			m_list.push_back(vc);
+		}
+		m_lock.Unlock();
+		return true;
+	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<AST::Scope*>& callables) override
 	{
@@ -37,7 +66,8 @@ public:
 			bool bCallable = false;
 			if (it.m_func.IsObject())
 			{
-				bCallable = it.m_func.GetObj() - CalcCallables(rt, it.GetContext(), callables);
+				auto* pDataObj = dynamic_cast<Data::Object*>(it.m_func.GetObj());
+				bCallable = pDataObj->CalcCallables(rt, it.GetContext(), callables);
 			}
 			bHave |= bCallable;
 		}
