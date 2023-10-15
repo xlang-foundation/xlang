@@ -3,6 +3,8 @@
 #include "str.h"
 #include "list.h"
 #include "dict.h"
+#include "xlang.h"
+#include "bin.h"
 
 namespace X
 {
@@ -53,7 +55,7 @@ namespace X
 			}
 			if (fromPath.empty())
 			{
-				std::string strFileName = GetModuleFileName();
+				std::string strFileName = GetPyModuleFileName();
 				PyObjectCache::I().AddModule(strFileName, this);
 				auto sys = PyEng::Object::Import("sys");
 				sys["path.insert"](0, m_path);
@@ -85,13 +87,17 @@ namespace X
 		{
 			if (m_proxyType == PyProxyType::Module)
 			{
-				std::string strFileName = GetModuleFileName();
+				std::string strFileName = GetPyModuleFileName();
 				PyObjectCache::I().RemoveModule(strFileName);
 			}
 		}
 		bool PyProxyObject::ToValue(X::Value& val)
 		{
 			return PyObjectToValue(m_obj, val);
+		}
+		bool PyProxyObject::ToBin(X::Value& valBin)
+		{
+			return PyObjectToBin(m_obj, valBin);
 		}
 		bool PyProxyObject::GetItem(long long index, X::Value& val)
 		{
@@ -128,6 +134,31 @@ namespace X
 				//todo: when to call release
 				pProxyObj->Object::IncRef();
 				val = X::Value(pProxyObj);
+			}
+			return true;
+		}
+		bool PyProxyObject::PyObjectToBin(PyEng::Object& pyObj, X::Value& valBin)
+		{
+			if (pyObj.IsArray()) //Numpy array to get its data and put data into Bin
+			{
+				char* pData = (char*)g_pPyHost->GetDataPtr(pyObj.ref());
+				int itemType = 0;
+				int itemSize = 0;
+				X::Port::vector<unsigned long long> dims(0);
+				X::Port::vector<unsigned long long> strides(0);
+				g_pPyHost->GetDataDesc(pyObj.ref(), itemType, itemSize, dims, strides);
+				//only convert one dimension array
+				if (dims.size() == 1)
+				{
+					//calculate the total size
+					//just one dimension array, so the size is the first dimension
+					long long totalSize = dims[0]* itemSize;
+					char* pBinData = new char[totalSize];
+					memcpy(pBinData, pData, totalSize);
+					//create a Bin object
+					Data::Binary* pBin = new Data::Binary(pBinData, totalSize, true);
+					valBin = X::Value(pBin);
+				}
 			}
 			return true;
 		}

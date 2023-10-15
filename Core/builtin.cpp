@@ -1121,6 +1121,31 @@ bool U_To_XObj(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	return true;
 }
+
+bool U_Extract_Data_ToBin(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	bool bOK = false;
+	//check if it is PyObject
+	auto& obj = params[0];
+	if (obj.IsObject()
+		&& obj.GetObj()->GetType() == ObjType::PyProxyObject)
+	{
+		auto* pPyObj = dynamic_cast<Data::PyProxyObject*>(obj.GetObj());
+		if (pPyObj)
+		{
+			bOK = pPyObj->ToBin(retValue);
+		}
+	}
+	return true;
+}
 bool U_GetModuleFileName(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1434,7 +1459,7 @@ bool Builtin::RegisterInternals()
 	Register("each", (X::U_FUNC)U_Each, params, "", true);
 	Register("lrpc_listen", (X::U_FUNC)U_LRpc_Listen, params, "", true);
 	Register("to_xlang", (X::U_FUNC)U_To_XObj, params, "to_xlang", true);
-
+	Register("to_bin", (X::U_FUNC)U_Extract_Data_ToBin, params, "to_bin", true);
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
 	Register("get_module_filename", (X::U_FUNC)U_GetModuleFileName, params);
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
