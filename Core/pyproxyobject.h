@@ -122,7 +122,7 @@ namespace X
 				m_proxyType = PyProxyType::Module;
 				m_name = name;
 				m_path = path;
-				std::string strFileName = GetModuleFileName();
+				std::string strFileName = GetPyModuleFileName();
 				Object::IncRef();
 				PyObjectCache::I().AddModule(strFileName, this);
 			}
@@ -152,8 +152,30 @@ namespace X
 			{
 				m_myScope = s;
 			}
+			virtual int cmp(X::Value* r) override
+			{
+				if (r->GetType() == ValueType::None && m_obj.IsNull())
+				{
+					return 0;
+				}
+				else if (r->GetType() == ValueType::Object 
+					&& r->GetObj()->GetType() == X::ObjType::PyProxyObject)
+				{
+					PyProxyObject* pObj = dynamic_cast<PyProxyObject*>(r->GetObj());
+					if (pObj)
+					{
+						if (pObj->m_obj.ref() == m_obj.ref())
+						{
+							return 0;
+						}
+					}
+				}
+				return 1;
+			}
 			bool ToValue(X::Value& val);
+			bool ToBin(X::Value& valBin);
 			static bool PyObjectToValue(PyEng::Object& pyObj, X::Value& val);
+			static bool PyObjectToBin(PyEng::Object& pyObj, X::Value& valBin);
 
 			virtual bool SupportAssign() override { return true; }
 			virtual void Assign(const X::Value& val) override
@@ -251,12 +273,12 @@ namespace X
 			{
 				if (m_proxyType == PyProxyType::Func)
 				{
-					return m_PyModule?m_PyModule->GetModuleFileName():
+					return m_PyModule?m_PyModule->GetPyModuleFileName():
 						m_moduleFileName;
 				}
 				else 
 				{
-					return GetModuleFileName();
+					return GetPyModuleFileName();
 				}
 			}
 			virtual Scope* GetScope() override
@@ -290,7 +312,7 @@ namespace X
 			{
 				return m_name;
 			}
-			std::string GetModuleFileName()
+			std::string GetPyModuleFileName()
 			{
 				return m_path + "/" + m_name + ".py";
 			}
