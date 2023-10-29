@@ -364,7 +364,12 @@ namespace X
 		Value v0;
 		if (g_pXHost->Import(rt, moduleName, nullptr,nullptr, v0))
 		{
-			SetObj(v0.GetObj());
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
 		}
 	}
 	template<>
@@ -375,7 +380,12 @@ namespace X
 		Value v0;
 		if (g_pXHost->Import(rt, moduleName, from, nullptr, v0))
 		{
-			SetObj(v0.GetObj());
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
 		}
 	}
 	Value Value::ObjCall(Port::vector<X::Value>& params, Port::StringMap<X::Value>& kwParams)
