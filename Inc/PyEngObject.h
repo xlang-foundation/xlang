@@ -363,7 +363,7 @@ public:
 		}
 		return *this;
 	}
-	~Object()
+	virtual ~Object()
 	{
 		if (m_p)
 		{
@@ -528,6 +528,9 @@ public:
 	{
 		m_p = g_pPyHost->GetPyNone();
 	}
+	~None() //make sure to call Object's deconstructor
+	{
+	}
 };
 class Tuple :
 	public Object
@@ -537,6 +540,9 @@ public:
 		Object()
 	{
 		m_p = g_pPyHost->NewTuple(0);
+	}
+	~Tuple() //make sure to call Object's deconstructor
+	{
 	}
 	Tuple(long long size) :
 		Object()
@@ -549,7 +555,9 @@ public:
 		m_p = g_pPyHost->NewTuple(li.size());
 		for (unsigned long long i = 0; i < li.size(); i++)
 		{
-			g_pPyHost->Set(m_p, (int)i, (Object)li[i]);
+			Object obj(li[i]);
+			//don't keep refcount in tuple, will not call release according Python ref count rules
+			g_pPyHost->Set(m_p, (int)i, obj);
 		}
 	}
 };
@@ -561,6 +569,9 @@ public:
 		Object()
 	{
 		m_p = g_pPyHost->NewDict();
+	}
+	~Dict() //make sure to call Object's deconstructor
+	{
 	}
 	Dict(const Object& self)
 	{
@@ -626,6 +637,9 @@ public:
 		:Object()
 	{
 
+	}
+	~Array() //make sure to call Object's deconstructor
+	{
 	}
 	Array(const Object& obj)
 		:Object(obj)
