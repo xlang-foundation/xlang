@@ -676,3 +676,18 @@ bool GrusPyEngHost::EnumDictItem(PyEngObjectPtr dict, long long& pos,
 	pos = pyPos;
 	return bOK;
 }
+
+bool GrusPyEngHost::CallReleaseForTupleItems(PyEngObjectPtr tuple)
+{
+	if (!PyTuple_Check((PyObject*)tuple))
+	{
+		return false;
+	}
+	Py_ssize_t size = PyTuple_Size((PyObject*)tuple);
+	for (Py_ssize_t i = 0; i < size; i++)
+	{
+		PyObject* pOb = PyTuple_GetItem((PyObject*)tuple, i);
+		Py_DecRef(pOb);
+	}
+	return true;
+}

@@ -543,6 +543,7 @@ public:
 	}
 	~Tuple() //make sure to call Object's deconstructor
 	{
+		g_pPyHost->CallReleaseForTupleItems(m_p);
 	}
 	Tuple(long long size) :
 		Object()
