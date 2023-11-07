@@ -2,6 +2,7 @@
 #include "utility.h"
 #include "PyFunc.h"
 #include <iostream>
+#include <sstream>
 #include "port.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
@@ -683,11 +684,17 @@ bool GrusPyEngHost::CallReleaseForTupleItems(PyEngObjectPtr tuple)
 	{
 		return false;
 	}
+	std::ostringstream oss;
 	Py_ssize_t size = PyTuple_Size((PyObject*)tuple);
+	oss << "CallReleaseForTupleItems,tuple size:" << size;
 	for (Py_ssize_t i = 0; i < size; i++)
 	{
 		PyObject* pOb = PyTuple_GetItem((PyObject*)tuple, i);
+		int cnt = (int)pOb->ob_refcnt;
+		oss <<"i="<<i<<",ref_count,before release="<<cnt<<",";
 		Py_DecRef(pOb);
 	}
+	std::string result = oss.str();
+	std::cout << result << std::endl;
 	return true;
 }

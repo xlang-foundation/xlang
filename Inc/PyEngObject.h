@@ -543,7 +543,7 @@ public:
 	}
 	~Tuple() //make sure to call Object's deconstructor
 	{
-		g_pPyHost->CallReleaseForTupleItems(m_p);
+		//g_pPyHost->CallReleaseForTupleItems(m_p);
 	}
 	Tuple(long long size) :
 		Object()
@@ -558,7 +558,7 @@ public:
 		{
 			Object obj(li[i]);
 			//don't keep refcount in tuple, will not call release according Python ref count rules
-			g_pPyHost->Set(m_p, (int)i, obj);
+			g_pPyHost->Set(m_p, (int)i, obj.ref());
 		}
 	}
 };
