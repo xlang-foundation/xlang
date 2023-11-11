@@ -14,140 +14,53 @@ namespace X
 {
 namespace AST
 {
-	bool Assign::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+	void InOp::DoIterator(Value& var0, Value& v)
 	{
-		if (!L || !R)
+		auto* pIt = new Data::Iterator();
+		pIt->SetContainer(var0);
+		if (L)
 		{
-			v = Value(false);
-			return false;
+			pIt->SetImpactVar(L);
 		}
-		Value v_l;
-		LValue lValue_L = nullptr;
-		L->Exec(rt, action,pContext, v_l, &lValue_L);
-		Value v_r;
-		if (!R->Exec(rt, action,pContext, v_r))
-		{
-			v = Value(false);
-			return false;
-		}
+		v = X::Value(dynamic_cast<XObj*>(pIt));
+	}
+	bool Assign::ObjectAssign(XlangRuntime* rt, XObj* pContext,XObj* pObj, Value& v, Value& v_r, LValue& lValue_L)
+	{
 		bool bOK = true;
-		if (v_l.IsObject())
+		auto ty = pObj->GetType();
+		switch (ty)
 		{
-			auto* pObj = v_l.GetObj();
-			if (pObj->GetType() == X::ObjType::FuncCalls)
+		case X::ObjType::FuncCalls:
+		{
+			auto* pCalls = dynamic_cast<Data::FuncCalls*>(pObj);
+			bOK = pCalls->SetValue(v_r);
+			v = Value(bOK);
+		}
+		case X::ObjType::Prop:
+		{
+			auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
+			bOK = pPropObj->SetPropValue(rt, lValue_L.GetContext(), v_r);
+			v = Value(bOK);
+		}
+		break;
+		case X::ObjType::RemoteObject:
+		{
+			//if Left side is a remote object, and right side is not a
+			//remote object, we treat as SetValue for this Left RemoteObject
+			//but for both sides are remote objects,treat as assign operator.
+			//TODO(Shawn 6/5/2023): But we need to consider more on this case.
+			if (!v_r.IsObject() || v_r.GetObj()->GetType() != X::ObjType::RemoteObject)
 			{
-				auto* pCalls = dynamic_cast<Data::FuncCalls*>(pObj);
-				bOK =  pCalls->SetValue(v_r);
+				auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObj);
+				bOK = pRemoteObj->SetValue(rt, pContext, v_r);
 				v = Value(bOK);
-				return bOK;
-			}
-			else if (pObj->GetType() == X::ObjType::Prop)
-			{
-				auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
-				bOK = pPropObj->SetPropValue(rt, lValue_L.GetContext(), v_r);
-				v = Value(bOK);
-				return bOK;
-			}
-			else if (pObj->GetType() == X::ObjType::RemoteObject)
-			{
-				//if Left side is a remote object, and right side is not a
-				//remote object, we treat as SetValue for this Left RemoteObject
-				//but for both sides are remote objects,treat as assign operator.
-				//TODO(Shawn 6/5/2023): But we need to consider more on this case.
-				if (!v_r.IsObject() || v_r.GetObj()->GetType() != X::ObjType::RemoteObject)
-				{
-					auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObj);
-					bOK = pRemoteObj->SetValue(rt, pContext, v_r);
-					v = Value(bOK);
-					return bOK;
-				}
 			}
 		}
-		if (lValue_L)
-		{
-			switch (opId)
-			{
-			case X::OP_ID::Equ:
-				*lValue_L = v_r;
-				break;
-			case X::OP_ID::AddEqu:
-				//TODO: need clone??
-				//lValue_L->Clone();
-				*lValue_L += v_r;
-				break;
-			case X::OP_ID::MinusEqu:
-				*lValue_L -= v_r;
-				break;
-			case X::OP_ID::MulEqu:
-				*lValue_L *= v_r;
-				break;
-			case X::OP_ID::DivEqu:
-				break;
-			case X::OP_ID::ModEqu:
-				break;
-			case X::OP_ID::FloorDivEqu:
-				break;
-			case X::OP_ID::PowerEqu:
-				break;
-			case X::OP_ID::AndEqu:
-				break;
-			case X::OP_ID::OrEqu:
-				break;
-			case X::OP_ID::NotEqu:
-				break;
-			case X::OP_ID::RightShiftEqu:
-				break;
-			case X::OP_ID::LeftShitEqu:
-				break;
-			case X::OP_ID::Count:
-				break;
-			default:
-				break;
-			}
+		default:
+			break;
 		}
-		else
-		{
-			switch (opId)
-			{
-			case X::OP_ID::Equ:
-				bOK = L->Set(rt, pContext, v_r);
-				break;
-			case X::OP_ID::AddEqu:
-				v_l.Clone();
-				v_l += v_r;
-				break;
-			case X::OP_ID::MinusEqu:
-				break;
-			case X::OP_ID::MulEqu:
-				break;
-			case X::OP_ID::DivEqu:
-				break;
-			case X::OP_ID::ModEqu:
-				break;
-			case X::OP_ID::FloorDivEqu:
-				break;
-			case X::OP_ID::PowerEqu:
-				break;
-			case X::OP_ID::AndEqu:
-				break;
-			case X::OP_ID::OrEqu:
-				break;
-			case X::OP_ID::NotEqu:
-				break;
-			case X::OP_ID::RightShiftEqu:
-				break;
-			case X::OP_ID::LeftShitEqu:
-				break;
-			case X::OP_ID::Count:
-				break;
-			default:
-				break;
-			}
-		}
-		v = Value(bOK);
 		return bOK;
 	}
-
 	bool Operator::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
 	{
 		std::vector<X::Value> vecParam;
@@ -257,60 +170,7 @@ bool Range::Eval(XlangRuntime* rt)
 	m_evaluated = true;
 	return true;
 }
-bool Range::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
-{
-	if (!m_evaluated)
-	{
-		Eval(rt);
-	}
-	if (v.GetType() != ValueType::Int64)
-	{//not started
-		v = Value(m_start);
-	}
-	else
-	{
-		v += m_step;
-	}
-	return (v.GetLongLong() < m_stop);
-}
-bool InOp::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
-{
-	bool bOK = true;
-	if (v.IsInvalid())
-	{
-		Value  var0;
-		ExecAction action;
-		bOK = R->Exec(rt, action,pContext, var0);
-		if (bOK)
-		{
-			if (var0.IsObject())
-			{
-				auto* pIt = new Data::Iterator();
-				pIt->SetContainer(var0);
-				if (L)
-				{
-					pIt->SetImpactVar(L);
-				}
-				v = X::Value(dynamic_cast<XObj*>(pIt));
-			}
-			else
-			{//such as range which return integer(64)
-				L->Set(rt, pContext, var0);
-				v = var0;
-			}
-		}
-	}
-	else if (!v.IsObject())
-	{//for range case after first run
-		ExecAction action;
-		bOK = R->Exec(rt,action,pContext, v);
-		if (bOK)
-		{
-			L->Set(rt, pContext, v);
-		}
-	}
-	return bOK;
-}
+
 bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 {
 	//for right operands, support multiple token
@@ -431,5 +291,6 @@ void ExternDecl::ScopeLayout()
 		}
 	}
 }
+
 }
 }

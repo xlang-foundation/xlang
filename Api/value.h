@@ -458,9 +458,67 @@ public:
 	}
 	virtual Value operator* (const Value& right);
 	virtual Value operator / (const Value& right);
-	virtual Value operator + (const Value& right);
+
+	Value AddObj(const Value& right);
+	virtual Value operator + (const Value& right)
+	{
+		if(t != ValueType::Object && !right.IsObject())
+		{
+			Value ret = *this;
+			ret += right;
+			return ret;
+		}
+		else
+		{
+			return AddObj(right);
+		}
+	}
 	virtual Value operator - (const Value& right);
-	virtual void operator += (const Value& v);
+	void AssignAndAdd(const Value& v);
+	virtual void operator += (const Value& v)
+	{
+		flags = v.flags;
+		if (t == ValueType::Object)
+		{
+			AssignAndAdd(v);
+		}
+		else if (v.IsObject())
+		{
+			Value v0 = v;
+			v0 += *this;
+			t = ValueType::Object;
+			AssignObject(v0.GetObj());
+		}
+		else
+		{
+			switch (t)
+			{
+			case ValueType::Int64:
+			{
+				if (v.t == ValueType::Double)
+				{//if right side is double, change to double
+					t = ValueType::Double;
+					x.d = (double)x.l + v.x.d;
+				}
+				else
+				{
+					x.l += ToInt64(v);
+				}
+			}
+			break;
+			case ValueType::Double:
+				x.d += ToDouble(v);
+				break;
+			case ValueType::Str:
+				x.str = v.x.str;
+				ChangeToStrObject();
+				break;
+			default:
+				*this = v;
+				break;
+			}
+		}
+	}
 	virtual void operator -= (const Value& v);
 
 	Value ObjCall(Port::vector<X::Value>& params);

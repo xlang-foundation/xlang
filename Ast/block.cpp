@@ -33,75 +33,11 @@ void Block::Add(Expression* item)
 	item->ScopeLayout();
 
 }
-bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, LValue* lValue)
+bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, LValue* lValue)
 {
-	if (Body.size() == 0)
-	{
-		return true;
-	}
 	bool bOk = true;
 	m_bRunning = true;
 
-	if (!rt->GetTrace())
-	{
-		//just for debug easy,write same code here
-		// because dbg also run xlang code
-		//then easy to set breakpoint for xlang code in debug mode
-		//not for dbg xlang code
-
-		//for break, continue and pass
-		//just do a check if i it is one of them
-		//then do process with them
-
-		auto last = Body[Body.size() - 1];
-		for (auto& i : Body)
-		{
-			if (i->m_type == ObType::ActionOp)
-			{
-				auto* pActionOperator = dynamic_cast<ActionOperator*>(i);
-				OP_ID opId = pActionOperator->GetId();
-				if (opId == OP_ID::Break)
-				{
-					action.type = ExecActionType::Break;
-					break;
-				}
-				else if (opId == OP_ID::Continue)
-				{
-					action.type = ExecActionType::Continue;
-					break;
-				}
-				else if (opId == OP_ID::Pass)
-				{
-					continue;//just run next line
-				}
-			}
-			Value v0;
-			int line = i->GetStartLine();
-			ExecAction action0;
-			bOk = i->Exec(rt, action0,pContext, v0);
-			//if break or cotinue action passed back
-			//break this loop,and pass back to caller
-			if (action0.type == ExecActionType::Break ||
-				action0.type == ExecActionType::Continue)
-			{
-				action = action0;
-				break;
-			}
-			if (!bOk)
-			{
-				auto pid = GetPID();
-				std::cout << "Error Occurs in line:" << line <<",pid:" << pid<<std::endl;
-				auto code = i->GetCode();
-				std::cout <<"*** " << code << std::endl;
-			}
-			if (v0.IsValid() && (i == last))
-			{
-				v = v0;
-			}
-		}
-		m_bRunning = false;
-		return bOk;
-	}
 	//if being traced, go to here
 	bool bEnterBlock = false;
 	if ((m_type == ObType::Func || m_type == ObType::Module) &&

@@ -72,7 +72,7 @@ namespace X
 		}
 		return ret;
 	}
-	Value Value::operator+ (const Value& right)
+	Value Value::AddObj(const Value& right)
 	{
 		Value ret;
 		bool done = false;
@@ -121,57 +121,6 @@ namespace X
 			ret -= right;
 		}
 		return ret;
-	}
-	void Value::operator += (const Value& v)
-	{
-		//if (IsObject())
-		//{
-		//	ReleaseObject(x.obj);
-		//}
-		flags = v.flags;
-		if (t == ValueType::Object)
-		{
-			Value v0;
-			//don't change V
-			v0 += v;
-			(*((XObj*)x.obj)) += v0;
-		}
-		else if (v.IsObject())
-		{
-			Value v0 = v;
-			v0 += *this;
-			t = ValueType::Object;
-			AssignObject(v0.GetObj());
-		}
-		else
-		{
-			switch (t)
-			{
-			case ValueType::Int64:
-			{
-				if (v.t == ValueType::Double)
-				{//if right side is double, change to double
-					t = ValueType::Double;
-					x.d = (double)x.l + v.x.d;
-				}
-				else
-				{
-					x.l += ToInt64(v);
-				}
-			}
-				break;
-			case ValueType::Double:
-				x.d += ToDouble(v);
-				break;
-			case ValueType::Str:
-				x.str = v.x.str;
-				ChangeToStrObject();
-				break;
-			default:
-				*this = v;
-				break;
-			}
-		}
 	}
 
 	void Value::operator -= (const Value& v)
@@ -442,6 +391,13 @@ namespace X
 			}
 		}
 		return true;
+	}
+	void Value::AssignAndAdd(const Value& v)
+	{
+		Value v0;
+		//don't change V
+		v0 += v;
+		(*((XObj*)x.obj)) += v0;
 	}
 	void Value::AssignObject(XObj* p, bool bAddRef)
 	{

@@ -15,13 +15,13 @@ public:
 class AutoLock
 {
 public:
-	AutoLock(Locker& lk)
+	inline AutoLock(Locker& lk)
 	{
 		m_lock = &lk;
 		lk.Lock();
 	}
 
-	~AutoLock()
+	inline ~AutoLock()
 	{
 		if (m_lock)
 		{

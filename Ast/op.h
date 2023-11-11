@@ -231,7 +231,114 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	bool ObjectAssign(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& v, Value& v_r, LValue& lValue_L);
+	inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	{
+		if (!L || !R)
+		{
+			v = Value(false);
+			return false;
+		}
+		Value v_l;
+		LValue lValue_L = nullptr;
+		L->Exec(rt, action, pContext, v_l, &lValue_L);
+		Value v_r;
+		if (!R->Exec(rt, action, pContext, v_r))
+		{
+			v = Value(false);
+			return false;
+		}
+		bool bOK = true;
+		if (v_l.IsObject())
+		{
+			auto* pObj = v_l.GetObj();
+			bOK = ObjectAssign(rt, pContext, pObj, v, v_r, lValue_L);
+			return bOK;
+		}
+		if (lValue_L)
+		{
+			switch (opId)
+			{
+			case X::OP_ID::Equ:
+				*lValue_L = v_r;
+				break;
+			case X::OP_ID::AddEqu:
+				//TODO: need clone??
+				//lValue_L->Clone();
+				*lValue_L += v_r;
+				break;
+			case X::OP_ID::MinusEqu:
+				*lValue_L -= v_r;
+				break;
+			case X::OP_ID::MulEqu:
+				*lValue_L *= v_r;
+				break;
+			case X::OP_ID::DivEqu:
+				break;
+			case X::OP_ID::ModEqu:
+				break;
+			case X::OP_ID::FloorDivEqu:
+				break;
+			case X::OP_ID::PowerEqu:
+				break;
+			case X::OP_ID::AndEqu:
+				break;
+			case X::OP_ID::OrEqu:
+				break;
+			case X::OP_ID::NotEqu:
+				break;
+			case X::OP_ID::RightShiftEqu:
+				break;
+			case X::OP_ID::LeftShitEqu:
+				break;
+			case X::OP_ID::Count:
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+			switch (opId)
+			{
+			case X::OP_ID::Equ:
+				bOK = L->Set(rt, pContext, v_r);
+				break;
+			case X::OP_ID::AddEqu:
+				v_l.Clone();
+				v_l += v_r;
+				break;
+			case X::OP_ID::MinusEqu:
+				break;
+			case X::OP_ID::MulEqu:
+				break;
+			case X::OP_ID::DivEqu:
+				break;
+			case X::OP_ID::ModEqu:
+				break;
+			case X::OP_ID::FloorDivEqu:
+				break;
+			case X::OP_ID::PowerEqu:
+				break;
+			case X::OP_ID::AndEqu:
+				break;
+			case X::OP_ID::OrEqu:
+				break;
+			case X::OP_ID::NotEqu:
+				break;
+			case X::OP_ID::RightShiftEqu:
+				break;
+			case X::OP_ID::LeftShitEqu:
+				break;
+			case X::OP_ID::Count:
+				break;
+			default:
+				break;
+			}
+		}
+		v = Value(bOK);
+		return bOK;
+	}
 };
 class ColonOP :
 	virtual public Operator
@@ -400,11 +507,27 @@ public:
 		stream >> m_evaluated >> m_start >> m_stop >> m_step;
 		return true;
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	{
+		if (!m_evaluated)
+		{
+			Eval(rt);
+		}
+		if (v.GetType() != ValueType::Int64)
+		{//not started
+			v = Value(m_start);
+		}
+		else
+		{
+			v += m_step;
+		}
+		return (v.GetLongLong() < m_stop);
+	}
 };
 class InOp :
 	virtual public BinaryOp
 {
+	void DoIterator(Value& var0, Value& v);
 public:
 	InOp() :
 		Operator(),
@@ -418,7 +541,40 @@ public:
 	{
 		m_type = ObType::In;
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+
+	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	{
+		bool bOK = true;
+		if (v.IsInvalid())
+		{
+			Value  var0;
+			ExecAction action;
+			bOK = R->Exec(rt, action, pContext, var0);
+			if (bOK)
+			{
+				if (var0.IsObject())
+				{
+					DoIterator(var0, v);
+				}
+				else
+				{//such as range which return integer(64)
+					L->Set(rt, pContext, var0);
+					v = var0;
+				}
+			}
+		}
+		else if (!v.IsObject())
+		{//for range case after first run
+			ExecAction action;
+			bOK = R->Exec(rt, action, pContext, v);
+			if (bOK)
+			{
+				L->Set(rt, pContext, v);
+			}
+		}
+		return bOK;
+	}
+
 	virtual void SetL(Expression* l) override
 	{
 		BinaryOp::SetL(l);

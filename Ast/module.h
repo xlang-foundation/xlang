@@ -350,7 +350,7 @@ public:
 	{
 		return Add(rt,name, pContext,v);
 	}
-	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
+	inline virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 	{
 		m_stackFrame->Set(idx, v);
 		return true;
