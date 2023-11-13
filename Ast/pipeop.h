@@ -11,17 +11,15 @@ namespace X
 	namespace AST
 	{
 		class PipeOp :
-			virtual public DotOp
+			public DotOp
 		{
 		public:
 			PipeOp():
-				Operator(), BinaryOp(), DotOp()
+				DotOp()
 			{
 				m_type = ObType::PipeOp;
 			}
 			PipeOp(short idx):
-				Operator(idx),
-				BinaryOp(idx),
 				DotOp(idx,1)
 			{
 				m_type = ObType::PipeOp;

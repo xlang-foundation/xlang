@@ -82,8 +82,8 @@ struct PrimitiveInfo
 	XlangRuntime* rt;
 };
 class Module :
-	virtual public Block,
-	virtual public Scope
+	public Block,
+	public Scope
 {
 	XlangRuntime* m_pRuntime=nullptr;//for top module, we need it
 	PrimitiveInfo m_primitives[(int)module_primitive::Count];
@@ -120,9 +120,6 @@ class Module :
 public:
 	Module() :
 		Scope(),
-		Operator(),
-		Expression(),
-		UnaryOp(),
 		Block()
 	{
 		m_type = ObType::Module;

@@ -8,20 +8,18 @@ namespace X
 	{
 		class Expression;
 		class Decorator :
-			virtual public UnaryOp
+			public UnaryOp
 		{
 			Expression* m_client = nullptr;
 			bool GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
 			bool RunExp(XlangRuntime* rt,Value& v, LValue* lValue);
 		public:
 			Decorator() :
-				Operator(),
 				UnaryOp()
 			{
 				m_type = ObType::Decor;
 			}
 			Decorator(short op) :
-				Operator(op),
 				UnaryOp(op)
 			{
 				m_type = ObType::Decor;

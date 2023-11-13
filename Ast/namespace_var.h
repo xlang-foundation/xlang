@@ -9,19 +9,19 @@ namespace X
 	namespace AST
 	{
 		class NamespaceVar :
-			virtual public Block,
-			virtual public Scope
+			public Block,
+			public Scope
 		{
 			int m_Index = -1;
 			X::Value m_obj;
 		public:
 			NamespaceVar() :
-				Block(), UnaryOp(), Operator()
+				Block()
 			{
 				m_type = ObType::NamespaceVar;
 			}
 			NamespaceVar(short op) :
-				Block(), UnaryOp(), Operator(op)
+				Block()
 			{
 				m_type = ObType::NamespaceVar;
 			}

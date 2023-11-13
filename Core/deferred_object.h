@@ -124,7 +124,8 @@ namespace X
 					{
 						DeferredObject* pProxy = new DeferredObject();
 						pProxy->m_IsProxy = true;
-						m_stackFrame->Set(idx, X::Value(pProxy));
+						X::Value proxy(pProxy);
+						m_stackFrame->Set(idx, proxy);
 					}
 				}
 				return idx;

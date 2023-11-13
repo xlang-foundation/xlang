@@ -8,17 +8,15 @@ namespace X
 	namespace AST
 	{
 		class AwaitOp :
-			virtual public UnaryOp
+			public UnaryOp
 		{
 		public:
 			AwaitOp() :
-				Operator(),
 				UnaryOp()
 			{
 				m_type = ObType::AwaitOp;
 			}
 			AwaitOp(short op) :
-				Operator(op),
 				UnaryOp(op)
 			{
 				m_type = ObType::AwaitOp;

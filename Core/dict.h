@@ -41,7 +41,8 @@ namespace X
 			virtual Value Member(XRuntime* rt, const char* name) override
 			{
 				X::Value val;
-				Get(X::Value(name), val);
+				X::Value key(name);
+				Get(key, val);
 				return val;
 			}
 			virtual void Set(X::Value& key, X::Value& val) override

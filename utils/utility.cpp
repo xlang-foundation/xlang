@@ -16,7 +16,7 @@
 #include <sstream>
 #include <limits>
 #include <fstream>
-
+#include <chrono>
 
 bool RunProcess(std::string cmd,
 	std::string initPath, bool newConsole, unsigned long& processId)
@@ -485,4 +485,10 @@ const char* GetABIString(std::string& str)
 	char* retStr = new char[str.size() + 1];
 	memcpy(retStr, str.data(), str.size() + 1);
 	return retStr;
+}
+long long getCurMicroTimeStamp()
+{
+	auto current_time = std::chrono::high_resolution_clock::now();
+	long long current_time_ll = std::chrono::time_point_cast<std::chrono::microseconds>(current_time).time_since_epoch().count();
+	return current_time_ll;
 }

@@ -122,7 +122,7 @@ public:
 		}
 		return Set(s, pContext, idx, v);
 	}
-	inline virtual bool Set(AST::Scope* s,XObj* pContext, int idx, X::Value& v)
+	inline virtual bool Set(AST::Scope* s,XObj* pContext, int idx, X::Value& v) final
 	{
 		bool bOK = false;
 		auto it = m_stackBottom;

@@ -8,7 +8,7 @@ namespace X
 namespace AST
 {
 	class PairOp :
-		virtual public BinaryOp
+		public BinaryOp
 	{
 		short m_preceding_token = 0;
 		bool ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
@@ -29,13 +29,11 @@ namespace AST
 			Value& v, LValue* lValue);
 	public:
 		PairOp() :
-			Operator(),
 			BinaryOp()
 		{
 			m_type = ObType::Pair;
 		}
 		PairOp(short opIndex, short preceding_token) :
-			Operator(opIndex),
 			BinaryOp(opIndex)
 		{
 			m_preceding_token = preceding_token;

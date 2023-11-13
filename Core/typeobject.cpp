@@ -172,7 +172,8 @@ namespace X
 					X::Dict dict;
 					X::Value val;
 					pClassScope->Get(rt, pObj, it.second, val);
-					dict->Set("Name", (std::string)it.first);
+					std::string name = it.first;
+					dict->Set("Name", name);
 					auto valType = val.GetValueType();
 					dict->Set("Type",valType);
 					list += dict;

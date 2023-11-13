@@ -30,17 +30,15 @@ public:
 //here we need to combin left side name with right side name put 
 //into one operand
 class AsOp :
-	virtual public BinaryOp
+	public BinaryOp
 {
 public:
 	AsOp() :
-		Operator(),
 		BinaryOp()
 	{
 		m_type = ObType::As;
 	}
 	AsOp(short op) :
-		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::As;
@@ -125,7 +123,7 @@ public:
 	}
 };
 class ThruOp :
-	virtual public UnaryOp
+	public UnaryOp
 {
 	std::string m_url;
 
@@ -171,13 +169,11 @@ class ThruOp :
 	}
 public:
 	ThruOp() :
-		Operator(),
 		UnaryOp()
 	{
 		m_type = ObType::Thru;
 	}
 	ThruOp(short op) :
-		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::Thru;
@@ -208,18 +204,16 @@ public:
 	}
 };
 class From :
-	virtual public UnaryOp
+	public UnaryOp
 {
 	std::string m_path;
 public:
 	From() :
-		Operator(),
 		UnaryOp()
 	{
 		m_type = ObType::From;
 	}
 	From(short op) :
-		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::From;

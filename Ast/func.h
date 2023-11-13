@@ -17,8 +17,8 @@ namespace X
 namespace AST
 {
 class Func :
-	virtual public Block,
-	virtual public Scope
+	public Block,
+	public Scope
 {
 protected:
 	bool m_PassScopeLayout = false;//in lambda case, will run ScopeLayout multiple time
@@ -80,8 +80,8 @@ protected:
 	}
 public:
 	Func() :
-		Block(), UnaryOp(), Operator(),
-		Scope(),ObjRef()
+		Block(),
+		Scope()
 	{
 		m_type = ObType::Func;
 	}

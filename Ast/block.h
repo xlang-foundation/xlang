@@ -23,6 +23,12 @@ namespace X
 					&& (tab_cnt >= other.tab_cnt)
 					&& (space_cnt >= other.space_cnt);
 			}
+			bool Equal(const Indent& other)
+			{
+				return (charPos == other.charPos)
+					&& (tab_cnt == other.tab_cnt)
+					&& (space_cnt == other.space_cnt);
+			}
 			bool operator==(const Indent& other)
 			{
 				return (charPos == other.charPos)
@@ -38,7 +44,7 @@ namespace X
 		};
 
 		class ActionOperator :
-			virtual public Operator
+			public Operator
 		{
 		public:
 			ActionOperator() :Operator()
@@ -63,7 +69,7 @@ namespace X
 			}
 		};
 		class Block :
-			virtual public UnaryOp
+			public UnaryOp
 		{
 		protected:
 			bool NoIndentCheck = false;//just for lambda block
@@ -72,12 +78,11 @@ namespace X
 			bool m_bRunning = false;
 			std::vector<Expression*> Body;
 		public:
-			Block() :Operator(), UnaryOp()
+			Block() :UnaryOp()
 			{
 				m_type = ObType::Block;
 			}
 			Block(short op) :
-				Operator(op),
 				UnaryOp(op)
 			{
 				m_type = ObType::Block;
@@ -162,6 +167,10 @@ namespace X
 			bool ExecForTrace(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue);
 			inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 			{
+				return Exec_i(rt, action, pContext, v, lValue);
+			}
+			inline bool Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr)
+			{
 				if (Body.size() == 0)
 				{
 					return true;
@@ -233,17 +242,15 @@ namespace X
 			}
 		};
 		class For :
-			virtual public Block
+			public Block
 		{
 		public:
 			For() :
-				Operator(),
 				Block()
 			{
 				m_type = ObType::For;
 			}
 			For(short op) :
-				Operator(op),
 				Block(op)
 			{
 				m_type = ObType::For;
@@ -251,17 +258,15 @@ namespace X
 			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 		};
 		class While :
-			virtual public Block
+			public Block
 		{
 		public:
 			While() :
-				Operator(),
 				Block()
 			{
 				m_type = ObType::While;
 			}
 			While(short op) :
-				Operator(op),
 				Block(op)
 			{
 				m_type = ObType::While;
@@ -271,18 +276,18 @@ namespace X
 		};
 
 		class If :
-			virtual public Block
+			public Block
 		{
 			bool m_isIf = false;//if it is 'if', this flag is true, if it is 'elif', 'else' will be false
 			If* m_next = nil;//elif  or else
 		public:
 			If() :
-				Operator(), Block()
+				Block()
 			{
 				m_type = ObType::If;
 			}
 			If(short op, bool needParam = true) :
-				Operator(op), Block(op)
+				Block(op)
 			{
 				m_type = ObType::If;
 				NeedParam = needParam;

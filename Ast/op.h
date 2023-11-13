@@ -4,13 +4,14 @@
 #include <stack>
 #include "def.h"
 #include "op_registry.h"
+#include "InlineCall.h"
 
 namespace X
 {
 namespace AST
 {
 class Operator :
-	virtual public Expression
+	public Expression
 {
 protected:
 	short Op=0;//index of _kws
@@ -52,7 +53,7 @@ public:
 };
 
 class BinaryOp :
-	virtual public Operator
+	public Operator
 {
 protected:
 	Expression* L=nil;
@@ -210,15 +211,14 @@ public:
 	}
 };
 class Assign :
-	virtual public BinaryOp
+	public BinaryOp
 {
 public:
-	Assign() :Operator(), BinaryOp()
+	Assign() :BinaryOp()
 	{
 		m_type = ObType::Assign;
 	}
 	Assign(short op) :
-		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::Assign;
@@ -390,7 +390,7 @@ public:
 };
 
 class UnaryOp :
-	virtual public Operator
+	public Operator
 {
 protected:
 	Expression* R = nil;
@@ -472,7 +472,7 @@ public:
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
-	virtual public UnaryOp
+	public UnaryOp
 {
 	bool m_evaluated = false;
 	long long m_start=0;
@@ -482,13 +482,11 @@ class Range :
 	bool Eval(XlangRuntime* rt);
 public:
 	Range() :
-		Operator(),
 		UnaryOp()
 	{
 		m_type = ObType::Range;
 	}
 	Range(short op) :
-		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::Range;
@@ -507,7 +505,7 @@ public:
 		stream >> m_evaluated >> m_start >> m_stop >> m_step;
 		return true;
 	}
-	inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		if (!m_evaluated)
 		{
@@ -525,31 +523,29 @@ public:
 	}
 };
 class InOp :
-	virtual public BinaryOp
+	public BinaryOp
 {
 	void DoIterator(Value& var0, Value& v);
 public:
 	InOp() :
-		Operator(),
 		BinaryOp()
 	{
 		m_type = ObType::In;
 	}
 	InOp(short op) :
-		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::In;
 	}
 
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		bool bOK = true;
 		if (v.IsInvalid())
 		{
 			Value  var0;
 			ExecAction action;
-			bOK = R->Exec(rt, action, pContext, var0);
+			bOK = ExpExec(R, rt, action, pContext, var0);
 			if (bOK)
 			{
 				if (var0.IsObject())
@@ -558,7 +554,7 @@ public:
 				}
 				else
 				{//such as range which return integer(64)
-					L->Set(rt, pContext, var0);
+					ExpSet(L,rt, pContext, var0);
 					v = var0;
 				}
 			}
@@ -566,10 +562,10 @@ public:
 		else if (!v.IsObject())
 		{//for range case after first run
 			ExecAction action;
-			bOK = R->Exec(rt, action, pContext, v);
+			bOK = ExpExec(R, rt, action, pContext, v);
 			if (bOK)
 			{
-				L->Set(rt, pContext, v);
+				ExpSet(L,rt, pContext, v);
 			}
 		}
 		return bOK;
@@ -585,17 +581,15 @@ public:
 	}
 };
 class ExternDecl :
-	virtual public UnaryOp
+	public UnaryOp
 {
 public:
 	ExternDecl() :
-		Operator(),
 		UnaryOp()
 	{
 		m_type = ObType::ExternDecl;
 	}
 	ExternDecl(short op) :
-		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::ExternDecl;

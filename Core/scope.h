@@ -141,6 +141,12 @@ public:
 		int idx = AddOrGet(name, true);
 		return (idx>=0)?rt->Get(this, pContext, idx, v, lValue):false;
 	}
+	inline bool RuntimeSet(XlangRuntime* rt, XObj* pContext,
+		int idx, X::Value& v)
+	{
+		assert(idx != -1);
+		return rt->Set(this, pContext, idx, v);
+	}
 	inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
 		int idx, X::Value& v)
 	{

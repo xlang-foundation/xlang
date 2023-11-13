@@ -45,6 +45,7 @@
 #include "tensor_cpu.h"
 #include "xport.h"
 #include "ast.h"
+#include "time_object.h"
 
 namespace X
 {
@@ -1421,6 +1422,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::HtmlWrapper>(m_libName.c_str(), "html");
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
+	X::RegisterPackage<X::TimeObject>(m_libName.c_str(), "time");
 
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");

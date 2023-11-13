@@ -5,6 +5,7 @@
 #include "module.h"
 #include <iostream>
 #include "utility.h"
+#include "InlineCall.h"
 
 extern bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
@@ -233,6 +234,7 @@ bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LVa
 	}
 	return true;
 }
+
 bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	Value v0;
@@ -240,7 +242,7 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 	{
 		bool bContinue = false;
 		ExecAction action;
-		bool bC0 = R->Exec(rt,action,pContext,v0);
+		bool bC0 = ExpExec(R, rt, action, pContext, v0, lValue);
 		if (bC0)
 		{
 			if (v0.IsObject())
@@ -263,7 +265,7 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 		if (bContinue)
 		{
 			ExecAction action;
-			bool bOK = Block::Exec(rt,action, pContext, v);
+			Block::Exec_i(rt,action, pContext, v);
 			//if break, will break this while loop
 			//if continue, continue loop
 			if (action.type == ExecActionType::Break)

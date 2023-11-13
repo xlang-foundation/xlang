@@ -35,7 +35,7 @@ public:
 	}
 	~StackFrame()
 	{
-		AutoLock lock(m_lock);
+		//AutoLock lock(m_lock);
 		if (m_Values)
 		{
 #if XLANG_ENG_DBG
@@ -92,7 +92,7 @@ public:
 	inline bool belongTo(Scope* s) { return s == m_pScope; }
 	void Copy(StackFrame* pFrom)
 	{
-		AutoLock lock(m_lock);
+		//AutoLock lock(m_lock);
 		for (int i = 0; i < m_varCnt; i++)
 		{
 			m_Values[i] = pFrom->m_Values[i];
@@ -104,7 +104,7 @@ public:
 	{//can be called multiple times,
 	//so need to check if m_Values is created
 	//if created, copy data into new array
-		AutoLock lock(m_lock);
+		//AutoLock lock(m_lock);
 		if (cnt == m_varCnt)
 		{
 			return true;
@@ -127,7 +127,7 @@ public:
 	}
 	inline void Set(int idx, X::Value& v)
 	{
-		AutoLock lock(m_lock);
+		//AutoLock lock(m_lock);
 		if (idx < 0 && idx >= m_varCnt)
 		{
 			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
@@ -142,12 +142,12 @@ public:
 	}
 	inline void SetReturn(X::Value& v)
 	{
-		AutoLock lock(m_lock);
+		//AutoLock lock(m_lock);
 		m_retVal = v;
 	}
 	inline void Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
 	{
-		AutoLock lock(m_lock);
+		//AutoLock lock(m_lock);
 		if (idx < 0 && idx >= m_varCnt)
 		{
 			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
@@ -158,7 +158,7 @@ public:
 	}
 	inline X::Value& GetReturnValue()
 	{
-		AutoLock lock(m_lock);
+		//AutoLock lock(m_lock);
 		return m_retVal;
 	}
 };
