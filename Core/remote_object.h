@@ -15,7 +15,7 @@ namespace X
 		XProxy* m_proxy = nullptr;
 		ROBJ_ID m_remote_Parent_Obj_id={0,0};
 		ROBJ_ID m_remote_Obj_id = { 0,0 };
-		AST::StackFrame* m_stackFrame = nullptr;
+		AST::VariableFrame* m_stackFrame = nullptr;
 		std::string m_objName;
 		ROBJ_MEMBER_ID m_memmberId = -1;
 		bool m_KeepRawParams = false;
@@ -28,7 +28,7 @@ namespace X
 		{
 			m_proxy = p;
 			m_t = ObjType::RemoteObject;
-			m_stackFrame = new AST::StackFrame(this);
+			m_stackFrame = new AST::VariableFrame(this);
 		}
 		~RemoteObject()
 		{

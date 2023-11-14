@@ -66,7 +66,7 @@ namespace X
 		{
 			PyProxyObject* m_PyModule = nullptr;
 			PyProxyType m_proxyType = PyProxyType::None;
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::VariableFrame* m_stackFrame = nullptr;
 			PyEng::Object m_parent_obj;
 			PyEng::Object m_obj;
 			PyEng::Object m_pyFrameObject;
@@ -81,7 +81,7 @@ namespace X
 				XPyObject(0), Object(), AST::Scope(), AST::Expression()
 			{
 				m_t = ObjType::PyProxyObject;
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::VariableFrame(this);
 			}
 			PyProxyObject(PyEng::Object& obj) :
 				PyProxyObject()

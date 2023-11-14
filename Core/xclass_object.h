@@ -9,14 +9,14 @@ namespace X {
 		{
 		protected:
 			AST::XClass* m_obj = nullptr;
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::VariableFrame* m_stackFrame = nullptr;
 			std::vector<Value> m_bases;//this is diffrent with XClass's bases
 			//will hold an instance per each Base class
 		public:
 			XClassObject()
 			{
 				m_t = ObjType::XClassObject;
-				m_stackFrame = new AST::StackFrame((AST::Scope*)this);
+				m_stackFrame = new AST::VariableFrame((AST::Scope*)this);
 			}
 			XClassObject(AST::XClass* p) :
 				XClassObject()
@@ -148,7 +148,7 @@ namespace X {
 				return pRetObj;
 
 			}
-			inline AST::StackFrame* GetStack()
+			inline AST::VariableFrame* GetStack()
 			{
 				return m_stackFrame;
 			}

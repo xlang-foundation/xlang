@@ -26,7 +26,7 @@ class Package :
 	void* m_apiset = nullptr;
 
 	void* m_pObject = nullptr;
-	StackFrame* m_stackFrame = nullptr;
+	VariableFrame* m_stackFrame = nullptr;
 	std::vector<MemberIndexInfo> m_memberInfos;
 	PackageCleanup m_funcPackageCleanup = nullptr;
 	PackageWaitFunc m_funcPackageWait = nullptr;
@@ -130,7 +130,7 @@ public:
 			m_stackFrame = nullptr;
 		}
 	}
-	StackFrame* GetStack() { return m_stackFrame; }
+	VariableFrame* GetStack() { return m_stackFrame; }
 	inline void Cleanup(void* pObj)
 	{
 		if (m_funcPackageCleanup)
@@ -191,7 +191,7 @@ public:
 	}
 	virtual bool Init(int varNum) override
 	{
-		m_stackFrame = new StackFrame(this);
+		m_stackFrame = new VariableFrame(this);
 		m_stackFrame->SetVarCount(varNum);
 		return true;
 	}
@@ -244,7 +244,7 @@ class PackageProxy :
 	//for event, need to clone a new event
 	//for prop, TODO:
 	//all add into m_stackFrame
-	StackFrame* m_stackFrame = nullptr;
+	VariableFrame* m_stackFrame = nullptr;
 	Package* m_pPackage = nullptr;
 	PackageCleanup m_funcPackageCleanup = nullptr;
 
@@ -285,7 +285,7 @@ public:
 		if (m_pPackage)
 		{
 			m_pPackage->Scope::IncRef();
-			m_stackFrame = new StackFrame(this);
+			m_stackFrame = new VariableFrame(this);
 			//? multiple threads will cause crash
 			//so lock here to try
 			//todo: check here, was commented out line below, shawn@4/21/2023

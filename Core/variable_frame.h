@@ -9,13 +9,12 @@
 namespace X {namespace AST {
 class Scope;
 class Expression;
-class StackFrame
+class VariableFrame
 {
 	Locker m_lock;
-	bool m_bEnableLock = false;
 protected:
-	StackFrame* m_prev = nil;
-	StackFrame* m_next = nil;
+	VariableFrame* m_prev = nil;
+	VariableFrame* m_next = nil;
 	Scope* m_pScope = nil;
 	int m_varCnt = 0;
 	X::Value* m_Values = nil;
@@ -27,20 +26,16 @@ protected:
 	void ObjDbgRemove(XObj* pObj);
 #endif
 public:
-	StackFrame():
-		m_lock(false)
+	VariableFrame()
 	{
 	}
-	StackFrame(Scope* s,bool enableLock):
-		m_lock(/*enableLock*/false)
+	VariableFrame(Scope* s)
 	{
-		m_bEnableLock = enableLock;
-		m_bEnableLock = false;
 		m_pScope = s;
 	}
-	~StackFrame()
+	~VariableFrame()
 	{
-		if(m_bEnableLock) m_lock.Lock();
+		//AutoLock lock(m_lock);
 		if (m_Values)
 		{
 #if XLANG_ENG_DBG
@@ -55,22 +50,21 @@ public:
 #endif
 			delete[] m_Values;
 		}
-		if (m_bEnableLock) m_lock.Unlock();
 	}
 	bool ToBytes(X::XLangStream& stream)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		m_lock.Lock();
 		stream << m_varCnt;
 		for (int i = 0; i < m_varCnt; i++)
 		{
 			stream << m_Values[i];
 		}
-		if (m_bEnableLock) m_lock.Unlock();
+		m_lock.Unlock();
 		return true;
 	}
 	bool FromBytes(X::XLangStream& stream)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		m_lock.Lock();
 		auto oldCnt = m_varCnt;
 		stream >> m_varCnt;
 		if (oldCnt != m_varCnt)
@@ -82,7 +76,7 @@ public:
 		{
 			stream >> m_Values[i];
 		}
-		if (m_bEnableLock) m_lock.Unlock();
+		m_lock.Unlock();
 		return true;
 	}
 	bool AddVar(XlangRuntime* rt,std::string& name, X::Value& val);
@@ -91,30 +85,28 @@ public:
 	inline void SetCharPos(int c) { m_charPos = c; }
 	inline virtual int GetCharPos() { return m_charPos; }
 	inline Scope* GetScope() { return m_pScope; }
-	inline void SetNext(StackFrame* n) { m_next = n; if(n) n->m_prev = this; }
-	inline void SetPrev(StackFrame* p) { m_prev = p; if(p) p->m_next = this; }
-	inline StackFrame* Next() { return m_next; }
-	inline StackFrame* Prev() { return m_prev; }
+	inline void SetNext(VariableFrame* n) { m_next = n; if(n) n->m_prev = this; }
+	inline void SetPrev(VariableFrame* p) { m_prev = p; if(p) p->m_next = this; }
+	inline VariableFrame* Next() { return m_next; }
+	inline VariableFrame* Prev() { return m_prev; }
 	inline bool belongTo(Scope* s) { return s == m_pScope; }
-	void Copy(StackFrame* pFrom)
+	void Copy(VariableFrame* pFrom)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		//AutoLock lock(m_lock);
 		for (int i = 0; i < m_varCnt; i++)
 		{
 			m_Values[i] = pFrom->m_Values[i];
 		}
 		m_retVal = pFrom->m_retVal;
-		if (m_bEnableLock) m_lock.Unlock();
 	}
 	inline int GetVarCount() { return m_varCnt; }
 	inline bool SetVarCount(int cnt)
 	{//can be called multiple times,
 	//so need to check if m_Values is created
 	//if created, copy data into new array
-		if (m_bEnableLock) m_lock.Lock();
+		//AutoLock lock(m_lock);
 		if (cnt == m_varCnt)
 		{
-			if (m_bEnableLock) m_lock.Unlock();
 			return true;
 		}
 		if (cnt > 0)
@@ -131,15 +123,14 @@ public:
 			m_Values = newList;
 			m_varCnt = cnt;
 		}
-		if (m_bEnableLock) m_lock.Unlock();
 		return true;
 	}
 	inline void Set(int idx, X::Value& v)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		//AutoLock lock(m_lock);
 		if (idx < 0 && idx >= m_varCnt)
 		{
-			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
+			std::cout << "VariableFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		m_Values[idx] = v;
 #if XLANG_ENG_DBG
@@ -148,37 +139,27 @@ public:
 			ObjDbgSet(v.GetObj());
 		}
 #endif
-		if (m_bEnableLock) m_lock.Unlock();
 	}
 	inline void SetReturn(X::Value& v)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		//AutoLock lock(m_lock);
 		m_retVal = v;
-		if (m_bEnableLock) m_lock.Unlock();
 	}
 	inline void Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		//AutoLock lock(m_lock);
 		if (idx < 0 && idx >= m_varCnt)
 		{
-			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
+			std::cout << "VariableFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		X::Value& v0 = m_Values[idx];
 		v = v0;
 		if (lValue) *lValue = &v0;
-		if (m_bEnableLock) m_lock.Unlock();
 	}
 	inline X::Value& GetReturnValue()
 	{
-		if (m_bEnableLock)
-		{
-			AutoLock lock(m_lock);
-			return m_retVal;
-		}
-		else
-		{
-			return m_retVal;
-		}
+		//AutoLock lock(m_lock);
+		return m_retVal;
 	}
 };
 }

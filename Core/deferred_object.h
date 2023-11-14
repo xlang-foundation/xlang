@@ -25,7 +25,7 @@ namespace X
 			//not root DeferredObject
 			bool m_IsProxy = false;
 			
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::VariableFrame* m_stackFrame = nullptr;
 			X::Value m_realObj;
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 			void RestoreDeferredObjectContent(XlangRuntime* pXlRt,Object* pRealObj);
@@ -90,7 +90,7 @@ namespace X
 			ObjRef(),XObj(),Scope(), Object()
 			{
 				m_t = ObjType::DeferredObject;
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::VariableFrame(this);
 			}
 			~DeferredObject()
 			{

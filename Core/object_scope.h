@@ -26,7 +26,7 @@ namespace X
 				X::U_FUNC func;
 			};
 			std::vector<FuncInfo> m_funclist;
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::VariableFrame* m_stackFrame = nullptr;
 			std::vector<X::XEvent*> __events;
 			virtual Scope* GetParentScope() override { return nullptr; }
 			// Inherited via Scope
@@ -78,7 +78,7 @@ namespace X
 			}
 			bool Create()
 			{
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::VariableFrame(this);
 				m_stackFrame->SetVarCount((int)m_funclist.size());
 				for (auto& f : m_funclist)
 				{

@@ -190,7 +190,7 @@ bool Func::Call(XRuntime* rt0,
 		rt->SetM(GetMyModule());
 	}
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
-	StackFrame* frame = new StackFrame(this);
+	StackFrame* frame = new StackFrame(this,false);
 	for (auto& kw : kwParams)
 	{
 		std::string strKey(kw.key);

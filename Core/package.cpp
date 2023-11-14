@@ -97,7 +97,7 @@ namespace X
 		{
 			auto* pTopModule = X::Hosting::I().LoadWithScope(this, code,strlen(code));
 			m_loadedModules.push_back(pTopModule);
-			//change StackFrame VarCount
+			//change VariableFrame VarCount
 			m_stackFrame->SetVarCount(GetVarNum());
 			X::Value retVal;
 			std::vector<X::Value> passInParams;

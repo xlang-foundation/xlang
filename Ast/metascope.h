@@ -1,7 +1,7 @@
 #pragma once
 #include "scope.h"
 #include "singleton.h"
-#include "stackframe.h"
+#include "variable_frame.h"
 
 namespace X
 {
@@ -11,11 +11,11 @@ namespace X
 			public Scope,
 			public Singleton<MetaScope>
 		{
-			StackFrame* m_stack = nullptr;
+			VariableFrame* m_stack = nullptr;
 		public:
 			MetaScope()
 			{
-				m_stack = new StackFrame();
+				m_stack = new VariableFrame();
 			}
 			void Init()
 			{

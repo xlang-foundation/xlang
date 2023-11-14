@@ -123,7 +123,7 @@ public:
 		Block()
 	{
 		m_type = ObType::Module;
-		m_stackFrame = new StackFrame(this);
+		m_stackFrame = new StackFrame(this,true);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
 	}
 	void AddInlineComment(X::AST::InlineComment* pExp)

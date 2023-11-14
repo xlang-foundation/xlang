@@ -2,6 +2,7 @@
 #include "exp.h"
 #include "scope.h"
 #include "func.h"
+#include "variable_frame.h"
 
 namespace X
 {
@@ -13,7 +14,7 @@ class XClass
 	:virtual public Func
 {
 	Func* m_constructor = nil;
-	AST::StackFrame* m_stackFrame = nullptr;//to hold non-instance properties
+	AST::VariableFrame* m_stackFrame = nullptr;//to hold non-instance properties
 	std::vector<Value> m_bases;
 	XClass* FindBase(XlangRuntime* rt, std::string& strName);
 public:
@@ -48,7 +49,7 @@ public:
 		}
 		return -1;
 	}
-	inline StackFrame* GetClassStack()
+	inline VariableFrame* GetClassStack()
 	{
 		return m_stackFrame;
 	}

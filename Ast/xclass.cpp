@@ -206,7 +206,7 @@ bool XClass::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v
 
 bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
-	m_stackFrame = new StackFrame(this);
+	m_stackFrame = new VariableFrame(this);
 	m_stackFrame->SetVarCount((int)m_Vars.size());
 	if (m_Index == -1 || m_scope == nullptr)
 	{

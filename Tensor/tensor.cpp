@@ -14,7 +14,7 @@ namespace X
 		class TensorScope :
 			virtual public AST::Scope
 		{
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::VariableFrame* m_stackFrame = nullptr;
 		public:
 			TensorScope() :
 				Scope()
@@ -38,7 +38,7 @@ namespace X
 			}
 			void Init()
 			{
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::VariableFrame(this);
 				//add datatype
 				std::vector<std::string> dataTypeList = {
 					"bool",

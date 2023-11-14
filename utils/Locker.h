@@ -10,9 +10,15 @@
 class Locker
 {
 	void* m_cs = nullptr;
+	bool m_bEnable = true;
 public:
-	inline Locker()
+	inline Locker(bool enable = true)
 	{
+		m_bEnable = enable;
+		if (!enable)
+		{
+			return;
+		}
 #if (WIN32)
 		auto* cs = new CRITICAL_SECTION();
 		InitializeCriticalSection(cs);
@@ -23,6 +29,10 @@ public:
 	}
 	inline ~Locker()
 	{
+		if (!m_bEnable)
+		{
+			return;
+		}
 #if (WIN32)
 		DeleteCriticalSection((CRITICAL_SECTION*)m_cs);
 		delete (CRITICAL_SECTION*)m_cs;
@@ -33,6 +43,10 @@ public:
 
 	inline void Lock()
 	{
+		if (!m_bEnable)
+		{
+			return;
+		}
 #if (WIN32)
 		::EnterCriticalSection((CRITICAL_SECTION*)m_cs);
 #else
@@ -41,6 +55,10 @@ public:
 	}
 	inline void Unlock()
 	{
+		if (!m_bEnable)
+		{
+			return;
+		}
 #if (WIN32)
 		::LeaveCriticalSection((CRITICAL_SECTION*)m_cs);
 #else

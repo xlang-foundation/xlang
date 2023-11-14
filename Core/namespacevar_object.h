@@ -17,11 +17,11 @@ namespace X
 			public virtual Object,
 			public virtual AST::Scope
 		{
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::VariableFrame* m_stackFrame = nullptr;
 		public:
 			NamespaceVarObject()
 			{
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::VariableFrame(this);
 			}
 			~NamespaceVarObject()
 			{

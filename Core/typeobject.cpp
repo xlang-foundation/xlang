@@ -12,7 +12,7 @@ namespace X
 		class TypeObjectScope :
 			virtual public AST::Scope
 		{
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::VariableFrame* m_stackFrame = nullptr;
 		public:
 			TypeObjectScope() :
 				Scope()
@@ -36,7 +36,7 @@ namespace X
 			}
 			void Init()
 			{
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::VariableFrame(this);
 				m_stackFrame->SetVarCount(3);
 				std::string strName;
 				{

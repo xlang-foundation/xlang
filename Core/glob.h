@@ -7,10 +7,11 @@
 #include "runtime.h"
 #include <iostream>
 #include "Locker.h"
+#include "variable_frame.h"
 
 namespace X {
 	namespace Data { class Object; }
-	namespace AST { class StackFrame; }
+	namespace AST { class VariableFrame; }
 	class OpRegistry;
 	class XlangRuntime;
 	class G:
@@ -19,7 +20,7 @@ namespace X {
 		struct ObjInfo
 		{
 #if XLANG_ENG_DBG
-			std::vector<AST::StackFrame*> stacksOwn;
+			std::vector<AST::VariableFrame*> stacksOwn;
 #endif
 		};
 		std::unordered_map<long long, XlangRuntime*> m_rtMap;//for multiple threads
@@ -72,8 +73,8 @@ namespace X {
 			std::cout << "Left Objects:" << size << std::endl;
 		}
 #if XLANG_ENG_DBG
-		void ObjBindToStack(XObj* pXObj, AST::StackFrame* pStack);
-		void ObjUnbindToStack(XObj* pXObj, AST::StackFrame* pStack);
+		void ObjBindToStack(XObj* pXObj, AST::VariableFrame* pStack);
+		void ObjUnbindToStack(XObj* pXObj, AST::VariableFrame* pStack);
 #endif
 		inline void AddObj(Data::Object* obj)
 		{
