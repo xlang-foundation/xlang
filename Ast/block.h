@@ -171,7 +171,8 @@ namespace X
 			}
 			inline bool Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr)
 			{
-				if (Body.size() == 0)
+				auto bodySize = Body.size();
+				if (bodySize == 0)
 				{
 					return true;
 				}
@@ -190,10 +191,11 @@ namespace X
 				//for break, continue and pass
 				//just do a check if i it is one of them
 				//then do process with them
-
-				auto last = Body[Body.size() - 1];
-				for (auto& i : Body)
+				
+				auto lastIdx = bodySize - 1;
+				for (size_t idx=0; idx <bodySize; idx++)
 				{
+					auto& i = Body[idx];
 					if (i->m_type == ObType::ActionOp)
 					{
 						auto* pActionOperator = dynamic_cast<ActionOperator*>(i);
@@ -216,7 +218,7 @@ namespace X
 					Value v0;
 					int line = i->GetStartLine();
 					ExecAction action0;
-					bOk = i->Exec(rt, action0, pContext, v0);
+					bOk = ExpExec(i, rt, action0, pContext, v0, lValue);
 					//if break or cotinue action passed back
 					//break this loop,and pass back to caller
 					if (action0.type == ExecActionType::Break ||
@@ -232,7 +234,7 @@ namespace X
 						auto code = i->GetCode();
 						std::cout << "*** " << code << std::endl;
 					}
-					if (v0.IsValid() && (i == last))
+					if (v0.IsValid() && (idx == lastIdx))
 					{
 						v = v0;
 					}

@@ -20,6 +20,7 @@ namespace X
 				}
 				return -1;
 			}
+#if __TODO__ //11/14/2023
 			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 			{
 				if (m_realScope)
@@ -28,6 +29,7 @@ namespace X
 				}
 				return false;
 			}
+
 			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
 				LValue* lValue = nullptr) override
 			{
@@ -37,6 +39,7 @@ namespace X
 				}
 				return false;
 			}
+#endif
 		public:
 			virtual void ScopeLayout() override
 			{

@@ -286,7 +286,7 @@ public:
 		Value& v, LValue* lValue = nullptr) override;
 };
 class ExternFunc
-	:virtual public Func
+	:public Func
 {
 	std::string m_funcName;
 	std::string m_doc;

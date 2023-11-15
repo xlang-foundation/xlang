@@ -11,7 +11,7 @@ namespace AST
 #define FastMatchThis(name) (name.size() ==4 \
 	&& name[0] =='t' && name[0] =='h' && name[0] =='i' && name[0] =='s')
 class XClass
-	:virtual public Func
+	:public Func
 {
 	Func* m_constructor = nil;
 	AST::VariableFrame* m_stackFrame = nullptr;//to hold non-instance properties

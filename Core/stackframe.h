@@ -12,7 +12,9 @@ class Expression;
 class StackFrame
 {
 	Locker m_lock;
-	bool m_bEnableLock = false;
+	//if this stack frame is shared by multiple threads,
+	//will be set to true
+	bool m_bShared = false;
 protected:
 	StackFrame* m_prev = nil;
 	StackFrame* m_next = nil;
@@ -27,20 +29,16 @@ protected:
 	void ObjDbgRemove(XObj* pObj);
 #endif
 public:
-	StackFrame():
-		m_lock(false)
+	StackFrame()
 	{
 	}
-	StackFrame(Scope* s,bool enableLock):
-		m_lock(/*enableLock*/false)
+	StackFrame(Scope* s)
 	{
-		m_bEnableLock = enableLock;
-		m_bEnableLock = false;
 		m_pScope = s;
 	}
 	~StackFrame()
 	{
-		if(m_bEnableLock) m_lock.Lock();
+		if(m_bShared) m_lock.Lock();
 		if (m_Values)
 		{
 #if XLANG_ENG_DBG
@@ -55,22 +53,22 @@ public:
 #endif
 			delete[] m_Values;
 		}
-		if (m_bEnableLock) m_lock.Unlock();
+		if (m_bShared) m_lock.Unlock();
 	}
 	bool ToBytes(X::XLangStream& stream)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		if (m_bShared) m_lock.Lock();
 		stream << m_varCnt;
 		for (int i = 0; i < m_varCnt; i++)
 		{
 			stream << m_Values[i];
 		}
-		if (m_bEnableLock) m_lock.Unlock();
+		if (m_bShared) m_lock.Unlock();
 		return true;
 	}
 	bool FromBytes(X::XLangStream& stream)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		if (m_bShared) m_lock.Lock();
 		auto oldCnt = m_varCnt;
 		stream >> m_varCnt;
 		if (oldCnt != m_varCnt)
@@ -82,7 +80,7 @@ public:
 		{
 			stream >> m_Values[i];
 		}
-		if (m_bEnableLock) m_lock.Unlock();
+		if (m_bShared) m_lock.Unlock();
 		return true;
 	}
 	bool AddVar(XlangRuntime* rt,std::string& name, X::Value& val);
@@ -98,23 +96,23 @@ public:
 	inline bool belongTo(Scope* s) { return s == m_pScope; }
 	void Copy(StackFrame* pFrom)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		if (m_bShared) m_lock.Lock();
 		for (int i = 0; i < m_varCnt; i++)
 		{
 			m_Values[i] = pFrom->m_Values[i];
 		}
 		m_retVal = pFrom->m_retVal;
-		if (m_bEnableLock) m_lock.Unlock();
+		if (m_bShared) m_lock.Unlock();
 	}
 	inline int GetVarCount() { return m_varCnt; }
 	inline bool SetVarCount(int cnt)
 	{//can be called multiple times,
 	//so need to check if m_Values is created
 	//if created, copy data into new array
-		if (m_bEnableLock) m_lock.Lock();
+		if (m_bShared) m_lock.Lock();
 		if (cnt == m_varCnt)
 		{
-			if (m_bEnableLock) m_lock.Unlock();
+			if (m_bShared) m_lock.Unlock();
 			return true;
 		}
 		if (cnt > 0)
@@ -131,12 +129,12 @@ public:
 			m_Values = newList;
 			m_varCnt = cnt;
 		}
-		if (m_bEnableLock) m_lock.Unlock();
+		if (m_bShared) m_lock.Unlock();
 		return true;
 	}
 	inline void Set(int idx, X::Value& v)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		if (m_bShared) m_lock.Lock();
 		if (idx < 0 && idx >= m_varCnt)
 		{
 			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
@@ -148,17 +146,17 @@ public:
 			ObjDbgSet(v.GetObj());
 		}
 #endif
-		if (m_bEnableLock) m_lock.Unlock();
+		if (m_bShared) m_lock.Unlock();
 	}
 	inline void SetReturn(X::Value& v)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		if (m_bShared) m_lock.Lock();
 		m_retVal = v;
-		if (m_bEnableLock) m_lock.Unlock();
+		if (m_bShared) m_lock.Unlock();
 	}
 	inline void Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
 	{
-		if (m_bEnableLock) m_lock.Lock();
+		if (m_bShared) m_lock.Lock();
 		if (idx < 0 && idx >= m_varCnt)
 		{
 			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
@@ -166,11 +164,11 @@ public:
 		X::Value& v0 = m_Values[idx];
 		v = v0;
 		if (lValue) *lValue = &v0;
-		if (m_bEnableLock) m_lock.Unlock();
+		if (m_bShared) m_lock.Unlock();
 	}
 	inline X::Value& GetReturnValue()
 	{
-		if (m_bEnableLock)
+		if (m_bShared)
 		{
 			AutoLock lock(m_lock);
 			return m_retVal;

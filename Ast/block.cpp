@@ -95,7 +95,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		}
 		Value v0;
 		ExecAction action0;
-		bOk = i->Exec(rt,action0,pContext, v0);
+		bOk = ExpExec(i, rt, action0, pContext, v0, lValue);
 		//if break or cotinue action passed back
 		//break this loop,and pass back to caller
 		if (action0.type == ExecActionType::Break ||

@@ -89,7 +89,7 @@ public:
 //it will accept left side var as its operand
 //which means who deffered
 class DeferredOP :
-	virtual public UnaryOp
+	public UnaryOp
 {
 public:
 	DeferredOP() :
@@ -330,7 +330,7 @@ struct ImportInfo
 	bool Deferred = false;
 };
 class Import :
-	virtual public Operator
+	public Operator
 {
 	From* m_from = nullptr;
 	ThruOp* m_thru = nullptr;

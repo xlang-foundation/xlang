@@ -475,7 +475,7 @@ public:
 	}
 	virtual Value operator - (const Value& right);
 	void AssignAndAdd(const Value& v);
-	virtual void operator += (const Value& v)
+	inline void operator += (const Value& v)
 	{
 		flags = v.flags;
 		if (t == ValueType::Object)

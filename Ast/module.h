@@ -123,7 +123,7 @@ public:
 		Block()
 	{
 		m_type = ObType::Module;
-		m_stackFrame = new StackFrame(this,true);
+		m_stackFrame = new StackFrame(this);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
 	}
 	void AddInlineComment(X::AST::InlineComment* pExp)
@@ -347,13 +347,13 @@ public:
 	{
 		return Add(rt,name, pContext,v);
 	}
-	inline virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
+	inline virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override final
 	{
 		m_stackFrame->Set(idx, v);
 		return true;
 	}
-	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-		LValue* lValue = nullptr) override
+	inline virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
+		LValue* lValue = nullptr) override final
 	{
 		m_stackFrame->Get(idx, v, lValue);
 		return true;

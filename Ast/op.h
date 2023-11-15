@@ -232,7 +232,7 @@ public:
 		}
 	}
 	bool ObjectAssign(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& v, Value& v_r, LValue& lValue_L);
-	inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		if (!L || !R)
 		{
@@ -241,9 +241,9 @@ public:
 		}
 		Value v_l;
 		LValue lValue_L = nullptr;
-		L->Exec(rt, action, pContext, v_l, &lValue_L);
+		ExpExec(L, rt, action, pContext, v_l, &lValue_L);
 		Value v_r;
-		if (!R->Exec(rt, action, pContext, v_r))
+		if (!ExpExec(R,rt, action, pContext, v_r))
 		{
 			v = Value(false);
 			return false;
@@ -341,7 +341,7 @@ public:
 	}
 };
 class ColonOP :
-	virtual public Operator
+	public Operator
 {
 public:
 	ColonOP() :Operator()
@@ -357,7 +357,7 @@ public:
 		std::stack<AST::Expression*>& operands, int LeftTokenIndex);
 };
 class CommaOp :
-	virtual public Operator
+	public Operator
 {
 public:
 	CommaOp() :Operator()
@@ -373,7 +373,7 @@ public:
 		std::stack<AST::Expression*>& operands, int LeftTokenIndex);
 };
 class SemicolonOp :
-	virtual public Operator
+	public Operator
 {
 public:
 	SemicolonOp() :Operator()

@@ -11,7 +11,7 @@ namespace X
 			lines
 		*/
 		class FeedOp :
-			virtual public Operator
+			public Operator
 		{
 		protected:
 			char* m_s = nil;

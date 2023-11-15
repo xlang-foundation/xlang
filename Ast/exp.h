@@ -251,7 +251,7 @@ public:
 };
 //only keep for AST Query
 class InlineComment:
-	virtual public Expression
+	public Expression
 {
 	char* m_s = nil;
 	int m_size = 0;
@@ -269,7 +269,7 @@ public:
 	std::string GetString() { return std::string(m_s,m_size); }
 };
 class Str :
-	virtual public Expression
+	public Expression
 {
 	bool m_haveFormat = false;
 	char* m_s = nil;
@@ -356,7 +356,7 @@ public:
 //But True and False deal by Number not XConst
 
 class XConst :
-	virtual public Expression
+	public Expression
 {
 	int m_tokenIndex;
 public:
@@ -391,7 +391,7 @@ public:
 	}
 };
 class Number :
-	virtual public Expression
+	public Expression
 {
 	long long m_val;
 	int m_digiNum = 0;
@@ -443,7 +443,7 @@ public:
 	}
 };
 class Double :
-	virtual public Expression
+	public Expression
 {
 	double m_val=0;
 public:
@@ -472,7 +472,7 @@ public:
 };
 //Only the imaginary  part for Complex
 class ImaginaryNumber :
-	virtual public Expression
+	public Expression
 {
 	double m_val = 0;
 public:
@@ -501,7 +501,7 @@ public:
 };
 
 class List :
-	virtual public Expression
+	public Expression
 {
 	std::vector<Expression*> list;
 public:
@@ -609,7 +609,7 @@ public:
 // def func1(x:int)
 //but also can be some other meaning bases on the context
 class Param :
-	virtual public Expression
+	public Expression
 {
 	Expression* Name = nil;
 	Expression* Type = nil;

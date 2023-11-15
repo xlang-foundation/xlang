@@ -147,6 +147,7 @@ namespace X
 		{
 			return nullptr;
 		}
+#if __TODO__ //11/14/2023
 		//prepare top module for this code
 		AST::ModuleProxy* pTopModule = new AST::ModuleProxy();
 		pTopModule->SetScope(pScope);
@@ -157,6 +158,9 @@ namespace X
 		pTopModule->SetModuleName(moduleName);
 		AddModule(pTopModule);
 		return pTopModule;    
+#else
+		return nullptr;
+#endif
 	}
     bool Hosting::Unload(AST::Module *pTopModule)
     {
