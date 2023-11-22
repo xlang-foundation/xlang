@@ -14,7 +14,7 @@ namespace X {
 		delete (Locker*)m_lock;
 	}
 #if XLANG_ENG_DBG
-	void G::ObjBindToStack(XObj* pXObj, AST::VariableFrame* pStack)
+	void G::ObjBindToStack(XObj* pXObj, AST::StackFrame* pStack)
 	{
 		Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
 		Lock();
@@ -25,7 +25,7 @@ namespace X {
 		}
 		UnLock();
 	}
-	void G::ObjUnbindToStack(XObj* pXObj, AST::VariableFrame* pStack)
+	void G::ObjUnbindToStack(XObj* pXObj, AST::StackFrame* pStack)
 	{
 		Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
 		Lock();

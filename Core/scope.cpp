@@ -47,10 +47,6 @@ namespace X
 			}
 			return true;
 		}
-		std::string Scope::GetModuleName(XlangRuntime* rt)
-		{
-			return rt->M()->GetModuleName();
-		}
 		void Scope::AddExternVar(AST::Var* var)
 		{
 			std::string name = var->GetNameString();

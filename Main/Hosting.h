@@ -58,7 +58,7 @@ namespace X
 		{
 			if (m_pInteractiveModule)
 			{
-				m_pInteractiveModule->DecRef();
+				//m_pInteractiveModule->DecRef();
 				m_pInteractiveModule = nullptr;
 			}
 		}

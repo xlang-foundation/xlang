@@ -497,9 +497,9 @@ bool Builtin::RegisterWithScope(const char* name, X::U_FUNC func,
 	m_lock.Unlock();
 	if (regToMeta)
 	{
-		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);
+		int idx = X::AST::MetaScope::I().GetMyScope()->AddOrGet(strName, false);
 		X::Value vFunc(pFuncObj);
-		X::AST::MetaScope::I().Set(nullptr, nullptr, idx, vFunc);
+		X::AST::MetaScope::I().GetMyScope()->Set(nullptr, nullptr, idx, vFunc);
 	}
 	return true;
 }
@@ -519,9 +519,9 @@ bool Builtin::Register(const char* name, X::U_FUNC func,
 	m_lock.Unlock();
 	if (regToMeta)
 	{
-		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);
+		int idx = X::AST::MetaScope::I().GetMyScope()->AddOrGet(strName, false);
 		X::Value vFunc(pFuncObj);
-		X::AST::MetaScope::I().Set(nullptr, nullptr, idx,vFunc);
+		X::AST::MetaScope::I().GetMyScope()->Set(nullptr, nullptr, idx, vFunc);
 	}
 	return true;
 }

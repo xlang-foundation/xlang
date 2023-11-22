@@ -65,7 +65,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 			if (m_type == ObType::Func
 				|| m_type == ObType::Module)
 			{
-				pMyScope = dynamic_cast<Scope*>(this);
+				pMyScope = GetMyScope();
 			}
 			else
 			{

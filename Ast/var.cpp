@@ -11,12 +11,6 @@ namespace X
 {
 namespace AST
 {
-	enum class ScopeType
-	{
-		Module,
-		Class,
-		Func
-	};
 	void Var::EncodeExtern(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 	{
 		Value v0;
@@ -25,26 +19,14 @@ namespace AST
 		{
 			return;
 		}
-		ScopeType st = ScopeType::Module;
+		ScopeType st = m_scope->GetType();
 		Scope* thisScope = m_scope;
 		//code scope ID for each Var
 		//if this scope is a top module, code the scopeid as 0,
 		//then in decoding stage, will use top module to replace it
-		if (dynamic_cast<Module*>(thisScope))
+		if (st == ScopeType::Module)
 		{
-			st = ScopeType::Module;
-			if (thisScope->GetParentScope() == nullptr)
-			{
-				thisScope = nullptr;
-			}
-		}
-		else if(dynamic_cast<XClass*>(thisScope))
-		{
-			st = ScopeType::Class;
-		}
-		else if (dynamic_cast<Func*>(thisScope))
-		{
-			st = ScopeType::Func;
+			thisScope = nullptr;
 		}
 		stream << st;
 		stream << (unsigned long long)(void*)thisScope;
@@ -161,7 +143,8 @@ namespace AST
 				if (pCurScope)
 				{
 					//will modify Index to match with new top module
-					Index = pCurScope->AddAndSet(rt, pContext, varName, v0);
+					Index = pCurScope->AddOrGet(varName, false);
+					rt->Set(pCurScope,pContext, Index, v0);
 				}
 			}
 		}
@@ -174,7 +157,8 @@ namespace AST
 				stream >> v0;
 				if (pCurScope)
 				{
-					Index = pCurScope->AddAndSet(rt, pContext, varName, v0);
+					Index = pCurScope->AddOrGet(varName, false);
+					rt->Set(pCurScope, pContext, Index, v0);
 				}
 			}
 			else
@@ -201,7 +185,10 @@ namespace AST
 		//if Index is still -1, this case
 		//will happen in decor function
 		//just treat as local var
-		bool isExtern = (Index != -1) && (dynamic_cast<X::Data::ExpressionScope*>(m_scope) == nullptr)
+		bool isExtern = (Index != -1) 
+#if __TODO_SCOPE__
+			&& (dynamic_cast<X::Data::ExpressionScope*>(m_scope) == nullptr)
+#endif
 			&& (m_scope != stream.ScopeSpace().GetCurrentScope())
 			&& (m_scope != stream.ScopeSpace().GetCurrentClassScope());
 		stream << isExtern;
@@ -327,6 +314,8 @@ void Var::ScopeLayout()
 		}
 	}
 	bool bIsLeftValue = m_isLeftValue;
+
+	Expression* pFromExp = this;
 	while (pMyScope != nullptr && idx <0)
 	{
 		std::string strName(Name.s, Name.size);
@@ -346,7 +335,20 @@ void Var::ScopeLayout()
 			m_scope = (pRightScope==nullptr)?pMyScope: pRightScope;
 			break;
 		}
-		pMyScope = pMyScope->GetParentScope();
+		//Find next upper real scope
+		pMyScope = nullptr;
+		Expression* pa = pFromExp->GetParent();
+		while (pa != nullptr)
+		{
+			pMyScope = pa->GetMyScope();
+			if (pMyScope)
+			{
+				//save for next loop
+				pFromExp = pa;
+				break;
+			}
+			pa = pa->GetParent();
+		}
 	}
 	Index = idx;
 }

@@ -104,7 +104,7 @@ namespace X
 	X::Value Hosting::NewModule()
 	{
 		AST::Module* pTopModule = new AST::Module();
-		pTopModule->IncRef();
+		//pTopModule->IncRef();
 		pTopModule->ScopeLayout();
 
 		XlangRuntime* pRuntime = new XlangRuntime();
@@ -117,7 +117,7 @@ namespace X
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 		pModuleFrame->SetLine(pTopModule->GetStartLine());
 		pTopModule->AddBuiltins(pRuntime);
-		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
 
 		auto* pModuleObj = new X::AST::ModuleObject(pTopModule);
 		return X::Value(pModuleObj);
@@ -132,7 +132,7 @@ namespace X
 		}
 		//prepare top module for this code
 		AST::Module* pTopModule = new AST::Module();
-		pTopModule->IncRef();
+		//pTopModule->IncRef();
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);
 		std::string strModuleName(moduleName);
@@ -165,7 +165,7 @@ namespace X
     bool Hosting::Unload(AST::Module *pTopModule)
     {
 		RemoveModule(pTopModule);
-		pTopModule->DecRef();
+		//pTopModule->DecRef();
 		return true;
 	}
 	bool Hosting::InitRun(AST::Module* pTopModule,X::Value& retVal)
@@ -178,7 +178,7 @@ namespace X
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 		pModuleFrame->SetLine(pTopModule->GetStartLine());
 		pTopModule->AddBuiltins(pRuntime);
-		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
 		X::Value v;
 		X::AST::ExecAction action;
 		bool bOK = pTopModule->Exec(pRuntime, action,nullptr, v);
@@ -212,7 +212,7 @@ namespace X
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 		pModuleFrame->SetLine(pTopModule->GetStartLine());
 		pTopModule->AddBuiltins(pRuntime);
-		pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
 		X::Value v;
 		X::AST::ExecAction action;
 		bool bOK = pTopModule->Exec(pRuntime,action,nullptr, v);
@@ -249,7 +249,7 @@ namespace X
 		auto* rt = pModule->GetRT();
 		if (rt)
 		{
-			rt->AdjustStack(pModule->GetVarNum());
+			rt->AdjustStack(pModule->GetMyScope()->GetVarNum());
 		}
 		bOK = pModule->RunFromLine(rt, pModuleObj, lineCntBeforeAdd,retVal);
 		return bOK;
@@ -270,9 +270,9 @@ namespace X
 			AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 			pModuleFrame->SetLine(pTopModule->GetStartLine());
 			pTopModule->AddBuiltins(pRuntime);
-			pRuntime->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+			pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
 			m_pInteractiveModule = pTopModule;
-			m_pInteractiveModule->IncRef();
+			//m_pInteractiveModule->IncRef();
 			m_pInteractiveRuntime = pRuntime;
 		}
 		Parser parser;
@@ -286,7 +286,7 @@ namespace X
 			//todo:syntax error
 			return false;
 		}
-		m_pInteractiveRuntime->AdjustStack(m_pInteractiveModule->GetVarNum());
+		m_pInteractiveRuntime->AdjustStack(m_pInteractiveModule->GetMyScope()->GetVarNum());
 		bOK = m_pInteractiveModule->RunLast(m_pInteractiveRuntime, nullptr, retVal);
 		return bOK;
 	}

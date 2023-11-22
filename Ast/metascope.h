@@ -1,21 +1,27 @@
 #pragma once
 #include "scope.h"
 #include "singleton.h"
-#include "variable_frame.h"
+#include "stackframe.h"
 
 namespace X
 {
 	namespace AST
 	{
 		class MetaScope :
-			public Scope,
 			public Singleton<MetaScope>
 		{
-			VariableFrame* m_stack = nullptr;
+			Scope* m_pMyScope = nullptr;
+			StackFrame* m_variableFrame = nullptr;
 		public:
 			MetaScope()
 			{
-				m_stack = new VariableFrame();
+				m_variableFrame = new StackFrame();
+				m_pMyScope = new Scope();
+				m_pMyScope->SetVarFrame(m_variableFrame);
+			}
+			inline Scope* GetMyScope()
+			{
+				return m_pMyScope;
 			}
 			void Init()
 			{
@@ -23,43 +29,18 @@ namespace X
 			}
 			void Cleanup()
 			{
-				if (m_stack)
+				if (m_variableFrame)
 				{
-					delete m_stack;
-					m_stack = nullptr;
+					delete m_variableFrame;
+					m_variableFrame = nullptr;
 				}
 			}
 			~MetaScope()
 			{
-				if (m_stack)
+				if (m_variableFrame)
 				{
-					delete m_stack;
+					delete m_variableFrame;
 				}
-			}
-			virtual Scope* GetParentScope()
-			{
-				return nullptr;
-			}
-			virtual int AddOrGet(std::string& name, bool bGetOnly,Scope** ppRightScope = nullptr) override
-			{
-				int retIdx = Scope::AddOrGet(name, bGetOnly, ppRightScope);
-				if (!bGetOnly)
-				{
-					m_stack->SetVarCount(GetVarNum());
-				}
-				return retIdx;
-			}
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
-				int idx, X::Value& v, LValue* lValue = nullptr) override
-			{
-				m_stack->Get(idx, v, lValue);
-				return true;
-			}
-			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
-				int idx, X::Value& v) override
-			{
-				m_stack->Set(idx, v);
-				return true;
 			}
 		};
 	}

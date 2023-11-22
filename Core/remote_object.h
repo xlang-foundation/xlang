@@ -15,7 +15,7 @@ namespace X
 		XProxy* m_proxy = nullptr;
 		ROBJ_ID m_remote_Parent_Obj_id={0,0};
 		ROBJ_ID m_remote_Obj_id = { 0,0 };
-		AST::VariableFrame* m_stackFrame = nullptr;
+		AST::StackFrame* m_stackFrame = nullptr;
 		std::string m_objName;
 		ROBJ_MEMBER_ID m_memmberId = -1;
 		bool m_KeepRawParams = false;
@@ -28,7 +28,7 @@ namespace X
 		{
 			m_proxy = p;
 			m_t = ObjType::RemoteObject;
-			m_stackFrame = new AST::VariableFrame(this);
+			m_stackFrame = new AST::StackFrame();
 		}
 		~RemoteObject()
 		{
@@ -102,10 +102,6 @@ namespace X
 			stream >> m_remote_Obj_id;
 			return true;
 		}
-		virtual Scope* GetParentScope() override
-		{
-			return nullptr;
-		}
 		bool SetValue(XlangRuntime* rt, XObj* pContext,X::Value& val)
 		{
 			X::Value retValue;
@@ -167,7 +163,8 @@ namespace X
 				m_remote_Obj_id, m_memmberId,
 				params, kwParams, trailer,retValue);
 		}
-		virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
+#if __TODO_SCOPE__
+		virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr)
 		{
 			int idx = Scope::AddOrGet(name, bGetOnly);
 			if (idx == (int)X::AST::ScopeVarIndex::INVALID)
@@ -205,5 +202,6 @@ namespace X
 			m_stackFrame->Get(idx, v, lValue);
 			return true;
 		}
+#endif
 	};
 }

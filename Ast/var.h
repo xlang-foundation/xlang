@@ -66,7 +66,8 @@ public:
 				return false;
 			}
 		}
-		return m_scope->RuntimeSet(rt, pContext, Index, v);
+		m_scope->Set(rt,pContext, Index, v);
+		return true;
 	}
 	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
 	{
@@ -80,7 +81,7 @@ public:
 			ScopeLayout();
 			assert(Index != -1 && m_scope != nullptr);
 		}
-		return m_scope->Set(rt, pContext, Index, ary[0]);
+		return rt->Set(m_scope, pContext, Index, ary[0]);
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
@@ -96,7 +97,7 @@ public:
 				return false;
 			}
 		}
-		m_scope->Get(rt, pContext, Index, v, lValue);
+		m_scope->Get(rt,pContext, Index, v, lValue);
 		if(m_parent && m_parent->m_type == ObType::Dot 
 			&& (!m_parent->IsLeftValue()) && v.IsObject()
 			&& v.GetObj()->GetType() == ObjType::Prop)

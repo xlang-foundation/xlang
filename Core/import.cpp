@@ -15,10 +15,6 @@ namespace X
 
 }
 
-X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
-{
-	return nullptr;
-}
 bool X::AST::Import::CalcCallables(XlangRuntime* rt, XObj* pContext,
 	std::vector<Scope*>& callables)
 {
@@ -213,7 +209,8 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 		}
 		if (bOK && pMyScope)
 		{
-			pMyScope->AddAndSet(rt, pContext, varName, v);
+			auto idx = pMyScope->AddOrGet(varName, false);
+			rt->Set(pMyScope, pContext,idx,v);
 		}
 	}
 	return true;

@@ -19,7 +19,7 @@ bool PairOp::ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValu
 	{//Call Func
 		Value lVal;
 		ExecAction action;
-		bOK = L->Exec(rt,action, pContext, lVal, lValue);
+		bOK = ExpExec(L,rt,action, pContext, lVal, lValue);
 		if (!bOK)
 		{
 			return bOK;
@@ -54,7 +54,7 @@ bool PairOp::ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValu
 		if (R && R->m_type != ObType::List)
 		{
 			ExecAction action;
-			bOK = R->Exec(rt,action, pContext, v, lValue);
+			bOK = ExpExec(R,rt,action, pContext, v, lValue);
 		}
 	}
 	return bOK;

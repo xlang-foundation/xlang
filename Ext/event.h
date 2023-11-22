@@ -95,7 +95,7 @@ namespace X
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(m_APIs.GetScope());
+			bases.push_back(m_APIs.GetMyScope());
 		}
 		inline bool WaitOn(int timeout)
 		{

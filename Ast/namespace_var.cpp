@@ -73,6 +73,8 @@ namespace X
 					strName = dynamic_cast<Var*>(dotOp->GetL())->GetNameString();
 				}
 			}
+
+			Expression* pFromExp = this;
 			while (pMyScope != nullptr && idx < 0)
 			{
 				idx = pMyScope->AddOrGet(strName, false);
@@ -81,7 +83,20 @@ namespace X
 					m_scope = pMyScope;
 					break;
 				}
-				pMyScope = pMyScope->GetParentScope();
+				//Find next upper real scope
+				pMyScope = nullptr;
+				Expression* pa = pFromExp->GetParent();
+				while (pa != nullptr)
+				{
+					pMyScope = pa->GetMyScope();
+					if (pMyScope)
+					{
+						//save for next loop
+						pFromExp = pa;
+						break;
+					}
+					pa = pa->GetParent();
+				}
 			}
 			m_Index = idx;
 		}

@@ -7,7 +7,7 @@ namespace X
 		class DeferredObjectScope :
 			virtual public AST::Scope
 		{
-			AST::VariableFrame* m_stackFrame = nullptr;
+			AST::StackFrame* m_stackFrame = nullptr;
 		public:
 			DeferredObjectScope() :
 				Scope()
@@ -31,7 +31,7 @@ namespace X
 			}
 			void Init()
 			{
-				m_stackFrame = new AST::VariableFrame(this);
+				m_stackFrame = new AST::StackFrame();
 				m_stackFrame->SetVarCount(3);
 				std::string strName;
 				{
@@ -55,6 +55,7 @@ namespace X
 					m_stackFrame->Set(idx, funcVal);
 				}
 			}
+#if __TODO_SCOPE__
 			// Inherited via Scope
 			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
 			{
@@ -63,7 +64,6 @@ namespace X
 			}
 			virtual Scope* GetParentScope() override
 			{
-				return nullptr;
 			}
 			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 			{
@@ -76,6 +76,7 @@ namespace X
 				m_stackFrame->Get(idx, v, lValue);
 				return true;
 			}
+#endif
 		};
 		static DeferredObjectScope* _deferredObjectScope = nullptr;
 		void DeferredObject::GetBaseScopes(std::vector<AST::Scope*>& bases)
@@ -159,6 +160,7 @@ namespace X
 			RestoreDeferredObjectContent(pXlRt, pRealObj);
 			return true;
 		}
+#if __TODO_SCOPE__
 		AST::Scope* DeferredObject::GetParentScope()
 		{
 			if (m_realObj.IsObject())
@@ -168,5 +170,6 @@ namespace X
 			}
 			return nullptr;
 		}
+#endif
 	}
 }

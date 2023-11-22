@@ -2,7 +2,7 @@
 #include "exp.h"
 #include "scope.h"
 #include "func.h"
-#include "variable_frame.h"
+#include "stackframe.h"
 
 namespace X
 {
@@ -14,7 +14,7 @@ class XClass
 	:public Func
 {
 	Func* m_constructor = nil;
-	AST::VariableFrame* m_stackFrame = nullptr;//to hold non-instance properties
+	AST::StackFrame* m_variableFrame = nullptr;//to hold non-instance properties
 	std::vector<Value> m_bases;
 	XClass* FindBase(XlangRuntime* rt, std::string& strName);
 public:
@@ -25,33 +25,38 @@ public:
 	}
 	~XClass()
 	{
-		if (m_stackFrame)
+		if (m_variableFrame)
 		{
-			delete m_stackFrame;
+			delete m_variableFrame;
 		}
 	}
 	inline int QueryConstructor()
 	{
-		auto it = m_Vars.find(GetNameString());
-		if (it != m_Vars.end())
+		//Constructor can be class Name as its function name
+		//Or constructor uses name: constructor or __init__
+		auto name = GetNameString();
+		int idx = m_pMyScope->AddOrGet(name,true);
+		if (idx>=0)
 		{
-			return it->second;
+			return idx;
 		}
-		it = m_Vars.find("constructor");
-		if (it != m_Vars.end())
+		name = "constructor";
+		idx = m_pMyScope->AddOrGet(name, true);
+		if (idx >= 0)
 		{
-			return it->second;
+			return idx;
 		}
-		it = m_Vars.find("__init__");
-		if (it != m_Vars.end())
+		name = "__init__";
+		idx = m_pMyScope->AddOrGet(name, true);
+		if (idx >= 0)
 		{
-			return it->second;
+			return idx;
 		}
 		return -1;
 	}
-	inline VariableFrame* GetClassStack()
+	inline StackFrame* GetClassStack()
 	{
-		return m_stackFrame;
+		return m_variableFrame;
 	}
 	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 	{
@@ -86,29 +91,28 @@ public:
 			stream << idx;
 		}
 		stream << m_Index << m_IndexOfThis << m_needSetHint;
-		Scope::ToBytes(rt, pContext, stream);
+		m_pMyScope->ToBytes(rt, pContext, stream);
 
 		return true;
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override;
 	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
-	virtual int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
+	int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v)
 	{
-		int idx = AddOrGet(name, false);
+		int idx = m_pMyScope->AddOrGet(name, false);
 		if (idx >= 0)
 		{
-			int cnt = m_stackFrame->GetVarCount();
+			int cnt = m_variableFrame->GetVarCount();
 			if (cnt <= idx)
 			{
-				m_stackFrame->SetVarCount(idx + 1);
+				m_variableFrame->SetVarCount(idx + 1);
 			}
-			Set(rt, pContext, idx, v);
+			m_variableFrame->Set(idx, v);
 		}
 		return idx;
 	}
-	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override;
-	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-		LValue* lValue = nullptr) override;
+	bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v);
+	bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,LValue* lValue = nullptr);
 	inline std::vector<Value>& GetBases() { return m_bases; }
 	bool Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr);
 	bool BuildBaseInstances(XlangRuntime* rt, XObj* pClassObj);

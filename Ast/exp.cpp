@@ -157,17 +157,6 @@ Expression* Expression::CreateByType(ObType t)
 	}
 	return pExp;
 }
-Scope* Expression::FindScope()
-{
-	Scope* pMyScope = nil;
-	Expression* pa = m_parent;
-	while (pa != nil && pMyScope == nil)
-	{
-		pMyScope = dynamic_cast<Scope*>(pa);
-		pa = pa->GetParent();
-	}
-	return pMyScope;
-}
 bool Expression::ToBytes(XlangRuntime* rt, XObj* pContext,X::XLangStream& stream)
 {
 	stream << m_type;
@@ -324,7 +313,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 									{
 										strPart += " ? ";
 										Value v0;
-										if (pMyScope->Get(rt, pContext, idx, v0))
+										if (rt->Get(pMyScope, pContext, idx, v0))
 										{
 											bind_data_list.push_back(v0);
 											bGotVal = true;
@@ -334,7 +323,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 									else
 									{
 										Value v0;
-										if (pMyScope->Get(rt, pContext, idx, v0))
+										if (rt->Get(pMyScope, pContext, idx, v0))
 										{
 											strPart += v0.ToString();
 											bGotVal = true;

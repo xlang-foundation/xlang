@@ -17,7 +17,7 @@ namespace X
 			for (auto& it : vars)
 			{
 				X::Value val;
-				pMyScope->Get(rt, this, it.second, val);
+				rt->Get(pMyScope, pContext,it.second, val);
 				Dict* dict = new Dict();
 				Data::Str* pStrName = new Data::Str(it.first);
 				dict->Set("Name", X::Value(pStrName));

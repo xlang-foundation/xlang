@@ -16,6 +16,7 @@ namespace X
 			virtual public AST::Scope
 		{
 			XCustomScope* m_customScope = nullptr;
+#if __TODO_SCOPE__
 			virtual Scope* GetParentScope() override { return nullptr; }
 			// Inherited via Scope
 			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
@@ -31,6 +32,7 @@ namespace X
 			{
 				return m_customScope->Get(idx, v);
 			}
+#endif
 		public:
 			ExpressionScope(XCustomScope* p)
 			{

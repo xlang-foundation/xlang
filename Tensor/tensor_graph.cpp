@@ -12,7 +12,7 @@ namespace X
 		class TensorGraphScope :
 			virtual public AST::Scope
 		{
-			AST::VariableFrame* m_stackFrame = nullptr;
+			AST::StackFrame* m_stackFrame = nullptr;
 		public:
 			TensorGraphScope() :
 				Scope()
@@ -36,7 +36,7 @@ namespace X
 			}
 			void Init()
 			{
-				m_stackFrame = new AST::VariableFrame(this);
+				m_stackFrame = new AST::StackFrame();
 				const int func_cnt = 1;
 				m_stackFrame->SetVarCount(func_cnt);
 				std::string strName;
@@ -61,6 +61,7 @@ namespace X
 					m_stackFrame->Set(idx, funcVal);
 				}
 			}
+#if __TODO_SCOPE__
 			// Inherited via Scope
 			virtual Scope* GetParentScope() override
 			{
@@ -77,6 +78,7 @@ namespace X
 				m_stackFrame->Get(idx, v, lValue);
 				return true;
 			}
+#endif
 		};
 		static TensorGraphScope* _TensorGraphScope = nullptr;
 		void TensorGraph::cleanup()

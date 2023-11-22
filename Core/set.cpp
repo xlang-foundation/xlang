@@ -12,7 +12,7 @@ namespace X
 		class SetScope :
 			virtual public AST::Scope
 		{
-			AST::VariableFrame* m_stackFrame = nullptr;
+			AST::StackFrame* m_stackFrame = nullptr;
 		public:
 			SetScope() :
 				Scope()
@@ -36,7 +36,7 @@ namespace X
 			}
 			void Init()
 			{
-				m_stackFrame = new AST::VariableFrame(this);
+				m_stackFrame = new AST::StackFrame();
 				m_stackFrame->SetVarCount(3);
 
 				std::string strName;
@@ -106,22 +106,6 @@ namespace X
 					m_stackFrame->Set(idx, funcVal);
 				}
 
-			}
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override
-			{
-				return nullptr;
-			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
 			}
 		};
 		static SetScope* _SetScope = nullptr;

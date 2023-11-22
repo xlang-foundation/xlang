@@ -302,7 +302,7 @@ public:
 			switch (opId)
 			{
 			case X::OP_ID::Equ:
-				bOK = L->Set(rt, pContext, v_r);
+				bOK = ExpSet(L,rt, pContext, v_r);
 				break;
 			case X::OP_ID::AddEqu:
 				v_l.Clone();

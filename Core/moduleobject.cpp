@@ -144,7 +144,7 @@ namespace X
 		{
 			Object::GetBaseScopes(bases);
 			bases.push_back(_module_op);
-			bases.push_back(m_pModule);
+			bases.push_back(m_pModule->GetMyScope());
 		}
 		int ModuleObject::QueryMethod(const char* name, bool* pKeepRawParams)
 		{
@@ -156,7 +156,7 @@ namespace X
 			else
 			{
 				std::string strName(name);
-				return m_pModule->AddOrGet(strName, true);
+				return m_pModule->GetMyScope()->AddOrGet(strName, true);
 			}
 		}
 		bool ModuleObject::GetIndexValue(int idx, Value& v)
@@ -167,12 +167,9 @@ namespace X
 			}
 			else
 			{
-				return m_pModule->Get(nullptr, this, idx, v);
+				m_pModule->GetStack()->Get(idx, v);
+				return true;
 			}
-		}
-		Scope* ModuleObject::GetParentScope()
-		{
-			return nullptr;
 		}
 	}
 }

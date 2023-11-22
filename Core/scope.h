@@ -10,6 +10,7 @@
 #include "def.h"
 #include "XLangStream.h"
 #include "Locker.h"
+#include "stackframe.h"
 
 namespace X 
 { 
@@ -27,50 +28,55 @@ enum class ScopeVarIndex
 	INVALID =-1,
 	EXTERN =-2
 };
-class Scope:
-	virtual public ObjRef
-{//variables scope support, for Module and Func/Class
+enum class ScopeType
+{
+	Module,
+	Class,
+	Func,
+	Package,
+	PyObject,
+	Namespace,
+};
+//Variables scope support, for Module and Func/Class
+
+class Expresion;
+class Scope
+{
 	Locker m_lock;
+	ScopeType m_type = ScopeType::Module;
+	Expression* m_pExp = nullptr;//expression owns this scope for example moudle or func
 protected:
+	//only used in Class and Core Object to hold member variables or APIs
+	StackFrame* m_varFrame = nullptr;
 	std::unordered_map <std::string, int> m_Vars;
 	std::unordered_map <std::string, AST::Var*> m_ExternVarMap;
 public:
-	Scope():
-		ObjRef()
+	Scope()
 	{
+	}
+	inline void SetVarFrame(StackFrame* pFrame)
+	{
+		m_varFrame = pFrame;
 	}
 	//use address as ID, just used Serialization
 	ExpId ID() { return (ExpId)this; }
 	void AddExternVar(AST::Var* var);
-	inline virtual int IncRef()
+	inline void SetExp(Expression* pExp)
 	{
-		AutoLock autoLock(m_lock);
-		return ObjRef::AddRef();
+		m_pExp = pExp;
 	}
-	inline virtual int DecRef()
+	inline Expression* GetExp()
 	{
-		m_lock.Lock();
-		int ref = ObjRef::Release();
-		if (ref == 0)
-		{
-			m_lock.Unlock();
-			delete this;
-		}
-		else
-		{
-			m_lock.Unlock();
-		}
-		return ref;
+		return m_pExp;
 	}
-	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream);
-	virtual bool FromBytes(X::XLangStream& stream);
+	inline ScopeType GetType() { return m_type; }
+	inline void SetType(ScopeType type) { m_type = type; }
+
+	bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream);
+	bool FromBytes(X::XLangStream& stream);
 	inline int GetVarNum()
 	{
 		return (int)m_Vars.size();
-	}
-	virtual std::string GetNameString()
-	{
-		return "";
 	}
 	inline std::unordered_map <std::string, int>& GetVarMap() 
 	{ 
@@ -85,7 +91,7 @@ public:
 		}
 		return names;
 	}
-	virtual void EachVar(XlangRuntime* rt,XObj* pContext,
+	void EachVar(XlangRuntime* rt,XObj* pContext,
 		std::function<void(std::string,X::Value&)> const& f)
 	{
 		for (auto it : m_Vars)
@@ -95,23 +101,13 @@ public:
 			f(it.first, val);
 		}
 	}
-	virtual std::string GetModuleName(XlangRuntime* rt);
-	virtual bool isEqual(Scope* s) { return (this == s); };
+	bool isEqual(Scope* s) { return (this == s); };
 	virtual ScopeWaitingStatus IsWaitForCall() 
 	{ 
 		return ScopeWaitingStatus::NoWaiting;
 	};
-	virtual Scope* GetParentScope()= 0;
-	virtual int AddAndSet(XlangRuntime* rt, XObj* pContext,std::string& name, Value& v)
-	{
-		int idx = AddOrGet(name, false,nullptr);
-		if (idx >= 0)
-		{
-			rt->DynSet(this, pContext, idx, v);
-		}
-		return idx;
-	}
-	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
+
+	inline int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{//Always append,no remove, so new item's index is size of m_Vars;
 		//check extern map first,if it is extern var
 		//just return -1 to make caller look up to parent scopes
@@ -128,6 +124,10 @@ public:
 		{
 			int idx = (int)m_Vars.size();
 			m_Vars.emplace(std::make_pair(name, idx));
+			if (m_varFrame)
+			{
+				m_varFrame->SetVarCount(m_Vars.size());
+			}
 			return idx;
 		}
 		else
@@ -135,29 +135,28 @@ public:
 			return (int)ScopeVarIndex::INVALID;
 		}
 	}
-	inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
-		std::string& name, X::Value& v, LValue* lValue = nullptr)
+	inline void Set(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v)
 	{
-		int idx = AddOrGet(name, true);
-		return (idx>=0)?rt->Get(this, pContext, idx, v, lValue):false;
-	}
-	inline bool RuntimeSet(XlangRuntime* rt, XObj* pContext,
-		int idx, X::Value& v)
-	{
-		assert(idx != -1);
-		return rt->Set(this, pContext, idx, v);
-	}
-	inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
-		int idx, X::Value& v)
-	{
-		assert(idx != -1);
-		return rt->Set(this, pContext, idx, v);
+		if (m_varFrame)
+		{
+			m_varFrame->Set(idx, v);
+		}
+		else
+		{
+			rt->Set(this, pContext, idx, v);
+		}
 	}
 
-	inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
-		int idx, X::Value& v, LValue* lValue = nullptr)
+	inline void Get(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v, LValue* lValue = nullptr)
 	{
-		return rt->Get(this, pContext, idx, v, lValue);
+		if (m_varFrame)
+		{
+			m_varFrame->Get(idx, v, lValue);
+		}
+		else
+		{
+			rt->Get(this,pContext, idx, v, lValue);
+		}
 	}
 };
 }

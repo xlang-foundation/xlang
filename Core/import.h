@@ -17,7 +17,6 @@ class ScopeProxy :
 	{
 		return AST::ScopeWaitingStatus::HasWaiting;
 	}
-	virtual Scope* GetParentScope() override;
 public:
 	ScopeProxy() :
 		Scope()

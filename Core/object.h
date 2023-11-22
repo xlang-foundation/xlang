@@ -44,6 +44,10 @@ namespace Data {
 			DeleteAttrBag();
 			G::I().RemoveObj(this);
 		}
+		inline virtual AST::Scope* GetMyScope()
+		{
+			return nullptr;
+		}
 		inline virtual int IncRef()
 		{
 			AutoLock autoLock(m_lock);

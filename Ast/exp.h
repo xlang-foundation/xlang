@@ -73,12 +73,20 @@ class Func;
 class Scope;
 class Var;
 
+
+//About **scope**,each Expression has a scope which is a refrerence to a real scope
+//only Func,Class,Module etc has a real scope, will be its member m_pMyScope
+//for real scope, we will use term MyScope, and put a variable m_pMyScope in Expression
+//we don't use virtual function to get scope which will bring optinization problem
 class Expression
 {
 protected:
+	Scope* m_pMyScope = nullptr;
+
 	int m_tokenIndex = -1;
 	Expression* m_parent = nil;
-	Scope* m_scope = nil;//set by compiling
+	//m_scope points to the scope for this expression which has a name need to translate into index
+	Scope* m_scope = nil;
 	bool m_isLeftValue = false;
 	//hint
 	int m_lineStart=-1;
@@ -185,6 +193,10 @@ public:
 		m_isLeftValue = b;
 	}
 	virtual ~Expression(){}
+	inline Scope* GetMyScope()
+	{
+		return m_pMyScope;
+	}
 	inline virtual Scope* GetScope()
 	{
 		if (m_scope == nil)
@@ -193,7 +205,19 @@ public:
 		}
 		return m_scope;
 	}
-	Scope* FindScope();
+	//Find MyScope from ancestor wich has RealScope
+	Scope* FindScope()
+	{
+		Scope* pMyScope = nil;
+		Expression* pa = m_parent;
+		while (pa != nil && pMyScope == nil)
+		{
+			pMyScope = pa->GetMyScope();
+			pa = pa->GetParent();
+		}
+		return pMyScope;
+	}
+	//Set Expresion's scope which is a reference to a real scope
 	virtual void SetScope(Scope* p)
 	{
 		m_scope = p;

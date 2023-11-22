@@ -102,7 +102,7 @@ namespace X
 		if (index >= 0)
 		{
 			X::Value varFunc;
-			if (!pScope->Get(this, nullptr, index, varFunc))
+			if (!Get(pScope,nullptr, index, varFunc))
 			{
 				return -1;
 			}
@@ -122,7 +122,7 @@ namespace X
 			return -1;
 		}
 		X::Value varFunc;
-		if (!pScope->Get(this, nullptr, index, varFunc))
+		if (!Get(pScope, nullptr, index, varFunc))
 		{
 			return -1;
 		}
@@ -170,10 +170,10 @@ namespace X
 		}
 		m_pModule = new AST::Module();
 		m_pModule->ScopeLayout();
-		AST::StackFrame* pModuleFrame = new AST::StackFrame(m_pModule);
+		AST::StackFrame* pModuleFrame = new AST::StackFrame(m_pModule->GetMyScope());
 		pModuleFrame->SetLine(m_pModule->GetStartLine());
 		m_pModule->AddBuiltins(this);
-		PushFrame(pModuleFrame, m_pModule->GetVarNum());
+		PushFrame(pModuleFrame, m_pModule->GetMyScope()->GetVarNum());
 
 		return true;
 	}

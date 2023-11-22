@@ -82,9 +82,9 @@ struct PrimitiveInfo
 	XlangRuntime* rt;
 };
 class Module :
-	public Block,
-	public Scope
+	public Block
 {
+	StackFrame* m_stackFrame = nullptr;
 	XlangRuntime* m_pRuntime=nullptr;//for top module, we need it
 	PrimitiveInfo m_primitives[(int)module_primitive::Count];
 	Locker m_lockSearchPath;
@@ -101,7 +101,6 @@ class Module :
 	//and each parse use its own code fragment
 	//then this way will work fine for multiple parsing times
 	std::vector<std::string> m_allCode;
-	StackFrame* m_stackFrame = nullptr;
 	//Parameters
 	std::vector<X::Value> m_args;
 	//for debug
@@ -118,13 +117,41 @@ class Module :
 	//only keep for AST Query
 	std::vector<X::AST::InlineComment*> m_inlineComments;
 public:
-	Module() :
-		Scope(),
+	Module():
 		Block()
 	{
 		m_type = ObType::Module;
-		m_stackFrame = new StackFrame(this);
+		m_pMyScope = new Scope();
+		m_pMyScope->SetType(ScopeType::Module);
+		m_pMyScope->SetExp(this);
+		m_stackFrame = new StackFrame(m_pMyScope);
+		m_pMyScope->SetVarFrame(m_stackFrame);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	~Module()
+	{
+		m_lockCommands.Lock();
+		for (auto& it : m_commands)
+		{
+			if (it->m_wait)
+			{
+				it->m_wait->Release();
+			}
+		}
+		m_lockCommands.Unlock();
+		m_commandWait.Release();
+		delete m_stackFrame;
+		delete m_pMyScope;
+
+		for (auto it : m_inlineComments)
+		{
+			delete it;
+		}
+		m_inlineComments.clear();
+	}
+	inline Scope* GetMyScope()
+	{
+		return m_pMyScope;
 	}
 	void AddInlineComment(X::AST::InlineComment* pExp)
 	{
@@ -301,36 +328,12 @@ public:
 		}
 		return code; 
 	}
-	~Module()
-	{
-		m_lockCommands.Lock();
-		for (auto& it : m_commands)
-		{
-			if (it->m_wait)
-			{
-				it->m_wait->Release();
-			}
-		}
-		m_lockCommands.Unlock();
-		m_commandWait.Release();
-		delete m_stackFrame;
-
-		for (auto it : m_inlineComments)
-		{
-			delete it;
-		}
-		m_inlineComments.clear();
-	}
-	virtual Scope* GetParentScope() override
-	{
-		return nullptr;
-	}
 	virtual void ScopeLayout() override;
 	void AddBuiltins(XlangRuntime* rt);
 	inline int Add(XlangRuntime* rt, std::string& name,
 		XObj* pContext, Value& v)
 	{
-		int idx = AddOrGet(name, false);
+		int idx = m_pMyScope->AddOrGet(name, false);
 		if (idx >= 0)
 		{
 			int cnt = m_stackFrame->GetVarCount();
@@ -338,27 +341,10 @@ public:
 			{
 				m_stackFrame->SetVarCount(idx + 1);
 			}
-			Set(rt, pContext, idx, v);
+			rt->Set(m_pMyScope, pContext, idx, v);
 		}
 		return idx;
 	}
-	// Inherited via Scope
-	inline virtual int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
-	{
-		return Add(rt,name, pContext,v);
-	}
-	inline virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override final
-	{
-		m_stackFrame->Set(idx, v);
-		return true;
-	}
-	inline virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-		LValue* lValue = nullptr) override final
-	{
-		m_stackFrame->Get(idx, v, lValue);
-		return true;
-	}
-
 	void SetDebug(bool b,XlangRuntime* runtime);
 	inline bool IsInDebug()
 	{
@@ -373,7 +359,7 @@ public:
 	inline dbg GetLastRequestDgbType() { return m_dbgLastRequest; }
 	inline bool InDbgScope(Scope* s)
 	{ 
-		if (s == this)
+		if (s == m_pMyScope)
 		{
 			return true;
 		}
@@ -404,14 +390,11 @@ public:
 		if (m_dbgScopes.size() > 0)
 		{
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
-			last->DecRef();
-			s->IncRef();
 			m_dbgScopes[m_dbgScopes.size() - 1] = s;
 		}
 	}
 	inline void AddDbgScope(Scope* s)
 	{
-		s->IncRef();
 		m_dbgScopes.push_back(s);
 	}
 	inline void RemoveDbgScope(Scope* s)
@@ -422,7 +405,6 @@ public:
 			Scope* s0 = (*it);
 			if (s0->isEqual(s))
 			{
-				s0->DecRef();
 				m_dbgScopes.erase(it);
 				break;
 			}

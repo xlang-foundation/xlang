@@ -52,7 +52,7 @@ namespace X
 			XObj* pContextCurrent,
 			X::Value& valGlobals)
 		{
-			AST::Scope* pCurScope = rt->M();
+			AST::Scope* pCurScope = rt->M()->GetMyScope();
 			return PackScopeVars(rt, pContextCurrent, pCurScope, valGlobals);
 		}
 		bool PackValueAsDict(Data::Dict* dict,std::string& name, X::Value& val)
@@ -247,10 +247,10 @@ namespace X
 				else if (objType == "globals")
 				{
 					auto* pTopModule = rt->M();
-					int index = pTopModule->AddOrGet(objName, true);
+					int index = pTopModule->GetMyScope()->AddOrGet(objName, true);
 					if (index >= 0)
 					{
-						pTopModule->Set(rt, nullptr, index, newVal);
+						rt->Set(pTopModule->GetMyScope(), nullptr, index, newVal);
 					}
 				}
 			}
@@ -355,16 +355,18 @@ namespace X
 				int column = pCurStack->GetCharPos();
 
 				AST::Scope* pMyScope = pCurStack->GetScope();
-				std::string moduleFileName = pMyScope->GetModuleName(rt);
+				std::string moduleFileName = rt->M()->GetModuleName();
 				if (pMyScope)
 				{
 					Data::Dict* dict = new Data::Dict();
 					dict->Set("index", X::Value(index));
-					std::string name = pMyScope->GetNameString();
-					if (name.empty())
+					std::string name;
+					auto* pExp = pMyScope->GetExp();
+					if (pExp->m_type == X::AST::ObType::Func)
 					{
-						AST::Func* pFunc = dynamic_cast<AST::Func*>(pMyScope);
-						if (pFunc)
+						AST::Func* pFunc = dynamic_cast<AST::Func*>(pExp);
+						std::string name = pFunc->GetNameString();
+						if (name.empty())
 						{
 							char v[1000];
 							snprintf(v, sizeof(v), "lambda:(%d,%d)0x%llx",

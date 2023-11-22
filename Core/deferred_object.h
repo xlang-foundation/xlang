@@ -25,7 +25,7 @@ namespace X
 			//not root DeferredObject
 			bool m_IsProxy = false;
 			
-			AST::VariableFrame* m_stackFrame = nullptr;
+			AST::StackFrame* m_stackFrame = nullptr;
 			X::Value m_realObj;
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 			void RestoreDeferredObjectContent(XlangRuntime* pXlRt,Object* pRealObj);
@@ -90,7 +90,7 @@ namespace X
 			ObjRef(),XObj(),Scope(), Object()
 			{
 				m_t = ObjType::DeferredObject;
-				m_stackFrame = new AST::VariableFrame(this);
+				m_stackFrame = new AST::StackFrame();
 			}
 			~DeferredObject()
 			{
@@ -103,6 +103,7 @@ namespace X
 			}
 			bool Load(X::XRuntime* rt,X::ARGS& params,X::KWARGS& kwParams);
 
+#if __TODO_SCOPE__
 			// Inherited via Scope
 			virtual Scope* GetParentScope() override;
 			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
@@ -144,6 +145,7 @@ namespace X
 				m_stackFrame->Get(idx, v, lValue);
 				return true;
 			}
+#endif
 		};
 	}
 }

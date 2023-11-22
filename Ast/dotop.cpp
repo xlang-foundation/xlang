@@ -33,7 +33,7 @@ void DotOp::QueryBases(XlangRuntime* rt, Data::Object* pObj,
 	std::vector<Scope*>& bases)
 {
 	pObj->GetBaseScopes(bases);
-	bases.push_back(&MetaScope::I());
+	bases.push_back(MetaScope::I().GetMyScope());
 }
 void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
 	std::vector<Scope*>& scopes)
@@ -265,7 +265,7 @@ bool DotOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LV
 		return true;
 	}
 	Value v_l;
-	if (!L->Exec(rt,action, pContext, v_l) || !v_l.IsObject())
+	if (!ExpExec(L,rt,action, pContext, v_l) || !v_l.IsObject())
 	{
 		return false;
 	}

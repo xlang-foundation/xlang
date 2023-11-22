@@ -41,9 +41,6 @@ namespace X
 			}
 			virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override;
 			virtual bool GetIndexValue(int idx, Value& v) override;
-
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override;
 		};
 	}
 }

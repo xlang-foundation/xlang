@@ -9,24 +9,24 @@ namespace X {
 		{
 		protected:
 			AST::XClass* m_obj = nullptr;
-			AST::VariableFrame* m_stackFrame = nullptr;
+			AST::StackFrame* m_variableFrame = nullptr;
 			std::vector<Value> m_bases;//this is diffrent with XClass's bases
 			//will hold an instance per each Base class
 		public:
 			XClassObject()
 			{
 				m_t = ObjType::XClassObject;
-				m_stackFrame = new AST::VariableFrame((AST::Scope*)this);
+				m_variableFrame = new AST::StackFrame();
 			}
 			XClassObject(AST::XClass* p) :
 				XClassObject()
 			{
 				m_obj = p;
-				m_stackFrame->SetVarCount(p->GetVarNum());
+				m_variableFrame->SetVarCount(m_obj->GetScope()->GetVarNum());
 				auto* pClassStack = p->GetClassStack();
 				if (pClassStack)
 				{
-					m_stackFrame->Copy(pClassStack);
+					m_variableFrame->Copy(pClassStack);
 				}
 			}
 			inline std::vector<Value>& GetBases()
@@ -36,13 +36,13 @@ namespace X {
 			void AssignClass(AST::XClass* p)
 			{
 				m_obj = p;
-				m_stackFrame->SetVarCount(p->GetVarNum());
+				m_variableFrame->SetVarCount(m_obj->GetScope()->GetVarNum());
 			}
 			~XClassObject()
 			{
-				if (m_stackFrame)
+				if (m_variableFrame)
 				{
-					delete m_stackFrame;
+					delete m_variableFrame;
 				}
 			}
 			inline virtual int GetBaseClassCount()
@@ -63,7 +63,7 @@ namespace X {
 				{
 					stream << b;
 				}
-				m_stackFrame->ToBytes(stream);
+				m_variableFrame->ToBytes(stream);
 				return true;
 			}
 			virtual bool FromBytes(X::XLangStream& stream)
@@ -82,13 +82,13 @@ namespace X {
 					stream >> b;
 					m_bases.push_back(b);
 				}
-				m_stackFrame->FromBytes(stream);
+				m_variableFrame->FromBytes(stream);
 				stream.ScopeSpace().SetContext(pPrevContext);
 				return true;
 			}
 			virtual long long Size() override
 			{
-				return m_obj ? m_obj->GetVarNum() : 0;
+				return m_obj ? m_obj->GetScope()->GetVarNum() : 0;
 			}
 			inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 			{
@@ -103,7 +103,7 @@ namespace X {
 						pRealObj->GetBaseScopes(bases);
 					}
 				}
-				bases.push_back(pAst_Cls);
+				bases.push_back(pAst_Cls->GetScope());
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
@@ -148,9 +148,9 @@ namespace X {
 				return pRetObj;
 
 			}
-			inline AST::VariableFrame* GetStack()
+			inline AST::StackFrame* GetStack()
 			{
-				return m_stackFrame;
+				return m_variableFrame;
 			}
 			inline AST::XClass* GetClassObj() { return m_obj; }
 			virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,

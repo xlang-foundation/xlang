@@ -51,7 +51,6 @@ namespace X
 		if (bAddTopModule)
 		{
 			AST::Module* pTopModule = new AST::Module();
-			pTopModule->IncRef();
 			pTopModule->ScopeLayout();
 
 			rt->SetM(pTopModule);
@@ -59,7 +58,7 @@ namespace X
 			AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 			pModuleFrame->SetLine(pTopModule->GetStartLine());
 			pTopModule->AddBuiltins(rt);
-			rt->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+			rt->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
 		}
 		G::I().BindRuntimeToThread(rt);
 		return dynamic_cast<XRuntime*>(rt);
@@ -90,7 +89,7 @@ namespace X
 			return X::Value();
 		}
 		X::Value retValue;
-		AST::Scope* pScope = dynamic_cast<AST::Scope*>(pRealObj);
+		AST::Scope* pScope = pRealObj->GetMyScope();
 		if (pScope)
 		{
 			std::string strName(name);
@@ -217,13 +216,13 @@ namespace X
 	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
 		auto* pPack = new AST::Package(pRealObj);
-		pPack->Scope::IncRef();
+		pPack->IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}
 	XPackage* XHost_Impl::CreatePackageProxy(XPackage* pPackage, void* pRealObj)
 	{
 		auto* pPack = new AST::PackageProxy(dynamic_cast<AST::Package*>(pPackage),pRealObj);
-		pPack->Scope::IncRef();
+		pPack->IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}
 	XEvent* XHost_Impl::CreateXEvent(const char* name)

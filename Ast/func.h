@@ -17,8 +17,7 @@ namespace X
 namespace AST
 {
 class Func :
-	public Block,
-	public Scope
+	public Block
 {
 protected:
 	bool m_PassScopeLayout = false;//in lambda case, will run ScopeLayout multiple time
@@ -80,10 +79,12 @@ protected:
 	}
 public:
 	Func() :
-		Block(),
-		Scope()
+		Block()
 	{
 		m_type = ObType::Func;
+		m_pMyScope = new Scope();
+		m_pMyScope->SetType(ScopeType::Func);
+		m_pMyScope->SetExp(this);
 	}
 	~Func()
 	{
@@ -102,6 +103,10 @@ public:
 #endif
 		m_decors.clear();
 	}
+	inline Scope* GetScope()
+	{
+		return m_pMyScope;
+	}
 	virtual void ScopeLayout() override;
 	std::string getcode(bool includeHead = false);
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
@@ -112,6 +117,7 @@ public:
 			code += decor->GetCode()+"\n";
 		}
 		code += GetCode();
+		//TODO:11/16/2023
 		//change current scope of stream
 		Scope* pOldScope = stream.ScopeSpace().GetCurrentScope();
 		stream.ScopeSpace().SetCurrentScope(dynamic_cast<Scope*>(this));
@@ -140,7 +146,13 @@ public:
 			stream << idx;
 		}
 		stream << m_Index << m_IndexOfThis<< m_needSetHint;
-		Scope::ToBytes(rt, pContext, stream);
+
+		bool bHaveScope = (m_pMyScope != nullptr);	
+		stream << bHaveScope;
+		if (m_pMyScope)
+		{
+			m_pMyScope->ToBytes(rt, pContext, stream);
+		}
 		return true;
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override
@@ -186,7 +198,12 @@ public:
 			m_IndexofParamList.push_back(idx);
 		}
 		stream >> m_Index >> m_IndexOfThis>> m_needSetHint;
-		Scope::FromBytes(stream);
+		bool bHaveScope = false;
+		stream >> bHaveScope;
+		if (bHaveScope)
+		{
+			m_pMyScope->FromBytes(stream);
+		}
 		return true;
 	}
 	virtual std::string GetDoc()
@@ -198,8 +215,8 @@ public:
 		m_decors.push_back(pDecor);
 	}
 	void NeedSetHint(bool b) { m_needSetHint = b; }
-	String& GetNameStr() { return m_Name; }
-	virtual std::string GetNameString() override
+	inline String& GetNameStr() { return m_Name; }
+	inline std::string GetNameString()
 	{
 		return std::string(m_Name.s, m_Name.size);
 	}
@@ -210,13 +227,10 @@ public:
 		{
 			Params->CalcCallables(rt,pContext,callables);
 		}
-		callables.push_back(this);
+		callables.push_back(m_pMyScope);
 		return true;
 	}
-	virtual Scope* GetParentScope() override
-	{
-		return FindScope();
-	}
+
 	virtual void SetR(Expression* r) override
 	{
 		if (r->m_type == AST::ObType::Pair)
@@ -267,10 +281,10 @@ public:
 	{
 		return Params;
 	}
-	
-	virtual int AddOrGet(std::string& name, bool bGetOnly,Scope** ppRightScope=nullptr) override
+	//TODO: 11/16/2023
+	virtual int AddOrGet(std::string& name, bool bGetOnly,Scope** ppRightScope=nullptr)
 	{
-		int retIdx = Scope::AddOrGet(name, bGetOnly, ppRightScope);
+		int retIdx = -1;// Scope::AddOrGet(name, bGetOnly, ppRightScope);
 		return retIdx;
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext,

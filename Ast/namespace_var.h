@@ -9,8 +9,7 @@ namespace X
 	namespace AST
 	{
 		class NamespaceVar :
-			public Block,
-			public Scope
+			public Block
 		{
 			int m_Index = -1;
 			X::Value m_obj;
@@ -19,15 +18,21 @@ namespace X
 				Block()
 			{
 				m_type = ObType::NamespaceVar;
+				m_pMyScope = new Scope();
+				m_pMyScope->SetType(ScopeType::Namespace);
+				m_pMyScope->SetExp(this);
 			}
 			NamespaceVar(short op) :
 				Block()
 			{
 				m_type = ObType::NamespaceVar;
+				m_pMyScope = new Scope();
+				m_pMyScope->SetType(ScopeType::Namespace);
+				m_pMyScope->SetExp(this);
 			}
 			~NamespaceVar()
 			{
-
+				delete m_pMyScope;
 			}
 			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v)
@@ -62,7 +67,7 @@ namespace X
 				if (m_obj.IsObject())
 				{
 					auto* pNameObj = dynamic_cast<Data::NamespaceVarObject*>(m_obj.GetObj());
-					int idx = pNameObj->AddOrGet(name, bGetOnly,ppRightScope);
+					int idx = m_pMyScope->AddOrGet(name, bGetOnly,ppRightScope);
 					if (idx >= 0)
 					{
 						pNameObj->AddSlotTo(idx);
@@ -115,12 +120,6 @@ namespace X
 			virtual bool Exec(XlangRuntime* rt, 
 				ExecAction& action, XObj* pContext, 
 				Value& v, LValue* lValue = nullptr) override;
-
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override 
-			{ 
-				return FindScope(); 
-			}
 		};
 	}
 }
