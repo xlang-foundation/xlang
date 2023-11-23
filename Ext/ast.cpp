@@ -59,7 +59,7 @@ namespace X
                     (*valNode).SetNode(node);
                     list += valNode;
                 }
-                //if it is Module, need to append inline comments 
+                //if it is Module, need to append FORCE_INLINE comments 
                 if (pNode->m_type == ObType::Module)
 				{
 					Module* pModule = dynamic_cast<Module*>(pNode);
@@ -439,7 +439,7 @@ namespace X
                     Expression* pValExp = pAssign->GetR();
                     ExecAction action;
                     X::Value val;
-                    pValExp->Exec(nullptr, action, nullptr, val);
+                    ExpExec(pValExp,nullptr, action, nullptr, val);
                     return val;
                 }
             }

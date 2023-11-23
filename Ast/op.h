@@ -39,9 +39,9 @@ public:
 		return true;
 	}
 	bool GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
-	inline void SetId(OP_ID id) { opId = id; }
-	inline OP_ID GetId() { return opId; }
-	inline short getOp(){return Op;}
+	FORCE_INLINE void SetId(OP_ID id) { opId = id; }
+	FORCE_INLINE OP_ID GetId() { return opId; }
+	FORCE_INLINE short getOp(){return Op;}
 	virtual void SetL(Expression* l) {}
 	virtual void SetR(Expression* r) {}
 	virtual bool OpWithOperands(
@@ -197,12 +197,12 @@ public:
 			return false;
 		}
 		Value v_l;
-		if (!L->Exec(rt,action,pContext,v_l))
+		if (!ExpExec(L,rt,action,pContext,v_l))
 		{
 			return false;
 		}
 		Value v_r;
-		if (!R->Exec(rt,action,pContext, v_r))
+		if (!ExpExec(R,rt,action,pContext, v_r))
 		{
 			return false;
 		}
@@ -232,7 +232,7 @@ public:
 		}
 	}
 	bool ObjectAssign(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& v, Value& v_r, LValue& lValue_L);
-	inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		if (!L || !R)
 		{
@@ -505,7 +505,7 @@ public:
 		stream >> m_evaluated >> m_start >> m_stop >> m_step;
 		return true;
 	}
-	inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		if (!m_evaluated)
 		{
@@ -538,7 +538,7 @@ public:
 		m_type = ObType::In;
 	}
 
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		bool bOK = true;
 		if (v.IsInvalid())
@@ -595,7 +595,7 @@ public:
 		m_type = ObType::ExternDecl;
 	}
 	virtual void ScopeLayout() override;
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		return true;//dont' run Base class's Run
 	}

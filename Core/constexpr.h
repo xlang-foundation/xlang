@@ -32,7 +32,7 @@ namespace X
 			}
 			bool hasAction() { return m_hasAction; }
 			void Set(XlangRuntime* rt,AST::Expression* exp);
-			inline void Run(Object* pObj, long long curPos, bool& retVal)
+			FORCE_INLINE void Run(Object* pObj, long long curPos, bool& retVal)
 			{
 				retVal = true;
 				for (auto& one : m_exprs)

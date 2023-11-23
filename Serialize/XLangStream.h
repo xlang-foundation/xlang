@@ -132,7 +132,7 @@ namespace X
         bool fetchchar(char& c);
         bool fetchstring(std::string& str);
         bool append(char* data, STREAM_SIZE size);
-        inline bool Skip(STREAM_SIZE size)
+        FORCE_INLINE bool Skip(STREAM_SIZE size)
         {
             return CopyTo(nullptr, size);
         }
@@ -181,11 +181,11 @@ namespace X
         {
             return m_streamKey;
         }
-        inline virtual blockIndex GetPos() override
+        FORCE_INLINE virtual blockIndex GetPos() override
         {
             return curPos;
         }
-        inline virtual void SetPos(blockIndex pos) override
+        FORCE_INLINE virtual void SetPos(blockIndex pos) override
         {
             curPos = pos;
             m_size = CalcSize(curPos);

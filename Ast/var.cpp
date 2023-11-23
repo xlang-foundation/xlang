@@ -15,7 +15,7 @@ namespace AST
 	{
 		Value v0;
 		ExecAction action;
-		if (!Exec(rt,action, pContext, v0))
+		if (!ExpExec(this,rt,action, pContext, v0))
 		{
 			return;
 		}
@@ -238,7 +238,7 @@ bool Var::CalcCallables(XlangRuntime* rt, XObj* pContext,
 {
 	Value val;
 	ExecAction action;
-	bool bOK = Exec(rt,action, pContext, val);
+	bool bOK = ExpExec(this,rt,action, pContext, val);
 	if (bOK && val.IsObject())
 	{
 		Data::Object* pObj = dynamic_cast<Data::Object*>(val.GetObj());

@@ -150,11 +150,11 @@ namespace X
 				m_key = k;
 				m_dict = d;
 			}
-			inline void operator += (const Value& v)
+			FORCE_INLINE void operator += (const Value& v)
 			{
 				m_dict->AddKeyValue(m_key, v);
 			}
-			virtual inline void operator = (const Value& v) override
+			FORCE_INLINE void operator = (const Value& v)
 			{
 				m_dict->SetKV(m_key, v);
 			}

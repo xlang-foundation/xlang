@@ -136,7 +136,7 @@ class ThruOp :
 			{
 				Value v0;
 				ExecAction action;
-				if (l->Exec(rt,action, pContext, v0, nullptr))
+				if (ExpExec(l,rt,action, pContext, v0, nullptr))
 				{
 					l_name = v0.ToString();
 				}
@@ -153,7 +153,7 @@ class ThruOp :
 			{
 				Value v0;
 				ExecAction action;
-				if (r->Exec(rt,action, pContext, v0, nullptr))
+				if (ExpExec(r,rt,action, pContext, v0, nullptr))
 				{
 					r_name = v0.ToString();
 				}
@@ -187,7 +187,7 @@ public:
 			if (R->m_type == ObType::Str || R->m_type == ObType::Var)
 			{
 				Value v0;
-				if (R->Exec(rt,action, pContext, v0, nullptr))
+				if (ExpExec(R,rt,action, pContext, v0, nullptr))
 				{
 					m_url = v0.ToString();
 				}
@@ -383,19 +383,19 @@ public:
 		}
 		return true;
 	}
-	inline From* GetFrom()
+	FORCE_INLINE From* GetFrom()
 	{
 		return m_from;
 	}
-	inline ThruOp* GetThru()
+	FORCE_INLINE ThruOp* GetThru()
 	{
 		return m_thru;
 	}
-	inline Expression* GetImports()
+	FORCE_INLINE Expression* GetImports()
 	{
 		return m_imports;
 	}
-	inline ImportInfo* FindMatchedImportInfo(AST::ImportInfo& importInfo)
+	FORCE_INLINE ImportInfo* FindMatchedImportInfo(AST::ImportInfo& importInfo)
 	{
 		for (auto& im : m_importInfos)
 		{
@@ -439,7 +439,7 @@ public:
 	{
 		m_type = ObType::Import;
 	}
-	inline bool LoadModule(XlangRuntime* rt,XObj* pContext,Value& v,ImportInfo* pImportInfo)
+	FORCE_INLINE bool LoadModule(XlangRuntime* rt,XObj* pContext,Value& v,ImportInfo* pImportInfo)
 	{
 		Scope* pMyScope = GetScope();
 		std::string varName = pImportInfo->alias.empty() ? pImportInfo->name : pImportInfo->alias;

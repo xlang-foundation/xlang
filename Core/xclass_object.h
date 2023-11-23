@@ -29,7 +29,7 @@ namespace X {
 					m_variableFrame->Copy(pClassStack);
 				}
 			}
-			inline std::vector<Value>& GetBases()
+			FORCE_INLINE std::vector<Value>& GetBases()
 			{
 				return m_bases;
 			}
@@ -45,11 +45,11 @@ namespace X {
 					delete m_variableFrame;
 				}
 			}
-			inline virtual int GetBaseClassCount()
+			FORCE_INLINE virtual int GetBaseClassCount()
 			{
 				return (int)m_bases.size();
 			}
-			inline virtual X::Value GetBaseClass(int idx)
+			FORCE_INLINE virtual X::Value GetBaseClass(int idx)
 			{
 				return m_bases[idx];
 			}
@@ -90,7 +90,7 @@ namespace X {
 			{
 				return m_obj ? m_obj->GetScope()->GetVarNum() : 0;
 			}
-			inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+			FORCE_INLINE virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 			{
 				Object::GetBaseScopes(bases);
 				auto* pAst_Cls = GetClassObj();
@@ -121,7 +121,7 @@ namespace X {
 				std::string retStr(v);
 				return GetABIString(retStr);
 			}
-			inline XObj* QueryBaseObjForPackage(XObj* pPackage)
+			FORCE_INLINE XObj* QueryBaseObjForPackage(XObj* pPackage)
 			{
 				XPackage* pXPackage = dynamic_cast<XPackage*>(pPackage);
 				if (pXPackage == nullptr)
@@ -148,11 +148,11 @@ namespace X {
 				return pRetObj;
 
 			}
-			inline AST::StackFrame* GetStack()
+			FORCE_INLINE AST::StackFrame* GetStack()
 			{
 				return m_variableFrame;
 			}
-			inline AST::XClass* GetClassObj() { return m_obj; }
+			FORCE_INLINE AST::XClass* GetClassObj() { return m_obj; }
 			virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue)

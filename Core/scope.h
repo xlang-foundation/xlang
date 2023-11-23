@@ -54,35 +54,35 @@ public:
 	Scope()
 	{
 	}
-	inline void SetVarFrame(StackFrame* pFrame)
+	FORCE_INLINE void SetVarFrame(StackFrame* pFrame)
 	{
 		m_varFrame = pFrame;
 	}
 	//use address as ID, just used Serialization
 	ExpId ID() { return (ExpId)this; }
 	void AddExternVar(AST::Var* var);
-	inline void SetExp(Expression* pExp)
+	FORCE_INLINE void SetExp(Expression* pExp)
 	{
 		m_pExp = pExp;
 	}
-	inline Expression* GetExp()
+	FORCE_INLINE Expression* GetExp()
 	{
 		return m_pExp;
 	}
-	inline ScopeType GetType() { return m_type; }
-	inline void SetType(ScopeType type) { m_type = type; }
+	FORCE_INLINE ScopeType GetType() { return m_type; }
+	FORCE_INLINE void SetType(ScopeType type) { m_type = type; }
 
 	bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream);
 	bool FromBytes(X::XLangStream& stream);
-	inline int GetVarNum()
+	FORCE_INLINE int GetVarNum()
 	{
 		return (int)m_Vars.size();
 	}
-	inline std::unordered_map <std::string, int>& GetVarMap() 
+	FORCE_INLINE std::unordered_map <std::string, int>& GetVarMap() 
 	{ 
 		return m_Vars; 
 	}
-	inline std::vector<std::string> GetVarNames()
+	FORCE_INLINE std::vector<std::string> GetVarNames()
 	{
 		std::vector<std::string> names;
 		for (auto& it : m_Vars)
@@ -107,7 +107,7 @@ public:
 		return ScopeWaitingStatus::NoWaiting;
 	};
 
-	inline int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
+	FORCE_INLINE int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{//Always append,no remove, so new item's index is size of m_Vars;
 		//check extern map first,if it is extern var
 		//just return -1 to make caller look up to parent scopes
@@ -135,7 +135,7 @@ public:
 			return (int)ScopeVarIndex::INVALID;
 		}
 	}
-	inline void Set(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v)
+	FORCE_INLINE void Set(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v)
 	{
 		if (m_varFrame)
 		{
@@ -147,7 +147,7 @@ public:
 		}
 	}
 
-	inline void Get(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v, LValue* lValue = nullptr)
+	FORCE_INLINE void Get(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v, LValue* lValue = nullptr)
 	{
 		if (m_varFrame)
 		{

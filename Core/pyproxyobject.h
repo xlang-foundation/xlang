@@ -141,7 +141,7 @@ namespace X
 				m_pyFrameObject = objFrame;
 			}
 			bool GetItem(long long index, X::Value& val);
-			inline bool MatchPyFrame(PyEngObjectPtr pyFrame)
+			FORCE_INLINE bool MatchPyFrame(PyEngObjectPtr pyFrame)
 			{
 				return (m_pyFrameObject.ref() == pyFrame);
 			}
@@ -186,7 +186,7 @@ namespace X
 				m_parent_obj[m_name.c_str()] = newObj;
 				m_obj = newObj;
 			}
-			inline virtual void CloseIterator(Iterator_Pos pos) override
+			FORCE_INLINE virtual void CloseIterator(Iterator_Pos pos) override
 			{
 				iterator_info* pIterator_info = (iterator_info*)pos;
 				if (pIterator_info)
@@ -199,7 +199,7 @@ namespace X
 				}
 
 			}
-			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 			{
 				iterator_info* pIterator_info = nullptr;
 				if (pos == nullptr)

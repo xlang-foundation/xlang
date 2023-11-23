@@ -55,7 +55,7 @@ namespace X
 				Value v_r;
 				LValue lValue_R = nullptr;
 				X::AST::ExecAction action;
-				if (!expR->Exec(rt,action, pContext, v_r, &lValue_R))
+				if (!ExpExec(expR,rt,action, pContext, v_r, &lValue_R))
 				{
 					return false;
 				}
@@ -101,7 +101,7 @@ namespace X
 					{
 						auto* pairR = pPair0->GetR();
 						X::AST::ExecAction action;
-						bOK = pairR->Exec(rt,action, pContext, v, lValue);
+						bOK = ExpExec(pairR,rt,action, pContext, v, lValue);
 						return bOK;
 					}
 					Value callList;
@@ -166,7 +166,7 @@ namespace X
 					return false;
 				}
 				Value v_l;
-				if (!L->Exec(rt,action, pContext, v_l))
+				if (!ExpExec(L,rt,action, pContext, v_l))
 				{
 					return false;
 				}

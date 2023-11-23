@@ -21,30 +21,30 @@ namespace X
 		~OpRegistry()
 		{
 		}
-		inline int GetOpId(OP_ID idx)
+		FORCE_INLINE int GetOpId(OP_ID idx)
 		{
 			return opids[(int)idx];
 		}
-		inline void SetOpId(OP_ID idx, int id)
+		FORCE_INLINE void SetOpId(OP_ID idx, int id)
 		{
 			opids[(int)idx] = id;
 		}
-		inline void SetActionWithOpId()
+		FORCE_INLINE void SetActionWithOpId()
 		{
 			for (int i = 0; i < (int)OP_ID::Count; i++)
 			{
 				OpActions[opids[i]].opId = (OP_ID)i;
 			}
 		}
-		inline std::vector<short>& GetKwTree()
+		FORCE_INLINE std::vector<short>& GetKwTree()
 		{
 			return kwTree;
 		}
-		inline std::vector<OpAction>& GetOpActions()
+		FORCE_INLINE std::vector<OpAction>& GetOpActions()
 		{
 			return OpActions;
 		}
-		inline OpAction OpAct(short idx)
+		FORCE_INLINE OpAction OpAct(short idx)
 		{
 			return (idx >= 0 && idx < (short)OpActions.size()) ?
 				OpActions[idx] : OpAction();

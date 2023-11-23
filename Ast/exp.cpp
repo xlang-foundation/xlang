@@ -210,23 +210,23 @@ bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v,
 					auto* pTypeAssign = dynamic_cast<Assign*>(Type);
 					auto* L_keep = pTypeAssign->GetL();
 					pTypeAssign->SetL(Name);
-					bOK = pTypeAssign->Exec(rt, action, pContext, v, lValue);
+					bOK = ExpExec(pTypeAssign,rt, action, pContext, v, lValue);
 					//restore back
 					pTypeAssign->SetL(L_keep);
 				}
 				else
 				{
-					bOK = Name->Exec(rt, action, pContext, v, lValue);
+					bOK = ExpExec(Name, rt, action, pContext, v, lValue);
 				}
 			}
 			else
 			{
-				bOK = Name->Exec(rt, action, pContext, v, lValue);
+				bOK = ExpExec(Name,rt, action, pContext, v, lValue);
 			}
 		}
 		else
 		{
-			bOK = Name->Exec(rt, action, pContext, v);
+			bOK = ExpExec(Name,rt, action, pContext, v);
 		}
 	}
 	return bOK;
@@ -530,7 +530,7 @@ bool List::Exec(XlangRuntime* rt, ExecAction& action,
 	{
 		Value v0;
 		ExecAction action0;
-		if (item->Exec(rt, action0, pContext, v0))
+		if (ExpExec(item,rt, action0, pContext, v0))
 		{
 			pOutList->Add(rt, v0);
 		}

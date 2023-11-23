@@ -11,7 +11,7 @@ class Locker
 {
 	void* m_cs = nullptr;
 public:
-	inline Locker()
+	FORCE_INLINE Locker()
 	{
 #if (WIN32)
 		auto* cs = new CRITICAL_SECTION();
@@ -21,7 +21,7 @@ public:
 		m_cs = (void*)new std::mutex();
 #endif
 	}
-	inline ~Locker()
+	FORCE_INLINE ~Locker()
 	{
 #if (WIN32)
 		DeleteCriticalSection((CRITICAL_SECTION*)m_cs);
@@ -31,7 +31,7 @@ public:
 #endif
 	}
 
-	inline void Lock()
+	FORCE_INLINE void Lock()
 	{
 #if (WIN32)
 		::EnterCriticalSection((CRITICAL_SECTION*)m_cs);
@@ -39,7 +39,7 @@ public:
 		((std::mutex*)m_cs)->lock();
 #endif
 	}
-	inline void Unlock()
+	FORCE_INLINE void Unlock()
 	{
 #if (WIN32)
 		::LeaveCriticalSection((CRITICAL_SECTION*)m_cs);
@@ -52,13 +52,13 @@ public:
 class AutoLock
 {
 public:
-	inline AutoLock(Locker& lk)
+	FORCE_INLINE AutoLock(Locker& lk)
 	{
 		m_lock = &lk;
 		lk.Lock();
 	}
 
-	inline ~AutoLock()
+	FORCE_INLINE ~AutoLock()
 	{
 		if (m_lock)
 		{

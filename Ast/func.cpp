@@ -135,7 +135,7 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	{
 		X::Value retVal;
 		ExecAction action;
-		(*it)->Exec(rt, action,pPassContext, retVal);
+		ExpExec(*it,rt, action,pPassContext, retVal);
 		if (retVal.IsObject())
 		{
 			pPassContext = retVal.GetObj();

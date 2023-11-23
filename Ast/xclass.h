@@ -30,7 +30,7 @@ public:
 			delete m_variableFrame;
 		}
 	}
-	inline int QueryConstructor()
+	FORCE_INLINE int QueryConstructor()
 	{
 		//Constructor can be class Name as its function name
 		//Or constructor uses name: constructor or __init__
@@ -54,7 +54,7 @@ public:
 		}
 		return -1;
 	}
-	inline StackFrame* GetClassStack()
+	FORCE_INLINE StackFrame* GetClassStack()
 	{
 		return m_variableFrame;
 	}
@@ -113,7 +113,7 @@ public:
 	}
 	bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v);
 	bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,LValue* lValue = nullptr);
-	inline std::vector<Value>& GetBases() { return m_bases; }
+	FORCE_INLINE std::vector<Value>& GetBases() { return m_bases; }
 	bool Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr);
 	bool BuildBaseInstances(XlangRuntime* rt, XObj* pClassObj);
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;

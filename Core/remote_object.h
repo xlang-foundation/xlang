@@ -42,11 +42,11 @@ namespace X
 				m_remote_Obj_id = m_proxy->QueryRootObject(name);
 			}
 		}
-		inline ROBJ_ID GetObjId()
+		FORCE_INLINE ROBJ_ID GetObjId()
 		{
 			return m_remote_Obj_id;
 		}
-		inline virtual int DecRef()
+		FORCE_INLINE virtual int DecRef()
 		{
 			Lock();
 			int ref = Ref();
@@ -190,13 +190,13 @@ namespace X
 			}
 			return idx;
 		}
-		inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
+		FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
 			int idx, X::Value& v) override
 		{
 			m_stackFrame->Set(idx, v);
 			return true;
 		}
-		inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+		FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 			int idx, X::Value& v, LValue* lValue = nullptr) override
 		{
 			m_stackFrame->Get(idx, v, lValue);

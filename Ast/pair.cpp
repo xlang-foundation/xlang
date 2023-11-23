@@ -66,7 +66,7 @@ bool PairOp::GetItemFromDict(XlangRuntime* rt, XObj* pContext,
 	bool bOK = true;
 	Value key;
 	ExecAction action;
-	bOK = r->Exec(rt,action, pContext, key);
+	bOK = ExpExec(r,rt,action, pContext, key);
 	if (bOK)
 	{
 		bOK = pDataDict->Get(key, v, lValue);
@@ -86,11 +86,11 @@ bool PairOp::GetItemFromTensor(XlangRuntime* rt, XObj* pContext,
 		ExecAction action;
 		auto* first = pParam->GetName();
 		auto* second = pParam->GetType();
-		if (first && first->Exec(rt, action, pContext, vIdx))
+		if (first && ExpExec(first,rt, action, pContext, vIdx))
 		{
 			retIdx.i = (long long)vIdx;
 		}
-		if (second && second->Exec(rt, action, pContext, vIdx))
+		if (second && ExpExec(second,rt, action, pContext, vIdx))
 		{
 			retIdx.j = (long long)vIdx;
 		}
@@ -114,7 +114,7 @@ bool PairOp::GetItemFromTensor(XlangRuntime* rt, XObj* pContext,
 				//keep index start with end as same number
 				Value v1;
 				ExecAction action;
-				if (e->Exec(rt, action, pContext, v1))
+				if (ExpExec(e,rt, action, pContext, v1))
 				{
 					idx.i = idx.j = (long long)v1;
 				}
@@ -133,7 +133,7 @@ bool PairOp::GetItemFromTensor(XlangRuntime* rt, XObj* pContext,
 		Data::TensorIndex idx = { 0,-1 };
 		Value v1;
 		ExecAction action;
-		if (R->Exec(rt, action, pContext, v1))
+		if (ExpExec(R,rt, action, pContext, v1))
 		{
 			idx.i = idx.j = (long long)v1;
 		}
@@ -156,7 +156,7 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 		{
 			Value v1;
 			ExecAction action;
-			if (e->Exec(rt, action, pContext, v1))
+			if (ExpExec(e,rt, action, pContext, v1))
 			{
 				IdxAry.push_back(v1.GetLongLong());
 			}
@@ -171,7 +171,7 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 	{
 		Value vIdx;
 		ExecAction action;
-		bOK = R->Exec(rt, action, pContext, vIdx);
+		bOK = ExpExec(R,rt, action, pContext, vIdx);
 		IdxAry.push_back(vIdx.GetLongLong());
 	}
 	if (bOK)
@@ -198,7 +198,7 @@ bool PairOp::GetItemFromPackage(XlangRuntime* rt, XObj* pContext,
 		{
 			Value v1;
 			ExecAction action;
-			if (e->Exec(rt,action, pContext, v1))
+			if (ExpExec(e,rt,action, pContext, v1))
 			{
 				IdxAry.push_back(v1);
 			}
@@ -214,7 +214,7 @@ bool PairOp::GetItemFromPackage(XlangRuntime* rt, XObj* pContext,
 		IdxAry.resize(1);
 		Value vIdx;
 		ExecAction action;
-		bOK = R->Exec(rt,action, pContext, vIdx);
+		bOK = ExpExec(R,rt,action, pContext, vIdx);
 		IdxAry.push_back(vIdx);
 	}
 	if (bOK)
@@ -234,7 +234,7 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 	{//usage: x[1,2]
 		Value v0;
 		ExecAction action;
-		bOK = L->Exec(rt,action, pContext, v0);
+		bOK = ExpExec(L,rt,action, pContext, v0);
 		if (!v0.IsObject())
 		{
 			return false;
@@ -267,7 +267,7 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 			{
 				Value vIdx;
 				ExecAction action;
-				bOK = R->Exec(rt,action, pContext, vIdx);
+				bOK = ExpExec(R,rt,action, pContext, vIdx);
 				pPyObj->GetItem(vIdx.GetLongLong(),v);
 			}
 		}
@@ -287,7 +287,7 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 			{
 				Value v;
 				ExecAction action;
-				if (e->Exec(rt,action, pContext, v))
+				if (ExpExec(e,rt,action, pContext, v))
 				{
 					pDataList->Add(rt, v);
 				}
@@ -302,7 +302,7 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 		{
 			Value v;
 			ExecAction action;
-			if (R->Exec(rt,action, pContext, v))
+			if (ExpExec(R,rt,action, pContext, v))
 			{
 				pDataList->Add(rt, v);
 			}
@@ -332,7 +332,7 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 		else
 		{
 			ExecAction action;
-			keyExpr->Exec(rt,action, pContext, retVal);
+			ExpExec(keyExpr,rt,action, pContext, retVal);
 		}
 		return retVal;
 	};
@@ -344,12 +344,15 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 		switch (i->m_type)
 		{
 		case ObType::Param:
-			Key = KeyProc((dynamic_cast<Param*>(i))->GetName());
-			(dynamic_cast<Param*>(i))->GetType()->Exec(rt,action, pContext, Val);
+			Key = KeyProc((static_cast<Param*>(i))->GetName());
+			ExpExec((static_cast<Param*>(i))->GetType(),rt,action, pContext, Val);
 			break;
 		case ObType::Assign:
-			(dynamic_cast<Assign*>(i))->GetL()->Exec(rt,action, pContext, Key);
-			(dynamic_cast<Assign*>(i))->GetL()->Exec(rt,action, pContext, Val);
+		{
+			auto* l = (static_cast<Assign*>(i))->GetL();
+			ExpExec(l, rt, action, pContext, Key);
+			ExpExec(l,rt, action, pContext, Val);
+		}
 			break;
 
 		default:
@@ -387,7 +390,7 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 			else {
 				Value Val;
 				ExecAction action;
-				i->Exec(rt,action, pContext, Val);
+				ExpExec(i,rt,action, pContext, Val);
 				pSet->Set(Val);
 			}
 		}
@@ -401,7 +404,7 @@ bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 		else {
 			Value Val;
 			ExecAction action;
-			R->Exec(rt,action, pContext, Val);
+			ExpExec(R,rt,action, pContext, Val);
 			pSet->Set(Val);
 		}
 	}
@@ -455,7 +458,7 @@ bool PairOp::TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue*
 				auto type1 = assign0->GetL();
 				auto r = assign0->GetR();
 				ExecAction action;
-				r->Exec(rt,action, pContext, valDefaultValue);
+				ExpExec(r,rt,action, pContext, valDefaultValue);
 			}
 			else if (type0->m_type == ObType::Var)
 			{
@@ -500,13 +503,13 @@ bool PairOp::Set(XlangRuntime* rt, XObj* pContext, Value& v)
 {
 	Value leftObj;
 	ExecAction action;
-	bool bOK = L->Exec(rt, action, pContext, leftObj);
+	bool bOK = ExpExec(L,rt, action, pContext, leftObj);
 	if (!bOK || !leftObj.IsObject())
 	{
 		return false;
 	}
 	Value varIdx;
-	bOK = R->Exec(rt, action, pContext, varIdx);
+	bOK = ExpExec(R,rt, action, pContext, varIdx);
 	if (!bOK)
 	{
 		return false;

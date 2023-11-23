@@ -181,7 +181,7 @@ namespace X
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
 		X::Value v;
 		X::AST::ExecAction action;
-		bool bOK = pTopModule->Exec(pRuntime, action,nullptr, v);
+		bool bOK = ExpExec(pTopModule,pRuntime, action,nullptr, v);
 		X::Value v1 = pModuleFrame->GetReturnValue();
 		if (v1.IsValid())
 		{
@@ -215,7 +215,7 @@ namespace X
 		pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
 		X::Value v;
 		X::AST::ExecAction action;
-		bool bOK = pTopModule->Exec(pRuntime,action,nullptr, v);
+		bool bOK = ExpExec(pTopModule,pRuntime,action,nullptr, v);
 		pRuntime->PopFrame();
 		X::Value v1 = pModuleFrame->GetReturnValue();
 		if (v1.IsValid())

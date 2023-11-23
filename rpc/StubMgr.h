@@ -53,8 +53,8 @@ namespace X
 	public:
 		CallWorker();
 		~CallWorker();
-		inline bool IsIdle() {return m_bIdle;}
-		inline void SetIdle(bool bIdle) { m_bIdle = bIdle; }
+		FORCE_INLINE bool IsIdle() {return m_bIdle;}
+		FORCE_INLINE void SetIdle(bool bIdle) { m_bIdle = bIdle; }
 		void Call(call_func func)
 		{
 			m_func = func;

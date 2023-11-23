@@ -693,7 +693,7 @@ namespace X
 			//SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
-		inline AST::Scope* Tensor::GetBaseScope() 
+		FORCE_INLINE AST::Scope* Tensor::GetBaseScope() 
 		{ 
 			if (_TensorScope == nullptr)
 			{

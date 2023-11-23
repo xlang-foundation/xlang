@@ -32,7 +32,7 @@ namespace X
 				delete m_variableFrame;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases);
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, LValue* lValue = nullptr)
 			{
 				m_variableFrame->Get(idx, v, lValue);

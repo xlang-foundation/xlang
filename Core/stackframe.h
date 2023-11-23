@@ -84,16 +84,16 @@ public:
 		return true;
 	}
 	bool AddVar(XlangRuntime* rt,std::string& name, X::Value& val);
-	inline virtual int GetStartLine() { return m_lineStart; }
-	inline void SetLine(int l) { m_lineStart = l; }
-	inline void SetCharPos(int c) { m_charPos = c; }
-	inline virtual int GetCharPos() { return m_charPos; }
-	inline Scope* GetScope() { return m_pScope; }
-	inline void SetNext(StackFrame* n) { m_next = n; if(n) n->m_prev = this; }
-	inline void SetPrev(StackFrame* p) { m_prev = p; if(p) p->m_next = this; }
-	inline StackFrame* Next() { return m_next; }
-	inline StackFrame* Prev() { return m_prev; }
-	inline bool belongTo(Scope* s) { return s == m_pScope; }
+	FORCE_INLINE virtual int GetStartLine() { return m_lineStart; }
+	FORCE_INLINE void SetLine(int l) { m_lineStart = l; }
+	FORCE_INLINE void SetCharPos(int c) { m_charPos = c; }
+	FORCE_INLINE virtual int GetCharPos() { return m_charPos; }
+	FORCE_INLINE Scope* GetScope() { return m_pScope; }
+	FORCE_INLINE void SetNext(StackFrame* n) { m_next = n; if(n) n->m_prev = this; }
+	FORCE_INLINE void SetPrev(StackFrame* p) { m_prev = p; if(p) p->m_next = this; }
+	FORCE_INLINE StackFrame* Next() { return m_next; }
+	FORCE_INLINE StackFrame* Prev() { return m_prev; }
+	FORCE_INLINE bool belongTo(Scope* s) { return s == m_pScope; }
 	void Copy(StackFrame* pFrom)
 	{
 		if (m_bShared) m_lock.Lock();
@@ -104,8 +104,8 @@ public:
 		m_retVal = pFrom->m_retVal;
 		if (m_bShared) m_lock.Unlock();
 	}
-	inline int GetVarCount() { return m_varCnt; }
-	inline bool SetVarCount(int cnt)
+	FORCE_INLINE int GetVarCount() { return m_varCnt; }
+	FORCE_INLINE bool SetVarCount(int cnt)
 	{//can be called multiple times,
 	//so need to check if m_Values is created
 	//if created, copy data into new array
@@ -132,7 +132,7 @@ public:
 		if (m_bShared) m_lock.Unlock();
 		return true;
 	}
-	inline void Set(int idx, X::Value& v)
+	FORCE_INLINE void Set(int idx, X::Value& v)
 	{
 		if (m_bShared) m_lock.Lock();
 		if (idx < 0 && idx >= m_varCnt)
@@ -148,13 +148,13 @@ public:
 #endif
 		if (m_bShared) m_lock.Unlock();
 	}
-	inline void SetReturn(X::Value& v)
+	FORCE_INLINE void SetReturn(X::Value& v)
 	{
 		if (m_bShared) m_lock.Lock();
 		m_retVal = v;
 		if (m_bShared) m_lock.Unlock();
 	}
-	inline void Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
+	FORCE_INLINE void Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
 	{
 		if (m_bShared) m_lock.Lock();
 		if (idx < 0 && idx >= m_varCnt)
@@ -166,7 +166,7 @@ public:
 		if (lValue) *lValue = &v0;
 		if (m_bShared) m_lock.Unlock();
 	}
-	inline X::Value& GetReturnValue()
+	FORCE_INLINE X::Value& GetReturnValue()
 	{
 		if (m_bShared)
 		{

@@ -7,12 +7,7 @@ namespace X
 	//ARITH_OP_IMPL(-= )
 	ARITH_OP_IMPL(*= )
 	ARITH_OP_IMPL(/= )
-	COMPARE_OP_IMPL(== )
-	COMPARE_OP_IMPL(!= )
-	COMPARE_OP_IMPL(> )
-	COMPARE_OP_IMPL(< )
-	COMPARE_OP_IMPL(>= )
-	COMPARE_OP_IMPL(<= )
+
 	
 	Value Value::GetObjectValue(Port::vector<X::Value>& IdxAry)
 	{
@@ -415,6 +410,10 @@ namespace X
 	Value::Value(std::string& s)
 	{
 		SetString(s);
+	}
+	int Value::obj_cmp(Value* r) const
+	{
+		return x.obj->cmp(r);
 	}
 	bool Value::ChangeToStrObject()
 	{

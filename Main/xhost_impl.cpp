@@ -547,7 +547,7 @@ namespace X
 		AST::Import* pImp = new AST::Import(moduleName, from, thru);
 		//todo: CHECK here if pImp will be released by out of scope
 		AST::ExecAction action;
-		bool bOK = pImp->Exec((XlangRuntime*)rt,action,nullptr, objPackage);
+		bool bOK = ExpExec(pImp,(XlangRuntime*)rt,action,nullptr, objPackage);
 		if (objPackage.IsObject())
 		{
 			objPackage.GetObj()->SetContext(rt, nullptr);
@@ -606,7 +606,7 @@ namespace X
 			return false;
 		}
 		AST::ExecAction action;
-		bool bOK = pExpr->Exec(nullptr,action,nullptr, result);
+		bool bOK = ExpExec(pExpr,nullptr,action,nullptr, result);
 		return bOK;
 	}
 	bool XHost_Impl::ExtractNativeObjectFromRemoteObject(X::Value& remoteObj,

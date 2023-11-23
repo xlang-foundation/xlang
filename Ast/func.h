@@ -103,7 +103,7 @@ public:
 #endif
 		m_decors.clear();
 	}
-	inline Scope* GetScope()
+	FORCE_INLINE Scope* GetScope()
 	{
 		return m_pMyScope;
 	}
@@ -210,13 +210,13 @@ public:
 	{
 		return "";
 	}
-	inline void AddDecor(Decorator* pDecor)
+	FORCE_INLINE void AddDecor(Decorator* pDecor)
 	{
 		m_decors.push_back(pDecor);
 	}
 	void NeedSetHint(bool b) { m_needSetHint = b; }
-	inline String& GetNameStr() { return m_Name; }
-	inline std::string GetNameString()
+	FORCE_INLINE String& GetNameStr() { return m_Name; }
+	FORCE_INLINE std::string GetNameString()
 	{
 		return std::string(m_Name.s, m_Name.size);
 	}
@@ -273,11 +273,11 @@ public:
 			RetType->SetParent(this);
 		}
 	}
-	inline Expression* GetRetType()
+	FORCE_INLINE Expression* GetRetType()
 	{
 		return RetType;
 	}
-	inline Expression* GetParams()
+	FORCE_INLINE Expression* GetParams()
 	{
 		return Params;
 	}
@@ -362,7 +362,7 @@ public:
 		stream >> m_funcName;
 		return true;
 	}
-	inline virtual bool CallEx(XRuntime* rt, XObj* pContext,
+	FORCE_INLINE virtual bool CallEx(XRuntime* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& trailer,
@@ -386,7 +386,7 @@ public:
 		}
 	}
 	XObj* GetRightContextForClass(XObj* pContext);
-	inline virtual bool Call(XRuntime* rt, XObj* pContext,
+	FORCE_INLINE virtual bool Call(XRuntime* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		Value& retValue) override

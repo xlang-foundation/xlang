@@ -19,7 +19,7 @@ namespace X
 				m_pMyScope = new Scope();
 				m_pMyScope->SetVarFrame(m_variableFrame);
 			}
-			inline Scope* GetMyScope()
+			FORCE_INLINE Scope* GetMyScope()
 			{
 				return m_pMyScope;
 			}

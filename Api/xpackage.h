@@ -68,59 +68,59 @@ namespace X
 	namespace HelpFuncs
 	{
 		template<class class_T, typename F, typename Array, std::size_t... I>
-		inline auto VarCall_impl(class_T* pThis, F f, Array& a, std::index_sequence<I...>)
+		FORCE_INLINE auto VarCall_impl(class_T* pThis, F f, Array& a, std::index_sequence<I...>)
 		{
 			return (pThis->*f)(a[I]...);
 		}
 		template<std::size_t N, class class_T, typename F, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto VarCall(class_T* pThis, F f, T& a)
+		FORCE_INLINE auto VarCall(class_T* pThis, F f, T& a)
 		{
 			return VarCall_impl(pThis, f, a, Indices{});
 		}
 		template<class class_T, typename F, typename Array, std::size_t... I>
-		inline auto VarCall_Ex_impl(class_T* pThis, F f, X::Value& extra, Array& a, std::index_sequence<I...>)
+		FORCE_INLINE auto VarCall_Ex_impl(class_T* pThis, F f, X::Value& extra, Array& a, std::index_sequence<I...>)
 		{
 			return (pThis->*f)(extra, a[I]...);
 		}
 		template<std::size_t N, class class_T, typename F, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto VarCallEx(class_T* pThis, F f, X::Value& extra, T& a)
+		FORCE_INLINE auto VarCallEx(class_T* pThis, F f, X::Value& extra, T& a)
 		{
 			return VarCall_Ex_impl(pThis, f, extra, a, Indices{});
 		}
 
 		template<class class_T, typename F, typename Array, std::size_t... I>
-		inline auto VarCall_impl_Extra(X::XRuntime* rt, X::XObj* pContext,
+		FORCE_INLINE auto VarCall_impl_Extra(X::XRuntime* rt, X::XObj* pContext,
 			class_T* pThis, F f, Array& a, std::index_sequence<I...>)
 		{
 			return (pThis->*f)(rt, pContext, a[I]...);
 		}
 		template<std::size_t N, class class_T, typename F, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto VarCall_Extra(X::XRuntime* rt, X::XObj* pContext, class_T* pThis, F f, T& a)
+		FORCE_INLINE auto VarCall_Extra(X::XRuntime* rt, X::XObj* pContext, class_T* pThis, F f, T& a)
 		{
 			return VarCall_impl_Extra(rt, pContext, pThis, f, a, Indices{});
 		}
 
 		template<class class_T, typename Array, std::size_t... I>
-		inline auto NewClass_impl(Array& a, std::index_sequence<I...>)
+		FORCE_INLINE auto NewClass_impl(Array& a, std::index_sequence<I...>)
 		{
 			return new class_T(a[I]...);
 		}
 		template<std::size_t N, class class_T, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto NewClass(T& a)
+		FORCE_INLINE auto NewClass(T& a)
 		{
 			return NewClass_impl<class_T>(a, Indices{});
 		}
 		template<typename FirstT, class class_T, typename Array, std::size_t... I>
-		inline auto NewClass_impl(FirstT first, Array& a, std::index_sequence<I...>)
+		FORCE_INLINE auto NewClass_impl(FirstT first, Array& a, std::index_sequence<I...>)
 		{
 			return new class_T(first, a[I]...);
 		}
 		template<typename FirstT, std::size_t N, class class_T, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto NewClass(FirstT first, T& a)
+		FORCE_INLINE auto NewClass(FirstT first, T& a)
 		{
 			return NewClass_impl<FirstT, class_T>(first, a, Indices{});
 		}
-		inline X::XPackage* MakePackagePointer(X::XObj* pThis, X::XObj* pContext)
+		FORCE_INLINE X::XPackage* MakePackagePointer(X::XObj* pThis, X::XObj* pContext)
 		{
 			X::XPackage* pThisPackage = nullptr;
 			if (pContext && pContext->GetType() == X::ObjType::Package)
@@ -183,25 +183,25 @@ namespace X
 		{
 			m_funcInstanceIdentity = func;
 		}
-		inline PackageInstanceIdentity GetInstanceProc()
+		FORCE_INLINE PackageInstanceIdentity GetInstanceProc()
 		{
 			return m_funcInstanceIdentity;
 		}		void SetEmbededParentObjectProc(PackageGetEmbededParentObject func)
 		{
 			m_funcGetEmbededParentObject = func;
 		}
-		inline PackageGetEmbededParentObject GetEmbededParentObjectProc()
+		FORCE_INLINE PackageGetEmbededParentObject GetEmbededParentObjectProc()
 		{
 			return m_funcGetEmbededParentObject;
 		}
-		inline PackageGetContentSizeFunc GetSizeFunc() { return m_funcGetContentSize; }
-		inline PackageToBytesFunc GetToBytesFunc() { return m_funcToBytes; }
-		inline PackageFromBytesFunc GetFromBytesFunc() { return m_funcFromBytes; }
-		inline void SetParent(APISetBase* pParent)
+		FORCE_INLINE PackageGetContentSizeFunc GetSizeFunc() { return m_funcGetContentSize; }
+		FORCE_INLINE PackageToBytesFunc GetToBytesFunc() { return m_funcToBytes; }
+		FORCE_INLINE PackageFromBytesFunc GetFromBytesFunc() { return m_funcFromBytes; }
+		FORCE_INLINE void SetParent(APISetBase* pParent)
 		{
 			m_parent = pParent;
 		}
-		inline APISetBase* GetParent()
+		FORCE_INLINE APISetBase* GetParent()
 		{
 			return m_parent;
 		}
@@ -214,23 +214,23 @@ namespace X
 			//derived class's same name member will override base's
 			bases.push_back(this);
 		}
-		inline void SetLibName(const char* name)
+		FORCE_INLINE void SetLibName(const char* name)
 		{
 			m_libName = name;
 		}
-		inline const char* GetLibName()
+		FORCE_INLINE const char* GetLibName()
 		{
 			return m_libName.c_str();
 		}
-		inline void SetName(const char* name)
+		FORCE_INLINE void SetName(const char* name)
 		{
 			m_Name = name;
 		}
-		inline const char* GetName()
+		FORCE_INLINE const char* GetName()
 		{
 			return m_Name.c_str();
 		}
-		inline auto& Members() { return m_members; }
+		FORCE_INLINE auto& Members() { return m_members; }
 		virtual XPackage* GetPack() = 0;
 		virtual XPackage* GetProxy(void* pRealObj) = 0;
 	};
@@ -255,9 +255,9 @@ namespace X
 			};
 		}
 		bool IsCreated() { return m_alreadyCallBuild; }
-		inline virtual XPackage* GetPack() override { return m_xPack; }
+		FORCE_INLINE virtual XPackage* GetPack() override { return m_xPack; }
 		//GetProxy will return XPackage with One RefCount, caller needs to release it
-		inline virtual XPackage* GetProxy(void* pRealObj) override
+		FORCE_INLINE virtual XPackage* GetProxy(void* pRealObj) override
 		{
 			T* pTObj = (T*)pRealObj;
 			if (pTObj->__pPack_)
@@ -290,11 +290,11 @@ namespace X
 				m_xPack->DecRef();
 			}
 		}
-		inline void AddBase(APISetBase* pBase)
+		FORCE_INLINE void AddBase(APISetBase* pBase)
 		{
 			m_bases.push_back(pBase);
 		}
-		inline void Fire(XPackage* pPack, int evtIndex,
+		FORCE_INLINE void Fire(XPackage* pPack, int evtIndex,
 			X::ARGS& params, X::KWARGS& kwargs)
 		{
 			if (pPack && evtIndex >= 0 && evtIndex < (int)__events.size())
@@ -306,7 +306,7 @@ namespace X
 				pEvt->DoFire(rt, nullptr, params, kwargs);
 			}
 		}
-		inline X::XEvent* GetEvent(XPackage* pPack, int evtIndex)
+		FORCE_INLINE X::XEvent* GetEvent(XPackage* pPack, int evtIndex)
 		{
 			X::XEvent* pEvt = nullptr;
 			if (pPack && evtIndex >= 0 && evtIndex < (int)__events.size())
@@ -719,7 +719,7 @@ namespace X
 					}),dummy,dummyEx,false,std::string(doc) });
 			return true;
 		}
-		inline void RegisterToTensorSystem()
+		FORCE_INLINE void RegisterToTensorSystem()
 		{
 			X::U_FUNC dummy;
 			X::U_FUNC_EX dummyEx;

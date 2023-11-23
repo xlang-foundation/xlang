@@ -1,5 +1,5 @@
 import time
-num =20000000
+num =100000000
 print("Test Loop:",num)
 sum =0
 t1 = time.time()

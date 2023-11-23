@@ -46,7 +46,7 @@ namespace X
 					return false;
 				}
 			}
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, X::LValue* lValue = nullptr)
 			{
 				v = m_funcs[idx];

@@ -77,7 +77,7 @@ namespace AST
 				Expression* valExpr = assign->GetR();
 				Value v0;
 				ExecAction action;
-				bOK = valExpr->Exec(rt,action,nullptr, v0);
+				bOK = ExpExec(valExpr,rt,action,nullptr, v0);
 				if (bOK)
 				{
 					vecKwParam.push_back(std::make_pair(strVarName,v0));
@@ -87,7 +87,7 @@ namespace AST
 			{
 				Value v0;
 				ExecAction action;
-				bOK = i->Exec(rt,action,nullptr, v0);
+				bOK = ExpExec(i,rt,action,nullptr, v0);
 				if (bOK)
 				{
 					vecParam.push_back(v0);
@@ -134,7 +134,7 @@ namespace AST
 bool UnaryOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	Value v_r;
-	if (!R->Exec(rt,action,pContext,v_r))
+	if (!ExpExec(R,rt,action,pContext,v_r))
 	{
 		return false;
 	}
@@ -158,7 +158,7 @@ bool Range::Eval(XlangRuntime* rt)
 			{//only one parameter, means stop
 				Value vStop;
 				ExecAction action;
-				param->Exec(rt, action,nullptr, vStop);
+				ExpExec(param,rt, action,nullptr, vStop);
 				if (vStop.GetType() == ValueType::Int64)
 				{
 					m_stop = vStop.GetLongLong();

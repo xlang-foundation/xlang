@@ -34,7 +34,7 @@ namespace X
 				mMap.clear();
 				m_bases.clear();
 			}
-			inline virtual long long Size() override
+			FORCE_INLINE virtual long long Size() override
 			{
 				return mMap.size();
 			}
@@ -185,7 +185,7 @@ namespace X
 			{
 				return true;
 			}
-			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 			{
 				long long offset = (long long)pos;
 				if (offset >= mMap.size())

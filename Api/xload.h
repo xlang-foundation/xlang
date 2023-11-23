@@ -2,6 +2,19 @@
 #define _X_LOAD_H_
 #include <string>
 
+#if !defined(FORCE_INLINE)
+#if defined(_MSC_VER)
+// Microsoft Visual C++ Compiler
+#define FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang Compiler
+#define FORCE_INLINE FORCE_INLINE __attribute__((always_inline))
+#else
+// Fallback for other compilers
+#define FORCE_INLINE FORCE_INLINE
+#endif
+#endif
+
 namespace X
 {
 	enum class AppEventCode
@@ -54,17 +67,17 @@ namespace X
 	public:
 		XLoad();
 		AppEventCode HandleAppEvent(int signum);
-		inline Config& GetConfig() { return *m_pConfig; }
+		FORCE_INLINE Config& GetConfig() { return *m_pConfig; }
 		int Load(Config* pCfg);
 		void Unload();
 		int Run();
 		void EventLoop();
-		inline void SetXLangLibHandler(void* handle) { xlangLibHandler = handle; }
-		inline void SetPythonLibHandler(void* handle) { pythonLibHandle = handle; }
-		inline void SetDevopsLibHandler(void* handle) { devopsLibHandler = handle; }
-		inline void* GetXLangLibHandler() { return xlangLibHandler; }
-		inline void* GetPythonLibHandler() { return pythonLibHandle; }
-		inline void* GetDevopsLibHandler() { return devopsLibHandler; }
+		FORCE_INLINE void SetXLangLibHandler(void* handle) { xlangLibHandler = handle; }
+		FORCE_INLINE void SetPythonLibHandler(void* handle) { pythonLibHandle = handle; }
+		FORCE_INLINE void SetDevopsLibHandler(void* handle) { devopsLibHandler = handle; }
+		FORCE_INLINE void* GetXLangLibHandler() { return xlangLibHandler; }
+		FORCE_INLINE void* GetPythonLibHandler() { return pythonLibHandle; }
+		FORCE_INLINE void* GetDevopsLibHandler() { return devopsLibHandler; }
 	};
 }
 

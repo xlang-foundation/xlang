@@ -43,7 +43,7 @@ namespace AST
 		{
 			return m_preceding_token;
 		}
-		inline virtual void SetIsLeftValue(bool b) override
+		FORCE_INLINE virtual void SetIsLeftValue(bool b) override
 		{
 			if (R && R->m_type == AST::ObType::List)
 			{
@@ -63,7 +63,7 @@ namespace AST
 			}
 		}
 		virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override;
-		inline virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
+		FORCE_INLINE virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
 		{
 			if (ary.size() == 0)
 			{

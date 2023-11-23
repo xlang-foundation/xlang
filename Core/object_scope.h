@@ -5,12 +5,12 @@ namespace X
 	namespace Data 
 	{
 		template<class class_T, typename F, typename Array, std::size_t... I>
-		inline auto VarCall_impl(class_T* pThis, F f, Array& a, std::index_sequence<I...>)
+		FORCE_INLINE auto VarCall_impl(class_T* pThis, F f, Array& a, std::index_sequence<I...>)
 		{
 			return (pThis->*f)(a[I]...);
 		}
 		template<std::size_t N, class class_T, typename F, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto VarCall(class_T* pThis, F f, T& a)
+		FORCE_INLINE auto VarCall(class_T* pThis, F f, T& a)
 		{
 			return VarCall_impl(pThis, f, a, Indices{});
 		}
@@ -29,7 +29,7 @@ namespace X
 			AST::StackFrame* m_variableFrame = nullptr;
 			std::vector<X::XEvent*> __events;
 		public:
-			inline AST::Scope* GetMyScope()
+			FORCE_INLINE AST::Scope* GetMyScope()
 			{
 				return m_pMyScope;
 			}
@@ -44,7 +44,7 @@ namespace X
 					delete m_pMyScope;
 				}
 			}
-			inline void Fire(int evtIndex,
+			FORCE_INLINE void Fire(int evtIndex,
 				X::ARGS& params, X::KWARGS& kwargs)
 			{
 				if (evtIndex >= 0 && evtIndex < (int)__events.size())
@@ -67,7 +67,7 @@ namespace X
 							return true;
 						}) });
 			}
-			inline AST::Scope* GetScope()
+			FORCE_INLINE AST::Scope* GetScope()
 			{
 				return dynamic_cast<AST::Scope*>(this);
 			}

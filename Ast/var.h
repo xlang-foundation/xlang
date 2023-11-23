@@ -55,7 +55,7 @@ public:
 	virtual void ScopeLayout() override;
 	String& GetName() { return Name; }
 	std::string GetNameString() { return std::string(Name.s, Name.size); }
-	inline virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override final
+	FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override final
 	{
 		if (Index == -1)
 		{
@@ -85,7 +85,7 @@ public:
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		if (Index == -1 || m_scope == nullptr || rt == nullptr)
 		{//case 1:RunExpression in XHost will call with rt is null,

@@ -1,5 +1,9 @@
+i=10
+sum =0
+sum+=10
+
 import time
-num =20000000
+num =30000000
 print("Test Loop:",num)
 sum =0
 t1 = time.time()

@@ -24,7 +24,7 @@ namespace X
 					{
 						ExecAction action;
 						X::Value valRight;
-						bool bOK = right->Exec(nullptr, action, nullptr, valRight);
+						bool bOK = ExpExec(right,nullptr, action, nullptr, valRight);
 						if (bOK)
 						{
 							//Obj()->Set(index, valRight);
@@ -139,7 +139,7 @@ namespace X
 					//take a place
 					ro_var->Set(rt, pContext, defVal);
 					ExecAction action0;
-					bOK = r0->Exec(rt, action0,pContext, v, lValue);
+					bOK = ExpExec(r0,rt, action0,pContext, v, lValue);
 				}
 				else if (r0->m_type == ObType::Dot)
 				{
@@ -149,7 +149,7 @@ namespace X
 					//pChildNamespaceVar->SetScope(this);
 					Block::Add(pChildNamespaceVar);//hold this item into block for releasing this item
 					ExecAction action0;
-					bOK = pChildNamespaceVar->Exec(rt, action0, pContext, v, lValue);
+					bOK = ExpExec(pChildNamespaceVar,rt, action0, pContext, v, lValue);
 					pChildNamespaceVar->SetR(nullptr); // don't let be deleted twice
 				}
 			}

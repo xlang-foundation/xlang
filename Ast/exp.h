@@ -98,11 +98,11 @@ public:
 	Expression()
 	{
 	}
-	inline void SetTokenIndex(int idx)
+	FORCE_INLINE void SetTokenIndex(int idx)
 	{
 		m_tokenIndex = idx;
 	}
-	inline int GetTokenIndex() { return m_tokenIndex; }
+	FORCE_INLINE int GetTokenIndex() { return m_tokenIndex; }
 	static Expression* CreateByType(ObType t);
 	template<typename T>
 	T* BuildFromStream(X::XLangStream& stream)
@@ -158,7 +158,7 @@ public:
 	std::string GetCode();
 	//use address as ID, just used Serialization
 	ExpId ID() { return (ExpId)this; }
-	inline void SetHint(int startLine, int endLine, int charPos,
+	FORCE_INLINE void SetHint(int startLine, int endLine, int charPos,
 		int charStart,int charEnd)
 	{
 		m_lineStart = startLine;
@@ -167,7 +167,7 @@ public:
 		m_charStart = charStart;
 		m_charEnd = charEnd;
 	}
-	inline void ReCalcHint(Expression* pAnotherExp)
+	FORCE_INLINE void ReCalcHint(Expression* pAnotherExp)
 	{
 		auto min_val = [](int x, int y) {
 			return x >= 0 ? MIN_VAL(x, y) : y;
@@ -182,22 +182,22 @@ public:
 		m_charStart = min_val(m_charStart, pAnotherExp->m_charStart);
 		m_charEnd = max_val(m_charEnd, pAnotherExp->m_charEnd);
 	}
-	inline bool IsLeftValue() { return m_isLeftValue; }
-	inline int GetStartLine() { return m_lineStart+1; }
-	inline int GetEndLine() { return m_lineEnd+1; }
-	inline int GetCharPos() { return m_charPos; }
-	inline int GetCharStart() { return m_charStart; }
-	inline int GetCharEnd() { return m_charEnd; }
-	inline virtual void SetIsLeftValue(bool b)
+	FORCE_INLINE bool IsLeftValue() { return m_isLeftValue; }
+	FORCE_INLINE int GetStartLine() { return m_lineStart+1; }
+	FORCE_INLINE int GetEndLine() { return m_lineEnd+1; }
+	FORCE_INLINE int GetCharPos() { return m_charPos; }
+	FORCE_INLINE int GetCharStart() { return m_charStart; }
+	FORCE_INLINE int GetCharEnd() { return m_charEnd; }
+	FORCE_INLINE virtual void SetIsLeftValue(bool b)
 	{
 		m_isLeftValue = b;
 	}
 	virtual ~Expression(){}
-	inline Scope* GetMyScope()
+	FORCE_INLINE Scope* GetMyScope()
 	{
 		return m_pMyScope;
 	}
-	inline virtual Scope* GetScope()
+	FORCE_INLINE virtual Scope* GetScope()
 	{
 		if (m_scope == nil)
 		{
@@ -313,9 +313,9 @@ public:
 		m_needRelease = false;
 		m_size = size;
 	}
-	inline bool IsCharSequence() { return m_isCharSequence; }
-	inline int Size() { return m_size; }
-	inline char* GetChars() { return m_s; }
+	FORCE_INLINE bool IsCharSequence() { return m_isCharSequence; }
+	FORCE_INLINE int Size() { return m_size; }
+	FORCE_INLINE char* GetChars() { return m_s; }
 	void SetCharFlag(bool isChars)
 	{
 		m_isCharSequence = isChars;
@@ -405,7 +405,7 @@ public:
 		stream >> m_tokenIndex;
 		return true;
 	}
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (m_tokenIndex == TokenIndex::Token_None)
 		{
@@ -449,9 +449,9 @@ public:
 		stream >> m_val >> m_digiNum >> m_isBool;
 		return true;
 	}
-	inline long long GetVal() { return m_val; }
-	inline int GetDigiNum() { return m_digiNum; }
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	FORCE_INLINE long long GetVal() { return m_val; }
+	FORCE_INLINE int GetDigiNum() { return m_digiNum; }
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		if (m_isBool)
@@ -492,7 +492,7 @@ public:
 		stream >> m_val;
 		return true;
 	}
-	inline double GetVal() { return m_val; }
+	FORCE_INLINE double GetVal() { return m_val; }
 };
 //Only the imaginary  part for Complex
 class ImaginaryNumber :
@@ -675,8 +675,8 @@ public:
 		Type = BuildFromStream<Expression>(stream);
 		return true;
 	}
-	inline Expression* GetName() { return Name; }
-	inline Expression* GetType() { return Type; }
+	FORCE_INLINE Expression* GetName() { return Name; }
+	FORCE_INLINE Expression* GetType() { return Type; }
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);

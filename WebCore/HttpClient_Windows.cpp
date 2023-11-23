@@ -97,7 +97,7 @@ namespace X
 				}
 			}
 
-			inline bool setHeader(const std::string name, const std::string value)
+			FORCE_INLINE bool setHeader(const std::string name, const std::string value)
 			{
 				auto it = headers.find(name);
 				if (it != headers.end())
@@ -108,7 +108,7 @@ namespace X
 				return true;
 			}
 
-			inline bool sendRequest(const std::string body_content)
+			FORCE_INLINE bool sendRequest(const std::string body_content)
 			{
 				OpenRequest();
 				BOOL bResults = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
@@ -125,7 +125,7 @@ namespace X
 				}
 				return bResults;
 			}
-			inline X::Value readResponse()
+			FORCE_INLINE X::Value readResponse()
 			{
 				X::Value valData;
 				//todo: need to check output MIME 

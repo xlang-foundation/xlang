@@ -36,12 +36,12 @@ class CommandInfo:
 {
 	Locker _lock;
 public:
-	inline virtual int IncRef()
+	FORCE_INLINE virtual int IncRef()
 	{
 		AutoLock lock(_lock);
 		return ObjRef::AddRef();
 	}
-	inline virtual int DecRef()
+	FORCE_INLINE virtual int DecRef()
 	{
 		_lock.Lock();
 		int ref = ObjRef::Release();
@@ -149,7 +149,7 @@ public:
 		}
 		m_inlineComments.clear();
 	}
-	inline Scope* GetMyScope()
+	FORCE_INLINE Scope* GetMyScope()
 	{
 		return m_pMyScope;
 	}
@@ -258,7 +258,7 @@ public:
 	{
 		return m_moduleName;
 	}
-	inline void AddCommand(CommandInfo* pCmdInfo,bool bWaitFinish)
+	FORCE_INLINE void AddCommand(CommandInfo* pCmdInfo,bool bWaitFinish)
 	{
 		//m_addCommandLock.Lock();
 		if (bWaitFinish)
@@ -282,7 +282,7 @@ public:
 		//std::cout << "AddCommand,end,pCmdInfo = "<< pCmdInfo << "tid=" << tid << std::endl;
 		//m_addCommandLock.Unlock();
 	}
-	inline CommandInfo* PopCommand()
+	FORCE_INLINE CommandInfo* PopCommand()
 	{
 		//auto tid = GetThreadID();
 		//std::cout << "PopCommand,Begin"<< "tid=" << tid << std::endl;
@@ -307,7 +307,7 @@ public:
 		//std::cout << "PopCommand,end,pCommandInfo=" << pCommandInfo << "tid=" << tid << std::endl;
 		return pCommandInfo;
 	}
-	inline char* SetCode(char* code, int size)
+	FORCE_INLINE char* SetCode(char* code, int size)
 	{
 		std::string strCode(code, size);
 		m_allCode.push_back(strCode);
@@ -330,7 +330,7 @@ public:
 	}
 	virtual void ScopeLayout() override;
 	void AddBuiltins(XlangRuntime* rt);
-	inline int Add(XlangRuntime* rt, std::string& name,
+	FORCE_INLINE int Add(XlangRuntime* rt, std::string& name,
 		XObj* pContext, Value& v)
 	{
 		int idx = m_pMyScope->AddOrGet(name, false);
@@ -346,18 +346,18 @@ public:
 		return idx;
 	}
 	void SetDebug(bool b,XlangRuntime* runtime);
-	inline bool IsInDebug()
+	FORCE_INLINE bool IsInDebug()
 	{
 		return m_inDebug;
 	}
-	inline void SetDbgType(dbg d,dbg lastRequest)
+	FORCE_INLINE void SetDbgType(dbg d,dbg lastRequest)
 	{
 		m_dbg = d;
 		m_dbgLastRequest = lastRequest;
 	}
-	inline dbg GetDbgType() { return m_dbg; }
-	inline dbg GetLastRequestDgbType() { return m_dbgLastRequest; }
-	inline bool InDbgScope(Scope* s)
+	FORCE_INLINE dbg GetDbgType() { return m_dbg; }
+	FORCE_INLINE dbg GetLastRequestDgbType() { return m_dbgLastRequest; }
+	FORCE_INLINE bool InDbgScope(Scope* s)
 	{ 
 		if (s == m_pMyScope)
 		{
@@ -374,18 +374,18 @@ public:
 		}	
 		return bIn;
 	}
-	inline Scope* LastScope()
+	FORCE_INLINE Scope* LastScope()
 	{
 		return m_dbgScopes.size() > 0 ? 
 			m_dbgScopes[m_dbgScopes.size() - 1] : nullptr;
 	}
-	inline ScopeWaitingStatus HaveWaitForScope()
+	FORCE_INLINE ScopeWaitingStatus HaveWaitForScope()
 	{
 		return m_dbgScopes.size() > 0?
 			m_dbgScopes[m_dbgScopes.size() - 1]->IsWaitForCall():
 			ScopeWaitingStatus::NoWaiting;
 	}
-	inline void ReplaceLastDbgScope(Scope* s)
+	FORCE_INLINE void ReplaceLastDbgScope(Scope* s)
 	{
 		if (m_dbgScopes.size() > 0)
 		{
@@ -393,11 +393,11 @@ public:
 			m_dbgScopes[m_dbgScopes.size() - 1] = s;
 		}
 	}
-	inline void AddDbgScope(Scope* s)
+	FORCE_INLINE void AddDbgScope(Scope* s)
 	{
 		m_dbgScopes.push_back(s);
 	}
-	inline void RemoveDbgScope(Scope* s)
+	FORCE_INLINE void RemoveDbgScope(Scope* s)
 	{
 		auto it = m_dbgScopes.begin();
 		while (it != m_dbgScopes.end())

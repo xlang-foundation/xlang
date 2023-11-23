@@ -232,7 +232,7 @@ bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value&
 	}
 	//then check back constructor,destructor
 	int nConstructorIndex = QueryConstructor();
-	Block::Exec(rt, action, pContext, v, lValue);
+	Block::Exec_i(rt, action, pContext, v, lValue);
 	if (nConstructorIndex >= 0)
 	{
 		X::Value varFunc;
@@ -255,7 +255,7 @@ bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value&
 		{
 			Value paramObj;
 			ExecAction action0;
-			bool bOK = i->Exec(rt, action0, pContext, paramObj);
+			bool bOK = ExpExec(i,rt, action0, pContext, paramObj);
 			if (paramObj.IsObject())
 			{
 				auto ty = paramObj.GetObj()->GetType();
@@ -286,7 +286,7 @@ bool XClass::BuildBaseInstances(XlangRuntime* rt,XObj* pClassObj)
 		{
 			Value paramObj;
 			ExecAction action0;
-			bool bOK = i->Exec(rt, action0, pClassObj, paramObj);
+			bool bOK = ExpExec(i,rt, action0, pClassObj, paramObj);
 			if (paramObj.IsObject())
 			{
 				auto ty = paramObj.GetObj()->GetType();

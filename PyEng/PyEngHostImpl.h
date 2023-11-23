@@ -10,7 +10,7 @@ class GrusPyEngHost :
 public:
 	GrusPyEngHost();
 	~GrusPyEngHost();
-	inline Xlang_CallFunc GetXlangCallFunc()
+	FORCE_INLINE Xlang_CallFunc GetXlangCallFunc()
 	{
 		return m_xlang_call_func;
 	}

@@ -95,7 +95,7 @@ namespace X
 				}
 				Body.clear();
 			}
-			inline std::vector<Expression*>& GetBody()
+			FORCE_INLINE std::vector<Expression*>& GetBody()
 			{
 				return Body;
 			}
@@ -104,7 +104,7 @@ namespace X
 				return Body.size();
 			}
 			//using Body's last expression's line number to get the end line number
-			inline void ReCalcHintWithBody()
+			FORCE_INLINE void ReCalcHintWithBody()
 			{
 				if (Body.size() > 0)
 				{
@@ -138,7 +138,7 @@ namespace X
 				}
 				return true;
 			}
-			inline int GetStartLine()
+			FORCE_INLINE int GetStartLine()
 			{
 				if (Body.size() > 0)
 				{
@@ -149,27 +149,28 @@ namespace X
 					return -1;
 				}
 			}
-			inline bool IsNoIndentCheck()
+			FORCE_INLINE bool IsNoIndentCheck()
 			{
 				return NoIndentCheck;
 			}
-			inline void SetNoIndentCheck(bool b)
+			FORCE_INLINE void SetNoIndentCheck(bool b)
 			{
 				NoIndentCheck = b;
 			}
 			virtual void Add(Expression* item);
-			inline Indent GetIndentCount() { return IndentCount; }
-			inline Indent GetChildIndentCount() { return ChildIndentCount; }
-			inline void SetIndentCount(Indent cnt) { IndentCount = cnt; }
-			inline void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
+			FORCE_INLINE Indent GetIndentCount() { return IndentCount; }
+			FORCE_INLINE Indent GetChildIndentCount() { return ChildIndentCount; }
+			FORCE_INLINE void SetIndentCount(Indent cnt) { IndentCount = cnt; }
+			FORCE_INLINE void SetChildIndentCount(Indent cnt) { ChildIndentCount = cnt; }
 			bool RunLast(XRuntime* rt, XObj* pContext, Value& v, LValue* lValue = nullptr);
 			bool RunFromLine(XRuntime* rt, XObj* pContext, long long lineNo, Value& v, LValue* lValue = nullptr);
 			bool ExecForTrace(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue);
-			inline virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+			FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 			{
 				return Exec_i(rt, action, pContext, v, lValue);
 			}
-			inline bool Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr)
+
+			FORCE_INLINE bool Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr)
 			{
 				auto bodySize = Body.size();
 				if (bodySize == 0)
@@ -191,28 +192,27 @@ namespace X
 				//for break, continue and pass
 				//just do a check if i it is one of them
 				//then do process with them
-				
+
 				auto lastIdx = bodySize - 1;
-				for (size_t idx=0; idx <bodySize; idx++)
+				for (size_t idx = 0; idx < bodySize; idx++)
 				{
 					auto& i = Body[idx];
 					if (i->m_type == ObType::ActionOp)
 					{
 						auto* pActionOperator = dynamic_cast<ActionOperator*>(i);
 						OP_ID opId = pActionOperator->GetId();
-						if (opId == OP_ID::Break)
+						switch (opId)
 						{
-							action.type = ExecActionType::Break;
-							break;
-						}
-						else if (opId == OP_ID::Continue)
-						{
-							action.type = ExecActionType::Continue;
-							break;
-						}
-						else if (opId == OP_ID::Pass)
-						{
-							continue;//just run next line
+							case OP_ID::Break:
+								action.type = ExecActionType::Break;
+								break;
+							case OP_ID::Continue:
+								action.type = ExecActionType::Continue;
+								break;
+							case OP_ID::Pass:
+								continue;//just run next line					
+							default:
+								break;
 						}
 					}
 					Value v0;

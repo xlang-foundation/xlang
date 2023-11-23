@@ -177,7 +177,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 	if (m_from)
 	{
 		Value v0;
-		if (m_from->Exec(rt, action, pContext, v0, nullptr))
+		if (ExpExec(m_from,rt, action, pContext, v0, nullptr))
 		{
 			m_path = v0.ToString();
 		}
@@ -185,7 +185,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 	if (m_thru)
 	{
 		Value v0;
-		if (m_thru->Exec(rt, action, pContext, v0, nullptr))
+		if (ExpExec(m_thru,rt, action, pContext, v0, nullptr))
 		{
 			m_thruUrl = v0.ToString();
 		}

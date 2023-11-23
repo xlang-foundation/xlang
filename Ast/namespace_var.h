@@ -34,7 +34,7 @@ namespace X
 			{
 				delete m_pMyScope;
 			}
-			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v)
 			{
 				if (m_obj.IsObject())
@@ -48,7 +48,7 @@ namespace X
 					return false;
 				}
 			}
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, LValue* lValue = nullptr)
 			{
 				if (m_obj.IsObject())
@@ -79,7 +79,7 @@ namespace X
 					return -1;
 				}
 			}
-			inline std::string GetName()
+			FORCE_INLINE std::string GetName()
 			{
 				if (R)
 				{

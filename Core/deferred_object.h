@@ -96,7 +96,7 @@ namespace X
 			{
 				delete m_stackFrame;
 			}
-			inline void SetImportInfo(AST::Import* pImport, AST::ImportInfo* pInfo)
+			FORCE_INLINE void SetImportInfo(AST::Import* pImport, AST::ImportInfo* pInfo)
 			{
 				m_from_Import = pImport;
 				m_importInfo = pInfo;
@@ -131,7 +131,7 @@ namespace X
 				}
 				return idx;
 			}
-			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v) override
 			{
 				assert(idx != -1);
@@ -139,7 +139,7 @@ namespace X
 				return true;
 			}
 
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, LValue* lValue = nullptr) override
 			{
 				m_stackFrame->Get(idx, v, lValue);

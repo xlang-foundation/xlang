@@ -39,7 +39,7 @@ namespace X
 			bool binddouble(int idx, double val);
 			bool bindint64(int idx, long long val);
 			int getcolnum();
-			inline int Step() { return (int)step(); }
+			FORCE_INLINE int Step() { return (int)step(); }
 			DBState step();
 			bool reset();
 			bool getValue(int idx, std::wstring& val);
@@ -47,7 +47,7 @@ namespace X
 			bool blob2text(const void* blob, int size, std::wstring& val);
 			std::string getColName(int idx);
 			int getValue(int idx);
-			inline X::Value GetValue(int idx)
+			FORCE_INLINE X::Value GetValue(int idx)
 			{
 				X::Value v;
 				getValue(idx, v);
