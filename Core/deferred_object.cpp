@@ -1,84 +1,12 @@
 #include "deferred_object.h"
 #include "function.h"
+#include "obj_func_scope.h"
+
 namespace X
 {
 	namespace Data
 	{
-		class DeferredObjectScope :
-			virtual public AST::Scope
-		{
-			AST::StackFrame* m_stackFrame = nullptr;
-		public:
-			DeferredObjectScope() :
-				Scope()
-			{
-				Init();
-			}
-			void clean()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-					m_stackFrame = nullptr;
-				}
-			}
-			~DeferredObjectScope()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
-			}
-			void Init()
-			{
-				m_stackFrame = new AST::StackFrame();
-				m_stackFrame->SetVarCount(3);
-				std::string strName;
-				{
-					strName = "load";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						auto* pObj = dynamic_cast<DeferredObject*>(pContext);
-						bool bOK = pObj?pObj->Load(rt,params,kwParams):false;
-						retValue = Value(bOK);
-						return bOK;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName, "load()", func);
-					auto* pFuncObj = new X::Data::Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = Scope::AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-			}
-#if __TODO_SCOPE__
-			// Inherited via Scope
-			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
-			{
-				//can't add new members
-				return Scope::AddOrGet(name, true, ppRightScope);
-			}
-			virtual Scope* GetParentScope() override
-			{
-			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
-			}
-#endif
-		};
-		static DeferredObjectScope* _deferredObjectScope = nullptr;
+		static Obj_Func_Scope<1> _deferredObjectScope;
 		void DeferredObject::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			//after loaded, use real object's base scopes
@@ -89,22 +17,30 @@ namespace X
 			}
 			else//use deferred object's base scopes
 			{
-				bases.push_back(_deferredObjectScope);
+				bases.push_back(_deferredObjectScope.GetMyScope());
 				bases.push_back(this);
 			}
 		}
 		void DeferredObject::Init()
 		{
-			_deferredObjectScope = new DeferredObjectScope();
+			_deferredObjectScope.Init();
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					auto* pObj = dynamic_cast<DeferredObject*>(pContext);
+					bool bOK = pObj ? pObj->Load(rt, params, kwParams) : false;
+					retValue = Value(bOK);
+					return bOK;
+				};
+				_deferredObjectScope.AddFunc("load", "load()", f);
+			}
 		}
 		void DeferredObject::cleanup()
 		{
-			if (_deferredObjectScope)
-			{
-				_deferredObjectScope->clean();
-				delete _deferredObjectScope;
-				_deferredObjectScope = nullptr;
-			}
+			_deferredObjectScope.Clean();
 		}
 		void DeferredObject::RestoreDeferredObjectContent(XlangRuntime* pXlRt,Object* pRealObj)
 		{
