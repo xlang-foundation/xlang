@@ -266,19 +266,15 @@ void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 		return;
 	}
 	std::string strName(Name.s, Name.size);
-	for (auto it : candidates)
+	for (auto s : candidates)
 	{
-		Scope* s = dynamic_cast<Scope*>(it);
-		if (s)
-		{
-			Scope* pRightScope = nullptr;
-			int idx = s->AddOrGet(strName,!m_isLeftValue,&pRightScope);
-			if (idx != -1)
-			{//use the scope to find this name as its scope
-				m_scope = (pRightScope == nullptr) ? s : pRightScope;
-				Index = idx;
-				break;
-			}
+		Scope* pRightScope = nullptr;
+		int idx = s->AddOrGet(strName, !m_isLeftValue, &pRightScope);
+		if (idx != -1)
+		{//use the scope to find this name as its scope
+			m_scope = (pRightScope == nullptr) ? s : pRightScope;
+			Index = idx;
+			break;
 		}
 	}
 }

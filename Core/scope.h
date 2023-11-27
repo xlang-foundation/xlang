@@ -11,6 +11,7 @@
 #include "XLangStream.h"
 #include "Locker.h"
 #include "stackframe.h"
+#include "dyn_scope.h"
 
 namespace X 
 { 
@@ -35,7 +36,9 @@ enum class ScopeType
 	Func,
 	Package,
 	PyObject,
+	DeferredObject,
 	Namespace,
+	Custom,//impl. XCustomScope in the Object
 };
 //Variables scope support, for Module and Func/Class
 
@@ -45,6 +48,8 @@ class Scope
 	Locker m_lock;
 	ScopeType m_type = ScopeType::Module;
 	Expression* m_pExp = nullptr;//expression owns this scope for example moudle or func
+	DynamicScope* m_pDynScope = nullptr; //to hold dynamic variables
+	bool m_NoAddVar = false;//if set to true, can't add new var
 protected:
 	//only used in Class and Core Object to hold member variables or APIs
 	StackFrame* m_varFrame = nullptr;
@@ -57,6 +62,18 @@ public:
 	FORCE_INLINE void SetVarFrame(StackFrame* pFrame)
 	{
 		m_varFrame = pFrame;
+	}
+	inline void SetDynScope(DynamicScope* pScope)
+	{
+		m_pDynScope = pScope;
+	}
+	inline DynamicScope* GetDynScope()
+	{
+		return m_pDynScope;
+	}
+	inline void SetNoAddVar(bool bNoAdd)
+	{
+		m_NoAddVar = bNoAdd;
 	}
 	//use address as ID, just used Serialization
 	ExpId ID() { return (ExpId)this; }
@@ -108,7 +125,16 @@ public:
 	};
 
 	FORCE_INLINE int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
-	{//Always append,no remove, so new item's index is size of m_Vars;
+	{
+		if (m_NoAddVar)
+		{
+			bGetOnly = true;
+		}
+		if (m_pDynScope)
+		{
+			return m_pDynScope->AddOrGet(name.c_str(), bGetOnly);
+		}
+		//Always append,no remove, so new item's index is size of m_Vars;
 		//check extern map first,if it is extern var
 		//just return -1 to make caller look up to parent scopes
 		if (m_ExternVarMap.find(name)!= m_ExternVarMap.end())
@@ -137,7 +163,12 @@ public:
 	}
 	FORCE_INLINE void Set(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v)
 	{
-		if (m_varFrame)
+		//TODO: check performance here
+		if (m_pDynScope)
+		{
+			m_pDynScope->Set(idx,v);
+		}
+		else if (m_varFrame)
 		{
 			m_varFrame->Set(idx, v);
 		}
@@ -149,7 +180,12 @@ public:
 
 	FORCE_INLINE void Get(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v, LValue* lValue = nullptr)
 	{
-		if (m_varFrame)
+		//TODO: check performance here
+		if (m_pDynScope)
+		{
+			m_pDynScope->Get(idx, v, lValue);
+		}
+		else if (m_varFrame)
 		{
 			m_varFrame->Get(idx, v, lValue);
 		}

@@ -199,6 +199,8 @@ namespace Data {
 				return "RemoteObject";
 			case X::ObjType::PyProxyObject:
 				return "PyObject";
+			case X::ObjType::DeferredObject:
+				return "DeferredObject";
 			default:
 				break;
 			}

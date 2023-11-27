@@ -61,7 +61,8 @@ namespace X
 		class PyProxyObject :
 			public virtual Object,
 			public virtual XPyObject,
-			public virtual AST::Expression
+			public virtual AST::Expression,
+			public virtual AST::DynamicScope
 		{
 			PyProxyObject* m_PyModule = nullptr;
 			PyProxyType m_proxyType = PyProxyType::None;
@@ -72,7 +73,7 @@ namespace X
 			std::string m_name;
 			std::string m_path;
 			std::string m_moduleFileName;//for func case,m_PyModule is null
-			AST::Scope* m_myScope = nullptr;
+			AST::Scope* m_pMyScopeProxy = nullptr;
 			PyEng::Dict m_locals;
 			PyEng::Dict m_globals;
 		public:
@@ -80,10 +81,17 @@ namespace X
 				XPyObject(0), Object(),AST::Expression()
 			{
 				m_t = ObjType::PyProxyObject;
+
+				m_pMyScopeProxy = new AST::Scope();
+				m_pMyScopeProxy->SetType(AST::ScopeType::Custom);
+				m_pMyScopeProxy->SetDynScope(static_cast<AST::DynamicScope*>(this));
+
+
 				m_variableFrame = new AST::StackFrame();
 				m_pMyScope = new AST::Scope();
 				m_pMyScope->SetType(AST::ScopeType::PyObject);
 				m_pMyScope->SetVarFrame(m_variableFrame);
+
 			}
 			PyProxyObject(PyEng::Object& obj) :
 				PyProxyObject()
@@ -152,7 +160,8 @@ namespace X
 			}
 			void SetScope(AST::Scope* s)
 			{
-				m_myScope = s;
+				//todo: check here
+				m_pMyScopeProxy = s;
 			}
 			virtual int cmp(X::Value* r) override
 			{
@@ -278,10 +287,14 @@ namespace X
 					return GetPyModuleFileName();
 				}
 			}
+			virtual AST::Scope* GetMyScope() override
+			{
+				return m_pMyScopeProxy;
+			}
 #if __TODO_SCOPE__
 			virtual Scope* GetScope() override
 			{
-				return m_myScope == nullptr?this: m_myScope;
+				return m_pMyScopeProxy == nullptr?this: m_pMyScopeProxy;
 			}
 			virtual bool isEqual(Scope* s) override;
 			virtual AST::ScopeWaitingStatus IsWaitForCall() override
@@ -301,7 +314,7 @@ namespace X
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 			{
 				Object::GetBaseScopes(bases);
-				bases.push_back(m_pMyScope);
+				bases.push_back(m_pMyScopeProxy);
 			}
 			void SetModuleFileName(std::string& fileName)
 			{
@@ -317,27 +330,20 @@ namespace X
 			}
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*> & callables) override; 
-#if __TODO_SCOPE__
-			// Inherited via Scope
-			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, 
-				int idx, X::Value& v) override
+
+			// Inherited via DynamicScope
+			virtual int AddOrGet(const char* name, bool bGetOnly) override;
+			virtual bool Set(int idx, X::Value& v) override
 			{
 				m_variableFrame->Set(idx, v);
 				return true;
 			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, 
-				int idx, X::Value& v,
-				X::LValue* lValue = nullptr) override
+			virtual bool Get(int idx, X::Value& v, X::LValue* lValue = nullptr) override
 			{
 				m_variableFrame->Get(idx, v, lValue);
 				return true;
 			}
-			virtual Scope* GetParentScope() override
-			{
-				return nullptr;
-			}
-#endif
+
 			virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 				KWARGS& kwParams, X::Value& retValue) override;
 			virtual const char* ToString(bool WithFormat = false) override

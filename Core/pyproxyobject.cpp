@@ -186,19 +186,19 @@ namespace X
 			return (pS_Proxy->m_name == m_name &&
 				pS_Proxy->m_proxyType == m_proxyType);
 		}
-		int PyProxyObject::AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope)
+#endif
+		int PyProxyObject::AddOrGet(const char* name, bool bGetOnly)
 		{
-			int idx = AST::Scope::AddOrGet(name, false);
-			m_stackFrame->SetVarCount(GetVarNum());
-			auto obj0 = (PyEng::Object)m_obj[name.c_str()];
+			std::string strName(name);
+			//if not exist, add it, so set as false for AddOrGet
+			int idx = m_pMyScope->AddOrGet(strName, false);
+			auto obj0 = (PyEng::Object)m_obj[name];
 			//check obj0 is a function or not
-
-			PyProxyObject* pProxyObj = new PyProxyObject(m_obj,obj0,name);
+			PyProxyObject* pProxyObj = new PyProxyObject(m_obj,obj0, strName);
 			X::Value v(pProxyObj);
-			m_stackFrame->Set(idx, v);
+			m_variableFrame->Set(idx, v);
 			return idx;
 		}
-#endif
 		bool PyProxyObject::CalcCallables(XlangRuntime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables)
 		{

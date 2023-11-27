@@ -4,6 +4,7 @@
 #include "stackframe.h"
 #include "xproxy.h"
 #include "import.h"
+#include "dyn_scope.h"
 
 namespace X
 {
@@ -13,9 +14,12 @@ namespace X
 		//for example in import package_name defered as pack
 		class DeferredObject :
 			public virtual XDeferredObject,
-			public virtual AST::Scope,
-			public virtual Data::Object
+			public virtual Data::Object,
+			public virtual AST::DynamicScope
 		{
+			AST::Scope* m_pMyScopeProxy = nullptr;
+			AST::Scope* m_pMyScopeHolder = nullptr;//used to store members
+
 			//real object's create information
 			//from Import
 			AST::Import* m_from_Import = nullptr;
@@ -87,14 +91,23 @@ namespace X
 			static void cleanup();
 
 			DeferredObject() :
-			ObjRef(),XObj(),Scope(), Object()
+			ObjRef(),XObj(),Object()
 			{
 				m_t = ObjType::DeferredObject;
 				m_stackFrame = new AST::StackFrame();
+				m_pMyScopeProxy = new AST::Scope();
+				m_pMyScopeProxy->SetType(AST::ScopeType::Custom);
+				m_pMyScopeProxy->SetDynScope(static_cast<AST::DynamicScope*>(this));
+
+				m_pMyScopeHolder = new AST::Scope();
+				m_pMyScopeHolder->SetType(AST::ScopeType::DeferredObject);	
+				m_pMyScopeHolder->SetVarFrame(m_stackFrame);
 			}
 			~DeferredObject()
 			{
 				delete m_stackFrame;
+				delete m_pMyScopeProxy;
+				delete m_pMyScopeHolder;
 			}
 			FORCE_INLINE void SetImportInfo(AST::Import* pImport, AST::ImportInfo* pInfo)
 			{
@@ -103,10 +116,7 @@ namespace X
 			}
 			bool Load(X::XRuntime* rt,X::ARGS& params,X::KWARGS& kwParams);
 
-#if __TODO_SCOPE__
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override;
-			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
+			virtual int AddOrGet(const char* name, bool bGetOnly) override
 			{
 				//if this is true, means this Var is right value
 				//so we need to create a DeferredObject as its proxy
@@ -116,11 +126,12 @@ namespace X
 				{
 					needSetProxy = true;
 				}
-				bGetOnly = false;//deferred object can accespet all members request
-				auto idx =  Scope::AddOrGet(name, bGetOnly, ppRightScope);
+				std::string strName(name);
+				AST::Scope* pRightScope = nullptr;
+				auto idx = m_pMyScopeHolder->AddOrGet(strName, false, &pRightScope);
 				if (idx>=0)
 				{
-					m_stackFrame->SetVarCount(GetVarNum());
+					m_stackFrame->SetVarCount(m_pMyScopeHolder->GetVarNum());
 					if (needSetProxy)
 					{
 						DeferredObject* pProxy = new DeferredObject();
@@ -131,21 +142,18 @@ namespace X
 				}
 				return idx;
 			}
-			FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
-				int idx, X::Value& v) override
+			virtual bool Set(int idx, X::Value& v) override
 			{
 				assert(idx != -1);
 				m_stackFrame->Set(idx, v);
 				return true;
 			}
 
-			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
-				int idx, X::Value& v, LValue* lValue = nullptr) override
+			virtual bool Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
 			{
-				m_stackFrame->Get(idx, v, lValue);
+				m_stackFrame->Get(idx, v,lValue);
 				return true;
 			}
-#endif
 		};
 	}
 }
