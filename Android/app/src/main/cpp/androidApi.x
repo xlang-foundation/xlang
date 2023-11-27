@@ -22,6 +22,7 @@
 		LEFT = 3
 		# test test
 		# test Manlius
+		# test Manlius2		
 		NO_GRAVITY = 0
 		RELATIVE_HORIZONTAL_GRAVITY_MASK = 8388615
 		RELATIVE_LAYOUT_DIRECTION = 8388608
