@@ -32,7 +32,7 @@ public:
 		m_index = index;
 		m_idxType = IndexType::Index;
 	}
-	inline ObjectRef<TBase> operator[](const char* key)
+	FORCE_INLINE ObjectRef<TBase> operator[](const char* key)
 	{
 		return TBase(*this).operator[](key);
 	}
@@ -154,15 +154,15 @@ public:
 			g_pPyHost->SetTrace(func, args);
 		}
 	}
-	inline static Object Import(const char* moduleName)
+	FORCE_INLINE static Object Import(const char* moduleName)
 	{
 		return g_pPyHost->Import(moduleName);
 	}
-	inline static Object FromGlobals()
+	FORCE_INLINE static Object FromGlobals()
 	{
 		return Object(g_pPyHost->GetGlobals(),true);
 	}
-	inline static Object FromLocals()
+	FORCE_INLINE static Object FromLocals()
 	{
 		return Object(g_pPyHost->GetLocals(),true);
 	}
@@ -174,7 +174,7 @@ public:
 	{
 		Assign(v);
 	}
-	inline void Assign(X::Value& v)
+	FORCE_INLINE void Assign(X::Value& v)
 	{
 		switch (v.GetType())
 		{
@@ -381,7 +381,7 @@ public:
 			return "NULL";
 		}
 	}
-	inline operator PyEngObjectPtr () const
+	FORCE_INLINE operator PyEngObjectPtr () const
 	{
 		if (m_p)
 		{
@@ -389,20 +389,20 @@ public:
 		}
 		return m_p;
 	}
-	inline void* ref()
+	FORCE_INLINE void* ref()
 	{
 		return m_p;
 	}
-	inline ObjectRef<Object> operator[](int i)
+	FORCE_INLINE ObjectRef<Object> operator[](int i)
 	{
 		return ObjectRef<Object>(m_p, i);
 	}
 
-	inline ObjectRef<Object> operator[](const char* key)
+	FORCE_INLINE ObjectRef<Object> operator[](const char* key)
 	{
 		return ObjectRef<Object>(m_p,key);
 	}
-	inline bool ContainKey(const char* key)
+	FORCE_INLINE bool ContainKey(const char* key)
 	{
 		return g_pPyHost->ContainKey(m_p, Object(key));
 	}
@@ -441,47 +441,47 @@ public:
 		g_pPyHost->Free(sz);
 		return str;
 	}
-	inline bool IsNull()
+	FORCE_INLINE bool IsNull()
 	{
 		return (m_p == nullptr)?true: g_pPyHost->IsNone(m_p);
 	}
-	inline bool IsBool()
+	FORCE_INLINE bool IsBool()
 	{
 		return m_p == nullptr ? false : g_pPyHost->IsBool(m_p);
 	}
-	inline bool IsLong()
+	FORCE_INLINE bool IsLong()
 	{
 		return m_p == nullptr ? false : g_pPyHost->IsLong(m_p);
 	}
-	inline bool IsDouble()
+	FORCE_INLINE bool IsDouble()
 	{
 		return m_p == nullptr ? false : g_pPyHost->IsDouble(m_p);
 	}
-	inline bool IsString()
+	FORCE_INLINE bool IsString()
 	{
 		return m_p == nullptr ? false : g_pPyHost->IsString(m_p);
 	}
-	inline bool IsDict()
+	FORCE_INLINE bool IsDict()
 	{
 		return m_p == nullptr ? false : g_pPyHost->IsDict(m_p);
 	}
-	inline bool IsArray()
+	FORCE_INLINE bool IsArray()
 	{
 		return m_p == nullptr ? false : g_pPyHost->IsArray(m_p);
 	}
-	inline bool IsList()
+	FORCE_INLINE bool IsList()
 	{
 		return m_p==nullptr?false:g_pPyHost->IsList(m_p);
 	}
-	inline Object Call(int size, PyEngObjectPtr* ptrs)
+	FORCE_INLINE Object Call(int size, PyEngObjectPtr* ptrs)
 	{
 		return g_pPyHost->Call(m_p, size, ptrs);
 	}
-	inline Object Call(int size, PyEngObjectPtr* ptrs, PyEngObjectPtr kwargs)
+	FORCE_INLINE Object Call(int size, PyEngObjectPtr* ptrs, PyEngObjectPtr kwargs)
 	{
 		return g_pPyHost->Call(m_p, size, ptrs, kwargs);
 	}
-	inline Object Call(PyEngObjectPtr args,PyEngObjectPtr kwargs)
+	FORCE_INLINE Object Call(PyEngObjectPtr args,PyEngObjectPtr kwargs)
 	{
 		return g_pPyHost->Call(m_p,args,kwargs);
 	}
@@ -543,6 +543,7 @@ public:
 	}
 	~Tuple() //make sure to call Object's deconstructor
 	{
+		g_pPyHost->CallReleaseForTupleItems(m_p);
 	}
 	Tuple(long long size) :
 		Object()
@@ -728,7 +729,7 @@ public:
 		m_data = (ItemData_Type*)g_pPyHost->GetDataPtr(m_p);
 	}
 	template<typename... index>
-	inline ItemData_Type& operator()(index... i)
+	FORCE_INLINE ItemData_Type& operator()(index... i)
 	{
 		const int size = sizeof...(i);
 		long long idx[size] = { i... };
@@ -779,28 +780,28 @@ protected:
 	unsigned long long m_size = 0;
 };
 template<>
-inline void Array<char>::SetItemType()
+FORCE_INLINE void Array<char>::SetItemType()
 {
 	m_itemdatatype = JIT_DATA_TYPES::BYTE;
 }
 
 template<>
-inline void Array<float>::SetItemType()
+FORCE_INLINE void Array<float>::SetItemType()
 {
 	m_itemdatatype = JIT_DATA_TYPES::FLOAT;
 }
 template<>
-inline void Array<double>::SetItemType()
+FORCE_INLINE void Array<double>::SetItemType()
 {
 	m_itemdatatype = JIT_DATA_TYPES::DOUBLE;
 }
 template<>
-inline void Array<int>::SetItemType()
+FORCE_INLINE void Array<int>::SetItemType()
 {
 	m_itemdatatype = JIT_DATA_TYPES::INT;
 }
 
-inline Object Get(const char* key)
+FORCE_INLINE Object Get(const char* key)
 {
 	return g_pPyHost->Get(nullptr,key);
 }

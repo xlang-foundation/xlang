@@ -121,7 +121,7 @@ namespace X
 					return "";
 				}
 			}
-			inline bool WritePadUseDataBinding()
+			FORCE_INLINE bool WritePadUseDataBinding()
 			{
 				return true;
 			}

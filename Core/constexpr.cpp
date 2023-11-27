@@ -37,7 +37,7 @@ namespace X
 				auto* pR_Expr = pAssign->GetR();
 				X::Value valRet;
 				X::AST::ExecAction action;
-				pR_Expr->Exec(rt,action, nullptr, valRet);
+				ExpExec(pR_Expr,rt,action, nullptr, valRet);
 				one.val = valRet;
 				m_exprs.push_back(one);
 				m_hasAction = true;

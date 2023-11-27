@@ -127,7 +127,7 @@ namespace X
 				return GetABIString(retStr);
 			}
 			virtual char* Data() override { return m_data; }
-			inline virtual long long  Size()  override { return m_size; }
+			FORCE_INLINE virtual long long  Size()  override { return m_size; }
 			~Binary()
 			{
 				if (m_OwnData && m_data!=nullptr)

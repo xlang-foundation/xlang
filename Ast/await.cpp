@@ -15,7 +15,7 @@ namespace X
 				{
 					Value  var0;
 					ExecAction action0;
-					bool bOK = R->Exec(rt, action0, pContext, var0);
+					bool bOK = ExpExec(R,rt, action0, pContext, var0);
 					if (bOK && var0.IsObject())
 					{
 						Data::Object* pObj = dynamic_cast<Data::Object*>(var0.GetObj());
@@ -33,7 +33,7 @@ namespace X
 						{
 							Value  var0;
 							ExecAction action0;
-							bool bOK = exp->Exec(rt, action0, pContext, var0);
+							bool bOK = ExpExec(exp,rt, action0, pContext, var0);
 							if (bOK)
 							{
 								Data::Object* pObj = dynamic_cast<Data::Object*>(var0.GetObj());
@@ -46,7 +46,7 @@ namespace X
 				{
 					Value  var0;
 					ExecAction action0;
-					bool bOK = R->Exec(rt, action0, pContext, var0);
+					bool bOK = ExpExec(R,rt, action0, pContext, var0);
 					if (bOK)
 					{
 						Data::Object* pObj = dynamic_cast<Data::Object*>(var0.GetObj());

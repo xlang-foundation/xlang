@@ -10,7 +10,7 @@ class GrusPyEngHost :
 public:
 	GrusPyEngHost();
 	~GrusPyEngHost();
-	inline Xlang_CallFunc GetXlangCallFunc()
+	FORCE_INLINE Xlang_CallFunc GetXlangCallFunc()
 	{
 		return m_xlang_call_func;
 	}
@@ -102,4 +102,6 @@ private:
 	// Inherited via PyEngHost
 	virtual bool EnumDictItem(PyEngObjectPtr dict, long long& pos, 
 		PyEngObjectPtr& key, PyEngObjectPtr& val) override;
+
+	virtual bool CallReleaseForTupleItems(PyEngObjectPtr tuple) override;
 };

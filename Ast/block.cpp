@@ -5,6 +5,7 @@
 #include "module.h"
 #include <iostream>
 #include "utility.h"
+#include "InlineCall.h"
 
 extern bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
@@ -33,75 +34,11 @@ void Block::Add(Expression* item)
 	item->ScopeLayout();
 
 }
-bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, LValue* lValue)
+bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, LValue* lValue)
 {
-	if (Body.size() == 0)
-	{
-		return true;
-	}
 	bool bOk = true;
 	m_bRunning = true;
 
-	if (!rt->GetTrace())
-	{
-		//just for debug easy,write same code here
-		// because dbg also run xlang code
-		//then easy to set breakpoint for xlang code in debug mode
-		//not for dbg xlang code
-
-		//for break, continue and pass
-		//just do a check if i it is one of them
-		//then do process with them
-
-		auto last = Body[Body.size() - 1];
-		for (auto& i : Body)
-		{
-			if (i->m_type == ObType::ActionOp)
-			{
-				auto* pActionOperator = dynamic_cast<ActionOperator*>(i);
-				OP_ID opId = pActionOperator->GetId();
-				if (opId == OP_ID::Break)
-				{
-					action.type = ExecActionType::Break;
-					break;
-				}
-				else if (opId == OP_ID::Continue)
-				{
-					action.type = ExecActionType::Continue;
-					break;
-				}
-				else if (opId == OP_ID::Pass)
-				{
-					continue;//just run next line
-				}
-			}
-			Value v0;
-			int line = i->GetStartLine();
-			ExecAction action0;
-			bOk = i->Exec(rt, action0,pContext, v0);
-			//if break or cotinue action passed back
-			//break this loop,and pass back to caller
-			if (action0.type == ExecActionType::Break ||
-				action0.type == ExecActionType::Continue)
-			{
-				action = action0;
-				break;
-			}
-			if (!bOk)
-			{
-				auto pid = GetPID();
-				std::cout << "Error Occurs in line:" << line <<",pid:" << pid<<std::endl;
-				auto code = i->GetCode();
-				std::cout <<"*** " << code << std::endl;
-			}
-			if (v0.IsValid() && (i == last))
-			{
-				v = v0;
-			}
-		}
-		m_bRunning = false;
-		return bOk;
-	}
 	//if being traced, go to here
 	bool bEnterBlock = false;
 	if ((m_type == ObType::Func || m_type == ObType::Module) &&
@@ -128,7 +65,7 @@ bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, 
 			if (m_type == ObType::Func
 				|| m_type == ObType::Module)
 			{
-				pMyScope = dynamic_cast<Scope*>(this);
+				pMyScope = GetMyScope();
 			}
 			else
 			{
@@ -158,7 +95,7 @@ bool Block::Exec(XlangRuntime* rt, ExecAction& action,XObj* pContext, Value& v, 
 		}
 		Value v0;
 		ExecAction action0;
-		bOk = i->Exec(rt,action0,pContext, v0);
+		bOk = ExpExec(i, rt, action0, pContext, v0, lValue);
 		//if break or cotinue action passed back
 		//break this loop,and pass back to caller
 		if (action0.type == ExecActionType::Break ||
@@ -203,7 +140,7 @@ bool Block::RunFromLine(XRuntime* rt, XObj* pContext,
 			//just print out
 			Value v0;
 			ExecAction action;
-			bool bOK = exp->Exec((XlangRuntime*)rt, action,pContext, v0);
+			bool bOK = ExpExec(exp,(XlangRuntime*)rt, action,pContext, v0);
 			if (bOK)
 			{
 				X::ARGS args_p(1);
@@ -241,7 +178,7 @@ bool Block::RunFromLine(XRuntime* rt, XObj* pContext,
 		}
 		Value v0;
 		ExecAction action;
-		bOK = line->Exec((XlangRuntime*)rt,action,pContext, v0);
+		bOK = ExpExec(line,(XlangRuntime*)rt,action,pContext, v0);
 		if (!bOK)
 		{
 			break;
@@ -262,7 +199,7 @@ bool Block::RunLast(XRuntime* rt0, XObj* pContext, Value& v, LValue* lValue)
 	auto last = Body[Body.size() - 1];
 	Value v0;
 	ExecAction action;
-	bool bOk = last->Exec((XlangRuntime*)rt0, action,pContext, v0);
+	bool bOk = ExpExec(last,(XlangRuntime*)rt0, action,pContext, v0);
 	if (bOk)
 	{
 		v = v0;
@@ -280,7 +217,7 @@ bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LVa
 	{
 		Value v0;
 		ExecAction action;
-		bool bOK = R->Exec(rt,action,pContext,v0);
+		bool bOK = ExpExec(R,rt,action,pContext,v0);
 		if (bOK && v0.IsTrue())
 		{
 			ExecAction action;
@@ -297,6 +234,7 @@ bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LVa
 	}
 	return true;
 }
+
 bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	Value v0;
@@ -304,7 +242,7 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 	{
 		bool bContinue = false;
 		ExecAction action;
-		bool bC0 = R->Exec(rt,action,pContext,v0);
+		bool bC0 = ExpExec(R, rt, action, pContext, v0, lValue);
 		if (bC0)
 		{
 			if (v0.IsObject())
@@ -327,7 +265,7 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 		if (bContinue)
 		{
 			ExecAction action;
-			bool bOK = Block::Exec(rt,action, pContext, v);
+			Block::Exec_i(rt,action, pContext, v);
 			//if break, will break this while loop
 			//if continue, continue loop
 			if (action.type == ExecActionType::Break)
@@ -373,7 +311,7 @@ bool If::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue
 	{
 		Value v0;
 		ExecAction actionR;
-		bool bOK = R->Exec(rt, actionR,pContext,v0);
+		bool bOK = ExpExec(R,rt, actionR,pContext,v0);
 		if (bOK && v0 == Value(true))
 		{
 			bCanRun = true;
@@ -388,11 +326,11 @@ bool If::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue
 	//will take this action
 	if (bCanRun)
 	{
-		bRet = Block::Exec(rt,action,pContext,v);
+		bRet = Block::Exec_i(rt,action,pContext,v);
 	}
 	else if(m_next)
 	{
-		bRet = m_next->Exec(rt,action,pContext,v);
+		bRet = ExpExec(m_next,rt,action,pContext,v);
 	}
 	return bRet;
 }

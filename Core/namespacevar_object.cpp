@@ -8,7 +8,7 @@ namespace X
 		void NamespaceVarObject::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(dynamic_cast<AST::Scope*>(this));
+			bases.push_back(m_pMyScope);
 		}
 	}
 }

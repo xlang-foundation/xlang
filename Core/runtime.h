@@ -56,7 +56,7 @@ public:
 		m_threadId = GetThreadID();
 	}
 	~XlangRuntime();
-	inline void SetTrace(XTraceFunc f)
+	FORCE_INLINE void SetTrace(XTraceFunc f)
 	{
 		m_tracefunc = f;
 	}
@@ -67,32 +67,32 @@ public:
 	int PushWritePad(X::Value valObj, std::string alias);
 	void PopWritePad();
 	virtual bool CreateEmptyModule() override;
-	inline XTraceFunc GetTrace() { return m_tracefunc; }
-	inline long long GetThreadId() { return m_threadId; }
-	inline void MirrorStacksFrom(XlangRuntime* rt)
+	FORCE_INLINE XTraceFunc GetTrace() { return m_tracefunc; }
+	FORCE_INLINE long long GetThreadId() { return m_threadId; }
+	FORCE_INLINE void MirrorStacksFrom(XlangRuntime* rt)
 	{
 		m_pModule = rt->m_pModule;
 		m_stackBottom = rt->m_stackBottom;
 	}
-	inline bool SetVarCount(int cnt)
+	FORCE_INLINE bool SetVarCount(int cnt)
 	{
 		return m_stackBottom ? m_stackBottom->SetVarCount(cnt) : false;
 	}
-	inline virtual bool AddVar(const char* name, X::Value& val) override
+	FORCE_INLINE virtual bool AddVar(const char* name, X::Value& val) override
 	{
 		std::string strName(name);
 		return m_stackBottom ? m_stackBottom->AddVar(this, strName, val) : false;
 	}
-	inline void SetM(AST::Module* m) { m_pModule = m; }
-	inline AST::Module* M() { return m_pModule; }
-	inline void AdjustStack(int varNum)
+	FORCE_INLINE void SetM(AST::Module* m) { m_pModule = m; }
+	FORCE_INLINE AST::Module* M() { return m_pModule; }
+	FORCE_INLINE void AdjustStack(int varNum)
 	{
 		if (m_stackBottom)
 		{
 			m_stackBottom->SetVarCount(varNum);
 		}
 	}
-	inline void PushFrame(AST::StackFrame* frame,int varNum)
+	FORCE_INLINE void PushFrame(AST::StackFrame* frame,int varNum)
 	{
 		frame->SetVarCount(varNum);
 		if (m_stackBottom)
@@ -101,7 +101,7 @@ public:
 		}
 		m_stackBottom = frame;
 	}
-	inline void PopFrame()
+	FORCE_INLINE void PopFrame()
 	{
 		if (m_stackBottom!=nullptr)
 		{
@@ -109,11 +109,11 @@ public:
 			if(m_stackBottom) m_stackBottom->SetNext(nullptr);
 		}
 	}
-	inline AST::StackFrame* GetCurrentStack()
+	FORCE_INLINE AST::StackFrame* GetCurrentStack()
 	{
 		return m_stackBottom;
 	}
-	inline virtual bool DynSet(AST::Scope* s, XObj* pContext, int idx, X::Value& v)
+	FORCE_INLINE virtual bool DynSet(AST::Scope* s, XObj* pContext, int idx, X::Value& v)
 	{
 		int cnt = m_stackBottom->GetVarCount();
 		if (cnt <= idx)
@@ -122,7 +122,7 @@ public:
 		}
 		return Set(s, pContext, idx, v);
 	}
-	inline virtual bool Set(AST::Scope* s,XObj* pContext, int idx, X::Value& v)
+	FORCE_INLINE virtual bool Set(AST::Scope* s,XObj* pContext, int idx, X::Value& v) final
 	{
 		bool bOK = false;
 		auto it = m_stackBottom;
@@ -138,12 +138,12 @@ public:
 		}
 		return bOK;
 	}
-	inline bool SetReturn(X::Value& v)
+	FORCE_INLINE bool SetReturn(X::Value& v)
 	{
 		m_stackBottom->SetReturn(v);
 		return true;
 	}
-	inline virtual bool Get(AST::Scope* s,XObj* pContext, int idx, 
+	FORCE_INLINE virtual bool Get(AST::Scope* s,XObj* pContext, int idx, 
 		X::Value& v,X::LValue* lValue = nullptr)
 	{
 		bool bOK = false;

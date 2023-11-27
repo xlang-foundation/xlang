@@ -53,15 +53,16 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 	if (curBlock->IsNoIndentCheck()
 		|| indentCnt_CurBlock < lineIndent)
 	{
+		static AST::Indent nullIndent{ 0, -1, -1 };
 		auto child_indent_CurBlock =
 			curBlock->GetChildIndentCount();
-		if (child_indent_CurBlock == AST::Indent{ 0,-1, -1 })
+		if (child_indent_CurBlock.Equal(nullIndent))
 		{
 			curBlock->SetChildIndentCount(lineIndent);
 			curBlock->Add(line);
 			pCurBlockState->HaveNewLine(line);
 		}
-		else if (child_indent_CurBlock == lineIndent)
+		else if (child_indent_CurBlock.Equal(lineIndent))
 		{
 			curBlock->Add(line);
 			pCurBlockState->HaveNewLine(line);
@@ -89,7 +90,7 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 				curBlock->GetChildIndentCount();
 			//must already have child lines or block
 			if (curBlock->IsNoIndentCheck()
-				|| indentCnt == lineIndent)
+				|| indentCnt.Equal(lineIndent))
 			{
 				m_curBlkState = pCurBlockState;
 				break;

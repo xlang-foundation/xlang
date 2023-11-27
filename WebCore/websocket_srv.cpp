@@ -50,7 +50,7 @@ namespace X
                 mRun = false;
                 GThread::Stop();
             }
-            inline void SetPort(int port)
+            FORCE_INLINE void SetPort(int port)
             {
                 mPort = port;
             }
@@ -110,7 +110,7 @@ namespace X
                 delete m_wsSocket;
                 m_wsSocket = nullptr;
 			}
-            inline bool Write(const X::Value& data)
+            FORCE_INLINE bool Write(const X::Value& data)
 			{
                 m_lockQueue.Lock();
                 m_OutQueue.push_back(data);

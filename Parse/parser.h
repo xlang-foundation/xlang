@@ -28,14 +28,14 @@ class Parser
 	BlockState* m_curBlkState = nil;
 	std::vector<short> m_preceding_token_indexstack;
 
-	inline bool LastIsLambda();
+	FORCE_INLINE bool LastIsLambda();
 	//use this stack to keep 3 preceding tokens' index
 	//and if meet slash, will pop one, because slash means line continuing
-	inline void reset_preceding_token()
+	FORCE_INLINE void reset_preceding_token()
 	{
 		m_preceding_token_indexstack.clear();
 	}
-	inline void push_preceding_token(short idx)
+	FORCE_INLINE void push_preceding_token(short idx)
 	{
 		if (m_preceding_token_indexstack.size() > 3)
 		{
@@ -44,14 +44,14 @@ class Parser
 		}
 		m_preceding_token_indexstack.push_back(idx);
 	}
-	inline short get_last_token()
+	FORCE_INLINE short get_last_token()
 	{
 		return m_preceding_token_indexstack.size() > 0?
 			m_preceding_token_indexstack[
 				m_preceding_token_indexstack.size() - 1] :
 			(short)TokenIndex::TokenInvalid;
 	}
-	inline void pop_preceding_token()
+	FORCE_INLINE void pop_preceding_token()
 	{
 		if (m_preceding_token_indexstack.size() > 0)
 		{
@@ -75,7 +75,7 @@ public:
 	void NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair = true);
 	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
 	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'
-	inline bool PreTokenIsOp()
+	FORCE_INLINE bool PreTokenIsOp()
 	{ 
 		if (m_preceding_token_indexstack.size() == 0)
 		{
@@ -87,7 +87,7 @@ public:
 		}
 	}
 
-	inline OpAction OpAct(short idx)
+	FORCE_INLINE OpAction OpAct(short idx)
 	{
 		return G::I().R().OpAct(idx);
 	}

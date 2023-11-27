@@ -274,13 +274,13 @@ namespace X
 			{
 				return nullptr;
 			}
-			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v)
 			{
 				return false;
 			}
 
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, X::LValue* lValue = nullptr)
 			{
 				Str* pStrObj = dynamic_cast<Str*>(pContext);
@@ -290,7 +290,7 @@ namespace X
 		};
 
 		static StrOp* _strop =nullptr;
-		inline void Str::GetBaseScopes(std::vector<AST::Scope*>& bases)
+		FORCE_INLINE void Str::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			bases.push_back(_strop);
 		}

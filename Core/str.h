@@ -60,7 +60,7 @@ namespace Data
 			stream >> m_s;
 			return true;
 		}
-		inline virtual const char* ToString(bool WithFormat = false) override
+		FORCE_INLINE virtual const char* ToString(bool WithFormat = false) override
 		{
 			return GetABIString(m_s);
 		}
@@ -127,16 +127,16 @@ namespace Data
 			}
 			return *this;
 		}
-		inline size_t Find(std::string& x, size_t offset = 0)
+		FORCE_INLINE size_t Find(std::string& x, size_t offset = 0)
 		{
 			return m_s.find(x, offset);
 		}
-		inline size_t RFind(std::string& x, size_t offset = 0)
+		FORCE_INLINE size_t RFind(std::string& x, size_t offset = 0)
 		{
 			return m_s.rfind(x, offset);
 		}
-		inline size_t GetSize() { return m_s.size(); }
-		inline bool Slice(size_t start,size_t end,std::string& retVal)
+		FORCE_INLINE size_t GetSize() { return m_s.size(); }
+		FORCE_INLINE bool Slice(size_t start,size_t end,std::string& retVal)
 		{
 			size_t len=0;
 			if (end == -1 || end>= m_s.size())
@@ -150,7 +150,7 @@ namespace Data
 			retVal = m_s.substr(start, len);
 			return true;
 		}
-		inline bool Split(std::string& delims, std::vector<std::string>& retList)
+		FORCE_INLINE bool Split(std::string& delims, std::vector<std::string>& retList)
 		{
 			if (delims.size() == 1)
 			{
@@ -162,13 +162,13 @@ namespace Data
 			}
 			return true;
 		}
-		inline bool SplitWithChars(std::string& delims,
+		FORCE_INLINE bool SplitWithChars(std::string& delims,
 			std::vector<std::string>& retList)
 		{
 			retList = splitWithChars(m_s, delims.c_str());
 			return true;
 		}
-		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+		FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 		{
 			long long it = (long long)pos;
 			X::Value val0;
@@ -190,7 +190,7 @@ namespace Data
 		{
 			return true;
 		}
-		inline virtual bool Get(long long idx, X::Value& val) override
+		FORCE_INLINE virtual bool Get(long long idx, X::Value& val) override
 		{
 			if (idx >=0 && m_s.size() >= idx)
 			{
@@ -202,7 +202,7 @@ namespace Data
 				return false;
 			}
 		}
-		inline virtual bool Set(long long idx, X::Value& val) override
+		FORCE_INLINE virtual bool Set(long long idx, X::Value& val) override
 		{
 			if (idx >= 0 && m_s.size() >= idx)
 			{

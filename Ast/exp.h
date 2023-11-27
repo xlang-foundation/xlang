@@ -73,12 +73,20 @@ class Func;
 class Scope;
 class Var;
 
+
+//About **scope**,each Expression has a scope which is a refrerence to a real scope
+//only Func,Class,Module etc has a real scope, will be its member m_pMyScope
+//for real scope, we will use term MyScope, and put a variable m_pMyScope in Expression
+//we don't use virtual function to get scope which will bring optinization problem
 class Expression
 {
 protected:
+	Scope* m_pMyScope = nullptr;
+
 	int m_tokenIndex = -1;
 	Expression* m_parent = nil;
-	Scope* m_scope = nil;//set by compiling
+	//m_scope points to the scope for this expression which has a name need to translate into index
+	Scope* m_scope = nil;
 	bool m_isLeftValue = false;
 	//hint
 	int m_lineStart=-1;
@@ -90,11 +98,11 @@ public:
 	Expression()
 	{
 	}
-	inline void SetTokenIndex(int idx)
+	FORCE_INLINE void SetTokenIndex(int idx)
 	{
 		m_tokenIndex = idx;
 	}
-	inline int GetTokenIndex() { return m_tokenIndex; }
+	FORCE_INLINE int GetTokenIndex() { return m_tokenIndex; }
 	static Expression* CreateByType(ObType t);
 	template<typename T>
 	T* BuildFromStream(X::XLangStream& stream)
@@ -150,7 +158,7 @@ public:
 	std::string GetCode();
 	//use address as ID, just used Serialization
 	ExpId ID() { return (ExpId)this; }
-	inline void SetHint(int startLine, int endLine, int charPos,
+	FORCE_INLINE void SetHint(int startLine, int endLine, int charPos,
 		int charStart,int charEnd)
 	{
 		m_lineStart = startLine;
@@ -159,7 +167,7 @@ public:
 		m_charStart = charStart;
 		m_charEnd = charEnd;
 	}
-	inline void ReCalcHint(Expression* pAnotherExp)
+	FORCE_INLINE void ReCalcHint(Expression* pAnotherExp)
 	{
 		auto min_val = [](int x, int y) {
 			return x >= 0 ? MIN_VAL(x, y) : y;
@@ -174,18 +182,22 @@ public:
 		m_charStart = min_val(m_charStart, pAnotherExp->m_charStart);
 		m_charEnd = max_val(m_charEnd, pAnotherExp->m_charEnd);
 	}
-	inline bool IsLeftValue() { return m_isLeftValue; }
-	inline int GetStartLine() { return m_lineStart+1; }
-	inline int GetEndLine() { return m_lineEnd+1; }
-	inline int GetCharPos() { return m_charPos; }
-	inline int GetCharStart() { return m_charStart; }
-	inline int GetCharEnd() { return m_charEnd; }
-	inline virtual void SetIsLeftValue(bool b)
+	FORCE_INLINE bool IsLeftValue() { return m_isLeftValue; }
+	FORCE_INLINE int GetStartLine() { return m_lineStart+1; }
+	FORCE_INLINE int GetEndLine() { return m_lineEnd+1; }
+	FORCE_INLINE int GetCharPos() { return m_charPos; }
+	FORCE_INLINE int GetCharStart() { return m_charStart; }
+	FORCE_INLINE int GetCharEnd() { return m_charEnd; }
+	FORCE_INLINE virtual void SetIsLeftValue(bool b)
 	{
 		m_isLeftValue = b;
 	}
 	virtual ~Expression(){}
-	inline virtual Scope* GetScope()
+	FORCE_INLINE Scope* GetMyScope()
+	{
+		return m_pMyScope;
+	}
+	FORCE_INLINE virtual Scope* GetScope()
 	{
 		if (m_scope == nil)
 		{
@@ -193,7 +205,19 @@ public:
 		}
 		return m_scope;
 	}
-	Scope* FindScope();
+	//Find MyScope from ancestor wich has RealScope
+	Scope* FindScope()
+	{
+		Scope* pMyScope = nil;
+		Expression* pa = m_parent;
+		while (pa != nil && pMyScope == nil)
+		{
+			pMyScope = pa->GetMyScope();
+			pa = pa->GetParent();
+		}
+		return pMyScope;
+	}
+	//Set Expresion's scope which is a reference to a real scope
 	virtual void SetScope(Scope* p)
 	{
 		m_scope = p;
@@ -251,7 +275,7 @@ public:
 };
 //only keep for AST Query
 class InlineComment:
-	virtual public Expression
+	public Expression
 {
 	char* m_s = nil;
 	int m_size = 0;
@@ -269,7 +293,7 @@ public:
 	std::string GetString() { return std::string(m_s,m_size); }
 };
 class Str :
-	virtual public Expression
+	public Expression
 {
 	bool m_haveFormat = false;
 	char* m_s = nil;
@@ -289,9 +313,9 @@ public:
 		m_needRelease = false;
 		m_size = size;
 	}
-	inline bool IsCharSequence() { return m_isCharSequence; }
-	inline int Size() { return m_size; }
-	inline char* GetChars() { return m_s; }
+	FORCE_INLINE bool IsCharSequence() { return m_isCharSequence; }
+	FORCE_INLINE int Size() { return m_size; }
+	FORCE_INLINE char* GetChars() { return m_s; }
 	void SetCharFlag(bool isChars)
 	{
 		m_isCharSequence = isChars;
@@ -356,7 +380,7 @@ public:
 //But True and False deal by Number not XConst
 
 class XConst :
-	virtual public Expression
+	public Expression
 {
 	int m_tokenIndex;
 public:
@@ -381,7 +405,7 @@ public:
 		stream >> m_tokenIndex;
 		return true;
 	}
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		if (m_tokenIndex == TokenIndex::Token_None)
 		{
@@ -391,7 +415,7 @@ public:
 	}
 };
 class Number :
-	virtual public Expression
+	public Expression
 {
 	long long m_val;
 	int m_digiNum = 0;
@@ -425,9 +449,9 @@ public:
 		stream >> m_val >> m_digiNum >> m_isBool;
 		return true;
 	}
-	inline long long GetVal() { return m_val; }
-	inline int GetDigiNum() { return m_digiNum; }
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	FORCE_INLINE long long GetVal() { return m_val; }
+	FORCE_INLINE int GetDigiNum() { return m_digiNum; }
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		Value v0(m_val);
 		if (m_isBool)
@@ -443,7 +467,7 @@ public:
 	}
 };
 class Double :
-	virtual public Expression
+	public Expression
 {
 	double m_val=0;
 public:
@@ -468,11 +492,11 @@ public:
 		stream >> m_val;
 		return true;
 	}
-	inline double GetVal() { return m_val; }
+	FORCE_INLINE double GetVal() { return m_val; }
 };
 //Only the imaginary  part for Complex
 class ImaginaryNumber :
-	virtual public Expression
+	public Expression
 {
 	double m_val = 0;
 public:
@@ -497,11 +521,11 @@ public:
 		stream >> m_val;
 		return true;
 	}
-	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 };
 
 class List :
-	virtual public Expression
+	public Expression
 {
 	std::vector<Expression*> list;
 public:
@@ -609,7 +633,7 @@ public:
 // def func1(x:int)
 //but also can be some other meaning bases on the context
 class Param :
-	virtual public Expression
+	public Expression
 {
 	Expression* Name = nil;
 	Expression* Type = nil;
@@ -651,8 +675,8 @@ public:
 		Type = BuildFromStream<Expression>(stream);
 		return true;
 	}
-	inline Expression* GetName() { return Name; }
-	inline Expression* GetType() { return Type; }
+	FORCE_INLINE Expression* GetName() { return Name; }
+	FORCE_INLINE Expression* GetType() { return Type; }
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);

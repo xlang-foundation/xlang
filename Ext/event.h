@@ -46,12 +46,12 @@ namespace X
 		std::vector<XWait*> m_waits;
 		bool m_fired = false;
 	public:
-		inline void Fire(int evtIndex,X::ARGS& params, X::KWARGS& kwargs)
+		FORCE_INLINE void Fire(int evtIndex,X::ARGS& params, X::KWARGS& kwargs)
 		{
 			SetFire();
 			m_APIs.Fire(evtIndex,params,kwargs);
 		}
-		inline virtual bool wait(int timeout) override
+		FORCE_INLINE virtual bool wait(int timeout) override
 		{
 			return WaitOn(timeout);
 		}
@@ -95,9 +95,9 @@ namespace X
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(m_APIs.GetScope());
+			bases.push_back(m_APIs.GetMyScope());
 		}
-		inline bool WaitOn(int timeout)
+		FORCE_INLINE bool WaitOn(int timeout)
 		{
 			m_statusLock.Lock();
 			if (m_fired)
@@ -214,12 +214,12 @@ namespace X
 			}
 			m_lockHandlers.Unlock();
 		}
-		inline X::Value Get(const char* name)
+		FORCE_INLINE X::Value Get(const char* name)
 		{
 			std::string strName(name);
 			return Get(strName);
 		}
-		inline X::Value Get(std::string& name)
+		FORCE_INLINE X::Value Get(std::string& name)
 		{
 			X::Value ret;
 			auto pAttrBag = GetAttrBag();
@@ -229,12 +229,12 @@ namespace X
 			}
 			return ret;
 		}
-		inline void Set(const char* name, X::Value& val)
+		FORCE_INLINE void Set(const char* name, X::Value& val)
 		{
 			std::string strName(name);
 			Set(strName, val);
 		}
-		inline void Set(std::string& name, X::Value& val)
+		FORCE_INLINE void Set(std::string& name, X::Value& val)
 		{
 			auto pAttrBag = GetAttrBag();
 			if (pAttrBag)
@@ -242,7 +242,7 @@ namespace X
 				pAttrBag->Set(name, val);
 			}
 		}
-		inline long Add(EventHandler handler)
+		FORCE_INLINE long Add(EventHandler handler)
 		{
 			int cnt = 0;
 			int tid = (int)GetThreadID();
@@ -257,7 +257,7 @@ namespace X
 			}
 			return cookie;
 		}
-		inline long Add(X::Data::Function* pFuncHandler)
+		FORCE_INLINE long Add(X::Data::Function* pFuncHandler)
 		{
 			int cnt = 0;
 			int tid = (int)GetThreadID();
@@ -273,7 +273,7 @@ namespace X
 			}
 			return cookie;
 		}
-		inline void Remove(long cookie)
+		FORCE_INLINE void Remove(long cookie)
 		{
 			int cnt = 0;
 			m_lockHandlers.Lock();
@@ -328,7 +328,7 @@ namespace X
 			m_run = false;
 			m_wait.Release();
 		}
-		inline void FireInMain(ObjectEvent* pEvt, XRuntime* rt, XObj* pContext,
+		FORCE_INLINE void FireInMain(ObjectEvent* pEvt, XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams)
 		{
 			ARGS params0 = params;//for copy
@@ -339,12 +339,12 @@ namespace X
 			m_lockEventOnFire.Unlock();
 			m_wait.Release();
 		}
-		inline ObjectEvent* Query(const char* name)
+		FORCE_INLINE ObjectEvent* Query(const char* name)
 		{
 			std::string strName(name);
 			return Query(strName);
 		}
-		inline ObjectEvent* Query(std::string& name)
+		FORCE_INLINE ObjectEvent* Query(std::string& name)
 		{
 			ObjectEvent* pEvt = nullptr;
 			m_lockEventMap.Lock();
@@ -360,7 +360,7 @@ namespace X
 			}
 			return pEvt;
 		}
-		inline void AddEventTask(EventTask task, ARGS& params)
+		FORCE_INLINE void AddEventTask(EventTask task, ARGS& params)
 		{
 			m_lockEventTasks.Lock();
 			m_eventTasks.push_back(EventTaskInfo{ task,params });
@@ -398,7 +398,7 @@ namespace X
 				m_lockEventTasks.Unlock();
 			}
 		}
-		inline void Fire(X::XRuntime* rt, XObj* pContext,
+		FORCE_INLINE void Fire(X::XRuntime* rt, XObj* pContext,
 			std::string& name, ARGS& params, KWARGS& kwargs, bool inMain = false)
 		{
 			ObjectEvent* pEvt = Query(name);
@@ -408,12 +408,12 @@ namespace X
 				pEvt->DecRef();
 			}
 		}
-		inline bool Unregister(const char* name)
+		FORCE_INLINE bool Unregister(const char* name)
 		{
 			std::string strName(name);
 			return Unregister(strName);
 		}
-		inline bool Unregister(std::string& name)
+		FORCE_INLINE bool Unregister(std::string& name)
 		{
 			ObjectEvent* pEvt = nullptr;
 			m_lockEventMap.Lock();
@@ -430,7 +430,7 @@ namespace X
 			}
 			return true;
 		}
-		inline ObjectEvent* Register(const char* name)
+		FORCE_INLINE ObjectEvent* Register(const char* name)
 		{
 			std::string strName(name);
 			return Register(strName);

@@ -135,7 +135,7 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	{
 		X::Value retVal;
 		ExecAction action;
-		(*it)->Exec(rt, action,pPassContext, retVal);
+		ExpExec(*it,rt, action,pPassContext, retVal);
 		if (retVal.IsObject())
 		{
 			pPassContext = retVal.GetObj();
@@ -144,7 +144,10 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	}
 	if (m_Index >= 0)
 	{//Lambda doesn't need to register it, which doesn't have a name
+		//TODO:11/16/2023
+#if _TODO_
 		m_scope->Set(rt, pContext, m_Index, v0);
+#endif
 	}
 	v = v0;
 	return true;
@@ -190,19 +193,19 @@ bool Func::Call(XRuntime* rt0,
 		rt->SetM(GetMyModule());
 	}
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
-	StackFrame* frame = new StackFrame(this);
+	StackFrame* pCurFrame = new StackFrame(m_pMyScope);
 	for (auto& kw : kwParams)
 	{
 		std::string strKey(kw.key);
-		Scope::AddOrGet(strKey, false);
+		m_pMyScope->AddOrGet(strKey, false);
 	}
-	rt->PushFrame(frame,GetVarNum());
-	//Add this if This is not null
+	rt->PushFrame(pCurFrame,m_pMyScope->GetVarNum());
+	//for Class,Add this if This is not null
 	if (m_IndexOfThis >=0 &&
 		pContextObj && pContextObj->GetType() == X::ObjType::XClassObject)
 	{
 		Value v0(dynamic_cast<Data::Object*>(pContext));
-		Scope::Set(rt, pContext, m_IndexOfThis, v0);
+		pCurFrame->Set(m_IndexOfThis, v0);
 	}
 	int num = (int)params.size();
 	int indexNum = (int)m_IndexofParamList.size();
@@ -212,23 +215,23 @@ bool Func::Call(XRuntime* rt0,
 	}
 	for (int i = 0; i < num; i++)
 	{
-		Scope::Set(rt, pContext, m_IndexofParamList[i], params[i]);
+		pCurFrame->Set(m_IndexofParamList[i], params[i]);
 	}
 	for (auto& kw : kwParams)
 	{
 		std::string strKey(kw.key);
-		int idx = Scope::AddOrGet(strKey, false);
+		int idx = m_pMyScope->AddOrGet(strKey, false);
 		if (idx >= 0)
 		{
-			Scope::Set(rt, pContext, idx, kw.val);
+			pCurFrame->Set(idx, kw.val);
 		}
 	}
 	Value v0;
 	ExecAction action;
 	Block::Exec(rt,action,pContext, v0);
 	rt->PopFrame();
-	retValue = frame->GetReturnValue();
-	delete frame;
+	retValue = pCurFrame->GetReturnValue();
+	delete pCurFrame;
 	return true;
 }
 XObj* ExternFunc::GetRightContextForClass(XObj* pContext)

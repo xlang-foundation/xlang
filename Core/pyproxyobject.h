@@ -61,12 +61,11 @@ namespace X
 		class PyProxyObject :
 			public virtual Object,
 			public virtual XPyObject,
-			public virtual AST::Scope,
 			public virtual AST::Expression
 		{
 			PyProxyObject* m_PyModule = nullptr;
 			PyProxyType m_proxyType = PyProxyType::None;
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::StackFrame* m_variableFrame = nullptr;
 			PyEng::Object m_parent_obj;
 			PyEng::Object m_obj;
 			PyEng::Object m_pyFrameObject;
@@ -78,10 +77,13 @@ namespace X
 			PyEng::Dict m_globals;
 		public:
 			PyProxyObject():
-				XPyObject(0), Object(), AST::Scope(), AST::Expression()
+				XPyObject(0), Object(),AST::Expression()
 			{
 				m_t = ObjType::PyProxyObject;
-				m_stackFrame = new AST::StackFrame(this);
+				m_variableFrame = new AST::StackFrame();
+				m_pMyScope = new AST::Scope();
+				m_pMyScope->SetType(AST::ScopeType::PyObject);
+				m_pMyScope->SetVarFrame(m_variableFrame);
 			}
 			PyProxyObject(PyEng::Object& obj) :
 				PyProxyObject()
@@ -139,7 +141,7 @@ namespace X
 				m_pyFrameObject = objFrame;
 			}
 			bool GetItem(long long index, X::Value& val);
-			inline bool MatchPyFrame(PyEngObjectPtr pyFrame)
+			FORCE_INLINE bool MatchPyFrame(PyEngObjectPtr pyFrame)
 			{
 				return (m_pyFrameObject.ref() == pyFrame);
 			}
@@ -184,12 +186,7 @@ namespace X
 				m_parent_obj[m_name.c_str()] = newObj;
 				m_obj = newObj;
 			}
-
-			virtual std::string GetNameString() override
-			{
-				return m_name;
-			}
-			inline virtual void CloseIterator(Iterator_Pos pos) override
+			FORCE_INLINE virtual void CloseIterator(Iterator_Pos pos) override
 			{
 				iterator_info* pIterator_info = (iterator_info*)pos;
 				if (pIterator_info)
@@ -202,7 +199,7 @@ namespace X
 				}
 
 			}
-			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 			{
 				iterator_info* pIterator_info = nullptr;
 				if (pos == nullptr)
@@ -268,8 +265,8 @@ namespace X
 				return true;
 			}
 			virtual void EachVar(XlangRuntime* rt, XObj* pContext,
-				std::function<void(std::string, X::Value&)> const& f) override;
-			virtual std::string GetModuleName(XlangRuntime* rt) override
+				std::function<void(std::string, X::Value&)> const& f);
+			virtual std::string GetModuleName(XlangRuntime* rt)
 			{
 				if (m_proxyType == PyProxyType::Func)
 				{
@@ -281,6 +278,7 @@ namespace X
 					return GetPyModuleFileName();
 				}
 			}
+#if __TODO_SCOPE__
 			virtual Scope* GetScope() override
 			{
 				return m_myScope == nullptr?this: m_myScope;
@@ -294,6 +292,7 @@ namespace X
 					AST::ScopeWaitingStatus::HasWaiting:
 					AST::ScopeWaitingStatus::NoWaiting;
 			}
+#endif
 			~PyProxyObject();
 			void SetModule(PyProxyObject* pModule)
 			{
@@ -302,7 +301,7 @@ namespace X
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 			{
 				Object::GetBaseScopes(bases);
-				bases.push_back(dynamic_cast<Scope*>(this));
+				bases.push_back(m_pMyScope);
 			}
 			void SetModuleFileName(std::string& fileName)
 			{
@@ -316,27 +315,29 @@ namespace X
 			{
 				return m_path + "/" + m_name + ".py";
 			}
-			// Inherited via Scope
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-				std::vector<AST::Scope*>& callables) override;
+				std::vector<AST::Scope*> & callables) override; 
+#if __TODO_SCOPE__
+			// Inherited via Scope
 			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
 			virtual bool Set(XlangRuntime* rt, XObj* pContext, 
 				int idx, X::Value& v) override
 			{
-				m_stackFrame->Set(idx, v);
+				m_variableFrame->Set(idx, v);
 				return true;
 			}
 			virtual bool Get(XlangRuntime* rt, XObj* pContext, 
 				int idx, X::Value& v,
 				X::LValue* lValue = nullptr) override
 			{
-				m_stackFrame->Get(idx, v, lValue);
+				m_variableFrame->Get(idx, v, lValue);
 				return true;
 			}
 			virtual Scope* GetParentScope() override
 			{
 				return nullptr;
 			}
+#endif
 			virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 				KWARGS& kwParams, X::Value& retValue) override;
 			virtual const char* ToString(bool WithFormat = false) override

@@ -4,7 +4,7 @@
 template <class T> 
 class Singleton { 
 public: 
-	inline static T& I() { 
+	FORCE_INLINE static T& I() { 
 		static T _instance; 
 		return _instance; 
 	} 

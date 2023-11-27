@@ -24,7 +24,7 @@ namespace X
 					{
 						ExecAction action;
 						X::Value valRight;
-						bool bOK = right->Exec(nullptr, action, nullptr, valRight);
+						bool bOK = ExpExec(right,nullptr, action, nullptr, valRight);
 						if (bOK)
 						{
 							//Obj()->Set(index, valRight);
@@ -73,6 +73,8 @@ namespace X
 					strName = dynamic_cast<Var*>(dotOp->GetL())->GetNameString();
 				}
 			}
+
+			Expression* pFromExp = this;
 			while (pMyScope != nullptr && idx < 0)
 			{
 				idx = pMyScope->AddOrGet(strName, false);
@@ -81,7 +83,20 @@ namespace X
 					m_scope = pMyScope;
 					break;
 				}
-				pMyScope = pMyScope->GetParentScope();
+				//Find next upper real scope
+				pMyScope = nullptr;
+				Expression* pa = pFromExp->GetParent();
+				while (pa != nullptr)
+				{
+					pMyScope = pa->GetMyScope();
+					if (pMyScope)
+					{
+						//save for next loop
+						pFromExp = pa;
+						break;
+					}
+					pa = pa->GetParent();
+				}
 			}
 			m_Index = idx;
 		}
@@ -124,7 +139,7 @@ namespace X
 					//take a place
 					ro_var->Set(rt, pContext, defVal);
 					ExecAction action0;
-					bOK = r0->Exec(rt, action0,pContext, v, lValue);
+					bOK = ExpExec(r0,rt, action0,pContext, v, lValue);
 				}
 				else if (r0->m_type == ObType::Dot)
 				{
@@ -134,7 +149,7 @@ namespace X
 					//pChildNamespaceVar->SetScope(this);
 					Block::Add(pChildNamespaceVar);//hold this item into block for releasing this item
 					ExecAction action0;
-					bOK = pChildNamespaceVar->Exec(rt, action0, pContext, v, lValue);
+					bOK = ExpExec(pChildNamespaceVar,rt, action0, pContext, v, lValue);
 					pChildNamespaceVar->SetR(nullptr); // don't let be deleted twice
 				}
 			}

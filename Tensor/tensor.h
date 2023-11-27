@@ -148,11 +148,11 @@ namespace X
 			Tensor();
 			~Tensor();
 
-			inline void SetName(std::string& n)
+			FORCE_INLINE void SetName(std::string& n)
 			{
 				m_name = n;
 			}
-			inline std::string& GetName() { return m_name; }
+			FORCE_INLINE std::string& GetName() { return m_name; }
 			//this function only return first dim's size
 			//because debug will use it as first level
 			virtual long long Size() override
@@ -178,11 +178,11 @@ namespace X
 			{
 				return m_dims;
 			}
-			inline virtual int GetDimCount() override
+			FORCE_INLINE virtual int GetDimCount() override
 			{
 				return (int)m_dims.size();
 			}
-			inline virtual long long GetDimSize(int dimIdx) override
+			FORCE_INLINE virtual long long GetDimSize(int dimIdx) override
 			{
 				return m_dims[dimIdx].size;
 			}
@@ -323,7 +323,7 @@ namespace X
 			X::Value GetDataWithOffset(long long addr);
 
 			//keep use same memory
-			inline X::Value reshape(X::Value& listOfShape)
+			FORCE_INLINE X::Value reshape(X::Value& listOfShape)
 			{
 				Port::vector<int> shapes(0);
 				int shapeCount = 1;
@@ -360,7 +360,7 @@ namespace X
 				pNewTensor->m_dataSize = m_dataSize;
 				return X::Value(pNewTensor);
 			}
-			inline X::Value asType(int type)
+			FORCE_INLINE X::Value asType(int type)
 			{
 				TensorDataType dt = (TensorDataType)type;
 				Tensor* pNewTensor = new Tensor();
@@ -384,7 +384,7 @@ namespace X
 
 			}
 			//indices array needs to have all left side indices + (rightDimCount)
-			inline void IterateRight(TensorIterateProc proc, std::vector<long long>& indices,int rightDimCount)
+			FORCE_INLINE void IterateRight(TensorIterateProc proc, std::vector<long long>& indices,int rightDimCount)
 			{
 				int dimSize = m_dims.size();
 				int startDim = dimSize - rightDimCount;
@@ -395,7 +395,7 @@ namespace X
 				}
 				IterateLoop(indices, startDim, proc, dimList, 0);
 			}
-			inline void IterateLeft(TensorIterateProc proc,int leftDimCount)
+			FORCE_INLINE void IterateLeft(TensorIterateProc proc,int leftDimCount)
 			{
 				std::vector<long long> indices;
 				indices.resize(leftDimCount);
@@ -406,7 +406,7 @@ namespace X
 				}
 				IterateLoop(indices, 0,proc, dimList, 0);
 			}
-			inline void IterateAll(TensorIterateProc proc)
+			FORCE_INLINE void IterateAll(TensorIterateProc proc)
 			{
 				std::vector<long long> indices;
 				int dimSize = m_dims.size();
@@ -420,7 +420,7 @@ namespace X
 				}
 				IterateLoop(indices,0,proc,dimList,0);
 			}
-			inline void IterateLoop(std::vector<long long>& indices, int Offset,
+			FORCE_INLINE void IterateLoop(std::vector<long long>& indices, int Offset,
 				TensorIterateProc proc, std::vector<int>& dimList, std::vector<long long>& strides)
 			{
 				long long itemCount = 1;
@@ -454,7 +454,7 @@ namespace X
 				}
 			}
 			//before call,indices need has same size of m_dims
-			inline void IterateLoop(std::vector<long long>&indices,int Offset,
+			FORCE_INLINE void IterateLoop(std::vector<long long>&indices,int Offset,
 				TensorIterateProc proc, std::vector<int>& dimList ,int level=0)
 			{
 				auto lastLevel = dimList.size()-1;

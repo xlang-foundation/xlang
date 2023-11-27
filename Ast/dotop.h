@@ -8,7 +8,7 @@ namespace X
 namespace AST
 {
 class DotOp :
-	virtual public BinaryOp
+	public BinaryOp
 {
 	int m_dotNum = 1;
 protected:
@@ -20,19 +20,17 @@ protected:
 		Value& v_l, Expression* r,
 		Value& v, LValue* lValue = nullptr);
 public:
-	DotOp() :Operator(), BinaryOp()
+	DotOp() :BinaryOp()
 	{
 		m_type = ObType::Dot;
 	}
 	DotOp(short opIndex) :
-		Operator(opIndex),
 		BinaryOp(opIndex)
 	{
 		m_type = ObType::Dot;
 		m_dotNum = 1;
 	}
 	DotOp(short opIndex,int dotNum) :
-		Operator(opIndex),
 		BinaryOp(opIndex)
 	{
 		m_type = ObType::Dot;

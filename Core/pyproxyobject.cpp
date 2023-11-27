@@ -51,7 +51,7 @@ namespace X
 			if (rt->GetTrace())
 			{
 				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
-					TraceEvent::Call, this, this);
+					TraceEvent::Call, m_pMyScope, this);
 			}
 			if (fromPath.empty())
 			{
@@ -175,6 +175,7 @@ namespace X
 				f(name, val);
 			}
 		}
+#if __TODO_SCOPE__
 		bool PyProxyObject::isEqual(Scope* s)
 		{
 			PyProxyObject* pS_Proxy = dynamic_cast<PyProxyObject*>(s);
@@ -184,12 +185,6 @@ namespace X
 			}
 			return (pS_Proxy->m_name == m_name &&
 				pS_Proxy->m_proxyType == m_proxyType);
-		}
-		bool PyProxyObject::CalcCallables(XlangRuntime* rt, XObj* pContext,
-			std::vector<AST::Scope*>& callables)
-		{
-			callables.push_back(dynamic_cast<AST::Scope*>(this));
-			return true;
 		}
 		int PyProxyObject::AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope)
 		{
@@ -202,6 +197,13 @@ namespace X
 			X::Value v(pProxyObj);
 			m_stackFrame->Set(idx, v);
 			return idx;
+		}
+#endif
+		bool PyProxyObject::CalcCallables(XlangRuntime* rt, XObj* pContext,
+			std::vector<AST::Scope*>& callables)
+		{
+			callables.push_back(dynamic_cast<AST::Scope*>(this));
+			return true;
 		}
 		bool PyProxyObject::Call(XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams,

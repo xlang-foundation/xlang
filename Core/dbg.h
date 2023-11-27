@@ -15,7 +15,7 @@ class Dbg
 {
 	XlangRuntime* m_rt = nullptr;
 public:
-	inline Dbg(XlangRuntime* rt)
+	FORCE_INLINE Dbg(XlangRuntime* rt)
 	{
 		m_rt = rt;
 	}
@@ -60,7 +60,8 @@ public:
 				for (auto& l_name : l_names)
 				{
 					X::Value vDbg;
-					pMyScope->Get(m_rt, pContext, l_name, vDbg);
+					auto idx = pMyScope->AddOrGet(l_name, true);
+					m_rt->Get(pMyScope, pContext, idx, vDbg);
 					std::cout << l_name << ":" << vDbg.ToString() << std::endl;
 				}
 			}
@@ -82,7 +83,8 @@ public:
 						X::Value vDbg;
 						if (pMyScope)
 						{
-							pMyScope->Get(m_rt, pContext, param, vDbg);
+							auto idx = pMyScope->AddOrGet(param, true);
+							m_rt->Get(pMyScope, pContext, idx, vDbg);
 						}
 						std::cout <<vDbg.ToString() << std::endl;
 					}
@@ -166,7 +168,7 @@ public:
 			pCmdInfo->DecRef();
 		}
 	}
-	inline bool ExitBlockRun(XlangRuntime* rt,XObj* pContext,
+	FORCE_INLINE bool ExitBlockRun(XlangRuntime* rt,XObj* pContext,
 		AST::Scope* pThisBlock)
 	{
 		if (m_rt->M()->IsInDebug())
@@ -175,7 +177,7 @@ public:
 		}
 		return true;
 	}
-	inline bool Check(TraceEvent evt,XlangRuntime* rt,
+	FORCE_INLINE bool Check(TraceEvent evt,XlangRuntime* rt,
 		AST::Scope* pThisBlock,
 		AST::Expression* exp, XObj* pContext)
 	{
