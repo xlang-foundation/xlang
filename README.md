@@ -1,53 +1,34 @@
 # XLang™
-* A next-generation dynamic and high-performance language for **AI and IOT** with natural born **distributed computing ability**    
-* A super glue to easily integrating with other languages such as c++/c, python and javascript and any framework cross operation system barriers.  
-* Running faster than python about 3x-5x  
+XLang™ is a cutting-edge language designed for AI and IoT applications, offering exceptional dynamic and high-performance capabilities. It stands out with its innate ability for distributed computing. XLang™ excels in seamless integration with popular languages like C++, Python, and JavaScript, bridging the gap across various operating systems.
 
-# for AI/Deep learning
-- fully optimized tensor computing architecture 
-- easily build neural network with tensor expression
-- automatically generate tensor data flow graph and compile for target  
-- boost inference/training performance about 6x-10x in GPU(CUDA)  
+Performance-wise, XLang™ is notably efficient, running approximately 3 to 5 times faster than Python, especially in AI and deep learning contexts. It features a fully optimized tensor computing architecture, enabling users to effortlessly construct neural networks through tensor expressions. XLang™ automates the generation of tensor data flow graphs and compiles them for specific targets. Particularly in GPU environments utilizing CUDA, it can enhance inference and training performance by about 6 to 10 times.
 
-# How to Build  
-- build from Windows  
-1. git clone https://github.com/xlang-foundation/xlang.git  
-2. use Visual Studio to open this xlang folder  
-3. choose configuration for example Local Machine/x64-Debug, WSL:Ubuntu/WSL-GCC-Debug  
-4. build ( click on Visual Studio's menu: build/build all) 
+**Building XLang™:**
 
-- build from Linux(Ubuntu)  
-    ## Prerequisites  
-        sudo apt-get install uuid-dev  
-    ## for openssl required by http plugin
-        sudo apt-get install libssl-dev
-    ## if want to enable xlang™ to call python libs directly  
-        sudo apt-get install python3-dev
-        and also need to pip install numpy
-        if not want to enable this feature, 
-        just comment out line below in CMakeLists.txt in root folder
-        add_subdirectory("PyEng")
-    ## Steps to build
-        1. git clone https://github.com/xlang-foundation/xlang.git
-        2. cd xlang
-        3. mkdir out
-        4. cd out
-        5. cmake ..
-        6. make
+- For Windows:
+  - Clone the repository: `git clone https://github.com/xlang-foundation/xlang.git`
+  - Open the XLang™ folder with Visual Studio.
+  - Select a configuration (e.g., Local Machine/x64-Debug, WSL:Ubuntu/WSL-GCC-Debug).
+  - Build using Visual Studio's build menu.
 
+- For Linux (Ubuntu):
+  - Install prerequisites:
+    - UUID: `sudo apt-get install uuid-dev`
+    - OpenSSL (for HTTP plugin): `sudo apt-get install libssl-dev`
+    - Python3 (optional for Python library integration): `sudo apt-get install python3-dev` and `pip install numpy`. To disable, comment out `add_subdirectory("PyEng")` in `CMakeLists.txt`.
+  - Building steps:
+    1. Clone the repository: `git clone https://github.com/xlang-foundation/xlang.git`
+    2. Navigate to the cloned directory: `cd xlang`
+    3. Create and enter the build directory: `mkdir out && cd out`
+    4. Generate build files: `cmake ..`
+    5. Compile: `make`
 
-# How to Run
-- go to console window, cd to xlang executable file folder
-- xlang
+**Running XLang™:**
 
-# How to use vscode to debug on xlang code  
-1. install xlang plugin in vscode  
-2. start xlang with parameter: -event_loop -dbg -enable_python  
-    xlang -event_loop -dbg -enable_python
-3. open or new a file with .x extension name  
-    click on vs code menu run/start debuging then vscode will automatcilly connect with xlang to run  
+- Navigate to the XLang™ executable folder and run the `xlang` command.
+- For debugging in VS Code, install the XLang™ plugin and start XLang™ with `-event_loop -dbg -enable_python`. Open or create a `.x` file, and start debugging from the VS Code menu.
 
-# How to build for Android
-1. in Windows, install Android Studio
-2. open project from folder xlang\Android
-3. then build from Android Stduio menu: Build/Make Project
+**Building for Android:**
+
+- On Windows, install Android Studio.
+- Open the XLang™ project from the `xlang\Android` folder and build using the Android Studio's Build menu.  
