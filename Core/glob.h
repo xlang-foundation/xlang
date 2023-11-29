@@ -36,7 +36,7 @@ namespace X {
 		void UnbindRuntimeToThread(XlangRuntime* rt);
 		FORCE_INLINE OpRegistry& R() { return *m_reg;}
 		FORCE_INLINE void SetReg(OpRegistry* r) { m_reg = r; }
-		FORCE_INLINE XRuntime* GetCurrentRuntime()
+		FORCE_INLINE XRuntime* GetCurrentRuntime(XRuntime* baseRt = nullptr)
 		{
 			unsigned long tid = GetThreadID();
 			XRuntime* pRet = nullptr;
@@ -49,7 +49,7 @@ namespace X {
 			((Locker*)m_lockRTMap)->Unlock();
 			if (pRet == nullptr)
 			{
-				pRet =  MakeThreadRuntime(tid, nullptr);
+				pRet =  MakeThreadRuntime(tid, baseRt?dynamic_cast<XlangRuntime*>(baseRt):nullptr);
 			}
 			return pRet;
 		}

@@ -200,6 +200,7 @@ namespace X
 	{
 		pTopModule->SetArgs(passInParams);
 		XlangRuntime* pRuntime = new XlangRuntime();
+		pTopModule->SetRT(pRuntime);
 		pRuntime->SetM(pTopModule);
 		G::I().BindRuntimeToThread(pRuntime);
 		if (stopOnEntry)
