@@ -144,10 +144,7 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	}
 	if (m_Index >= 0)
 	{//Lambda doesn't need to register it, which doesn't have a name
-		//TODO:11/16/2023
-#if _TODO_
 		m_scope->Set(rt, pContext, m_Index, v0);
-#endif
 	}
 	v = v0;
 	return true;
