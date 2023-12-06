@@ -17,8 +17,7 @@ namespace X
 		switch (traceEvent)
 		{
 		case X::TraceEvent::Call:
-			//pThisBlock->IncRef();
-			rt->M()->AddDbgScope(pThisBlock);//todo??
+			rt->M()->AddDbgScope(pThisBlock);
 			break;
 		case X::TraceEvent::Exception:
 			break;

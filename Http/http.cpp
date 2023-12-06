@@ -171,10 +171,7 @@ namespace X
 					X::Value retValue0;
 					try 
 					{
-						pHandler->Call(nullptr/*X::g_pXHost->GetCurrentRuntime()*/,
-							pCurPack,
-							params0, kwParams0,
-							retValue0);
+						pHandler->Call(nullptr,pCurPack,params0, kwParams0,retValue0);
 					}
 					catch (int e)
 					{

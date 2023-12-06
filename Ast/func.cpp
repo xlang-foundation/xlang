@@ -196,6 +196,13 @@ bool Func::Call(XRuntime* rt0,
 	{
 		rt->SetM(GetMyModule());
 	}
+	//TODO: check cost
+	if (rt->GetTrace())
+	{
+		//check if this func's scope in debug scope list or not
+		rt->M()->AddDbgScope(m_pMyScope);
+	}
+
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
 	StackFrame* pCurFrame = new StackFrame(m_pMyScope);
 	for (auto& kw : kwParams)
