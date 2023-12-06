@@ -208,11 +208,15 @@ public:
 	//Find MyScope from ancestor wich has RealScope
 	Scope* FindScope()
 	{
-		Scope* pMyScope = nil;
+		Scope* pMyScope = nullptr;
 		Expression* pa = m_parent;
-		while (pa != nil && pMyScope == nil)
+		while (pa != nullptr)
 		{
 			pMyScope = pa->GetMyScope();
+			if (pMyScope)
+			{
+				break;
+			}
 			pa = pa->GetParent();
 		}
 		return pMyScope;

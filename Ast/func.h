@@ -114,7 +114,11 @@ public:
 	}
 	FORCE_INLINE Scope* GetScope()
 	{
-		return m_pMyScope;
+		if (m_scope == nullptr)
+		{
+			m_scope = FindScope();
+		}
+		return m_scope;
 	}
 	virtual void ScopeLayout() override;
 	std::string getcode(bool includeHead = false);
