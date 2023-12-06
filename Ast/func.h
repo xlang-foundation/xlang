@@ -22,6 +22,7 @@ class Func :
 protected:
 	bool m_PassScopeLayout = false;//in lambda case, will run ScopeLayout multiple time
 	//use this to avoid it
+	Module* m_myModule = nullptr;
 	std::vector<Decorator*> m_decors;
 	String m_Name = { nil,0 };
 	bool m_NameNeedRelease = false;
@@ -31,7 +32,15 @@ protected:
 	List* Params = nil;
 	std::vector<int> m_IndexofParamList;//same size with input positional param
 	Expression* RetType = nil;
-	Module* GetMyModule();
+	void FindMyModule();
+	FORCE_INLINE Module* GetMyModule()
+	{
+		if (m_myModule == nullptr)
+		{
+			FindMyModule();
+		}
+		return m_myModule;
+	}
 	void SetName(Expression* n)
 	{
 		Var* vName = dynamic_cast<Var*>(n);
@@ -280,12 +289,6 @@ public:
 	FORCE_INLINE Expression* GetParams()
 	{
 		return Params;
-	}
-	//TODO: 11/16/2023
-	virtual int AddOrGet(std::string& name, bool bGetOnly,Scope** ppRightScope=nullptr)
-	{
-		int retIdx = -1;// Scope::AddOrGet(name, bGetOnly, ppRightScope);
-		return retIdx;
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext,
 		ARGS& params,

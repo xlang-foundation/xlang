@@ -171,7 +171,7 @@ namespace X
 					X::Value retValue0;
 					try 
 					{
-						pHandler->Call(X::g_pXHost->GetCurrentRuntime(),
+						pHandler->Call(nullptr/*X::g_pXHost->GetCurrentRuntime()*/,
 							pCurPack,
 							params0, kwParams0,
 							retValue0);

@@ -36,6 +36,10 @@ public:
 	{
 		m_pScope = s;
 	}
+	void SetShareFlag(bool bShare)
+	{
+		m_bShared = bShare;
+	}
 	~StackFrame()
 	{
 		if(m_bShared) m_lock.Lock();

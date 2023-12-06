@@ -73,6 +73,8 @@ public:
 	{
 		m_pModule = rt->m_pModule;
 		m_stackBottom = rt->m_stackBottom;
+		//TODO:when stack remove from link, need to check if need to set back
+		m_stackBottom->SetShareFlag(true);
 	}
 	FORCE_INLINE bool SetVarCount(int cnt)
 	{

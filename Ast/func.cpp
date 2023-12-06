@@ -26,7 +26,7 @@ void Func::ScopeLayout()
 		//TODO: debug here
 		if (m_parent->m_type == ObType::Class)
 		{//it is class's member
-			m_IndexOfThis = AddOrGet(thisKey, false);
+			m_IndexOfThis = pMyScope->AddOrGet(thisKey, false);
 		}
 	}
 	//process parameters' default values
@@ -66,7 +66,7 @@ void Func::ScopeLayout()
 			}
 			break;
 			}
-			int idx = AddOrGet(strVarName, false);
+			int idx = m_pMyScope->AddOrGet(strVarName, false);
 			m_IndexofParamList.push_back(idx);
 		}
 		Params->ScopeLayout();
@@ -164,21 +164,23 @@ bool Func::CallEx(XRuntime* rt, XObj* pContext,
 	kwParams.Add("origin", trailer);
 	return Call(rt,pContext,params,kwParams,retValue);
 }
-Module* Func::GetMyModule()
+void Func::FindMyModule()
 {
+	Module* myModule = nullptr;
 	auto pa = m_parent;
 	while (pa)
 	{
 		if (pa->m_type == ObType::Module)
 		{
-			return dynamic_cast<Module*>(pa);
+			myModule =  dynamic_cast<Module*>(pa);
+			break;
 		}
 		else
 		{
 			pa = pa->GetParent();
 		}
 	}
-	return nullptr;
+	m_myModule = myModule;
 }
 bool Func::Call(XRuntime* rt0,
 	XObj* pContext,
@@ -186,6 +188,11 @@ bool Func::Call(XRuntime* rt0,
 	KWARGS& kwParams,
 	Value& retValue)
 {
+	if (rt0 == nullptr)
+	{
+		auto* pMyModule = GetMyModule();
+		rt0 = pMyModule->GetRT();
+	}
 	auto* rt_from = (XlangRuntime*)rt0;
 	XlangRuntime* rt = G::I().Threading(rt_from);
 	if (!rt->M())

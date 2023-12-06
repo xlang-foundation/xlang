@@ -96,7 +96,7 @@ public:
 		return true;
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override;
-	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
+	int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr);
 	int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v)
 	{
 		int idx = m_pMyScope->AddOrGet(name, false);
