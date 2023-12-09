@@ -3,7 +3,6 @@
 #include "gthread.h"
 #include "moduleobject.h"
 #include "module.h"
-#include "moduleProxy.h"
 #include "event.h"
 
 namespace X
@@ -147,25 +146,19 @@ namespace X
 		{
 			return nullptr;
 		}
-#if __TODO__ //11/14/2023
 		//prepare top module for this code
-		AST::ModuleProxy* pTopModule = new AST::ModuleProxy();
-		pTopModule->SetScope(pScope);
-		pTopModule->IncRef();
+		AST::Module* pTopModule = new AST::Module();
+		pTopModule->ChangeMyScopeTo(pScope);
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);
 		std::string moduleName("proxy_module");
 		pTopModule->SetModuleName(moduleName);
 		AddModule(pTopModule);
 		return pTopModule;    
-#else
-		return nullptr;
-#endif
 	}
     bool Hosting::Unload(AST::Module *pTopModule)
     {
 		RemoveModule(pTopModule);
-		//pTopModule->DecRef();
 		return true;
 	}
 	bool Hosting::InitRun(AST::Module* pTopModule,X::Value& retVal)

@@ -116,6 +116,9 @@ class Module :
 	std::vector<BreakPointInfo> m_breakpoints;
 	//only keep for AST Query
 	std::vector<X::AST::InlineComment*> m_inlineComments;
+
+	//for scope
+	bool m_bMyScopeIsRef = false;
 public:
 	Module():
 		Block()
@@ -127,6 +130,16 @@ public:
 		m_stackFrame = new StackFrame(m_pMyScope);
 		m_pMyScope->SetVarFrame(m_stackFrame);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	void ChangeMyScopeTo(Scope* pNewMyScope)
+	{
+		if (!m_bMyScopeIsRef)
+		{
+			delete m_pMyScope;
+		}
+		m_pMyScope = pNewMyScope;
+		m_bMyScopeIsRef = true;
+		m_stackFrame->SetScope(pNewMyScope);
 	}
 	~Module()
 	{
@@ -141,7 +154,10 @@ public:
 		m_lockCommands.Unlock();
 		m_commandWait.Release();
 		delete m_stackFrame;
-		delete m_pMyScope;
+		if (!m_bMyScopeIsRef)
+		{
+			delete m_pMyScope;
+		}
 
 		for (auto it : m_inlineComments)
 		{

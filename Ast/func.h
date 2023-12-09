@@ -130,10 +130,9 @@ public:
 			code += decor->GetCode()+"\n";
 		}
 		code += GetCode();
-		//TODO:11/16/2023
 		//change current scope of stream
 		Scope* pOldScope = stream.ScopeSpace().GetCurrentScope();
-		stream.ScopeSpace().SetCurrentScope(dynamic_cast<Scope*>(this));
+		stream.ScopeSpace().SetCurrentScope(m_pMyScope);
 		Block::ToBytes(rt,pContext,stream);
 #if _pack_decor_
 		stream << (int)m_decors.size();

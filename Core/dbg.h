@@ -148,8 +148,9 @@ public:
 						}
 					}
 				}
-				m_rt->M()->SetDbgType(AST::dbg::Step,
-					AST::dbg::StepIn);
+				//TODO: check here 
+				//m_rt->M()->SetDbgType(AST::dbg::Step,AST::dbg::StepIn);
+				m_rt->M()->SetDbgType(AST::dbg::StepIn, AST::dbg::StepIn);
 				mLoop = false;
 				break;
 			case AST::dbg::StepOut:

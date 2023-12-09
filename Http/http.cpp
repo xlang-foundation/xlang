@@ -49,7 +49,7 @@ namespace X
 						kwargs.Add(it);
 					}
 					X::Value retValue;
-					bool bCallOK = pat.handler.GetObj()->Call(X::g_pXHost->GetCurrentRuntime(),
+					bool bCallOK = pat.handler.GetObj()->Call(nullptr,
 						pCurPack, params,kwargs, retValue);
 					if (bCallOK)
 					{

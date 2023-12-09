@@ -29,18 +29,22 @@ protected:
 	void ObjDbgRemove(XObj* pObj);
 #endif
 public:
-	StackFrame()
+	FORCE_INLINE StackFrame()
 	{
 	}
-	StackFrame(Scope* s)
+	FORCE_INLINE StackFrame(Scope* s)
 	{
 		m_pScope = s;
 	}
-	void SetShareFlag(bool bShare)
+	FORCE_INLINE void SetScope(Scope* s)
+	{
+		m_pScope = s;
+	}
+	FORCE_INLINE void SetShareFlag(bool bShare)
 	{
 		m_bShared = bShare;
 	}
-	~StackFrame()
+	FORCE_INLINE ~StackFrame()
 	{
 		if(m_bShared) m_lock.Lock();
 		if (m_Values)
@@ -59,7 +63,7 @@ public:
 		}
 		if (m_bShared) m_lock.Unlock();
 	}
-	bool ToBytes(X::XLangStream& stream)
+	FORCE_INLINE bool ToBytes(X::XLangStream& stream)
 	{
 		if (m_bShared) m_lock.Lock();
 		stream << m_varCnt;
@@ -70,7 +74,7 @@ public:
 		if (m_bShared) m_lock.Unlock();
 		return true;
 	}
-	bool FromBytes(X::XLangStream& stream)
+	FORCE_INLINE bool FromBytes(X::XLangStream& stream)
 	{
 		if (m_bShared) m_lock.Lock();
 		auto oldCnt = m_varCnt;

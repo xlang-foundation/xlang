@@ -179,16 +179,23 @@ void Func::FindMyModule()
 	}
 	m_myModule = myModule;
 }
+
+//Shawn@12/8/2023, if rt0 is nullptr,called from non-main thread,
+//need to get rt from the module
+//also check if in this is in-trace or not,
+//if in trace, need to add Scope into trace list
 bool Func::Call(XRuntime* rt0,
 	XObj* pContext,
 	ARGS& params,
 	KWARGS& kwParams,
 	Value& retValue)
 {
+	bool needAddScopeToTrace = false;
 	if (rt0 == nullptr)
 	{
 		auto* pMyModule = GetMyModule();
 		rt0 = pMyModule->GetRT();
+		needAddScopeToTrace = true;
 	}
 	auto* rt_from = (XlangRuntime*)rt0;
 	XlangRuntime* rt = G::I().Threading(rt_from);
@@ -197,7 +204,7 @@ bool Func::Call(XRuntime* rt0,
 		rt->SetM(GetMyModule());
 	}
 	//TODO: check cost
-	if (rt->GetTrace())
+	if (needAddScopeToTrace && rt->GetTrace())
 	{
 		//check if this func's scope in debug scope list or not
 		rt->M()->AddDbgScope(m_pMyScope);

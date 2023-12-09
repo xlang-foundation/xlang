@@ -38,6 +38,16 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 {
 	bool bOk = true;
 	m_bRunning = true;
+	auto Trace = rt->GetTrace();
+	Scope* pCurScope = nullptr;
+	if (m_type == ObType::Func|| m_type == ObType::Module)
+	{
+		pCurScope = GetMyScope();
+	}
+	else
+	{
+		pCurScope = GetScope();
+	}
 
 	//if being traced, go to here
 	bool bEnterBlock = false;
@@ -45,9 +55,10 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		rt->M()->GetDbgType() == X::AST::dbg::StepIn)
 	{
 		bEnterBlock = true;
-		rt->GetTrace()(rt, pContext,rt->GetCurrentStack(),
-			TraceEvent::Call,
-			dynamic_cast<Scope*>(this),nullptr);
+		Trace(rt, pContext,rt->GetCurrentStack(),TraceEvent::Call, pCurScope,nullptr);
+		//then we need to change DbgType to Step from StepIn
+		//because the lines exec in Body will be step by step
+		rt->M()->SetDbgType(X::AST::dbg::Step, X::AST::dbg::StepIn);
 	}
 	auto last = Body[Body.size() - 1];
 	for (auto& i : Body)
@@ -59,21 +70,8 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		rt->GetCurrentStack()->SetCharPos(pos);
 		//std::cout << "Run Line(before check):" << line <<std::endl;
 
-		if (rt->GetTrace())
-		{
-			Scope* pMyScope = nullptr;
-			if (m_type == ObType::Func
-				|| m_type == ObType::Module)
-			{
-				pMyScope = GetMyScope();
-			}
-			else
-			{
-				pMyScope = GetScope();
-			}
-			rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
-				TraceEvent::Line, pMyScope, i);
-		}
+		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Line, pCurScope, i);
+
 		if (i->m_type == ObType::ActionOp)
 		{
 			auto* pActionOperator = dynamic_cast<ActionOperator*>(i);
@@ -119,13 +117,9 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		}
 	}
 	m_bRunning = false;
-	if (rt->GetTrace() && bEnterBlock
-		&& (m_type == ObType::Func
-		|| m_type == ObType::Module))
+	if (bEnterBlock && (m_type == ObType::Func || m_type == ObType::Module))
 	{
-		rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
-			TraceEvent::Return,
-			dynamic_cast<Scope*>(this),nullptr);
+		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Return, pCurScope,nullptr);
 	}
 	return bOk;
 }
