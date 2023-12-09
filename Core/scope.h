@@ -49,6 +49,12 @@ class Scope
 	ScopeType m_type = ScopeType::Module;
 	Expression* m_pExp = nullptr;//expression owns this scope for example moudle or func
 	DynamicScope* m_pDynScope = nullptr; //to hold dynamic variables
+	//used in PacakgeProxy which as Package's instance to share 
+	//same namespace scope with Package, but different m_varFrame
+	//we add this method to make scope's variable access is very fast
+	//by removing all function calls
+
+	Scope* m_pNamespaceScope = nullptr;
 	bool m_NoAddVar = false;//if set to true, can't add new var
 protected:
 	//only used in Class and Core Object to hold member variables or APIs
@@ -58,6 +64,10 @@ protected:
 public:
 	Scope()
 	{
+	}
+	void SetNamespaceScope(Scope* pScope)
+	{
+		m_pNamespaceScope = pScope;
 	}
 	FORCE_INLINE void SetVarFrame(StackFrame* pFrame)
 	{
@@ -126,6 +136,10 @@ public:
 
 	FORCE_INLINE int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{
+		if (m_pNamespaceScope)
+		{
+			return m_pNamespaceScope->AddOrGet(name, bGetOnly, ppRightScope);
+		}
 		if (m_NoAddVar)
 		{
 			bGetOnly = true;

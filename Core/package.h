@@ -232,6 +232,7 @@ class PackageProxy :
 	virtual public XPackage,
 	virtual public Data::Object
 {
+	AST::Scope* m_pMyScope = nullptr;
 	void* m_pObject = nullptr;
 	//for functions, just addref
 	//for event, need to clone a new event
@@ -275,9 +276,13 @@ public:
 		Data::Object()
 	{
 		m_pPackage = pPack;
+		m_pMyScope = new Scope();
+		m_pMyScope->SetType(ScopeType::Package);
 		if (m_pPackage)
 		{
 			m_variableFrame = new StackFrame();
+			m_pMyScope->SetVarFrame(m_variableFrame);
+			m_pMyScope->SetNamespaceScope(m_pPackage->GetMyScope());
 			//? multiple threads will cause crash
 			//so lock here to try
 			//todo: check here, was commented out line below, shawn@4/21/2023
@@ -325,10 +330,12 @@ public:
 			m_variableFrame = nullptr;
 		}
 		//m_pPackage->Unlock();
+
+		delete m_pMyScope;
 	}
 	FORCE_INLINE virtual AST::Scope* GetMyScope() override
 	{
-		return m_pPackage? m_pPackage->GetMyScope():nullptr;
+		return m_pMyScope;
 	}
 	virtual void SetAPISet(void* pApiSet) override {}
 	FORCE_INLINE virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
