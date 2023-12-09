@@ -8,7 +8,7 @@ namespace X
 namespace AST
 {
 	class PairOp :
-		virtual public BinaryOp
+		public BinaryOp
 	{
 		short m_preceding_token = 0;
 		bool ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
@@ -29,13 +29,11 @@ namespace AST
 			Value& v, LValue* lValue);
 	public:
 		PairOp() :
-			Operator(),
 			BinaryOp()
 		{
 			m_type = ObType::Pair;
 		}
 		PairOp(short opIndex, short preceding_token) :
-			Operator(opIndex),
 			BinaryOp(opIndex)
 		{
 			m_preceding_token = preceding_token;
@@ -45,7 +43,7 @@ namespace AST
 		{
 			return m_preceding_token;
 		}
-		inline virtual void SetIsLeftValue(bool b) override
+		FORCE_INLINE virtual void SetIsLeftValue(bool b) override
 		{
 			if (R && R->m_type == AST::ObType::List)
 			{
@@ -65,7 +63,7 @@ namespace AST
 			}
 		}
 		virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override;
-		inline virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
+		FORCE_INLINE virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
 		{
 			if (ary.size() == 0)
 			{

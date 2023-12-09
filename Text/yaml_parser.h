@@ -73,7 +73,7 @@ namespace X
 					delete m_valueNode;
 				}
 			}
-			inline bool HaveQuote()
+			FORCE_INLINE bool HaveQuote()
 			{
 				return m_inQuote;
 			}
@@ -134,15 +134,15 @@ namespace X
 				m_valueNode = pNode;
 				m_valueNode->SetParent(this);
 			}
-			inline int GetChildrenCount()
+			FORCE_INLINE int GetChildrenCount()
 			{
 				return (int)m_children.size();
 			}
-			inline std::vector<YamlNode*>& GetChildren()
+			FORCE_INLINE std::vector<YamlNode*>& GetChildren()
 			{
 				return m_children;
 			}
-			inline YamlNode* GetChild(int idx)
+			FORCE_INLINE YamlNode* GetChild(int idx)
 			{
 				if (idx < 0 || idx >= m_children.size())
 				{
@@ -150,11 +150,11 @@ namespace X
 				}
 				return m_children[idx];
 			}
-			inline YamlNode* GetValueNode()
+			FORCE_INLINE YamlNode* GetValueNode()
 			{
 				return m_valueNode;
 			}
-			inline std::string GetValue()
+			FORCE_INLINE std::string GetValue()
 			{
 				if (m_type == YamlNodeType::Doc)
 				{

@@ -80,6 +80,7 @@ public:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) = 0;
 	virtual PyEngObjectPtr GetGlobals() = 0;
 	virtual PyEngObjectPtr GetLocals() = 0;
+	virtual bool CallReleaseForTupleItems(PyEngObjectPtr tuple) = 0;
 };
 
 extern PyEngHost* g_pPyHost;

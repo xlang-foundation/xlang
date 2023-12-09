@@ -41,7 +41,7 @@ namespace X
         {
             return mShmPtr + sizeof(PayloadFrameHead);
         }
-        inline int BufferSize()
+        FORCE_INLINE int BufferSize()
         {
             return m_BufferSize - sizeof(PayloadFrameHead);
         }

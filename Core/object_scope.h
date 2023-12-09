@@ -5,20 +5,20 @@ namespace X
 	namespace Data 
 	{
 		template<class class_T, typename F, typename Array, std::size_t... I>
-		inline auto VarCall_impl(class_T* pThis, F f, Array& a, std::index_sequence<I...>)
+		FORCE_INLINE auto VarCall_impl(class_T* pThis, F f, Array& a, std::index_sequence<I...>)
 		{
 			return (pThis->*f)(a[I]...);
 		}
 		template<std::size_t N, class class_T, typename F, typename T, typename Indices = std::make_index_sequence<N>>
-		inline auto VarCall(class_T* pThis, F f, T& a)
+		FORCE_INLINE auto VarCall(class_T* pThis, F f, T& a)
 		{
 			return VarCall_impl(pThis, f, a, Indices{});
 		}
 
 		template<class T>
-		class ObjectScope :
-			virtual public AST::Scope
+		class ObjectScope
 		{
+			AST::Scope* m_pMyScope = nullptr;
 		protected:
 			struct FuncInfo
 			{
@@ -26,30 +26,25 @@ namespace X
 				X::U_FUNC func;
 			};
 			std::vector<FuncInfo> m_funclist;
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::StackFrame* m_variableFrame = nullptr;
 			std::vector<X::XEvent*> __events;
-			virtual Scope* GetParentScope() override { return nullptr; }
-			// Inherited via Scope
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
-			}
 		public:
+			FORCE_INLINE AST::Scope* GetMyScope()
+			{
+				return m_pMyScope;
+			}
 			~ObjectScope()
 			{
-				if (m_stackFrame)
+				if (m_variableFrame)
 				{
-					delete m_stackFrame;
+					delete m_variableFrame;
+				}
+				if (m_pMyScope)
+				{
+					delete m_pMyScope;
 				}
 			}
-			inline void Fire(int evtIndex,
+			FORCE_INLINE void Fire(int evtIndex,
 				X::ARGS& params, X::KWARGS& kwargs)
 			{
 				if (evtIndex >= 0 && evtIndex < (int)__events.size())
@@ -72,20 +67,22 @@ namespace X
 							return true;
 						}) });
 			}
-			inline AST::Scope* GetScope()
+			FORCE_INLINE AST::Scope* GetScope()
 			{
 				return dynamic_cast<AST::Scope*>(this);
 			}
 			bool Create()
 			{
-				m_stackFrame = new AST::StackFrame(this);
-				m_stackFrame->SetVarCount((int)m_funclist.size());
+				m_pMyScope = new AST::Scope();
+				m_variableFrame = new AST::StackFrame();
+				m_variableFrame->SetVarCount((int)m_funclist.size());
+				m_pMyScope->SetVarFrame(m_variableFrame);
 				for (auto& f : m_funclist)
 				{
-					int idx = AddOrGet(f.name, false);
+					int idx = m_pMyScope->AddOrGet(f.name, false);
 					auto* pFuncObj = X::g_pXHost->CreateFunction(f.name.c_str(),f.func);
 					X::Value v0(dynamic_cast<X::XObj*>(pFuncObj));
-					m_stackFrame->Set(idx, v0);
+					m_variableFrame->Set(idx, v0);
 				}
 				m_funclist.clear();//save memory
 				return true;

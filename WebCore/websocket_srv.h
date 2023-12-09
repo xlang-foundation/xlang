@@ -17,7 +17,7 @@ namespace X
 			END_PACKAGE
 			WebSocketSession();
 			~WebSocketSession();
-			inline void SetImpl(void* pImpl)
+			FORCE_INLINE void SetImpl(void* pImpl)
 			{
 				m_pImpl = pImpl;
 			}

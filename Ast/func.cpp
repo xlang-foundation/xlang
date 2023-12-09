@@ -26,7 +26,7 @@ void Func::ScopeLayout()
 		//TODO: debug here
 		if (m_parent->m_type == ObType::Class)
 		{//it is class's member
-			m_IndexOfThis = AddOrGet(thisKey, false);
+			m_IndexOfThis = pMyScope->AddOrGet(thisKey, false);
 		}
 	}
 	//process parameters' default values
@@ -66,7 +66,7 @@ void Func::ScopeLayout()
 			}
 			break;
 			}
-			int idx = AddOrGet(strVarName, false);
+			int idx = m_pMyScope->AddOrGet(strVarName, false);
 			m_IndexofParamList.push_back(idx);
 		}
 		Params->ScopeLayout();
@@ -135,7 +135,7 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 	{
 		X::Value retVal;
 		ExecAction action;
-		(*it)->Exec(rt, action,pPassContext, retVal);
+		ExpExec(*it,rt, action,pPassContext, retVal);
 		if (retVal.IsObject())
 		{
 			pPassContext = retVal.GetObj();
@@ -161,48 +161,69 @@ bool Func::CallEx(XRuntime* rt, XObj* pContext,
 	kwParams.Add("origin", trailer);
 	return Call(rt,pContext,params,kwParams,retValue);
 }
-Module* Func::GetMyModule()
+void Func::FindMyModule()
 {
+	Module* myModule = nullptr;
 	auto pa = m_parent;
 	while (pa)
 	{
 		if (pa->m_type == ObType::Module)
 		{
-			return dynamic_cast<Module*>(pa);
+			myModule =  dynamic_cast<Module*>(pa);
+			break;
 		}
 		else
 		{
 			pa = pa->GetParent();
 		}
 	}
-	return nullptr;
+	m_myModule = myModule;
 }
+
+//Shawn@12/8/2023, if rt0 is nullptr,called from non-main thread,
+//need to get rt from the module
+//also check if in this is in-trace or not,
+//if in trace, need to add Scope into trace list
 bool Func::Call(XRuntime* rt0,
 	XObj* pContext,
 	ARGS& params,
 	KWARGS& kwParams,
 	Value& retValue)
 {
+	bool needAddScopeToTrace = false;
+	if (rt0 == nullptr)
+	{
+		auto* pMyModule = GetMyModule();
+		rt0 = pMyModule->GetRT();
+		needAddScopeToTrace = true;
+	}
 	auto* rt_from = (XlangRuntime*)rt0;
 	XlangRuntime* rt = G::I().Threading(rt_from);
 	if (!rt->M())
 	{
 		rt->SetM(GetMyModule());
 	}
+	//TODO: check cost
+	if (needAddScopeToTrace && rt->GetTrace())
+	{
+		//check if this func's scope in debug scope list or not
+		rt->M()->AddDbgScope(m_pMyScope);
+	}
+
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
-	StackFrame* frame = new StackFrame(this);
+	StackFrame* pCurFrame = new StackFrame(m_pMyScope);
 	for (auto& kw : kwParams)
 	{
 		std::string strKey(kw.key);
-		Scope::AddOrGet(strKey, false);
+		m_pMyScope->AddOrGet(strKey, false);
 	}
-	rt->PushFrame(frame,GetVarNum());
-	//Add this if This is not null
+	rt->PushFrame(pCurFrame,m_pMyScope->GetVarNum());
+	//for Class,Add this if This is not null
 	if (m_IndexOfThis >=0 &&
 		pContextObj && pContextObj->GetType() == X::ObjType::XClassObject)
 	{
 		Value v0(dynamic_cast<Data::Object*>(pContext));
-		Scope::Set(rt, pContext, m_IndexOfThis, v0);
+		pCurFrame->Set(m_IndexOfThis, v0);
 	}
 	int num = (int)params.size();
 	int indexNum = (int)m_IndexofParamList.size();
@@ -212,23 +233,23 @@ bool Func::Call(XRuntime* rt0,
 	}
 	for (int i = 0; i < num; i++)
 	{
-		Scope::Set(rt, pContext, m_IndexofParamList[i], params[i]);
+		pCurFrame->Set(m_IndexofParamList[i], params[i]);
 	}
 	for (auto& kw : kwParams)
 	{
 		std::string strKey(kw.key);
-		int idx = Scope::AddOrGet(strKey, false);
+		int idx = m_pMyScope->AddOrGet(strKey, false);
 		if (idx >= 0)
 		{
-			Scope::Set(rt, pContext, idx, kw.val);
+			pCurFrame->Set(idx, kw.val);
 		}
 	}
 	Value v0;
 	ExecAction action;
 	Block::Exec(rt,action,pContext, v0);
 	rt->PopFrame();
-	retValue = frame->GetReturnValue();
-	delete frame;
+	retValue = pCurFrame->GetReturnValue();
+	delete pCurFrame;
 	return true;
 }
 XObj* ExternFunc::GetRightContextForClass(XObj* pContext)

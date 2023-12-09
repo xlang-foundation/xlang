@@ -943,7 +943,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.type = "PyObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
-				break;			
+				break;	
+			case 'DeferredObject':
+				v.reference = this._runtime.createScopeRef(
+					v.Type,v.FrameId,v.Val,v.Id);
+				dapVariable.value = 'Deferred Object(Size:'+v.Size.toString()+")";
+				dapVariable.type = "DeferredObject";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = v.Size;
+				break;						
 			default:
 				break;
 		}

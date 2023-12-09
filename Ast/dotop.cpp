@@ -33,7 +33,7 @@ void DotOp::QueryBases(XlangRuntime* rt, Data::Object* pObj,
 	std::vector<Scope*>& bases)
 {
 	pObj->GetBaseScopes(bases);
-	bases.push_back(&MetaScope::I());
+	bases.push_back(MetaScope::I().GetMyScope());
 }
 void DotOp::RunScopeLayoutWithScopes(Expression* pExpr,
 	std::vector<Scope*>& scopes)
@@ -141,7 +141,7 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 						Value v0;
 						LValue lVal = nil;
 						ExecAction action;
-						var->Exec(rt,action,pContext, v0, &lVal);
+						ExpExec(var,rt,action,pContext, v0, &lVal);
 						AddFunc(v0, lVal,pContext);
 					}
 				}
@@ -152,7 +152,7 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 				Value v0;
 				LValue lVal = nil;
 				ExecAction action;
-				var->Exec(rt, action,pContext, v0, &lVal);
+				ExpExec(var,rt, action,pContext, v0, &lVal);
 				AddFunc(v0, lVal,pContext);
 			}
 		}
@@ -162,7 +162,7 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 			Value v0;
 			LValue lValue = nil;
 			ExecAction action;
-			var->Exec(rt, action,pContext, v0, &lValue);
+			ExpExec(var,rt, action,pContext, v0, &lValue);
 			AddFunc(v0, lValue,pContext);
 		}
 	};
@@ -265,7 +265,7 @@ bool DotOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LV
 		return true;
 	}
 	Value v_l;
-	if (!L->Exec(rt,action, pContext, v_l) || !v_l.IsObject())
+	if (!ExpExec(L,rt,action, pContext, v_l) || !v_l.IsObject())
 	{
 		return false;
 	}
@@ -287,7 +287,7 @@ bool DotOp::CalcCallables(XlangRuntime* rt, XObj* pContext,
 {
 	Value val;
 	ExecAction action;
-	bool bOK = Exec(rt, action,pContext, val);
+	bool bOK = ExpExec(this,rt, action,pContext, val);
 	if (bOK && val.IsObject())
 	{
 		bOK = dynamic_cast<Data::Object*>(val.GetObj())->CalcCallables(rt, pContext, callables);

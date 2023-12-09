@@ -31,9 +31,9 @@ namespace X
 				m_rightVal = val;
 				m_op = op;
 			}
-			inline X::Value& GetLeftValue() { return m_leftVal; }
-			inline X::Value& GetRightValue() { return m_rightVal; }
-			inline Tensor_Operator GetOp() { return m_op; }
+			FORCE_INLINE X::Value& GetLeftValue() { return m_leftVal; }
+			FORCE_INLINE X::Value& GetRightValue() { return m_rightVal; }
+			FORCE_INLINE Tensor_Operator GetOp() { return m_op; }
 		};
 	}
 }

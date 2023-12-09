@@ -26,13 +26,13 @@ namespace X
 			{
 
 			}
-			virtual inline void SetName(const char* n) override
+			virtual FORCE_INLINE void SetName(const char* n) override
 			{
 				m_name = n;
 			}
-			inline std::string& GetName() { return m_name; }
-			inline bool IsUnaryOp() { return m_isUnaryOp; }
-			inline Tensor_OperatorHandler GetOpHandler()
+			FORCE_INLINE std::string& GetName() { return m_name; }
+			FORCE_INLINE bool IsUnaryOp() { return m_isUnaryOp; }
+			FORCE_INLINE Tensor_OperatorHandler GetOpHandler()
 			{
 				return m_opHandler;
 			}

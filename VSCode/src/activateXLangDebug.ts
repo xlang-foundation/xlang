@@ -111,7 +111,7 @@ export function activateXLangDebug(context: vscode.ExtensionContext, factory?: v
 		}
 	}));
 
-	// override VS Code's default implementation of the "inline values" feature"
+	// override VS Code's default implementation of the "FORCE_INLINE values" feature"
 	context.subscriptions.push(vscode.languages.registerInlineValuesProvider('xlang', {
 
 		provideInlineValues(document: vscode.TextDocument, viewport: vscode.Range, context: vscode.InlineValueContext) : vscode.ProviderResult<vscode.InlineValue[]> {

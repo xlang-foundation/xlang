@@ -7,6 +7,7 @@
 #include "runtime.h"
 #include <iostream>
 #include "Locker.h"
+#include "stackframe.h"
 
 namespace X {
 	namespace Data { class Object; }
@@ -33,9 +34,9 @@ namespace X {
 		~G();
 		void BindRuntimeToThread(XlangRuntime* rt);
 		void UnbindRuntimeToThread(XlangRuntime* rt);
-		inline OpRegistry& R() { return *m_reg;}
-		inline void SetReg(OpRegistry* r) { m_reg = r; }
-		inline XRuntime* GetCurrentRuntime()
+		FORCE_INLINE OpRegistry& R() { return *m_reg;}
+		FORCE_INLINE void SetReg(OpRegistry* r) { m_reg = r; }
+		FORCE_INLINE XRuntime* GetCurrentRuntime(XRuntime* baseRt = nullptr)
 		{
 			unsigned long tid = GetThreadID();
 			XRuntime* pRet = nullptr;
@@ -48,11 +49,11 @@ namespace X {
 			((Locker*)m_lockRTMap)->Unlock();
 			if (pRet == nullptr)
 			{
-				pRet =  MakeThreadRuntime(tid, nullptr);
+				pRet =  MakeThreadRuntime(tid, baseRt?dynamic_cast<XlangRuntime*>(baseRt):nullptr);
 			}
 			return pRet;
 		}
-		inline XlangRuntime* Threading(XlangRuntime* fromRt)
+		FORCE_INLINE XlangRuntime* Threading(XlangRuntime* fromRt)
 		{
 			long long curTId = GetThreadID();
 			if (fromRt == nullptr || fromRt->GetThreadId() != curTId)
@@ -75,13 +76,13 @@ namespace X {
 		void ObjBindToStack(XObj* pXObj, AST::StackFrame* pStack);
 		void ObjUnbindToStack(XObj* pXObj, AST::StackFrame* pStack);
 #endif
-		inline void AddObj(Data::Object* obj)
+		FORCE_INLINE void AddObj(Data::Object* obj)
 		{
 			Lock();
 			Objects.emplace(std::make_pair(obj,ObjInfo{}));
 			UnLock();
 		}
-		inline void RemoveObj(Data::Object* obj)
+		FORCE_INLINE void RemoveObj(Data::Object* obj)
 		{
 			Lock();
 			auto it = Objects.find(obj);

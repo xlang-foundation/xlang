@@ -60,11 +60,11 @@ namespace X
 		XRuntime* m_rt = nullptr;
 		XObj* m_parent = nullptr;
 
-		inline void SetRT(XRuntime* rt)
+		FORCE_INLINE void SetRT(XRuntime* rt)
 		{
 			m_rt = rt;
 		}
-		inline void SetParent(XObj* p)
+		FORCE_INLINE void SetParent(XObj* p)
 		{
 			m_parent = p;
 		}
@@ -173,7 +173,7 @@ namespace X
 			return 0;
 		}
 		//API Wrapper
-		inline virtual Value Member(XRuntime* rt,const char* name)
+		FORCE_INLINE virtual Value Member(XRuntime* rt,const char* name)
 		{
 			X::Value retVal = g_pXHost->QueryMember(rt,this, name);
 			if (retVal.IsObject())
@@ -182,7 +182,7 @@ namespace X
 			}
 			return retVal;
 		}
-		inline Value Member(const char* name)
+		FORCE_INLINE Value Member(const char* name)
 		{
 			if (m_rt == nullptr)
 			{
@@ -209,7 +209,7 @@ namespace X
 			}
 			return v0;
 		}
-		inline X::Value operator()()
+		FORCE_INLINE X::Value operator()()
 		{
 			X::ARGS params(0);
 			X::KWARGS kwargs;
@@ -271,7 +271,7 @@ namespace X
 		Internal_Reserve(XDict)
 		virtual void Set(X::Value& key, X::Value& val) = 0;
 		virtual void Enum(Dict_Enum proc) = 0;
-		inline void Set(const char* key, X::Value val)
+		FORCE_INLINE void Set(const char* key, X::Value val)
 		{
 			X::Value k(key);
 			Set(k,val);
@@ -440,11 +440,11 @@ namespace X
 		virtual void SetAPISet(void* pApiSet) = 0;
 		virtual bool IsSamePackage(XPackage* pPack) = 0;
 	};
-	inline long OnEvent(const char* evtName, EventHandler handler)
+	FORCE_INLINE long OnEvent(const char* evtName, EventHandler handler)
 	{
 		return g_pXHost->OnEvent(evtName, handler);
 	}
-	inline void OffEvent(const char* evtName, long Cookie)
+	FORCE_INLINE void OffEvent(const char* evtName, long Cookie)
 	{
 		return g_pXHost->OffEvent(evtName, Cookie);
 	}

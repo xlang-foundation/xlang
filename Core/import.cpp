@@ -15,10 +15,6 @@ namespace X
 
 }
 
-X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
-{
-	return nullptr;
-}
 bool X::AST::Import::CalcCallables(XlangRuntime* rt, XObj* pContext,
 	std::vector<Scope*>& callables)
 {
@@ -181,7 +177,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 	if (m_from)
 	{
 		Value v0;
-		if (m_from->Exec(rt, action, pContext, v0, nullptr))
+		if (ExpExec(m_from,rt, action, pContext, v0, nullptr))
 		{
 			m_path = v0.ToString();
 		}
@@ -189,7 +185,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 	if (m_thru)
 	{
 		Value v0;
-		if (m_thru->Exec(rt, action, pContext, v0, nullptr))
+		if (ExpExec(m_thru,rt, action, pContext, v0, nullptr))
 		{
 			m_thruUrl = v0.ToString();
 		}
@@ -213,7 +209,8 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 		}
 		if (bOK && pMyScope)
 		{
-			pMyScope->AddAndSet(rt, pContext, varName, v);
+			auto idx = pMyScope->AddOrGet(varName, false);
+			rt->Set(pMyScope, pContext,idx,v);
 		}
 	}
 	return true;

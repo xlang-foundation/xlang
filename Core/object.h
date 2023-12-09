@@ -44,12 +44,16 @@ namespace Data {
 			DeleteAttrBag();
 			G::I().RemoveObj(this);
 		}
-		inline virtual int IncRef()
+		FORCE_INLINE virtual AST::Scope* GetMyScope()
+		{
+			return nullptr;
+		}
+		FORCE_INLINE virtual int IncRef()
 		{
 			AutoLock autoLock(m_lock);
 			return ObjRef::AddRef();
 		}
-		inline void SetExtraScope(AST::Scope* pScope)
+		FORCE_INLINE void SetExtraScope(AST::Scope* pScope)
 		{
 			m_extraScope = pScope;
 		}
@@ -58,12 +62,12 @@ namespace Data {
 			IncRef();
 			return this;
 		}
-		inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals)
+		FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals)
 		{
 			return true;
 		}
-		inline virtual void CloseIterator(Iterator_Pos pos) {}
-		inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
+		FORCE_INLINE virtual void CloseIterator(Iterator_Pos pos) {}
+		FORCE_INLINE virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			if (m_extraScope)
 			{
@@ -72,7 +76,7 @@ namespace Data {
 		}
 		AttributeBag* GetAttrBag();
 		void DeleteAttrBag();
-		inline virtual int DecRef()
+		FORCE_INLINE virtual int DecRef()
 		{
 			m_lock.Lock();
 			int ref = ObjRef::Release();
@@ -87,37 +91,37 @@ namespace Data {
 			}
 			return ref;
 		}
-		inline void ExternLock()
+		FORCE_INLINE void ExternLock()
 		{
 			m_external_lock.Lock();
 		}
-		inline void ExternUnlock()
+		FORCE_INLINE void ExternUnlock()
 		{
 			m_external_lock.Unlock();
 		}
-		inline void Lock()
+		FORCE_INLINE void Lock()
 		{
 			m_lock.Lock();
 		}
-		inline void Unlock()
+		FORCE_INLINE void Unlock()
 		{
 			m_lock.Unlock();
 		}
-		inline bool IsFunc()
+		FORCE_INLINE bool IsFunc()
 		{
 			return (m_t == ObjType::Function);
 		}
-		inline std::string CombinObjectIds(std::vector<std::string>& IdList,
+		FORCE_INLINE std::string CombinObjectIds(std::vector<std::string>& IdList,
 			std::string newId)
 		{
 			return concat(IdList, ".") + "." + newId;
 		}
-		inline std::string CombinObjectIds(std::vector<std::string>& IdList,
+		FORCE_INLINE std::string CombinObjectIds(std::vector<std::string>& IdList,
 			unsigned long long id)
 		{
 			return concat(IdList, ".") + "." + ::tostring(id);
 		}
-		inline bool IsStr()
+		FORCE_INLINE bool IsStr()
 		{
 			return (m_t == ObjType::Str);
 		}
@@ -152,7 +156,7 @@ namespace Data {
 			return GetABIString(typeName);
 		}
 		//todo: should impl. into individual class  with virtual
-		inline std::string GetObjectTypeString()
+		FORCE_INLINE std::string GetObjectTypeString()
 		{
 			switch (m_t)
 			{
@@ -195,6 +199,8 @@ namespace Data {
 				return "RemoteObject";
 			case X::ObjType::PyProxyObject:
 				return "PyObject";
+			case X::ObjType::DeferredObject:
+				return "DeferredObject";
 			default:
 				break;
 			}
@@ -283,7 +289,7 @@ namespace Data {
 			if (m_expr)
 			{
 				AST::ExecAction action;
-				return m_expr->Exec((XlangRuntime*)rt, action, pContext, retValue);
+				return ExpExec(m_expr,(XlangRuntime*)rt, action, pContext, retValue);
 			}
 			else
 			{

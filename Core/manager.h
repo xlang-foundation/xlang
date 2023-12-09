@@ -65,7 +65,7 @@ namespace X
 			}
 			m_lockLrpcPorts.Unlock();
 		}
-		inline bool IsLrpcHostedByThisProcess(const char* url)
+		FORCE_INLINE bool IsLrpcHostedByThisProcess(const char* url)
 		{
 			bool bFound = false;
 			int nPort = 0;

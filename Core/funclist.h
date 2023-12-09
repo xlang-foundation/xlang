@@ -24,7 +24,7 @@ public:
 	{
 		m_t = ObjType::FuncCalls;
 	}
-	inline std::vector<VectorCall>& GetList()
+	FORCE_INLINE std::vector<VectorCall>& GetList()
 	{
 		return m_list;
 	}

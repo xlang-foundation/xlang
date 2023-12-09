@@ -34,7 +34,7 @@ namespace X
 			}
 			void Init()
 			{
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::StackFrame();
 				m_stackFrame->SetVarCount(2);
 
 				std::string strName;
@@ -92,6 +92,7 @@ namespace X
 					m_stackFrame->Set(idx, funcVal);
 				}
 			}
+#if __TODO_SCOPE__
 			// Inherited via Scope
 			virtual Scope* GetParentScope() override
 			{
@@ -108,6 +109,7 @@ namespace X
 				m_stackFrame->Get(idx, v, lValue);
 				return true;
 			}
+#endif
 		};
 		static FutureScope* _FutureScope = nullptr;
 

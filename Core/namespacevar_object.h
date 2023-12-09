@@ -10,52 +10,50 @@ namespace X
 	namespace AST
 	{
 		class NamespaceVar;
+		class Scope;
 	}
 	namespace Data
 	{
 		class NamespaceVarObject :
-			public virtual Object,
-			public virtual AST::Scope
+			public virtual Object
 		{
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::Scope* m_pMyScope = nullptr;
+			AST::StackFrame* m_variableFrame = nullptr;
 		public:
 			NamespaceVarObject()
 			{
-				m_stackFrame = new AST::StackFrame(this);
+				m_pMyScope = new AST::Scope();
+				m_variableFrame = new AST::StackFrame();
+				m_pMyScope->SetVarFrame(m_variableFrame);
 			}
 			~NamespaceVarObject()
 			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
+				delete m_pMyScope;
+				delete m_variableFrame;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases);
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, LValue* lValue = nullptr)
 			{
-				m_stackFrame->Get(idx, v, lValue);
+				m_variableFrame->Get(idx, v, lValue);
 				return true;
 			}
 			bool Get(int idx, X::Value& v, LValue* lValue)
 			{
-				m_stackFrame->Get(idx, v, lValue);
+				m_variableFrame->Get(idx, v, lValue);
 				return true;
 			}
 			void AddSlotTo(int index)
 			{
-				if (index >= m_stackFrame->GetVarCount())
+				if (index >= m_variableFrame->GetVarCount())
 				{
-					m_stackFrame->SetVarCount(index + 1);
+					m_variableFrame->SetVarCount(index + 1);
 				}
 			}
 			void Set(int index, X::Value& val)
 			{
-				m_stackFrame->Set(index, val);
+				m_variableFrame->Set(index, val);
 			}
-
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override { return nullptr; }
 		};
 	}
 }

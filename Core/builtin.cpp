@@ -45,6 +45,7 @@
 #include "tensor_cpu.h"
 #include "xport.h"
 #include "ast.h"
+#include "time_object.h"
 
 namespace X
 {
@@ -496,9 +497,9 @@ bool Builtin::RegisterWithScope(const char* name, X::U_FUNC func,
 	m_lock.Unlock();
 	if (regToMeta)
 	{
-		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);
+		int idx = X::AST::MetaScope::I().GetMyScope()->AddOrGet(strName, false);
 		X::Value vFunc(pFuncObj);
-		X::AST::MetaScope::I().Set(nullptr, nullptr, idx, vFunc);
+		X::AST::MetaScope::I().GetMyScope()->Set(nullptr, nullptr, idx, vFunc);
 	}
 	return true;
 }
@@ -518,9 +519,9 @@ bool Builtin::Register(const char* name, X::U_FUNC func,
 	m_lock.Unlock();
 	if (regToMeta)
 	{
-		int idx = X::AST::MetaScope::I().AddOrGet(strName, false);
+		int idx = X::AST::MetaScope::I().GetMyScope()->AddOrGet(strName, false);
 		X::Value vFunc(pFuncObj);
-		X::AST::MetaScope::I().Set(nullptr, nullptr, idx,vFunc);
+		X::AST::MetaScope::I().GetMyScope()->Set(nullptr, nullptr, idx, vFunc);
 	}
 	return true;
 }
@@ -1421,6 +1422,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::HtmlWrapper>(m_libName.c_str(), "html");
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
+	X::RegisterPackage<X::TimeObject>(m_libName.c_str(), "time");
 
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");

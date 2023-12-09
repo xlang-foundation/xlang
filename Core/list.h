@@ -38,7 +38,7 @@ public:
 		m_ptrs.clear();
 		m_data.clear();
 	}
-	inline virtual void AddItem(X::Value& v) override
+	FORCE_INLINE virtual void AddItem(X::Value& v) override
 	{
 		Add(v);
 	}
@@ -64,7 +64,7 @@ public:
 		}
 		return outs;
 	}
-	inline virtual bool GetIndexValue(int idx, Value& v) override
+	FORCE_INLINE virtual bool GetIndexValue(int idx, Value& v) override
 	{
 		return Get(idx, v);
 	}
@@ -200,12 +200,12 @@ public:
 		strList += "]";
 		return GetABIString(strList);
 	}
-	inline virtual long long Size() override 
+	FORCE_INLINE virtual long long Size() override 
 	{
 		AutoLock autoLock(m_lock);
 		return m_useLValue ? m_ptrs.size() : m_data.size();
 	}
-	inline void Clear()
+	FORCE_INLINE void Clear()
 	{
 		AutoLock autoLock(m_lock);
 		m_bases.clear();
@@ -226,18 +226,18 @@ public:
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 		KWARGS& kwParams,X::Value& retValue) override;
-	inline void Add(X::LValue p)
+	FORCE_INLINE void Add(X::LValue p)
 	{
 		AutoLock autoLock(m_lock);
 		m_useLValue = true;
 		m_ptrs.push_back(p);
 	}
-	inline void Add(X::Value v)
+	FORCE_INLINE void Add(X::Value v)
 	{
 		AutoLock autoLock(m_lock);
 		m_data.push_back(v);
 	}
-	inline void MakeCommonBases(
+	FORCE_INLINE void MakeCommonBases(
 		AST::Expression* pThisBase,
 		std::vector<Value>& bases_0)
 	{
@@ -279,12 +279,12 @@ public:
 			}//end while
 		}//end else
 	}
-	inline void Remove(long long idx)
+	FORCE_INLINE void Remove(long long idx)
 	{
 		AutoLock autoLock(m_lock);
 		m_data.erase(std::next(m_data.begin(), idx));
 	}
-	inline void Insert(long long idx,XlangRuntime* rt, X::Value& v)
+	FORCE_INLINE void Insert(long long idx,XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
 		if (v.IsObject())
@@ -311,7 +311,7 @@ public:
 		}
 		m_data.insert(m_data.begin()+ idx,v);
 	}
-	inline void Add(XlangRuntime* rt, X::Value& v)
+	FORCE_INLINE void Add(XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
 		if (v.IsObject())
@@ -344,7 +344,7 @@ public:
 	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val) override;
-	inline virtual bool Set(long long index, X::Value& v) override
+	FORCE_INLINE virtual bool Set(long long index, X::Value& v) override
 	{
 		AutoLock autoLock(m_lock);
 		if (m_useLValue)
@@ -361,7 +361,7 @@ public:
 		}
 		return true;
 	}
-	inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+	FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 	{
 		long long it = (long long)pos;
 		X::Value val0;
@@ -398,7 +398,7 @@ public:
 		Get(idx, v0);
 		return v0;
 	}
-	inline bool Get(long long idx, X::Value& v,
+	FORCE_INLINE bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{
 		AutoLock autoLock(m_lock);

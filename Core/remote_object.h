@@ -28,7 +28,7 @@ namespace X
 		{
 			m_proxy = p;
 			m_t = ObjType::RemoteObject;
-			m_stackFrame = new AST::StackFrame(this);
+			m_stackFrame = new AST::StackFrame();
 		}
 		~RemoteObject()
 		{
@@ -42,11 +42,11 @@ namespace X
 				m_remote_Obj_id = m_proxy->QueryRootObject(name);
 			}
 		}
-		inline ROBJ_ID GetObjId()
+		FORCE_INLINE ROBJ_ID GetObjId()
 		{
 			return m_remote_Obj_id;
 		}
-		inline virtual int DecRef()
+		FORCE_INLINE virtual int DecRef()
 		{
 			Lock();
 			int ref = Ref();
@@ -101,10 +101,6 @@ namespace X
 			stream >> m_remote_Parent_Obj_id;
 			stream >> m_remote_Obj_id;
 			return true;
-		}
-		virtual Scope* GetParentScope() override
-		{
-			return nullptr;
 		}
 		bool SetValue(XlangRuntime* rt, XObj* pContext,X::Value& val)
 		{
@@ -167,7 +163,8 @@ namespace X
 				m_remote_Obj_id, m_memmberId,
 				params, kwParams, trailer,retValue);
 		}
-		virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
+#if __TODO_SCOPE__
+		virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr)
 		{
 			int idx = Scope::AddOrGet(name, bGetOnly);
 			if (idx == (int)X::AST::ScopeVarIndex::INVALID)
@@ -193,17 +190,18 @@ namespace X
 			}
 			return idx;
 		}
-		inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
+		FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
 			int idx, X::Value& v) override
 		{
 			m_stackFrame->Set(idx, v);
 			return true;
 		}
-		inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+		FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 			int idx, X::Value& v, LValue* lValue = nullptr) override
 		{
 			m_stackFrame->Get(idx, v, lValue);
 			return true;
 		}
+#endif
 	};
 }

@@ -2,97 +2,37 @@
 #include "list.h"
 #include "port.h"
 #include "function.h"
+#include "obj_func_scope.h"
 
 namespace X
 {
 	namespace Data
 	{
-		class DictScope :
-			virtual public AST::Scope
-		{
-			AST::StackFrame* m_stackFrame = nullptr;
-		public:
-			DictScope() :
-				Scope()
-			{
-				Init();
-			}
-			void clean()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-					m_stackFrame = nullptr;
-				}
-			}
-			~DictScope()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
-			}
-			void Init()
-			{
-				m_stackFrame = new AST::StackFrame(this);
-				m_stackFrame->SetVarCount(1);
-
-				std::string strName;
-				{
-					strName = "has";
-					auto f = [](X::XRuntime* rt, X::XObj* pThis,X::XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						Dict* pObj = dynamic_cast<Dict*>(pContext);
-						retValue = Value(pObj->Has(params[0]));
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"has(key)",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-			}
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override
-			{
-				return nullptr;
-			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
-			}
-		};
-		static DictScope* _dictScope = nullptr;
+		static Obj_Func_Scope<1> _dictScope;
 		void Dict::Init()
 		{
-			_dictScope = new DictScope();
+			_dictScope.Init();
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					Dict* pObj = dynamic_cast<Dict*>(pContext);
+					retValue = X::Value(pObj->Has(params[0]));
+					return true;
+				};
+				_dictScope.AddFunc("has", "has(key)", f);
+			}
 		}
 		void Dict::cleanup()
 		{
-			if (_dictScope)
-			{
-				_dictScope->clean();
-				delete _dictScope;
-				_dictScope = nullptr;
-			}
+			_dictScope.Clean();
 		}
 		Dict::Dict() :XDict(0)
 		{
 			m_t = ObjType::Dict;
-			m_bases.push_back(_dictScope);
+			m_bases.push_back(_dictScope.GetMyScope());
 		}
 		List* Dict::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
@@ -210,11 +150,11 @@ namespace X
 				m_key = k;
 				m_dict = d;
 			}
-			inline void operator += (const Value& v)
+			FORCE_INLINE void operator += (const Value& v)
 			{
 				m_dict->AddKeyValue(m_key, v);
 			}
-			virtual inline void operator = (const Value& v) override
+			FORCE_INLINE void operator = (const Value& v)
 			{
 				m_dict->SetKV(m_key, v);
 			}

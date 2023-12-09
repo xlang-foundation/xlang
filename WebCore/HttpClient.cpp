@@ -53,13 +53,13 @@ namespace X
                 }
             }
 
-            inline bool setHeader(const std::string name, const std::string value)
+            FORCE_INLINE bool setHeader(const std::string name, const std::string value)
             {
                 req.set(name, value);
                 return true;
             }
 
-            inline std::string sendRequest(const std::string body_content)
+            FORCE_INLINE std::string sendRequest(const std::string body_content)
             {
                 try {
                     boost::asio::ip::tcp::resolver resolver{ioc};

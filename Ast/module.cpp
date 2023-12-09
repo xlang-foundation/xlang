@@ -35,11 +35,11 @@ void Module::SetDebug(bool b,XlangRuntime* runtime)
 void Module::ScopeLayout()
 {
 	std::string self("self");
-	AddOrGet(self,false);
+	m_pMyScope->AddOrGet(self,false);
 	auto& funcs = Builtin::I().All();
 	for (auto it : funcs)
 	{
-		int idx = AddOrGet(it.name, false);
+		int idx = m_pMyScope->AddOrGet(it.name, false);
 	}
 	Builtin::I().ReturnMap();
 	Block::ScopeLayout();
@@ -47,25 +47,25 @@ void Module::ScopeLayout()
 void Module::AddBuiltins(XlangRuntime* rt)
 {
 	auto& funcs = Builtin::I().All();
-	m_stackFrame->SetVarCount(GetVarNum());
+	m_stackFrame->SetVarCount(m_pMyScope->GetVarNum());
 	//add self as this module
 	{
 		std::string selfName("self");
-		int idx = AddOrGet(selfName, true);
+		int idx = m_pMyScope->AddOrGet(selfName, true);
 		if (idx >= 0)
 		{
 			auto* pModuleObj = new ModuleObject(this);
 			Value v0(pModuleObj);
-			Set(rt, nullptr, idx, v0);
+			m_stackFrame->Set(idx, v0);
 		}
 	}
 	for (auto it : funcs)
 	{
-		int idx = AddOrGet(it.name, true);
+		int idx = m_pMyScope->AddOrGet(it.name, true);
 		if (idx >= 0)
 		{
 			Value v0(it.funcObj);
-			Set(rt,nullptr,idx, v0);
+			m_stackFrame->Set(idx, v0);
 		}
 	}
 	Builtin::I().ReturnMap();

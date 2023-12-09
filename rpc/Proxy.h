@@ -53,7 +53,7 @@ namespace X
 		Locker m_CallContextLock;
 		std::vector<Call_Context*> mCallContexts;
 		Call_Context* GetCallContext();
-		inline void ReturnCallContext(Call_Context* pContext)
+		FORCE_INLINE void ReturnCallContext(Call_Context* pContext)
 		{
 			m_CallContextLock.Lock();
 			pContext->InUse = false;

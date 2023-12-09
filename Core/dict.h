@@ -34,14 +34,15 @@ namespace X
 				mMap.clear();
 				m_bases.clear();
 			}
-			inline virtual long long Size() override
+			FORCE_INLINE virtual long long Size() override
 			{
 				return mMap.size();
 			}
 			virtual Value Member(XRuntime* rt, const char* name) override
 			{
 				X::Value val;
-				Get(X::Value(name), val);
+				X::Value key(name);
+				Get(key, val);
 				return val;
 			}
 			virtual void Set(X::Value& key, X::Value& val) override
@@ -184,7 +185,7 @@ namespace X
 			{
 				return true;
 			}
-			inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 			{
 				long long offset = (long long)pos;
 				if (offset >= mMap.size())

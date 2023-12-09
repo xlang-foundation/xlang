@@ -38,7 +38,7 @@ namespace X
 			}
 			void Init()
 			{
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::StackFrame();
 				//add datatype
 				std::vector<std::string> dataTypeList = {
 					"bool",
@@ -199,6 +199,7 @@ namespace X
 					m_stackFrame->Set(idx, funcVal);
 				}
 			}
+#if __TODO_SCOPE__
 			// Inherited via Scope
 			virtual Scope* GetParentScope() override
 			{
@@ -215,6 +216,7 @@ namespace X
 				m_stackFrame->Get(idx, v, lValue);
 				return true;
 			}
+#endif
 		};
 		static TensorScope* _TensorScope = nullptr;
 		void Tensor::cleanup()
@@ -691,7 +693,7 @@ namespace X
 			//SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
-		inline AST::Scope* Tensor::GetBaseScope() 
+		FORCE_INLINE AST::Scope* Tensor::GetBaseScope() 
 		{ 
 			if (_TensorScope == nullptr)
 			{

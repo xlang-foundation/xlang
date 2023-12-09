@@ -20,15 +20,15 @@ namespace X
 			{
 				m_t = ObjType::Iterator;
 			}
-			inline void SetImpactVar(AST::Expression* pVar)
+			FORCE_INLINE void SetImpactVar(AST::Expression* pVar)
 			{
 				m_varToImpack = pVar;
 			}
-			inline void SetContainer(X::Value& v)
+			FORCE_INLINE void SetContainer(X::Value& v)
 			{
 				m_container = v;
 			}
-			inline ~Iterator()
+			FORCE_INLINE ~Iterator()
 			{
 				if (m_container.IsObject())
 				{

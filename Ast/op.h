@@ -4,13 +4,14 @@
 #include <stack>
 #include "def.h"
 #include "op_registry.h"
+#include "InlineCall.h"
 
 namespace X
 {
 namespace AST
 {
 class Operator :
-	virtual public Expression
+	public Expression
 {
 protected:
 	short Op=0;//index of _kws
@@ -38,9 +39,9 @@ public:
 		return true;
 	}
 	bool GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
-	inline void SetId(OP_ID id) { opId = id; }
-	inline OP_ID GetId() { return opId; }
-	inline short getOp(){return Op;}
+	FORCE_INLINE void SetId(OP_ID id) { opId = id; }
+	FORCE_INLINE OP_ID GetId() { return opId; }
+	FORCE_INLINE short getOp(){return Op;}
 	virtual void SetL(Expression* l) {}
 	virtual void SetR(Expression* r) {}
 	virtual bool OpWithOperands(
@@ -52,7 +53,7 @@ public:
 };
 
 class BinaryOp :
-	virtual public Operator
+	public Operator
 {
 protected:
 	Expression* L=nil;
@@ -196,12 +197,12 @@ public:
 			return false;
 		}
 		Value v_l;
-		if (!L->Exec(rt,action,pContext,v_l))
+		if (!ExpExec(L,rt,action,pContext,v_l))
 		{
 			return false;
 		}
 		Value v_r;
-		if (!R->Exec(rt,action,pContext, v_r))
+		if (!ExpExec(R,rt,action,pContext, v_r))
 		{
 			return false;
 		}
@@ -210,15 +211,14 @@ public:
 	}
 };
 class Assign :
-	virtual public BinaryOp
+	public BinaryOp
 {
 public:
-	Assign() :Operator(), BinaryOp()
+	Assign() :BinaryOp()
 	{
 		m_type = ObType::Assign;
 	}
 	Assign(short op) :
-		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::Assign;
@@ -231,10 +231,117 @@ public:
 			L->SetIsLeftValue(true);
 		}
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	bool ObjectAssign(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& v, Value& v_r, LValue& lValue_L);
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	{
+		if (!L || !R)
+		{
+			v = Value(false);
+			return false;
+		}
+		Value v_l;
+		LValue lValue_L = nullptr;
+		ExpExec(L, rt, action, pContext, v_l, &lValue_L);
+		Value v_r;
+		if (!ExpExec(R,rt, action, pContext, v_r))
+		{
+			v = Value(false);
+			return false;
+		}
+		bool bOK = true;
+		if (v_l.IsObject())
+		{
+			auto* pObj = v_l.GetObj();
+			bOK = ObjectAssign(rt, pContext, pObj, v, v_r, lValue_L);
+			return bOK;
+		}
+		if (lValue_L)
+		{
+			switch (opId)
+			{
+			case X::OP_ID::Equ:
+				*lValue_L = v_r;
+				break;
+			case X::OP_ID::AddEqu:
+				//TODO: need clone??
+				//lValue_L->Clone();
+				*lValue_L += v_r;
+				break;
+			case X::OP_ID::MinusEqu:
+				*lValue_L -= v_r;
+				break;
+			case X::OP_ID::MulEqu:
+				*lValue_L *= v_r;
+				break;
+			case X::OP_ID::DivEqu:
+				break;
+			case X::OP_ID::ModEqu:
+				break;
+			case X::OP_ID::FloorDivEqu:
+				break;
+			case X::OP_ID::PowerEqu:
+				break;
+			case X::OP_ID::AndEqu:
+				break;
+			case X::OP_ID::OrEqu:
+				break;
+			case X::OP_ID::NotEqu:
+				break;
+			case X::OP_ID::RightShiftEqu:
+				break;
+			case X::OP_ID::LeftShitEqu:
+				break;
+			case X::OP_ID::Count:
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+			switch (opId)
+			{
+			case X::OP_ID::Equ:
+				bOK = ExpSet(L,rt, pContext, v_r);
+				break;
+			case X::OP_ID::AddEqu:
+				v_l.Clone();
+				v_l += v_r;
+				break;
+			case X::OP_ID::MinusEqu:
+				break;
+			case X::OP_ID::MulEqu:
+				break;
+			case X::OP_ID::DivEqu:
+				break;
+			case X::OP_ID::ModEqu:
+				break;
+			case X::OP_ID::FloorDivEqu:
+				break;
+			case X::OP_ID::PowerEqu:
+				break;
+			case X::OP_ID::AndEqu:
+				break;
+			case X::OP_ID::OrEqu:
+				break;
+			case X::OP_ID::NotEqu:
+				break;
+			case X::OP_ID::RightShiftEqu:
+				break;
+			case X::OP_ID::LeftShitEqu:
+				break;
+			case X::OP_ID::Count:
+				break;
+			default:
+				break;
+			}
+		}
+		v = Value(bOK);
+		return bOK;
+	}
 };
 class ColonOP :
-	virtual public Operator
+	public Operator
 {
 public:
 	ColonOP() :Operator()
@@ -250,7 +357,7 @@ public:
 		std::stack<AST::Expression*>& operands, int LeftTokenIndex);
 };
 class CommaOp :
-	virtual public Operator
+	public Operator
 {
 public:
 	CommaOp() :Operator()
@@ -266,7 +373,7 @@ public:
 		std::stack<AST::Expression*>& operands, int LeftTokenIndex);
 };
 class SemicolonOp :
-	virtual public Operator
+	public Operator
 {
 public:
 	SemicolonOp() :Operator()
@@ -283,7 +390,7 @@ public:
 };
 
 class UnaryOp :
-	virtual public Operator
+	public Operator
 {
 protected:
 	Expression* R = nil;
@@ -365,7 +472,7 @@ public:
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 class Range :
-	virtual public UnaryOp
+	public UnaryOp
 {
 	bool m_evaluated = false;
 	long long m_start=0;
@@ -375,13 +482,11 @@ class Range :
 	bool Eval(XlangRuntime* rt);
 public:
 	Range() :
-		Operator(),
 		UnaryOp()
 	{
 		m_type = ObType::Range;
 	}
 	Range(short op) :
-		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::Range;
@@ -400,25 +505,72 @@ public:
 		stream >> m_evaluated >> m_start >> m_stop >> m_step;
 		return true;
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	{
+		if (!m_evaluated)
+		{
+			Eval(rt);
+		}
+		if (v.GetType() != ValueType::Int64)
+		{//not started
+			v = Value(m_start);
+		}
+		else
+		{
+			v += m_step;
+		}
+		return (v.GetLongLong() < m_stop);
+	}
 };
 class InOp :
-	virtual public BinaryOp
+	public BinaryOp
 {
+	void DoIterator(Value& var0, Value& v);
 public:
 	InOp() :
-		Operator(),
 		BinaryOp()
 	{
 		m_type = ObType::In;
 	}
 	InOp(short op) :
-		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::In;
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	{
+		bool bOK = true;
+		if (v.IsInvalid())
+		{
+			Value  var0;
+			ExecAction action;
+			bOK = ExpExec(R, rt, action, pContext, var0);
+			if (bOK)
+			{
+				if (var0.IsObject())
+				{
+					DoIterator(var0, v);
+				}
+				else
+				{//such as range which return integer(64)
+					ExpSet(L,rt, pContext, var0);
+					v = var0;
+				}
+			}
+		}
+		else if (!v.IsObject())
+		{//for range case after first run
+			ExecAction action;
+			bOK = ExpExec(R, rt, action, pContext, v);
+			if (bOK)
+			{
+				ExpSet(L,rt, pContext, v);
+			}
+		}
+		return bOK;
+	}
+
 	virtual void SetL(Expression* l) override
 	{
 		BinaryOp::SetL(l);
@@ -429,23 +581,21 @@ public:
 	}
 };
 class ExternDecl :
-	virtual public UnaryOp
+	public UnaryOp
 {
 public:
 	ExternDecl() :
-		Operator(),
 		UnaryOp()
 	{
 		m_type = ObType::ExternDecl;
 	}
 	ExternDecl(short op) :
-		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::ExternDecl;
 	}
 	virtual void ScopeLayout() override;
-	inline virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
 	{
 		return true;//dont' run Base class's Run
 	}
