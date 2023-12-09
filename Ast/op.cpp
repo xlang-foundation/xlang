@@ -57,6 +57,7 @@ namespace AST
 			}
 		}
 		default:
+			bOK = false;
 			break;
 		}
 		return bOK;

@@ -184,9 +184,8 @@ namespace X
 				bCreated = info.package.IsValid();
 				valPack = info.package;
 
-				X::ObjRef* pRef = dynamic_cast<X::ObjRef*>(valPack.GetObj());
-				std::cout << "QueryAndCreatePackage,query:"<<name<<",RefCount:" <<
-					pRef->Ref()<< std::endl;
+				//X::ObjRef* pRef = dynamic_cast<X::ObjRef*>(valPack.GetObj());
+				//std::cout << "QueryAndCreatePackage,query:"<<name<<",RefCount:" <<pRef->Ref()<< std::endl;
 			}
 			return bCreated;
 		}
