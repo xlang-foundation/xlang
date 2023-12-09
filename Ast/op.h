@@ -258,6 +258,8 @@ public:
 				return bOK;
 			}
 		}
+		//move bOK to true to avoid error
+		bOK = true;
 		if (lValue_L)
 		{
 			switch (opId)
