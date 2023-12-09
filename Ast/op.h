@@ -253,7 +253,10 @@ public:
 		{
 			auto* pObj = v_l.GetObj();
 			bOK = ObjectAssign(rt, pContext, pObj, v, v_r, lValue_L);
-			return bOK;
+			if (bOK)
+			{
+				return bOK;
+			}
 		}
 		if (lValue_L)
 		{
