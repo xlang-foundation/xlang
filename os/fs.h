@@ -63,6 +63,13 @@ namespace X
 				XBin* pBin = dynamic_cast<XBin*>(p.GetObj());
 				m_wstream.write(pBin->Data(), pBin->Size());
 			}
+			else
+			{
+				std::string str = p.ToString();
+				std::streamsize  len = str.length();
+				m_wstream.write(str.c_str(), len);
+			}
+
 			return true;
 		}
 		bool close()
