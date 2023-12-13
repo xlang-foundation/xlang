@@ -34,10 +34,12 @@ enum class ObType
 	Dot,
 	Decor,
 	Func,
+	JitBlock,
 	BuiltinFunc,
 	Module,
 	Block,
 	Class,
+	ReturnType,
 #if ADD_SQL
 	Select,
 #endif

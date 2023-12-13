@@ -5,9 +5,10 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "xlang.exe",
+      "projectTarget": "xlang.exe (bin\\xlang.exe)",
       "args": [ "-event_loop", "-dbg", "-enable_python" ],
-      "name": "xlang.exe"
+      "args_": [ "C:\\ToGithub\\CantorAI\\xlang\\test\\jit\\simple101.x" ],
+      "name": "xlang.exe (bin\\xlang.exe)"
     }
   ]
 }

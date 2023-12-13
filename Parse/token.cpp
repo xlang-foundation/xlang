@@ -63,6 +63,9 @@ namespace X {
 		bool meetSlash = false;
 		bool haveEscapeCode = false;//like \n,\r...
 
+		int lineBeginSpaceTabCount = 0;
+		bool newTokenStartedForSpeicalPosMeet = false;
+
 		auto default_proc = [&](char c)
 		{
 			if (InSpace)
@@ -162,6 +165,41 @@ namespace X {
 				token_out(TokenEOS);
 				break;
 			}
+			//CASE:for special pos to meet
+			if (InMeetLineStartPosLessOrEqualToSpecialPos)
+			{
+				if (!newTokenStartedForSpeicalPosMeet)
+				{
+					newTokenStartedForSpeicalPosMeet = true;
+					new_token_start();
+				}
+				if (c == ' ' || c == '\t')
+				{
+					lineBeginSpaceTabCount++;
+				}
+				else if (c == '\n')
+				{
+					IncLine();
+					lineBeginSpaceTabCount = 0;
+				}
+				else
+				{
+					if (lineBeginSpaceTabCount <= SpecialPosToBeLessOrEqual)
+					{
+						//if not space or tab, and line char count less or equal to special pos
+						//it means we need the pos we wanted
+						token_out(TokenSpecialPosToBeLessOrEqual);
+						InMeetLineStartPosLessOrEqualToSpecialPos = false;
+						SpecialPosToBeLessOrEqual = 0;
+						//we need to count this char back, so set to -1
+						new_token_start();
+						break;
+					}
+				}
+				//continue to next char to check
+				continue;
+			}
+
 			//to cover case after slash, there are some spaces or tabs
 			//if not, turn off this flag
 			//and in newline meets, just check this flag

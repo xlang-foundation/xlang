@@ -8,6 +8,8 @@
 #include "feedop.h"
 #include "manager.h"
 #include "op_registry.h"
+#include "jitblock.h"
+#include "jitlib.h"
 
 namespace X
 {		
@@ -46,6 +48,18 @@ void Parser::ResetForNewLine()
 void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 	AST::Indent& lineIndent)
 {
+	if (m_bMeetJitBlock)
+	{
+		AST::Expression* pExpJitBlock = IsJitBlock(line);
+		if (pExpJitBlock)
+		{
+			m_bInsideJitBlock = true;
+			//reset it, we don't need this flag
+			m_bMeetJitBlock = false;
+			m_curJitBlock = (AST::JitBlock*)pExpJitBlock;
+			m_blockStartCharPos = line->GetCharPos();
+		}
+	}
 	auto* pCurBlockState = m_stackBlocks.top();
 	auto curBlock = pCurBlockState->Block();
 	auto indentCnt_CurBlock = 
@@ -386,8 +400,15 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 	//each expresion or op will get a tokenindex
 	//which increased with the sequence come out from Token parser
 	//use this way to make sure each op just get right operands
+
+	JitLib* pJitLib = nullptr;
+
 	while (true)
 	{
+		if (m_bInsideJitBlock)
+		{
+			mToken->SetSpecialPosToBeLessOrEqual(true, m_blockStartCharPos);
+		}
 		String s;
 		int leadingSpaceCnt = 0;
 		OneToken one;
@@ -408,6 +429,21 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		}
 		switch (idx)
 		{
+		case TokenSpecialPosToBeLessOrEqual:
+		{
+			//reset
+			m_bInsideJitBlock = false;
+			if (m_curJitBlock)
+			{
+				m_curJitBlock->SetJitCode(one.id);
+				if (pJitLib == nullptr)
+				{
+					pJitLib = new JitLib();
+				}
+				pJitLib->AddBlock(m_curJitBlock);
+			}
+		}
+			break;
 		case TokenLineComment:
 		{
 				AST::InlineComment* v = new AST::InlineComment(s.s, s.size);
@@ -549,6 +585,11 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		auto top = m_stackBlocks.top();
 		m_stackBlocks.pop();//only keep top one
 		delete top;
+	}
+	if (pJitLib)
+	{
+		pModule->SetJitLib(pJitLib);
+		pJitLib->Build();
 	}
 	return true;
 }

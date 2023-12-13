@@ -11,6 +11,7 @@
 #include "feedop.h"
 #include "await.h"
 #include "namespace_var.h"
+#include "jitblock.h"
 
 namespace X
 {
@@ -77,6 +78,9 @@ namespace X
 				break;
 			case X::AST::ObType::Decor:
 				bOK = static_cast<Decorator*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::JitBlock:
+				bOK = static_cast<JitBlock*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;
 			case X::AST::ObType::Func:
 				bOK = static_cast<Func*>(pExp)->Exec(rt, action, pContext, v, lValue);
