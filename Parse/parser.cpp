@@ -438,7 +438,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 				m_curJitBlock->SetJitCode(one.id);
 				if (pJitLib == nullptr)
 				{
-					pJitLib = new JitLib();
+					pJitLib = new JitLib(pModule->GetModuleName());
 				}
 				pJitLib->AddBlock(m_curJitBlock);
 			}
