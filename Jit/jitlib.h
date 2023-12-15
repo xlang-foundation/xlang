@@ -14,7 +14,7 @@ namespace X
 	namespace Jit
 	{
 		class JitCompiler;
-		typedef void (*Jit_Load_Proc)(void* pHost, int** funcIdList,void*** funcs, int* cnt);
+		typedef void (*Jit_Load_Proc)(void* pHost, int** funcIdList,void*** funcs, const char*** hash_list,int* cnt);
 		enum class LangType
 		{
 			cpp,
@@ -35,6 +35,7 @@ namespace X
 		{
 			std::string name;
 			std::string hash;//if compiled,then set this
+			std::string has_from_lib;
 			LangType langType;
 			std::string code;
 			std::vector<ParamInfo> params;
@@ -51,10 +52,10 @@ namespace X
 			std::string m_path;
 			std::string m_moduleName;//module name without ext
 			std::vector<FuncInfo> m_funcs;
-			bool m_buildWithDebug = true;
-			std::string m_XLangIncludePath = "C:\\ToGithub\\CantorAI\\xlang\\Api\\";
+			bool m_buildWithDebug = false;
+			std::string m_XLangIncludePath;
 		public:
-			FORCE_INLINE void SetFuncStub(int* funcIdList, void** funcs, int cnt)
+			FORCE_INLINE void SetFuncStub(int* funcIdList, void** funcs, const char** funcHashList,int cnt)
 			{
 				int funcNum = (int)m_funcs.size();
 				for (int i = 0; i < cnt; i++)
@@ -64,6 +65,7 @@ namespace X
 					{
 						auto& funcInfo = m_funcs[funcId];
 						funcInfo.stub = (AST::Jit_Stub_Proc)funcs[i];
+						funcInfo.has_from_lib = funcHashList[i];
 						funcInfo.jitBlock->SetJitStub(funcInfo.stub);
 					}
 				}
@@ -82,6 +84,10 @@ namespace X
 			FORCE_INLINE std::string& ModuleName()
 			{
 				return m_moduleName;
+			}
+			FORCE_INLINE void SetXLangEngPath(std::string& path)
+			{
+				m_XLangIncludePath = path + Path_Sep + "Api";
 			}
 			JitLib(std::string& moduleName)
 			{
@@ -114,10 +120,7 @@ namespace X
 					m_compilers.push_back(nullptr);
 				}
 			}
-			~JitLib()
-			{
-
-			}
+			~JitLib();
 			FORCE_INLINE bool ExtractFuncInfo(AST::JitBlock* pBlock)
 			{
 				FuncInfo funcInfo;

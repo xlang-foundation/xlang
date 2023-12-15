@@ -2,7 +2,9 @@
 #include <fstream>
 #include "cppcompiler.h"
 #include "port.h"
+#include "md5.h"
 
+#define  VS_MSVC_PATH "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
 namespace X
 {
 	namespace Jit
@@ -35,7 +37,8 @@ namespace X
 			return true;
 		}
 
-		bool CppCompiler::BuildCode(std::vector<std::string>& srcs, std::vector<std::string>& exports)
+		bool CppCompiler::BuildCode(std::vector<std::string>& srcs, 
+			std::vector<std::string>& exports, BuildCodeAction& action)
 		{
 			static const char* stub_list_pat =
 				"namespace X\n"
@@ -47,7 +50,7 @@ namespace X
 				"#if (WIN32)\n"
 				"	__declspec(dllexport)\n"
 				"#endif\n"
-				"void Load(void* pHost, int** funcIdList, void*** funcs, int* cnt)\n"
+				"void Load(void* pHost, int** funcIdList, void*** funcs,const char*** hash_list,int* cnt)\n"
 				"{\n"
 				"	X::g_pXHost = (X::XHost*)pHost;\n"
 				"	static void* __funcs__[%d] = \n"
@@ -58,8 +61,13 @@ namespace X
 				"	{\n"
 				"		%s\n"
 				"	};\n"
+				"	static const char* __func_hash_list__[%d] = \n"
+				"	{\n"
+				"		%s\n"
+				"	};\n"
 				"	*funcIdList = __func_id_list__;\n"
 				"	*funcs = __funcs__;\n"
+				"	*hash_list = __func_hash_list__;\n"
 				"	*cnt = %d;\n"
 				"}\n";
 
@@ -82,6 +90,9 @@ namespace X
 			ReplaceAll(moduleName, " ", "_");
 			ReplaceAll(moduleName, ".", "_");
 
+			//Try to load lib with func's hash
+			LoadLib();
+
 			char funcLine[online_len];
 			//namespace code
 			std::string namespace_prefix;
@@ -98,10 +109,12 @@ namespace X
 
 			std::string stub_list;
 			std::string stub_funcId_list;
+			std::string func_hash_list;
 			bool needToGenFuncCodeFile = false;
 			auto& funcList = mJitLib->GetFuncs();
 			int funcCount = (int)funcList.size();
 			int funcIndex = 0;
+			bool bHashMatch = true;
 			for (int funcIndex =0; funcIndex < funcCount; funcIndex++)
 			{
 				auto& funcInfo = funcList[funcIndex];
@@ -118,7 +131,12 @@ namespace X
 				{
 					continue;
 				}
-
+				std::string funcHash = md5(funcCode);
+				funcInfo.hash = funcHash;
+				if(funcInfo.has_from_lib != funcHash)
+				{
+					bHashMatch = false;
+				}
 				std::string& funcName = funcInfo.name;
 				if (funcInfo.isExternImpl)
 				{
@@ -141,34 +159,38 @@ namespace X
 				{
 					stub_list = stub_item;
 					stub_funcId_list  = strFunIndex;
+					func_hash_list = "\"" + funcHash + "\"";
 				}
 				else
 				{
 					stub_list += "," + stub_item;
 					stub_funcId_list += "," + strFunIndex;
+					func_hash_list += ",\"" + funcHash + "\"";
 				}
 				if (funcIndex>0 && (funcIndex%3) == 0)
 				{
 					stub_list += "\n\t\t";
 				}
-#if _TODO_
-				SPRINTF(funcLine, online_len, funcLineTemp,
-					funcInfo.hash.c_str(),
-					funcName.c_str(), funcName.c_str());
-#endif
 			}
+			//if all hash match, then no need to build
+			if (bHashMatch)
+			{
+				action = BuildCodeAction::HashAllMached;
+				return true;
+			}
+			//Unload lib to make the compiler prcoess the new code
+			UnloadLib();
+			action = BuildCodeAction::NeedBuild;
+
 			allcode += allStubCode;
 			allcode += namespace_postfix;
 
 			char stubListLine[online_len];
 			SPRINTF(stubListLine, online_len, stub_list_pat, funcCount, 
 				stub_list.c_str(), funcCount,
-				stub_funcId_list.c_str(), funcCount);
+				stub_funcId_list.c_str(), funcCount,
+				func_hash_list.c_str(),funcCount);
 			allcode += stubListLine;
-			//allStubCode = allStubExternalImplDecl + namespace_prefix + allStubCode;
-
-			//allStubCode += namespace_postfix;
-
 			//Write out code
 			if (needToGenFuncCodeFile)
 			{
@@ -184,27 +206,13 @@ namespace X
 
 				srcs.push_back(strJitCpp);
 			}
-#if 0
-			//Write out stub code
-			std::string strJitStubCpp = mJitFolder + Path_Sep + "src" + Path_Sep
-				+ mJitLib->ModuleName() + ".stub.cpp";
-			std::ofstream sfile(strJitStubCpp);
-			if (!sfile.is_open())
-			{
-				return false;
-			}
-			sfile.write((const char*)allStubCode.c_str(), allStubCode.length() * sizeof(char));
-			sfile.close();
-
-			srcs.push_back(strJitStubCpp);
-#endif
 			return true;
 		}
 		bool CppCompiler::Build_VC(std::string strJitFolder, std::vector<std::string> srcs)
 		{
 #if (WIN32)
 			//printf("Call Build_VC,strJitFolder=%s\n", strJitFolder.c_str());
-			std::string clVarSet = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat";
+			std::string clVarSet = VS_MSVC_PATH;
 			std::string clVarSet_Quote = mJitLib->QuotePath(clVarSet);
 			clVarSet_Quote += " x64 ";
 			std::string initCmd = clVarSet_Quote + " && ";
@@ -242,18 +250,39 @@ namespace X
 			std::string logRedir = " > " + mJitLib->QuotePath(buildLog);
 			std::string cmd = initCmd + clCmd + includePath_I + objPath_Fo + binPath_Fe + srcCmd + linkCmd + logRedir;
 
+			SECURITY_ATTRIBUTES sa;
+			HANDLE hNull;
+
+			// Set the bInheritHandle flag so pipe handles are inherited
+			sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+			sa.bInheritHandle = TRUE;
+			sa.lpSecurityDescriptor = NULL;
+
+			// Create a NULL device handle to redirect console output
+			hNull = CreateFile("NUL", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, NULL);
+			if (hNull == INVALID_HANDLE_VALUE) 
+			{
+				std::cout << "Failed to create NULL device handle.\n";
+				return 1;
+			}
+
 			STARTUPINFO StartupInfo;
 			memset(&StartupInfo, 0, sizeof(STARTUPINFO));
 			StartupInfo.cb = sizeof(STARTUPINFO);
+			StartupInfo.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 			StartupInfo.wShowWindow = SW_SHOW;
+			StartupInfo.hStdOutput = hNull;
+			StartupInfo.hStdError = hNull;
+
 			PROCESS_INFORMATION ProcessInformation;
 			memset(&ProcessInformation, 0, sizeof(PROCESS_INFORMATION));
 			ProcessInformation.hThread = INVALID_HANDLE_VALUE;
 			ProcessInformation.hProcess = INVALID_HANDLE_VALUE;
 
+
 			//have to ass /S and quote the whole command line
 			std::string strCmd = "cmd /S /C \"" + cmd + "\"";
-			printf("run compiler\n%s\n", strCmd.c_str());
+			//printf("run compiler\n%s\n", strCmd.c_str());
 			BOOL bOK = CreateProcess(NULL, (LPSTR)strCmd.c_str(), NULL, NULL, TRUE,
 				/*CREATE_NEW_CONSOLE*/0,//if use CREATE_NEW_CONSOLE will show new cmd window
 				NULL, strJitFolder.c_str(),
@@ -263,6 +292,7 @@ namespace X
 				::WaitForSingleObject(ProcessInformation.hProcess, -1);
 			}
 #endif
+			CloseHandle(hNull);
 			return true;
 		}
 		bool CppCompiler::Build_GCC(std::string strJitFolder, std::vector<std::string> srcs)
@@ -330,12 +360,8 @@ namespace X
 			return bOK;
 		}
 
-		bool CppCompiler::LoadLib(const std::string& libFileName)
+		bool CppCompiler::LoadLib()
 		{
-			if (!libFileName.empty())
-			{
-				mLibFileName = libFileName;
-			}
 			bool bOK = false;
 			if (mLibHandle == nullptr)
 			{
@@ -349,9 +375,10 @@ namespace X
 					{
 						int* funcIdList = nullptr;
 						void** funcs = nullptr;
+						const char** funcHashList = nullptr;
 						int funcNum = 0;
-						loadProc((void*)X::g_pXHost,&funcIdList,&funcs,&funcNum);
-						mJitLib->SetFuncStub(funcIdList, funcs, funcNum);
+						loadProc((void*)X::g_pXHost,&funcIdList,&funcs,&funcHashList,&funcNum);
+						mJitLib->SetFuncStub(funcIdList, funcs, funcHashList,funcNum);
 						bOK = true;
 					}
 				}

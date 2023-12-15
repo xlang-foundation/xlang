@@ -16,9 +16,10 @@ namespace X
 
 			// Inherited via JitCompiler
 			virtual bool Init(std::string& libFileName) override;
-			virtual bool BuildCode(std::vector<std::string>& srcs, std::vector<std::string>& exports) override;
+			virtual bool BuildCode(std::vector<std::string>& srcs, 
+				std::vector<std::string>& exports, BuildCodeAction& action) override;
 			virtual bool CompileAndLink(std::vector<std::string> srcs) override;
-			virtual bool LoadLib(const std::string& libFileName) override;
+			virtual bool LoadLib() override;
 			virtual void UnloadLib() override;
 		protected:
 			bool BuildFuncCode(bool isExternImpl, std::string& funcName, FuncInfo& funcInfo,

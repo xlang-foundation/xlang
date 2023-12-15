@@ -168,6 +168,7 @@ namespace X {
 			//CASE:for special pos to meet
 			if (InMeetLineStartPosLessOrEqualToSpecialPos)
 			{
+				bool Loopback = true;
 				if (!newTokenStartedForSpeicalPosMeet)
 				{
 					newTokenStartedForSpeicalPosMeet = true;
@@ -193,11 +194,19 @@ namespace X {
 						SpecialPosToBeLessOrEqual = 0;
 						//we need to count this char back, so set to -1
 						new_token_start();
-						break;
+						//if (MatchInTree(c))
+						//{
+						//	token_out(GetLastMatchedNodeIndex(), 0);
+						//}
+						//break;
+						Loopback = false;
 					}
 				}
 				//continue to next char to check
-				continue;
+				if (Loopback)
+				{
+					continue;
+				}
 			}
 
 			//to cover case after slash, there are some spaces or tabs

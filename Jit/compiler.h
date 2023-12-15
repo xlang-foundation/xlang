@@ -9,6 +9,11 @@ namespace X
 	namespace Jit
 	{
 		class JitLib;
+		enum class BuildCodeAction
+		{
+			NeedBuild,
+			HashAllMached,
+		};
 		class JitCompiler
 		{
 		public:
@@ -25,9 +30,10 @@ namespace X
 				mJitLib = p;
 			}
 			virtual bool Init(std::string& libFileName) = 0;
-			virtual bool BuildCode(std::vector<std::string>& srcs, std::vector<std::string>& exports) = 0;
+			virtual bool BuildCode(std::vector<std::string>& srcs, 
+				std::vector<std::string>& exports, BuildCodeAction& action) = 0;
 			virtual bool CompileAndLink(std::vector<std::string> srcs) = 0;
-			virtual bool LoadLib(const std::string& libFileName) = 0;
+			virtual bool LoadLib() = 0;
 			virtual void UnloadLib() = 0;
 			void AddIncludeFile(std::string strFile)
 			{

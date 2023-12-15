@@ -6,6 +6,16 @@ namespace X
 {
 	namespace Jit
 	{
+		JitLib::~JitLib()
+		{
+			for (auto* pCompiler : m_compilers)
+			{
+				if (pCompiler != nullptr)
+				{
+					delete pCompiler;
+				}
+			}
+		}
 		std::string JitLib::QuotePath(std::string& strSrc)
 		{
 			std::string strNew = strSrc;
@@ -42,9 +52,13 @@ namespace X
 				}
 				std::vector<std::string> srcs;
 				std::vector<std::string> exports;
-				pCompiler->BuildCode(srcs,exports);
-				pCompiler->CompileAndLink(srcs);
-				pCompiler->LoadLib("");
+				BuildCodeAction action;
+				pCompiler->BuildCode(srcs,exports,action);
+				if (action == BuildCodeAction::NeedBuild)
+				{
+					pCompiler->CompileAndLink(srcs);
+					pCompiler->LoadLib();
+				}
 			}
 			return true;
 		}

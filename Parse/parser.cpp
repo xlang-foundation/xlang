@@ -12,7 +12,8 @@
 #include "jitlib.h"
 
 namespace X
-{		
+{
+	extern XLoad* g_pXload;
 Parser::Parser()
 {
 }
@@ -439,6 +440,8 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 				if (pJitLib == nullptr)
 				{
 					pJitLib = new X::Jit::JitLib(pModule->GetModuleName());
+					std::string xlangEngPath = g_pXload->GetConfig().xlangEnginePath;
+					pJitLib->SetXLangEngPath(xlangEngPath);
 				}
 				pJitLib->AddBlock(m_curJitBlock);
 			}
