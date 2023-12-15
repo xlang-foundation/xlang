@@ -401,7 +401,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 	//which increased with the sequence come out from Token parser
 	//use this way to make sure each op just get right operands
 
-	JitLib* pJitLib = nullptr;
+	X::Jit::JitLib* pJitLib = nullptr;
 
 	while (true)
 	{
@@ -438,7 +438,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 				m_curJitBlock->SetJitCode(one.id);
 				if (pJitLib == nullptr)
 				{
-					pJitLib = new JitLib(pModule->GetModuleName());
+					pJitLib = new X::Jit::JitLib(pModule->GetModuleName());
 				}
 				pJitLib->AddBlock(m_curJitBlock);
 			}

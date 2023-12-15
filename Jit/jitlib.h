@@ -13,11 +13,68 @@ namespace X
 {
 	namespace Jit
 	{
+		class JitCompiler;
+		typedef void (*Jit_Load_Proc)(void* pHost, int** funcIdList,void*** funcs, int* cnt);
+		enum class LangType
+		{
+			cpp,
+			cs,
+			java,
+			golang,
+			cuda,
+			compute_shader,
+			Count
+		};
+		struct ParamInfo
+		{
+			std::string name;
+			std::string type;
+			X::Value defaultValue;
+		};
+		struct FuncInfo
+		{
+			std::string name;
+			std::string hash;//if compiled,then set this
+			LangType langType;
+			std::string code;
+			std::vector<ParamInfo> params;
+			std::string retType;
+			bool isExternImpl = false;
+			std::vector<std::string> externImplFileNameList;
+			AST::Jit_Stub_Proc stub = nullptr;
+			AST::JitBlock* jitBlock = nullptr;
+		};
+
 		class JitLib
 		{
+			std::vector<JitCompiler*> m_compilers;
 			std::string m_path;
 			std::string m_moduleName;//module name without ext
+			std::vector<FuncInfo> m_funcs;
+			bool m_buildWithDebug = true;
+			std::string m_XLangIncludePath = "C:\\ToGithub\\CantorAI\\xlang\\Api\\";
 		public:
+			FORCE_INLINE void SetFuncStub(int* funcIdList, void** funcs, int cnt)
+			{
+				int funcNum = (int)m_funcs.size();
+				for (int i = 0; i < cnt; i++)
+				{
+					int funcId = funcIdList[i];
+					if (funcId < funcNum)
+					{
+						auto& funcInfo = m_funcs[funcId];
+						funcInfo.stub = (AST::Jit_Stub_Proc)funcs[i];
+						funcInfo.jitBlock->SetJitStub(funcInfo.stub);
+					}
+				}
+			}
+			std::string QuotePath(std::string& strSrc);
+			FORCE_INLINE bool IsBuildWithDebug() { return m_buildWithDebug; }
+			FORCE_INLINE std::string& GetXLangIncludePath() { return m_XLangIncludePath; }
+			FORCE_INLINE auto& GetFuncs()
+			{
+				return m_funcs;
+			}
 			FORCE_INLINE std::string& Path()
 			{
 				return m_path;
@@ -29,7 +86,11 @@ namespace X
 			JitLib(std::string& moduleName)
 			{
 				std::string right;
-				auto pos = moduleName.rfind(Path_Sep);
+				auto pos = moduleName.rfind('\\');
+				if (pos == moduleName.npos)
+				{
+					pos = moduleName.rfind('/');
+				}
 				if (pos != moduleName.npos)
 				{
 					m_path = moduleName.substr(0, pos);
@@ -48,20 +109,29 @@ namespace X
 				{
 					m_moduleName = right;
 				}
+				for (int i = 0; i < (int)LangType::Count; i++)
+				{
+					m_compilers.push_back(nullptr);
+				}
 			}
 			~JitLib()
 			{
 
 			}
-			//acording define in this block with Input parameter and return value type
-			//to geneate function head
-			FORCE_INLINE std::string DeclareFuncHead(AST::JitBlock* pBlock)
+			FORCE_INLINE bool ExtractFuncInfo(AST::JitBlock* pBlock)
 			{
-				std::string funcHead;
+				FuncInfo funcInfo;
 				std::string funcName = pBlock->GetName();
 				auto* params = pBlock->GetParams();
 				auto& paramList = params->GetList();
 				auto& strRetType = pBlock->GetRetType();
+
+				funcInfo.langType = LangType::cpp;//TODO:
+				funcInfo.name = funcName;
+				funcInfo.retType = strRetType;
+				funcInfo.jitBlock = pBlock;
+
+				funcInfo.code = pBlock->GetCode();
 				for (auto* i : paramList)
 				{
 					std::string strVarName;
@@ -94,25 +164,17 @@ namespace X
 					}
 					break;
 					}
-
+					funcInfo.params.push_back({ strVarName ,strVarType,defaultValue });
 				}
-				return funcHead;
-			}
-			FORCE_INLINE std::string DeclareClassHead(AST::JitBlock* pBlock)
-			{
-				std::string classHead;
-				return classHead;
+				m_funcs.push_back(funcInfo);
+				return true;
 			}
 			bool AddBlock(AST::JitBlock* pBlock)
 			{
+				ExtractFuncInfo(pBlock);
 				return true;
 			}
-			bool BuildCode(int moduleIndex, std::string strJitFolder,
-				std::vector<std::string>& srcs, std::vector<std::string>& exports);
-			bool Build()
-			{
-				return true;
-			}
+			bool Build();
 		};
 	}
 }

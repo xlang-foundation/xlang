@@ -131,11 +131,11 @@ namespace X
 		}
 		//prepare top module for this code
 		AST::Module* pTopModule = new AST::Module();
-		//pTopModule->IncRef();
-		pTopModule->ScopeLayout();
-		parser.Compile(pTopModule,(char*)code, size);
 		std::string strModuleName(moduleName);
 		pTopModule->SetModuleName(strModuleName);
+		pTopModule->ScopeLayout();
+		parser.Compile(pTopModule,(char*)code, size);
+
 		moduleKey = AddModule(pTopModule);
 		return pTopModule;
 	}

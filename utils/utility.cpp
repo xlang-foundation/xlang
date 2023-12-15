@@ -492,3 +492,24 @@ long long getCurMicroTimeStamp()
 	long long current_time_ll = std::chrono::time_point_cast<std::chrono::microseconds>(current_time).time_since_epoch().count();
 	return current_time_ll;
 }
+
+#if (WIN32)
+#include <Windows.h>
+void _mkdir(const char* dir)
+{
+	CreateDirectory(dir, NULL);
+}
+#else
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+void _mkdir(const char* dir)
+{
+	int state = access(dir, R_OK | W_OK);
+	if (state != 0)
+	{
+		mkdir(dir, S_IRWXU);
+	}
+}
+#endif

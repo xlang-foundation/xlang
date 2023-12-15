@@ -121,7 +121,8 @@ enum class ValueSubType
 	USHORT =5,
 	INT = 8,
 	UINT =9,
-	FLOAT =10,
+	UINT64 = 10,//if it is int64, don't need to set this
+	FLOAT =11,
 };
 class Value
 {
@@ -233,6 +234,7 @@ public:
 	FORCE_INLINE Value(unsigned long long l)
 	{
 		t = ValueType::Int64;
+		flags |= (int)ValueSubType::UINT64;
 		x.l = (long long)l;
 	}
 	FORCE_INLINE Value(double d)

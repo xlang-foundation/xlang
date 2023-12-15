@@ -177,13 +177,41 @@ bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands, int LeftTok
 	//for right operands, support multiple token
 	//for example: x: long int, the type is two-tokens word
 	//so pop up all operands which's tokenIndex>op's token index
-	AST::Expression* operandR = nullptr;
+	std::vector<AST::Expression*> vecOperandR;
 	while (!operands.empty() 
 		&& operands.top()->GetTokenIndex() > m_tokenIndex)
 	{
-		operandR = operands.top();
+		vecOperandR.push_back(operands.top());
 		operands.pop();
 	}
+	AST::Expression* operandR = nullptr;
+	auto opernandRSize = vecOperandR.size();
+	if (opernandRSize > 0)
+	{
+		operandR = vecOperandR[opernandRSize - 1];
+		//we check if they are Var, just merge names to first one 
+		//and just adjust first one's name's size to reach the end of last one
+		if (operandR->m_type == AST::ObType::Var)
+		{
+			auto* var_r = dynamic_cast<AST::Var*>(operandR);
+			auto& name_r = var_r->GetName();
+			if (opernandRSize > 1)
+			{
+				auto* operand_first = vecOperandR[0];
+				if (operand_first->m_type == AST::ObType::Var)
+				{
+					auto* var_first = dynamic_cast<AST::Var*>(operand_first);
+					auto& name_first = var_first->GetName();
+					name_r.size = name_first.s+name_first.size- name_r.s;
+				}
+			}
+		}
+		else
+		{
+			//TODO:
+		}
+	}
+
 #if NOT_SUPPORT //we want to support 1:[skip] for tensor index,
 	//but check if have some other impacts
 	if (operandR == nullptr)

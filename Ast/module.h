@@ -7,9 +7,14 @@
 #include "utility.h"
 #include <iostream>
 #include "value.h"
+
+
 namespace X
 {
-	class JitLib;
+	namespace Jit
+	{
+		class JitLib;
+	}
 namespace AST
 {
 enum class dbg
@@ -87,7 +92,7 @@ class Module :
 {
 
 	//if this module has Jit Blocks, will have this member
-	JitLib* m_pJitLib = nullptr;
+	X::Jit::JitLib* m_pJitLib = nullptr;
 
 	StackFrame* m_stackFrame = nullptr;
 	XlangRuntime* m_pRuntime=nullptr;//for top module, we need it
@@ -136,7 +141,7 @@ public:
 		m_pMyScope->SetVarFrame(m_stackFrame);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
 	}
-	FORCE_INLINE void SetJitLib(JitLib* pLib)
+	FORCE_INLINE void SetJitLib(X::Jit::JitLib* pLib)
 	{
 		m_pJitLib = pLib;
 	}

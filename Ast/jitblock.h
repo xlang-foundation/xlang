@@ -12,6 +12,7 @@ namespace X
 {
 	namespace AST
 	{
+		typedef X::Value(*Jit_Stub_Proc)(X::ARGS& vars);
 		enum class JitType
 		{
 			Func,
@@ -22,6 +23,7 @@ namespace X
 		{
 		protected:
 			String m_JitCode;
+			Jit_Stub_Proc m_Stub = nullptr;
 			std::string m_strRetType;
 			JitType  m_JitType = JitType::Func;
 			String m_Name = { nullptr,0 };
@@ -93,6 +95,10 @@ namespace X
 					delete m_Name.s;
 				}
 			}
+			FORCE_INLINE void SetJitStub(Jit_Stub_Proc stub)
+			{
+				m_Stub = stub;
+			}
 			virtual void ScopeLayout() override;
 			FORCE_INLINE std::string GetName()
 			{
@@ -113,6 +119,10 @@ namespace X
 			FORCE_INLINE void SetJitCode(String& code)
 			{
 				m_JitCode = code;
+			}
+			FORCE_INLINE std::string GetCode()
+			{
+				return std::string(m_JitCode.s,m_JitCode.size);
 			}
 			virtual void SetR(Expression* r) override
 			{
@@ -151,6 +161,11 @@ namespace X
 				KWARGS& kwParams,
 				Value& retValue) override final
 			{
+				if (m_Stub == nullptr)
+				{
+					return false;
+				}
+				retValue = m_Stub(params);
 				return true;
 			}
 			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
@@ -176,19 +191,46 @@ namespace X
 				//we need to check if there is JitBlock and an var in operands 
 				if (operands.size() >= 2)
 				{
-					auto operandR = operands.top();
-					operands.pop();
+					//we need to conside return type has multiple words such as 'unsinged long long'
+					//so in operands,until find the JitBlock,we need to combine all operands after
+					//JitBlock as return type
+					Var* lastVar = nullptr;
+					Var* firstVar = nullptr;
+					while(!operands.empty())
+					{
+						auto* operand = operands.top();
+						if (operand->m_type == AST::ObType::Var)
+						{
+							if (lastVar == nullptr)
+							{
+								lastVar = dynamic_cast<Var*>(operand);
+							}
+							firstVar = dynamic_cast<Var*>(operand);
+						}
+						else if (operand->m_type == AST::ObType::JitBlock)
+						{
+							break;
+						}
+						operands.pop();
+					}
 					auto operandL = operands.top();
-					if (operandL->m_type == AST::ObType::JitBlock)
+					if (operandL && operandL->m_type == AST::ObType::JitBlock)
 					{
 						auto* jit = dynamic_cast<JitBlock*>(operandL);
-						operandR->SetParent(jit);
-						if (operandR->m_type == AST::ObType::Var)
+						if (lastVar != nullptr)
 						{
-							auto* var = dynamic_cast<Var*>(operandR);
-							jit->SetRetType(var->GetNameString());
+							if (firstVar == lastVar)//single word
+							{
+								jit->SetRetType(firstVar->GetNameString());
+							}
+							else//multiple words
+							{
+								auto& first_str = firstVar->GetName();
+								auto& last_str = lastVar->GetName();
+								std::string strRetType(first_str.s, last_str.s+last_str.size-first_str.s);
+								jit->SetRetType(strRetType);
+							}
 						}
-						delete operandR;
 						//need to delete this object, we don't need to add into AST
 						delete this;
 						return true;

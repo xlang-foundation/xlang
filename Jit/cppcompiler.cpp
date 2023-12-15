@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include "cppcompiler.h"
-#include "jitlib.h"
 #include "port.h"
 
 namespace X
@@ -20,9 +19,14 @@ namespace X
 		{
 			if (libFileName.size() == 0)
 			{
-				std::string strJitFolder = mJitLib->Path() + Path_Sep + "_jit_";
-				mLibFileName = strJitFolder + Path_Sep_S
-					+ "bin" + Path_Sep_S + mJitLib->LibFileName() + ShareLibExt;
+				mJitFolder = mJitLib->Path() + Path_Sep + "_jit_";
+				mLibFileName = mJitFolder + Path_Sep_S
+					+ "bin" + Path_Sep_S + mJitLib->ModuleName() + ShareLibExt;
+
+				std::string strJitSrcFolder = mJitFolder + Path_Sep + "src";
+				_mkdir(mJitFolder.c_str());
+				_mkdir(strJitSrcFolder.c_str());
+
 			}
 			else
 			{
@@ -31,68 +35,39 @@ namespace X
 			return true;
 		}
 
-		bool CppCompiler::BuildLoadModuleCode(std::string strJitFolder,
-			std::vector<std::string>& srcs, std::vector<std::string> exports)
+		bool CppCompiler::BuildCode(std::vector<std::string>& srcs, std::vector<std::string>& exports)
 		{
-			std::string stubFileHead =
-				"#include \"Jit_Object.h\"\n\n"
-				"JitHost * g_pHost = nullptr;\n\n";
-			std::string  init_func_head =
-				"extern \"C\"  JIT_EXPORT int InitJitLib(JitHost* pHost,void* context)\n"
+			static const char* stub_list_pat =
+				"namespace X\n"
 				"{\n"
-				"\tg_pHost = pHost;\n";
-			static std::string init_func_post =
-				"\treturn 0;\n"
+				"	XHost* g_pXHost = nullptr;\n"
+				"}\n"
+				"\n"
+				"extern \"C\"\n"
+				"#if (WIN32)\n"
+				"	__declspec(dllexport)\n"
+				"#endif\n"
+				"void Load(void* pHost, int** funcIdList, void*** funcs, int* cnt)\n"
+				"{\n"
+				"	X::g_pXHost = (X::XHost*)pHost;\n"
+				"	static void* __funcs__[%d] = \n"
+				"	{\n"
+				"		%s\n"
+				"	};\n"
+				"	static int __func_id_list__[%d] = \n"
+				"	{\n"
+				"		%s\n"
+				"	};\n"
+				"	*funcIdList = __func_id_list__;\n"
+				"	*funcs = __funcs__;\n"
+				"	*cnt = %d;\n"
 				"}\n";
 
-			const int online_len = 1000;
-			const char* funcExternLineTemp = "namespace %s {extern void %s(JitHost* pHost,void* context);}\n";
-			const char* funcCallLineTemp = "\t%s(pHost,context);\n";
-
-			char funcLine[online_len];
-			std::string externs;
-			std::string calls;
-			for (auto it : exports)
-			{
-				auto pos = it.find("::");
-				if (pos != it.npos)
-				{
-					std::string nm = it.substr(0, pos);
-					std::string func = it.substr(pos + 2);
-					SPRINTF(funcLine, online_len, funcExternLineTemp, nm.c_str(), func.c_str());
-					externs += funcLine;
-				}
-				SPRINTF(funcLine, online_len, funcCallLineTemp, it.c_str());
-				calls += funcLine;
-			}
-			std::string allcode =
-				stubFileHead +
-				externs +
-				init_func_head +
-				calls +
-				init_func_post;
-			//Write out Load code
-			std::string strJitLoadCpp = strJitFolder + Path_Sep + "src" + Path_Sep
-				+ mJitLib->LibFileName() + ".init.cpp";
-			std::ofstream sfile(strJitLoadCpp);
-			if (!sfile.is_open())
-			{
-				return false;
-			}
-			sfile.write((const char*)allcode.c_str(), allcode.length() * sizeof(char));
-			sfile.close();
-
-			srcs.push_back(strJitLoadCpp);
-
-			return true;
-		}
-
-		bool CppCompiler::BuildCode(std::string strJitFolder,
-			std::vector<std::string>& srcs, std::vector<std::string>& exports)
-		{
+				
+				
 			const int online_len = 1024 * 8;
 			std::string allcode =
-				"#include \"value.h\"\n";
+				"#include \"xlang.h\"\n";
 			std::string otherIncludes;
 			for (auto h : mIncludes)
 			{
@@ -107,13 +82,7 @@ namespace X
 			ReplaceAll(moduleName, " ", "_");
 			ReplaceAll(moduleName, ".", "_");
 
-			std::string export_moduleName = GetExportModuleName(moduleIndex);
-			exports.push_back(moduleName + "::" + export_moduleName);
-			std::string init_func_lines;
 			char funcLine[online_len];
-			SPRINTF(funcLine, online_len, init_func_head_temp, export_moduleName.c_str(), org_moduleName.c_str());
-			std::string init_func_head = funcLine;
-
 			//namespace code
 			std::string namespace_prefix;
 			SPRINTF(funcLine, online_len, "\nnamespace %s{\n\n", moduleName.c_str());
@@ -127,46 +96,34 @@ namespace X
 			std::string allStubCode;
 			std::string allStubExternalImplDecl;
 
+			std::string stub_list;
+			std::string stub_funcId_list;
 			bool needToGenFuncCodeFile = false;
-			for (auto it : mJitLib->FuncMap(moduleIndex))
+			auto& funcList = mJitLib->GetFuncs();
+			int funcCount = (int)funcList.size();
+			int funcIndex = 0;
+			for (int funcIndex =0; funcIndex < funcCount; funcIndex++)
 			{
-				JitFuncInfo* pFuncInfo = it.second.pFuncInfo;
-				if (pFuncInfo == nullptr)
-				{//when the python module not loaded,but the SharedLib (Compiled) loaded
-				//will come to this case. TODO:
-					continue;
-				}
-				if (pFuncInfo->Lang() != LangType::cpp)
+				auto& funcInfo = funcList[funcIndex];
+				if (funcInfo.langType != LangType::cpp)
 				{
 					continue;
 				}
-				bool isExternImpl = pFuncInfo->IsExternImpl();
 				std::string funcCode;
 				std::string stubCode;
 				std::string externalDeclstubCode;
-				std::string class_stub_func_list;
-				std::string prop_method_name_list;
-				bool bOKToBuildBlockCode = true;
-
-				if (it.second.blockType == JitBlockType::Func)
-				{
-					bOKToBuildBlockCode = BuildFuncCode(isExternImpl, pFuncInfo, funcCode, stubCode, externalDeclstubCode);
-				}
-				else if (it.second.blockType == JitBlockType::Class)
-				{
-					bOKToBuildBlockCode = BuildClassCode(isExternImpl, pFuncInfo->Name(),
-						(JitClassInfo*)pFuncInfo, funcCode, stubCode, externalDeclstubCode, prop_method_name_list, class_stub_func_list);
-				}
+				bool bOKToBuildBlockCode = BuildFuncCode(funcInfo.isExternImpl,
+					funcInfo.name,funcInfo, funcCode, stubCode, externalDeclstubCode);
 				if (!bOKToBuildBlockCode)
 				{
 					continue;
 				}
 
-				std::string& funcName = pFuncInfo->Name();
-				if (isExternImpl)
+				std::string& funcName = funcInfo.name;
+				if (funcInfo.isExternImpl)
 				{
 					allStubExternalImplDecl += externalDeclstubCode + ";\n";
-					std::vector<std::string> impl_srcs = pFuncInfo->GetExternImplFileName();
+					std::vector<std::string>& impl_srcs = funcInfo.externImplFileNameList;
 					for (std::string& ss : impl_srcs)
 					{
 						srcs.push_back(ss);
@@ -178,39 +135,45 @@ namespace X
 					needToGenFuncCodeFile = true;
 				}
 				allStubCode += stubCode;
-				if (it.second.blockType == JitBlockType::Func)
+				std::string strFunIndex = tostring((long)funcIndex);
+				std::string stub_item = "(void*)" + moduleName + "::" + funcName + "_stub";
+				if (stub_list.empty())
 				{
-					SPRINTF(funcLine, online_len, funcLineTemp,
-						pFuncInfo->Hash().c_str(),
-						funcName.c_str(), funcName.c_str());
+					stub_list = stub_item;
+					stub_funcId_list  = strFunIndex;
 				}
-				else if (it.second.blockType == JitBlockType::Class)
+				else
 				{
-					JitClassInfo* pClassInfo = (JitClassInfo*)pFuncInfo;
-					SPRINTF(funcLine, online_len, classLineTemp,
-						prop_method_name_list.c_str(),
-						class_stub_func_list.c_str(),
-						pFuncInfo->Hash().c_str(),
-						funcName.c_str(),
-						pClassInfo->Props().size(),
-						pClassInfo->Funcs().size());
+					stub_list += "," + stub_item;
+					stub_funcId_list += "," + strFunIndex;
 				}
-				init_func_lines += funcLine;
+				if (funcIndex>0 && (funcIndex%3) == 0)
+				{
+					stub_list += "\n\t\t";
+				}
+#if _TODO_
+				SPRINTF(funcLine, online_len, funcLineTemp,
+					funcInfo.hash.c_str(),
+					funcName.c_str(), funcName.c_str());
+#endif
 			}
+			allcode += allStubCode;
 			allcode += namespace_postfix;
 
-			allStubCode = stubFileHead + allStubExternalImplDecl + namespace_prefix + allStubCode;
+			char stubListLine[online_len];
+			SPRINTF(stubListLine, online_len, stub_list_pat, funcCount, 
+				stub_list.c_str(), funcCount,
+				stub_funcId_list.c_str(), funcCount);
+			allcode += stubListLine;
+			//allStubCode = allStubExternalImplDecl + namespace_prefix + allStubCode;
 
-			allStubCode += init_func_head;
-			allStubCode += init_func_lines;
-			allStubCode += init_func_post;
-			allStubCode += namespace_postfix;
-			//printf("//------cpp code----------\n%s\n",allcode.c_str());
+			//allStubCode += namespace_postfix;
+
 			//Write out code
 			if (needToGenFuncCodeFile)
 			{
-				std::string strJitCpp = strJitFolder + Path_Sep + "src" + Path_Sep
-					+ mJitLib->ModuleName(moduleIndex) + ".cpp";
+				std::string strJitCpp = mJitFolder + Path_Sep + "src" + Path_Sep
+					+ mJitLib->ModuleName() + ".cpp";
 				std::ofstream file(strJitCpp);
 				if (!file.is_open())
 				{
@@ -221,9 +184,10 @@ namespace X
 
 				srcs.push_back(strJitCpp);
 			}
+#if 0
 			//Write out stub code
-			std::string strJitStubCpp = strJitFolder + Path_Sep + "src" + Path_Sep
-				+ mJitLib->ModuleName(moduleIndex) + ".stub.cpp";
+			std::string strJitStubCpp = mJitFolder + Path_Sep + "src" + Path_Sep
+				+ mJitLib->ModuleName() + ".stub.cpp";
 			std::ofstream sfile(strJitStubCpp);
 			if (!sfile.is_open())
 			{
@@ -233,15 +197,14 @@ namespace X
 			sfile.close();
 
 			srcs.push_back(strJitStubCpp);
+#endif
 			return true;
 		}
-#ifdef _OTHER_WAY //keep for reference 
 		bool CppCompiler::Build_VC(std::string strJitFolder, std::vector<std::string> srcs)
 		{
 #if (WIN32)
 			//printf("Call Build_VC,strJitFolder=%s\n", strJitFolder.c_str());
-			//"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat";
-			std::string clVarSet = JITManager::I().GetCompilerPath();
+			std::string clVarSet = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat";
 			std::string clVarSet_Quote = mJitLib->QuotePath(clVarSet);
 			clVarSet_Quote += " x64 ";
 			std::string initCmd = clVarSet_Quote + " && ";
@@ -254,9 +217,12 @@ namespace X
 			{
 				clCmd = "cl /O2 /DWIN32 /D_USRDLL /D_WINDLL ";//for release
 			}
-			std::string includePath = JITManager::I().GetPath();
+			std::string includePath = mJitLib->GetXLangIncludePath();
+			std::string xlangSrcs = includePath + "\\value.cpp";
 			std::string includePath_I = "/I" + mJitLib->QuotePath(includePath);
 			std::string srcCmd = " ";
+			srcCmd += mJitLib->QuotePath(xlangSrcs);
+			srcCmd += " ";
 			for (auto src : srcs)
 			{
 				srcCmd += mJitLib->QuotePath(src);
@@ -267,7 +233,7 @@ namespace X
 			std::string binPath = strJitFolder + "\\bin\\";
 			_mkdir(objPath.c_str());
 			_mkdir(binPath.c_str());
-			std::string binFileName = binPath + mJitLib->LibFileName() + ".dll";
+			std::string binFileName = binPath + mJitLib->ModuleName() + ".dll";
 			std::string objPath_Fo = " /Fo:" + mJitLib->QuotePath(objPath);
 			std::string binPath_Fe = " /Fe:" + mJitLib->QuotePath(binFileName);
 
@@ -357,70 +323,14 @@ namespace X
 #endif
 			return true;
 		}
-#endif //_OTHER_WAY //keep for reference 
 
-		bool CppCompiler::CompileAndLink(std::string strJitFolder,
-			std::vector<std::string> srcs, std::vector<std::string> exports)
+		bool CppCompiler::CompileAndLink(std::vector<std::string> srcs)
 		{
-			std::string curPath = mJitLib->Path();
-			BuildLoadModuleCode(strJitFolder, srcs, exports);
-
-			int Debug = mJitLib->IsBuildWithDebug() ? 1 : 0;
-			std::string binPath = (std::string)PyJit::Object()["os.path.join"](strJitFolder, "bin");
-			auto M_ccompiler = PyJit::Object::Import("distutils.ccompiler");
-			auto compiler = M_ccompiler["new_compiler"]();
-			auto M_sysconfig = PyJit::Object::Import("distutils.sysconfig");
-			M_sysconfig["customize_compiler"](compiler);
-			GalaxyJitPtr pp = PyJit::Object(mJitLib->LibFileName()).ref();
-			std::string binFileName =
-				(std::string)((PyJit::Object)compiler["shared_object_filename"]).Call(1, &pp,
-					PyJit::Object(std::map <std::string, PyJit::Object>
-			{
-				{"output_dir", PyJit::Object(binPath)},
-			}));
-
-			PyJit::Object sources(srcs);
-			std::string includePath = JITManager::I().GetPath();
-			std::vector<std::string> incDirs{ includePath, curPath };
-			auto otherDirs = mJitLib->IncludeDirs();
-			for (auto d : otherDirs)
-			{
-				MakeOSPath(d);
-				if (!IsAbsPath(d))
-				{
-					d = curPath + Path_Sep_S + d;
-				}
-				incDirs.push_back(d);
-			}
-			std::vector<PyJit::Tuple> macros
-			{
-		#if (WIN32)
-				PyJit::Tuple(std::vector<std::string>{"WIN32","1"})
-		#endif
-			};
-			std::map <std::string, PyJit::Object> kwargs_
-			{
-				  { "output_dir", PyJit::Object("obj") },
-				  { "include_dirs",PyJit::Object(incDirs)},
-				  { "macros",PyJit::Object(macros)},
-				  { "debug",PyJit::Object(Debug)}
-			};
-			PyJit::Object kwargs(kwargs_);
-			pp = sources.ref();
-			//pp will be deleted by .Call
-			auto objects = ((PyJit::Object)compiler["compile"]).Call(1, &pp, kwargs);
-			GalaxyJitPtr pp2[2] = { objects.ref(),PyJit::Object(binFileName).ref() };
-			PyJit::Object(compiler["link_shared_object"]).Call(2, pp2, PyJit::Object(
-				std::map <std::string, PyJit::Object>{
-					{"debug", PyJit::Object(Debug)},
-					{ "output_dir", PyJit::Object("bin") },
-					{ "target_lang",PyJit::Object("c++") },
-					{ "export_symbols",PyJit::Object(std::vector<std::string>{"InitJitLib"}) }
-			}));
-			return true;
+			bool bOK = Build_VC(mJitFolder, srcs);
+			return bOK;
 		}
 
-		bool CppCompiler::LoadLib(const std::string& libFileName, JitHost* pHost)
+		bool CppCompiler::LoadLib(const std::string& libFileName)
 		{
 			if (!libFileName.empty())
 			{
@@ -432,12 +342,16 @@ namespace X
 				mLibHandle = LOADLIB(mLibFileName.c_str());
 				if (mLibHandle)
 				{
-					std::string export_moduleName = "InitJitLib";
+					std::string export_moduleName = "Load";
 
-					Jit_Init_Proc InitProc = (Jit_Init_Proc)GetProc(mLibHandle, export_moduleName.c_str());
-					if (InitProc)
+					Jit_Load_Proc loadProc = (Jit_Load_Proc)GetProc(mLibHandle, export_moduleName.c_str());
+					if (loadProc)
 					{
-						InitProc(pHost, (void*)mJitLib);
+						int* funcIdList = nullptr;
+						void** funcs = nullptr;
+						int funcNum = 0;
+						loadProc((void*)X::g_pXHost,&funcIdList,&funcs,&funcNum);
+						mJitLib->SetFuncStub(funcIdList, funcs, funcNum);
 						bOK = true;
 					}
 				}
@@ -454,39 +368,25 @@ namespace X
 			}
 		}
 
-		std::string CppCompiler::GetExportModuleName(int moduleIndex)
-		{
-			std::string moduleName = mJitLib->ModuleName(moduleIndex);
-			ReplaceAll(moduleName, ".", "_");
-			std::string export_moduleName = "Init_" + moduleName;
-			return export_moduleName;
-		}
-
 		bool CppCompiler::BuildFuncCode(bool isExternImpl, std::string& funcName,
-			JitFuncInfo* pFuncInfo, std::string& code,
+			FuncInfo& funcInfo, std::string& code,
 			std::string& stubCode, std::string& externalDeclstubCode)
 		{
 			const int online_len = 2000;
-
-			FuncParseInfo info;
-			if (!TranslateCode(pFuncInfo->Name(), pFuncInfo->Code(), info))
-			{
-				return false;
-			}
-
+			int paramSize = (int)funcInfo.params.size();
 			std::string param_def;
 			std::string param_in_stub;
 			char line[online_len];
-			for (int i = 0; i < (int)info.parameters.size(); i++)
+			for (int i = 0; i < paramSize; i++)
 			{
-				auto it0 = info.parameters[i];
+				auto& paramInfo = funcInfo.params[i];
 				bool isNativeObj = false;;
-				auto mappedDataType = MapDataType(it0.second, isNativeObj);
-				param_def += "\t" + mappedDataType + " " + it0.first;
-				SPRINTF(line, online_len, "\t\t(%s)objs[%d]", mappedDataType.c_str(), i);
+				auto mappedDataType = MapDataType(paramInfo.type, isNativeObj);
+				param_def += "\t" + mappedDataType + " " + paramInfo.name;
+				SPRINTF(line, online_len, "\t\t(%s)vars[%d]", mappedDataType.c_str(), i);
 				param_in_stub += line;
 
-				if (i < int(info.parameters.size() - 1))
+				if (i < (paramSize - 1))
 				{
 					param_def += ",";
 					param_in_stub += ",";
@@ -495,7 +395,7 @@ namespace X
 				param_in_stub += "\n";
 			}
 			bool isNativeObj = false;
-			std::string retType = MapDataType(info.retType, isNativeObj);
+			std::string retType = MapDataType(funcInfo.retType, isNativeObj);
 			std::string funcHead;
 			//SPRINTF(line, online_len, "inline %s %s\n(\n", retType.c_str(), funcName.c_str());
 			//TODO:if add inline, can't debug, so delete it, because use the O2 to compile
@@ -517,15 +417,14 @@ namespace X
 				decl_func = "\t" + decl_func + ";\n";
 			}
 			funcHead += "\n{";
-			std::string funcAll = funcHead + info.body +
+			std::string funcAll = funcHead + "\n" + funcInfo.code +
 				"}\n";
 
 			std::string funcStubHead;
 			SPRINTF(line, online_len,
-				"GalaxyJitPtr %s_stub(GalaxyJitPtr vars)\n{\n"
+				"X::Value %s_stub(X::ARGS& vars)\n{\n"
 				"%s"
-				"\tPyJit::Object objs(vars,true);\n"
-				"\treturn PyJit::Object(%s(\n",
+				"\treturn %s(\n",
 				funcName.c_str(),
 				decl_func.c_str(),
 				funcName.c_str()
@@ -533,488 +432,10 @@ namespace X
 			funcStubHead = line;
 			std::string funcStubAll = funcStubHead
 				+ param_in_stub
-				+ "\t\t)\n\t);\n}\n";
+				+ "\t\t);\n}\n";
 
 			code = funcAll;
 			stubCode = funcStubAll;
-			return true;
-		}
-
-		bool CppCompiler::BuildFuncCode(bool isExternImpl, JitFuncInfo* pFuncInfo,
-			std::string& funcCode, std::string& stubCode, std::string& externalDeclstubCode)
-		{
-			const int online_len = 2000;
-
-			std::string param_def;
-			std::string param_in_stub;
-			char line[online_len];
-			ClassFuncInfo& funcHeadInfo = pFuncInfo->FuncHead();
-			for (int i = 0; i < (int)funcHeadInfo.parameters.size(); i++)
-			{
-				auto& varInfo = funcHeadInfo.parameters[i];
-				bool isNativeObj = false;;
-				auto mappedDataType = MapDataType(varInfo.type, isNativeObj);
-				param_def += "\t" + mappedDataType + " " + varInfo.name;
-				SPRINTF(line, online_len, "\t\t(%s)objs[%d]", mappedDataType.c_str(), i);
-				param_in_stub += line;
-
-				if (i < int(funcHeadInfo.parameters.size() - 1))
-				{
-					param_def += ",";
-					param_in_stub += ",";
-				}
-				param_def += "\n";
-				param_in_stub += "\n";
-			}
-			const char* funcName = pFuncInfo->Name().c_str();
-			bool isNativeObj = false;
-			std::string retType = MapDataType(funcHeadInfo.returnType, isNativeObj);
-			std::string funcHead;
-			//SPRINTF(line, online_len, "inline %s %s\n(\n", retType.c_str(), funcName.c_str());
-			//TODO:if add inline, can't debug, so delete it, because use the O2 to compile
-			SPRINTF(line, online_len, "%s %s\n(\n", retType.c_str(), funcName);
-			funcHead = line;
-			funcHead += param_def;
-			funcHead += ")";
-			std::string decl_func;
-			decl_func = "extern " + funcHead;
-			ReplaceAll(decl_func, "\n", "");
-			ReplaceAll(decl_func, "\t", " ");
-			if (isExternImpl)
-			{
-				externalDeclstubCode = decl_func;
-				decl_func = "";
-			}
-			else
-			{
-				decl_func = "\t" + decl_func + ";\n";
-			}
-			funcHead += "\n{";
-			std::string funcAll = funcHead + pFuncInfo->Code() +
-				"\n}\n";
-
-			std::string funcStubHead;
-			SPRINTF(line, online_len,
-				"GalaxyJitPtr %s_stub(GalaxyJitPtr vars)\n{\n"
-				"%s"
-				"\tPyJit::Object objs(vars,true);\n"
-				"\treturn PyJit::Object(%s(\n",
-				funcName,
-				decl_func.c_str(),
-				funcName
-			);
-			funcStubHead = line;
-			std::string funcStubAll = funcStubHead
-				+ param_in_stub
-				+ "\t\t)\n\t);\n}\n";
-
-			funcCode = funcAll;
-			stubCode = funcStubAll;
-
-			return true;
-		}
-
-		bool CppCompiler::BuildClassCode(bool isExternImpl,
-			std::string& className,
-			JitClassInfo* pClassInfo,
-			std::string& code,
-			std::string& stubCode,
-			std::string& externalDeclstubCode,
-			std::string& prop_method_name_list,
-			std::string& class_stub_func_list)
-		{
-			const int online_len = 2000;
-			char line[online_len];
-			const char* szClassName = className.c_str();
-			std::string nativeClassName = pClassInfo->NativeClassName();
-			const char* szNativeClassName = nativeClassName.c_str();
-
-			static const char* BEGIN_CLASS =
-				"/*****BEGIN******%s*****************/\n";
-			SPRINTF(line, online_len, BEGIN_CLASS, szClassName);
-			stubCode += line;
-
-			static const char* class_new_template =
-				"static void* %s_new()\n"//className
-				"{\n"
-				"\treturn new %s()\n"//szNativeClassName
-				"}\n";
-
-			static const char* class_dealloc_template =
-				"static void %s_dealloc(void* classInstance)\n"//className
-				"{\n"
-				"\tdelete (%s*)classInstance;\n"//szNativeClassName
-				"}\n"
-				"";
-
-			static const char* class_serialize_template =
-				"static void %s_serialize_stub(GalaxyJitPtr self,unsigned long long streamId,bool InputOrOutput)\n"//className
-				"{\n"
-				"\tPyJit::Native<%s> N(self);\n"//szNativeClassName
-				"\tN.Get()->serialize(streamId,InputOrOutput);\n"
-				"}\n";
-
-			//New Func
-			std::string newStub;
-			//dealloc
-			SPRINTF(line, online_len, class_dealloc_template, szClassName, szNativeClassName);
-			std::string dealloc_stub = line;
-
-			std::string serialize_stub;
-
-			static const char* new_dealloc_stub_temp =
-				"\t(unsigned long long)%s_new,(unsigned long long)%s_dealloc,nullptr\n";
-			static const char* new_dealloc_serialize_stub_temp =
-				"\t(unsigned long long)%s_new,(unsigned long long)%s_dealloc,(unsigned long long)%s_serialize_stub\n";
-
-			SPRINTF(line, online_len, new_dealloc_stub_temp, szClassName, szClassName);
-			class_stub_func_list = line;
-			if (pClassInfo->support_serialization())
-			{
-				SPRINTF(line, online_len, new_dealloc_serialize_stub_temp, szClassName, szClassName, szClassName);
-				class_stub_func_list = line;
-			}
-			else
-			{
-				SPRINTF(line, online_len, new_dealloc_stub_temp, szClassName, szClassName);
-				class_stub_func_list = line;
-			}
-			prop_method_name_list = "\"new\",\"dealloc\",\"serialize\"\n";
-			//Props
-			static const char* prop_get_func_template =
-				"static GalaxyJitPtr %s_get_%s(GalaxyJitPtr self,void* closure)\n"//className,propName
-				"{\n"
-				"\tPyJit::Native<%s> N(self,0x%x);\n"//szNativeClassName,secret code
-				"\treturn PyJit::Object(N.Get()->get%s());\n"//propName
-				"}\n";
-			static const char* prop_set_func_template =
-				"static int %s_set_%s(GalaxyJitPtr self,GalaxyJitPtr value)\n"//className,propName
-				"{\n"
-				"\tPyJit::Native<%s> N(self,0x%x);\n"//szNativeClassName,secret code
-				"\tN.Get()->set%s(%sPyJit::Object(value,true));\n"//propName,(prop_type) or empty
-				"\treturn 0;\n"
-				"}\n";
-
-			static const char* bind_prop_get_func_template =
-				"static GalaxyJitPtr %s_get_%s(GalaxyJitPtr self,void* closure)\n"//className,propName
-				"{\n"
-				"\tPyJit::Native<%s> N(self,0x%x);\n"//szNativeClassName,secret code
-				"\treturn PyJit::Object(N.Get()->%s);\n"//bindInfo
-				"}\n";
-			static const char* bind_prop_set_func_template =
-				"static int %s_set_%s(GalaxyJitPtr self,GalaxyJitPtr value)\n"//className,propName
-				"{\n"
-				"\tPyJit::Native<%s> N(self,0x%x);\n"//szNativeClassName,secret code
-				"\tN.Get()->%s = %sPyJit::Object(value,true);\n"//bindInfo,(prop_type) or empty
-				"\treturn 0;\n"
-				"}\n";
-			static const char* prop_stub_temp =
-				"\t\t\t,(unsigned long long)%s_get_%s,(unsigned long long)%s_set_%s\n";
-
-			auto& props = pClassInfo->Props();
-			std::string prop_stub_code;
-			if (props.size() > 0)
-			{
-				prop_method_name_list += "\t\t/*props*/";
-			}
-			for (int i = 0; i < props.size(); i++)
-			{
-				auto& prop = props[i];
-				const char* propName = prop.name.c_str();
-				const char* bindInfo = prop.bindto.c_str();
-				unsigned int secret_code = (1 << 24) | i;
-				if (prop.bindto.size() > 0)
-				{
-					SPRINTF(line, online_len, bind_prop_get_func_template, szClassName, propName,
-						szNativeClassName, secret_code, bindInfo);
-				}
-				else
-				{
-					SPRINTF(line, online_len, prop_get_func_template, szClassName, propName,
-						szNativeClassName, secret_code, propName);
-				}
-				prop_stub_code += line;
-				bool isNativeObj = false;
-				std::string propType = MapDataType(prop.type, isNativeObj);
-				if (!propType.empty())
-				{
-					propType = "(" + propType + ")";
-				}
-				secret_code = (2 << 24) | i;
-
-				if (prop.bindto.size() > 0)
-				{
-					SPRINTF(line, online_len, bind_prop_set_func_template, szClassName, propName,
-						szNativeClassName, secret_code, bindInfo, propType.c_str());
-				}
-				else
-				{
-					SPRINTF(line, online_len, prop_set_func_template, szClassName, propName,
-						szNativeClassName, secret_code, propName, propType.c_str());
-				}
-				prop_stub_code += line;
-				SPRINTF(line, online_len, prop_stub_temp, szClassName, propName, szClassName, propName);
-				class_stub_func_list += line;
-
-				prop_method_name_list += ",\"" + prop.name + "\"";
-				if (i % 3 == 0)
-				{
-					prop_method_name_list += "\n\t\t";
-				}
-			}
-			if (props.size() > 0)
-			{
-				prop_method_name_list += "\n";
-			}
-			if (pClassInfo->HaveInitFunc())
-			{
-				std::string func_code;
-				BuildClassConstructorCode(isExternImpl, &pClassInfo->InitFuncInfo(),
-					pClassInfo, func_code, newStub, externalDeclstubCode);
-			}
-			else
-			{//use default one without parameters
-				SPRINTF(line, online_len, class_new_template, szClassName, szClassName, szClassName);
-				newStub = line;
-			}
-			if (pClassInfo->support_serialization())
-			{//add serialization stub
-				SPRINTF(line, online_len, class_serialize_template, szClassName, szNativeClassName);
-				serialize_stub = line;
-			}
-			auto& funcs = pClassInfo->Funcs();
-			std::string func_stub_code;
-			static const char* func_stub_temp =
-				"\t\t\t,(unsigned long long)%s_%s_stub\n";
-			if (funcs.size() > 0)
-			{
-				prop_method_name_list += "\t\t/*methods*/";
-			}
-
-			for (int i = 0; i < funcs.size(); i++)
-			{
-				auto& f = funcs[i];
-				std::string func_code;
-				std::string stub_Code;
-				std::string externalDeclstubCode;
-				//TODO: for embeded code:func_code;
-				BuildClassFuncCode(i, isExternImpl, &f, pClassInfo, func_code, stub_Code, externalDeclstubCode);
-				func_stub_code += stub_Code;
-
-				SPRINTF(line, online_len, func_stub_temp, szClassName, f.name.c_str());
-				class_stub_func_list += line;
-				prop_method_name_list += ",\"" + f.name + "\"";
-			}
-
-			static const char* END_CLASS =
-				"/*****END********%s*****************/\n\n";
-			SPRINTF(line, online_len, END_CLASS, szClassName);
-			std::string endCode = line;
-			stubCode +=
-				newStub +
-				dealloc_stub +
-				serialize_stub +
-				prop_stub_code +
-				func_stub_code +
-				endCode;
-			return true;
-		}
-
-		bool CppCompiler::BuildClassFuncCode(unsigned int funcId, bool isExternImpl, ClassFuncInfo* pClassFuncInfo,
-			JitClassInfo* pClassInfo, std::string& code, std::string& stubCode, std::string& externalDeclstubCode)
-		{
-			const int online_len = 2000;
-			std::string param_def;
-			std::string param_in_stub;
-			char line[online_len];
-			for (int i = 0; i < pClassFuncInfo->parameters.size(); i++)
-			{
-				auto& var = pClassFuncInfo->parameters[i];
-				bool isNativeObj = false;
-				auto mappedDataType = MapDataType(var.type, isNativeObj);
-				if (isNativeObj)
-				{
-					if (mappedDataType == pClassInfo->Name())
-					{
-						mappedDataType = pClassInfo->NativeClassName();
-					}
-					mappedDataType += "*";//change to pointer for native object
-				}
-				param_def += "\t" + mappedDataType + " " + var.name;
-				SPRINTF(line, online_len, "\t\t(%s)objs[%d]", mappedDataType.c_str(), i);
-				param_in_stub += line;
-
-				if (i < int(pClassFuncInfo->parameters.size() - 1))
-				{
-					param_def += ",";
-					param_in_stub += ",";
-				}
-				param_def += "\n";
-				param_in_stub += "\n";
-			}
-			bool isNativeObj = false;
-			bool isRetEmpty = false;
-			if ((pClassFuncInfo->returnType == "") || (pClassFuncInfo->returnType == "None"))
-			{
-				isRetEmpty = true;
-			}
-			std::string retType = MapDataType(pClassFuncInfo->returnType, isNativeObj);
-			std::string funcHead;
-			//SPRINTF(line, online_len, "inline %s %s\n(\n", retType.c_str(), funcName.c_str());
-			//TODO:if add inline, can't debug, so delete it, because use the O2 to compile
-			SPRINTF(line, online_len, "%s %s\n(\n", retType.c_str(), pClassFuncInfo->name.c_str());
-			funcHead = line;
-			funcHead += param_def;
-			funcHead += ")";
-			std::string decl_func;
-			decl_func = "extern " + funcHead;
-			ReplaceAll(decl_func, "\n", "");
-			ReplaceAll(decl_func, "\t", " ");
-			if (isExternImpl)
-			{
-				externalDeclstubCode = decl_func;
-				decl_func = "";
-			}
-			else
-			{
-				decl_func = "\t" + decl_func + ";\n";
-			}
-			funcHead += "\n{";
-			std::string funcAll = funcHead + /*info.body +*/ "}\n";
-
-			unsigned int secret_code = (3 << 24) | funcId;
-			if (!isNativeObj)
-			{
-				if (isRetEmpty)
-				{
-					SPRINTF(line, online_len,
-						"GalaxyJitPtr %s_%s_stub(GalaxyJitPtr self,GalaxyJitPtr vars)\n{\n"
-						"\tPyJit::Native<%s> N(self,0x%x);\n"//className,secret code
-						"\tPyJit::Object objs(vars,true);\n"
-						"\tN.Get()->%s(\n%s\t);\n"
-						"\treturn PyJit::None();\n"
-						"}\n",
-						pClassInfo->Name().c_str(),
-						pClassFuncInfo->name.c_str(),
-						pClassInfo->NativeClassName().c_str(), secret_code,
-						pClassFuncInfo->name.c_str(),
-						param_in_stub.c_str()
-					);
-				}
-				else
-				{
-					SPRINTF(line, online_len,
-						"GalaxyJitPtr %s_%s_stub(GalaxyJitPtr self,GalaxyJitPtr vars)\n{\n"
-						"\tPyJit::Native<%s> N(self,0x%x);\n"//className,secret code
-						"\tPyJit::Object objs(vars,true);\n"
-						"\tPyJit::Object retObj(N.Get()->%s(\n%s\t\t)\n\t);\n"
-						"\treturn retObj;\n"
-						"}\n",
-						pClassInfo->Name().c_str(),
-						pClassFuncInfo->name.c_str(),
-						pClassInfo->NativeClassName().c_str(), secret_code,
-						pClassFuncInfo->name.c_str(),
-						param_in_stub.c_str()
-					);
-				}
-			}
-			else
-			{
-				if (retType == pClassInfo->Name())
-				{
-					retType = pClassInfo->NativeClassName();
-				}
-				const char* className = pClassInfo->Name().c_str();
-				const char* funcName = pClassFuncInfo->name.c_str();
-				SPRINTF(line, online_len,
-					"GalaxyJitPtr %s_%s_stub(GalaxyJitPtr self,GalaxyJitPtr vars)\n{\n"//className,funcname
-					"\tPyJit::Native<%s> N(self,0x%x);\n"//className,secret code
-					"\tPyJit::Object objs(vars,true);\n"
-					"\t%s* pNativeObj = N.Get()->%s(\n%s\t);\n"//retType,funcname,param_in_stub
-					"\treturn PyJit::Extract<%s,false>(self,\"%s\",pNativeObj);\n"//retType,retType
-					"}\n",
-					className, funcName,
-					pClassInfo->NativeClassName().c_str(), secret_code,
-					retType.c_str(), funcName, param_in_stub.c_str(),
-					retType.c_str(), retType.c_str()
-				);
-			}
-			stubCode = line;
-
-			//code = funcAll;
-
-			return true;
-		}
-		bool CppCompiler::BuildClassConstructorCode(bool isExternImpl, ClassFuncInfo* pClassFuncInfo,
-			JitClassInfo* pClassInfo, std::string& code, std::string& stubCode, std::string& externalDeclstubCode)
-		{
-			const int online_len = 2000;
-			std::string param_def;
-			std::string param_in_stub;
-			char line[online_len];
-			for (int i = 0; i < pClassFuncInfo->parameters.size(); i++)
-			{
-				auto& var = pClassFuncInfo->parameters[i];
-				bool isNativeObj = false;;
-				auto mappedDataType = MapDataType(var.type, isNativeObj);
-				param_def += "\t" + mappedDataType + " " + var.name;
-				SPRINTF(line, online_len, "\t\t(%s)objs[%d]", mappedDataType.c_str(), i);
-				param_in_stub += line;
-
-				if (i < int(pClassFuncInfo->parameters.size() - 1))
-				{
-					param_def += ",";
-					param_in_stub += ",";
-				}
-				param_def += "\n";
-				param_in_stub += "\n";
-			}
-			std::string funcHead;
-			//SPRINTF(line, online_len, "inline %s %s\n(\n", retType.c_str(), funcName.c_str());
-			//TODO:if add inline, can't debug, so delete it, because use the O2 to compile
-			SPRINTF(line, online_len, "%s\n(\n", pClassInfo->Name().c_str());
-			funcHead = line;
-			funcHead += param_def;
-			funcHead += ")";
-			std::string decl_func;
-			if (isExternImpl)
-			{
-				externalDeclstubCode = decl_func;
-				decl_func = "";
-			}
-			else
-			{
-				decl_func = "\t" + decl_func + ";\n";
-			}
-			funcHead += "\n{";
-			std::string funcAll = funcHead + /*info.body +*/ "}\n";
-
-			const char* className = pClassInfo->Name().c_str();
-			std::string strNativeClassName = pClassInfo->NativeClassName();
-			const char* nativeClassName = strNativeClassName.c_str();
-			SPRINTF(line, online_len,
-				"void* %s_new(GalaxyJitPtr self,GalaxyJitPtr vars)\n"//classname
-				"{\n"
-				"\tPyJit::Object objs(vars,true);\n"
-				"\t%s* nativeObj = nullptr;\n"//nativeClassName
-				"\tif(objs.GetCount()==0)\n"
-				"\t{\n"
-				"\t\tnativeObj =  new %s();\n"//nativeClassName
-				"\t}\n"
-				"\telse\n"
-				"\t{\n"
-				"\t\tnativeObj =  new %s(\n%s\t);\n"//nativeClassName,param_in_stub
-				"\t}\n"
-				"\treturn nativeObj;\n"
-				"}\n",
-				className,
-				nativeClassName, nativeClassName, nativeClassName,
-				param_in_stub.c_str()
-			);
-			stubCode = line;
-
-			//code = funcAll;
-
 			return true;
 		}
 
@@ -1024,27 +445,11 @@ namespace X
 			std::string strRetType;
 			if (type == "" || type == "None")
 			{
-				strRetType = "PyJit::Object";
+				strRetType = "void";
 			}
-			else if (type == "bool" || type == "<class 'bool'>")
-			{
-				strRetType = "bool";
-			}
-			else if (type == "int" || type == "<class 'int'>")
-			{
-				strRetType = "int";
-			}
-			else if (type == "float" || type == "<class 'float'>")
-			{//python's float is c's double
-				strRetType = "double";
-			}
-			else if (type == "str" || type == "<class 'str'>")
+			else if (type == "str")
 			{
 				strRetType = "std::string";
-			}
-			else if (type == "<built-in function any>")
-			{
-				strRetType = "";
 			}
 			else
 			{
