@@ -144,6 +144,7 @@ namespace X
 				}
 			}
 		public:
+			static void Init();
 			static void cleanup();
 			Tensor();
 			~Tensor();

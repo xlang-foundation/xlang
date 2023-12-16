@@ -30,6 +30,8 @@
 #include "set.h"
 #include "deferred_object.h"
 #include "typeobject.h"
+#include "tensor.h"
+#include "tensor_graph.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -230,6 +232,8 @@ static void XLangInternalInit()
 	X::Data::List::Init();
 	X::Data::Dict::Init();
 	X::Data::mSet::Init();
+	X::Data::Tensor::Init();
+	X::Data::TensorGraph::Init();
 	X::AST::MetaScope().I().Init();
 	X::Data::DeferredObject::Init();
 	X::Data::TypeObject::Init();
@@ -359,6 +363,7 @@ void XLangStaticUnload()
 	X::Data::List::cleanup();
 	X::Data::Dict::cleanup();
 	X::Data::Tensor::cleanup();
+	X::Data::TensorGraph::cleanup();
 	X::Data::Future::cleanup();
 	X::Data::Function::cleanup();
 	X::Data::DeferredObject::cleanup();

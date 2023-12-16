@@ -48,6 +48,12 @@ namespace X
 		{
 			m_pMyScope->SetNoAddVar(true);
 		}
+		void AddConst(const char* name, X::Value& val)
+		{
+			std::string strName(name);
+			int idx = m_pMyScope->AddOrGet(strName, false);
+			m_variableFrame->Set(idx, val);
+		}
 		void AddFunc(const char* name,const char* doc, U_FUNC func)
 		{
 			std::string strName(name);
