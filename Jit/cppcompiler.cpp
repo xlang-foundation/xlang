@@ -478,6 +478,10 @@ namespace X
 			{
 				strRetType = "std::string";
 			}
+			else if (type == "any")
+			{
+				strRetType = "X::Value";
+			}
 			else
 			{
 				strRetType = type;// use this format var:"c++ class name"
