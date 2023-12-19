@@ -4,19 +4,6 @@
 #include <string>
 #include "xport.h"
 
-#if !defined(FORCE_INLINE)
-#if defined(_MSC_VER)
-	// Microsoft Visual C++ Compiler
-#define FORCE_INLINE __forceinline
-#elif defined(__GNUC__) || defined(__clang__)
-	// GCC or Clang Compiler
-#define FORCE_INLINE FORCE_INLINE __attribute__((always_inline))
-#else
-	// Fallback for other compilers
-#define FORCE_INLINE FORCE_INLINE
-#endif
-#endif
-
 namespace X 
 {
 class XObj;
@@ -488,20 +475,13 @@ public:
 		}
 	}
 	virtual Value operator - (const Value& right);
-	void AssignAndAdd(const Value& v);
+	void ObjectAssignAndAdd(const Value& v);
 	FORCE_INLINE void operator += (const Value& v)
 	{
 		flags = v.flags;
-		if (t == ValueType::Object)
+		if (t == ValueType::Object || v.t == ValueType::Object)
 		{
-			AssignAndAdd(v);
-		}
-		else if (v.IsObject())
-		{
-			Value v0 = v;
-			v0 += *this;
-			t = ValueType::Object;
-			AssignObject(v0.GetObj());
+			ObjectAssignAndAdd(v);
 		}
 		else
 		{

@@ -35,19 +35,19 @@ public:
 		//Constructor can be class Name as its function name
 		//Or constructor uses name: constructor or __init__
 		auto name = GetNameString();
-		int idx = m_pMyScope->AddOrGet(name,true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name,true);
 		if (idx>=0)
 		{
 			return idx;
 		}
 		name = "constructor";
-		idx = m_pMyScope->AddOrGet(name, true);
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(idx,m_pMyScope,name, true);
 		if (idx >= 0)
 		{
 			return idx;
 		}
 		name = "__init__";
-		idx = m_pMyScope->AddOrGet(name, true);
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(idx,m_pMyScope,name, true);
 		if (idx >= 0)
 		{
 			return idx;
@@ -99,7 +99,7 @@ public:
 	int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr);
 	int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v)
 	{
-		int idx = m_pMyScope->AddOrGet(name, false);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name, false);
 		if (idx >= 0)
 		{
 			int cnt = m_variableFrame->GetVarCount();

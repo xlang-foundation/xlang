@@ -143,7 +143,7 @@ namespace AST
 				if (pCurScope)
 				{
 					//will modify Index to match with new top module
-					Index = pCurScope->AddOrGet(varName, false);
+					SCOPE_FAST_CALL_AddOrGet0_NoDef(Index,pCurScope,varName, false);
 					rt->Set(pCurScope,pContext, Index, v0);
 				}
 			}
@@ -157,7 +157,7 @@ namespace AST
 				stream >> v0;
 				if (pCurScope)
 				{
-					Index = pCurScope->AddOrGet(varName, false);
+					SCOPE_FAST_CALL_AddOrGet0_NoDef(Index,pCurScope,varName, false);
 					rt->Set(pCurScope, pContext, Index, v0);
 				}
 			}
@@ -269,7 +269,7 @@ void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 	for (auto s : candidates)
 	{
 		Scope* pRightScope = nullptr;
-		int idx = s->AddOrGet(strName, !m_isLeftValue, &pRightScope);
+		SCOPE_FAST_CALL_AddOrGet(idx,s,strName, !m_isLeftValue, &pRightScope);
 		if (idx != -1)
 		{//use the scope to find this name as its scope
 			m_scope = (pRightScope == nullptr) ? s : pRightScope;
@@ -316,7 +316,7 @@ void Var::ScopeLayout()
 	{
 		std::string strName(Name.s, Name.size);
 		Scope* pRightScope = nullptr;
-		idx = pMyScope->AddOrGet(strName,!m_isLeftValue,&pRightScope);
+		SCOPE_FAST_CALL_AddOrGet_NoDef(idx,pMyScope,strName,!m_isLeftValue,&pRightScope);
 		if (idx == (int)ScopeVarIndex::EXTERN)
 		{//for extern var, always looking up parent scopes
 			bIsLeftValue = false;

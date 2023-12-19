@@ -38,13 +38,6 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 
-if(MSVC)
-    add_definitions(-DFORCE_INLINE=__forceinline)
-elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    add_definitions(-DFORCE_INLINE='inline __attribute__((always_inline))')
-else()
-    add_definitions(-DFORCE_INLINE=inline)
-endif()
 
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

@@ -9,10 +9,10 @@
 #define FORCE_INLINE __forceinline
 #elif defined(__GNUC__) || defined(__clang__)
 // GCC or Clang Compiler
-#define FORCE_INLINE FORCE_INLINE __attribute__((always_inline))
+#define FORCE_INLINE __attribute__((always_inline)) inline
 #else
 // Fallback for other compilers
-#define FORCE_INLINE FORCE_INLINE
+#define FORCE_INLINE inline
 #endif
 #endif
 

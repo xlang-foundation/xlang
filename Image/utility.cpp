@@ -6,6 +6,7 @@
 #if (WIN32)
 #include <windows.h>
 #else
+#include <dlfcn.h>
 #endif
 
 bool GetCurLibInfo(void* EntryFuncName, std::string& strFullPath,

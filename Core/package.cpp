@@ -46,7 +46,7 @@ namespace X
 			{
 				auto& strId = IdList[id_offset++];
 				X::Value item;
-				int idx = m_pMyScope->AddOrGet(strId, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strId, true);
 				if (idx >= 0)
 				{
 					GetIndexValue(idx, item);
@@ -63,7 +63,7 @@ namespace X
 				//all elses, return value passed in
 				return val;
 			}
-			int index = m_pMyScope->AddOrGet(itemName, true);
+			SCOPE_FAST_CALL_AddOrGet0(index,m_pMyScope,itemName, true);
 			if (index > 0)
 			{
 				X::Value valMember;
@@ -113,7 +113,7 @@ namespace X
 			{
 				auto& key = IdList[id_offset++];
 				X::Value item;
-				int idx = m_pMyScope->AddOrGet(key, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,key, true);
 				if (idx >= 0)
 				{
 					GetIndexValue(idx, item);
@@ -143,7 +143,7 @@ namespace X
 				//make object_ids
 				std::string myId = it.name;
 				auto valType = GetMemberType(it.type);
-				int idx = m_pMyScope->AddOrGet(it.name, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,it.name, true);
 				X::Value val;
 				GetIndexValue(idx, val);
 				if (val.IsObject() && val.GetObj()->GetType()
@@ -213,7 +213,7 @@ namespace X
 			{
 				auto& strId = IdList[id_offset++];
 				X::Value item;
-				int idx = m_pPackage->GetMyScope()->AddOrGet(strId, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,m_pPackage->GetMyScope(),strId, true);
 				if (idx >= 0)
 				{
 					GetIndexValue(idx, item);
@@ -230,7 +230,7 @@ namespace X
 				//all elses, return value passed in
 				return val;
 			}
-			int index = m_pPackage->GetMyScope()->AddOrGet(itemName, true);
+			SCOPE_FAST_CALL_AddOrGet0(index,m_pPackage->GetMyScope(),itemName, true);
 			if (index > 0)
 			{
 				X::Value valMember;
@@ -359,7 +359,7 @@ namespace X
 			{
 				auto& strId = IdList[id_offset++];
 				X::Value item;
-				int idx = m_pPackage->GetMyScope()->AddOrGet(strId, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,m_pPackage->GetMyScope(),strId, true);
 				if (idx >= 0)
 				{
 					GetIndexValue(idx, item);
@@ -391,7 +391,7 @@ namespace X
 				dict->Set("Name", X::Value(pStrName));
 				//make object_ids
 				std::string myId = it.name;
-				int idx = m_pPackage->GetMyScope()->AddOrGet(it.name, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,m_pPackage->GetMyScope(),it.name, true);
 				auto valType = GetMemberType(it.type);
 				X::Value val;
 				GetIndexValue(idx, val);

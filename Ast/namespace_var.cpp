@@ -77,7 +77,7 @@ namespace X
 			Expression* pFromExp = this;
 			while (pMyScope != nullptr && idx < 0)
 			{
-				idx = pMyScope->AddOrGet(strName, false);
+				SCOPE_FAST_CALL_AddOrGet0_NoDef(idx,pMyScope,strName, false);
 				if (idx >= 0)
 				{//use the scope to find this name as its scope
 					m_scope = pMyScope;

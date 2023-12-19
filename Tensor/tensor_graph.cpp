@@ -111,7 +111,7 @@ namespace X
 				default:
 					break;
 				}
-				int idx = pScope->AddOrGet(strName, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
 				if (idx >= 0)
 				{
 					X::Value valFunc;

@@ -67,7 +67,7 @@ namespace X
 				if (m_obj.IsObject())
 				{
 					auto* pNameObj = dynamic_cast<Data::NamespaceVarObject*>(m_obj.GetObj());
-					int idx = m_pMyScope->AddOrGet(name, bGetOnly,ppRightScope);
+					SCOPE_FAST_CALL_AddOrGet(idx,m_pMyScope,name, bGetOnly,ppRightScope);
 					if (idx >= 0)
 					{
 						pNameObj->AddSlotTo(idx);

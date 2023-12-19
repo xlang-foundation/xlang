@@ -435,7 +435,7 @@ extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 	std::string strFullPath;
 	std::string strFolderPath;
 	std::string strLibName;
-	GetCurLibInfo(Load, strFullPath, strFolderPath, strLibName);
+	GetCurLibInfo((void*)Load, strFullPath, strFolderPath, strLibName);
 	X::g_pXload = (X::XLoad*)pXload;
 	const char* engPath = new char[strFolderPath.length() + 1];
 	memcpy((char*)engPath, strFolderPath.data(), strFolderPath.length() + 1);

@@ -291,8 +291,8 @@ namespace X
 			{
 				::WaitForSingleObject(ProcessInformation.hProcess, -1);
 			}
-#endif
 			CloseHandle(hNull);
+#endif
 			return true;
 		}
 		bool CppCompiler::Build_GCC(std::string strJitFolder, std::vector<std::string> srcs)
@@ -308,7 +308,7 @@ namespace X
 			else
 			{
 			}
-			std::string includePath = JITManager::I().GetPath();
+			std::string includePath = mJitLib->GetXLangIncludePath();
 			std::string includePath_I = " -I " + mJitLib->QuotePath(includePath);
 			std::string srcCmd = " ";
 			for (auto src : srcs)
@@ -319,7 +319,7 @@ namespace X
 
 			std::string binPath = strJitFolder + "/bin/";
 			_mkdir(binPath.c_str());
-			std::string binFileName = binPath + mJitLib->LibFileName() + ".so";
+			std::string binFileName = binPath + mJitLib->ModuleName() + ".so";
 			std::string binPath_Fe = " -o " + mJitLib->QuotePath(binFileName);
 
 			std::string buildLog = binPath + "build.txt";

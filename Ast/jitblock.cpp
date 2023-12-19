@@ -12,7 +12,7 @@ namespace X
 			if (pMyScope)
 			{
 				std::string strName(m_Name.s, m_Name.size);
-				m_Index = pMyScope->AddOrGet(strName, false);
+				SCOPE_FAST_CALL_AddOrGet0_NoDef(m_Index,pMyScope,strName, false);
 			}
 			//process parameters' default values
 			if (Params)
@@ -51,7 +51,7 @@ namespace X
 					}
 					break;
 					}
-					int idx = m_pMyScope->AddOrGet(strVarName, false);
+					SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strVarName, false);
 					m_IndexofParamList.push_back(idx);
 				}
 				Params->ScopeLayout();

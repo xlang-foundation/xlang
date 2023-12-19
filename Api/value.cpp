@@ -387,12 +387,24 @@ namespace X
 		}
 		return true;
 	}
-	void Value::AssignAndAdd(const Value& v)
+	void Value::ObjectAssignAndAdd(const Value& v)
 	{
-		Value v0;
-		//don't change V
-		v0 += v;
-		(*((XObj*)x.obj)) += v0;
+		if(t == ValueType::Object && v.t != ValueType::Object)
+		{
+			//if this is an object, but v is not an object, then we need to
+			//add v to this object
+			(*((XObj*)x.obj)) += (Value&)v;
+		}
+		else if (t != ValueType::Object && v.t == ValueType::Object)
+		{
+			//if this is not an object, but v is an object, then we need to
+			//add this to v object
+			(*((XObj*)v.x.obj)) += *this;
+		}
+		else
+		{
+			(*((XObj*)v.x.obj)) += (Value&)v;
+		}
 	}
 	void Value::AssignObject(XObj* p, bool bAddRef)
 	{

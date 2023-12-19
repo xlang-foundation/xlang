@@ -93,7 +93,7 @@ namespace X
 		if (pScope)
 		{
 			std::string strName(name);
-			int idx = pScope->AddOrGet(strName, true);
+			SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
 			if (idx >= 0)
 			{
 				pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);
@@ -106,7 +106,7 @@ namespace X
 			for (auto* pScope : scopes)
 			{
 				std::string strName(name);
-				int idx = pScope->AddOrGet(strName, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
 				if (idx >= 0)
 				{
 					pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);

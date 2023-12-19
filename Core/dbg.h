@@ -60,7 +60,7 @@ public:
 				for (auto& l_name : l_names)
 				{
 					X::Value vDbg;
-					auto idx = pMyScope->AddOrGet(l_name, true);
+					SCOPE_FAST_CALL_AddOrGet0(idx,pMyScope,l_name, true);
 					m_rt->Get(pMyScope, pContext, idx, vDbg);
 					std::cout << l_name << ":" << vDbg.ToString() << std::endl;
 				}
@@ -83,7 +83,7 @@ public:
 						X::Value vDbg;
 						if (pMyScope)
 						{
-							auto idx = pMyScope->AddOrGet(param, true);
+							SCOPE_FAST_CALL_AddOrGet0(idx,pMyScope,param, true);
 							m_rt->Get(pMyScope, pContext, idx, vDbg);
 						}
 						std::cout <<vDbg.ToString() << std::endl;

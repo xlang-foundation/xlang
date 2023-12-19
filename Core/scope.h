@@ -13,6 +13,46 @@
 #include "stackframe.h"
 #include "dyn_scope.h"
 
+#define SCOPE_FAST_CALL_AddOrGet0_NoRet(myScope,name,bGetOnly) \
+	SCOPE_FAST_CALL_AddOrGet_NoRet(myScope,name,bGetOnly,nullptr)
+
+#define SCOPE_FAST_CALL_AddOrGet0(idx,myScope,name,bGetOnly) \
+	SCOPE_FAST_CALL_AddOrGet(idx,myScope,name,bGetOnly,nullptr)
+
+#define SCOPE_FAST_CALL_AddOrGet0_NoDef(idx,myScope,name,bGetOnly) \
+	SCOPE_FAST_CALL_AddOrGet_NoDef(idx,myScope,name,bGetOnly,nullptr)
+
+#define SCOPE_FAST_CALL_AddOrGet(idx,myScope,name,bGetOnly,ppRightScope) \
+	int idx;\
+	SCOPE_FAST_CALL_AddOrGet_NoDef(idx,myScope,name,bGetOnly,ppRightScope)
+
+#define SCOPE_FAST_CALL_AddOrGet_NoDef(idx,myScope,name,bGetOnly,ppRightScope)\
+	if (myScope->GetNamespaceScope())\
+	{\
+		idx = myScope->GetNamespaceScope()->AddOrGet(name, bGetOnly, ppRightScope);\
+	}\
+	else if (myScope->GetDynScope())\
+	{\
+		idx = myScope->GetDynScope()->AddOrGet(name.c_str(), bGetOnly);\
+	}\
+	else\
+	{\
+		idx = myScope->AddOrGet(name, bGetOnly, ppRightScope);\
+	}
+
+#define SCOPE_FAST_CALL_AddOrGet_NoRet(myScope,name,bGetOnly,ppRightScope)\
+	if (myScope->GetNamespaceScope())\
+	{\
+		myScope->GetNamespaceScope()->AddOrGet(name, bGetOnly, ppRightScope);\
+	}\
+	else if (myScope->GetDynScope())\
+	{\
+		myScope->GetDynScope()->AddOrGet(name.c_str(), bGetOnly);\
+	}\
+	else\
+	{\
+		myScope->AddOrGet(name, bGetOnly, ppRightScope);\
+	}
 namespace X 
 { 
 namespace AST 
@@ -69,24 +109,28 @@ public:
 	{
 		m_pNamespaceScope = pScope;
 	}
+	FORCE_INLINE Scope* GetNamespaceScope()
+	{
+		return m_pNamespaceScope;
+	}
 	FORCE_INLINE void SetVarFrame(StackFrame* pFrame)
 	{
 		m_varFrame = pFrame;
 	}
-	inline void SetDynScope(DynamicScope* pScope)
+	FORCE_INLINE void SetDynScope(DynamicScope* pScope)
 	{
 		m_pDynScope = pScope;
 	}
-	inline DynamicScope* GetDynScope()
+	FORCE_INLINE DynamicScope* GetDynScope()
 	{
 		return m_pDynScope;
 	}
-	inline void SetNoAddVar(bool bNoAdd)
+	FORCE_INLINE void SetNoAddVar(bool bNoAdd)
 	{
 		m_NoAddVar = bNoAdd;
 	}
 	//use address as ID, just used Serialization
-	ExpId ID() { return (ExpId)this; }
+	FORCE_INLINE ExpId ID() { return (ExpId)this; }
 	void AddExternVar(AST::Var* var);
 	FORCE_INLINE void SetExp(Expression* pExp)
 	{
@@ -128,25 +172,18 @@ public:
 			f(it.first, val);
 		}
 	}
-	bool isEqual(Scope* s) { return (this == s); };
+	FORCE_INLINE bool isEqual(Scope* s) { return (this == s); };
 	virtual ScopeWaitingStatus IsWaitForCall() 
 	{ 
 		return ScopeWaitingStatus::NoWaiting;
 	};
 
+
 	FORCE_INLINE int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{
-		if (m_pNamespaceScope)
-		{
-			return m_pNamespaceScope->AddOrGet(name, bGetOnly, ppRightScope);
-		}
 		if (m_NoAddVar)
 		{
 			bGetOnly = true;
-		}
-		if (m_pDynScope)
-		{
-			return m_pDynScope->AddOrGet(name.c_str(), bGetOnly);
 		}
 		//Always append,no remove, so new item's index is size of m_Vars;
 		//check extern map first,if it is extern var

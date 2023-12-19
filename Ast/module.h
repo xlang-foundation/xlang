@@ -363,7 +363,7 @@ public:
 	FORCE_INLINE int Add(XlangRuntime* rt, std::string& name,
 		XObj* pContext, Value& v)
 	{
-		int idx = m_pMyScope->AddOrGet(name, false);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name, false);
 		if (idx >= 0)
 		{
 			int cnt = m_stackFrame->GetVarCount();

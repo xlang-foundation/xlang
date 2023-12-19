@@ -80,7 +80,7 @@ void XClass::ScopeLayout()
 	if (pMyScope)
 	{
 		std::string strName(m_Name.s, m_Name.size);
-		m_Index = pMyScope->AddOrGet(strName, false);
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(m_Index,pMyScope,strName, false);
 	}
 	if (Params)
 	{
@@ -101,7 +101,7 @@ XClass* XClass::FindBase(XlangRuntime* rt, std::string& strName)
 	Expression* pFromExp = this;
 	while (pScope != nullptr)
 	{
-		int idx = pScope->AddOrGet(strName, true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
 		if (idx != -1)
 		{
 			Value v0;
@@ -138,7 +138,7 @@ XClass* XClass::FindBase(XlangRuntime* rt, std::string& strName)
 }
 int XClass::AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope)
 {
-	int retIdx = m_pMyScope->AddOrGet(name, bGetOnly, ppRightScope);
+	SCOPE_FAST_CALL_AddOrGet(retIdx,m_pMyScope,name, bGetOnly, ppRightScope);
 	if (retIdx >= 0)
 	{
 		return retIdx;
@@ -153,7 +153,7 @@ int XClass::AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope)
 			for (auto* pScope : bases)
 			{
 				Scope* pRigthScope = nullptr;
-				int idx = pScope->AddOrGet(name, bGetOnly, &pRigthScope);
+				SCOPE_FAST_CALL_AddOrGet(idx,pScope,name, bGetOnly, &pRigthScope);
 				if (idx >= 0)
 				{
 					*ppRightScope = (pRigthScope == nullptr)? pScope:pRigthScope;

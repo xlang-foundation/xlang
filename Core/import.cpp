@@ -7,6 +7,7 @@
 #include "moduleobject.h"
 #include "remote_object.h"
 #include "deferred_object.h"
+#include "op.h"
 
 namespace X
 {
@@ -209,7 +210,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 		}
 		if (bOK && pMyScope)
 		{
-			auto idx = pMyScope->AddOrGet(varName, false);
+			SCOPE_FAST_CALL_AddOrGet0(idx,pMyScope,varName, false);
 			rt->Set(pMyScope, pContext,idx,v);
 		}
 	}
