@@ -17,7 +17,7 @@ namespace X
 {
 	namespace AST
 	{
-		extern FORCE_INLINE  bool ExpExec(Expression* pExp,
+		extern FORCE_INLINE_EXP bool ExpExec(Expression* pExp,
 			XlangRuntime* rt,
 			ExecAction& action,
 			XObj* pContext,
@@ -144,23 +144,6 @@ namespace X
 				break;
 			case X::AST::ObType::NamespaceVar:
 				bOK = static_cast<NamespaceVar*>(pExp)->Exec(rt, action, pContext, v, lValue);
-				break;
-			default:
-				break;
-			}
-			return bOK;
-		}
-		extern FORCE_INLINE bool ExpSet(Expression* pExp,
-			XlangRuntime* rt,
-			XObj* pContext,
-			Value& v)
-		{
-			bool bOK = false;
-			auto expType = pExp->m_type;
-			switch (expType)
-			{
-			case X::AST::ObType::Var:
-				bOK = static_cast<Var*>(pExp)->Set(rt, pContext, v);
 				break;
 			default:
 				break;

@@ -265,13 +265,6 @@ namespace X
 			{
 				m_type = ObType::For;
 			}
-			FORCE_INLINE bool ExpRun(XlangRuntime* rt, X::Exp::ExpValue& rightValue, X::Value& retVal)
-			{
-				if (rightValue.v.IsTrue())
-				{
-
-				}
-			}
 			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 		};
 		class While :
