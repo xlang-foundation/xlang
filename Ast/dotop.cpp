@@ -137,22 +137,22 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 				{
 					if (it->m_type == ObType::Var)
 					{
-						Var* var = dynamic_cast<Var*>(it);
+						Var* var = static_cast<Var*>(it);
 						Value v0;
 						LValue lVal = nil;
 						ExecAction action;
-						ExpExec(var,rt,action,pContext, v0, &lVal);
+						var->Exec(rt, action, pContext, v0, &lVal);
 						AddFunc(v0, lVal,pContext);
 					}
 				}
 			}
 			else if (pair_r && pair_r->m_type == ObType::Var)
 			{
-				Var* var = dynamic_cast<Var*>(pair_r);
+				Var* var = static_cast<Var*>(pair_r);
 				Value v0;
 				LValue lVal = nil;
 				ExecAction action;
-				ExpExec(var,rt, action,pContext, v0, &lVal);
+				var->Exec(rt, action, pContext, v0, &lVal);
 				AddFunc(v0, lVal,pContext);
 			}
 		}
@@ -162,7 +162,7 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 			Value v0;
 			LValue lValue = nil;
 			ExecAction action;
-			ExpExec(var,rt, action,pContext, v0, &lValue);
+			var->Exec(rt, action, pContext, v0, &lValue);
 			AddFunc(v0, lValue,pContext);
 		}
 	};
@@ -233,6 +233,7 @@ bool DotOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LV
 		double dValue = (double)pLeftNum->GetVal();
 		double fraction = 0;
 		int digiNum = 0;
+
 		if (R->m_type == ObType::Number)
 		{
 			Number* pNum = dynamic_cast<Number*>(R);

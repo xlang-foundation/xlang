@@ -471,6 +471,20 @@ public:
 		v = v0;
 		return true;
 	}
+	FORCE_INLINE X::Value GetValue()
+	{
+		Value v0(m_val);
+		if (m_isBool)
+		{
+			v0.AsBool();
+		}
+		else
+		{
+			v0.SetDigitNum(m_digiNum);
+		}
+		return v0;
+	}
+
 };
 class Double :
 	public Expression

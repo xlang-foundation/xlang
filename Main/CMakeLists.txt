@@ -11,6 +11,7 @@ project ("xlang_eng")
 include_directories("../Api")
 include_directories("../Inc")
 include_directories("../utils")
+include_directories("../Executor")
 include_directories("../Ast")
 include_directories("../Parse")
 include_directories("../Serialize")
@@ -26,6 +27,7 @@ include_directories(".")
 
 FILE(GLOB Api_SRC "../Api/value.cpp")
 FILE(GLOB Utils_SRC "../utils/*.cpp")
+FILE(GLOB Executor_SRC "../Executor/*.cpp")
 FILE(GLOB Core_SRC "../Core/*.cpp")
 FILE(GLOB Ast_SRC "../Ast/*.cpp")
 FILE(GLOB Serialize_SRC "../Serialize/*.cpp")
@@ -41,6 +43,7 @@ FILE(GLOB Main_SRC "*.cpp")
 add_library(${PROJECT_NAME} SHARED 
 	${Api_SRC}
 	${Utils_SRC}
+	${Executor_SRC}
 	${Core_SRC}
 	${Ast_SRC}
 	${Parse_SRC}

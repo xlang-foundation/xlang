@@ -439,6 +439,19 @@ public:
 	{
 		m_type = ObType::Import;
 	}
+	FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
+	{
+		//m_from and m_thru need to do expresion calculation
+		if (m_from)
+		{
+			stack.push({ m_from,false });
+		}
+		if (m_thru)
+		{
+			stack.push({ m_thru,false });
+		}
+		return true;
+	}
 	FORCE_INLINE bool LoadModule(XlangRuntime* rt,XObj* pContext,Value& v,ImportInfo* pImportInfo)
 	{
 		Scope* pMyScope = GetScope();
@@ -510,6 +523,7 @@ public:
 		Value& v, LValue* lValue = nullptr) override;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
+	bool ExpRun(XlangRuntime* rt, X::XObj* pContext, X::Exp::ValueStack& valueStack, X::Value& retValue);
 };
 }
 }
