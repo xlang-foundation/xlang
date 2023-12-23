@@ -4,6 +4,7 @@
 #include "module.h"
 #include "glob.h"
 #include "list.h"
+#include "op.h"
 
 namespace X 
 {
@@ -98,7 +99,7 @@ namespace X
 		static std::string WritePadBindingFuncName("WritePadUseDataBinding");
 		static std::string WritePadFuncName("WritePad");
 		bool UsingDataBinding = false;
-		int index = pScope->AddOrGet(WritePadBindingFuncName, true);
+		SCOPE_FAST_CALL_AddOrGet0(index,pScope,WritePadBindingFuncName, true);
 		if (index >= 0)
 		{
 			X::Value varFunc;
@@ -116,7 +117,7 @@ namespace X
 				UsingDataBinding = true;
 			}
 		}
-		index = pScope->AddOrGet(WritePadFuncName, true);
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(index,pScope,WritePadFuncName, true);
 		if (index < 0)
 		{
 			return -1;

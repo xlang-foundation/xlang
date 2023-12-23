@@ -22,11 +22,12 @@ void Func::ScopeLayout()
 	if (pMyScope && m_Name.size > 0)
 	{
 		std::string strName(m_Name.s, m_Name.size);
-		m_Index = pMyScope->AddOrGet(strName, false);
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(m_Index,pMyScope,strName, false);
 		//TODO: debug here
 		if (m_parent->m_type == ObType::Class)
 		{//it is class's member
-			m_IndexOfThis = pMyScope->AddOrGet(thisKey, false);
+			//add into myscope not parent class's scope
+			SCOPE_FAST_CALL_AddOrGet0_NoDef(m_IndexOfThis,GetMyScope(), thisKey, false);
 		}
 	}
 	//process parameters' default values
@@ -66,7 +67,7 @@ void Func::ScopeLayout()
 			}
 			break;
 			}
-			int idx = m_pMyScope->AddOrGet(strVarName, false);
+			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strVarName, false);
 			m_IndexofParamList.push_back(idx);
 		}
 		Params->ScopeLayout();
@@ -215,7 +216,7 @@ bool Func::Call(XRuntime* rt0,
 	for (auto& kw : kwParams)
 	{
 		std::string strKey(kw.key);
-		m_pMyScope->AddOrGet(strKey, false);
+		SCOPE_FAST_CALL_AddOrGet0_NoRet(m_pMyScope,strKey, false);
 	}
 	rt->PushFrame(pCurFrame,m_pMyScope->GetVarNum());
 	//for Class,Add this if This is not null
@@ -238,7 +239,7 @@ bool Func::Call(XRuntime* rt0,
 	for (auto& kw : kwParams)
 	{
 		std::string strKey(kw.key);
-		int idx = m_pMyScope->AddOrGet(strKey, false);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strKey, false);
 		if (idx >= 0)
 		{
 			pCurFrame->Set(idx, kw.val);

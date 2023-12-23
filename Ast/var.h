@@ -2,6 +2,7 @@
 #include "exp.h"
 #include "scope.h"
 #include <assert.h> 
+#include "exp_exec.h"
 namespace X
 {
 namespace AST
@@ -14,6 +15,16 @@ class Var:
 	int Index = -1;//index for this Var,set by compiling
 
 	bool GetPropValue(XlangRuntime* rt, XObj* pContext,XObj* pObj,Value& val);
+public:
+	//Expression Excuting
+	bool PreExec(X::Exp::ExpresionStack& stack,XlangRuntime* rt)
+	{
+		return false;
+	}
+	bool PostExec(X::Exp::ExpresionStack& stack,XlangRuntime* rt)
+	{
+		return false;
+	}
 public:
 	Var()
 	{

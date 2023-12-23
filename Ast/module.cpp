@@ -35,12 +35,12 @@ void Module::SetDebug(bool b,XlangRuntime* runtime)
 void Module::ScopeLayout()
 {
 	std::string self("self");
-	m_pMyScope->AddOrGet(self,false);
+	SCOPE_FAST_CALL_AddOrGet0_NoRet(m_pMyScope,self,false);
 	auto& funcs = Builtin::I().All();
 	for (auto it : funcs)
 	{
-		int idx = m_pMyScope->AddOrGet(it.name, false);
-	}
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,it.name, false);
+}
 	Builtin::I().ReturnMap();
 	Block::ScopeLayout();
 }
@@ -51,7 +51,7 @@ void Module::AddBuiltins(XlangRuntime* rt)
 	//add self as this module
 	{
 		std::string selfName("self");
-		int idx = m_pMyScope->AddOrGet(selfName, true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,selfName, true);
 		if (idx >= 0)
 		{
 			auto* pModuleObj = new ModuleObject(this);
@@ -61,7 +61,7 @@ void Module::AddBuiltins(XlangRuntime* rt)
 	}
 	for (auto it : funcs)
 	{
-		int idx = m_pMyScope->AddOrGet(it.name, true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,it.name, true);
 		if (idx >= 0)
 		{
 			Value v0(it.funcObj);

@@ -4,19 +4,6 @@
 #include <string>
 #include "xport.h"
 
-#if !defined(FORCE_INLINE)
-#if defined(_MSC_VER)
-	// Microsoft Visual C++ Compiler
-#define FORCE_INLINE __forceinline
-#elif defined(__GNUC__) || defined(__clang__)
-	// GCC or Clang Compiler
-#define FORCE_INLINE FORCE_INLINE __attribute__((always_inline))
-#else
-	// Fallback for other compilers
-#define FORCE_INLINE FORCE_INLINE
-#endif
-#endif
-
 namespace X 
 {
 class XObj;
@@ -121,7 +108,8 @@ enum class ValueSubType
 	USHORT =5,
 	INT = 8,
 	UINT =9,
-	FLOAT =10,
+	UINT64 = 10,//if it is int64, don't need to set this
+	FLOAT =11,
 };
 class Value
 {
@@ -233,6 +221,7 @@ public:
 	FORCE_INLINE Value(unsigned long long l)
 	{
 		t = ValueType::Int64;
+		flags |= (int)ValueSubType::UINT64;
 		x.l = (long long)l;
 	}
 	FORCE_INLINE Value(double d)
@@ -486,20 +475,13 @@ public:
 		}
 	}
 	virtual Value operator - (const Value& right);
-	void AssignAndAdd(const Value& v);
+	void ObjectAssignAndAdd(const Value& v);
 	FORCE_INLINE void operator += (const Value& v)
 	{
 		flags = v.flags;
-		if (t == ValueType::Object)
+		if (t == ValueType::Object || v.t == ValueType::Object)
 		{
-			AssignAndAdd(v);
-		}
-		else if (v.IsObject())
-		{
-			Value v0 = v;
-			v0 += *this;
-			t = ValueType::Object;
-			AssignObject(v0.GetObj());
+			ObjectAssignAndAdd(v);
 		}
 		else
 		{

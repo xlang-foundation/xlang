@@ -156,7 +156,8 @@ namespace X
 			else
 			{
 				std::string strName(name);
-				return m_pModule->GetMyScope()->AddOrGet(strName, true);
+				SCOPE_FAST_CALL_AddOrGet0(retIdx,m_pModule->GetMyScope(), strName, true);
+				return retIdx;
 			}
 		}
 		bool ModuleObject::GetIndexValue(int idx, Value& v)

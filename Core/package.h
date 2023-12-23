@@ -146,7 +146,7 @@ public:
 	{
 		std::string strName(name);
 		std::string strDoc(doc);
-		int idx =  m_pMyScope->AddOrGet(strName, false);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, false);
 		int size = (int)m_memberInfos.size();
 		if (size <= idx)
 		{
@@ -165,7 +165,7 @@ public:
 	FORCE_INLINE virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
 	{
 		std::string strName(name);
-		int idx =  m_pMyScope->AddOrGet(strName, true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, true);
 		if (idx>=0 && pKeepRawParams)
 		{
 			*pKeepRawParams = m_memberInfos[idx].KeepRawParams;
@@ -174,7 +174,7 @@ public:
 	}
 	FORCE_INLINE virtual MemberIndexInfo QueryMethod(std::string name)
 	{
-		int idx =  m_pMyScope->AddOrGet(name, true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name, true);
 		return m_memberInfos[idx];
 	}
 

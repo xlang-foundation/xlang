@@ -3,6 +3,7 @@
 #include "port.h"
 #include "function.h"
 #include "obj_func_scope.h"
+#include "op.h"
 
 namespace X
 {

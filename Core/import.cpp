@@ -7,6 +7,7 @@
 #include "moduleobject.h"
 #include "remote_object.h"
 #include "deferred_object.h"
+#include "op.h"
 
 namespace X
 {
@@ -209,12 +210,52 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 		}
 		if (bOK && pMyScope)
 		{
-			auto idx = pMyScope->AddOrGet(varName, false);
+			SCOPE_FAST_CALL_AddOrGet0(idx,pMyScope,varName, false);
 			rt->Set(pMyScope, pContext,idx,v);
 		}
 	}
 	return true;
 }
+bool X::AST::Import::ExpRun(XlangRuntime* rt, X::XObj* pContext, X::Exp::ValueStack& valueStack, X::Value& retValue)
+{
+	Scope* pMyScope = GetScope();
+	if (m_from)
+	{
+		m_path = valueStack.top().v.ToString();
+		valueStack.pop();
+	}
+	if (m_thru)
+	{
+		m_thruUrl = valueStack.top().v.ToString();
+		valueStack.pop();
+	}
+	for (auto& im : m_importInfos)
+	{
+		//for deferred object, create a DeferredObject object to wrap the import info
+		//and set this object's value to current scope
+		std::string varName = im.alias.empty() ? im.name : im.alias;
+		bool bOK = false;
+		if (im.Deferred)
+		{
+			auto* deferredObj = new Data::DeferredObject();
+			deferredObj->SetImportInfo(this, &im);
+			retValue = Value(dynamic_cast<XObj*>(deferredObj));
+			bOK = true;
+		}
+		else
+		{
+			bOK = LoadOneModule(rt, pMyScope, pContext, retValue, im, varName);
+		}
+		if (bOK && pMyScope)
+		{
+			SCOPE_FAST_CALL_AddOrGet0(idx, pMyScope, varName, false);
+			rt->Set(pMyScope, pContext, idx, retValue);
+		}
+	}
+
+	return true;
+}
+
 bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 	XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange)
 {

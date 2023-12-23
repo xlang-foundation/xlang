@@ -128,7 +128,7 @@ namespace X
 				}
 				std::string strName(name);
 				AST::Scope* pRightScope = nullptr;
-				auto idx = m_pMyScopeHolder->AddOrGet(strName, false, &pRightScope);
+				SCOPE_FAST_CALL_AddOrGet(idx,m_pMyScopeHolder,strName, false, &pRightScope);
 				if (idx>=0)
 				{
 					m_stackFrame->SetVarCount(m_pMyScopeHolder->GetVarNum());

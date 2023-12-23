@@ -58,7 +58,7 @@ extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 	std::string strFullPath;
 	std::string strFolderPath;
 	std::string strLibName;
-	GetCurLibInfo(Load, strFullPath, strFolderPath, strLibName);
+	GetCurLibInfo((void*)Load, strFullPath, strFolderPath, strLibName);
 
 	X::g_pXHost = (X::XHost*)pHost;
 	X::RegisterPackage<XWin::App>(strLibName.c_str(),"App",&XWin::App::I());

@@ -4,100 +4,38 @@
 #include "tensor_expression.h"
 #include "tensorop.h"
 #include <iostream>
+#include "obj_func_scope.h"
 
 namespace X
 {
 	namespace Data
 	{
-		class TensorGraphScope :
-			virtual public AST::Scope
+		static Obj_Func_Scope<1> _tensorGraphScope;
+		void TensorGraph::Init()
 		{
-			AST::StackFrame* m_stackFrame = nullptr;
-		public:
-			TensorGraphScope() :
-				Scope()
+			_tensorGraphScope.Init();
 			{
-				Init();
-			}
-			void clean()
-			{
-				if (m_stackFrame)
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
 				{
-					delete m_stackFrame;
-					m_stackFrame = nullptr;
-				}
+					TensorGraph* pGraph = dynamic_cast<TensorGraph*>(pContext);
+					retValue = X::Value(pGraph->Run(params, kwParams));
+					return true;
+				};
+				_tensorGraphScope.AddFunc("run", "graph.run()", f);
 			}
-			~TensorGraphScope()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
-			}
-			void Init()
-			{
-				m_stackFrame = new AST::StackFrame();
-				const int func_cnt = 1;
-				m_stackFrame->SetVarCount(func_cnt);
-				std::string strName;
-				{
-					strName = "run";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						TensorGraph* pGraph = dynamic_cast<TensorGraph*>(pContext);
-						retValue = X::Value(pGraph->Run(params, kwParams));
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"graph.run()",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-			}
-#if __TODO_SCOPE__
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override
-			{
-				return nullptr;
-			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
-			}
-#endif
-		};
-		static TensorGraphScope* _TensorGraphScope = nullptr;
+		}
+
 		void TensorGraph::cleanup()
 		{
-			if (_TensorGraphScope)
-			{
-				_TensorGraphScope->clean();
-				delete _TensorGraphScope;
-				_TensorGraphScope = nullptr;
-			}
+			_tensorGraphScope.Clean();
 		}
 		void TensorGraph::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
-			if (_TensorGraphScope == nullptr)
-			{
-				_TensorGraphScope = new TensorGraphScope();
-			}
 			Object::GetBaseScopes(bases);
-			bases.push_back(_TensorGraphScope);
+			bases.push_back(_tensorGraphScope.GetMyScope());
 		}
 
 		class GraphBuildContext
@@ -149,7 +87,8 @@ namespace X
 			{
 				return handler;
 			}
-			AST::Scope* pScope = dynamic_cast<AST::Scope*>(pPackage);
+			auto* pObjPackage = dynamic_cast<X::Data::Object*>(pPackage);
+			AST::Scope* pScope = pObjPackage->GetMyScope();
 			if (pScope)
 			{
 				std::string strName;
@@ -172,8 +111,8 @@ namespace X
 				default:
 					break;
 				}
-				int idx = pScope->AddOrGet(strName, true);
-				if (idx>=0)
+				SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
+				if (idx >= 0)
 				{
 					X::Value valFunc;
 					if (pPackage->GetIndexValue(idx, valFunc))
@@ -191,7 +130,7 @@ namespace X
 								if (pTensorOp)
 								{
 									handler = pTensorOp->GetOpHandler();
-									pGraphBuildContext->SetHandler(opIndex,handler);
+									pGraphBuildContext->SetHandler(opIndex, handler);
 								}
 							}
 						}
@@ -333,7 +272,7 @@ namespace X
 				}
 			}
 		}
-		void TensorGraph::Create(XObj* pContext,X::ARGS& params, X::KWARGS& kwParams)
+		void TensorGraph::Create(XObj* pContext, X::ARGS& params, X::KWARGS& kwParams)
 		{
 			GraphBuildContext buildContext;
 			//check tensor's m_op, if the tensor package(pContext) has
@@ -344,9 +283,9 @@ namespace X
 				{
 					continue;
 				}
-				TensorExpression* tensorExp =dynamic_cast<TensorExpression*>(p.GetObj());
+				TensorExpression* tensorExp = dynamic_cast<TensorExpression*>(p.GetObj());
 				GraphBuildAction action = GraphBuildAction::None;
-				BuildGraph(&buildContext,pContext, tensorExp, action);
+				BuildGraph(&buildContext, pContext, tensorExp, action);
 			}
 		}
 		bool TensorGraph::Run(X::ARGS& params, X::KWARGS& kwParams)
@@ -380,7 +319,7 @@ namespace X
 								inputName = pTensor->GetName();
 							}
 						}
-						else if(in.GetObj()->GetType() == ObjType::TensorExpression)
+						else if (in.GetObj()->GetType() == ObjType::TensorExpression)
 						{
 							TensorExpression* pTensorExp = dynamic_cast<TensorExpression*>(in.GetObj());
 							if (pTensorExp)

@@ -10,6 +10,19 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin/Api)
+configure_file("${PROJECT_SOURCE_DIR}/Api/value.h" "${CMAKE_BINARY_DIR}/bin/Api/value.h")
+configure_file("${PROJECT_SOURCE_DIR}/Api/value.cpp" "${CMAKE_BINARY_DIR}/bin/Api/value.cpp")
+configure_file("${PROJECT_SOURCE_DIR}/Api/xhost.h" "${CMAKE_BINARY_DIR}/bin/Api/xhost.h")
+configure_file("${PROJECT_SOURCE_DIR}/Api/xlang.h" "${CMAKE_BINARY_DIR}/bin/Api/xlang.h")
+configure_file("${PROJECT_SOURCE_DIR}/Api/xload.h" "${CMAKE_BINARY_DIR}/bin/Api/xload.h")
+configure_file("${PROJECT_SOURCE_DIR}/Api/xload.cpp" "${CMAKE_BINARY_DIR}/bin/Api/xload.cpp")
+configure_file("${PROJECT_SOURCE_DIR}/Api/xlstream.h" "${CMAKE_BINARY_DIR}/bin/Api/xlstream.h")
+configure_file("${PROJECT_SOURCE_DIR}/Api/xpackage.h" "${CMAKE_BINARY_DIR}/bin/Api/xpackage.h")
+configure_file("${PROJECT_SOURCE_DIR}/Api/xport.h" "${CMAKE_BINARY_DIR}/bin/Api/xport.h")
+configure_file("${PROJECT_SOURCE_DIR}/Api/xproxy.h" "${CMAKE_BINARY_DIR}/bin/Api/xproxy.h")
+
+
 # To enable Link Time Optimization (LTO) for Release builds.
 if(MSVC)
     # Enable LTO for MSVC
@@ -25,13 +38,6 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 
-if(MSVC)
-    add_definitions(-DFORCE_INLINE=__forceinline)
-elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    add_definitions(-DFORCE_INLINE='inline __attribute__((always_inline))')
-else()
-    add_definitions(-DFORCE_INLINE=inline)
-endif()
 
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

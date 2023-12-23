@@ -53,7 +53,7 @@ namespace X
 					X::Value val;
 					m_stackFrame->Get(it.second, val);
 					std::string varName = it.first;
-					int idx = pRealScope->AddOrGet(varName, false);
+					SCOPE_FAST_CALL_AddOrGet0(idx,pRealScope,varName, false);
 					if (idx >= 0)
 					{
 						if (val.IsObject() && val.GetObj()->GetType() == X::ObjType::DeferredObject)

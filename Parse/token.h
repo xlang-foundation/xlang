@@ -2,6 +2,19 @@
 #include "def.h"
 #include <vector>
 
+#if !defined(FORCE_INLINE)
+#if defined(_MSC_VER)
+// Microsoft Visual C++ Compiler
+#define FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang Compiler
+#define FORCE_INLINE __attribute__((always_inline)) inline
+#else
+// Fallback for other compilers
+#define FORCE_INLINE inline
+#endif
+#endif
+
 namespace X {
 enum LastCharType
 {
@@ -51,7 +64,8 @@ enum TokenIndex
 	TokenEOS = -13,
 	TokenLineComment = -20,
 	TokenComment = -21,
-	TokenFeedOp = -22
+	TokenFeedOp = -22,
+	TokenSpecialPosToBeLessOrEqual = -23,
 };
 
 enum class TokenErrorType
@@ -87,6 +101,14 @@ class Token
 {
 	const char* OPS = "~`!@#$%^&*()-+={}[]|:;<>,.?/\t\r\n \\'\"#";
 	CoreContext _context;
+	
+	//for some block like jit block, we need to pass through until meet a special pos
+	//so use the two variables below to control it
+	//if InMeetLineStartPosLessOrEqualToSpecialPos is true, 
+	//then we will pass through until meet a line start pos <= SpecialPosToBeLessOrEqual
+	bool InMeetLineStartPosLessOrEqualToSpecialPos = false;
+	int SpecialPosToBeLessOrEqual = 0;
+
 	bool InSpace = false;
 	bool NotCharSequnce = false; //it is "...." not '....'
 	bool InQuote = false;
@@ -182,6 +204,11 @@ public:
 		_context.lct = LCT_None;
 		_context.curNode = 0;
 		_context.token_start = nil;
+	}
+	void SetSpecialPosToBeLessOrEqual(bool bEnable, int pos)
+	{
+		InMeetLineStartPosLessOrEqualToSpecialPos = true;
+		SpecialPosToBeLessOrEqual = pos;
 	}
 	void set_ops(const char* ops)
 	{

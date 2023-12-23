@@ -14,9 +14,13 @@ namespace X
 		bool releaseValPtr = false;
 		XObj* context = nullptr;
 	public:
-		void SetReleaseFlag(bool b)
+		FORCE_INLINE void SetReleaseFlag(bool b)
 		{
 			releaseValPtr = b;
+		}
+		FORCE_INLINE LValue()
+		{
+			valptr = nullptr;
 		}
 		FORCE_INLINE LValue(Value& v)
 		{

@@ -5,6 +5,7 @@
 #include "dict.h"
 #include "xlang.h"
 #include "bin.h"
+#include "op.h"
 
 namespace X
 {
@@ -191,7 +192,7 @@ namespace X
 		{
 			std::string strName(name);
 			//if not exist, add it, so set as false for AddOrGet
-			int idx = m_pMyScope->AddOrGet(strName, false);
+			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, false);
 			auto obj0 = (PyEng::Object)m_obj[name];
 			//check obj0 is a function or not
 			PyProxyObject* pProxyObj = new PyProxyObject(m_obj,obj0, strName);

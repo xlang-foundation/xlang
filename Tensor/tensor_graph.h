@@ -32,6 +32,7 @@ namespace X
 			Tensor_OperatorHandler QueryRegisteredOpHandler(void* pBuildContext,
 				XObj* pPackage, int opIndex);
 		public:
+			static void Init();
 			static void cleanup();
 			TensorGraph():XTensorGraph(0),XObj(),Object()
 			{

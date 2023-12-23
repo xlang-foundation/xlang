@@ -29,7 +29,7 @@ namespace X
 		{
 			if (!R || R->m_type != ObType::Pair)
 			{
-				return false;
+				return true;
 			}
 			if (R->m_type == ObType::Pair)
 			{

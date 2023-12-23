@@ -48,13 +48,19 @@ namespace X
 		{
 			m_pMyScope->SetNoAddVar(true);
 		}
+		void AddConst(const char* name, X::Value& val)
+		{
+			std::string strName(name);
+			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, false);
+			m_variableFrame->Set(idx, val);
+		}
 		void AddFunc(const char* name,const char* doc, U_FUNC func)
 		{
 			std::string strName(name);
 			AST::ExternFunc* extFunc = new AST::ExternFunc(strName, doc, func);
 			auto* pFuncObj = new X::Data::Function(extFunc);
 			pFuncObj->IncRef();
-			int idx = m_pMyScope->AddOrGet(strName, false);
+			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, false);
 			Value funcVal(pFuncObj);
 			m_variableFrame->Set(idx, funcVal);
 		}

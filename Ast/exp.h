@@ -34,10 +34,12 @@ enum class ObType
 	Dot,
 	Decor,
 	Func,
+	JitBlock,
 	BuiltinFunc,
 	Module,
 	Block,
 	Class,
+	ReturnType,
 #if ADD_SQL
 	Select,
 #endif
@@ -469,6 +471,20 @@ public:
 		v = v0;
 		return true;
 	}
+	FORCE_INLINE X::Value GetValue()
+	{
+		Value v0(m_val);
+		if (m_isBool)
+		{
+			v0.AsBool();
+		}
+		else
+		{
+			v0.SetDigitNum(m_digiNum);
+		}
+		return v0;
+	}
+
 };
 class Double :
 	public Expression

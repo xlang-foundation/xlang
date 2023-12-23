@@ -7,8 +7,14 @@
 #include "utility.h"
 #include <iostream>
 #include "value.h"
+
+
 namespace X
 {
+	namespace Jit
+	{
+		class JitLib;
+	}
 namespace AST
 {
 enum class dbg
@@ -84,6 +90,10 @@ struct PrimitiveInfo
 class Module :
 	public Block
 {
+
+	//if this module has Jit Blocks, will have this member
+	X::Jit::JitLib* m_pJitLib = nullptr;
+
 	StackFrame* m_stackFrame = nullptr;
 	XlangRuntime* m_pRuntime=nullptr;//for top module, we need it
 	PrimitiveInfo m_primitives[(int)module_primitive::Count];
@@ -130,6 +140,10 @@ public:
 		m_stackFrame = new StackFrame(m_pMyScope);
 		m_pMyScope->SetVarFrame(m_stackFrame);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	FORCE_INLINE void SetJitLib(X::Jit::JitLib* pLib)
+	{
+		m_pJitLib = pLib;
 	}
 	void ChangeMyScopeTo(Scope* pNewMyScope)
 	{
@@ -349,7 +363,7 @@ public:
 	FORCE_INLINE int Add(XlangRuntime* rt, std::string& name,
 		XObj* pContext, Value& v)
 	{
-		int idx = m_pMyScope->AddOrGet(name, false);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name, false);
 		if (idx >= 0)
 		{
 			int cnt = m_stackFrame->GetVarCount();

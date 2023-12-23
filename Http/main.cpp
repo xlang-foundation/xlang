@@ -6,6 +6,7 @@
 #include <windows.h>
 #define X_EXPORT __declspec(dllexport) 
 #else
+#include <dlfcn.h>
 #define X_EXPORT
 #endif
 
@@ -58,7 +59,7 @@ extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 	std::string strFullPath;
 	std::string strFolderPath;
 	std::string strLibName;
-	GetCurLibInfo(Load, strFullPath, strFolderPath, strLibName);
+	GetCurLibInfo((void*)Load, strFullPath, strFolderPath, strLibName);
 
 	X::g_pXHost = (X::XHost*)pHost;
 	X::RegisterPackage<X::Http>(strFullPath.c_str(),"http");

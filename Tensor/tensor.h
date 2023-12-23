@@ -144,6 +144,7 @@ namespace X
 				}
 			}
 		public:
+			static void Init();
 			static void cleanup();
 			Tensor();
 			~Tensor();
@@ -454,7 +455,7 @@ namespace X
 				}
 			}
 			//before call,indices need has same size of m_dims
-			FORCE_INLINE void IterateLoop(std::vector<long long>&indices,int Offset,
+			void IterateLoop(std::vector<long long>&indices,int Offset,
 				TensorIterateProc proc, std::vector<int>& dimList ,int level=0)
 			{
 				auto lastLevel = dimList.size()-1;

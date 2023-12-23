@@ -4,6 +4,7 @@
 #include "SwapBufferStream.h"
 #include "Locker.h"
 #include "gthread.h"
+#include <vector>
 
 class XWait;
 namespace X

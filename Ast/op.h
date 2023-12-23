@@ -5,6 +5,8 @@
 #include "def.h"
 #include "op_registry.h"
 #include "InlineCall.h"
+#include "exp_exec.h"
+#include "var.h"
 
 namespace X
 {
@@ -73,6 +75,12 @@ public:
 		if (L) delete L;
 		if (R) delete R;
 	}
+	FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
+	{
+		stack.push({ L,false });
+		stack.push({ R,false });
+		return true;
+	}
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		Operator::ToBytes(rt,pContext,stream);
@@ -132,9 +140,10 @@ public:
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 	{
-		//for BinaryOp eat all operands just keep left-most one
-		//as right operand
-		//also need to output syntax error info
+		//we do a patch here, for case this.[prop1,prop2]
+		//dot's Precedence is higher than '['
+		//so we need to merge right pair to left side dot
+
 		AST::Expression* operandR = nullptr;
 		while (!operands.empty() && 
 			operands.top()->GetTokenIndex() > m_tokenIndex)
@@ -147,7 +156,22 @@ public:
 			}
 			else
 			{
-				delete operandR;
+				if (r->m_type == ObType::Dot)
+				{
+					auto* pDotOp = static_cast<BinaryOp*>(r);
+					if (pDotOp->GetR() == nullptr)
+					{
+						pDotOp->SetR(operandR);
+					}
+					else
+					{
+						delete operandR;
+					}
+				}
+				else
+				{
+					delete operandR;
+				}
 				operandR = r;
 			}
 		}
@@ -189,7 +213,11 @@ public:
 	}
 	Expression* GetR() { return R; }
 	Expression* GetL() { return L; }
-
+	FORCE_INLINE bool ExpRun(XlangRuntime* rt, X::Exp::ExpValue& leftValue, X::Exp::ExpValue& rightValue,X::Value& retVal)
+	{
+		auto func = G::I().R().OpAct(Op).binaryop;
+		return func ? func(rt, this, leftValue.v, rightValue.v, retVal) : false;
+	}
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
@@ -230,6 +258,92 @@ public:
 		{
 			L->SetIsLeftValue(true);
 		}
+	}
+	FORCE_INLINE bool ExpRun(XlangRuntime* rt, X::Exp::ExpValue& leftValue, X::Exp::ExpValue& rightValue)
+	{
+		bool bOK = true;
+		if (leftValue.lv)
+		{
+			switch (opId)
+			{
+			case X::OP_ID::Equ:
+				*leftValue.lv = rightValue.v;
+				break;
+			case X::OP_ID::AddEqu:
+				//TODO: need clone??
+				//lValue_L->Clone();
+				*leftValue.lv += rightValue.v;
+				break;
+			case X::OP_ID::MinusEqu:
+				*leftValue.lv -= rightValue.v;
+				break;
+			case X::OP_ID::MulEqu:
+				*leftValue.lv *= rightValue.v;
+				break;
+			case X::OP_ID::DivEqu:
+				break;
+			case X::OP_ID::ModEqu:
+				break;
+			case X::OP_ID::FloorDivEqu:
+				break;
+			case X::OP_ID::PowerEqu:
+				break;
+			case X::OP_ID::AndEqu:
+				break;
+			case X::OP_ID::OrEqu:
+				break;
+			case X::OP_ID::NotEqu:
+				break;
+			case X::OP_ID::RightShiftEqu:
+				break;
+			case X::OP_ID::LeftShitEqu:
+				break;
+			case X::OP_ID::Count:
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+			switch (opId)
+			{
+			case X::OP_ID::Equ:
+				//bOK = ExpSet(L, rt, pContext, v_r);
+				break;
+			case X::OP_ID::AddEqu:
+				//v_l.Clone();
+				//v_l += v_r;
+				break;
+			case X::OP_ID::MinusEqu:
+				break;
+			case X::OP_ID::MulEqu:
+				break;
+			case X::OP_ID::DivEqu:
+				break;
+			case X::OP_ID::ModEqu:
+				break;
+			case X::OP_ID::FloorDivEqu:
+				break;
+			case X::OP_ID::PowerEqu:
+				break;
+			case X::OP_ID::AndEqu:
+				break;
+			case X::OP_ID::OrEqu:
+				break;
+			case X::OP_ID::NotEqu:
+				break;
+			case X::OP_ID::RightShiftEqu:
+				break;
+			case X::OP_ID::LeftShitEqu:
+				break;
+			case X::OP_ID::Count:
+				break;
+			default:
+				break;
+			}
+		}
+		return bOK;
 	}
 	bool ObjectAssign(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& v, Value& v_r, LValue& lValue_L);
 	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
@@ -414,6 +528,11 @@ public:
 	{
 		if (R) delete R;
 	}
+	FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
+	{
+		stack.push({ R,false });
+		return true;
+	}
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 	{
 		Operator::ToBytes(rt,pContext,stream);
@@ -472,7 +591,7 @@ public:
 			R->SetParent(this);
 		}
 	}
-	Expression* GetR() { return R; }
+	FORCE_INLINE Expression* GetR() { return R; }
 
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
@@ -510,6 +629,43 @@ public:
 		stream >> m_evaluated >> m_start >> m_stop >> m_step;
 		return true;
 	}
+	FORCE_INLINE bool Step(X::Value& curVal)
+	{
+		if (!m_evaluated)
+		{
+			return false;
+		}
+		if (curVal.GetType() != ValueType::Int64)
+		{//not started
+			curVal = Value(m_start);
+		}
+		else
+		{
+			curVal += m_step;
+		}
+		return (curVal.GetLongLong() < m_stop);
+	}
+	FORCE_INLINE bool ExpRun(XlangRuntime* rt, X::Exp::ExpValue& rightValue, X::Value& retVal)
+	{
+		if (!m_evaluated)
+		{
+			//TODO:
+			if (rightValue.v.GetType() == ValueType::Int64)
+			{
+				m_stop = rightValue.v.GetLongLong();
+			}
+			m_evaluated = true;
+		}
+		if (retVal.GetType() != ValueType::Int64)
+		{//not started
+			retVal = Value(m_start);
+		}
+		else
+		{
+			retVal += m_step;
+		}
+		return (retVal.GetLongLong() < m_stop);
+	}
 	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		if (!m_evaluated)
@@ -542,7 +698,29 @@ public:
 	{
 		m_type = ObType::In;
 	}
-
+	FORCE_INLINE bool ExpRun(XlangRuntime* rt, X::Exp::ExpValue& leftValue, X::Exp::ExpValue& rightValue, X::Value& retVal)
+	{
+		bool bRet = false;
+		Value& var0 = rightValue.v;
+		if (var0.IsObject())
+		{
+			DoIterator(var0, retVal);
+		}
+		else
+		{//such as range which return integer(64)
+			if (rightValue.exp->m_type == X::AST::ObType::Range)
+			{
+				retVal = leftValue.v;
+				bRet = static_cast<Range*>(rightValue.exp)->Step(retVal);
+				if(leftValue.exp->m_type == X::AST::ObType::Var)
+				{
+					static_cast<Var*>(leftValue.exp)->Set(rt, nullptr, retVal);
+				}
+				//ExpSet(leftValue.exp, rt, nullptr, retVal);
+			}
+		}
+		return bRet;
+	}
 	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		bool bOK = true;

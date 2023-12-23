@@ -14,6 +14,7 @@
 #include "namespace_var.h"
 #include "sql.h"
 #include "await.h"
+#include "jitblock.h"
 
 namespace X {
 
@@ -216,8 +217,17 @@ void Register(OpRegistry* reg)
 		});
 	RegOP("def","func","function")
 		.SetProcess([](Parser* p, short opIndex){
+		if (p->LastLineIsJitDecorator())
+		{
+			auto jitBlock = new AST::JitBlock(AST::JitType::Func);
+			p->SetMeetJitBlock(true);
+			return (AST::Operator*)jitBlock;
+		}
+		else
+		{
 			auto func = new AST::Func();
 			return (AST::Operator*)func;
+		}
 		});
 	RegOP("const", "var","namespace", "|-")
 		.SetProcess([](Parser* p, short opIndex) {
@@ -226,9 +236,18 @@ void Register(OpRegistry* reg)
 			});
 	RegOP("class")
 		.SetProcess([](Parser* p, short opIndex) {
-		auto cls = new AST::XClass();
-		return (AST::Operator*)cls;
-			});
+		if (p->LastLineIsJitDecorator())
+		{
+			auto jitBlock = new AST::JitBlock(AST::JitType::Class);
+			p->SetMeetJitBlock(true);
+			return (AST::Operator*)jitBlock;
+		}
+		else
+		{
+			auto cls = new AST::XClass();
+			return (AST::Operator*)cls;
+		}
+		});
 	RegOP(//Python Assignment Operators
 		"=", "+=", "-=", "*=", "/=", "%=", "//=",
 		"**=", "&=", "|=", "^=", ">>=", "<<=")
@@ -304,12 +323,18 @@ void Register(OpRegistry* reg)
 			return op;
 		});
 	//Python Bitwise Operators --index range[61,66]
-	RegOP("&", "|", "^", "~", "<<", ">>")
+	RegOP("&", "|", "^", "~", "<<", ">>","->")
 		.SetProcess([](Parser* p, short opIndex) 
 	{
 		auto op = new AST::BinaryOp(opIndex);
 		return (AST::Operator*)op;
 	});
+	RegOP("->")
+		.SetProcess([](Parser* p, short opIndex)
+			{
+				auto op = new AST::RetTypeOp(opIndex);
+				return (AST::Operator*)op;
+			});
 	RegOP("|")
 		.SetProcess([](Parser* p, short opIndex)
 			{
@@ -401,7 +426,7 @@ void Register(OpRegistry* reg)
 			auto op = new AST::Operator(opIndex);
 			return op;
 		});
-	
+
 	RegOP("(").SetId(reg,OP_ID::Parenthesis_L);
 	RegOP("<|").SetId(reg, OP_ID::TableBracket_L);
 	RegOP("[").SetId(reg, OP_ID::Brackets_L);
@@ -414,6 +439,10 @@ void Register(OpRegistry* reg)
 	RegOP("continue").SetId(reg, OP_ID::Continue);
 	RegOP("pass").SetId(reg, OP_ID::Pass);
 
+	//for Jit Func return type
+	//for example: def Add_Two(m:int,n:int)->int:
+	RegOP("->").SetId(reg, OP_ID::ReturnType);
+
 	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(reg,
 		{ OP_ID::Equ,OP_ID::AddEqu,OP_ID::MinusEqu,OP_ID::MulEqu,
 		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu })
@@ -421,7 +450,12 @@ void Register(OpRegistry* reg)
 	RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
 		{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
 		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu })
-		.SetPrecedence(Precedence_Reqular-1);;
+		.SetPrecedence(Precedence_Reqular-1);
+
+	//For jitblock
+	RegOP("->")
+		.SetPrecedence(Precedence_Reqular);
+
 	//Calculation from left to right if same Precedence
 	//so leading op such as if while for need to 
 	//have lower Precedence as >,== etc.

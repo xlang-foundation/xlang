@@ -11,12 +11,13 @@
 #include "feedop.h"
 #include "await.h"
 #include "namespace_var.h"
+#include "jitblock.h"
 
 namespace X
 {
 	namespace AST
 	{
-		extern FORCE_INLINE  bool ExpExec(Expression* pExp,
+		extern FORCE_INLINE_EXP bool ExpExec(Expression* pExp,
 			XlangRuntime* rt,
 			ExecAction& action,
 			XObj* pContext,
@@ -77,6 +78,9 @@ namespace X
 				break;
 			case X::AST::ObType::Decor:
 				bOK = static_cast<Decorator*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::JitBlock:
+				bOK = static_cast<JitBlock*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;
 			case X::AST::ObType::Func:
 				bOK = static_cast<Func*>(pExp)->Exec(rt, action, pContext, v, lValue);
@@ -140,23 +144,6 @@ namespace X
 				break;
 			case X::AST::ObType::NamespaceVar:
 				bOK = static_cast<NamespaceVar*>(pExp)->Exec(rt, action, pContext, v, lValue);
-				break;
-			default:
-				break;
-			}
-			return bOK;
-		}
-		extern FORCE_INLINE bool ExpSet(Expression* pExp,
-			XlangRuntime* rt,
-			XObj* pContext,
-			Value& v)
-		{
-			bool bOK = false;
-			auto expType = pExp->m_type;
-			switch (expType)
-			{
-			case X::AST::ObType::Var:
-				bOK = static_cast<Var*>(pExp)->Set(rt, pContext, v);
 				break;
 			default:
 				break;

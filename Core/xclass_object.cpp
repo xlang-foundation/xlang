@@ -12,7 +12,7 @@ namespace X
 		{
 			List* pOutList = new List();
 			pOutList->IncRef();
-			AST::Scope* pMyScope = dynamic_cast<AST::Scope*>(m_obj);
+			AST::Scope* pMyScope = m_obj->GetMyScope();
 			auto vars = pMyScope->GetVarMap();
 			for (auto& it : vars)
 			{

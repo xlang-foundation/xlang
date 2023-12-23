@@ -237,7 +237,7 @@ namespace X
 					if (pCurStack)
 					{
 						AST::Scope* pCurScope = pCurStack->GetScope();
-						int index = pCurScope->AddOrGet(objName, true);
+						SCOPE_FAST_CALL_AddOrGet0(index,pCurScope,objName, true);
 						if (index >= 0)
 						{
 							pCurStack->Set(index, newVal);
@@ -247,7 +247,7 @@ namespace X
 				else if (objType == "globals")
 				{
 					auto* pTopModule = rt->M();
-					int index = pTopModule->GetMyScope()->AddOrGet(objName, true);
+					SCOPE_FAST_CALL_AddOrGet0(index,pTopModule->GetMyScope(),objName, true);
 					if (index >= 0)
 					{
 						rt->Set(pTopModule->GetMyScope(), nullptr, index, newVal);

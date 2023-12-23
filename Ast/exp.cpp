@@ -306,7 +306,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 								= split(varName, ',');
 							for (auto it : listVars)
 							{
-								int idx = pMyScope->AddOrGet(it, true,nullptr);
+								SCOPE_FAST_CALL_AddOrGet(idx,pMyScope,it, true,nullptr);
 								if (idx >= 0)
 								{
 									if (UseBindMode)

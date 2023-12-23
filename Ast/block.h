@@ -95,6 +95,14 @@ namespace X
 				}
 				Body.clear();
 			}
+			FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
+			{
+				for (auto rit = Body.rbegin(); rit != Body.rend(); ++rit)
+				{
+					stack.push({ *rit,false });
+				}
+				return true;
+			}
 			FORCE_INLINE std::vector<Expression*>& GetBody()
 			{
 				return Body;

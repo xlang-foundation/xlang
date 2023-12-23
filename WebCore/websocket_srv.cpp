@@ -34,7 +34,7 @@ namespace X
             Locker m_lockSessions;
             std::vector<WebSocketSessionImpl*> m_Sessions;
         protected:
-            virtual void WebSocketSrvThread::run() override;
+            virtual void run() override;
         public:
             WebSocketServer* GetServer()
 			{
