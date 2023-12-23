@@ -69,7 +69,7 @@ namespace X
 			}
 			FORCE_INLINE AST::Scope* GetScope()
 			{
-				return dynamic_cast<AST::Scope*>(this);
+				return m_pMyScope;
 			}
 			bool Create()
 			{

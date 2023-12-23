@@ -71,7 +71,7 @@ public:
 		//change current scope of stream
 		Scope* pOldClassScope = stream.ScopeSpace().GetCurrentClassScope();
 		Scope* pOldScope = stream.ScopeSpace().GetCurrentScope();
-		auto* pCurScope = dynamic_cast<Scope*>(this);
+		auto* pCurScope = GetMyScope();
 		stream.ScopeSpace().SetCurrentScope(pCurScope);
 		stream.ScopeSpace().SetCurrentClassScope(pCurScope);
 		Block::ToBytes(rt, pContext, stream);

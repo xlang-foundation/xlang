@@ -91,6 +91,7 @@ namespace X
 		{
 			return -1;
 		}
+		//TODO: Scope Issue
 		auto* pScope = dynamic_cast<AST::Scope*>(valObj.GetObj());
 		if (pScope == nullptr)
 		{

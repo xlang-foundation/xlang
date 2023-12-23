@@ -62,6 +62,7 @@ namespace X
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
+			//TODO: Scope issue
 			bases.push_back(dynamic_cast<Scope*>(this));
 		}
 		virtual void SetObjID(unsigned long pid, void* objid)

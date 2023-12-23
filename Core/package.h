@@ -225,7 +225,7 @@ public:
 	virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{
 		Object::GetBaseScopes(bases);
-		bases.push_back(dynamic_cast<Scope*>(m_pMyScope));
+		bases.push_back(m_pMyScope);
 	}
 };
 class PackageProxy :
@@ -412,7 +412,7 @@ public:
 	}
 	FORCE_INLINE virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{
-		bases.push_back(dynamic_cast<Scope*>(m_pPackage->GetMyScope()));
+		bases.push_back(m_pPackage->GetMyScope());
 	}
 	virtual bool Init(int varNum) override
 	{

@@ -95,22 +95,30 @@ namespace AST
 				{
 					if (rt)
 					{
-						pCurScope = dynamic_cast<Scope*>(rt->M());
+						pCurScope = rt->M()->GetMyScope();
 					}
 				}
 				else
 				{//todo: need to do more to recove sub-module
 					AST::Module* pModule = new AST::Module();
 					pModule->ScopeLayout();
-					pCurScope = dynamic_cast<Scope*>(pModule);
+					pCurScope = pModule->GetMyScope();
 				}
 			}
 				break;
 			case ScopeType::Class:
-				pCurScope = dynamic_cast<Scope*>(new XClass());
+			{
+				//TODO: how to deal with the pClass Pointer
+				auto* pClass = new AST::XClass();
+				pCurScope = pClass->GetMyScope();
+			}
 				break;
 			case ScopeType::Func:
-				pCurScope = dynamic_cast<Scope*>(new Func());
+			{
+				//TODO: How to deal with the pFunc Pointer
+				auto* pFunc = new AST::Func();
+				pCurScope = pFunc->GetMyScope();
+			}
 				break;
 			default:
 				break;
