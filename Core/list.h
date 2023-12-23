@@ -4,6 +4,7 @@
 #include "scope.h"
 #include "stackframe.h"
 #include "xclass_object.h"
+#include "function.h"
 
 namespace X
 {
@@ -251,22 +252,55 @@ public:
 					pRealObj->GetBaseScopes(m_bases);
 				}
 			}
-			m_bases.push_back(dynamic_cast<AST::Scope*>(pThisBase));
+			auto* pBaseScope = pThisBase->GetMyScope();
+			if (pBaseScope)
+			{
+				m_bases.push_back(pBaseScope);
+			}
 		}
 		else
 		{//find common
 			auto it = m_bases.begin();
 			while (it != m_bases.end())
 			{
-				if (*it != dynamic_cast<AST::Scope*>(pThisBase))
+				if (*it != pThisBase->GetMyScope())
 				{
 					bool bFind = false;
 					for (auto it2 : bases_0)
 					{
-						if (*it == it2)
+						if (it2.IsObject())
 						{
-							bFind = true;
-							break;
+							auto* pXObj = it2.GetObj();
+							if(pXObj->GetType() == ObjType::XClassObject)
+							{
+								XClassObject* pClassObj = dynamic_cast<XClassObject*>(pXObj);
+								if (pClassObj)
+								{
+									AST::XClass* pXClass = pClassObj->GetClassObj();
+									if (pXClass)
+									{
+										auto* pBaseScope = pXClass->GetMyScope();
+										if (*it == pBaseScope)
+										{
+											bFind = true;
+											break;
+										}
+									}
+								}
+							}
+							else if (pXObj->GetType() == ObjType::Function)
+							{
+								Function* pFunc = dynamic_cast<Function*>(pXObj);
+								if (pFunc)
+								{
+									auto* pBaseScope = pFunc->GetMyScope();
+									if (*it == pBaseScope)
+									{
+										bFind = true;
+										break;
+									}
+								}
+							}	
 						}
 					}//end for
 					if (!bFind)
@@ -332,6 +366,7 @@ public:
 			}
 			else if (obj->GetType() == ObjType::Function)
 			{
+				//TODO: why need to process function?
 				std::vector<Value> dummy;
 				MakeCommonBases(rt->M(), dummy);
 			}

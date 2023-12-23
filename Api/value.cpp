@@ -393,17 +393,17 @@ namespace X
 		{
 			//if this is an object, but v is not an object, then we need to
 			//add v to this object
-			(*((XObj*)x.obj)) += (Value&)v;
+			x.obj->operator+=((Value&)v);
 		}
 		else if (t != ValueType::Object && v.t == ValueType::Object)
 		{
 			//if this is not an object, but v is an object, then we need to
 			//add this to v object
-			(*((XObj*)v.x.obj)) += *this;
+			*v.x.obj += *this;
 		}
 		else
 		{
-			(*((XObj*)v.x.obj)) += (Value&)v;
+			x.obj->operator+=((Value&)v);
 		}
 	}
 	void Value::AssignObject(XObj* p, bool bAddRef)
