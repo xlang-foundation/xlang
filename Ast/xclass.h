@@ -22,6 +22,8 @@ public:
 		Func()
 	{
 		m_type = ObType::Class;
+		m_variableFrame = new StackFrame(m_pMyScope);
+		m_pMyScope->SetVarFrame(m_variableFrame);
 	}
 	~XClass()
 	{

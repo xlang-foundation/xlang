@@ -140,9 +140,10 @@ public:
 	virtual bool OpWithOperands(
 		std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 	{
-		//for BinaryOp eat all operands just keep left-most one
-		//as right operand
-		//also need to output syntax error info
+		//we do a patch here, for case this.[prop1,prop2]
+		//dot's Precedence is higher than '['
+		//so we need to merge right pair to left side dot
+
 		AST::Expression* operandR = nullptr;
 		while (!operands.empty() && 
 			operands.top()->GetTokenIndex() > m_tokenIndex)
@@ -155,7 +156,22 @@ public:
 			}
 			else
 			{
-				delete operandR;
+				if (r->m_type == ObType::Dot)
+				{
+					auto* pDotOp = static_cast<BinaryOp*>(r);
+					if (pDotOp->GetR() == nullptr)
+					{
+						pDotOp->SetR(operandR);
+					}
+					else
+					{
+						delete operandR;
+					}
+				}
+				else
+				{
+					delete operandR;
+				}
 				operandR = r;
 			}
 		}

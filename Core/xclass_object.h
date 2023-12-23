@@ -103,7 +103,7 @@ namespace X {
 						pRealObj->GetBaseScopes(bases);
 					}
 				}
-				bases.push_back(pAst_Cls->GetScope());
+				bases.push_back(pAst_Cls->GetMyScope());
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,

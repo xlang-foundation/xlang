@@ -26,7 +26,8 @@ void Func::ScopeLayout()
 		//TODO: debug here
 		if (m_parent->m_type == ObType::Class)
 		{//it is class's member
-			SCOPE_FAST_CALL_AddOrGet0_NoDef(m_IndexOfThis,pMyScope,thisKey, false);
+			//add into myscope not parent class's scope
+			SCOPE_FAST_CALL_AddOrGet0_NoDef(m_IndexOfThis,GetMyScope(), thisKey, false);
 		}
 	}
 	//process parameters' default values

@@ -253,8 +253,7 @@ void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 	{//check if matche with one candidate
 		for (auto it : candidates)
 		{
-			Scope* s = dynamic_cast<Scope*>(it);
-			if (s == m_scope)
+			if (it == m_scope)
 			{
 				matched = true;
 				break;
