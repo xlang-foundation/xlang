@@ -145,9 +145,9 @@ namespace X
 			m_proxyMapLock.Unlock();
 			return pProxy;
 		}
-		bool Register(const char* name,PackageCreator creator)
+		bool Register(const char* name,PackageCreator creator,void* pContextForCreator = nullptr)
 		{
-			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,Value()}));
+			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,Value(pContextForCreator)}));
 			return true;
 		}
 		bool Register(const char* name,Value& objPackage)
@@ -176,9 +176,9 @@ namespace X
 			if (it != m_mapPackage.end())
 			{
 				PackageInfo& info = it->second;
-				if (info.package.IsInvalid())
+				if (info.creator)
 				{
-					auto* pPack = info.creator();
+					auto* pPack = info.creator(info.package);
 					info.package = pPack;
 				}
 				bCreated = info.package.IsValid();

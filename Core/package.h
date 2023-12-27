@@ -186,6 +186,10 @@ public:
 	{ 
 		return m_pObject; 
 	}
+	virtual void SetEmbedObj(void* p) override
+	{
+		m_pObject = p;
+	}
 	virtual bool Init(int varNum) override
 	{
 		m_variableFrame = new StackFrame();
@@ -399,6 +403,10 @@ public:
 	virtual void* GetEmbedObj() override
 	{
 		return m_pObject;
+	}
+	virtual void SetEmbedObj(void* p) override
+	{
+		m_pObject = p;
 	}
 	virtual bool SetIndexValue(int idx, Value& v) override
 	{

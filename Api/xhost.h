@@ -26,7 +26,7 @@ namespace X
 	class XProxy;
 	class XCustomScope;
 	class XRuntime;
-	typedef XPackage* (*PackageCreator)();
+	typedef XPackage* (*PackageCreator)(X::Value context);
 	typedef long long (*PackageGetContentSizeFunc)(void* pContextObj);
 	typedef bool (*PackageToBytesFunc)(void* pContextObj, X::XLStream* pStream);
 	typedef bool (*PackageFromBytesFunc)(void* pContextObj, X::XLStream* pStream);
@@ -64,7 +64,7 @@ namespace X
 		virtual void AddSysCleanupFunc(CLEANUP f) = 0;
 		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) = 0;
 		virtual XRuntime* GetCurrentRuntime() = 0;
-		virtual bool RegisterPackage(const char* name,PackageCreator creator) = 0;
+		virtual bool RegisterPackage(const char* name,PackageCreator creator,void* pContext = nullptr) = 0;
 		virtual bool RegisterPackage(const char* name,Value& objPackage) = 0;
 		virtual Value QueryMember(XRuntime* rt, XObj* pObj, const char* name) = 0;
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;

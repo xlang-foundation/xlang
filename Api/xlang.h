@@ -433,6 +433,7 @@ namespace X
 		virtual void SetPackageAccessor(PackageAccessor func) = 0;
 		virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) = 0;
 		virtual void* GetEmbedObj() = 0;
+		virtual void SetEmbedObj(void* p) = 0;
 		virtual bool Init(int varNum) = 0;
 		virtual bool SetIndexValue(int idx, Value& v) = 0;
 		virtual void RemoveALl() = 0;

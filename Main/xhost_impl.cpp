@@ -73,9 +73,9 @@ namespace X
 		pStrObj->IncRef();
 		return pStrObj;
 	}
-	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator)
+	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator, void* pContext)
 	{
-		return X::Manager::I().Register(name,creator);
+		return X::Manager::I().Register(name,creator, pContext);
 	}
 	bool XHost_Impl::RegisterPackage(const char* name,Value& objPackage)
 	{

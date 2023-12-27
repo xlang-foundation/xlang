@@ -111,6 +111,10 @@ enum class ValueSubType
 	UINT64 = 10,//if it is int64, don't need to set this
 	FLOAT =11,
 };
+
+/*
+	Value just keep 16 bytes, no virtual function defined, so no vtable
+*/
 class Value
 {
 	//from high->low, second and third byte are digits number , mask is 0x00FFFF00 and shift >>8
@@ -421,6 +425,12 @@ public:
 		}
 		return bRet;
 	}
+	void SetString(const char* s, int size)
+	{
+		t = ValueType::Str;
+		flags = size;
+		x.str = (char*)s;
+	}
 	std::string GetValueType();
 	FORCE_INLINE ValueType GetType() { return t; }
 	FORCE_INLINE void SetType(ValueType t0) { t = t0; }
@@ -457,8 +467,8 @@ public:
 			break;
 		}
 	}
-	virtual Value operator* (const Value& right);
-	virtual Value operator / (const Value& right);
+	Value operator* (const Value& right);
+	Value operator / (const Value& right);
 
 	Value AddObj(const Value& right);
 	FORCE_INLINE Value operator + (const Value& right)
@@ -474,7 +484,7 @@ public:
 			return AddObj(right);
 		}
 	}
-	virtual Value operator - (const Value& right);
+	Value operator - (const Value& right);
 	void ObjectAssignAndAdd(const Value& v);
 	FORCE_INLINE void operator += (const Value& v)
 	{
@@ -513,7 +523,7 @@ public:
 			}
 		}
 	}
-	virtual void operator -= (const Value& v);
+	void operator -= (const Value& v);
 
 	Value ObjCall(Port::vector<X::Value>& params);
 	Value ObjCall(Port::vector<X::Value>& params,Port::StringMap<X::Value>& kwParams);
