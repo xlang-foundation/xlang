@@ -77,6 +77,7 @@ enum class ScopeType
 	Package,
 	PyObject,
 	DeferredObject,
+	RemoteObject,
 	Namespace,
 	Custom,//impl. XCustomScope in the Object
 };
@@ -181,6 +182,10 @@ public:
 
 	FORCE_INLINE int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{
+		if (m_pDynScope)
+		{
+			return m_pDynScope->AddOrGet(name.c_str(), bGetOnly);
+		}
 		if (m_NoAddVar)
 		{
 			bGetOnly = true;
