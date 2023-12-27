@@ -12,17 +12,13 @@ public enum BridgeCallType : int
 }
 public enum PackageMemberType : int
 {
-    Function,
+    Func,
+    FuncEx,
+    Prop,
+    Const,
+    ObjectEvent,
     Class,
-    Property,
-    Field,
-    Event,
-    Enum,
-    EnumValue,
-    Interface,
-    Struct,
-    Namespace,
-    Unknown
+    ClassInstance,
 }
 public enum ValueType : int
 {
@@ -204,6 +200,7 @@ public class XLangEng
          IntPtr pVoidApiSet, bool singleInstance, IntPtr createFuncOrInstance);
     public delegate bool CallObjectFuncDelegate(IntPtr pObjPtr, string funcName,
                      IntPtr variantArray, int arrayLength, out Value returnValue);
+    public delegate bool FireObjectEventDelegate(IntPtr objPtr, int evtId,IntPtr variantArray, int arrayLength);
     public delegate IntPtr CallObjectToStringDelegate(IntPtr pObjPtr);
     public delegate void ReleaseStringDelegate(IntPtr str);
 
@@ -218,6 +215,7 @@ public class XLangEng
     public CallObjectFuncDelegate callObjectFunc;
     public CallObjectToStringDelegate callObjectToString;
     public ReleaseStringDelegate releaseString;
+    public FireObjectEventDelegate fireObjectEvent;
 
     private object[] ConvertValueArray(IntPtr variantsPtr, int size)
     {
@@ -256,6 +254,22 @@ public class XLangEng
 
         return result;
     }
+    public IntPtr ConvertArrayToVariants(object[] managedArray)
+    {
+        int size = managedArray.Length;
+        int variantSize = Marshal.SizeOf(typeof(Value));
+        IntPtr variantsPtr = Marshal.AllocHGlobal(variantSize * size);
+
+        for (int i = 0; i < size; i++)
+        {
+            IntPtr variantPtr = IntPtr.Add(variantsPtr, variantSize * i);
+            Value variant = ConvertToVariant(managedArray[i]);
+            Marshal.StructureToPtr(variant, variantPtr, false);
+        }
+
+        return variantsPtr;
+    }
+
     private object[] ConvertValueToParameters(object[] managedArray, ParameterInfo[] parameters)
     {
         if (managedArray.Length != parameters.Length)
@@ -335,6 +349,7 @@ public class XLangEng
         callObjectFunc = Marshal.GetDelegateForFunctionPointer<CallObjectFuncDelegate>(GetProcAddress(hModule, "CallObjectFunc"));
         callObjectToString = Marshal.GetDelegateForFunctionPointer<CallObjectToStringDelegate>(GetProcAddress(hModule, "CallObjectToString"));
         releaseString = Marshal.GetDelegateForFunctionPointer<ReleaseStringDelegate>(GetProcAddress(hModule, "ReleaseString"));
+        fireObjectEvent = Marshal.GetDelegateForFunctionPointer<FireObjectEventDelegate>(GetProcAddress(hModule, "FireObjectEvent"));
     }
     public IntPtr GetPointerToObject(object obj)
     {
@@ -348,6 +363,12 @@ public class XLangEng
         return objectRegistry.GetObject(pointer);
         //GCHandle handle = GCHandle.FromIntPtr(pointer);
         //return handle.Target;
+    }
+    public bool FireEvent(object obj, int evtId, object[] args)
+    {
+        IntPtr objPtr = GetPointerToObject(obj);
+        IntPtr argsPtr = ConvertArrayToVariants(args);
+        return fireObjectEvent(objPtr, evtId, argsPtr, args.Length);
     }
     public IntPtr CreateAPISet()
     {
@@ -368,14 +389,18 @@ public class XLangEng
         var createFunc = Marshal.GetFunctionPointerForDelegate(delFunc);
         registerPackage(name, pApiSet, false, createFunc);
     }
-    public void RegisterClass<T>(T instance)
+    public void RegisterClass<T>(string[] eventlist,T instance)
     {
         var type = typeof(T);
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance| BindingFlags.DeclaredOnly);
         var apiSet = CreateAPISet();
+        foreach (var evt in eventlist)
+        {
+            AddApiToSet(apiSet, PackageMemberType.ObjectEvent, evt);
+        }
         foreach (var method in methods)
         {
-            AddApiToSet(apiSet, PackageMemberType.Function, method.Name);
+            AddApiToSet(apiSet, PackageMemberType.Func, method.Name);
         }
         if (instance == null)
         {

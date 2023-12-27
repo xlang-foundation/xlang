@@ -1,6 +1,7 @@
 #pragma once
 #include "xpackage.h"
 #include "xlang.h"
+#include <unordered_map>
 
 namespace X
 {
@@ -24,6 +25,8 @@ namespace X
 		extern InvokeMethodDelegate g_invokeMethodDelegate;
 		class ApiBridge
 		{
+			//from object's id to api bridge
+			static std::unordered_map<void*, ApiBridge*> mMapApiBridge;
 		public:
 			bool mSingleInstance = false;
 			void* mCreateFuncOrInstance = nullptr;
@@ -44,9 +47,34 @@ namespace X
 			{
 				return mApis.Create(this);
 			}
+			void AddMap(void* pInstance)
+			{
+				mMapApiBridge.emplace(std::make_pair(pInstance, this));
+			}
+			bool FireObjectEvent(int evtId,X::Value* variantArray, int arrayLength)
+			{
+				X::ARGS args(arrayLength);
+				X::KWARGS kwArgs;
+				for (int i = 0; i < arrayLength; i++)
+				{
+					args.push_back(variantArray[i]);
+				}
+				mApis.Fire(__pPack_, evtId, args, kwArgs);
+				return true;
+			}
+			static ApiBridge* GetApiBridge(void* pInstance)
+			{
+				auto it = mMapApiBridge.find(pInstance);
+				if (it != mMapApiBridge.end())
+				{
+					return it->second;
+				}
+				return nullptr;
+			}
 			X::XPackage* CreatePackProxy()
 			{
 				auto* pInstance = g_createOrGetClassInstanceDelegate(mCreateFuncOrInstance);
+				AddMap(pInstance);
 				auto* pPackProxy = g_pXHost->CreatePackageProxy(__pPack_, pInstance);
 				return pPackProxy;
 			}
@@ -55,14 +83,14 @@ namespace X
 				mSingleInstance = singleInstance;
 				mCreateFuncOrInstance = createFuncOrInstance;
 			}
-			bool RegisterApi(X::PackageMemberType type,const char* funcName)
+			bool RegisterApi(X::PackageMemberType type,const char* evtName)
 			{
 				int memberId = -1;
 				switch (type)
 				{
 				case X::PackageMemberType::Func:
 					memberId = mApis.AllocSlot();
-					mApis.SetDirectFunc(memberId,funcName, [this, memberId](
+					mApis.SetDirectFunc(memberId, evtName, [this, memberId](
 						X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 						X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 						{
@@ -82,6 +110,7 @@ namespace X
 				case X::PackageMemberType::Const:
 					break;
 				case X::PackageMemberType::ObjectEvent:
+					mApis.AddEvent(evtName);
 					break;
 				case X::PackageMemberType::Class:
 					break;

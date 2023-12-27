@@ -73,15 +73,6 @@ namespace X
 extern "C"  X_EXPORT bool CallObjectFunc(void* pObjPtr,const char* funcName,
 	X::Value* variantArray,int arrayLength,X::Value* outReturnValue)
 {
-	std::string strFuncName(funcName);
-	X::XObj* pXObj = (X::XObj*)pObjPtr;
-	if (strFuncName == "ToString")
-	{
-		const char* str = pXObj->ToString();
-		outReturnValue->SetString(str, strlen(str));
-		//need to call release string later
-	}
-
 	return true;
 }
 
@@ -126,6 +117,7 @@ extern "C"  X_EXPORT bool RegisterPackage(const char* className,
 	pApiBridge->CreatePackage();
 	if (singleInstance)
 	{
+		pApiBridge->AddMap(createFuncOrInstance);
 		auto* pXPack = pApiBridge->APISET().GetPack();
 		//when call CreatePackage, we passed the pApiBridge to the package as the embed object
 		//but we need to keep same logic as passing creation function
@@ -188,4 +180,15 @@ extern "C"  X_EXPORT void Unload(void* pContext)
 	X::XLoad& xLoad = pXLanEngineContext->xLoad;
 	xLoad.Unload();
 	delete pXLanEngineContext;
+}
+
+extern "C" X_EXPORT bool FireObjectEvent(void* objPtr, int evtId, 
+	X::Value * variantArray, int arrayLength)
+{
+	auto* pBridge = X::Interop::ApiBridge::GetApiBridge(objPtr);
+	if (pBridge == nullptr)
+	{
+		return false;
+	}
+	return pBridge->FireObjectEvent(evtId, variantArray, arrayLength);
 }
