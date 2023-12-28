@@ -76,6 +76,21 @@ extern "C"  X_EXPORT bool CallObjectFunc(void* pObjPtr,const char* funcName,
 	return true;
 }
 
+extern "C" X_EXPORT long long GetObjectBinaryData(void* objPtr, unsigned char** data)
+{
+	X::XObj* pXObj = (X::XObj*)objPtr;
+	if (pXObj->GetType() == X::ObjType::Binary)
+	{
+		auto* pBin = dynamic_cast<X::XBin*>(pXObj);
+		*data = (unsigned char*)pBin->Data();
+		return pBin->Size();
+	}
+	else
+	{
+		*data = nullptr;
+		return 0;
+	}
+}
 //if return value is string, need to consider memory allocation and deallocation
 //so need to use sepreated function to call paring with string releease function
 

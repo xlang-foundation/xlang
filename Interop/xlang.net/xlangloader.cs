@@ -144,7 +144,21 @@ public class XObj : IConvertible
 
     public object ToType(Type conversionType, IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        if(conversionType == typeof(Byte[]))
+        {
+            long size = xLangEng.getObjectBinaryData(xObjPtr, out IntPtr dataPtr);
+            if(size > 0)
+            {
+                byte[] data = new byte[size];
+                Marshal.Copy(dataPtr, data, 0, (int)size);
+                return data;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        return null;
     }
 
     public ushort ToUInt16(IFormatProvider? provider)
@@ -204,6 +218,9 @@ public class XLangEng
     public delegate IntPtr CallObjectToStringDelegate(IntPtr pObjPtr);
     public delegate void ReleaseStringDelegate(IntPtr str);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate long GetObjectBinaryDataDelegate(IntPtr objectHandle, out IntPtr dataPtr);
+
     public delegate object CreateClassInstanceDelegate();
 
     private LoadDelegate load;
@@ -214,6 +231,7 @@ public class XLangEng
     private RegisterPackageDelegate registerPackage;
     public CallObjectFuncDelegate callObjectFunc;
     public CallObjectToStringDelegate callObjectToString;
+    public GetObjectBinaryDataDelegate getObjectBinaryData;
     public ReleaseStringDelegate releaseString;
     public FireObjectEventDelegate fireObjectEvent;
 
@@ -350,6 +368,7 @@ public class XLangEng
         callObjectToString = Marshal.GetDelegateForFunctionPointer<CallObjectToStringDelegate>(GetProcAddress(hModule, "CallObjectToString"));
         releaseString = Marshal.GetDelegateForFunctionPointer<ReleaseStringDelegate>(GetProcAddress(hModule, "ReleaseString"));
         fireObjectEvent = Marshal.GetDelegateForFunctionPointer<FireObjectEventDelegate>(GetProcAddress(hModule, "FireObjectEvent"));
+        getObjectBinaryData = Marshal.GetDelegateForFunctionPointer<GetObjectBinaryDataDelegate>(GetProcAddress(hModule, "GetObjectBinaryData"));
     }
     public IntPtr GetPointerToObject(object obj)
     {
