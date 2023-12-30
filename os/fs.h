@@ -109,7 +109,7 @@ namespace X
 		};
 	public:
 		BEGIN_PACKAGE(Dir)
-		APISET().AddFunc<0>("scanDir", &Dir::scanDir);
+		APISET().AddFunc<1>("scanDir", &Dir::scanDir);
 		APISET().AddFunc<0>("createDir", &Dir::createDir);		
 		END_PACKAGE
 		Dir()
@@ -120,18 +120,12 @@ namespace X
 		~Dir()
 		{
 		}
-		std::string scanDir() {
-			int option = DirOnly;
-			std::string output = scanDirInternal(m_path, option);
-			return output;
-		}
-
-		std::string scanDirInternal(std::string path, int option) {
+		std::string scanDir(int option) {
 			std::string output;
 			std::error_code ec; // For using the non-throwing overloads of functions below.
 			std::filesystem::path fPath;
 			if (option == DirOnly) {
-				for (const auto& file : std::filesystem::recursive_directory_iterator(path)) {
+				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
 					fPath = file.path();
 					if (std::filesystem::is_directory(fPath, ec)) {
 						//std::cout << fPath << std::endl;
@@ -141,7 +135,7 @@ namespace X
 				}
 			}
 			else if (option == FileOnly) {
-				for (const auto& file : std::filesystem::recursive_directory_iterator(path)) {
+				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
 					fPath = file.path();
 					if (!std::filesystem::is_directory(fPath, ec)) {
 						//std::cout << fPath << std::endl;
@@ -151,7 +145,7 @@ namespace X
 				}
 			}
 			else { //both
-				for (const auto& file : std::filesystem::recursive_directory_iterator(path)) {
+				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
 					fPath = file.path();
 					//std::cout << fPath << std::endl;
 					output += fPath.generic_string();
