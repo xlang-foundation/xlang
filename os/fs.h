@@ -110,6 +110,7 @@ namespace X
 	public:
 		BEGIN_PACKAGE(Dir)
 		APISET().AddFunc<0>("scanDir", &Dir::scanDir);
+		APISET().AddFunc<0>("createDir", &Dir::createDir);		
 		END_PACKAGE
 		Dir()
 		{
@@ -160,6 +161,14 @@ namespace X
 
 			return output;
 		}
+		bool createDir() {
+			std::filesystem::path fPath{ m_path };
+			if (std::filesystem::exists(fPath))
+				return false;
+			else
+				return std::filesystem::create_directory(fPath);
+		}
+
 	};
 
 	class FileSystem:
