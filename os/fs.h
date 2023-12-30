@@ -4,6 +4,7 @@
 #include "xlang.h"
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <sys/stat.h>
 namespace X
 {
@@ -96,6 +97,71 @@ namespace X
 			return X::Value((long long)size);
 		}
 	};
+
+	//-------------------------------------------------------------------------------------
+	class Dir
+	{
+		std::string m_path;
+		enum ScanOption{
+			DirOnly,
+			FileOnly,
+			Both
+		};
+	public:
+		BEGIN_PACKAGE(Dir)
+		APISET().AddFunc<0>("scanDir", &Dir::scanDir);
+		END_PACKAGE
+		Dir()
+		{
+			m_path = "./";
+		}
+		Dir(std::string path);	
+		~Dir()
+		{
+		}
+		std::string scanDir() {
+			int option = DirOnly;
+			std::string output = scanDirInternal(m_path, option);
+			return output;
+		}
+
+		std::string scanDirInternal(std::string path, int option) {
+			std::string output;
+			std::error_code ec; // For using the non-throwing overloads of functions below.
+			std::filesystem::path fPath;
+			if (option == DirOnly) {
+				for (const auto& file : std::filesystem::recursive_directory_iterator(path)) {
+					fPath = file.path();
+					if (std::filesystem::is_directory(fPath, ec)) {
+						//std::cout << fPath << std::endl;
+						output += fPath.generic_string();
+						output += '\n';
+					}
+				}
+			}
+			else if (option == FileOnly) {
+				for (const auto& file : std::filesystem::recursive_directory_iterator(path)) {
+					fPath = file.path();
+					if (!std::filesystem::is_directory(fPath, ec)) {
+						//std::cout << fPath << std::endl;
+						output += fPath.generic_string();
+						output += '\n';
+					}
+				}
+			}
+			else { //both
+				for (const auto& file : std::filesystem::recursive_directory_iterator(path)) {
+					fPath = file.path();
+					//std::cout << fPath << std::endl;
+					output += fPath.generic_string();
+					output += '\n';
+				}
+			}
+
+			return output;
+		}
+	};
+
 	class FileSystem:
 		public Singleton<FileSystem>
 	{
@@ -138,6 +204,7 @@ namespace X
 		}
 		BEGIN_PACKAGE(FileSystem)
 			APISET().AddClass<2, File>("File");
+			APISET().AddClass<1, Dir>("Dir");
 		END_PACKAGE
 	};
 }
