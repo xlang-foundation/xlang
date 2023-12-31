@@ -58,7 +58,6 @@ namespace X
 			m_stream.open(m_fileName.c_str(),
 				m_IsBinary ? (std::ios_base::in
 					| std::ios_base::binary) : std::ios_base::in);
-
 		}
 	}
 

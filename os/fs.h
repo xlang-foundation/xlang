@@ -70,7 +70,6 @@ namespace X
 				std::streamsize  len = str.length();
 				m_wstream.write(str.c_str(), len);
 			}
-
 			return true;
 		}
 		bool close()
