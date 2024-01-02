@@ -148,7 +148,8 @@ namespace X
 					fPath = file.path();
 					//std::cout << fPath << std::endl;
 					output += fPath.generic_string();
-					output += '\n';
+					//output += '\n';
+					output += ',';
 				}
 			}
 
