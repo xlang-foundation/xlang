@@ -419,10 +419,20 @@ namespace X
 		t = ValueType::Object;
 		x.obj = g_pXHost->CreateStr(s.c_str(), (int)s.size());
 	}
+	void Value::SetString(std::string&& s)
+	{
+		t = ValueType::Object;
+		x.obj = g_pXHost->CreateStr(s.c_str(), (int)s.size());
+	}
 	Value::Value(std::string& s)
 	{
 		SetString(s);
 	}
+	Value::Value(std::string&& s)
+	{
+		SetString(s);
+	}
+
 	int Value::obj_cmp(Value* r) const
 	{
 		return x.obj->cmp(r);
