@@ -132,9 +132,16 @@ public class XObj : IConvertible
         var str = xLangEng.callObjectToString(xObjPtr);
         if(str!=IntPtr.Zero)
         {
-            string retStr =  Marshal.PtrToStringAnsi(str);
+            string? retStr =  Marshal.PtrToStringAnsi(str);
             xLangEng.releaseString(str);
-            return retStr;
+            if (retStr != null)
+            {
+                return retStr;
+            }
+            else
+            {
+                return "";
+            }
         }
         else
         {
@@ -180,6 +187,7 @@ public class XObj : IConvertible
 public class XLangEng
 {
     private const string DllName = "C:\\ToGithub\\CantorAI\\out\\build\\x64-debug\\bin\\xlang_interop.dll"; // or "xlang_eng.so" for Linux
+    //private const string DllName = "C:\\ToGithub\\CantorAI\\xlang\\out\\build\\x64-Debug\\bin\\xlang_interop.dll";
     private IntPtr xlangContext = IntPtr.Zero;
     private xlang.net.ObjectRegistry objectRegistry = new xlang.net.ObjectRegistry();
 
@@ -223,6 +231,12 @@ public class XLangEng
 
     public delegate object CreateClassInstanceDelegate();
 
+    //for Module
+    public delegate bool LoadXModuleDelegate(string modulePath, string xlangCode, int size, out IntPtr ppModule);
+    public delegate bool RunXModuleDelegate(IntPtr module,out Value returnValue);
+    public delegate bool UnloadXModuleDelegate(IntPtr module);
+
+
     private LoadDelegate load;
     private UnloadDelegate unload;
     private CreateAPISetDelegate createAPISet;
@@ -234,6 +248,9 @@ public class XLangEng
     public GetObjectBinaryDataDelegate getObjectBinaryData;
     public ReleaseStringDelegate releaseString;
     public FireObjectEventDelegate fireObjectEvent;
+    public LoadXModuleDelegate loadXModule;
+    public UnloadXModuleDelegate unloadXModule;
+    public RunXModuleDelegate runXModule;
 
     private object[] ConvertValueArray(IntPtr variantsPtr, int size)
     {
@@ -369,11 +386,34 @@ public class XLangEng
         releaseString = Marshal.GetDelegateForFunctionPointer<ReleaseStringDelegate>(GetProcAddress(hModule, "ReleaseString"));
         fireObjectEvent = Marshal.GetDelegateForFunctionPointer<FireObjectEventDelegate>(GetProcAddress(hModule, "FireObjectEvent"));
         getObjectBinaryData = Marshal.GetDelegateForFunctionPointer<GetObjectBinaryDataDelegate>(GetProcAddress(hModule, "GetObjectBinaryData"));
+        loadXModule = Marshal.GetDelegateForFunctionPointer<LoadXModuleDelegate>(GetProcAddress(hModule, "LoadXModule"));
+        unloadXModule = Marshal.GetDelegateForFunctionPointer<UnloadXModuleDelegate>(GetProcAddress(hModule, "UnloadXModule"));
+        runXModule = Marshal.GetDelegateForFunctionPointer<RunXModuleDelegate>(GetProcAddress(hModule, "RunXModule"));
+
+    }
+    public IntPtr RunXModule(string modulePath,string code, out Value returnValue)
+    {
+        IntPtr hModule = IntPtr.Zero;
+        bool bOK = loadXModule(modulePath,code, code.Length, out hModule);
+        if(bOK)
+        {
+            bOK = runXModule(hModule, out returnValue);
+            if (bOK)
+            {
+                return hModule;
+            }
+        }
+        returnValue = new Value();
+        return IntPtr.Zero;
+    }
+    public void UnloadXModule(IntPtr hModule)
+    {
+        unloadXModule(hModule);
     }
     public IntPtr GetPointerToObject(object obj)
     {
         return objectRegistry.RegisterObject(obj);
-        GCHandle handle = GCHandle.Alloc(obj/*GCHandleType.Pinned*/);
+        //GCHandle handle = GCHandle.Alloc(obj/*GCHandleType.Pinned*/);
         //TODO: handle.Free(); need to called later
         //return GCHandle.ToIntPtr(handle);
     }
@@ -388,6 +428,19 @@ public class XLangEng
         IntPtr objPtr = GetPointerToObject(obj);
         IntPtr argsPtr = ConvertArrayToVariants(args);
         return fireObjectEvent(objPtr, evtId, argsPtr, args.Length);
+    }
+    public object CallFunc(object objFunc,object[] args)
+    {
+        if(objFunc is XObj xObj)
+        {
+            IntPtr argsPtr = ConvertArrayToVariants(args);
+            Value outVal;
+            callObjectFunc(xObj.xObjPtr, "", argsPtr, args.Length, out outVal);
+            return outVal;
+        }
+        //IntPtr objPtr = GetPointerToObject(objFunc);
+
+        return null;
     }
     public IntPtr CreateAPISet()
     {
@@ -461,18 +514,49 @@ public class XLangEng
         object[] managedArray = ConvertValueArray(variantArrayPtr, arrayLength);
         object[] parameters = ConvertValueToParameters(managedArray,methodInfo.GetParameters());
         // Use reflection to invoke the method on the class instance
-        object result = methodInfo.Invoke(classInstance, parameters); ;
-        // Convert the result to an IntPtr (this might involve marshaling complex types)
+        //object result = methodInfo.Invoke(classInstance, parameters);
+        object? result = null;
+        try
+        {
+            result = methodInfo.Invoke(classInstance, parameters);
+        }
+        catch (TargetInvocationException ex)
+        {
+            // Handle exceptions thrown by the invoked method
+            // You can access the original exception using ex.InnerException
+            Console.WriteLine($"Exception thrown in invoked method: {ex.InnerException}");
+        }
+        catch (ArgumentException ex)
+        {
+            // Handle argument exceptions, e.g., method parameters mismatch
+            Console.WriteLine($"Argument exception: {ex.Message}");
+        }
+        catch (TargetException ex)
+        {
+            // Handle cases where the method is not valid for the given instance
+            Console.WriteLine($"Target exception: {ex.Message}");
+        }
+        catch (MethodAccessException ex)
+        {
+            // Handle exceptions related to access restrictions
+            Console.WriteLine($"Method access exception: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            // Handle other exceptions
+            Console.WriteLine($"General exception: {ex.Message}");
+        }
         returnValue = ConvertToVariant(result);
         return true;
     }
-
-
+    //keep here to avoid GC 
+    private InvokeMethodDelegate _invokeMethodDelegate;
+    private CreateOrGetClassInstanceDelegate _callbackDelegate;
     public void Load()
     {
-        var callbackDelegate = new CreateOrGetClassInstanceDelegate(CreateOrGetClassInstance);
-        var invokeMethodDelegate = new InvokeMethodDelegate(InvokeMethod);
-        load(callbackDelegate, invokeMethodDelegate,out this.xlangContext);
+        _callbackDelegate = new CreateOrGetClassInstanceDelegate(CreateOrGetClassInstance);
+        _invokeMethodDelegate = new InvokeMethodDelegate(InvokeMethod);
+        load(_callbackDelegate, _invokeMethodDelegate,out this.xlangContext);
     }
 
     public void Unload()

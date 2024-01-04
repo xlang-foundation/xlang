@@ -25,6 +25,7 @@
 #include "PyEngObject.h"
 #include "pyproxyobject.h"
 #include <sstream>
+#include "moduleobject.h"
 
 namespace X 
 {
@@ -445,6 +446,39 @@ namespace X
 		std::vector<X::Value> passInParams;
 		return X::Hosting::I().Run(moduleName, code,
 			codeSize, passInParams,retVal);
+	}
+	bool XHost_Impl::LoadModule(const char* moduleName, 
+		const char* code, int codeSize, X::Value& objModule)
+	{
+		unsigned long long moduleKey = 0;
+		AST::Module* pModule = X::Hosting::I().Load(moduleName, code, codeSize, moduleKey);
+		if (pModule == nullptr)
+		{
+			return false;
+		}
+		X::AST::ModuleObject* pModuleObj = new X::AST::ModuleObject(pModule);
+		objModule = Value(pModuleObj);
+
+		return true;
+	}
+	bool XHost_Impl::UnloadModule(X::Value objModule)
+	{
+		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
+		{
+			auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(objModule.GetObj());
+			X::Hosting::I().Unload(pModuleObj->M());
+		}
+		return true;
+	}
+	bool XHost_Impl::RunModule(X::Value objModule, X::Value& retVal)
+	{
+		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
+		{
+			auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(objModule.GetObj());
+			std::vector<X::Value> passInParams;
+			return X::Hosting::I().Run(pModuleObj->M(), retVal, passInParams);
+		}
+		return false;
 	}
 	bool XHost_Impl::RunModuleInThread(const char* moduleName, 
 		const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs)

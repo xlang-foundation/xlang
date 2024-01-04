@@ -49,7 +49,7 @@ public class ObjectRegistry
         return IntPtr.Zero; // Or some other way to indicate 'not found'
     }
 
-    public object GetObject(IntPtr id)
+    public object? GetObject(IntPtr id)
     {
         if (idToObject.TryGetValue(id, out var instance))
         {

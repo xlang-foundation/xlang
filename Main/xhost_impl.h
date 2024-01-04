@@ -47,6 +47,9 @@ namespace X
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) override;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) override;
 		virtual bool RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal) override;
+		virtual bool LoadModule(const char* moduleName, const char* code, int codeSize, X::Value& objModule) override;
+		virtual bool UnloadModule(X::Value objModule) override;
+		virtual bool RunModule(X::Value objModule, X::Value& retVal) override;
 		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
 		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal) override;
 		virtual const char* GetInteractiveCode() override;

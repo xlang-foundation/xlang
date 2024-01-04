@@ -73,7 +73,15 @@ namespace X
 extern "C"  X_EXPORT bool CallObjectFunc(void* pObjPtr,const char* funcName,
 	X::Value* variantArray,int arrayLength,X::Value* outReturnValue)
 {
-	return true;
+	X::XObj* pXObj = (X::XObj*)pObjPtr;
+	X::ARGS args(arrayLength);
+	X::KWARGS kwArgs;
+	for (int i = 0; i < arrayLength; i++)
+	{
+		args.push_back(variantArray[i]);
+	}
+	bool bOK = pXObj->Call(nullptr, nullptr, args, kwArgs, *outReturnValue);
+	return bOK;
 }
 
 extern "C" X_EXPORT long long GetObjectBinaryData(void* objPtr, unsigned char** data)
@@ -152,6 +160,34 @@ extern "C"  X_EXPORT bool RegisterPackage(const char* className,
 	//return apiset.GetPack();
 	return true;
 }
+
+extern "C"  X_EXPORT bool LoadXModule(const char* modulePath,
+	const char* xlangCode, int size, void** ppModule)
+{
+	//MessageBox(NULL, "LoadXModule", "Lyric", MB_OK);
+	X::Value objModule;
+	bool bOK = X::g_pXHost->LoadModule(modulePath, xlangCode, size, objModule);
+	X::XObj* pObjModule = objModule.GetObj();
+	pObjModule->IncRef();
+	*ppModule = pObjModule;
+	return bOK;
+}
+extern "C"  X_EXPORT bool RunXModule(void* pModule, X::Value * outReturnValue)
+{
+	X::XObj* pXObjModule = (X::XObj*)pModule;
+	X::Value retVal;
+	bool bOK =  X::g_pXHost->RunModule(X::Value(pXObjModule), retVal);
+	*outReturnValue = retVal;
+	return bOK;
+}
+extern "C"  X_EXPORT bool UnloadXModule(void* pModule)
+{
+	X::XObj* pXObjModule = (X::XObj*)pModule;
+	X::Value valModule(pXObjModule, false);//false to release Module;
+	return X::g_pXHost->UnloadModule(valModule);
+}
+
+
 extern "C"  X_EXPORT bool Load(void* createCallback,void* invokeCallback,void** ppContext)
 {
 	X::Interop::g_createOrGetClassInstanceDelegate = (X::Interop::CreateOrGetClassInstanceDelegate)createCallback;
