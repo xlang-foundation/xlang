@@ -40,7 +40,10 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 	m_bRunning = true;
 	auto Trace = rt->GetTrace();
 	Scope* pCurScope = nullptr;
-	if (m_type == ObType::Func|| m_type == ObType::Module)
+	bool useMyScope = (m_type == ObType::Func 
+		|| m_type == ObType::Class 
+		|| m_type == ObType::Module);
+	if (useMyScope)
 	{
 		pCurScope = GetMyScope();
 	}
@@ -51,8 +54,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 
 	//if being traced, go to here
 	bool bEnterBlock = false;
-	if ((m_type == ObType::Func || m_type == ObType::Module) &&
-		rt->M()->GetDbgType() == X::AST::dbg::StepIn)
+	if (useMyScope && rt->M()->GetDbgType() == X::AST::dbg::StepIn)
 	{
 		bEnterBlock = true;
 		Trace(rt, pContext,rt->GetCurrentStack(),TraceEvent::Call, pCurScope,nullptr);

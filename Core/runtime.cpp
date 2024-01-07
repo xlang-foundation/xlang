@@ -172,8 +172,12 @@ namespace X
 		}
 		m_pModule = new AST::Module();
 		m_pModule->ScopeLayout();
-		AST::StackFrame* pModuleFrame = new AST::StackFrame(m_pModule->GetMyScope());
-		pModuleFrame->SetLine(m_pModule->GetStartLine());
+		//old code: 
+		//AST::StackFrame* pModuleFrame = new AST::StackFrame(m_pModule->GetMyScope());
+		//pModuleFrame->SetLine(m_pModule->GetStartLine());
+		//1/6/2024 changed
+		//reuse m_pModule's m_stackFrame by GetStack()
+		AST::StackFrame* pModuleFrame = m_pModule->GetStack();
 		m_pModule->AddBuiltins(this);
 		PushFrame(pModuleFrame, m_pModule->GetMyScope()->GetVarNum());
 

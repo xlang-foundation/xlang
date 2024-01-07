@@ -58,10 +58,19 @@ namespace X
 			{
 				std::string strFileName = GetPyModuleFileName();
 				PyObjectCache::I().AddModule(strFileName, this);
-				auto sys = PyEng::Object::Import("sys");
-				sys["path.insert"](0, m_path);
+				bool bRemovePath = false;
+				PyEng::Object sys;
+				if (IsAbsPath(strFileName))
+				{
+					sys = PyEng::Object::Import("sys");
+					sys["path.insert"](0, m_path);
+					bRemovePath = true;
+				}
 				m_obj = g_pPyHost->Import(name.c_str());
-				sys["path.remove"](m_path);
+				if (bRemovePath)
+				{
+					sys["path.remove"](m_path);
+				}
 			}
 			else if (fromPath == preloadTag)
 			{
@@ -160,6 +169,16 @@ namespace X
 					Data::Binary* pBin = new Data::Binary(pBinData, totalSize, true);
 					valBin = X::Value(pBin);
 				}
+			}
+			else if (pyObj.IsString())
+			{
+				std::string strVal = (std::string)pyObj;
+				long long totalSize = (long long)strVal.size();
+				char* pBinData = new char[totalSize];
+				memcpy(pBinData, strVal.c_str(), totalSize);
+				//create a Bin object
+				Data::Binary* pBin = new Data::Binary(pBinData, totalSize, true);
+				valBin = X::Value(pBin);
 			}
 			return true;
 		}

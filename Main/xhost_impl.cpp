@@ -16,7 +16,6 @@
 #include "remote_object.h"
 #include "msgthread.h"
 #include "import.h"
-#include "expr_scope.h"
 #include "RemoteObjectStub.h"
 #include "tensor.h"
 #include "tensorop.h"
@@ -26,6 +25,7 @@
 #include "pyproxyobject.h"
 #include <sstream>
 #include "moduleobject.h"
+#include "parser.h"
 
 namespace X 
 {
@@ -590,13 +590,14 @@ namespace X
 	}
 	bool XHost_Impl::CreateScopeWrapper(XCustomScope* pScope)
 	{
-		Data::ExpressionScope* pExprScope = new Data::ExpressionScope(pScope);
-		pScope->SetScope((void*)pExprScope);
+		X::AST::Scope* pExprScope = new X::AST::Scope();
+		pExprScope->SetDynScope(pScope);
+		pScope->SetScope(pExprScope);
 		return true;
 	}
 	bool XHost_Impl::DeleteScopeWrapper(XCustomScope* pScope)
 	{
-		Data::ExpressionScope* pExprScope = (Data::ExpressionScope*)pScope->GetScope();
+		X::AST::Scope* pExprScope = (X::AST::Scope*)pScope->GetScope();
 		if (pExprScope)
 		{
 			delete pExprScope;
@@ -619,7 +620,7 @@ namespace X
 		{
 			return false;
 		}
-		Data::ExpressionScope* pExprScope = (Data::ExpressionScope*)pScope->GetScope();
+		X::AST::Scope* pExprScope = (X::AST::Scope*)pScope->GetScope();
 		pExpr->SetScope(pExprScope);
 		return true;
 	}
@@ -641,6 +642,32 @@ namespace X
 		}
 		AST::ExecAction action;
 		bool bOK = ExpExec(pExpr,nullptr,action,nullptr, result);
+		return bOK;
+	}
+	bool XHost_Impl::CompileExpression(const char* code, int codeSize, X::Value& expr)
+	{
+		Parser parser;
+		if (!parser.Init())
+		{
+			return false;
+		}
+		auto* pExpModule = new AST::Module();
+		bool bOK = parser.Compile(pExpModule, (char*)code, codeSize);
+		if (bOK)
+		{
+			auto& body = pExpModule->GetBody();
+			if (body.size() >= 1)
+			{
+				auto* pExpr = body[0];
+				body.erase(body.begin());
+				expr = X::Value(new Data::Expr(pExpr));
+			}
+			else
+			{
+				bOK = false;
+			}
+		}
+		UnloadModule(pExpModule);
 		return bOK;
 	}
 	bool XHost_Impl::ExtractNativeObjectFromRemoteObject(X::Value& remoteObj,

@@ -57,6 +57,10 @@ bool XClass::FromBytes(X::XLangStream& stream)
 	}
 	stream >> m_Index >> m_IndexOfThis >> m_needSetHint;
 	m_pMyScope->FromBytes(stream);
+	m_variableFrame = new StackFrame(m_pMyScope);
+	m_pMyScope->SetVarFrame(m_variableFrame);
+	m_variableFrame->FromBytes(stream);
+#if _TODO_
 	ScopeLayout();
 	XObj* pContext = stream.ScopeSpace().Context();
 	X::Data::XClassObject* pClassObj = dynamic_cast<X::Data::XClassObject*>(pContext);
@@ -71,6 +75,7 @@ bool XClass::FromBytes(X::XLangStream& stream)
 	{
 		BuildBaseInstances(stream.ScopeSpace().RT(), pClassObj);
 	}
+#endif
 	return true;
 }
 
@@ -220,8 +225,6 @@ bool XClass::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v
 
 bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
-	m_variableFrame = new StackFrame();
-	m_variableFrame->SetVarCount(m_pMyScope->GetVarNum());
 	if (m_Index == -1 || m_scope == nullptr)
 	{
 		ScopeLayout();

@@ -117,6 +117,7 @@ namespace X
 		virtual bool DeleteScopeWrapper(XCustomScope* pScope) = 0;
 		virtual bool SetExpressionScope(XCustomScope* pScope, X::Value& expr) = 0;
 		virtual bool RunExpression(X::Value& expr, X::Value& result) = 0;
+		virtual bool CompileExpression(const char* code, int codeSize, X::Value& expr) = 0;
 		virtual bool ExtractNativeObjectFromRemoteObject(X::Value& remoteObj, X::Value& nativeObj) = 0;
 		virtual void RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler,void* pContext) = 0;
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() = 0;

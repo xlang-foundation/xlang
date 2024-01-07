@@ -7,7 +7,7 @@
       "project": "CMakeLists.txt",
       "projectTarget": "xlang.exe (bin\\xlang.exe)",
       "args": [ "-event_loop", "-dbg", "-enable_python" ],
-      "args_": [ "C:\\ToGithub\\CantorAI\\xlang\\test\\ExpExec\\simple101.x" ],
+      "args_": [ "C:\\ToGithub\\CantorAI\\xlang\\test\\misc\\simple.x" ],
       "name": "xlang.exe (bin\\xlang.exe)"
     }
   ]

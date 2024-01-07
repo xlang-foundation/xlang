@@ -22,6 +22,7 @@ public:
 		Func()
 	{
 		m_type = ObType::Class;
+		m_pMyScope->SetType(ScopeType::Class);
 		m_variableFrame = new StackFrame(m_pMyScope);
 		m_pMyScope->SetVarFrame(m_variableFrame);
 	}
@@ -94,6 +95,7 @@ public:
 		}
 		stream << m_Index << m_IndexOfThis << m_needSetHint;
 		m_pMyScope->ToBytes(rt, pContext, stream);
+		m_variableFrame->ToBytes(stream);
 
 		return true;
 	}

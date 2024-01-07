@@ -1,7 +1,6 @@
 #pragma once
 #include "object.h"
 #include "scope.h"
-#include "dyn_scope.h"
 #include "stackframe.h"
 #include "xproxy.h"
 
@@ -9,7 +8,7 @@ namespace X
 {
 	class RemoteObject :
 		public virtual XRemoteObject,
-		public virtual AST::DynamicScope,
+		public virtual X::XCustomScope,
 		public virtual Data::Object,
 		public virtual AST::Expression
 	{
@@ -230,9 +229,9 @@ namespace X
 			m_stackFrame->Set(idx, v);
 			return true;
 		}
-		FORCE_INLINE virtual bool Get(int idx, X::Value& v, X::LValue* lValue = nullptr) override final
+		FORCE_INLINE virtual bool Get(int idx, X::Value& v, void* lValue = nullptr) override final
 		{
-			m_stackFrame->Get(idx, v, lValue);
+			m_stackFrame->Get(idx, v, (X::LValue*)lValue);
 			return true;
 		}
 	};

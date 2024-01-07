@@ -420,8 +420,8 @@ namespace X
 		}
 		void SetScope(void* p) { m_embedScope = p; }
 		void* GetScope() { return m_embedScope; }
-		virtual int Query(const char* name) = 0;
-		virtual bool Get(int idx, X::Value& v) = 0;
+		virtual int AddOrGet(const char* name, bool bGetOnly) = 0;
+		virtual bool Get(int idx, X::Value& v, void* lValue = nullptr) = 0;
 		virtual bool Set(int idx, X::Value& v) = 0;
 	};
 	class XPackage:

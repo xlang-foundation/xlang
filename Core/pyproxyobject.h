@@ -62,7 +62,7 @@ namespace X
 			public virtual Object,
 			public virtual XPyObject,
 			public virtual AST::Expression,
-			public virtual AST::DynamicScope
+			public virtual X::XCustomScope
 		{
 			PyProxyObject* m_PyModule = nullptr;
 			PyProxyType m_proxyType = PyProxyType::None;
@@ -84,7 +84,7 @@ namespace X
 
 				m_pMyScopeProxy = new AST::Scope();
 				m_pMyScopeProxy->SetType(AST::ScopeType::Custom);
-				m_pMyScopeProxy->SetDynScope(static_cast<AST::DynamicScope*>(this));
+				m_pMyScopeProxy->SetDynScope(static_cast<X::XCustomScope*>(this));
 
 
 				m_variableFrame = new AST::StackFrame();
@@ -326,7 +326,8 @@ namespace X
 			}
 			std::string GetPyModuleFileName()
 			{
-				return m_path + "/" + m_name + ".py";
+				if (m_path.empty()) return m_name + ".py";
+				else return m_path + "/" + m_name + ".py";
 			}
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*> & callables) override; 
@@ -338,9 +339,9 @@ namespace X
 				m_variableFrame->Set(idx, v);
 				return true;
 			}
-			virtual bool Get(int idx, X::Value& v, X::LValue* lValue = nullptr) override
+			virtual bool Get(int idx, X::Value& v, void* lValue = nullptr) override
 			{
-				m_variableFrame->Get(idx, v, lValue);
+				m_variableFrame->Get(idx, v, (X::LValue*)lValue);
 				return true;
 			}
 

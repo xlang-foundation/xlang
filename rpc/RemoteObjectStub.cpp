@@ -82,7 +82,7 @@ namespace X
 	{
 		if (m_rt == nullptr)
 		{
-			m_rt = X::g_pXHost->CreateRuntime();
+			m_rt = X::g_pXHost->CreateRuntime(true);
 		}
 	}
 	X::XObj* RemoteObjectStub::QueryObjWithName(std::string& name)
