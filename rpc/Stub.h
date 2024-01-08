@@ -5,6 +5,7 @@
 #include "service_def.h"
 #include <vector>
 #include "StubMgr.h"
+#include "xproxy.h"
 
 namespace X
 {
@@ -58,6 +59,9 @@ namespace X
         {
             return m_clientPid;
         }
+        //we don't support return value for this
+        //only use for event handler from client side
+        bool CallClient(ROBJ_ID clientObjId, ARGS& params, KWARGS& kwParams);
     protected:
         void run();
         void run2();

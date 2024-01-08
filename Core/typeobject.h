@@ -123,6 +123,9 @@ namespace X
 					case X::ObjType::RemoteObject:
 						strType = "<class 'remoteobject'>";
 						break;
+					case X::ObjType::RemoteClientObject:
+						strType = "<class 'remoteclientobject'>";
+						break;
 					case X::ObjType::PyProxyObject:
 						strType = "<class 'pythonobject'>";
 						break;

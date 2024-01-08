@@ -163,6 +163,33 @@ namespace X
 
 	}
 
+	bool XLangStub::CallClient(ROBJ_ID clientObjId, ARGS& params, KWARGS& kwParams)
+	{
+		SwapBufferStream stream;
+		m_locker_buffer2.Lock();
+		//then we can write to another side
+		stream.ReInit();
+		stream.SetSMSwapBuffer(m_pSwapBuffer2);
+		m_pSwapBuffer2->BeginWrite();
+		stream << clientObjId;
+		int argNum = (int)params.size();
+		stream << argNum;
+		for (auto& param : params)
+		{
+			stream << param;
+		}
+		int kwArgNum = (int)kwParams.size();
+		stream << kwArgNum;
+		for (auto& kw : kwParams)
+		{
+			stream << kw.key;
+			kw.val.ToBytes(&stream);
+		}
+		//No Context, set nullptr
+		FinishCall(nullptr, stream, true);
+		return true;
+	}
+
 	bool XLangStub::ShakeHandsCall(void* pCallContext, SwapBufferStream& stream)
 	{
 		unsigned long clientPid = 0;
