@@ -11,7 +11,7 @@
 #include "XLangStream.h"
 #include "Locker.h"
 #include "stackframe.h"
-#include "dyn_scope.h"
+
 
 #define SCOPE_FAST_CALL_AddOrGet0_NoRet(myScope,name,bGetOnly) \
 	SCOPE_FAST_CALL_AddOrGet_NoRet(myScope,name,bGetOnly,nullptr)
@@ -77,6 +77,7 @@ enum class ScopeType
 	Package,
 	PyObject,
 	DeferredObject,
+	RemoteObject,
 	Namespace,
 	Custom,//impl. XCustomScope in the Object
 };
@@ -88,7 +89,7 @@ class Scope
 	Locker m_lock;
 	ScopeType m_type = ScopeType::Module;
 	Expression* m_pExp = nullptr;//expression owns this scope for example moudle or func
-	DynamicScope* m_pDynScope = nullptr; //to hold dynamic variables
+	XCustomScope* m_pDynScope = nullptr; //to hold dynamic variables
 	//used in PacakgeProxy which as Package's instance to share 
 	//same namespace scope with Package, but different m_varFrame
 	//we add this method to make scope's variable access is very fast
@@ -105,6 +106,16 @@ public:
 	Scope()
 	{
 	}
+	void CopyFrom(Scope* pScope)
+	{
+		m_type = pScope->m_type;
+		m_pExp = pScope->m_pExp;
+		m_pDynScope = pScope->m_pDynScope;
+		m_pNamespaceScope = pScope->m_pNamespaceScope;
+		m_NoAddVar = pScope->m_NoAddVar;
+		m_Vars = pScope->m_Vars;
+		m_ExternVarMap = pScope->m_ExternVarMap;
+	}
 	void SetNamespaceScope(Scope* pScope)
 	{
 		m_pNamespaceScope = pScope;
@@ -117,11 +128,11 @@ public:
 	{
 		m_varFrame = pFrame;
 	}
-	FORCE_INLINE void SetDynScope(DynamicScope* pScope)
+	FORCE_INLINE void SetDynScope(XCustomScope* pScope)
 	{
 		m_pDynScope = pScope;
 	}
-	FORCE_INLINE DynamicScope* GetDynScope()
+	FORCE_INLINE XCustomScope* GetDynScope()
 	{
 		return m_pDynScope;
 	}
@@ -181,6 +192,10 @@ public:
 
 	FORCE_INLINE int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{
+		if (m_pDynScope)
+		{
+			return m_pDynScope->AddOrGet(name.c_str(), bGetOnly);
+		}
 		if (m_NoAddVar)
 		{
 			bGetOnly = true;
@@ -234,7 +249,7 @@ public:
 		//TODO: check performance here
 		if (m_pDynScope)
 		{
-			m_pDynScope->Get(idx, v, lValue);
+			m_pDynScope->Get(idx, v, (void*)lValue);
 		}
 		else if (m_varFrame)
 		{

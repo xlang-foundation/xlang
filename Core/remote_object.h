@@ -8,7 +8,7 @@ namespace X
 {
 	class RemoteObject :
 		public virtual XRemoteObject,
-		public virtual AST::Scope,
+		public virtual X::XCustomScope,
 		public virtual Data::Object,
 		public virtual AST::Expression
 	{
@@ -19,16 +19,52 @@ namespace X
 		std::string m_objName;
 		ROBJ_MEMBER_ID m_memmberId = -1;
 		bool m_KeepRawParams = false;
+
+		//for remote object's members cache
+		std::unordered_map <std::string, int> m_NameToIndex;
+
+		FORCE_INLINE int NameToIndex(std::string& name, bool bGetOnly)
+		{
+			auto it = m_NameToIndex.find(name);
+			if (it != m_NameToIndex.end())
+			{
+				return it->second;
+			}
+			else if (!bGetOnly)
+			{
+				int idx = (int)m_NameToIndex.size();
+				m_NameToIndex.emplace(std::make_pair(name, idx));
+				if (m_stackFrame)
+				{
+					m_stackFrame->SetVarCount(m_NameToIndex.size());
+				}
+				return idx;
+			}
+			else
+			{
+				return (int)AST::ScopeVarIndex::INVALID;
+			}
+		}
+		FORCE_INLINE int GetNameCacheNum()
+		{
+			return (int)m_NameToIndex.size();
+		}
 	public:
 		//if XProxy is null, means this process just keep this RemoteObject
 		//will not convert to native object because this RemoteObject is not
 		//inside this Process
 		RemoteObject(XProxy* p):
-			ObjRef(),XObj(),Scope(), Object()
+			ObjRef(),XObj(),Object()
 		{
 			m_proxy = p;
 			m_t = ObjType::RemoteObject;
 			m_stackFrame = new AST::StackFrame();
+
+			m_pMyScope = new AST::Scope();
+			m_pMyScope->SetType(AST::ScopeType::RemoteObject);
+			m_pMyScope->SetExp(this);
+			m_pMyScope->SetDynScope(this);
+
 		}
 		~RemoteObject()
 		{
@@ -62,7 +98,7 @@ namespace X
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(dynamic_cast<Scope*>(this));
+			bases.push_back(m_pMyScope);
 		}
 		virtual void SetObjID(unsigned long pid, void* objid)
 		{
@@ -75,7 +111,7 @@ namespace X
 		}
 		virtual AST::Scope* GetScope()
 		{
-			return this;
+			return m_pMyScope;
 		}
 		virtual void ScopeLayout() override
 		{
@@ -163,20 +199,18 @@ namespace X
 				m_remote_Obj_id, m_memmberId,
 				params, kwParams, trailer,retValue);
 		}
-#if __TODO_SCOPE__
-		virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr)
+		FORCE_INLINE virtual int AddOrGet(const char* name, bool bGetOnly) override final
 		{
-			int idx = Scope::AddOrGet(name, bGetOnly);
+			std::string strName(name);
+			int idx = NameToIndex(strName, bGetOnly);
 			if (idx == (int)X::AST::ScopeVarIndex::INVALID)
 			{
 				bool KeepRawParams = false;
-				auto memId = m_proxy->QueryMember(m_remote_Obj_id, name, KeepRawParams);
+				auto memId = m_proxy->QueryMember(m_remote_Obj_id, strName, KeepRawParams);
 				if (memId != -1)
 				{
 					auto objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId);
-					idx = Scope::AddOrGet(name, false);
-					m_stackFrame->SetVarCount(GetVarNum());
-
+					idx = NameToIndex(strName, false);
 					auto* r_obj = new RemoteObject(m_proxy);
 					r_obj->m_remote_Parent_Obj_id = m_remote_Obj_id;
 					r_obj->m_remote_Obj_id = objId;
@@ -190,18 +224,15 @@ namespace X
 			}
 			return idx;
 		}
-		FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
-			int idx, X::Value& v) override
+		FORCE_INLINE virtual bool Set(int idx, X::Value& v) override final
 		{
 			m_stackFrame->Set(idx, v);
 			return true;
 		}
-		FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
-			int idx, X::Value& v, LValue* lValue = nullptr) override
+		FORCE_INLINE virtual bool Get(int idx, X::Value& v, void* lValue = nullptr) override final
 		{
-			m_stackFrame->Get(idx, v, lValue);
+			m_stackFrame->Get(idx, v, (X::LValue*)lValue);
 			return true;
 		}
-#endif
 	};
 }

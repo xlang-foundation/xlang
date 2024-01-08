@@ -143,8 +143,10 @@ public:
 	FORCE_INLINE void Set(int idx, X::Value& v)
 	{
 		if (m_bShared) m_lock.Lock();
-		if (idx < 0 && idx >= m_varCnt)
+		if (idx < 0 || idx >= m_varCnt)
 		{
+			//TODO: just hack here, need to find why
+			SetVarCount(idx+1);
 			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		m_Values[idx] = v;

@@ -133,6 +133,7 @@ namespace X
 				if (r0->m_type == ObType::Var)
 				{
 					auto* ro_var = dynamic_cast<Var*>(r0);
+					//TODO: Scope Issue
 					ro_var->SetScope(dynamic_cast<Scope*>(this));
 					ro_var->SetIsLeftValue(true);
 					X::Value defVal;

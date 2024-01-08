@@ -144,7 +144,7 @@ namespace X
 			else if (pObj->GetType() == X::ObjType::XClassObject)
 			{
 				auto* pClassObj = dynamic_cast<XClassObject*>(pObj);
-				AST::Scope* pClassScope = dynamic_cast<AST::Scope*>(pClassObj->GetClassObj());
+				AST::Scope* pClassScope = pClassObj->GetClassObj()->GetMyScope();
 				auto vars = pClassScope->GetVarMap();
 				for (auto& it : vars)
 				{

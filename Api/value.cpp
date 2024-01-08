@@ -9,7 +9,7 @@ namespace X
 		ARITH_OP_IMPL(/= )
 
 
-		Value Value::GetObjectValue(Port::vector<X::Value>& IdxAry)
+	Value Value::GetObjectValue(Port::vector<X::Value>& IdxAry)
 	{
 		auto* rt = X::g_pXHost->GetCurrentRuntime();
 		XObj* pObj = GetObj();

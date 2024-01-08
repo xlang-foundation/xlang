@@ -108,6 +108,15 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	}
 	return bOK;
 }
+
+bool endsWithDotX(const std::string& str) 
+{
+	return str.length() >= 2 &&
+		str[str.length() - 2] == '.' &&
+		std::tolower(str[str.length() - 1]) == 'x';
+}
+
+
 bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	std::string& curModulePath,
 	std::string& loadingModuleName,
@@ -118,36 +127,47 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	std::string prefixPath;
 	if (!m_path.empty())
 	{
-		prefixPath = m_path;
-		ReplaceAll(prefixPath, ".", Path_Sep_S);
-	}
-
-	std::vector<std::string> searchPaths;
-	searchPaths.push_back(curModulePath);
-	searchPaths.push_back(g_pXload->GetConfig().xlangEnginePath);
-
-	auto search = [](std::string& loadingModuleName,
-		std::vector<std::string>& searchPaths,
-		std::string& loadXModuleName, std::string prefixPath)
-	{
-		for (auto& pa : searchPaths)
+		//we check m_path if it is a full path of .x file
+		bHaveX = endsWithDotX(m_path);
+		if (bHaveX)
 		{
-			std::vector<std::string> candiateFiles;
-			bool bRet = file_search(pa + Path_Sep_S + prefixPath,
-				loadingModuleName + ".x", candiateFiles);
-			if (bRet && candiateFiles.size() > 0)
-			{
-				loadXModuleName = candiateFiles[0];
-				return true;
-			}
+			loadXModuleFileName = m_path;
 		}
-		return false;
-	};
-	bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
+		else
+		{
+			prefixPath = m_path;
+			ReplaceAll(prefixPath, ".", Path_Sep_S);
+		}
+	}
 	if (!bHaveX)
 	{
-		rt->M()->GetSearchPaths(searchPaths);
+		std::vector<std::string> searchPaths;
+		searchPaths.push_back(curModulePath);
+		searchPaths.push_back(g_pXload->GetConfig().xlangEnginePath);
+
+		auto search = [](std::string& loadingModuleName,
+			std::vector<std::string>& searchPaths,
+			std::string& loadXModuleName, std::string prefixPath)
+			{
+				for (auto& pa : searchPaths)
+				{
+					std::vector<std::string> candiateFiles;
+					bool bRet = file_search(pa + Path_Sep_S + prefixPath,
+						loadingModuleName + ".x", candiateFiles);
+					if (bRet && candiateFiles.size() > 0)
+					{
+						loadXModuleName = candiateFiles[0];
+						return true;
+					}
+				}
+				return false;
+			};
 		bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
+		if (!bHaveX)
+		{
+			rt->M()->GetSearchPaths(searchPaths);
+			bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
+		}
 	}
 	bool bOK = false;
 	if (bHaveX)

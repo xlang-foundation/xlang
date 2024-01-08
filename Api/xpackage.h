@@ -50,7 +50,7 @@ namespace X
 			});
 		if (instance == nullptr)
 		{
-			X::g_pXHost->RegisterPackage(pack_name,[]()
+			X::g_pXHost->RegisterPackage(pack_name,[](X::Value context)
 				{
 					impl_pack_class* pPackImpl = new impl_pack_class();
 					return impl_pack_class::APISET().GetProxy(pPackImpl);
@@ -231,6 +231,7 @@ namespace X
 			return m_Name.c_str();
 		}
 		FORCE_INLINE auto& Members() { return m_members; }
+		FORCE_INLINE auto& GetMember(int index) { return m_members[index]; }
 		virtual XPackage* GetPack() = 0;
 		virtual XPackage* GetProxy(void* pRealObj) = 0;
 	};
@@ -525,6 +526,20 @@ namespace X
 						return true;
 					}),true,std::string(doc) });
 		}
+		//return index in m_members
+		int AllocSlot()
+		{
+			m_members.push_back(MemberInfo{});
+			return (int)m_members.size() - 1;
+		}
+		void SetDirectFunc(int idx,const char* func_name, X::U_FUNC func, const char* doc = "")
+		{
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
+			m_members[idx] = MemberInfo{
+				PackageMemberType::Func,func_name,X::Value(),
+				func,dummy,dummyEx,false,std::string(doc) };
+		}
 		template<typename F>
 		void AddVarFunc(const char* func_name, F f, const char* doc = "")
 		{
@@ -757,7 +772,7 @@ namespace X
 			}
 
 			auto* pPackage = X::g_pXHost->CreatePackage(thisObj);
-			pPackage->SetAPISet((void*)&T::APISET());
+			pPackage->SetAPISet((void*)&thisObj->APISET());
 			//if object created by outside,thisObj will not be NULL
 			//then don't need to be deleted by XPackage
 			if (thisObj == nullptr)

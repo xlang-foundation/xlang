@@ -13,7 +13,7 @@ namespace X
 		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) override;
 		virtual XRuntime* GetCurrentRuntime() override;
 		virtual XStr* CreateStr(const char* data, int size) override;
-		virtual bool RegisterPackage(const char* name,PackageCreator creator) override;
+		virtual bool RegisterPackage(const char* name,PackageCreator creator,void* pContext) override;
 		virtual bool RegisterPackage(const char* name,Value& objPackage) override;
 		virtual Value QueryMember(XRuntime* rt, XObj* pObj, const char* name) override;
 		virtual bool QueryPackage(XRuntime* rt, const char* name, Value& objPackage) override;
@@ -47,6 +47,9 @@ namespace X
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) override;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) override;
 		virtual bool RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal) override;
+		virtual bool LoadModule(const char* moduleName, const char* code, int codeSize, X::Value& objModule) override;
+		virtual bool UnloadModule(X::Value objModule) override;
+		virtual bool RunModule(X::Value objModule, X::Value& retVal) override;
 		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
 		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal) override;
 		virtual const char* GetInteractiveCode() override;
@@ -62,6 +65,7 @@ namespace X
 		virtual bool DeleteScopeWrapper(XCustomScope* pScope) override;
 		virtual bool SetExpressionScope(XCustomScope* pScope, X::Value& expr) override;
 		virtual bool RunExpression(X::Value& expr, X::Value& result) override;
+		virtual bool CompileExpression(const char* code,int codeSize, X::Value& expr) override;
 		virtual bool ExtractNativeObjectFromRemoteObject(X::Value& remoteObj, X::Value& nativeObj) override;
 		virtual void RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler, void* pContext) override;
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() override;

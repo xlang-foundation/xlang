@@ -16,7 +16,6 @@
 #include "remote_object.h"
 #include "msgthread.h"
 #include "import.h"
-#include "expr_scope.h"
 #include "RemoteObjectStub.h"
 #include "tensor.h"
 #include "tensorop.h"
@@ -25,6 +24,8 @@
 #include "PyEngObject.h"
 #include "pyproxyobject.h"
 #include <sstream>
+#include "moduleobject.h"
+#include "parser.h"
 
 namespace X 
 {
@@ -73,9 +74,9 @@ namespace X
 		pStrObj->IncRef();
 		return pStrObj;
 	}
-	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator)
+	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator, void* pContext)
 	{
-		return X::Manager::I().Register(name,creator);
+		return X::Manager::I().Register(name,creator, pContext);
 	}
 	bool XHost_Impl::RegisterPackage(const char* name,Value& objPackage)
 	{
@@ -446,6 +447,39 @@ namespace X
 		return X::Hosting::I().Run(moduleName, code,
 			codeSize, passInParams,retVal);
 	}
+	bool XHost_Impl::LoadModule(const char* moduleName, 
+		const char* code, int codeSize, X::Value& objModule)
+	{
+		unsigned long long moduleKey = 0;
+		AST::Module* pModule = X::Hosting::I().Load(moduleName, code, codeSize, moduleKey);
+		if (pModule == nullptr)
+		{
+			return false;
+		}
+		X::AST::ModuleObject* pModuleObj = new X::AST::ModuleObject(pModule);
+		objModule = Value(pModuleObj);
+
+		return true;
+	}
+	bool XHost_Impl::UnloadModule(X::Value objModule)
+	{
+		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
+		{
+			auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(objModule.GetObj());
+			X::Hosting::I().Unload(pModuleObj->M());
+		}
+		return true;
+	}
+	bool XHost_Impl::RunModule(X::Value objModule, X::Value& retVal)
+	{
+		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
+		{
+			auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(objModule.GetObj());
+			std::vector<X::Value> passInParams;
+			return X::Hosting::I().Run(pModuleObj->M(), retVal, passInParams);
+		}
+		return false;
+	}
 	bool XHost_Impl::RunModuleInThread(const char* moduleName, 
 		const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs)
 	{
@@ -556,13 +590,14 @@ namespace X
 	}
 	bool XHost_Impl::CreateScopeWrapper(XCustomScope* pScope)
 	{
-		Data::ExpressionScope* pExprScope = new Data::ExpressionScope(pScope);
-		pScope->SetScope((void*)pExprScope);
+		X::AST::Scope* pExprScope = new X::AST::Scope();
+		pExprScope->SetDynScope(pScope);
+		pScope->SetScope(pExprScope);
 		return true;
 	}
 	bool XHost_Impl::DeleteScopeWrapper(XCustomScope* pScope)
 	{
-		Data::ExpressionScope* pExprScope = (Data::ExpressionScope*)pScope->GetScope();
+		X::AST::Scope* pExprScope = (X::AST::Scope*)pScope->GetScope();
 		if (pExprScope)
 		{
 			delete pExprScope;
@@ -585,7 +620,7 @@ namespace X
 		{
 			return false;
 		}
-		Data::ExpressionScope* pExprScope = (Data::ExpressionScope*)pScope->GetScope();
+		X::AST::Scope* pExprScope = (X::AST::Scope*)pScope->GetScope();
 		pExpr->SetScope(pExprScope);
 		return true;
 	}
@@ -607,6 +642,32 @@ namespace X
 		}
 		AST::ExecAction action;
 		bool bOK = ExpExec(pExpr,nullptr,action,nullptr, result);
+		return bOK;
+	}
+	bool XHost_Impl::CompileExpression(const char* code, int codeSize, X::Value& expr)
+	{
+		Parser parser;
+		if (!parser.Init())
+		{
+			return false;
+		}
+		auto* pExpModule = new AST::Module();
+		bool bOK = parser.Compile(pExpModule, (char*)code, codeSize);
+		if (bOK)
+		{
+			auto& body = pExpModule->GetBody();
+			if (body.size() >= 1)
+			{
+				auto* pExpr = body[0];
+				body.erase(body.begin());
+				expr = X::Value(new Data::Expr(pExpr));
+			}
+			else
+			{
+				bOK = false;
+			}
+		}
+		UnloadModule(pExpModule);
 		return bOK;
 	}
 	bool XHost_Impl::ExtractNativeObjectFromRemoteObject(X::Value& remoteObj,

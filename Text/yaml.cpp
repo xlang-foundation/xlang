@@ -39,7 +39,7 @@ namespace X
 	X::Value  YamlWrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,
 		std::string fileName)
 	{
-		if (!IsAbsPath(fileName))
+			if (!IsAbsPath(fileName))
 		{
 			X::XlangRuntime* pRt = (X::XlangRuntime*)rt;
 			std::string curPath = pRt->M()->GetModulePath();

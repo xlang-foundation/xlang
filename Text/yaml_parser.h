@@ -203,6 +203,11 @@ namespace X
 						return pNode;
 					}
 				}
+				//check value node
+				if (m_valueNode)
+				{
+					return m_valueNode->FindNode(keyName);
+				}
 				return nullptr;
 			}
 		};

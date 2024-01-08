@@ -22,6 +22,7 @@ public:
 		Func()
 	{
 		m_type = ObType::Class;
+		m_pMyScope->SetType(ScopeType::Class);
 		m_variableFrame = new StackFrame(m_pMyScope);
 		m_pMyScope->SetVarFrame(m_variableFrame);
 	}
@@ -71,7 +72,7 @@ public:
 		//change current scope of stream
 		Scope* pOldClassScope = stream.ScopeSpace().GetCurrentClassScope();
 		Scope* pOldScope = stream.ScopeSpace().GetCurrentScope();
-		auto* pCurScope = dynamic_cast<Scope*>(this);
+		auto* pCurScope = GetMyScope();
 		stream.ScopeSpace().SetCurrentScope(pCurScope);
 		stream.ScopeSpace().SetCurrentClassScope(pCurScope);
 		Block::ToBytes(rt, pContext, stream);
@@ -94,6 +95,7 @@ public:
 		}
 		stream << m_Index << m_IndexOfThis << m_needSetHint;
 		m_pMyScope->ToBytes(rt, pContext, stream);
+		m_variableFrame->ToBytes(stream);
 
 		return true;
 	}

@@ -4,7 +4,6 @@
 #include "stackframe.h"
 #include "xproxy.h"
 #include "import.h"
-#include "dyn_scope.h"
 
 namespace X
 {
@@ -15,7 +14,7 @@ namespace X
 		class DeferredObject :
 			public virtual XDeferredObject,
 			public virtual Data::Object,
-			public virtual AST::DynamicScope
+			public virtual X::XCustomScope
 		{
 			AST::Scope* m_pMyScopeProxy = nullptr;
 			AST::Scope* m_pMyScopeHolder = nullptr;//used to store members
@@ -97,7 +96,7 @@ namespace X
 				m_stackFrame = new AST::StackFrame();
 				m_pMyScopeProxy = new AST::Scope();
 				m_pMyScopeProxy->SetType(AST::ScopeType::Custom);
-				m_pMyScopeProxy->SetDynScope(static_cast<AST::DynamicScope*>(this));
+				m_pMyScopeProxy->SetDynScope(static_cast<X::XCustomScope*>(this));
 
 				m_pMyScopeHolder = new AST::Scope();
 				m_pMyScopeHolder->SetType(AST::ScopeType::DeferredObject);	
@@ -149,9 +148,9 @@ namespace X
 				return true;
 			}
 
-			virtual bool Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
+			virtual bool Get(int idx, X::Value& v, void* lValue = nullptr)
 			{
-				m_stackFrame->Get(idx, v,lValue);
+				m_stackFrame->Get(idx, v,(X::LValue*)lValue);
 				return true;
 			}
 		};

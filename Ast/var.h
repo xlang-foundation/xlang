@@ -108,8 +108,9 @@ public:
 				return false;
 			}
 		}
-		m_scope->Get(rt,pContext, Index, v, lValue);
-		if(m_parent && m_parent->m_type == ObType::Dot 
+		m_scope->Get(rt, pContext, Index, v, lValue);
+
+		if(m_parent && m_parent->m_type == ObType::Dot
 			&& (!m_parent->IsLeftValue()) && v.IsObject()
 			&& v.GetObj()->GetType() == ObjType::Prop)
 		{//for right value, if it is prop, need to calc out

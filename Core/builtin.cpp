@@ -52,16 +52,11 @@ namespace X
 	extern XLoad* g_pXload;
 }
 
-Locker _printLock;
-bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
-	X::ARGS& params,
-	X::KWARGS& kwParams,
-	X::Value& retValue)
+FORCE_INLINE static std::string CombineParamsToString(X::ARGS& params)
 {
 	std::string allOut;
-	//_printLock.Lock();
 	int p_cnt = (int)params.size();
-	for (int i=0;i<p_cnt;i++)
+	for (int i = 0; i < p_cnt; i++)
 	{
 		//todo: for linux, may need to change
 		auto& v = params[i];
@@ -71,9 +66,19 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		}
 		else
 		{
-			allOut += " "+v.ToString();//add space between two items
+			allOut += " " + v.ToString();//add space between two items
 		}
 	}
+	return allOut;
+}
+Locker _printLock;
+bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	std::string allOut = CombineParamsToString(params);
+	//_printLock.Lock();
 	//add new line per print
 	allOut += '\n';
 
@@ -124,6 +129,18 @@ bool U_Input(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	std::string in;
 	std::cin >> in;
 	retValue = X::Value(in);
+	return true;
+}
+bool U_Alert(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	std::string allOut = CombineParamsToString(params);
+#if (WIN32)
+	MessageBox(NULL, allOut.c_str(),"XLang", MB_OK);
+#else
+#endif
 	return true;
 }
 bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
@@ -1427,6 +1444,7 @@ bool Builtin::RegisterInternals()
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
+	Register("alert", (X::U_FUNC)U_Alert, params, "alert(...)");
 	Register("load", (X::U_FUNC)U_Load, params,"moodule = load(filename)");
 	Register("loads", (X::U_FUNC)U_LoadS, params, "moodule = loads(code)");
 	Register("run", (X::U_FUNC)U_Run, params,"run(module:loaded by call load func)");

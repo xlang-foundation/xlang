@@ -12,12 +12,12 @@ namespace X
 		{
 			List* pOutList = new List();
 			pOutList->IncRef();
-			AST::Scope* pMyScope = m_obj->GetMyScope();
+			AST::Scope* pMyScope = m_pMyScope;
 			auto vars = pMyScope->GetVarMap();
 			for (auto& it : vars)
 			{
 				X::Value val;
-				rt->Get(pMyScope, pContext,it.second, val);
+				m_variableFrame->Get(it.second, val);
 				Dict* dict = new Dict();
 				Data::Str* pStrName = new Data::Str(it.first);
 				dict->Set("Name", X::Value(pStrName));
