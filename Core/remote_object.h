@@ -144,6 +144,8 @@ namespace X
 			ARGS params(1);
 			params.push_back(val);
 			KWARGS kwParams;
+			X::Value varSetValue(true);
+			kwParams.Add("SetValue", varSetValue);
 			X::Value dummyTrailer;
 			return m_proxy->Call(rt, pContext,
 				m_remote_Parent_Obj_id,

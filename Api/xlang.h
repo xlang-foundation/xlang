@@ -38,6 +38,7 @@ namespace X
 		Table,
 		DeferredObject,
 		RemoteObject,
+		RemoteClientObject,
 		PyProxyObject
 	};
 

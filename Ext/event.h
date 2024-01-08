@@ -46,10 +46,10 @@ namespace X
 		std::vector<XWait*> m_waits;
 		bool m_fired = false;
 	public:
-		FORCE_INLINE void Fire(int evtIndex,X::ARGS& params, X::KWARGS& kwargs)
+		FORCE_INLINE void Fire(int evtIndex, X::ARGS& params, X::KWARGS& kwargs)
 		{
 			SetFire();
-			m_APIs.Fire(evtIndex,params,kwargs);
+			m_APIs.Fire(evtIndex, params, kwargs);
 		}
 		FORCE_INLINE virtual bool wait(int timeout) override
 		{
@@ -75,7 +75,7 @@ namespace X
 				if (handleInfo.FuncHandler)
 				{
 					auto str_abi = handleInfo.FuncHandler->ToString();
-					retVal+= str_abi;
+					retVal += str_abi;
 					g_pXHost->ReleaseString(str_abi);
 					retVal += "\r\n";
 				}
@@ -134,11 +134,24 @@ namespace X
 			if (r.IsObject())
 			{
 				auto* pObjHandler = dynamic_cast<X::Data::Object*>(r.GetObj());
-				if (pObjHandler && pObjHandler->GetType() == ObjType::Function)
+				if (pObjHandler)
 				{
-					auto pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
-					pFuncHandler->IncRef();
-					Add(pFuncHandler);
+					if (pObjHandler->GetType() == ObjType::Function)
+					{
+						auto pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
+						pFuncHandler->IncRef();
+						Add(pFuncHandler);
+					}
+					else if (pObjHandler->GetType() == ObjType::RemoteClientObject)
+					{
+						pObjHandler->IncRef();
+						EventHandler evtProxyHandler = [pObjHandler](XRuntime* rt, XObj* pContext,
+							ARGS& params, KWARGS& kwParams, Value& retValue)
+							{
+								pObjHandler->Call(rt, pContext, params, kwParams, retValue);
+							};
+						Add(evtProxyHandler);
+					}
 				}
 			}
 			return *this;

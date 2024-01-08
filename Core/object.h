@@ -197,6 +197,8 @@ namespace Data {
 				return "Table";
 			case X::ObjType::RemoteObject:
 				return "RemoteObject";
+			case X::ObjType::RemoteClientObject:
+				return "RemoteClientObject";
 			case X::ObjType::PyProxyObject:
 				return "PyObject";
 			case X::ObjType::DeferredObject:
