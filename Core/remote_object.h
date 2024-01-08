@@ -202,7 +202,8 @@ namespace X
 		FORCE_INLINE virtual int AddOrGet(const char* name, bool bGetOnly) override final
 		{
 			std::string strName(name);
-			int idx = NameToIndex(strName, bGetOnly);
+			int idx = NameToIndex(strName, true);//1/8/2024 change to true from bGetOnly
+			//we need to check if this is a cache there, if not, go to remote to get it
 			if (idx == (int)X::AST::ScopeVarIndex::INVALID)
 			{
 				bool KeepRawParams = false;
