@@ -252,6 +252,7 @@ public:
 		AssignObject(p, AddRef);
 	}
 	Value(std::string& s);
+	Value(std::string&& s);
 
 	int obj_cmp(Value* r) const;
 	FORCE_INLINE void SetObj(XObj* p)
@@ -373,6 +374,7 @@ public:
 		x.l =l;
 	}
 	void SetString(std::string& s);
+	void SetString(std::string&& s);
 	FORCE_INLINE bool GetBool()
 	{
 		return (x.l!=0);
