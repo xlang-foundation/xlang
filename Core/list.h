@@ -127,7 +127,6 @@ public:
 	}
 	virtual List& operator +=(X::Value& r) override
 	{
-		AutoLock autoLock(m_lock);
 		if (r.IsObject())
 		{
 			Object* pObj = dynamic_cast<Object*>(r.GetObj());
