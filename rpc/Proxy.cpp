@@ -225,8 +225,8 @@ namespace X
 		//Pack Parameters
 		for (auto& param : params)
 		{
-			if (param.IsObject())
-			{
+			if (param.IsObject() && param.GetObj()->GetType() == X::ObjType::Function)
+			{//for function as an event handler, we need to convert it to remote client object
 				//conver to remote client object
 				auto&& rcParam = ConvertXObjToRemoteClientObject(param.GetObj());
 				rcParam.ToBytes(&stream);
@@ -240,7 +240,7 @@ namespace X
 		for (auto& kw : kwParams)
 		{
 			stream << kw.key;
-			if (kw.val.IsObject())
+			if (kw.val.IsObject() && kw.val.GetObj()->GetType() == X::ObjType::Function)
 			{
 				//conver to remote client object
 				auto&& rcParam = ConvertXObjToRemoteClientObject(kw.val.GetObj());
