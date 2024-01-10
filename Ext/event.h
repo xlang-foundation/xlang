@@ -17,6 +17,7 @@
 #include "stackframe.h"
 #include "object_scope.h"
 #include "wait.h"
+#include <conio.h>
 
 namespace X
 {
@@ -384,6 +385,14 @@ namespace X
 		{
 			while (m_run)
 			{
+				if (_kbhit())
+				{
+					char ch = _getch();
+					if (ch == 'q' || ch == 'Q')
+					{
+						break;
+					}
+				}
 				m_wait.Wait(1000);
 				m_lockEventOnFire.Lock();
 				while (m_eventsOnFire.size() > 0)
