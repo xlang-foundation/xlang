@@ -166,7 +166,7 @@ namespace X
                 }
                 catch (const std::exception& e)
                 {
-                    //LOG << "Error:" << e.what() << LINE_END;
+                    std::cout << "Error:" << e.what() << std::endl;
                 }
                 PrepareStop();
                 TryToRemoveSession();
