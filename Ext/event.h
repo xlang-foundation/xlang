@@ -17,8 +17,11 @@
 #include "stackframe.h"
 #include "object_scope.h"
 #include "wait.h"
+#if (WIN32)
 #include <conio.h>
-
+#else
+#include <curses.h>
+#endif
 namespace X
 {
 	class ObjectEvent;
@@ -387,7 +390,11 @@ namespace X
 			{
 				if (_kbhit())
 				{
+#if (WIN32)
 					char ch = _getch();
+#else
+					char ch = getch();
+#endif	
 					if (ch == 'q' || ch == 'Q')
 					{
 						break;
