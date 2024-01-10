@@ -19,8 +19,6 @@
 #include "wait.h"
 #if (WIN32)
 #include <conio.h>
-#else
-#include <curses.h>
 #endif
 namespace X
 {
@@ -388,18 +386,16 @@ namespace X
 		{
 			while (m_run)
 			{
+#if (WIN32)
 				if (_kbhit())
 				{
-#if (WIN32)
 					char ch = _getch();
-#else
-					char ch = getch();
-#endif	
 					if (ch == 'q' || ch == 'Q')
 					{
 						break;
 					}
 				}
+#endif	
 				m_wait.Wait(1000);
 				m_lockEventOnFire.Lock();
 				while (m_eventsOnFire.size() > 0)
