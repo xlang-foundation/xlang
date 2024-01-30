@@ -9,27 +9,32 @@ namespace X
 	namespace AST
 	{
 		class NamespaceVar :
-			virtual public Block,
-			virtual public Scope
+			public Block
 		{
 			int m_Index = -1;
 			X::Value m_obj;
 		public:
 			NamespaceVar() :
-				Block(), UnaryOp(), Operator()
+				Block()
 			{
 				m_type = ObType::NamespaceVar;
+				m_pMyScope = new Scope();
+				m_pMyScope->SetType(ScopeType::Namespace);
+				m_pMyScope->SetExp(this);
 			}
 			NamespaceVar(short op) :
-				Block(), UnaryOp(), Operator(op)
+				Block()
 			{
 				m_type = ObType::NamespaceVar;
+				m_pMyScope = new Scope();
+				m_pMyScope->SetType(ScopeType::Namespace);
+				m_pMyScope->SetExp(this);
 			}
 			~NamespaceVar()
 			{
-
+				delete m_pMyScope;
 			}
-			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v)
 			{
 				if (m_obj.IsObject())
@@ -43,7 +48,7 @@ namespace X
 					return false;
 				}
 			}
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, LValue* lValue = nullptr)
 			{
 				if (m_obj.IsObject())
@@ -62,7 +67,7 @@ namespace X
 				if (m_obj.IsObject())
 				{
 					auto* pNameObj = dynamic_cast<Data::NamespaceVarObject*>(m_obj.GetObj());
-					int idx = pNameObj->AddOrGet(name, bGetOnly,ppRightScope);
+					SCOPE_FAST_CALL_AddOrGet(idx,m_pMyScope,name, bGetOnly,ppRightScope);
 					if (idx >= 0)
 					{
 						pNameObj->AddSlotTo(idx);
@@ -74,7 +79,7 @@ namespace X
 					return -1;
 				}
 			}
-			inline std::string GetName()
+			FORCE_INLINE std::string GetName()
 			{
 				if (R)
 				{
@@ -115,12 +120,6 @@ namespace X
 			virtual bool Exec(XlangRuntime* rt, 
 				ExecAction& action, XObj* pContext, 
 				Value& v, LValue* lValue = nullptr) override;
-
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override 
-			{ 
-				return FindScope(); 
-			}
 		};
 	}
 }

@@ -14,35 +14,39 @@ namespace X
 		bool releaseValPtr = false;
 		XObj* context = nullptr;
 	public:
-		void SetReleaseFlag(bool b)
+		FORCE_INLINE void SetReleaseFlag(bool b)
 		{
 			releaseValPtr = b;
 		}
-		inline LValue(Value& v)
+		FORCE_INLINE LValue()
+		{
+			valptr = nullptr;
+		}
+		FORCE_INLINE LValue(Value& v)
 		{
 			val = v;
 			//todo: CHANGE TO NULL, because v maybe in stack, 
 			//as temp var
 			valptr = nullptr;// &val;
 		}
-		inline LValue(Value* pVal)
+		FORCE_INLINE LValue(Value* pVal)
 		{
 			valptr = pVal;
 		}
-		inline ~LValue()
+		FORCE_INLINE ~LValue()
 		{
 			if (releaseValPtr && valptr)
 			{
 				delete valptr;
 			}
 		}
-		inline void SetContext(XObj* p) { context = p; }
-		inline XObj* GetContext() { return context; }
-		inline operator bool()
+		FORCE_INLINE void SetContext(XObj* p) { context = p; }
+		FORCE_INLINE XObj* GetContext() { return context; }
+		FORCE_INLINE operator bool()
 		{
 			return (valptr != 0) || val.IsValid();
 		}
-		inline Value& operator *() const
+		FORCE_INLINE Value& operator *() const
 		{
 			if (valptr)
 			{
@@ -53,7 +57,7 @@ namespace X
 				return (Value&)val;
 			}
 		}
-		inline Value* operator ->() const
+		FORCE_INLINE Value* operator ->() const
 		{
 			return valptr;
 		}

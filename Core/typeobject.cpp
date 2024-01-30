@@ -36,7 +36,7 @@ namespace X
 			}
 			void Init()
 			{
-				m_stackFrame = new AST::StackFrame(this);
+				m_stackFrame = new AST::StackFrame();
 				m_stackFrame->SetVarCount(3);
 				std::string strName;
 				{
@@ -59,27 +59,6 @@ namespace X
 					Value funcVal(pFuncObj);
 					m_stackFrame->Set(idx, funcVal);
 				}
-			}
-			// Inherited via Scope
-			virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
-			{
-				//can't add new members
-				return Scope::AddOrGet(name, true, ppRightScope);
-			}
-			virtual Scope* GetParentScope() override
-			{
-				return nullptr;
-			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
 			}
 		};
 		static TypeObjectScope* _TypeObjectScope = nullptr;
@@ -165,14 +144,15 @@ namespace X
 			else if (pObj->GetType() == X::ObjType::XClassObject)
 			{
 				auto* pClassObj = dynamic_cast<XClassObject*>(pObj);
-				AST::Scope* pClassScope = dynamic_cast<AST::Scope*>(pClassObj->GetClassObj());
+				AST::Scope* pClassScope = pClassObj->GetClassObj()->GetMyScope();
 				auto vars = pClassScope->GetVarMap();
 				for (auto& it : vars)
 				{
 					X::Dict dict;
 					X::Value val;
 					pClassScope->Get(rt, pObj, it.second, val);
-					dict->Set("Name", (std::string)it.first);
+					std::string name = it.first;
+					dict->Set("Name", name);
 					auto valType = val.GetValueType();
 					dict->Set("Type",valType);
 					list += dict;

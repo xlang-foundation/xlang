@@ -6,6 +6,11 @@
 #include <fstream>
 #include <sys/stat.h>
 
+#define EXPAND_UNSIGNED_CHAR(c) \
+    (((unsigned int)(c) << 24) | \
+     ((unsigned int)(c) << 16) | \
+     ((unsigned int)(c) << 8))
+
 namespace X {
 	namespace Images {
 		class ImageImpl :
@@ -34,6 +39,7 @@ namespace X {
 				wstream.close();
 				return true;
 			}
+
 			virtual X::Value To_Tensor(int pixelFmt) override
 			{
 				struct stat stat_buf;
@@ -121,8 +127,12 @@ namespace X {
 					retValue = X::Value(false);
 					return false;
 				}
+				bool needReleaseImageData = false;
 				unsigned char* pImgRawData = (unsigned char*)pTensor->GetData();
 				auto itemType = pTensor->GetDataType();
+				int _height = pTensor->GetDimSize(0);
+				int _width = pTensor->GetDimSize(1);
+
 				//for gray ( 1 byte) or 32 bits pixel format with itemType is INT or UINT
 				int COLOR_COMPONENTS = 4;
 				TJPF pixF = TJPF_RGB;
@@ -132,8 +142,25 @@ namespace X {
 					{
 					case X::TensorDataType::BYTE:
 					case X::TensorDataType::UBYTE:
-						COLOR_COMPONENTS = 1;
-						pixF = TJPF_GRAY;
+					{
+						COLOR_COMPONENTS = 4;
+						needReleaseImageData = true;
+						//COLOR_COMPONENTS = 1;
+						//pixF = TJPF_GRAY;
+						pixF = TJPF_RGBA;
+						//convert to RGBA
+						unsigned int* pImgRawData_new = new unsigned int[_width * _height];
+						for (int j = 0; j < _height; j++)
+						{
+							for (int i = 0; i < _width; i++)
+							{
+								auto idx = j * _width + i;
+								unsigned char c = pImgRawData[idx];
+								pImgRawData_new[idx] = EXPAND_UNSIGNED_CHAR(c);
+							}
+						}
+						pImgRawData = (unsigned char*)pImgRawData_new;
+					}
 						break;
 					case X::TensorDataType::INT:
 					case X::TensorDataType::UINT:
@@ -157,8 +184,6 @@ namespace X {
 				}
 
 				const int JPEG_QUALITY = 75;
-				int _height = pTensor->GetDimSize(0);
-				int _width = pTensor->GetDimSize(1);
 
 				long unsigned int _jpegSize = 0;
 				unsigned char* _compressedImage = nullptr; //!< Memory is allocated by tjCompress2 if _jpegSize == 0
@@ -176,7 +201,10 @@ namespace X {
 				//tjFree(_compressedImage);
 				m_data = _compressedImage;
 				m_dataSize = _jpegSize;
-
+				if (needReleaseImageData)
+				{
+					delete pImgRawData;
+				}
 				return true;
 			}
 		};

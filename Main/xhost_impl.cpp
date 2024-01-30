@@ -16,7 +16,6 @@
 #include "remote_object.h"
 #include "msgthread.h"
 #include "import.h"
-#include "expr_scope.h"
 #include "RemoteObjectStub.h"
 #include "tensor.h"
 #include "tensorop.h"
@@ -25,6 +24,8 @@
 #include "PyEngObject.h"
 #include "pyproxyobject.h"
 #include <sstream>
+#include "moduleobject.h"
+#include "parser.h"
 
 namespace X 
 {
@@ -51,7 +52,6 @@ namespace X
 		if (bAddTopModule)
 		{
 			AST::Module* pTopModule = new AST::Module();
-			pTopModule->IncRef();
 			pTopModule->ScopeLayout();
 
 			rt->SetM(pTopModule);
@@ -59,7 +59,7 @@ namespace X
 			AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 			pModuleFrame->SetLine(pTopModule->GetStartLine());
 			pTopModule->AddBuiltins(rt);
-			rt->PushFrame(pModuleFrame, pTopModule->GetVarNum());
+			rt->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
 		}
 		G::I().BindRuntimeToThread(rt);
 		return dynamic_cast<XRuntime*>(rt);
@@ -74,9 +74,9 @@ namespace X
 		pStrObj->IncRef();
 		return pStrObj;
 	}
-	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator)
+	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator, void* pContext)
 	{
-		return X::Manager::I().Register(name,creator);
+		return X::Manager::I().Register(name,creator, pContext);
 	}
 	bool XHost_Impl::RegisterPackage(const char* name,Value& objPackage)
 	{
@@ -90,11 +90,11 @@ namespace X
 			return X::Value();
 		}
 		X::Value retValue;
-		AST::Scope* pScope = dynamic_cast<AST::Scope*>(pRealObj);
+		AST::Scope* pScope = pRealObj->GetMyScope();
 		if (pScope)
 		{
 			std::string strName(name);
-			int idx = pScope->AddOrGet(strName, true);
+			SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
 			if (idx >= 0)
 			{
 				pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);
@@ -107,7 +107,7 @@ namespace X
 			for (auto* pScope : scopes)
 			{
 				std::string strName(name);
-				int idx = pScope->AddOrGet(strName, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
 				if (idx >= 0)
 				{
 					pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);
@@ -217,13 +217,13 @@ namespace X
 	XPackage* XHost_Impl::CreatePackage(void* pRealObj)
 	{
 		auto* pPack = new AST::Package(pRealObj);
-		pPack->Scope::IncRef();
+		pPack->IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}
 	XPackage* XHost_Impl::CreatePackageProxy(XPackage* pPackage, void* pRealObj)
 	{
 		auto* pPack = new AST::PackageProxy(dynamic_cast<AST::Package*>(pPackage),pRealObj);
-		pPack->Scope::IncRef();
+		pPack->IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}
 	XEvent* XHost_Impl::CreateXEvent(const char* name)
@@ -447,6 +447,39 @@ namespace X
 		return X::Hosting::I().Run(moduleName, code,
 			codeSize, passInParams,retVal);
 	}
+	bool XHost_Impl::LoadModule(const char* moduleName, 
+		const char* code, int codeSize, X::Value& objModule)
+	{
+		unsigned long long moduleKey = 0;
+		AST::Module* pModule = X::Hosting::I().Load(moduleName, code, codeSize, moduleKey);
+		if (pModule == nullptr)
+		{
+			return false;
+		}
+		X::AST::ModuleObject* pModuleObj = new X::AST::ModuleObject(pModule);
+		objModule = Value(pModuleObj);
+
+		return true;
+	}
+	bool XHost_Impl::UnloadModule(X::Value objModule)
+	{
+		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
+		{
+			auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(objModule.GetObj());
+			X::Hosting::I().Unload(pModuleObj->M());
+		}
+		return true;
+	}
+	bool XHost_Impl::RunModule(X::Value objModule, X::Value& retVal)
+	{
+		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
+		{
+			auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(objModule.GetObj());
+			std::vector<X::Value> passInParams;
+			return X::Hosting::I().Run(pModuleObj->M(), retVal, passInParams);
+		}
+		return false;
+	}
 	bool XHost_Impl::RunModuleInThread(const char* moduleName, 
 		const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs)
 	{
@@ -548,7 +581,7 @@ namespace X
 		AST::Import* pImp = new AST::Import(moduleName, from, thru);
 		//todo: CHECK here if pImp will be released by out of scope
 		AST::ExecAction action;
-		bool bOK = pImp->Exec((XlangRuntime*)rt,action,nullptr, objPackage);
+		bool bOK = ExpExec(pImp,(XlangRuntime*)rt,action,nullptr, objPackage);
 		if (objPackage.IsObject())
 		{
 			objPackage.GetObj()->SetContext(rt, nullptr);
@@ -557,13 +590,14 @@ namespace X
 	}
 	bool XHost_Impl::CreateScopeWrapper(XCustomScope* pScope)
 	{
-		Data::ExpressionScope* pExprScope = new Data::ExpressionScope(pScope);
-		pScope->SetScope((void*)pExprScope);
+		X::AST::Scope* pExprScope = new X::AST::Scope();
+		pExprScope->SetDynScope(pScope);
+		pScope->SetScope(pExprScope);
 		return true;
 	}
 	bool XHost_Impl::DeleteScopeWrapper(XCustomScope* pScope)
 	{
-		Data::ExpressionScope* pExprScope = (Data::ExpressionScope*)pScope->GetScope();
+		X::AST::Scope* pExprScope = (X::AST::Scope*)pScope->GetScope();
 		if (pExprScope)
 		{
 			delete pExprScope;
@@ -586,7 +620,7 @@ namespace X
 		{
 			return false;
 		}
-		Data::ExpressionScope* pExprScope = (Data::ExpressionScope*)pScope->GetScope();
+		X::AST::Scope* pExprScope = (X::AST::Scope*)pScope->GetScope();
 		pExpr->SetScope(pExprScope);
 		return true;
 	}
@@ -607,7 +641,33 @@ namespace X
 			return false;
 		}
 		AST::ExecAction action;
-		bool bOK = pExpr->Exec(nullptr,action,nullptr, result);
+		bool bOK = ExpExec(pExpr,nullptr,action,nullptr, result);
+		return bOK;
+	}
+	bool XHost_Impl::CompileExpression(const char* code, int codeSize, X::Value& expr)
+	{
+		Parser parser;
+		if (!parser.Init())
+		{
+			return false;
+		}
+		auto* pExpModule = new AST::Module();
+		bool bOK = parser.Compile(pExpModule, (char*)code, codeSize);
+		if (bOK)
+		{
+			auto& body = pExpModule->GetBody();
+			if (body.size() >= 1)
+			{
+				auto* pExpr = body[0];
+				body.erase(body.begin());
+				expr = X::Value(new Data::Expr(pExpr));
+			}
+			else
+			{
+				bOK = false;
+			}
+		}
+		UnloadModule(pExpModule);
 		return bOK;
 	}
 	bool XHost_Impl::ExtractNativeObjectFromRemoteObject(X::Value& remoteObj,

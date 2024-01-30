@@ -24,7 +24,7 @@ namespace X
 					{
 						ExecAction action;
 						X::Value valRight;
-						bool bOK = right->Exec(nullptr, action, nullptr, valRight);
+						bool bOK = ExpExec(right,nullptr, action, nullptr, valRight);
 						if (bOK)
 						{
 							//Obj()->Set(index, valRight);
@@ -73,15 +73,30 @@ namespace X
 					strName = dynamic_cast<Var*>(dotOp->GetL())->GetNameString();
 				}
 			}
+
+			Expression* pFromExp = this;
 			while (pMyScope != nullptr && idx < 0)
 			{
-				idx = pMyScope->AddOrGet(strName, false);
+				SCOPE_FAST_CALL_AddOrGet0_NoDef(idx,pMyScope,strName, false);
 				if (idx >= 0)
 				{//use the scope to find this name as its scope
 					m_scope = pMyScope;
 					break;
 				}
-				pMyScope = pMyScope->GetParentScope();
+				//Find next upper real scope
+				pMyScope = nullptr;
+				Expression* pa = pFromExp->GetParent();
+				while (pa != nullptr)
+				{
+					pMyScope = pa->GetMyScope();
+					if (pMyScope)
+					{
+						//save for next loop
+						pFromExp = pa;
+						break;
+					}
+					pa = pa->GetParent();
+				}
 			}
 			m_Index = idx;
 		}
@@ -118,13 +133,14 @@ namespace X
 				if (r0->m_type == ObType::Var)
 				{
 					auto* ro_var = dynamic_cast<Var*>(r0);
+					//TODO: Scope Issue
 					ro_var->SetScope(dynamic_cast<Scope*>(this));
 					ro_var->SetIsLeftValue(true);
 					X::Value defVal;
 					//take a place
 					ro_var->Set(rt, pContext, defVal);
 					ExecAction action0;
-					bOK = r0->Exec(rt, action0,pContext, v, lValue);
+					bOK = ExpExec(r0,rt, action0,pContext, v, lValue);
 				}
 				else if (r0->m_type == ObType::Dot)
 				{
@@ -134,7 +150,7 @@ namespace X
 					//pChildNamespaceVar->SetScope(this);
 					Block::Add(pChildNamespaceVar);//hold this item into block for releasing this item
 					ExecAction action0;
-					bOK = pChildNamespaceVar->Exec(rt, action0, pContext, v, lValue);
+					bOK = ExpExec(pChildNamespaceVar,rt, action0, pContext, v, lValue);
 					pChildNamespaceVar->SetR(nullptr); // don't let be deleted twice
 				}
 			}

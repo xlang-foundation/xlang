@@ -17,7 +17,6 @@ class ScopeProxy :
 	{
 		return AST::ScopeWaitingStatus::HasWaiting;
 	}
-	virtual Scope* GetParentScope() override;
 public:
 	ScopeProxy() :
 		Scope()
@@ -30,17 +29,15 @@ public:
 //here we need to combin left side name with right side name put 
 //into one operand
 class AsOp :
-	virtual public BinaryOp
+	public BinaryOp
 {
 public:
 	AsOp() :
-		Operator(),
 		BinaryOp()
 	{
 		m_type = ObType::As;
 	}
 	AsOp(short op) :
-		Operator(op),
 		BinaryOp(op)
 	{
 		m_type = ObType::As;
@@ -91,7 +88,7 @@ public:
 //it will accept left side var as its operand
 //which means who deffered
 class DeferredOP :
-	virtual public UnaryOp
+	public UnaryOp
 {
 public:
 	DeferredOP() :
@@ -125,7 +122,7 @@ public:
 	}
 };
 class ThruOp :
-	virtual public UnaryOp
+	public UnaryOp
 {
 	std::string m_url;
 
@@ -139,7 +136,7 @@ class ThruOp :
 			{
 				Value v0;
 				ExecAction action;
-				if (l->Exec(rt,action, pContext, v0, nullptr))
+				if (ExpExec(l,rt,action, pContext, v0, nullptr))
 				{
 					l_name = v0.ToString();
 				}
@@ -156,7 +153,7 @@ class ThruOp :
 			{
 				Value v0;
 				ExecAction action;
-				if (r->Exec(rt,action, pContext, v0, nullptr))
+				if (ExpExec(r,rt,action, pContext, v0, nullptr))
 				{
 					r_name = v0.ToString();
 				}
@@ -171,13 +168,11 @@ class ThruOp :
 	}
 public:
 	ThruOp() :
-		Operator(),
 		UnaryOp()
 	{
 		m_type = ObType::Thru;
 	}
 	ThruOp(short op) :
-		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::Thru;
@@ -192,7 +187,7 @@ public:
 			if (R->m_type == ObType::Str || R->m_type == ObType::Var)
 			{
 				Value v0;
-				if (R->Exec(rt,action, pContext, v0, nullptr))
+				if (ExpExec(R,rt,action, pContext, v0, nullptr))
 				{
 					m_url = v0.ToString();
 				}
@@ -208,18 +203,16 @@ public:
 	}
 };
 class From :
-	virtual public UnaryOp
+	public UnaryOp
 {
 	std::string m_path;
 public:
 	From() :
-		Operator(),
 		UnaryOp()
 	{
 		m_type = ObType::From;
 	}
 	From(short op) :
-		Operator(op),
 		UnaryOp(op)
 	{
 		m_type = ObType::From;
@@ -336,7 +329,7 @@ struct ImportInfo
 	bool Deferred = false;
 };
 class Import :
-	virtual public Operator
+	public Operator
 {
 	From* m_from = nullptr;
 	ThruOp* m_thru = nullptr;
@@ -390,19 +383,19 @@ public:
 		}
 		return true;
 	}
-	inline From* GetFrom()
+	FORCE_INLINE From* GetFrom()
 	{
 		return m_from;
 	}
-	inline ThruOp* GetThru()
+	FORCE_INLINE ThruOp* GetThru()
 	{
 		return m_thru;
 	}
-	inline Expression* GetImports()
+	FORCE_INLINE Expression* GetImports()
 	{
 		return m_imports;
 	}
-	inline ImportInfo* FindMatchedImportInfo(AST::ImportInfo& importInfo)
+	FORCE_INLINE ImportInfo* FindMatchedImportInfo(AST::ImportInfo& importInfo)
 	{
 		for (auto& im : m_importInfos)
 		{
@@ -446,7 +439,20 @@ public:
 	{
 		m_type = ObType::Import;
 	}
-	inline bool LoadModule(XlangRuntime* rt,XObj* pContext,Value& v,ImportInfo* pImportInfo)
+	FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
+	{
+		//m_from and m_thru need to do expresion calculation
+		if (m_from)
+		{
+			stack.push({ m_from,false });
+		}
+		if (m_thru)
+		{
+			stack.push({ m_thru,false });
+		}
+		return true;
+	}
+	FORCE_INLINE bool LoadModule(XlangRuntime* rt,XObj* pContext,Value& v,ImportInfo* pImportInfo)
 	{
 		Scope* pMyScope = GetScope();
 		std::string varName = pImportInfo->alias.empty() ? pImportInfo->name : pImportInfo->alias;
@@ -517,6 +523,7 @@ public:
 		Value& v, LValue* lValue = nullptr) override;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
+	bool ExpRun(XlangRuntime* rt, X::XObj* pContext, X::Exp::ValueStack& valueStack, X::Value& retValue);
 };
 }
 }

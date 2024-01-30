@@ -29,7 +29,7 @@ namespace X
 		{
 			if (!R || R->m_type != ObType::Pair)
 			{
-				return false;
+				return true;
 			}
 			if (R->m_type == ObType::Pair)
 			{
@@ -83,7 +83,7 @@ namespace X
 				{//Call Func
 					Value lVal;
 					ExecAction action;
-					bOK = pairL->Exec(rt, action,pContext, lVal, lValue);
+					bOK = ExpExec(pairL,rt, action,pContext, lVal, lValue);
 					if (!bOK || !lVal.IsObject())
 					{
 						return bOK;

@@ -7,8 +7,14 @@
 #include "utility.h"
 #include <iostream>
 #include "value.h"
+
+
 namespace X
 {
+	namespace Jit
+	{
+		class JitLib;
+	}
 namespace AST
 {
 enum class dbg
@@ -36,12 +42,12 @@ class CommandInfo:
 {
 	Locker _lock;
 public:
-	inline virtual int IncRef()
+	FORCE_INLINE virtual int IncRef()
 	{
 		AutoLock lock(_lock);
 		return ObjRef::AddRef();
 	}
-	inline virtual int DecRef()
+	FORCE_INLINE virtual int DecRef()
 	{
 		_lock.Lock();
 		int ref = ObjRef::Release();
@@ -82,9 +88,13 @@ struct PrimitiveInfo
 	XlangRuntime* rt;
 };
 class Module :
-	virtual public Block,
-	virtual public Scope
+	public Block
 {
+
+	//if this module has Jit Blocks, will have this member
+	X::Jit::JitLib* m_pJitLib = nullptr;
+
+	StackFrame* m_stackFrame = nullptr;
 	XlangRuntime* m_pRuntime=nullptr;//for top module, we need it
 	PrimitiveInfo m_primitives[(int)module_primitive::Count];
 	Locker m_lockSearchPath;
@@ -101,7 +111,6 @@ class Module :
 	//and each parse use its own code fragment
 	//then this way will work fine for multiple parsing times
 	std::vector<std::string> m_allCode;
-	StackFrame* m_stackFrame = nullptr;
 	//Parameters
 	std::vector<X::Value> m_args;
 	//for debug
@@ -117,17 +126,62 @@ class Module :
 	std::vector<BreakPointInfo> m_breakpoints;
 	//only keep for AST Query
 	std::vector<X::AST::InlineComment*> m_inlineComments;
+
+	//for scope
+	bool m_bMyScopeIsRef = false;
 public:
-	Module() :
-		Scope(),
-		Operator(),
-		Expression(),
-		UnaryOp(),
+	Module():
 		Block()
 	{
 		m_type = ObType::Module;
-		m_stackFrame = new StackFrame(this);
+		m_pMyScope = new Scope();
+		m_pMyScope->SetType(ScopeType::Module);
+		m_pMyScope->SetExp(this);
+		m_stackFrame = new StackFrame(m_pMyScope);
+		m_pMyScope->SetVarFrame(m_stackFrame);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
+	}
+	FORCE_INLINE void SetJitLib(X::Jit::JitLib* pLib)
+	{
+		m_pJitLib = pLib;
+	}
+	void ChangeMyScopeTo(Scope* pNewMyScope)
+	{
+		if (!m_bMyScopeIsRef)
+		{
+			delete m_pMyScope;
+		}
+		m_pMyScope = pNewMyScope;
+		m_bMyScopeIsRef = true;
+		m_stackFrame->SetScope(pNewMyScope);
+	}
+	~Module()
+	{
+		m_lockCommands.Lock();
+		for (auto& it : m_commands)
+		{
+			if (it->m_wait)
+			{
+				it->m_wait->Release();
+			}
+		}
+		m_lockCommands.Unlock();
+		m_commandWait.Release();
+		delete m_stackFrame;
+		if (!m_bMyScopeIsRef)
+		{
+			delete m_pMyScope;
+		}
+
+		for (auto it : m_inlineComments)
+		{
+			delete it;
+		}
+		m_inlineComments.clear();
+	}
+	FORCE_INLINE Scope* GetMyScope()
+	{
+		return m_pMyScope;
 	}
 	void AddInlineComment(X::AST::InlineComment* pExp)
 	{
@@ -234,7 +288,7 @@ public:
 	{
 		return m_moduleName;
 	}
-	inline void AddCommand(CommandInfo* pCmdInfo,bool bWaitFinish)
+	FORCE_INLINE void AddCommand(CommandInfo* pCmdInfo,bool bWaitFinish)
 	{
 		//m_addCommandLock.Lock();
 		if (bWaitFinish)
@@ -258,7 +312,7 @@ public:
 		//std::cout << "AddCommand,end,pCmdInfo = "<< pCmdInfo << "tid=" << tid << std::endl;
 		//m_addCommandLock.Unlock();
 	}
-	inline CommandInfo* PopCommand()
+	FORCE_INLINE CommandInfo* PopCommand()
 	{
 		//auto tid = GetThreadID();
 		//std::cout << "PopCommand,Begin"<< "tid=" << tid << std::endl;
@@ -283,7 +337,7 @@ public:
 		//std::cout << "PopCommand,end,pCommandInfo=" << pCommandInfo << "tid=" << tid << std::endl;
 		return pCommandInfo;
 	}
-	inline char* SetCode(char* code, int size)
+	FORCE_INLINE char* SetCode(char* code, int size)
 	{
 		std::string strCode(code, size);
 		m_allCode.push_back(strCode);
@@ -304,36 +358,12 @@ public:
 		}
 		return code; 
 	}
-	~Module()
-	{
-		m_lockCommands.Lock();
-		for (auto& it : m_commands)
-		{
-			if (it->m_wait)
-			{
-				it->m_wait->Release();
-			}
-		}
-		m_lockCommands.Unlock();
-		m_commandWait.Release();
-		delete m_stackFrame;
-
-		for (auto it : m_inlineComments)
-		{
-			delete it;
-		}
-		m_inlineComments.clear();
-	}
-	virtual Scope* GetParentScope() override
-	{
-		return nullptr;
-	}
 	virtual void ScopeLayout() override;
 	void AddBuiltins(XlangRuntime* rt);
-	inline int Add(XlangRuntime* rt, std::string& name,
+	FORCE_INLINE int Add(XlangRuntime* rt, std::string& name,
 		XObj* pContext, Value& v)
 	{
-		int idx = AddOrGet(name, false);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name, false);
 		if (idx >= 0)
 		{
 			int cnt = m_stackFrame->GetVarCount();
@@ -341,42 +371,25 @@ public:
 			{
 				m_stackFrame->SetVarCount(idx + 1);
 			}
-			Set(rt, pContext, idx, v);
+			rt->Set(m_pMyScope, pContext, idx, v);
 		}
 		return idx;
 	}
-	// Inherited via Scope
-	inline virtual int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
-	{
-		return Add(rt,name, pContext,v);
-	}
-	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-	{
-		m_stackFrame->Set(idx, v);
-		return true;
-	}
-	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-		LValue* lValue = nullptr) override
-	{
-		m_stackFrame->Get(idx, v, lValue);
-		return true;
-	}
-
 	void SetDebug(bool b,XlangRuntime* runtime);
-	inline bool IsInDebug()
+	FORCE_INLINE bool IsInDebug()
 	{
 		return m_inDebug;
 	}
-	inline void SetDbgType(dbg d,dbg lastRequest)
+	FORCE_INLINE void SetDbgType(dbg d,dbg lastRequest)
 	{
 		m_dbg = d;
 		m_dbgLastRequest = lastRequest;
 	}
-	inline dbg GetDbgType() { return m_dbg; }
-	inline dbg GetLastRequestDgbType() { return m_dbgLastRequest; }
-	inline bool InDbgScope(Scope* s)
+	FORCE_INLINE dbg GetDbgType() { return m_dbg; }
+	FORCE_INLINE dbg GetLastRequestDgbType() { return m_dbgLastRequest; }
+	FORCE_INLINE bool InDbgScope(Scope* s)
 	{ 
-		if (s == this)
+		if (s == m_pMyScope)
 		{
 			return true;
 		}
@@ -391,33 +404,30 @@ public:
 		}	
 		return bIn;
 	}
-	inline Scope* LastScope()
+	FORCE_INLINE Scope* LastScope()
 	{
 		return m_dbgScopes.size() > 0 ? 
 			m_dbgScopes[m_dbgScopes.size() - 1] : nullptr;
 	}
-	inline ScopeWaitingStatus HaveWaitForScope()
+	FORCE_INLINE ScopeWaitingStatus HaveWaitForScope()
 	{
 		return m_dbgScopes.size() > 0?
 			m_dbgScopes[m_dbgScopes.size() - 1]->IsWaitForCall():
 			ScopeWaitingStatus::NoWaiting;
 	}
-	inline void ReplaceLastDbgScope(Scope* s)
+	FORCE_INLINE void ReplaceLastDbgScope(Scope* s)
 	{
 		if (m_dbgScopes.size() > 0)
 		{
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
-			last->DecRef();
-			s->IncRef();
 			m_dbgScopes[m_dbgScopes.size() - 1] = s;
 		}
 	}
-	inline void AddDbgScope(Scope* s)
+	FORCE_INLINE void AddDbgScope(Scope* s)
 	{
-		s->IncRef();
 		m_dbgScopes.push_back(s);
 	}
-	inline void RemoveDbgScope(Scope* s)
+	FORCE_INLINE void RemoveDbgScope(Scope* s)
 	{
 		auto it = m_dbgScopes.begin();
 		while (it != m_dbgScopes.end())
@@ -425,7 +435,6 @@ public:
 			Scope* s0 = (*it);
 			if (s0->isEqual(s))
 			{
-				s0->DecRef();
 				m_dbgScopes.erase(it);
 				break;
 			}

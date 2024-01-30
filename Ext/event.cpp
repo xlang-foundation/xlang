@@ -6,6 +6,13 @@ namespace X
 		KWARGS& kwParams,
 		X::Value& retValue)
 	{
+		auto* findSetValue = kwParams.find("SetValue");
+		if (findSetValue != nullptr && params.size()>0)
+		{
+			*this += params[0];
+			return true;
+		}
+
 		DoFire(rt, pContext, params, kwParams);
 		retValue = Value(true);
 		return true;

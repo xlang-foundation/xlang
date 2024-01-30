@@ -19,14 +19,14 @@ namespace AST
 	};
 class Package :
 	virtual public XPackage,
-	virtual public Data::Object,
-	virtual public Scope
+	virtual public Data::Object
 {
+	AST::Scope* m_pMyScope = nullptr;
 	//Meta data for this package
 	void* m_apiset = nullptr;
 
 	void* m_pObject = nullptr;
-	StackFrame* m_stackFrame = nullptr;
+	StackFrame* m_variableFrame = nullptr;
 	std::vector<MemberIndexInfo> m_memberInfos;
 	PackageCleanup m_funcPackageCleanup = nullptr;
 	PackageWaitFunc m_funcPackageWait = nullptr;
@@ -53,12 +53,14 @@ class Package :
 	void UnloadAddedModules();
 	Locker m_lock;
 public:
-	inline std::vector<MemberIndexInfo>& GetMemberInfo() { return m_memberInfos; }
+	FORCE_INLINE std::vector<MemberIndexInfo>& GetMemberInfo() { return m_memberInfos; }
 	Package(void* pObj):
-		Data::Object(), Scope()
+		Data::Object()
 	{
 		m_pObject = pObj;
 		m_t = X::ObjType::Package;
+		m_pMyScope = new Scope();
+		m_pMyScope->SetType(ScopeType::Package);
 	}
 	~Package()
 	{
@@ -67,16 +69,17 @@ public:
 		{
 			Cleanup(m_pObject);
 		}
+		delete m_pMyScope;
 	}
 	virtual void SetAPISet(void* pApiSet) override
 	{
 		m_apiset = pApiSet;
 	}
-	inline void* GetAPISet()
+	FORCE_INLINE void* GetAPISet()
 	{
 		return m_apiset;
 	}
-	inline virtual bool wait(int timeout) override
+	FORCE_INLINE virtual bool wait(int timeout) override
 	{
 		bool bOK = true;
 		if (m_funcPackageWait)
@@ -103,11 +106,11 @@ public:
 	}
 	bool ToBytesImpl(XlangRuntime* rt, void* pEmbededObject, X::XLangStream& stream);
 	bool FromBytesImpl(void* pEmbededObject, X::XLangStream& stream);
-	inline virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+	FORCE_INLINE virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 	{
 		return ToBytesImpl(rt,m_pObject, stream);
 	}
-	inline virtual bool FromBytes(X::XLangStream& stream) override
+	FORCE_INLINE virtual bool FromBytes(X::XLangStream& stream) override
 	{
 		return FromBytesImpl(m_pObject, stream);
 	}
@@ -124,26 +127,26 @@ public:
 	}
 	virtual void RemoveALl() override
 	{
-		if (m_stackFrame)
+		if (m_variableFrame)
 		{
-			delete m_stackFrame;
-			m_stackFrame = nullptr;
+			delete m_variableFrame;
+			m_variableFrame = nullptr;
 		}
 	}
-	StackFrame* GetStack() { return m_stackFrame; }
-	inline void Cleanup(void* pObj)
+	StackFrame* GetStack() { return m_variableFrame; }
+	FORCE_INLINE void Cleanup(void* pObj)
 	{
 		if (m_funcPackageCleanup)
 		{
 			m_funcPackageCleanup(pObj);
 		}
 	}
-	inline virtual int AddMember(PackageMemberType type, const char* name,
+	FORCE_INLINE virtual int AddMember(PackageMemberType type, const char* name,
 		const char* doc, bool keepRawParams = false) override
 	{
 		std::string strName(name);
 		std::string strDoc(doc);
-		int idx =  Scope::AddOrGet(strName, false);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, false);
 		int size = (int)m_memberInfos.size();
 		if (size <= idx)
 		{
@@ -159,40 +162,39 @@ public:
 		}
 		return idx;
 	}
-	inline virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
+	FORCE_INLINE virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
 	{
 		std::string strName(name);
-		int idx =  Scope::AddOrGet(strName, true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, true);
 		if (idx>=0 && pKeepRawParams)
 		{
 			*pKeepRawParams = m_memberInfos[idx].KeepRawParams;
 		}
 		return idx;
 	}
-	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
+	FORCE_INLINE virtual MemberIndexInfo QueryMethod(std::string name)
 	{
-		//in this case, can't add new member, in init stage, will call Scope::AddOrGet directly
-		//add member
-		return Scope::AddOrGet(name, true, ppRightScope);
-	}
-	inline virtual MemberIndexInfo QueryMethod(std::string name)
-	{
-		int idx =  Scope::AddOrGet(name, true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name, true);
 		return m_memberInfos[idx];
 	}
 
-	inline virtual AST::Scope* GetScope()
+	FORCE_INLINE virtual AST::Scope* GetMyScope() override
 	{
-		return dynamic_cast<Scope*>(this);
+		return m_pMyScope;
 	}
 	virtual void* GetEmbedObj() override 
 	{ 
 		return m_pObject; 
 	}
+	virtual void SetEmbedObj(void* p) override
+	{
+		m_pObject = p;
+	}
 	virtual bool Init(int varNum) override
 	{
-		m_stackFrame = new StackFrame(this);
-		m_stackFrame->SetVarCount(varNum);
+		m_variableFrame = new StackFrame();
+		m_variableFrame->SetVarCount(varNum);
+		m_pMyScope->SetVarFrame(m_variableFrame);
 		return true;
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext,
@@ -203,48 +205,44 @@ public:
 		return true;
 	}
 	// Inherited via Scope
-	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
+	bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v)
 	{
-		m_stackFrame->Set(idx, v);
+		m_variableFrame->Set(idx, v);
 		return true;
 	}
 	virtual bool SetIndexValue(int idx, Value& v) override
 	{
-		m_stackFrame->Set(idx, v);
+		m_variableFrame->Set(idx, v);
 		return true;
 	}
 	virtual bool GetIndexValue(int idx, Value& v)
 	{
-		m_stackFrame->Get(idx,v);
+		m_variableFrame->Get(idx,v);
 		return true;
 	}
-	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-		LValue* lValue = nullptr) override
+	bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
+		LValue* lValue = nullptr)
 	{
-		m_stackFrame->Get(idx, v, lValue);
+		m_variableFrame->Get(idx, v, lValue);
 		return true;
-	}
-	virtual Scope* GetParentScope() override
-	{
-		return nullptr;
 	}
 	virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{
 		Object::GetBaseScopes(bases);
-		bases.push_back(dynamic_cast<Scope*>(this));
+		bases.push_back(m_pMyScope);
 	}
 };
 class PackageProxy :
 	virtual public XPackage,
-	virtual public Data::Object,
-	virtual public Scope
+	virtual public Data::Object
 {
+	AST::Scope* m_pMyScope = nullptr;
 	void* m_pObject = nullptr;
 	//for functions, just addref
 	//for event, need to clone a new event
 	//for prop, TODO:
-	//all add into m_stackFrame
-	StackFrame* m_stackFrame = nullptr;
+	//all add into m_variableFrame
+	StackFrame* m_variableFrame = nullptr;
 	Package* m_pPackage = nullptr;
 	PackageCleanup m_funcPackageCleanup = nullptr;
 
@@ -269,7 +267,7 @@ public:
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{
 	}
-	inline virtual bool wait(int timeout) override
+	FORCE_INLINE virtual bool wait(int timeout) override
 	{
 		bool bOK = true;
 		if (m_pPackage->GetWaitFunc())
@@ -279,20 +277,23 @@ public:
 		return bOK;
 	}
 	PackageProxy(Package* pPack,void* pObj) :
-		Data::Object(), Scope()
+		Data::Object()
 	{
 		m_pPackage = pPack;
+		m_pMyScope = new Scope();
+		m_pMyScope->SetType(ScopeType::Package);
 		if (m_pPackage)
 		{
-			m_pPackage->Scope::IncRef();
-			m_stackFrame = new StackFrame(this);
+			m_variableFrame = new StackFrame();
+			m_pMyScope->SetVarFrame(m_variableFrame);
+			m_pMyScope->SetNamespaceScope(m_pPackage->GetMyScope());
 			//? multiple threads will cause crash
 			//so lock here to try
 			//todo: check here, was commented out line below, shawn@4/21/2023
 			m_pPackage->Lock();
 			auto* pBaseStack = m_pPackage->GetStack();
 			int cnt = pBaseStack->GetVarCount();
-			m_stackFrame->SetVarCount(cnt);
+			m_variableFrame->SetVarCount(cnt);
 			for (int i = 0; i < cnt; i++)
 			{
 				X::Value v0;
@@ -306,7 +307,7 @@ public:
 				{
 					v0.Clone();
 				}
-				m_stackFrame->Set(i, v0);
+				m_variableFrame->Set(i, v0);
 			}
 			m_pPackage->Unlock();
 		}
@@ -326,24 +327,26 @@ public:
 				m_pPackage->Cleanup(m_pObject);
 			}
 		}
-		if (m_pPackage)
-		{
-			m_pPackage->Scope::DecRef();
-		}
 		//m_pPackage->Lock();
-		if (m_stackFrame)
+		if (m_variableFrame)
 		{
-			delete m_stackFrame;
-			m_stackFrame = nullptr;
+			delete m_variableFrame;
+			m_variableFrame = nullptr;
 		}
 		//m_pPackage->Unlock();
+
+		delete m_pMyScope;
+	}
+	FORCE_INLINE virtual AST::Scope* GetMyScope() override
+	{
+		return m_pMyScope;
 	}
 	virtual void SetAPISet(void* pApiSet) override {}
-	inline virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+	FORCE_INLINE virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 	{
 		return m_pPackage ? m_pPackage->ToBytesImpl(rt, m_pObject, stream) : false;
 	}
-	inline virtual bool FromBytes(X::XLangStream& stream) override
+	FORCE_INLINE virtual bool FromBytes(X::XLangStream& stream) override
 	{
 		return m_pPackage ? m_pPackage->FromBytesImpl(m_pObject, stream) : false;
 	}
@@ -353,7 +356,7 @@ public:
 	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val) override;
-	inline virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry,X::Value& val)override
+	FORCE_INLINE virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry,X::Value& val)override
 	{
 		if (m_pPackage)
 		{
@@ -370,70 +373,54 @@ public:
 	{
 		return m_pPackage->Size();
 	}
-	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override
-	{
-		return m_pPackage->AddOrGet(name, bGetOnly);
-	}
 	virtual void RemoveALl() override
 	{
 		m_pPackage->RemoveALl();
 		//m_pPackage->Lock();
-		if (m_stackFrame)
+		if (m_variableFrame)
 		{
-			delete m_stackFrame;
-			m_stackFrame = nullptr;
+			delete m_variableFrame;
+			m_variableFrame = nullptr;
 		}
 		//m_pPackage->Unlock();
 	}
-	inline virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) override
+	FORCE_INLINE virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) override
 	{
 		return m_pPackage->AddMember(type,name,doc,keepRawParams);
 	}
-	inline virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
+	FORCE_INLINE virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
 	{
 		return m_pPackage->QueryMethod(name, pKeepRawParams);
 	}
-	inline virtual MemberIndexInfo QueryMethod(std::string name)
+	FORCE_INLINE virtual MemberIndexInfo QueryMethod(std::string name)
 	{
 		return m_pPackage->QueryMethod(name);
 	}
-	inline virtual AST::Scope* GetScope()
+	FORCE_INLINE virtual AST::Scope* GetScope()
 	{
-		return this;
+		return m_pPackage->GetMyScope();
 	}
 	virtual void* GetEmbedObj() override
 	{
 		return m_pObject;
 	}
-	// Inherited via Scope
-	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
+	virtual void SetEmbedObj(void* p) override
 	{
-		m_stackFrame->Set(idx, v);
-		return true;
+		m_pObject = p;
 	}
 	virtual bool SetIndexValue(int idx, Value& v) override
 	{
-		m_stackFrame->Set(idx, v);
+		m_variableFrame->Set(idx, v);
 		return true;
 	}
 	virtual bool GetIndexValue(int idx, Value& v)
 	{
-		m_stackFrame->Get(idx, v);
+		m_variableFrame->Get(idx, v);
 		return true;
 	}
-	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-		LValue* lValue = nullptr) override
+	FORCE_INLINE virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{
-		m_stackFrame->Get(idx, v, lValue);
-		return true;
-	}
-	inline virtual Scope* GetParentScope() override
-	{
-		return m_pPackage->GetParentScope();
-	}
-	inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
-	{
-		bases.push_back(dynamic_cast<Scope*>(this));
+		bases.push_back(m_pPackage->GetMyScope());
 	}
 	virtual bool Init(int varNum) override
 	{

@@ -20,7 +20,7 @@ static void WrapFunc_dealloc(PyWrapFunc* self)
 }
 
 static PyTypeObject WrapFuncType = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyVarObject_HEAD_INIT(&PyType_Type,sizeof(PyType_Type))
 	"XlangPythonWrapFunc",             /*tp_name*/
 	sizeof(PyWrapFunc),             /*tp_basicsize*/
 	0,                         /*tp_itemsize*/

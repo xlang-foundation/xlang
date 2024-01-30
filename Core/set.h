@@ -4,6 +4,7 @@
 #include "scope.h"
 #include "stackframe.h"																																																												
 #include "xclass_object.h"
+#include "function.h"
 
 namespace X
 {																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																							
@@ -229,12 +230,12 @@ public:
 		strSet += "}";
 		return GetABIString(strSet);
 	}
-	inline virtual long long Size() override 
+	FORCE_INLINE virtual long long Size() override 
 	{
 		AutoLock autoLock(m_lock);	
 		return m_useLValue ? m_ptrs.size() : m_data.size();
 	}
-	inline void Clear()
+	FORCE_INLINE void Clear()
 	{
 		AutoLock autoLock(m_lock);
 		m_bases.clear();
@@ -255,7 +256,7 @@ public:
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 		KWARGS& kwParams,X::Value& retValue) override;
-	inline void Add(X::LValue p)
+	FORCE_INLINE void Add(X::LValue p)
 	{
 		AutoLock autoLock(m_lock);
 		bool isDup = false;
@@ -270,7 +271,7 @@ public:
 		if (!isDup)
 			m_ptrs.push_back(p);
 	}
-	inline void Add(X::Value v)
+	FORCE_INLINE void Add(X::Value v)
 	{
 		AutoLock autoLock(m_lock);
 		bool isDup = false;
@@ -284,7 +285,7 @@ public:
 		if (!isDup)
 			m_data.push_back(v);
 	}
-	inline void Add(XlangRuntime* rt, X::Value& v)
+	FORCE_INLINE void Add(XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
 		if (v.IsObject())
@@ -323,7 +324,7 @@ public:
 
 	}
 
-	inline void Remove(X::LValue p)
+	FORCE_INLINE void Remove(X::LValue p)
 	{
 		AutoLock autoLock(m_lock);
 		for (size_t i = 0; i < m_ptrs.size(); i++)
@@ -334,7 +335,7 @@ public:
 			}
 		}
 	}
-	inline void Remove(X::Value v)
+	FORCE_INLINE void Remove(X::Value v)
 	{
 		AutoLock autoLock(m_lock);
 		for (size_t i = 0; i < m_data.size(); i++)
@@ -345,7 +346,7 @@ public:
 			}
 		}
 	}
-	inline void Remove(XlangRuntime* rt, X::Value& v)
+	FORCE_INLINE void Remove(XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
 		if (v.IsObject())
@@ -381,13 +382,13 @@ public:
 
 	}
 
-	inline void MakeCommonBases(
+	FORCE_INLINE void MakeCommonBases(
 		AST::Expression* pThisBase,
 		std::vector<Value>& bases_0)
 	{
 		if (m_bases.empty())//first item
 		{//append all
-			for (auto it : bases_0)
+			for (auto& it : bases_0)
 			{
 				if (it.IsObject())
 				{
@@ -395,22 +396,55 @@ public:
 					pRealObj->GetBaseScopes(m_bases);
 				}
 			}
-			m_bases.push_back(dynamic_cast<AST::Scope*>(pThisBase));
+			auto* pBaseScope = pThisBase->GetMyScope();
+			if (pBaseScope)
+			{
+				m_bases.push_back(pBaseScope);
+			}
 		}
 		else
 		{//find common
 			auto it = m_bases.begin();
 			while (it != m_bases.end())
 			{
-				if (*it != dynamic_cast<AST::Scope*>(pThisBase))
+				if (*it != pThisBase->GetMyScope())
 				{
 					bool bFind = false;
 					for (auto it2 : bases_0)
 					{
-						if (*it == it2)
+						if (it2.IsObject())
 						{
-							bFind = true;
-							break;
+							auto* pXObj = it2.GetObj();
+							if (pXObj->GetType() == ObjType::XClassObject)
+							{
+								XClassObject* pClassObj = dynamic_cast<XClassObject*>(pXObj);
+								if (pClassObj)
+								{
+									AST::XClass* pXClass = pClassObj->GetClassObj();
+									if (pXClass)
+									{
+										auto* pBaseScope = pXClass->GetMyScope();
+										if (*it == pBaseScope)
+										{
+											bFind = true;
+											break;
+										}
+									}
+								}
+							}
+							else if (pXObj->GetType() == ObjType::Function)
+							{
+								Function* pFunc = dynamic_cast<Function*>(pXObj);
+								if (pFunc)
+								{
+									auto* pBaseScope = pFunc->GetMyScope();
+									if (*it == pBaseScope)
+									{
+										bFind = true;
+										break;
+									}
+								}
+							}
 						}
 					}//end for
 					if (!bFind)
@@ -426,7 +460,7 @@ public:
 	virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdSet, int id_offset,
 		long long startIndex, long long count) override;
-	inline bool Set(X::Value& v) 
+	FORCE_INLINE bool Set(X::Value& v) 
 	{
 		AutoLock autoLock(m_lock);
 		if (m_useLValue)
@@ -435,7 +469,7 @@ public:
 			m_data.push_back(v);
 		return true;
 	}
-	inline virtual bool Set(long long index, X::Value& v) override
+	FORCE_INLINE virtual bool Set(long long index, X::Value& v) override
 	{
 		AutoLock autoLock(m_lock);
 		if (m_useLValue)
@@ -452,7 +486,7 @@ public:
 		}
 		return true;
 	}
-	inline virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+	FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
 	{
 		long long it = (long long)pos;
 		X::Value val0;
@@ -489,7 +523,7 @@ public:
 //		Get(idx, v0);
 //		return v0;
 //	}
-	inline bool Get(long long idx, X::Value& v,
+	FORCE_INLINE bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{
 		AutoLock autoLock(m_lock);

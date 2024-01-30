@@ -10,12 +10,14 @@
 #include "number.h"
 #include "module.h"
 #include "op_registry.h"
+#include "decor.h"
 
 namespace X 
 {
 	namespace AST
 	{
 		class Module;
+		class JitBlock;
 	}
 class OpRegistry;
 class Parser
@@ -28,14 +30,24 @@ class Parser
 	BlockState* m_curBlkState = nil;
 	std::vector<short> m_preceding_token_indexstack;
 
-	inline bool LastIsLambda();
+	//status for JitBlock
+	//if this flag is true, means the next line will be a JitBlock
+	//then inside LineOpFeedIntoBlock, will check the input line is JitBlock or not
+	//use this flag to avoid this check always
+	bool m_bMeetJitBlock = false;
+	bool m_bInsideJitBlock = false;
+	AST::JitBlock* m_curJitBlock = nullptr;
+	//Use this to meet some line pos >= this then this block finished
+	int m_blockStartCharPos = 0;
+
+	FORCE_INLINE bool LastIsLambda();
 	//use this stack to keep 3 preceding tokens' index
 	//and if meet slash, will pop one, because slash means line continuing
-	inline void reset_preceding_token()
+	FORCE_INLINE void reset_preceding_token()
 	{
 		m_preceding_token_indexstack.clear();
 	}
-	inline void push_preceding_token(short idx)
+	FORCE_INLINE void push_preceding_token(short idx)
 	{
 		if (m_preceding_token_indexstack.size() > 3)
 		{
@@ -44,14 +56,14 @@ class Parser
 		}
 		m_preceding_token_indexstack.push_back(idx);
 	}
-	inline short get_last_token()
+	FORCE_INLINE short get_last_token()
 	{
 		return m_preceding_token_indexstack.size() > 0?
 			m_preceding_token_indexstack[
 				m_preceding_token_indexstack.size() - 1] :
 			(short)TokenIndex::TokenInvalid;
 	}
-	inline void pop_preceding_token()
+	FORCE_INLINE void pop_preceding_token()
 	{
 		if (m_preceding_token_indexstack.size() > 0)
 		{
@@ -63,6 +75,37 @@ private:
 	void ResetForNewLine();
 	void LineOpFeedIntoBlock(AST::Expression* line,
 		AST::Indent& lineIndent);
+	FORCE_INLINE AST::Expression* IsJitBlock(AST::Expression* lineStatment)
+	{
+		AST::Expression* pExpJitBlock = nullptr;
+		auto opType = lineStatment->m_type;
+		if (opType == AST::ObType::JitBlock)
+		{
+			pExpJitBlock = lineStatment;
+		}
+		else if (opType == AST::ObType::BinaryOp)
+		{
+			auto* pBinOp = (AST::BinaryOp*)lineStatment;
+			auto* pL = pBinOp->GetL();
+			if (pL)
+			{
+				if (pL->m_type == AST::ObType::BinaryOp)
+				{
+					auto* pLBinOp = (AST::BinaryOp*)pL;
+					auto* pLL = pLBinOp->GetL();
+					if (pLL && pLL->m_type == AST::ObType::JitBlock)
+					{
+						pExpJitBlock = pLL;
+					}
+				}
+				else if (pL->m_type == AST::ObType::JitBlock)
+				{
+					pExpJitBlock = pL;
+				}
+			}
+		}
+		return pExpJitBlock;
+	}
 public:
 	void SetSkipLineFeedFlags(bool b)
 	{
@@ -71,11 +114,40 @@ public:
 			m_curBlkState->m_SkipLineFeedN = b;
 		}
 	}
+	FORCE_INLINE void SetMeetJitBlock(bool b)
+	{
+		m_bMeetJitBlock = b;
+	}
+	FORCE_INLINE bool LastLineIsJitDecorator()
+	{
+		if (m_curBlkState == nullptr)
+		{
+			return false;
+		}
+		auto* pBlock = m_curBlkState->Block();
+		if (pBlock)
+		{
+			auto& lasBlockBody = pBlock->GetBody();
+			if (lasBlockBody.size())
+			{
+				auto* pLastLine = lasBlockBody[lasBlockBody.size() - 1];
+				if (pLastLine->m_type == AST::ObType::Decor)
+				{
+					auto* pDecor = (AST::Decorator*)pLastLine;
+					if (pDecor->IsJitDecorator())
+					{
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
 	BlockState* GetCurBlockState() {return m_curBlkState;}
 	void NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair = true);
 	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
 	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'
-	inline bool PreTokenIsOp()
+	FORCE_INLINE bool PreTokenIsOp()
 	{ 
 		if (m_preceding_token_indexstack.size() == 0)
 		{
@@ -87,7 +159,7 @@ public:
 		}
 	}
 
-	inline OpAction OpAct(short idx)
+	FORCE_INLINE OpAction OpAct(short idx)
 	{
 		return G::I().R().OpAct(idx);
 	}

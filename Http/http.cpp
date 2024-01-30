@@ -49,7 +49,7 @@ namespace X
 						kwargs.Add(it);
 					}
 					X::Value retValue;
-					bool bCallOK = pat.handler.GetObj()->Call(X::g_pXHost->GetCurrentRuntime(),
+					bool bCallOK = pat.handler.GetObj()->Call(nullptr,
 						pCurPack, params,kwargs, retValue);
 					if (bCallOK)
 					{
@@ -171,10 +171,7 @@ namespace X
 					X::Value retValue0;
 					try 
 					{
-						pHandler->Call(X::g_pXHost->GetCurrentRuntime(),
-							pCurPack,
-							params0, kwParams0,
-							retValue0);
+						pHandler->Call(nullptr,pCurPack,params0, kwParams0,retValue0);
 					}
 					catch (int e)
 					{

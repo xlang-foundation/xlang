@@ -6,6 +6,7 @@
 #include "remote_object.h"
 #include "list.h"
 #include "prop.h"
+#include "remote_client_object.h"
 
 namespace X
 {
@@ -82,7 +83,7 @@ namespace X
 	{
 		if (m_rt == nullptr)
 		{
-			m_rt = X::g_pXHost->CreateRuntime();
+			m_rt = X::g_pXHost->CreateRuntime(true);
 		}
 	}
 	X::XObj* RemoteObjectStub::QueryObjWithName(std::string& name)
@@ -352,6 +353,11 @@ namespace X
 		{
 			X::Value v;
 			v.FromBytes(&stream);
+			if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteClientObject)
+			{
+				auto* pRemoteClientObj = dynamic_cast<X::RemoteClientObject*>(v.GetObj());
+				pRemoteClientObj->SetStub((XLangStub*)pProc);
+			}
 			pCallInfo->params.push_back(v);
 		}
 		int kwNum = 0;
@@ -363,6 +369,11 @@ namespace X
 			stream >> key;
 			X::Value v;
 			v.FromBytes(&stream);
+			if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteClientObject)
+			{
+				auto* pRemoteClientObj = dynamic_cast<X::RemoteClientObject*>(v.GetObj());
+				pRemoteClientObj->SetStub((XLangStub*)pProc);
+			}
 			pCallInfo->kwParams.Add(key.c_str(), v,true);
 		}
 		stream >> pCallInfo->haveTrailer;

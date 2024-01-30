@@ -3,141 +3,66 @@
 #include "dict.h"
 #include "port.h"
 #include "function.h"
+#include "obj_func_scope.h"
 
 namespace X
 {
 	namespace Data
 	{
-		class ListScope :
-			virtual public AST::Scope
-		{
-			AST::StackFrame* m_stackFrame = nullptr;
-		public:
-			ListScope() :
-				Scope()
-			{
-				Init();
-			}
-			void clean()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-					m_stackFrame = nullptr;
-				}
-			}
-			~ListScope()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
-			}
-			void Init()
-			{
-				m_stackFrame = new AST::StackFrame(this);
-				m_stackFrame->SetVarCount(3);
-				std::string strName;
-				{
-					strName = "remove";
-					auto f = [](X::XRuntime* rt,XObj* pThis,XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						List* pObj = dynamic_cast<List*>(pContext);
-						long long idx = params[0];
-						pObj->Remove(idx);
-						retValue = Value(true);
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName, "remove(index)", func);
-					auto* pFuncObj = new X::Data::Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-				{
-					strName = "clear";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						List* pObj = dynamic_cast<List*>(pContext);
-						pObj->Clear();
-						retValue = Value(true);
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"clear()",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-				{
-					strName = "size";
-					auto f = [](X::XRuntime* rt,XObj* pThis,XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						List* pObj = dynamic_cast<List*>(pContext);
-						retValue = Value(pObj->Size());
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"size()",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-
-			}
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override
-			{
-				return nullptr;
-			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
-			}
-		};
-		static ListScope* _listScope = nullptr;
+		static Obj_Func_Scope<3> _listScope;
 		void List::Init()
 		{
-			_listScope = new ListScope();
+			_listScope.Init();
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					List* pObj = dynamic_cast<List*>(pContext);
+					long long idx = params[0];
+					pObj->Remove(idx);
+					retValue = Value(true);
+					return true;
+				};
+				_listScope.AddFunc("remove", "remove(index)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					List* pObj = dynamic_cast<List*>(pContext);
+					pObj->Clear();
+					retValue = Value(true);
+					return true;
+				};
+				_listScope.AddFunc("clear", "clear()", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					List* pObj = dynamic_cast<List*>(pContext);
+					retValue = Value(pObj->Size());
+					return true;
+				};
+				_listScope.AddFunc("size", "size()", f);
+			}
 		}
 		void List::cleanup()
 		{
-			if (_listScope)
-			{
-				_listScope->clean();
-				delete _listScope;
-				_listScope = nullptr;
-			}
+			_listScope.Clean();
 		}
 		List::List() :
 			XList(0),
 			Object()
 		{
 			m_t = ObjType::List;
-			m_bases.push_back(_listScope);
+			m_bases.push_back(_listScope.GetMyScope());
 
 		}
 		bool List::Call(XRuntime* rt, XObj* pContext,

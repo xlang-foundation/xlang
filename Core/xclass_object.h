@@ -9,69 +9,84 @@ namespace X {
 		{
 		protected:
 			AST::XClass* m_obj = nullptr;
-			AST::StackFrame* m_stackFrame = nullptr;
+			AST::Scope* m_pMyScope = nullptr;//for hold instance properties
+			//same as m_obj->GetMyScope(), but will have own stack frame
+			AST::StackFrame* m_variableFrame = nullptr;
 			std::vector<Value> m_bases;//this is diffrent with XClass's bases
 			//will hold an instance per each Base class
 		public:
 			XClassObject()
 			{
 				m_t = ObjType::XClassObject;
-				m_stackFrame = new AST::StackFrame((AST::Scope*)this);
+				m_pMyScope = new AST::Scope();
+				m_pMyScope->SetType(AST::ScopeType::Class);
 			}
 			XClassObject(AST::XClass* p) :
 				XClassObject()
 			{
 				m_obj = p;
-				m_stackFrame->SetVarCount(p->GetVarNum());
+
+				m_pMyScope->CopyFrom(m_obj->GetMyScope());
+				m_variableFrame = new AST::StackFrame(m_pMyScope);
+				m_pMyScope->SetVarFrame(m_variableFrame);
+
+
+				//use XClas's MyScope not Scope( parent scope)
+				m_variableFrame->SetVarCount(m_obj->GetMyScope()->GetVarNum());
 				auto* pClassStack = p->GetClassStack();
 				if (pClassStack)
 				{
-					m_stackFrame->Copy(pClassStack);
+					m_variableFrame->Copy(pClassStack);
 				}
 			}
-			inline std::vector<Value>& GetBases()
+			FORCE_INLINE std::vector<Value>& GetBases()
 			{
 				return m_bases;
 			}
 			void AssignClass(AST::XClass* p)
 			{
 				m_obj = p;
-				m_stackFrame->SetVarCount(p->GetVarNum());
+				if (m_variableFrame == nullptr)
+				{
+					m_variableFrame = new AST::StackFrame(m_pMyScope);
+					m_pMyScope->SetVarFrame(m_variableFrame);
+				}
+				m_variableFrame->SetVarCount(m_obj->GetMyScope()->GetVarNum());
 			}
 			~XClassObject()
 			{
-				if (m_stackFrame)
+				if (m_variableFrame)
 				{
-					delete m_stackFrame;
+					delete m_variableFrame;
 				}
 			}
-			inline virtual int GetBaseClassCount()
+			FORCE_INLINE virtual int GetBaseClassCount()
 			{
 				return (int)m_bases.size();
 			}
-			inline virtual X::Value GetBaseClass(int idx)
+			FORCE_INLINE virtual X::Value GetBaseClass(int idx)
 			{
 				return m_bases[idx];
 			}
 			virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 			{
-				//TODO:check here
-				AST::Expression exp;
-				exp.SaveToStream(rt, pContext, m_obj, stream);
+				AST::Scope* pOldClassScope = stream.ScopeSpace().GetCurrentClassScope();
+				stream.ScopeSpace().SetCurrentClassScope(m_obj->GetMyScope());
+				//Pack Bases first
 				stream << m_bases.size();
 				for (auto& b : m_bases)
 				{
 					stream << b;
 				}
-				m_stackFrame->ToBytes(stream);
+
+				AST::Expression exp;
+				exp.SaveToStream(rt, pContext, m_obj, stream);
+				m_variableFrame->ToBytes(stream);
+				stream.ScopeSpace().SetCurrentClassScope(pOldClassScope);
 				return true;
 			}
 			virtual bool FromBytes(X::XLangStream& stream)
 			{
-				//pass this as XClass's Object
-				auto* pPrevContext = stream.ScopeSpace().SetContext(this);
-				AST::Expression exp;
-				m_obj = exp.BuildFromStream<AST::XClass>(stream);
 				size_t size = 0;
 				stream >> size;
 				//remove all bases maybe come from init
@@ -82,17 +97,31 @@ namespace X {
 					stream >> b;
 					m_bases.push_back(b);
 				}
-				m_stackFrame->FromBytes(stream);
+
+				//pass this as XClass's Object
+				auto* pPrevContext = stream.ScopeSpace().SetContext(this);
+				AST::Expression exp;
+				m_obj = exp.BuildFromStream<AST::XClass>(stream);
+				//Create m_variableFrame
+				m_pMyScope->CopyFrom(m_obj->GetMyScope());
+				m_variableFrame = new AST::StackFrame(m_pMyScope);
+				m_pMyScope->SetVarFrame(m_variableFrame);
+				m_variableFrame->FromBytes(stream);
 				stream.ScopeSpace().SetContext(pPrevContext);
 				return true;
 			}
 			virtual long long Size() override
 			{
-				return m_obj ? m_obj->GetVarNum() : 0;
+				return m_obj ? m_obj->GetMyScope()->GetVarNum() : 0;
 			}
-			inline virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+			FORCE_INLINE virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 			{
 				Object::GetBaseScopes(bases);
+				//we put this class or class instance's scope at first
+				//means instance or class's member will overide bases
+				
+				//use instance's scope replace|| bases.push_back(pAst_Cls->GetMyScope());
+				bases.push_back(m_pMyScope);
 				auto* pAst_Cls = GetClassObj();
 				auto& cls_bases = pAst_Cls->GetBases();
 				for (auto& v : cls_bases)
@@ -103,7 +132,6 @@ namespace X {
 						pRealObj->GetBaseScopes(bases);
 					}
 				}
-				bases.push_back(pAst_Cls);
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
@@ -121,7 +149,7 @@ namespace X {
 				std::string retStr(v);
 				return GetABIString(retStr);
 			}
-			inline XObj* QueryBaseObjForPackage(XObj* pPackage)
+			FORCE_INLINE XObj* QueryBaseObjForPackage(XObj* pPackage)
 			{
 				XPackage* pXPackage = dynamic_cast<XPackage*>(pPackage);
 				if (pXPackage == nullptr)
@@ -148,11 +176,11 @@ namespace X {
 				return pRetObj;
 
 			}
-			inline AST::StackFrame* GetStack()
+			FORCE_INLINE AST::StackFrame* GetStack()
 			{
-				return m_stackFrame;
+				return m_variableFrame;
 			}
-			inline AST::XClass* GetClassObj() { return m_obj; }
+			FORCE_INLINE AST::XClass* GetClassObj() { return m_obj; }
 			virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue)

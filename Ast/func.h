@@ -17,12 +17,12 @@ namespace X
 namespace AST
 {
 class Func :
-	virtual public Block,
-	virtual public Scope
+	public Block
 {
 protected:
 	bool m_PassScopeLayout = false;//in lambda case, will run ScopeLayout multiple time
 	//use this to avoid it
+	Module* m_myModule = nullptr;
 	std::vector<Decorator*> m_decors;
 	String m_Name = { nil,0 };
 	bool m_NameNeedRelease = false;
@@ -32,7 +32,15 @@ protected:
 	List* Params = nil;
 	std::vector<int> m_IndexofParamList;//same size with input positional param
 	Expression* RetType = nil;
-	Module* GetMyModule();
+	void FindMyModule();
+	FORCE_INLINE Module* GetMyModule()
+	{
+		if (m_myModule == nullptr)
+		{
+			FindMyModule();
+		}
+		return m_myModule;
+	}
 	void SetName(Expression* n)
 	{
 		Var* vName = dynamic_cast<Var*>(n);
@@ -80,10 +88,12 @@ protected:
 	}
 public:
 	Func() :
-		Block(), UnaryOp(), Operator(),
-		Scope(),ObjRef()
+		Block()
 	{
 		m_type = ObType::Func;
+		m_pMyScope = new Scope();
+		m_pMyScope->SetType(ScopeType::Func);
+		m_pMyScope->SetExp(this);
 	}
 	~Func()
 	{
@@ -102,6 +112,14 @@ public:
 #endif
 		m_decors.clear();
 	}
+	FORCE_INLINE Scope* GetScope()
+	{
+		if (m_scope == nullptr)
+		{
+			m_scope = FindScope();
+		}
+		return m_scope;
+	}
 	virtual void ScopeLayout() override;
 	std::string getcode(bool includeHead = false);
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
@@ -114,7 +132,7 @@ public:
 		code += GetCode();
 		//change current scope of stream
 		Scope* pOldScope = stream.ScopeSpace().GetCurrentScope();
-		stream.ScopeSpace().SetCurrentScope(dynamic_cast<Scope*>(this));
+		stream.ScopeSpace().SetCurrentScope(m_pMyScope);
 		Block::ToBytes(rt,pContext,stream);
 #if _pack_decor_
 		stream << (int)m_decors.size();
@@ -140,7 +158,13 @@ public:
 			stream << idx;
 		}
 		stream << m_Index << m_IndexOfThis<< m_needSetHint;
-		Scope::ToBytes(rt, pContext, stream);
+
+		bool bHaveScope = (m_pMyScope != nullptr);	
+		stream << bHaveScope;
+		if (m_pMyScope)
+		{
+			m_pMyScope->ToBytes(rt, pContext, stream);
+		}
 		return true;
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override
@@ -186,20 +210,25 @@ public:
 			m_IndexofParamList.push_back(idx);
 		}
 		stream >> m_Index >> m_IndexOfThis>> m_needSetHint;
-		Scope::FromBytes(stream);
+		bool bHaveScope = false;
+		stream >> bHaveScope;
+		if (bHaveScope)
+		{
+			m_pMyScope->FromBytes(stream);
+		}
 		return true;
 	}
 	virtual std::string GetDoc()
 	{
 		return "";
 	}
-	inline void AddDecor(Decorator* pDecor)
+	FORCE_INLINE void AddDecor(Decorator* pDecor)
 	{
 		m_decors.push_back(pDecor);
 	}
 	void NeedSetHint(bool b) { m_needSetHint = b; }
-	String& GetNameStr() { return m_Name; }
-	virtual std::string GetNameString() override
+	FORCE_INLINE String& GetNameStr() { return m_Name; }
+	FORCE_INLINE std::string GetNameString()
 	{
 		return std::string(m_Name.s, m_Name.size);
 	}
@@ -210,13 +239,10 @@ public:
 		{
 			Params->CalcCallables(rt,pContext,callables);
 		}
-		callables.push_back(this);
+		callables.push_back(m_pMyScope);
 		return true;
 	}
-	virtual Scope* GetParentScope() override
-	{
-		return FindScope();
-	}
+
 	virtual void SetR(Expression* r) override
 	{
 		if (r->m_type == AST::ObType::Pair)
@@ -259,19 +285,13 @@ public:
 			RetType->SetParent(this);
 		}
 	}
-	inline Expression* GetRetType()
+	FORCE_INLINE Expression* GetRetType()
 	{
 		return RetType;
 	}
-	inline Expression* GetParams()
+	FORCE_INLINE Expression* GetParams()
 	{
 		return Params;
-	}
-	
-	virtual int AddOrGet(std::string& name, bool bGetOnly,Scope** ppRightScope=nullptr) override
-	{
-		int retIdx = Scope::AddOrGet(name, bGetOnly, ppRightScope);
-		return retIdx;
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext,
 		ARGS& params,
@@ -286,7 +306,7 @@ public:
 		Value& v, LValue* lValue = nullptr) override;
 };
 class ExternFunc
-	:virtual public Func
+	:public Func
 {
 	std::string m_funcName;
 	std::string m_doc;
@@ -348,7 +368,7 @@ public:
 		stream >> m_funcName;
 		return true;
 	}
-	inline virtual bool CallEx(XRuntime* rt, XObj* pContext,
+	FORCE_INLINE virtual bool CallEx(XRuntime* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& trailer,
@@ -372,7 +392,7 @@ public:
 		}
 	}
 	XObj* GetRightContextForClass(XObj* pContext);
-	inline virtual bool Call(XRuntime* rt, XObj* pContext,
+	FORCE_INLINE virtual bool Call(XRuntime* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		Value& retValue) override

@@ -5,6 +5,7 @@
 #include "dict.h"
 #include "xlang.h"
 #include "bin.h"
+#include "op.h"
 
 namespace X
 {
@@ -51,16 +52,25 @@ namespace X
 			if (rt->GetTrace())
 			{
 				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
-					TraceEvent::Call, this, this);
+					TraceEvent::Call, m_pMyScope, this);
 			}
 			if (fromPath.empty())
 			{
 				std::string strFileName = GetPyModuleFileName();
 				PyObjectCache::I().AddModule(strFileName, this);
-				auto sys = PyEng::Object::Import("sys");
-				sys["path.insert"](0, m_path);
+				bool bRemovePath = false;
+				PyEng::Object sys;
+				if (IsAbsPath(strFileName))
+				{
+					sys = PyEng::Object::Import("sys");
+					sys["path.insert"](0, m_path);
+					bRemovePath = true;
+				}
 				m_obj = g_pPyHost->Import(name.c_str());
-				sys["path.remove"](m_path);
+				if (bRemovePath)
+				{
+					sys["path.remove"](m_path);
+				}
 			}
 			else if (fromPath == preloadTag)
 			{
@@ -160,6 +170,16 @@ namespace X
 					valBin = X::Value(pBin);
 				}
 			}
+			else if (pyObj.IsString())
+			{
+				std::string strVal = (std::string)pyObj;
+				long long totalSize = (long long)strVal.size();
+				char* pBinData = new char[totalSize];
+				memcpy(pBinData, strVal.c_str(), totalSize);
+				//create a Bin object
+				Data::Binary* pBin = new Data::Binary(pBinData, totalSize, true);
+				valBin = X::Value(pBin);
+			}
 			return true;
 		}
 		void PyProxyObject::EachVar(XlangRuntime* rt, XObj* pContext,
@@ -175,6 +195,7 @@ namespace X
 				f(name, val);
 			}
 		}
+#if __TODO_SCOPE__
 		bool PyProxyObject::isEqual(Scope* s)
 		{
 			PyProxyObject* pS_Proxy = dynamic_cast<PyProxyObject*>(s);
@@ -185,23 +206,24 @@ namespace X
 			return (pS_Proxy->m_name == m_name &&
 				pS_Proxy->m_proxyType == m_proxyType);
 		}
+#endif
+		int PyProxyObject::AddOrGet(const char* name, bool bGetOnly)
+		{
+			std::string strName(name);
+			//if not exist, add it, so set as false for AddOrGet
+			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, false);
+			auto obj0 = (PyEng::Object)m_obj[name];
+			//check obj0 is a function or not
+			PyProxyObject* pProxyObj = new PyProxyObject(m_obj,obj0, strName);
+			X::Value v(pProxyObj);
+			m_variableFrame->Set(idx, v);
+			return idx;
+		}
 		bool PyProxyObject::CalcCallables(XlangRuntime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
 			callables.push_back(dynamic_cast<AST::Scope*>(this));
 			return true;
-		}
-		int PyProxyObject::AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope)
-		{
-			int idx = AST::Scope::AddOrGet(name, false);
-			m_stackFrame->SetVarCount(GetVarNum());
-			auto obj0 = (PyEng::Object)m_obj[name.c_str()];
-			//check obj0 is a function or not
-
-			PyProxyObject* pProxyObj = new PyProxyObject(m_obj,obj0,name);
-			X::Value v(pProxyObj);
-			m_stackFrame->Set(idx, v);
-			return idx;
 		}
 		bool PyProxyObject::Call(XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams,

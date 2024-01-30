@@ -225,13 +225,31 @@ namespace X
 		//Pack Parameters
 		for (auto& param : params)
 		{
-			param.ToBytes(&stream);
+			if (param.IsObject() && param.GetObj()->GetType() == X::ObjType::Function)
+			{//for function as an event handler, we need to convert it to remote client object
+				//conver to remote client object
+				auto&& rcParam = ConvertXObjToRemoteClientObject(param.GetObj());
+				rcParam.ToBytes(&stream);
+			}
+			else
+			{
+				param.ToBytes(&stream);
+			}
 		}
 		stream << (int)kwParams.size();
 		for (auto& kw : kwParams)
 		{
 			stream << kw.key;
-			kw.val.ToBytes(&stream);
+			if (kw.val.IsObject() && kw.val.GetObj()->GetType() == X::ObjType::Function)
+			{
+				//conver to remote client object
+				auto&& rcParam = ConvertXObjToRemoteClientObject(kw.val.GetObj());
+				rcParam.ToBytes(&stream);
+			}
+			else
+			{
+				kw.val.ToBytes(&stream);
+			}
 		}
 		//set flag to show if there is a trailer
 		stream << trailer.IsValid();
@@ -406,15 +424,46 @@ namespace X
 			{
 				Call_Context* pContext = (Call_Context*)head.context;
 				pContext->pWait->Release();
+				//wait for call read out its return data
+				m_pCallReadyWait->Wait(-1);
+				mSMSwapBuffer2->EndRead();
 			}
 			else
-			{//notify from server side
+			{//notify from server side, no wait, we don't support return valur for this call
+				mStream2.ReInit();
+				mStream2.SetSMSwapBuffer(mSMSwapBuffer2);
+				mStream2.Refresh();
+				ROBJ_ID clientObjId;
+				mStream2 >> clientObjId;
+				int argNum;
+				mStream2 >> argNum;
+				ARGS params(argNum);
+				KWARGS kwParams;
+				for (int i = 0; i < argNum; i++)
+				{
+					Value val;
+					val.FromBytes(&mStream2);
+					params.push_back(val);
+				}
+				int kwNum;
+				mStream2 >> kwNum;
+				for (int i = 0; i < kwNum; i++)
+				{
+					std::string key;
+					mStream2 >> key;
+					Value val;
+					val.FromBytes(&mStream2);
+					kwParams.Add(key.c_str(),val);
+				}
+				mSMSwapBuffer2->EndRead();
 
+				auto* pClientObj = CovertIdToXObj(clientObjId);
+				if(pClientObj)
+				{
+					X::Value retValue;
+					pClientObj->Call(nullptr, nullptr, params,kwParams,retValue);
+				}
 			}
-			//wait for call read out its return data
-			m_pCallReadyWait->Wait(-1);
-			//std::cout << "After wait" << std::endl;
-			mSMSwapBuffer2->EndRead();
 			//do an empty write to notify server side can write again
 			mSMSwapBuffer2->BeginWrite();
 			mSMSwapBuffer2->EndWrite();

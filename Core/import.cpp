@@ -7,6 +7,7 @@
 #include "moduleobject.h"
 #include "remote_object.h"
 #include "deferred_object.h"
+#include "op.h"
 
 namespace X
 {
@@ -15,10 +16,6 @@ namespace X
 
 }
 
-X::AST::Scope* X::AST::ScopeProxy::GetParentScope()
-{
-	return nullptr;
-}
 bool X::AST::Import::CalcCallables(XlangRuntime* rt, XObj* pContext,
 	std::vector<Scope*>& callables)
 {
@@ -111,6 +108,15 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	}
 	return bOK;
 }
+
+bool endsWithDotX(const std::string& str) 
+{
+	return str.length() >= 2 &&
+		str[str.length() - 2] == '.' &&
+		std::tolower(str[str.length() - 1]) == 'x';
+}
+
+
 bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	std::string& curModulePath,
 	std::string& loadingModuleName,
@@ -121,36 +127,47 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	std::string prefixPath;
 	if (!m_path.empty())
 	{
-		prefixPath = m_path;
-		ReplaceAll(prefixPath, ".", Path_Sep_S);
-	}
-
-	std::vector<std::string> searchPaths;
-	searchPaths.push_back(curModulePath);
-	searchPaths.push_back(g_pXload->GetConfig().xlangEnginePath);
-
-	auto search = [](std::string& loadingModuleName,
-		std::vector<std::string>& searchPaths,
-		std::string& loadXModuleName, std::string prefixPath)
-	{
-		for (auto& pa : searchPaths)
+		//we check m_path if it is a full path of .x file
+		bHaveX = endsWithDotX(m_path);
+		if (bHaveX)
 		{
-			std::vector<std::string> candiateFiles;
-			bool bRet = file_search(pa + Path_Sep_S + prefixPath,
-				loadingModuleName + ".x", candiateFiles);
-			if (bRet && candiateFiles.size() > 0)
-			{
-				loadXModuleName = candiateFiles[0];
-				return true;
-			}
+			loadXModuleFileName = m_path;
 		}
-		return false;
-	};
-	bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
+		else
+		{
+			prefixPath = m_path;
+			ReplaceAll(prefixPath, ".", Path_Sep_S);
+		}
+	}
 	if (!bHaveX)
 	{
-		rt->M()->GetSearchPaths(searchPaths);
+		std::vector<std::string> searchPaths;
+		searchPaths.push_back(curModulePath);
+		searchPaths.push_back(g_pXload->GetConfig().xlangEnginePath);
+
+		auto search = [](std::string& loadingModuleName,
+			std::vector<std::string>& searchPaths,
+			std::string& loadXModuleName, std::string prefixPath)
+			{
+				for (auto& pa : searchPaths)
+				{
+					std::vector<std::string> candiateFiles;
+					bool bRet = file_search(pa + Path_Sep_S + prefixPath,
+						loadingModuleName + ".x", candiateFiles);
+					if (bRet && candiateFiles.size() > 0)
+					{
+						loadXModuleName = candiateFiles[0];
+						return true;
+					}
+				}
+				return false;
+			};
 		bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
+		if (!bHaveX)
+		{
+			rt->M()->GetSearchPaths(searchPaths);
+			bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
+		}
 	}
 	bool bOK = false;
 	if (bHaveX)
@@ -181,7 +198,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 	if (m_from)
 	{
 		Value v0;
-		if (m_from->Exec(rt, action, pContext, v0, nullptr))
+		if (ExpExec(m_from,rt, action, pContext, v0, nullptr))
 		{
 			m_path = v0.ToString();
 		}
@@ -189,7 +206,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 	if (m_thru)
 	{
 		Value v0;
-		if (m_thru->Exec(rt, action, pContext, v0, nullptr))
+		if (ExpExec(m_thru,rt, action, pContext, v0, nullptr))
 		{
 			m_thruUrl = v0.ToString();
 		}
@@ -213,11 +230,52 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 		}
 		if (bOK && pMyScope)
 		{
-			pMyScope->AddAndSet(rt, pContext, varName, v);
+			SCOPE_FAST_CALL_AddOrGet0(idx,pMyScope,varName, false);
+			rt->Set(pMyScope, pContext,idx,v);
 		}
 	}
 	return true;
 }
+bool X::AST::Import::ExpRun(XlangRuntime* rt, X::XObj* pContext, X::Exp::ValueStack& valueStack, X::Value& retValue)
+{
+	Scope* pMyScope = GetScope();
+	if (m_from)
+	{
+		m_path = valueStack.top().v.ToString();
+		valueStack.pop();
+	}
+	if (m_thru)
+	{
+		m_thruUrl = valueStack.top().v.ToString();
+		valueStack.pop();
+	}
+	for (auto& im : m_importInfos)
+	{
+		//for deferred object, create a DeferredObject object to wrap the import info
+		//and set this object's value to current scope
+		std::string varName = im.alias.empty() ? im.name : im.alias;
+		bool bOK = false;
+		if (im.Deferred)
+		{
+			auto* deferredObj = new Data::DeferredObject();
+			deferredObj->SetImportInfo(this, &im);
+			retValue = Value(dynamic_cast<XObj*>(deferredObj));
+			bOK = true;
+		}
+		else
+		{
+			bOK = LoadOneModule(rt, pMyScope, pContext, retValue, im, varName);
+		}
+		if (bOK && pMyScope)
+		{
+			SCOPE_FAST_CALL_AddOrGet0(idx, pMyScope, varName, false);
+			rt->Set(pMyScope, pContext, idx, retValue);
+		}
+	}
+
+	return true;
+}
+
 bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 	XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange)
 {

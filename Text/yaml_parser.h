@@ -6,6 +6,19 @@
 #include <string>
 #include "utility.h"
 
+#if !defined(FORCE_INLINE)
+#if defined(_MSC_VER)
+// Microsoft Visual C++ Compiler
+#define FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang Compiler
+#define FORCE_INLINE __attribute__((always_inline)) inline
+#else
+// Fallback for other compilers
+#define FORCE_INLINE inline
+#endif
+#endif
+
 namespace X
 {
 	namespace Text
@@ -73,7 +86,7 @@ namespace X
 					delete m_valueNode;
 				}
 			}
-			inline bool HaveQuote()
+			FORCE_INLINE bool HaveQuote()
 			{
 				return m_inQuote;
 			}
@@ -134,15 +147,15 @@ namespace X
 				m_valueNode = pNode;
 				m_valueNode->SetParent(this);
 			}
-			inline int GetChildrenCount()
+			FORCE_INLINE int GetChildrenCount()
 			{
 				return (int)m_children.size();
 			}
-			inline std::vector<YamlNode*>& GetChildren()
+			FORCE_INLINE std::vector<YamlNode*>& GetChildren()
 			{
 				return m_children;
 			}
-			inline YamlNode* GetChild(int idx)
+			FORCE_INLINE YamlNode* GetChild(int idx)
 			{
 				if (idx < 0 || idx >= m_children.size())
 				{
@@ -150,11 +163,11 @@ namespace X
 				}
 				return m_children[idx];
 			}
-			inline YamlNode* GetValueNode()
+			FORCE_INLINE YamlNode* GetValueNode()
 			{
 				return m_valueNode;
 			}
-			inline std::string GetValue()
+			FORCE_INLINE std::string GetValue()
 			{
 				if (m_type == YamlNodeType::Doc)
 				{
@@ -189,6 +202,11 @@ namespace X
 					{
 						return pNode;
 					}
+				}
+				//check value node
+				if (m_valueNode)
+				{
+					return m_valueNode->FindNode(keyName);
 				}
 				return nullptr;
 			}

@@ -1,12 +1,12 @@
-num =1000
+import time
+num =100000000
 print("Test Loop:",num)
-sum =0
-t1 = time()
+sum =1
+t1 = time.time()
 for i in range(num):
- sum = sum+i
- sum = sum+3
- sum = sum-3
-t2 = time()
+  sum += i
+  
+t2 = time.time()
 t2 = (t2-t1)
 print("sum=",sum)
 print("All->time spend:",t2)

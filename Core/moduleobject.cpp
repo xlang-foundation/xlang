@@ -102,7 +102,7 @@ namespace X
 			{
 				return nullptr;
 			}
-			inline virtual bool Set(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v)
 			{
 				return false;
@@ -119,7 +119,7 @@ namespace X
 					return -1;
 				}
 			}
-			inline virtual bool Get(XlangRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v, X::LValue* lValue = nullptr)
 			{
 				v = m_funcs[idx];
@@ -144,7 +144,7 @@ namespace X
 		{
 			Object::GetBaseScopes(bases);
 			bases.push_back(_module_op);
-			bases.push_back(m_pModule);
+			bases.push_back(m_pModule->GetMyScope());
 		}
 		int ModuleObject::QueryMethod(const char* name, bool* pKeepRawParams)
 		{
@@ -156,7 +156,8 @@ namespace X
 			else
 			{
 				std::string strName(name);
-				return m_pModule->AddOrGet(strName, true);
+				SCOPE_FAST_CALL_AddOrGet0(retIdx,m_pModule->GetMyScope(), strName, true);
+				return retIdx;
 			}
 		}
 		bool ModuleObject::GetIndexValue(int idx, Value& v)
@@ -167,12 +168,9 @@ namespace X
 			}
 			else
 			{
-				return m_pModule->Get(nullptr, this, idx, v);
+				m_pModule->GetStack()->Get(idx, v);
+				return true;
 			}
-		}
-		Scope* ModuleObject::GetParentScope()
-		{
-			return nullptr;
 		}
 	}
 }

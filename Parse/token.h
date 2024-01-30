@@ -2,6 +2,19 @@
 #include "def.h"
 #include <vector>
 
+#if !defined(FORCE_INLINE)
+#if defined(_MSC_VER)
+// Microsoft Visual C++ Compiler
+#define FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang Compiler
+#define FORCE_INLINE __attribute__((always_inline)) inline
+#else
+// Fallback for other compilers
+#define FORCE_INLINE inline
+#endif
+#endif
+
 namespace X {
 enum LastCharType
 {
@@ -51,7 +64,8 @@ enum TokenIndex
 	TokenEOS = -13,
 	TokenLineComment = -20,
 	TokenComment = -21,
-	TokenFeedOp = -22
+	TokenFeedOp = -22,
+	TokenSpecialPosToBeLessOrEqual = -23,
 };
 
 enum class TokenErrorType
@@ -87,6 +101,14 @@ class Token
 {
 	const char* OPS = "~`!@#$%^&*()-+={}[]|:;<>,.?/\t\r\n \\'\"#";
 	CoreContext _context;
+	
+	//for some block like jit block, we need to pass through until meet a special pos
+	//so use the two variables below to control it
+	//if InMeetLineStartPosLessOrEqualToSpecialPos is true, 
+	//then we will pass through until meet a line start pos <= SpecialPosToBeLessOrEqual
+	bool InMeetLineStartPosLessOrEqualToSpecialPos = false;
+	int SpecialPosToBeLessOrEqual = 0;
+
 	bool InSpace = false;
 	bool NotCharSequnce = false; //it is "...." not '....'
 	bool InQuote = false;
@@ -100,7 +122,7 @@ class Token
 	//2 lines below for HTML parser
 	bool SkipQuote = false;
 	bool SkipHash = false; //#
-	inline char GetChar()
+	FORCE_INLINE char GetChar()
 	{
 		if (_context.spos > _context.src_code)
 		{
@@ -109,21 +131,21 @@ class Token
 		_context.charPos++;
 		return *_context.spos++;
 	}
-	inline char PrevChar()
+	FORCE_INLINE char PrevChar()
 	{
 		return _context.prevChar;
 	}
-	inline void IncLine()
+	FORCE_INLINE void IncLine()
 	{
 		_context.lineNo++;
 		_context.charPos = 0;
 		_context.lineCharCount = 0;
 	}
-	inline void ResetToRoot()
+	FORCE_INLINE void ResetToRoot()
 	{
 		_context.curNode = 0;
 	}
-	inline short GetLastMatchedNodeIndex()
+	FORCE_INLINE short GetLastMatchedNodeIndex()
 	{
 		node* pNode = (node*)(_context.kwTree + _context.curNode);
 		short idx = pNode->index;
@@ -135,24 +157,24 @@ class Token
 	}
 	bool MatchInTree(char c);
 	void token_out(short idx,int offset =-1,bool callReset=true);
-	inline void ifnotstart_token_start()
+	FORCE_INLINE void ifnotstart_token_start()
 	{
 		if (_context.token_start == nil)
 		{
 			new_token_start();
 		}
 	}
-	inline void new_token_start(int addingOffset =0)
+	FORCE_INLINE void new_token_start(int addingOffset =0)
 	{
 		_context.token_start = _context.spos - 1+ addingOffset;
 		_context.token_startline = _context.lineNo;
 		_context.token_startCharPos = _context.charPos+ addingOffset-1;
 	}
-	inline void ClearToken()
+	FORCE_INLINE void ClearToken()
 	{
 		_context.token_start = nil;
 	}
-	inline bool InStr(char c, const char* str)
+	FORCE_INLINE bool InStr(char c, const char* str)
 	{
 		if (c == 0) //for first char's pre-char
 		{
@@ -182,6 +204,11 @@ public:
 		_context.lct = LCT_None;
 		_context.curNode = 0;
 		_context.token_start = nil;
+	}
+	void SetSpecialPosToBeLessOrEqual(bool bEnable, int pos)
+	{
+		InMeetLineStartPosLessOrEqualToSpecialPos = true;
+		SpecialPosToBeLessOrEqual = pos;
 	}
 	void set_ops(const char* ops)
 	{

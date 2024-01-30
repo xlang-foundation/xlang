@@ -176,7 +176,7 @@ namespace X
 
 			return IsTensor;		
 		}
-		inline std::tuple<bool, bool> IsNumAddable(X::Data::Tensor &t, const X::Value& operand) 
+		FORCE_INLINE std::tuple<bool, bool> IsNumAddable(X::Data::Tensor &t, const X::Value& operand) 
 		{
 			bool bAddable = false;
 			bool IsNum = false;
@@ -277,7 +277,7 @@ namespace X
 			return {bAddable, IsNum};
 		}
 
-		inline bool IsTensorAddableNew(X::Data::Tensor &t1, X::Data::Tensor &t2) 
+		FORCE_INLINE bool IsTensorAddableNew(X::Data::Tensor &t1, X::Data::Tensor &t2) 
 		{
 			int dim_count1 = t1.GetDimCount(); //T(4,5,6,7)  -- 4 dimensions, 4*5*6*7 elements
 			int dim_count2 = t2.GetDimCount(); //T(6,7)      -- 2 dimensions, 6*7 elements

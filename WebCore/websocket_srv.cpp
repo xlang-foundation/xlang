@@ -34,7 +34,7 @@ namespace X
             Locker m_lockSessions;
             std::vector<WebSocketSessionImpl*> m_Sessions;
         protected:
-            virtual void WebSocketSrvThread::run() override;
+            virtual void run() override;
         public:
             WebSocketServer* GetServer()
 			{
@@ -50,7 +50,7 @@ namespace X
                 mRun = false;
                 GThread::Stop();
             }
-            inline void SetPort(int port)
+            FORCE_INLINE void SetPort(int port)
             {
                 mPort = port;
             }
@@ -110,7 +110,7 @@ namespace X
                 delete m_wsSocket;
                 m_wsSocket = nullptr;
 			}
-            inline bool Write(const X::Value& data)
+            FORCE_INLINE bool Write(const X::Value& data)
 			{
                 m_lockQueue.Lock();
                 m_OutQueue.push_back(data);
@@ -166,7 +166,7 @@ namespace X
                 }
                 catch (const std::exception& e)
                 {
-                    //LOG << "Error:" << e.what() << LINE_END;
+                    std::cout << "Error:" << e.what() << std::endl;
                 }
                 PrepareStop();
                 TryToRemoveSession();

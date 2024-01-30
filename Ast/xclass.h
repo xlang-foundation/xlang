@@ -2,6 +2,7 @@
 #include "exp.h"
 #include "scope.h"
 #include "func.h"
+#include "stackframe.h"
 
 namespace X
 {
@@ -10,10 +11,10 @@ namespace AST
 #define FastMatchThis(name) (name.size() ==4 \
 	&& name[0] =='t' && name[0] =='h' && name[0] =='i' && name[0] =='s')
 class XClass
-	:virtual public Func
+	:public Func
 {
 	Func* m_constructor = nil;
-	AST::StackFrame* m_stackFrame = nullptr;//to hold non-instance properties
+	AST::StackFrame* m_variableFrame = nullptr;//to hold non-instance properties
 	std::vector<Value> m_bases;
 	XClass* FindBase(XlangRuntime* rt, std::string& strName);
 public:
@@ -21,36 +22,44 @@ public:
 		Func()
 	{
 		m_type = ObType::Class;
+		m_pMyScope->SetType(ScopeType::Class);
+		m_variableFrame = new StackFrame(m_pMyScope);
+		m_pMyScope->SetVarFrame(m_variableFrame);
 	}
 	~XClass()
 	{
-		if (m_stackFrame)
+		if (m_variableFrame)
 		{
-			delete m_stackFrame;
+			delete m_variableFrame;
 		}
 	}
-	inline int QueryConstructor()
+	FORCE_INLINE int QueryConstructor()
 	{
-		auto it = m_Vars.find(GetNameString());
-		if (it != m_Vars.end())
+		//Constructor can be class Name as its function name
+		//Or constructor uses name: constructor or __init__
+		auto name = GetNameString();
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name,true);
+		if (idx>=0)
 		{
-			return it->second;
+			return idx;
 		}
-		it = m_Vars.find("constructor");
-		if (it != m_Vars.end())
+		name = "constructor";
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(idx,m_pMyScope,name, true);
+		if (idx >= 0)
 		{
-			return it->second;
+			return idx;
 		}
-		it = m_Vars.find("__init__");
-		if (it != m_Vars.end())
+		name = "__init__";
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(idx,m_pMyScope,name, true);
+		if (idx >= 0)
 		{
-			return it->second;
+			return idx;
 		}
 		return -1;
 	}
-	inline StackFrame* GetClassStack()
+	FORCE_INLINE StackFrame* GetClassStack()
 	{
-		return m_stackFrame;
+		return m_variableFrame;
 	}
 	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 	{
@@ -63,7 +72,7 @@ public:
 		//change current scope of stream
 		Scope* pOldClassScope = stream.ScopeSpace().GetCurrentClassScope();
 		Scope* pOldScope = stream.ScopeSpace().GetCurrentScope();
-		auto* pCurScope = dynamic_cast<Scope*>(this);
+		auto* pCurScope = GetMyScope();
 		stream.ScopeSpace().SetCurrentScope(pCurScope);
 		stream.ScopeSpace().SetCurrentClassScope(pCurScope);
 		Block::ToBytes(rt, pContext, stream);
@@ -85,30 +94,30 @@ public:
 			stream << idx;
 		}
 		stream << m_Index << m_IndexOfThis << m_needSetHint;
-		Scope::ToBytes(rt, pContext, stream);
+		m_pMyScope->ToBytes(rt, pContext, stream);
+		m_variableFrame->ToBytes(stream);
 
 		return true;
 	}
 	virtual bool FromBytes(X::XLangStream& stream) override;
-	virtual int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr) override;
-	virtual int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v) override
+	int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope = nullptr);
+	int AddAndSet(XlangRuntime* rt, XObj* pContext, std::string& name, Value& v)
 	{
-		int idx = AddOrGet(name, false);
+		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,name, false);
 		if (idx >= 0)
 		{
-			int cnt = m_stackFrame->GetVarCount();
+			int cnt = m_variableFrame->GetVarCount();
 			if (cnt <= idx)
 			{
-				m_stackFrame->SetVarCount(idx + 1);
+				m_variableFrame->SetVarCount(idx + 1);
 			}
-			Set(rt, pContext, idx, v);
+			m_variableFrame->Set(idx, v);
 		}
 		return idx;
 	}
-	virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override;
-	virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-		LValue* lValue = nullptr) override;
-	inline std::vector<Value>& GetBases() { return m_bases; }
+	bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v);
+	bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,LValue* lValue = nullptr);
+	FORCE_INLINE std::vector<Value>& GetBases() { return m_bases; }
 	bool Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr);
 	bool BuildBaseInstances(XlangRuntime* rt, XObj* pClassObj);
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;

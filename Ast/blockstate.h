@@ -23,7 +23,7 @@ class BlockState
 	std::stack<AST::Operator*> m_ops;
 	std::stack<PairInfo> m_stackPair;
 	std::vector<AST::Decorator*> m_unsolved_decors;
-	inline OpAction OpAct(short idx)
+	FORCE_INLINE OpAction OpAct(short idx)
 	{
 		return G::I().R().OpAct(idx);
 	}
@@ -41,39 +41,39 @@ public:
 	}
 	std::stack<PairInfo>& StackPair() { return m_stackPair; }
 	AST::Block* Block() { return m_pBlock; }
-	inline void PushExp(AST::Expression* exp)
+	FORCE_INLINE void PushExp(AST::Expression* exp)
 	{
 		m_operands.push(exp);
 	}
-	inline void PushOp(AST::Operator* op)
+	FORCE_INLINE void PushOp(AST::Operator* op)
 	{
 		m_ops.push(op);
 	}
-	inline bool IsOpStackEmpty()
+	FORCE_INLINE bool IsOpStackEmpty()
 	{
 		return m_ops.empty();
 	}
-	inline bool IsOperandStackEmpty()
+	FORCE_INLINE bool IsOperandStackEmpty()
 	{
 		return m_operands.empty();
 	}
-	inline void OperandPop()
+	FORCE_INLINE void OperandPop()
 	{
 		m_operands.pop();
 	}
-	inline AST::Expression* OperandTop()
+	FORCE_INLINE AST::Expression* OperandTop()
 	{
 		return m_operands.top();
 	}
-	inline AST::Operator* OpTop()
+	FORCE_INLINE AST::Operator* OpTop()
 	{
 		return m_ops.top();
 	}
-	inline void OpPop()
+	FORCE_INLINE void OpPop()
 	{
 		m_ops.pop();
 	}
-	inline void ProcessPrecedenceOp(short lastToken,
+	FORCE_INLINE void ProcessPrecedenceOp(short lastToken,
 		AST::Operator* curOp)
 	{
 		while (!m_ops.empty())
@@ -101,11 +101,11 @@ public:
 			}
 		}
 	}
-	inline void PushDecor(AST::Decorator* p)
+	FORCE_INLINE void PushDecor(AST::Decorator* p)
 	{
 		m_unsolved_decors.push_back(p);
 	}
-	inline void HaveNewLine(AST::Expression* newLine)
+	FORCE_INLINE void HaveNewLine(AST::Expression* newLine)
 	{
 		if (newLine->m_type == AST::ObType::Decor)
 		{
@@ -126,11 +126,11 @@ public:
 			m_unsolved_decors.clear();
 		}
 	}
-	inline bool DoOp(AST::Operator* op)
+	FORCE_INLINE bool DoOp(AST::Operator* op)
 	{
 		return op->OpWithOperands(m_operands,-1);
 	}
-	inline bool DoOpTop()
+	FORCE_INLINE bool DoOpTop()
 	{
 		auto top = m_ops.top();
 		m_ops.pop();

@@ -46,7 +46,7 @@ namespace X
 					delete m_pData;
 				}
 			}
-			inline virtual long long Size() { return m_size; }
+			FORCE_INLINE virtual long long Size() { return m_size; }
 			virtual char* Data() override
 			{
 				return m_pData;

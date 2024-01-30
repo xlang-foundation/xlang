@@ -1,6 +1,7 @@
 #pragma once
 #include "exp.h"
 #include "op.h"
+#include "exp_exec.h"
 
 namespace X
 {
@@ -8,7 +9,7 @@ namespace X
 namespace AST
 {
 	class PairOp :
-		virtual public BinaryOp
+		public BinaryOp
 	{
 		short m_preceding_token = 0;
 		bool ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
@@ -29,23 +30,33 @@ namespace AST
 			Value& v, LValue* lValue);
 	public:
 		PairOp() :
-			Operator(),
 			BinaryOp()
 		{
 			m_type = ObType::Pair;
 		}
 		PairOp(short opIndex, short preceding_token) :
-			Operator(opIndex),
 			BinaryOp(opIndex)
 		{
 			m_preceding_token = preceding_token;
 			m_type = ObType::Pair;
 		}
+		FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
+		{
+			if (L)
+			{
+				stack.push({ L,false });
+			}
+			if (R)
+			{
+				stack.push({ R,false });
+			}
+			return true;
+		}
 		short GetPrecedingToken()
 		{
 			return m_preceding_token;
 		}
-		inline virtual void SetIsLeftValue(bool b) override
+		FORCE_INLINE virtual void SetIsLeftValue(bool b) override
 		{
 			if (R && R->m_type == AST::ObType::List)
 			{
@@ -65,7 +76,7 @@ namespace AST
 			}
 		}
 		virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override;
-		inline virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
+		FORCE_INLINE virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
 		{
 			if (ary.size() == 0)
 			{
@@ -97,6 +108,64 @@ namespace AST
 				R->SetArry(rt, pContext, ary);
 			}
 			return true;
+		}
+		FORCE_INLINE bool ExpRun_Parent(XlangRuntime* rt, X::Exp::ExpValue& leftValue,
+			X::Exp::ExpValue& rightValue, X::Value& retVal)
+		{
+			bool bOK = false;
+			if (leftValue.exp)
+			{//Call Func
+				Value& lVal = leftValue.v;
+				//to support this case :)
+				//x =(3+4)(), for this one, xlang thinks it is just like x =3+4
+				if (!lVal.IsObject())
+				{
+					retVal = lVal;
+				}
+				else
+				{
+					ARGS params(0);
+					KWARGS kwParams;
+					if (R)
+					{
+						bOK = GetParamList(rt, R, params, kwParams);
+						if (!bOK)
+						{
+							return bOK;
+						}
+					}
+					auto* obj = lVal.GetObj();
+					if (obj)
+					{
+						bOK = obj->Call(rt, nullptr, params, kwParams, retVal);
+					}
+				}
+			}
+			else
+			{
+				retVal = rightValue.v;
+			}
+			return bOK;
+		}
+		FORCE_INLINE bool ExpRun(XlangRuntime* rt, X::Exp::ExpValue& leftValue, 
+			X::Exp::ExpValue& rightValue, X::Value& retVal)
+		{
+			bool bOK = false;
+			switch (opId)
+			{
+			case X::OP_ID::Parenthesis_L:
+				bOK = ExpRun_Parent(rt, leftValue, rightValue, retVal);
+				break;
+			case X::OP_ID::Brackets_L:
+				break;
+			case X::OP_ID::Curlybracket_L:
+				break;
+			case X::OP_ID::TableBracket_L:
+				break;
+			default:
+				break;
+			}
+			return bOK;
 		}
 		virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	};

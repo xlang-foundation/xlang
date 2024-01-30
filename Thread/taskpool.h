@@ -24,15 +24,15 @@ namespace X
 		public:
 			WorkingThread();
 			~WorkingThread();
-			inline void Stop()
+			FORCE_INLINE void Stop()
 			{
 				m_run = false;
 				m_pWait->Release();
 				WaitToEnd();
 			}
-			inline void SetPool(TaskPool* p) { m_pool = p; }
-			inline void ReleaseWait() { m_pWait->Release(); }
-			inline bool IsIdle() { return m_isIdle; }
+			FORCE_INLINE void SetPool(TaskPool* p) { m_pool = p; }
+			FORCE_INLINE void ReleaseWait() { m_pWait->Release(); }
+			FORCE_INLINE bool IsIdle() { return m_isIdle; }
 		};
 		class TaskPool :
 			virtual public Object

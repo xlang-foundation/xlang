@@ -59,7 +59,7 @@ namespace X
                     (*valNode).SetNode(node);
                     list += valNode;
                 }
-                //if it is Module, need to append inline comments 
+                //if it is Module, need to append FORCE_INLINE comments 
                 if (pNode->m_type == ObType::Module)
 				{
 					Module* pModule = dynamic_cast<Module*>(pNode);
@@ -282,7 +282,8 @@ namespace X
                 InlineComment* pObj = dynamic_cast<InlineComment*>(m_pNode);
                 if (pObj)
                 {
-                    return X::Value(pObj->GetString());
+                    auto str = pObj->GetString();
+                    return X::Value(str);
                 }
             }
                 break;
@@ -294,7 +295,8 @@ namespace X
                     Var* pVar = dynamic_cast<Var*>(pAssign->GetL());
                     if (pVar)
                     {
-                        return X::Value(pVar->GetNameString());
+                        std::string name = pVar->GetNameString();
+                        return X::Value(name);
                     }
                 }
             }
@@ -314,7 +316,8 @@ namespace X
                 Var* pVar = dynamic_cast<Var*>(m_pNode);
                 if (pVar)
                 {
-                    return X::Value(pVar->GetNameString());
+                    auto name = pVar->GetNameString();
+                    return X::Value(name);
                 }
             }
 
@@ -365,7 +368,8 @@ namespace X
                 Func* pFunc = dynamic_cast<Func*>(m_pNode);
                 if (pFunc)
                 {
-                    return X::Value(pFunc->GetNameString());
+                    auto name = pFunc->GetNameString();
+                    return X::Value(name);
                 }
             }
                 break;
@@ -435,7 +439,7 @@ namespace X
                     Expression* pValExp = pAssign->GetR();
                     ExecAction action;
                     X::Value val;
-                    pValExp->Exec(nullptr, action, nullptr, val);
+                    ExpExec(pValExp,nullptr, action, nullptr, val);
                     return val;
                 }
             }

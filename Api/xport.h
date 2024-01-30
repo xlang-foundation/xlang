@@ -3,6 +3,19 @@
 #include <string.h> //for memcpy
 #include <utility>
 
+#if !defined(FORCE_INLINE)
+#if defined(_MSC_VER)
+// Microsoft Visual C++ Compiler
+#define FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang Compiler
+#define FORCE_INLINE __attribute__((always_inline)) inline
+#else
+// Fallback for other compilers
+#define FORCE_INLINE inline
+#endif
+#endif
+
 /*
  Xlang API will cross Shared Library boundary, so avoid to use STL
  this head file include replacement of STL
@@ -77,11 +90,11 @@ namespace X
 					this->construct_f(this->data_ptr, rhs.data_ptr);
 				}
 			}
-			inline operator bool() const
+			FORCE_INLINE operator bool() const
 			{
 				return (data_ptr != nullptr);
 			}
-			inline void operator = (const Function& v)
+			FORCE_INLINE void operator = (const Function& v)
 			{
 				copy_from = (Function*)&v;
 				m_duplicatedCount = v.m_duplicatedCount + 1;
@@ -116,7 +129,7 @@ namespace X
 			T* m_data = nullptr;
 			int m_size = 0;
 			int m_curPos = 0;
-			inline void Copy(T* dst, T* src, int size)
+			FORCE_INLINE void Copy(T* dst, T* src, int size)
 			{
 				for (int i = 0; i < m_size; i++)
 				{
@@ -158,9 +171,9 @@ namespace X
 					delete[] m_data;
 				}
 			}
-			inline size_t size() { return m_size; }
-			inline T* Data() { return m_data; }
-			inline T& operator[](size_t idx)
+			FORCE_INLINE size_t size() { return m_size; }
+			FORCE_INLINE T* Data() { return m_data; }
+			FORCE_INLINE T& operator[](size_t idx)
 			{
 				return m_data[idx];
 			}
@@ -173,7 +186,7 @@ namespace X
 					Copy(m_data, v.m_data, m_size);
 				}
 			}
-			inline void push_back(T v)
+			FORCE_INLINE void push_back(T v)
 			{
 				m_data[m_curPos++] = v;
 			}
@@ -186,7 +199,7 @@ namespace X
 					m_data = nullptr;
 				}
 			}
-			inline void resize(int size)
+			FORCE_INLINE void resize(int size)
 			{
 				if (size != m_size)
 				{
@@ -216,7 +229,7 @@ namespace X
 					}
 				}
 			}
-			inline void Close()
+			FORCE_INLINE void Close()
 			{//finish put, will change size according m_curPos
 				m_size = m_curPos;
 			}
@@ -341,7 +354,7 @@ namespace X
 					delete[] m_data;
 				}
 			}
-			inline void CopyItems(MapItem* pNewMap)
+			FORCE_INLINE void CopyItems(MapItem* pNewMap)
 			{
 				if (m_size > 0)
 				{
@@ -361,7 +374,7 @@ namespace X
 					delete[] m_data;
 				}
 			}
-			inline void resize(int size)
+			FORCE_INLINE void resize(int size)
 			{
 				//we don't do new size more than old size,
 				//then we can skip the link re-build flow
@@ -373,7 +386,7 @@ namespace X
 					m_size = size;
 				}
 			}
-			inline void Add(MapItem& it)
+			FORCE_INLINE void Add(MapItem& it)
 			{
 				Add(it.key, it.val, !it.ownKey);
 			}
@@ -424,18 +437,18 @@ namespace X
 					}
 				}
 			}
-			inline bool Has(const char* key)
+			FORCE_INLINE bool Has(const char* key)
 			{
 				return (find(key) != nullptr);
 			}
-			inline size_t size() { return m_size; }
+			FORCE_INLINE size_t size() { return m_size; }
 			iterator begin() { return iterator(m_data); }
 			iterator end() { return iterator(m_data + m_size); }
-			inline bool matchKeys(const char* key1, const char* key2)
+			FORCE_INLINE bool matchKeys(const char* key1, const char* key2)
 			{
 				return (strcmp(key1, key2) == 0);
 			}
-			inline MapItem* find(const char* key)
+			FORCE_INLINE MapItem* find(const char* key)
 			{
 				if (key == nullptr)
 				{

@@ -5,11 +5,13 @@ cmake_minimum_required (VERSION 3.20)
 
 project ("xlang_eng")
 
-add_compile_definitions(XLANG_ENG_DBG=1)
+# add_compile_definitions(XLANG_ENG_DBG=1)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
 include_directories("../Api")
 include_directories("../Inc")
 include_directories("../utils")
+include_directories("../Executor")
 include_directories("../Ast")
 include_directories("../Parse")
 include_directories("../Serialize")
@@ -20,10 +22,12 @@ include_directories("../Core")
 include_directories("../Text")
 include_directories("../Scripts")
 include_directories("../Tensor")
+include_directories("../Jit")
 include_directories(".")
 
 FILE(GLOB Api_SRC "../Api/value.cpp")
 FILE(GLOB Utils_SRC "../utils/*.cpp")
+FILE(GLOB Executor_SRC "../Executor/*.cpp")
 FILE(GLOB Core_SRC "../Core/*.cpp")
 FILE(GLOB Ast_SRC "../Ast/*.cpp")
 FILE(GLOB Serialize_SRC "../Serialize/*.cpp")
@@ -33,11 +37,13 @@ FILE(GLOB Ext_SRC "../Ext/*.cpp")
 FILE(GLOB Text_SRC "../Text/*.cpp")
 FILE(GLOB Rpc_SRC "../rpc/*.cpp")
 FILE(GLOB Nn_SRC "../Tensor/*.cpp")
+FILE(GLOB Jit_SRC "../Jit/*.cpp")
 FILE(GLOB Main_SRC "*.cpp")
 
 add_library(${PROJECT_NAME} SHARED 
 	${Api_SRC}
 	${Utils_SRC}
+	${Executor_SRC}
 	${Core_SRC}
 	${Ast_SRC}
 	${Parse_SRC}
@@ -47,6 +53,7 @@ add_library(${PROJECT_NAME} SHARED
 	${Text_SRC}
 	${Rpc_SRC}
 	${Nn_SRC}
+	${Jit_SRC}
 	${Main_SRC}
 )
 

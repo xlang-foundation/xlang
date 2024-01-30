@@ -7,7 +7,8 @@ namespace X {
 		bool StackFrame::AddVar(XlangRuntime* rt,std::string& name, X::Value& val)
 		{
 			AutoLock lock(m_lock);
-			m_pScope->AddAndSet(rt, nullptr, name, val);
+			SCOPE_FAST_CALL_AddOrGet0(idx,m_pScope,name, false);
+			Set(idx, val);
 			return true;
 		}
 #if XLANG_ENG_DBG

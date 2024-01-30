@@ -65,7 +65,7 @@ namespace X
 			}
 			m_lockLrpcPorts.Unlock();
 		}
-		inline bool IsLrpcHostedByThisProcess(const char* url)
+		FORCE_INLINE bool IsLrpcHostedByThisProcess(const char* url)
 		{
 			bool bFound = false;
 			int nPort = 0;
@@ -145,9 +145,9 @@ namespace X
 			m_proxyMapLock.Unlock();
 			return pProxy;
 		}
-		bool Register(const char* name,PackageCreator creator)
+		bool Register(const char* name,PackageCreator creator,void* pContextForCreator = nullptr)
 		{
-			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,Value()}));
+			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,Value(pContextForCreator)}));
 			return true;
 		}
 		bool Register(const char* name,Value& objPackage)
@@ -176,17 +176,16 @@ namespace X
 			if (it != m_mapPackage.end())
 			{
 				PackageInfo& info = it->second;
-				if (info.package.IsInvalid())
+				if (info.creator)
 				{
-					auto* pPack = info.creator();
+					auto* pPack = info.creator(info.package);
 					info.package = pPack;
 				}
 				bCreated = info.package.IsValid();
 				valPack = info.package;
 
-				X::ObjRef* pRef = dynamic_cast<X::ObjRef*>(valPack.GetObj());
-				std::cout << "QueryAndCreatePackage,query:"<<name<<",RefCount:" <<
-					pRef->Ref()<< std::endl;
+				//X::ObjRef* pRef = dynamic_cast<X::ObjRef*>(valPack.GetObj());
+				//std::cout << "QueryAndCreatePackage,query:"<<name<<",RefCount:" <<pRef->Ref()<< std::endl;
 			}
 			return bCreated;
 		}

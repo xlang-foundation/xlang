@@ -26,7 +26,7 @@ namespace X
 	class XProxy;
 	class XCustomScope;
 	class XRuntime;
-	typedef XPackage* (*PackageCreator)();
+	typedef XPackage* (*PackageCreator)(X::Value context);
 	typedef long long (*PackageGetContentSizeFunc)(void* pContextObj);
 	typedef bool (*PackageToBytesFunc)(void* pContextObj, X::XLStream* pStream);
 	typedef bool (*PackageFromBytesFunc)(void* pContextObj, X::XLStream* pStream);
@@ -64,7 +64,7 @@ namespace X
 		virtual void AddSysCleanupFunc(CLEANUP f) = 0;
 		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) = 0;
 		virtual XRuntime* GetCurrentRuntime() = 0;
-		virtual bool RegisterPackage(const char* name,PackageCreator creator) = 0;
+		virtual bool RegisterPackage(const char* name,PackageCreator creator,void* pContext = nullptr) = 0;
 		virtual bool RegisterPackage(const char* name,Value& objPackage) = 0;
 		virtual Value QueryMember(XRuntime* rt, XObj* pObj, const char* name) = 0;
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
@@ -99,6 +99,9 @@ namespace X
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) = 0;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) = 0;
 		virtual bool RunCode(const char* moduleName,const char* code, int codeSize,X::Value& retVal) = 0;
+		virtual bool LoadModule(const char* moduleName, const char* code, int codeSize, X::Value& objModule) = 0;
+		virtual bool UnloadModule(X::Value objModule) = 0;
+		virtual bool RunModule(X::Value objModule, X::Value& retVal) = 0;
 		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
 		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal) = 0;
 		virtual const char* GetInteractiveCode() = 0;
@@ -114,6 +117,7 @@ namespace X
 		virtual bool DeleteScopeWrapper(XCustomScope* pScope) = 0;
 		virtual bool SetExpressionScope(XCustomScope* pScope, X::Value& expr) = 0;
 		virtual bool RunExpression(X::Value& expr, X::Value& result) = 0;
+		virtual bool CompileExpression(const char* code, int codeSize, X::Value& expr) = 0;
 		virtual bool ExtractNativeObjectFromRemoteObject(X::Value& remoteObj, X::Value& nativeObj) = 0;
 		virtual void RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler,void* pContext) = 0;
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() = 0;

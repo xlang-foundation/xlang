@@ -4,6 +4,7 @@
 #include "module.h"
 #include "glob.h"
 #include "list.h"
+#include "op.h"
 
 namespace X 
 {
@@ -90,6 +91,7 @@ namespace X
 		{
 			return -1;
 		}
+		//TODO: Scope Issue
 		auto* pScope = dynamic_cast<AST::Scope*>(valObj.GetObj());
 		if (pScope == nullptr)
 		{
@@ -98,11 +100,11 @@ namespace X
 		static std::string WritePadBindingFuncName("WritePadUseDataBinding");
 		static std::string WritePadFuncName("WritePad");
 		bool UsingDataBinding = false;
-		int index = pScope->AddOrGet(WritePadBindingFuncName, true);
+		SCOPE_FAST_CALL_AddOrGet0(index,pScope,WritePadBindingFuncName, true);
 		if (index >= 0)
 		{
 			X::Value varFunc;
-			if (!pScope->Get(this, nullptr, index, varFunc))
+			if (!Get(pScope,nullptr, index, varFunc))
 			{
 				return -1;
 			}
@@ -116,13 +118,13 @@ namespace X
 				UsingDataBinding = true;
 			}
 		}
-		index = pScope->AddOrGet(WritePadFuncName, true);
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(index,pScope,WritePadFuncName, true);
 		if (index < 0)
 		{
 			return -1;
 		}
 		X::Value varFunc;
-		if (!pScope->Get(this, nullptr, index, varFunc))
+		if (!Get(pScope, nullptr, index, varFunc))
 		{
 			return -1;
 		}
@@ -170,10 +172,14 @@ namespace X
 		}
 		m_pModule = new AST::Module();
 		m_pModule->ScopeLayout();
-		AST::StackFrame* pModuleFrame = new AST::StackFrame(m_pModule);
-		pModuleFrame->SetLine(m_pModule->GetStartLine());
+		//old code: 
+		//AST::StackFrame* pModuleFrame = new AST::StackFrame(m_pModule->GetMyScope());
+		//pModuleFrame->SetLine(m_pModule->GetStartLine());
+		//1/6/2024 changed
+		//reuse m_pModule's m_stackFrame by GetStack()
+		AST::StackFrame* pModuleFrame = m_pModule->GetStack();
 		m_pModule->AddBuiltins(this);
-		PushFrame(pModuleFrame, m_pModule->GetVarNum());
+		PushFrame(pModuleFrame, m_pModule->GetMyScope()->GetVarNum());
 
 		return true;
 	}

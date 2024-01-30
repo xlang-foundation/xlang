@@ -30,6 +30,8 @@
 #include "set.h"
 #include "deferred_object.h"
 #include "typeobject.h"
+#include "tensor.h"
+#include "tensor_graph.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -230,6 +232,8 @@ static void XLangInternalInit()
 	X::Data::List::Init();
 	X::Data::Dict::Init();
 	X::Data::mSet::Init();
+	X::Data::Tensor::Init();
+	X::Data::TensorGraph::Init();
 	X::AST::MetaScope().I().Init();
 	X::Data::DeferredObject::Init();
 	X::Data::TypeObject::Init();
@@ -359,6 +363,7 @@ void XLangStaticUnload()
 	X::Data::List::cleanup();
 	X::Data::Dict::cleanup();
 	X::Data::Tensor::cleanup();
+	X::Data::TensorGraph::cleanup();
 	X::Data::Future::cleanup();
 	X::Data::Function::cleanup();
 	X::Data::DeferredObject::cleanup();
@@ -430,7 +435,7 @@ extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 	std::string strFullPath;
 	std::string strFolderPath;
 	std::string strLibName;
-	GetCurLibInfo(Load, strFullPath, strFolderPath, strLibName);
+	GetCurLibInfo((void*)Load, strFullPath, strFolderPath, strLibName);
 	X::g_pXload = (X::XLoad*)pXload;
 	const char* engPath = new char[strFolderPath.length() + 1];
 	memcpy((char*)engPath, strFolderPath.data(), strFolderPath.length() + 1);

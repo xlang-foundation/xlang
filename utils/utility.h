@@ -37,3 +37,5 @@ bool IsAbsPath(std::string& strPath);
 bool LoadStringFromFile(std::string& fileName, std::string& content);
 bool GetCurLibInfo(void* EntryFuncName,std::string& strFullPath, std::string& strFolderPath, std::string& strLibName);
 const char* GetABIString(std::string& str);//return a string with ABI safety, this pointer will be released by g_pHost func
+long long getCurMicroTimeStamp();
+void _mkdir(const char* dir);

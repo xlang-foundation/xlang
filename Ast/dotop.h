@@ -1,6 +1,8 @@
 #pragma once
 #include "exp.h"
 #include "op.h"
+#include "number.h"
+#include "var.h"
 
 namespace X
 {
@@ -8,7 +10,7 @@ namespace X
 namespace AST
 {
 class DotOp :
-	virtual public BinaryOp
+	public BinaryOp
 {
 	int m_dotNum = 1;
 protected:
@@ -20,19 +22,17 @@ protected:
 		Value& v_l, Expression* r,
 		Value& v, LValue* lValue = nullptr);
 public:
-	DotOp() :Operator(), BinaryOp()
+	DotOp() :BinaryOp()
 	{
 		m_type = ObType::Dot;
 	}
 	DotOp(short opIndex) :
-		Operator(opIndex),
 		BinaryOp(opIndex)
 	{
 		m_type = ObType::Dot;
 		m_dotNum = 1;
 	}
 	DotOp(short opIndex,int dotNum) :
-		Operator(opIndex),
 		BinaryOp(opIndex)
 	{
 		m_type = ObType::Dot;
@@ -54,6 +54,71 @@ public:
 	virtual void ScopeLayout() override;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override;
+
+	FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
+	{
+		//we keep R not in stack to cascade dot ops working
+		//such as obj1.obj2.obj3
+		stack.push({ L,false });
+		return true;
+	}
+
+	FORCE_INLINE bool ExpRun(XlangRuntime* rt, XObj* pContext,
+		X::Exp::ExpValue& leftValue, 
+		X::Value& retVal, LValue* lValue)
+	{
+		auto& v_l = leftValue.v;
+		if (v_l.IsNumber())
+		{
+			double dValue = (double)v_l;
+			double fraction = 0;
+			int digiNum = 0;
+
+			if (R->m_type == ObType::Number)
+			{
+				Number* pNum = dynamic_cast<Number*>(R);
+				fraction = (double)pNum->GetVal();
+				digiNum = pNum->GetDigiNum();
+			}
+			else if (R->m_type == ObType::Var)
+			{
+				String name = (static_cast<Var*>(R))->GetName();
+				double dVal = 0;
+				long long llVal = 0;
+				ParseState st = ParseNumber(name, dVal, llVal);
+				if (st == ParseState::Long_Long)
+				{
+					digiNum = (int)dVal;
+					fraction = (double)llVal;
+				}
+			}
+			else
+			{//TODO: error
+				return false;
+			}
+			//TODO:optimize here
+			for (int i = 0; i < digiNum; i++)
+			{
+				fraction /= 10;
+			}
+			dValue += fraction;
+			retVal = Value(dValue);
+			return true;
+
+		}
+		Expression* r = R;
+		while (r->m_type == ObType::Dot)
+		{
+			DotOp* dotR = dynamic_cast<DotOp*>(r);
+			Value v0;
+			LValue lValue0 = nil;
+			DotProcess(rt, pContext, v_l, dotR->GetL(), v0, &lValue0);
+			v_l = v0;
+			r = dotR->GetR();
+		}
+		DotProcess(rt, pContext, v_l, r, retVal, lValue);
+		return true;
+	}
 };
 }
 }

@@ -8,9 +8,12 @@
 #include "feedop.h"
 #include "manager.h"
 #include "op_registry.h"
+#include "jitblock.h"
+#include "jitlib.h"
 
 namespace X
-{		
+{
+	extern XLoad* g_pXload;
 Parser::Parser()
 {
 }
@@ -46,6 +49,18 @@ void Parser::ResetForNewLine()
 void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 	AST::Indent& lineIndent)
 {
+	if (m_bMeetJitBlock)
+	{
+		AST::Expression* pExpJitBlock = IsJitBlock(line);
+		if (pExpJitBlock)
+		{
+			m_bInsideJitBlock = true;
+			//reset it, we don't need this flag
+			m_bMeetJitBlock = false;
+			m_curJitBlock = (AST::JitBlock*)pExpJitBlock;
+			m_blockStartCharPos = line->GetCharPos();
+		}
+	}
 	auto* pCurBlockState = m_stackBlocks.top();
 	auto curBlock = pCurBlockState->Block();
 	auto indentCnt_CurBlock = 
@@ -53,15 +68,16 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 	if (curBlock->IsNoIndentCheck()
 		|| indentCnt_CurBlock < lineIndent)
 	{
+		static AST::Indent nullIndent{ 0, -1, -1 };
 		auto child_indent_CurBlock =
 			curBlock->GetChildIndentCount();
-		if (child_indent_CurBlock == AST::Indent{ 0,-1, -1 })
+		if (child_indent_CurBlock.Equal(nullIndent))
 		{
 			curBlock->SetChildIndentCount(lineIndent);
 			curBlock->Add(line);
 			pCurBlockState->HaveNewLine(line);
 		}
-		else if (child_indent_CurBlock == lineIndent)
+		else if (child_indent_CurBlock.Equal(lineIndent))
 		{
 			curBlock->Add(line);
 			pCurBlockState->HaveNewLine(line);
@@ -89,7 +105,7 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 				curBlock->GetChildIndentCount();
 			//must already have child lines or block
 			if (curBlock->IsNoIndentCheck()
-				|| indentCnt == lineIndent)
+				|| indentCnt.Equal(lineIndent))
 			{
 				m_curBlkState = pCurBlockState;
 				break;
@@ -385,8 +401,15 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 	//each expresion or op will get a tokenindex
 	//which increased with the sequence come out from Token parser
 	//use this way to make sure each op just get right operands
+
+	X::Jit::JitLib* pJitLib = nullptr;
+
 	while (true)
 	{
+		if (m_bInsideJitBlock)
+		{
+			mToken->SetSpecialPosToBeLessOrEqual(true, m_blockStartCharPos);
+		}
 		String s;
 		int leadingSpaceCnt = 0;
 		OneToken one;
@@ -407,6 +430,23 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		}
 		switch (idx)
 		{
+		case TokenSpecialPosToBeLessOrEqual:
+		{
+			//reset
+			m_bInsideJitBlock = false;
+			if (m_curJitBlock)
+			{
+				m_curJitBlock->SetJitCode(one.id);
+				if (pJitLib == nullptr)
+				{
+					pJitLib = new X::Jit::JitLib(pModule->GetModuleName());
+					std::string xlangEngPath = g_pXload->GetConfig().xlangEnginePath;
+					pJitLib->SetXLangEngPath(xlangEngPath);
+				}
+				pJitLib->AddBlock(m_curJitBlock);
+			}
+		}
+			break;
 		case TokenLineComment:
 		{
 				AST::InlineComment* v = new AST::InlineComment(s.s, s.size);
@@ -548,6 +588,11 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		auto top = m_stackBlocks.top();
 		m_stackBlocks.pop();//only keep top one
 		delete top;
+	}
+	if (pJitLib)
+	{
+		pModule->SetJitLib(pJitLib);
+		pJitLib->Build();
 	}
 	return true;
 }

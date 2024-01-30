@@ -4,6 +4,8 @@
 #include "SwapBufferStream.h"
 #include "Locker.h"
 #include "gthread.h"
+#include "remote_client_object.h"
+#include <vector>
 
 class XWait;
 namespace X
@@ -53,7 +55,7 @@ namespace X
 		Locker m_CallContextLock;
 		std::vector<Call_Context*> mCallContexts;
 		Call_Context* GetCallContext();
-		inline void ReturnCallContext(Call_Context* pContext)
+		FORCE_INLINE void ReturnCallContext(Call_Context* pContext)
 		{
 			m_CallContextLock.Lock();
 			pContext->InUse = false;
@@ -87,5 +89,31 @@ namespace X
 		bool Connect();
 		void Disconnect();
 		void ShapeHandsToServer();
+
+
+		X::XObj* CovertIdToXObj(X::ROBJ_ID id)
+		{
+			X::XObj* pObjRet = nullptr;
+			auto pid = GetPID();
+			if (pid != id.pid)
+			{
+				//TODO::keep as RemoteObject
+			}
+			else
+			{
+				pObjRet = (X::XObj*)id.objId;
+			}
+			return pObjRet;
+		}
+
+		X::Value ConvertXObjToRemoteClientObject(X::XObj* obj)
+		{
+			obj->IncRef();
+			auto pid = GetPID();
+			X::ROBJ_ID robjId{ pid,obj };
+			RemoteClientObject* pRC = new RemoteClientObject(robjId);
+			X::Value val(pRC);
+			return val;
+		}
 	};
 }

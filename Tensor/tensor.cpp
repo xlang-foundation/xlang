@@ -6,228 +6,155 @@
 #include "ops_mgt.h"
 #include "tensor_expression.h"
 #include "utility.h"
+#include "obj_func_scope.h"
 
 namespace X
 {
 	namespace Data
 	{
-		class TensorScope :
-			virtual public AST::Scope
+		#define CONST_NUM 14
+		static Obj_Func_Scope<3+ CONST_NUM> _tensorScope;
+		void Tensor::Init()
 		{
-			AST::StackFrame* m_stackFrame = nullptr;
-		public:
-			TensorScope() :
-				Scope()
+			_tensorScope.Init();
+			//add datatype
+			const char* dataTypeList[14] = {
+				"bool",
+				"int8","uint8",
+				"int16","uint16",
+				"half",
+				"int","uint",
+				"int64","uint64",
+				"float",
+				"double",
+				"cfloat",
+				"cdouble"
+			};
+			for (int i = 0; i < CONST_NUM; i++)
 			{
-				Init();
+				X::Value val(i);
+				_tensorScope.AddConst(dataTypeList[i],val);
 			}
-			void clean()
 			{
-				if (m_stackFrame)
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
 				{
-					delete m_stackFrame;
-					m_stackFrame = nullptr;
-				}
-			}
-			~TensorScope()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
-			}
-			void Init()
-			{
-				m_stackFrame = new AST::StackFrame(this);
-				//add datatype
-				std::vector<std::string> dataTypeList = {
-					"bool",
-					"int8","uint8",
-					"int16","uint16",
-					"half",
-					"int","uint",
-					"int64","uint64",
-					"float",
-					"double",
-					"cfloat",
-					"cdouble"
-				};
-				int const_cnt = (int)dataTypeList.size();
-				int func_cnt = 3;
-				m_stackFrame->SetVarCount(const_cnt+ func_cnt);
-				for(int i = 0;i < const_cnt; i++)
-				{
-					int idx = AddOrGet(dataTypeList[i], false);
-					X::Value  val(i);
-					m_stackFrame->Set(idx, val);
-				}
-				std::string strName;
-				{
-					strName = "randwithshape";
-					auto f = [](X::XRuntime* rt,XObj* pThis,XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					auto& p0 = params[0];
+					if (p0.IsList())
 					{
-						Tensor* pObj = dynamic_cast<Tensor*>(pContext);
-						auto& p0 = params[0];
-						if (p0.IsList())
+						List* pList = dynamic_cast<List*>(p0.GetObj());
+						int axesCnt = (int)pList->Size();
+						double dMin = 0;
+						double dMax = 1;
+						long long llMin = LLONG_MIN;
+						long long llMax = LLONG_MAX;
+						TensorDataType dt = TensorDataType::DOUBLE;
+						auto it = kwParams.find(Tensor_DType);
+						if (it)
 						{
-							List* pList = dynamic_cast<List*>(p0.GetObj());
-							int axesCnt = (int)pList->Size();
-							double dMin = 0;
-							double dMax = 1;
-							long long llMin = LLONG_MIN;
-							long long llMax = LLONG_MAX;
-							TensorDataType dt = TensorDataType::DOUBLE;
-							auto it = kwParams.find(Tensor_DType);
+							dt = (TensorDataType)(int)it->val;
+						}
+						if (dt == TensorDataType::DOUBLE)
+						{
+							it = kwParams.find(Tensor_Max);
 							if (it)
 							{
-								dt = (TensorDataType)(int)it->val;
+								dMax = (double)it->val;
 							}
-							if (dt == TensorDataType::DOUBLE)
+							it = kwParams.find(Tensor_Min);
+							if (it)
 							{
-								it = kwParams.find(Tensor_Max);
-								if (it)
-								{
-									dMax = (double)it->val;
-								}
-								it = kwParams.find(Tensor_Min);
-								if (it)
-								{
-									dMin = (double)it->val;
-								}
+								dMin = (double)it->val;
 							}
-							else
-							{
-								it = kwParams.find(Tensor_Max);
-								if (it)
-								{
-									llMax = (long long)it->val;
-								}
-								it = kwParams.find(Tensor_Min);
-								if (it)
-								{
-									llMin = (long long)it->val;
-								}
-							}
-							Tensor* pNewTensor = new Tensor();
-							pNewTensor->SetDataType(dt);
-							Port::vector<int> dims(axesCnt);
-							for (int i = 0; i < axesCnt; i++)
-							{
-								dims[i] = (int)pList->Get(i);
-							}
-							pNewTensor->SetShape(dims);
-							X::Value initData;
-							pNewTensor->Create(initData);
-							auto it_proc = [pNewTensor, dMin, dMax](std::vector<long long>& indices)
-							{
-								X::Value val = randDouble(dMin, dMax);
-								pNewTensor->SetDataWithIndices(indices, val);
-							};
-							auto it_proc_int64 = [pNewTensor, llMin, llMax](std::vector<long long>& indices)
-							{
-								X::Value val = rand64(llMin, llMax);
-								pNewTensor->SetDataWithIndices(indices, val);
-							};
-							if (dt == TensorDataType::DOUBLE)
-							{
-								pNewTensor->IterateAll(it_proc);
-							}
-							else
-							{
-								pNewTensor->IterateAll(it_proc_int64);
-							}
-							retValue = X::Value(pNewTensor);
 						}
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"randwithshape(shapes in list)",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-				{
-					strName = "astype";
-					auto f = [](X::XRuntime* rt, XObj* pThis,XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						Tensor* pObj = dynamic_cast<Tensor*>(pContext);
-						retValue = pObj->asType((int)params[0]);
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"astype(type)",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-				{
-					strName = "reshape";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						if (params.size() == 0)
+						else
 						{
-							retValue = X::Value();
-							return true;
+							it = kwParams.find(Tensor_Max);
+							if (it)
+							{
+								llMax = (long long)it->val;
+							}
+							it = kwParams.find(Tensor_Min);
+							if (it)
+							{
+								llMin = (long long)it->val;
+							}
 						}
-						Tensor* pObj = dynamic_cast<Tensor*>(pContext);
-						retValue = pObj->reshape(params[0]);
+						Tensor* pNewTensor = new Tensor();
+						pNewTensor->SetDataType(dt);
+						Port::vector<int> dims(axesCnt);
+						for (int i = 0; i < axesCnt; i++)
+						{
+							dims[i] = (int)pList->Get(i);
+						}
+						pNewTensor->SetShape(dims);
+						X::Value initData;
+						pNewTensor->Create(initData);
+						auto it_proc = [pNewTensor, dMin, dMax](std::vector<long long>& indices)
+						{
+							X::Value val = randDouble(dMin, dMax);
+							pNewTensor->SetDataWithIndices(indices, val);
+						};
+						auto it_proc_int64 = [pNewTensor, llMin, llMax](std::vector<long long>& indices)
+						{
+							X::Value val = rand64(llMin, llMax);
+							pNewTensor->SetDataWithIndices(indices, val);
+						};
+						if (dt == TensorDataType::DOUBLE)
+						{
+							pNewTensor->IterateAll(it_proc);
+						}
+						else
+						{
+							pNewTensor->IterateAll(it_proc_int64);
+						}
+						retValue = X::Value(pNewTensor);
+					}
+					return true;
+				};
+				_tensorScope.AddFunc("randwithshape", "randwithshape(shapes in list)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					retValue = pObj->asType((int)params[0]);
+					return true;
+				};
+				_tensorScope.AddFunc("astype", "astype(type)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					if (params.size() == 0)
+					{
+						retValue = X::Value();
 						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"reshape(list of shape: [10,40,10], need to have same amount of items)",
-						func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-			}
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override
-			{
-				return nullptr;
-			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
-			}
-		};
-		static TensorScope* _TensorScope = nullptr;
-		void Tensor::cleanup()
-		{
-			if (_TensorScope)
-			{
-				_TensorScope->clean();
-				delete _TensorScope;
-				_TensorScope = nullptr;
+					}
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					retValue = pObj->reshape(params[0]);
+					return true;
+				};
+				_tensorScope.AddFunc("reshape",
+					"reshape(list of shape: [10,40,10], need to have same amount of items)", f);
 			}
 		}
 
-		Tensor::Tensor():XTensor(0),
+		void Tensor::cleanup()
+		{
+			_tensorScope.Clean();
+		}
+
+		Tensor::Tensor() :XTensor(0),
 			Object()
 		{
 			m_t = ObjType::Tensor;
@@ -267,7 +194,7 @@ namespace X
 				for (int i = 0; i < newStartDim; i++)
 				{
 					TensorDim& dimInfo = m_dims[i];
-					newStartItemOffet += (IdxAry[i].i+ dimInfo.offset) * dimInfo.dimProd;
+					newStartItemOffet += (IdxAry[i].i + dimInfo.offset) * dimInfo.dimProd;
 				}
 				pNewTensor->m_startItemOffet = newStartItemOffet;
 				for (int i = newStartDim; i < (int)m_dims.size(); i++)
@@ -279,7 +206,7 @@ namespace X
 					if (i < (int)IdxAry.size())
 					{
 						auto& idxInfo = IdxAry[i];
-						newDimInfo.offset = dimInfo.offset+idxInfo.i;
+						newDimInfo.offset = dimInfo.offset + idxInfo.i;
 						//stride keep same,because the memory is from the first tensor
 						//we support this way: t2 = t0[0,0,-2:2,-3:3]
 						//if index less than 0, mean out of range, just return invalid
@@ -297,7 +224,7 @@ namespace X
 			}
 			return true;
 		}
-		
+
 		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
 		{
 			long long addr = CalcItemOffset(indices);
@@ -410,7 +337,7 @@ namespace X
 			return retVal;
 		}
 
-		void Tensor::SetDataWithIndices(std::vector<long long>& indices,X::Value& val)
+		void Tensor::SetDataWithIndices(std::vector<long long>& indices, X::Value& val)
 		{
 			long long addr = CalcItemOffset(indices);
 			X::Value retVal;
@@ -465,7 +392,7 @@ namespace X
 			}
 
 		}
-		void Tensor::SetDataWithOffset(long long addr,X::Value& val)
+		void Tensor::SetDataWithOffset(long long addr, X::Value& val)
 		{
 			X::Value retVal;
 			char* pAddr = m_data + addr;
@@ -529,7 +456,7 @@ namespace X
 				if (item.IsList())
 				{
 					auto* pList_NextLevel = dynamic_cast<List*>(item.GetObj());
-					DeepCopyDataFromList(pList_NextLevel, indices, level+1);
+					DeepCopyDataFromList(pList_NextLevel, indices, level + 1);
 				}
 				else
 				{
@@ -538,14 +465,14 @@ namespace X
 				}
 			}
 		}
-		List* Tensor::FlatPack(XlangRuntime* rt, XObj* pContext, 
-			std::vector<std::string>& IdList, int id_offset, 
+		List* Tensor::FlatPack(XlangRuntime* rt, XObj* pContext,
+			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
 		{
 			AutoLock autoLock(m_lock);
 			int idSize = (int)IdList.size();
 			std::vector<long long> indices;
-			for(int i= id_offset;i< idSize;i++)
+			for (int i = id_offset; i < idSize; i++)
 			{
 				long long index = 0;
 				SCANF(IdList[i].c_str(), "%lld", &index);
@@ -583,7 +510,7 @@ namespace X
 					dict->Set("Type", X::Value(pStrType));
 					X::Value objId((unsigned long long)dynamic_cast<XObj*>(this));
 					dict->Set("Value", objId);
-					X::Value valSize(m_dims[lastDimIndex+1].size);
+					X::Value valSize(m_dims[lastDimIndex + 1].size);
 					dict->Set("Size", valSize);
 				}
 				else
@@ -667,7 +594,7 @@ namespace X
 				auto it_proc = [this, initData](std::vector<long long>& indices)
 				{
 					X::Value val = initData;
-					SetDataWithIndices(indices,val);
+					SetDataWithIndices(indices, val);
 				};
 				IterateAll(it_proc);
 			}
@@ -680,7 +607,7 @@ namespace X
 			{
 				m_pTensorToOwneData->DecRef();
 			}
-			else if(m_data != nullptr)
+			else if (m_data != nullptr)
 			{
 				delete m_data;
 			}
@@ -691,18 +618,14 @@ namespace X
 			//SetRightVal(r, Tensor_Operator::Mul);
 			return *this;
 		}
-		inline AST::Scope* Tensor::GetBaseScope() 
-		{ 
-			if (_TensorScope == nullptr)
-			{
-				_TensorScope = new TensorScope();
-			}
-			return _TensorScope;
+		AST::Scope* Tensor::GetBaseScope()
+		{
+			return _tensorScope.GetMyScope();
 		}
 		void Tensor::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(GetBaseScope());
+			bases.push_back(_tensorScope.GetMyScope());
 		}
 		bool Tensor::Multiply(const X::Value& r, X::Value& retVal)
 		{

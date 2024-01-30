@@ -56,7 +56,11 @@ bool XClass::FromBytes(X::XLangStream& stream)
 		m_IndexofParamList.push_back(idx);
 	}
 	stream >> m_Index >> m_IndexOfThis >> m_needSetHint;
-	Scope::FromBytes(stream);
+	m_pMyScope->FromBytes(stream);
+	m_variableFrame = new StackFrame(m_pMyScope);
+	m_pMyScope->SetVarFrame(m_variableFrame);
+	m_variableFrame->FromBytes(stream);
+#if _TODO_
 	ScopeLayout();
 	XObj* pContext = stream.ScopeSpace().Context();
 	X::Data::XClassObject* pClassObj = dynamic_cast<X::Data::XClassObject*>(pContext);
@@ -71,6 +75,7 @@ bool XClass::FromBytes(X::XLangStream& stream)
 	{
 		BuildBaseInstances(stream.ScopeSpace().RT(), pClassObj);
 	}
+#endif
 	return true;
 }
 
@@ -80,7 +85,7 @@ void XClass::ScopeLayout()
 	if (pMyScope)
 	{
 		std::string strName(m_Name.s, m_Name.size);
-		m_Index = pMyScope->AddOrGet(strName, false);
+		SCOPE_FAST_CALL_AddOrGet0_NoDef(m_Index,pMyScope,strName, false);
 	}
 	if (Params)
 	{
@@ -98,13 +103,14 @@ XClass* XClass::FindBase(XlangRuntime* rt, std::string& strName)
 {
 	XClass* pBase = nullptr;
 	auto* pScope = GetScope();
+	Expression* pFromExp = this;
 	while (pScope != nullptr)
 	{
-		int idx = pScope->AddOrGet(strName, true);
+		SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
 		if (idx != -1)
 		{
 			Value v0;
-			if (pScope->Get(rt,nullptr,idx, v0))
+			if (rt->Get(pScope,nullptr,idx, v0))
 			{
 				if (v0.IsObject())
 				{
@@ -118,13 +124,26 @@ XClass* XClass::FindBase(XlangRuntime* rt, std::string& strName)
 				}
 			}
 		}
-		pScope = pScope->GetParentScope();
+		//Find next upper real scope
+		pScope = nullptr;
+		Expression* pa = pFromExp->GetParent();
+		while (pa != nullptr)
+		{
+			pScope = pa->GetMyScope();
+			if (pScope)
+			{
+				//save for next loop
+				pFromExp = pa;
+				break;
+			}
+			pa = pa->GetParent();
+		}
 	}
 	return pBase;
 }
 int XClass::AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope)
 {
-	int retIdx = Scope::AddOrGet(name, bGetOnly, ppRightScope);
+	SCOPE_FAST_CALL_AddOrGet(retIdx,m_pMyScope,name, bGetOnly, ppRightScope);
 	if (retIdx >= 0)
 	{
 		return retIdx;
@@ -139,7 +158,7 @@ int XClass::AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope)
 			for (auto* pScope : bases)
 			{
 				Scope* pRigthScope = nullptr;
-				int idx = pScope->AddOrGet(name, bGetOnly, &pRigthScope);
+				SCOPE_FAST_CALL_AddOrGet(idx,pScope,name, bGetOnly, &pRigthScope);
 				if (idx >= 0)
 				{
 					*ppRightScope = (pRigthScope == nullptr)? pScope:pRigthScope;
@@ -162,9 +181,9 @@ bool XClass::Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v)
 			bSet = true;
 		}
 	}
-	if(!bSet && m_stackFrame)
+	if(!bSet && m_variableFrame)
 	{
-		m_stackFrame->Set(idx, v);
+		m_variableFrame->Set(idx, v);
 		bSet = true;
 	}
 	return bSet;
@@ -185,9 +204,9 @@ bool XClass::Get(XlangRuntime* rt,XObj* pContext, int idx, Value& v, LValue* lVa
 			return true;
 		}
 	}
-	if (m_stackFrame)
+	if (m_variableFrame)
 	{
-		m_stackFrame->Get(idx, v, lValue);
+		m_variableFrame->Get(idx, v, lValue);
 	}
 	return true;
 }
@@ -198,7 +217,7 @@ bool XClass::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v
 	Value v0(cls);
 	if (m_scope)
 	{
-		bOK = m_scope->Set(rt, pContext, m_Index, v0);
+		bOK = rt->Set(m_scope,pContext, m_Index, v0);
 	}
 	v = v0;
 	return bOK;
@@ -206,8 +225,6 @@ bool XClass::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v
 
 bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
-	m_stackFrame = new StackFrame(this);
-	m_stackFrame->SetVarCount((int)m_Vars.size());
 	if (m_Index == -1 || m_scope == nullptr)
 	{
 		ScopeLayout();
@@ -218,11 +235,11 @@ bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value&
 	}
 	//then check back constructor,destructor
 	int nConstructorIndex = QueryConstructor();
-	Block::Exec(rt, action, pContext, v, lValue);
+	Block::Exec_i(rt, action, pContext, v, lValue);
 	if (nConstructorIndex >= 0)
 	{
 		X::Value varFunc;
-		m_stackFrame->Get(nConstructorIndex, varFunc);
+		m_variableFrame->Get(nConstructorIndex, varFunc);
 		if (varFunc.IsObject())
 		{
 			Data::Function* pFuncObj = dynamic_cast<Data::Function*>(varFunc.GetObj());
@@ -241,7 +258,7 @@ bool XClass::Exec_i(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value&
 		{
 			Value paramObj;
 			ExecAction action0;
-			bool bOK = i->Exec(rt, action0, pContext, paramObj);
+			bool bOK = ExpExec(i,rt, action0, pContext, paramObj);
 			if (paramObj.IsObject())
 			{
 				auto ty = paramObj.GetObj()->GetType();
@@ -272,7 +289,7 @@ bool XClass::BuildBaseInstances(XlangRuntime* rt,XObj* pClassObj)
 		{
 			Value paramObj;
 			ExecAction action0;
-			bool bOK = i->Exec(rt, action0, pClassObj, paramObj);
+			bool bOK = ExpExec(i,rt, action0, pClassObj, paramObj);
 			if (paramObj.IsObject())
 			{
 				auto ty = paramObj.GetObj()->GetType();

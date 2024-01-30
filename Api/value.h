@@ -31,7 +31,7 @@ enum class ValueType
 Value& operator op (const Value& r);
 
 #define ARITH_OP_IMPL(op)\
-Value& Value::operator op (const Value& r)\
+FORCE_INLINE Value& Value::operator op (const Value& r)\
 {\
 	switch (t)\
 	{\
@@ -58,10 +58,7 @@ Value& Value::operator op (const Value& r)\
 }
 
 #define COMPARE_OP(op)\
-bool operator op (const Value& r) const;
-
-#define COMPARE_OP_IMPL(op)\
-bool Value::operator op (const Value& r) const\
+bool operator op (const Value& r) const\
 {\
 	bool bRet = false;\
 	switch (t)\
@@ -79,12 +76,12 @@ bool Value::operator op (const Value& r) const\
 		bRet = (x.d op ToDouble(r));\
 		break;\
 	case ValueType::Object:\
-		bRet = (x.obj->cmp((Value*)&r) op 0);\
+		bRet = (obj_cmp((Value*)&r) op 0);\
 		break;\
 	case ValueType::Str:\
 		if(r.t == ValueType::Object)\
 		{\
-			bRet = (0 op r.x.obj->cmp((Value*)this));\
+			bRet = (0 op r.obj_cmp((Value*)this));\
 		}\
 		else if(r.t == ValueType::Str)\
 		{\
@@ -111,8 +108,13 @@ enum class ValueSubType
 	USHORT =5,
 	INT = 8,
 	UINT =9,
-	FLOAT =10,
+	UINT64 = 10,//if it is int64, don't need to set this
+	FLOAT =11,
 };
+
+/*
+	Value just keep 16 bytes, no virtual function defined, so no vtable
+*/
 class Value
 {
 	//from high->low, second and third byte are digits number , mask is 0x00FFFF00 and shift >>8
@@ -129,19 +131,19 @@ class Value
 	}x;
 	Value QueryMember(const char* key);
 public:
-	inline bool IsLong() { return t == ValueType::Int64; }
-	inline bool IsDouble() { return t == ValueType::Double; }
-	inline bool IsNumber() { return IsLong() || IsDouble();}
-	inline bool IsBool() { return IsLong() && (flags & (int)ValueSubType::BOOL); }
-	inline bool IsInvalid()
+	FORCE_INLINE bool IsLong() { return t == ValueType::Int64; }
+	FORCE_INLINE bool IsDouble() { return t == ValueType::Double; }
+	FORCE_INLINE bool IsNumber() { return IsLong() || IsDouble();}
+	FORCE_INLINE bool IsBool() { return IsLong() && (flags & (int)ValueSubType::BOOL); }
+	FORCE_INLINE bool IsInvalid()
 	{
 		return (t == ValueType::Invalid);
 	}
-	inline bool IsValid()
+	FORCE_INLINE bool IsValid()
 	{
 		return (t != ValueType::Invalid);
 	}
-	inline ~Value()
+	FORCE_INLINE ~Value()
 	{
 		switch (t)
 		{
@@ -155,7 +157,7 @@ public:
 		}
 
 	}
-	inline void Clear()
+	FORCE_INLINE void Clear()
 	{
 		if (t == ValueType::Object)
 		{
@@ -163,93 +165,97 @@ public:
 		}
 		t = ValueType::Invalid;
 	}
-	inline Value()
+	FORCE_INLINE Value()
 	{
 		t = ValueType::Invalid;
 		x.l = 0;
 	}
-	inline Value(ValueType t0)
+	FORCE_INLINE Value(ValueType t0)
 	{
 		t = t0;
 	}
-	inline Value(bool b)
+	FORCE_INLINE Value(bool b)
 	{//use 1 as true and 0 as false, set flag to -1
 		t = ValueType::Int64;
 		flags |= (int)ValueSubType::BOOL;
 		x.l = b ? 1 : 0;
 	}
-	inline void AsBool()
+	FORCE_INLINE void AsBool()
 	{
 		flags |= (int)ValueSubType::BOOL;
 		x.l = x.l>0?1 : 0;
 	}
-	inline Value(char c)
+	FORCE_INLINE Value(char c)
 	{
 		t = ValueType::Int64;
 		flags |= (int)ValueSubType::CHAR;
 		x.l = c;
 	}
-	inline Value(int l)
+	FORCE_INLINE Value(int l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
 	}
-	inline Value(unsigned int l)
+	FORCE_INLINE Value(unsigned int l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
 	}
-	inline Value(long l)
+	FORCE_INLINE Value(long l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
 	}
-	inline Value(unsigned long l)
+	FORCE_INLINE Value(unsigned long l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
 	}
-	inline Value(long long l)
+	FORCE_INLINE Value(long long l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
 	}
 
-	inline Value(void* pointer)
+	FORCE_INLINE Value(void* pointer)
 	{
 		t = ValueType::Int64;
 		x.l = (long long)pointer;
 	}
-	inline Value(unsigned long long l)
+	FORCE_INLINE Value(unsigned long long l)
 	{
 		t = ValueType::Int64;
+		flags |= (int)ValueSubType::UINT64;
 		x.l = (long long)l;
 	}
-	inline Value(double d)
+	FORCE_INLINE Value(double d)
 	{
 		t = ValueType::Double;
 		x.d = d;
 	}
-	inline Value(const char* s)
+	FORCE_INLINE Value(const char* s)
 	{
 		t = ValueType::Str;
 		flags = (int)std::string(s).length();//avoid to use strlen, need to include <string.h> in Linux
 		x.str = (char*)s;
 	}
-	inline Value(char* s, int size)
+	FORCE_INLINE Value(char* s, int size)
 	{
 		t = ValueType::Str;
 		flags = size;
 		x.str = s;
 	}
-	inline Value(XObj* p,bool AddRef = true)
+	FORCE_INLINE Value(XObj* p,bool AddRef = true)
 	{
 		t = ValueType::Object;
 		x.obj = nullptr;
 		AssignObject(p, AddRef);
 	}
 	Value(std::string& s);
-	void SetObj(XObj* p)
+	Value(std::string&& s);
+
+	int obj_cmp(Value* r) const;
+	FORCE_INLINE void SetObj(XObj* p)
 	{
 		t = ValueType::Object;
 		x.obj = p;
@@ -258,7 +264,7 @@ public:
 	bool ChangeToStrObject();
 	void AssignObject(XObj* p,bool bAddRef = true);
 	void ReleaseObject(XObj* p);
-	inline Value Negative() const
+	FORCE_INLINE Value Negative() const
 	{
 		Value newV = this;
 		switch (t)
@@ -274,7 +280,7 @@ public:
 		}
 		return newV;
 	}
-	inline Value(const Value& v)
+	FORCE_INLINE Value(const Value& v)
 	{
 		flags = v.flags;
 		x.l = 0;
@@ -297,39 +303,39 @@ public:
 			break;
 		}
 	}
-	operator bool() const
+	FORCE_INLINE operator bool() const
 	{
 		return (x.l != 0);
 	}
-	operator double() const
+	FORCE_INLINE operator double() const
 	{
 		return (t == ValueType::Int64)?(double)x.l:x.d;
 	}
-	operator float() const
+	FORCE_INLINE operator float() const
 	{
 		return (t == ValueType::Int64) ? (float)x.l : (float)x.d;
 	}
-	operator long long() const
+	FORCE_INLINE operator long long() const
 	{
 		return (t == ValueType::Int64) ? x.l : (long long)x.d;
 	}
-	operator unsigned long long() const
+	FORCE_INLINE operator unsigned long long() const
 	{
 		return (t == ValueType::Int64) ? (unsigned long long)x.l : (unsigned long long)x.d;
 	}
-	operator int() const
+	FORCE_INLINE operator int() const
 	{
 		return (t == ValueType::Int64) ? (int)x.l : (int)x.d;
 	}
-	operator unsigned int() const
+	FORCE_INLINE operator unsigned int() const
 	{
 		return (t == ValueType::Int64) ? (unsigned int)x.l : (unsigned int)x.d;
 	}
-	operator unsigned long() const
+	FORCE_INLINE operator unsigned long() const
 	{
 		return (t == ValueType::Int64) ? (unsigned long)x.l : (unsigned long)x.d;
 	}
-	operator std::string()
+	FORCE_INLINE operator std::string()
 	{
 		return ToString();
 	}
@@ -338,67 +344,68 @@ public:
 	operator toT* () const;
 #endif
 	template<typename toT>
-	operator toT* () const
+	FORCE_INLINE operator toT* () const
 	{
 		return (toT*)CastObjectToPointer();
 	}
 	void* CastObjectToPointer() const;
 
-	operator void* ()const
+	FORCE_INLINE operator void* ()const
 	{
 		return (void*)x.obj;
 	}
 	
 	size_t Hash();
 
-	inline double GetDouble()
+	FORCE_INLINE double GetDouble()
 	{
 		return x.d;
 	}
-	inline void SetDouble(double d)
+	FORCE_INLINE void SetDouble(double d)
 	{
 		x.d = d;
 	}
-	inline long long GetLongLong()
+	FORCE_INLINE long long GetLongLong()
 	{
 		return x.l;
 	}
-	inline void SetLongLong(long long l)
+	FORCE_INLINE void SetLongLong(long long l)
 	{
 		x.l =l;
 	}
 	void SetString(std::string& s);
-	inline bool GetBool()
+	void SetString(std::string&& s);
+	FORCE_INLINE bool GetBool()
 	{
 		return (x.l!=0);
 	}
-	inline XObj* GetObj() const
+	FORCE_INLINE XObj* GetObj() const
 	{
 		return x.obj;
 	}
-	inline void SetDigitNum(int num)
+	FORCE_INLINE void SetDigitNum(int num)
 	{
 		int bits = (num << 8) & 0x00FFFF00;
 		flags |= bits;
 	}
-	inline int GetDigitNum()
+	FORCE_INLINE int GetDigitNum()
 	{
 		return (flags & 0x00FFFF00) >> 8;
 	}
-	inline void SetF(int f)
+	FORCE_INLINE void SetF(int f)
 	{
 		flags = f;
 	}
-	inline bool IsObject() const
+	FORCE_INLINE bool IsObject() const
 	{
 		return (t == ValueType::Object) && (x.obj != nullptr);
 	}
 	bool IsList() const;
-	inline bool IsTrue()
+	FORCE_INLINE bool IsTrue()
 	{
 		return !IsZero();
 	}
-	inline bool IsZero()
+	FORCE_INLINE bool IsZero()
 	{
 		bool bRet = false;
 		switch (t)
@@ -420,12 +427,18 @@ public:
 		}
 		return bRet;
 	}
+	void SetString(const char* s, int size)
+	{
+		t = ValueType::Str;
+		flags = size;
+		x.str = (char*)s;
+	}
 	std::string GetValueType();
-	inline ValueType GetType() { return t; }
-	inline void SetType(ValueType t0) { t = t0; }
-	inline int GetF() { return flags; }
+	FORCE_INLINE ValueType GetType() { return t; }
+	FORCE_INLINE void SetType(ValueType t0) { t = t0; }
+	FORCE_INLINE int GetF() { return flags; }
 	bool CallAssignIfObjectSupport(const Value& v);
-	virtual inline void operator = (const Value& v)
+	FORCE_INLINE void operator = (const Value& v)
 	{
 		if (IsObject())
 		{
@@ -456,18 +469,69 @@ public:
 			break;
 		}
 	}
-	virtual Value operator* (const Value& right);
-	virtual Value operator / (const Value& right);
-	virtual Value operator + (const Value& right);
-	virtual Value operator - (const Value& right);
-	virtual void operator += (const Value& v);
-	virtual void operator -= (const Value& v);
+	Value operator* (const Value& right);
+	Value operator / (const Value& right);
+
+	Value AddObj(const Value& right);
+	FORCE_INLINE Value operator + (const Value& right)
+	{
+		if(t != ValueType::Object && !right.IsObject())
+		{
+			Value ret = *this;
+			ret += right;
+			return ret;
+		}
+		else
+		{
+			return AddObj(right);
+		}
+	}
+	Value operator - (const Value& right);
+	void ObjectAssignAndAdd(const Value& v);
+	FORCE_INLINE void operator += (const Value& v)
+	{
+		flags = v.flags;
+		if (t == ValueType::Object || v.t == ValueType::Object)
+		{
+			ObjectAssignAndAdd(v);
+		}
+		else
+		{
+			switch (t)
+			{
+			case ValueType::Int64:
+			{
+				if (v.t == ValueType::Double)
+				{//if right side is double, change to double
+					t = ValueType::Double;
+					x.d = (double)x.l + v.x.d;
+				}
+				else
+				{
+					x.l += ToInt64(v);
+				}
+			}
+			break;
+			case ValueType::Double:
+				x.d += ToDouble(v);
+				break;
+			case ValueType::Str:
+				x.str = v.x.str;
+				ChangeToStrObject();
+				break;
+			default:
+				*this = v;
+				break;
+			}
+		}
+	}
+	void operator -= (const Value& v);
 
 	Value ObjCall(Port::vector<X::Value>& params);
 	Value ObjCall(Port::vector<X::Value>& params,Port::StringMap<X::Value>& kwParams);
 
 	template<typename... VarList>
-	Value operator()(VarList... args)
+	FORCE_INLINE Value operator()(VarList... args)
 	{
 		if (!IsObject())
 		{
@@ -482,7 +546,7 @@ public:
 		}
 		return ObjCall(params);
 	}
-	Value operator()()
+	FORCE_INLINE Value operator()()
 	{
 		if (!IsObject())
 		{
@@ -494,7 +558,7 @@ public:
 	Value GetItemValue(long long idx);
 	Value GetObjectValue(Port::vector<X::Value>& IdxAry);
 	template<typename... VarList>
-	Value Query(VarList... args)
+	FORCE_INLINE Value Query(VarList... args)
 	{
 		const int size = sizeof...(args);
 		Value vals[size] = { args... };
@@ -505,11 +569,11 @@ public:
 		}
 		return GetObjectValue(IdxAry);
 	}
-	inline Value operator[](long long index)
+	FORCE_INLINE Value operator[](long long index)
 	{
 		return GetItemValue(index);
 	}
-	inline Value operator[](const char* key)
+	FORCE_INLINE Value operator[](const char* key)
 	{
 		return QueryMember(key);
 	}

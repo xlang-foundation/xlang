@@ -1,8 +1,11 @@
 #include "dbg.h"
 #include "utility.h"
+#include "op.h"
 
 namespace X
 {
+	//XLang Trance Function
+
 	bool Dbg::xTraceFunc(
 		XlangRuntime* rt,
 		XObj* pContext,
@@ -15,8 +18,7 @@ namespace X
 		switch (traceEvent)
 		{
 		case X::TraceEvent::Call:
-			pThisBlock->IncRef();
-			rt->M()->AddDbgScope(pThisBlock);//todo??
+			//for call, we don't need to do anything here
 			break;
 		case X::TraceEvent::Exception:
 			break;
@@ -75,7 +77,10 @@ namespace X
 			{
 				return 0;
 			}
-			auto* pProxyScope = dynamic_cast<Data::PyProxyObject*>(lastScope);
+			Data::PyProxyObject* pProxyScope = nullptr;
+#if __TODO_SCOPE__
+			pProxyScope = dynamic_cast<Data::PyProxyObject*>(lastScope);
+#endif
 			if (pProxyScope == nullptr)
 			{
 				return 0;
@@ -92,14 +97,14 @@ namespace X
 		auto* pProxyModule = Data::PyObjectCache::I().QueryModule(fileName);
 		AST::Scope* pThisBlock = nullptr;
 		auto* blockObj = new Data::PyProxyObject(coName);
-		blockObj->Scope::IncRef();
+		//blockObj->Scope::IncRef();
 		blockObj->SetPyFrame(objFrame);
 		blockObj->SetModule(pProxyModule);
 		blockObj->SetModuleFileName(fileName);
-		blockObj->Scope::IncRef();//for pThisBlock
+		//blockObj->Scope::IncRef();//for pThisBlock
 		pThisBlock = dynamic_cast<AST::Scope*>(blockObj);
 		auto* pLine = new Data::PyProxyObject(line-1);//X start line from 0 not 1
-		pLine->Scope::IncRef();
+		//pLine->Scope::IncRef();
 		pLine->SetModuleFileName(fileName);
 		pLine->SetScope(pThisBlock);
 		if (te == TraceEvent::Call)
@@ -118,6 +123,7 @@ namespace X
 		xTraceFunc(rt, nullptr, frameProxy,
 			te, pThisBlock,
 			dynamic_cast<AST::Expression*>(pLine));
+#if __TODO_SCOPE__
 		if (pProxyModule)
 		{
 			pProxyModule->Scope::DecRef();
@@ -130,6 +136,7 @@ namespace X
 		{
 			pLine->Scope::DecRef();
 		}
+#endif
 		if (te == TraceEvent::Return)
 		{
 			rt->PopFrame();

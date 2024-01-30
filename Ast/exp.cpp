@@ -157,17 +157,6 @@ Expression* Expression::CreateByType(ObType t)
 	}
 	return pExp;
 }
-Scope* Expression::FindScope()
-{
-	Scope* pMyScope = nil;
-	Expression* pa = m_parent;
-	while (pa != nil && pMyScope == nil)
-	{
-		pMyScope = dynamic_cast<Scope*>(pa);
-		pa = pa->GetParent();
-	}
-	return pMyScope;
-}
 bool Expression::ToBytes(XlangRuntime* rt, XObj* pContext,X::XLangStream& stream)
 {
 	stream << m_type;
@@ -221,23 +210,23 @@ bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v,
 					auto* pTypeAssign = dynamic_cast<Assign*>(Type);
 					auto* L_keep = pTypeAssign->GetL();
 					pTypeAssign->SetL(Name);
-					bOK = pTypeAssign->Exec(rt, action, pContext, v, lValue);
+					bOK = ExpExec(pTypeAssign,rt, action, pContext, v, lValue);
 					//restore back
 					pTypeAssign->SetL(L_keep);
 				}
 				else
 				{
-					bOK = Name->Exec(rt, action, pContext, v, lValue);
+					bOK = ExpExec(Name, rt, action, pContext, v, lValue);
 				}
 			}
 			else
 			{
-				bOK = Name->Exec(rt, action, pContext, v, lValue);
+				bOK = ExpExec(Name,rt, action, pContext, v, lValue);
 			}
 		}
 		else
 		{
-			bOK = Name->Exec(rt, action, pContext, v);
+			bOK = ExpExec(Name,rt, action, pContext, v);
 		}
 	}
 	return bOK;
@@ -317,14 +306,14 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 								= split(varName, ',');
 							for (auto it : listVars)
 							{
-								int idx = pMyScope->AddOrGet(it, true,nullptr);
+								SCOPE_FAST_CALL_AddOrGet(idx,pMyScope,it, true,nullptr);
 								if (idx >= 0)
 								{
 									if (UseBindMode)
 									{
 										strPart += " ? ";
 										Value v0;
-										if (pMyScope->Get(rt, pContext, idx, v0))
+										if (rt->Get(pMyScope, pContext, idx, v0))
 										{
 											bind_data_list.push_back(v0);
 											bGotVal = true;
@@ -334,7 +323,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 									else
 									{
 										Value v0;
-										if (pMyScope->Get(rt, pContext, idx, v0))
+										if (rt->Get(pMyScope, pContext, idx, v0))
 										{
 											strPart += v0.ToString();
 											bGotVal = true;
@@ -541,7 +530,7 @@ bool List::Exec(XlangRuntime* rt, ExecAction& action,
 	{
 		Value v0;
 		ExecAction action0;
-		if (item->Exec(rt, action0, pContext, v0))
+		if (ExpExec(item,rt, action0, pContext, v0))
 		{
 			pOutList->Add(rt, v0);
 		}

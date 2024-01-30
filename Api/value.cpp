@@ -2,24 +2,19 @@
 #include "xlang.h"
 #include "xhost.h"
 
-namespace X 
+namespace X
 {
 	//ARITH_OP_IMPL(-= )
 	ARITH_OP_IMPL(*= )
-	ARITH_OP_IMPL(/= )
-	COMPARE_OP_IMPL(== )
-	COMPARE_OP_IMPL(!= )
-	COMPARE_OP_IMPL(> )
-	COMPARE_OP_IMPL(< )
-	COMPARE_OP_IMPL(>= )
-	COMPARE_OP_IMPL(<= )
-	
+		ARITH_OP_IMPL(/= )
+
+
 	Value Value::GetObjectValue(Port::vector<X::Value>& IdxAry)
 	{
-		auto* rt =  X::g_pXHost->GetCurrentRuntime();
+		auto* rt = X::g_pXHost->GetCurrentRuntime();
 		XObj* pObj = GetObj();
 		X::Value retVal;
-		pObj->Get(rt,pObj, IdxAry, retVal);
+		pObj->Get(rt, pObj, IdxAry, retVal);
 		return retVal;
 	}
 	Value Value::GetItemValue(long long idx)
@@ -72,7 +67,7 @@ namespace X
 		}
 		return ret;
 	}
-	Value Value::operator+ (const Value& right)
+	Value Value::AddObj(const Value& right)
 	{
 		Value ret;
 		bool done = false;
@@ -121,57 +116,6 @@ namespace X
 			ret -= right;
 		}
 		return ret;
-	}
-	void Value::operator += (const Value& v)
-	{
-		//if (IsObject())
-		//{
-		//	ReleaseObject(x.obj);
-		//}
-		flags = v.flags;
-		if (t == ValueType::Object)
-		{
-			Value v0;
-			//don't change V
-			v0 += v;
-			(*((XObj*)x.obj)) += v0;
-		}
-		else if (v.IsObject())
-		{
-			Value v0 = v;
-			v0 += *this;
-			t = ValueType::Object;
-			AssignObject(v0.GetObj());
-		}
-		else
-		{
-			switch (t)
-			{
-			case ValueType::Int64:
-			{
-				if (v.t == ValueType::Double)
-				{//if right side is double, change to double
-					t = ValueType::Double;
-					x.d = (double)x.l + v.x.d;
-				}
-				else
-				{
-					x.l += ToInt64(v);
-				}
-			}
-				break;
-			case ValueType::Double:
-				x.d += ToDouble(v);
-				break;
-			case ValueType::Str:
-				x.str = v.x.str;
-				ChangeToStrObject();
-				break;
-			default:
-				*this = v;
-				break;
-			}
-		}
 	}
 
 	void Value::operator -= (const Value& v)
@@ -283,21 +227,21 @@ namespace X
 	}
 	template<>
 	template<>
-	void V<XStruct>::Create(char* data,int size,bool asRef)
+	void V<XStruct>::Create(char* data, int size, bool asRef)
 	{
-		SetObj(g_pXHost->CreateStruct(data, size,asRef));
+		SetObj(g_pXHost->CreateStruct(data, size, asRef));
 	}
 	template<>
 	template<>
-	void V<XStr>::Create(const char* s,int size)
+	void V<XStr>::Create(const char* s, int size)
 	{
-		SetObj(g_pXHost->CreateStr(s,size));
+		SetObj(g_pXHost->CreateStr(s, size));
 	}
 	template<>
 	template<>
-	void V<XBin>::Create(char* s, int size,bool bOwnData)
+	void V<XBin>::Create(char* s, int size, bool bOwnData)
 	{
-		SetObj(g_pXHost->CreateBin(s,size, bOwnData));
+		SetObj(g_pXHost->CreateBin(s, size, bOwnData));
 	}
 	template<>
 	template<>
@@ -362,7 +306,7 @@ namespace X
 	void V<XPackage>::Create(Runtime rt, const char* moduleName)
 	{
 		Value v0;
-		if (g_pXHost->Import(rt, moduleName, nullptr,nullptr, v0))
+		if (g_pXHost->Import(rt, moduleName, nullptr, nullptr, v0))
 		{
 			auto* pObj = v0.GetObj();
 			if (pObj)
@@ -443,6 +387,25 @@ namespace X
 		}
 		return true;
 	}
+	void Value::ObjectAssignAndAdd(const Value& v)
+	{
+		if(t == ValueType::Object && v.t != ValueType::Object)
+		{
+			//if this is an object, but v is not an object, then we need to
+			//add v to this object
+			x.obj->operator+=((Value&)v);
+		}
+		else if (t != ValueType::Object && v.t == ValueType::Object)
+		{
+			//if this is not an object, but v is an object, then we need to
+			//add this to v object
+			*v.x.obj += *this;
+		}
+		else
+		{
+			x.obj->operator+=((Value&)v);
+		}
+	}
 	void Value::AssignObject(XObj* p, bool bAddRef)
 	{
 		if (p && bAddRef)
@@ -456,9 +419,23 @@ namespace X
 		t = ValueType::Object;
 		x.obj = g_pXHost->CreateStr(s.c_str(), (int)s.size());
 	}
+	void Value::SetString(std::string&& s)
+	{
+		t = ValueType::Object;
+		x.obj = g_pXHost->CreateStr(s.c_str(), (int)s.size());
+	}
 	Value::Value(std::string& s)
 	{
 		SetString(s);
+	}
+	Value::Value(std::string&& s)
+	{
+		SetString(s);
+	}
+
+	int Value::obj_cmp(Value* r) const
+	{
+		return x.obj->cmp(r);
 	}
 	bool Value::ChangeToStrObject()
 	{
@@ -520,23 +497,34 @@ namespace X
 			break;
 		case ValueType::Int64:
 		{
-			if (flags & (int)ValueSubType::BOOL)
+			ValueSubType last4Digit = (ValueSubType)(flags & 0xF);
+			switch (last4Digit)
 			{
-				if(WithFormat) str = (x.l == 1) ? "true" : "false";//Json likes it
-				else str = (x.l == 1) ? "True" : "False";
-			}
-			else if (flags & (int)ValueSubType::CHAR)
-			{
-				str = (char)x.l;
-			}
-			else
-			{
-				char v[1000];
-				snprintf(v, sizeof(v), "%lld", x.l);
-				str = v;
-			}
+				case ValueSubType::BOOL:
+				{
+					if (WithFormat) str = (x.l == 1) ? "true" : "false";//Json likes it
+					else str = (x.l == 1) ? "True" : "False";
+				}
+				break;
+				case ValueSubType::CHAR:
+					str = (char)x.l;
+				break;
+				case ValueSubType::UINT64:
+				{
+					char v[1000];
+					snprintf(v, sizeof(v), "%llu", (unsigned long long)x.l);
+					str = v;
+				}
+				break;
+				default:
+				{
+					char v[1000];
+					snprintf(v, sizeof(v), "%lld", x.l);
+					str = v;
+				}
+			}//end switch (last4Digit)
 		}
-			break;
+		break;
 		case ValueType::Double:
 		{
 			char v[1000];
@@ -545,21 +533,21 @@ namespace X
 		}
 		break;
 		case ValueType::Object:
-		if(x.obj)
-		{
-			auto str_abi = x.obj->ToString(WithFormat);
-			str = str_abi;
-			X::g_pXHost->ReleaseString(str_abi);
-			if (WithFormat && x.obj->GetType() == ObjType::Str)
+			if (x.obj)
 			{
-				const char* pNewStr= g_pXHost->StringifyString(str.c_str());
-				if (pNewStr)
+				auto str_abi = x.obj->ToString(WithFormat);
+				str = str_abi;
+				X::g_pXHost->ReleaseString(str_abi);
+				if (WithFormat && x.obj->GetType() == ObjType::Str)
 				{
-					str = pNewStr;
-					g_pXHost->ReleaseString(pNewStr);
+					const char* pNewStr = g_pXHost->StringifyString(str.c_str());
+					if (pNewStr)
+					{
+						str = pNewStr;
+						g_pXHost->ReleaseString(pNewStr);
+					}
 				}
 			}
-		}
 			break;
 		case ValueType::Str:
 			str = std::string((char*)x.str, flags);
@@ -670,6 +658,6 @@ namespace X
 	}
 	void Value::setattr(const char* attrName, X::Value& attrVal) const
 	{
-		g_pXHost->SetAttr(*this,attrName, attrVal);
+		g_pXHost->SetAttr(*this, attrName, attrVal);
 	}
 }

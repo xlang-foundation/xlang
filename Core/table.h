@@ -53,7 +53,7 @@ public:
 		free(m_data);
 		m_deleted.clear();
 	}
-	inline char* Item(size_t r)
+	FORCE_INLINE char* Item(size_t r)
 	{
 		return m_data + m_itemSize * r;
 	}
@@ -259,7 +259,7 @@ public:
 		}
 		m_rowMap.clear();
 	}
-	inline virtual long long Size() override
+	FORCE_INLINE virtual long long Size() override
 	{
 		return m_rowMap.size();
 	}
