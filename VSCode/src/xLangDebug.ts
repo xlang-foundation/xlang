@@ -235,7 +235,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
 		console.log(`disconnectRequest suspend: ${args.suspendDebuggee}, terminate: ${args.terminateDebuggee}`);
 		if (this._isLaunch)
-		this._runtime.close();
+			this._runtime.close();
 		this.sendResponse(response);
 	}
 
@@ -862,7 +862,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'Function':
 				dapVariable.type = 'Function';
-				dapVariable.value = `茠 ${v.Val}`;
+				dapVariable.value = `ƒ ${v.Val}`;
 				break;
 			case 'Event':
 				dapVariable.type = 'Event';
