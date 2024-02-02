@@ -388,6 +388,7 @@ namespace X
 	public:
 		virtual int GetBaseClassCount() = 0;
 		virtual X::Value GetBaseClass(int idx) = 0;
+		virtual X::Value GetXClassName() = 0;
 	};
 	class XPyObject :
 		virtual public XObj

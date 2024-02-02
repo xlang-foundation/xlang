@@ -60,13 +60,17 @@ namespace X {
 					delete m_variableFrame;
 				}
 			}
-			FORCE_INLINE virtual int GetBaseClassCount()
+			FORCE_INLINE virtual int GetBaseClassCount() 
 			{
 				return (int)m_bases.size();
 			}
-			FORCE_INLINE virtual X::Value GetBaseClass(int idx)
+			FORCE_INLINE virtual X::Value GetBaseClass(int idx) override 
 			{
 				return m_bases[idx];
+			}
+			FORCE_INLINE virtual X::Value GetXClassName() override
+			{
+				return m_obj->GetNameString();
 			}
 			virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 			{

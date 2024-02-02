@@ -6,6 +6,7 @@
 #include "port.h"
 #include "manager.h"
 #include <string>
+#include "ServerCallPool.h"
 
 namespace X
 {
@@ -460,8 +461,10 @@ namespace X
 				auto* pClientObj = CovertIdToXObj(clientObjId);
 				if(pClientObj)
 				{
-					X::Value retValue;
-					pClientObj->Call(nullptr, nullptr, params,kwParams,retValue);
+					SrvCallInfo srvInfo{ pClientObj,params, kwParams };
+					X::ServerCallPool::I().AddCall(srvInfo);
+					//X::Value retValue;
+					//pClientObj->Call(nullptr, nullptr, params,kwParams,retValue);
 				}
 			}
 			//do an empty write to notify server side can write again
