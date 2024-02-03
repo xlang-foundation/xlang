@@ -4,7 +4,7 @@
 //need to quick response without blocking
 //all server side calls to client will not return value
 #include "singleton.h"
-#include "locker.h"
+#include "Locker.h"
 #include "value.h"
 #include "xhost.h"
 #include <vector>
