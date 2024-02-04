@@ -316,6 +316,7 @@ namespace X
 		virtual long long GetDimSize(int dimIdx) = 0;
 		virtual void SetShape(Port::vector<int> shapes) = 0;
 		virtual void SetDataType(TensorDataType t) = 0;
+		virtual void SetData(char* data, long long size) = 0;
 		virtual TensorDataType GetDataType() = 0;
 		virtual bool Create(X::Value& initData) = 0;
 	};
