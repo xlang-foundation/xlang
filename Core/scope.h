@@ -227,20 +227,21 @@ public:
 			return (int)ScopeVarIndex::INVALID;
 		}
 	}
-	FORCE_INLINE void Set(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v)
+	FORCE_INLINE bool Set(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v)
 	{
 		//TODO: check performance here
 		if (m_pDynScope)
 		{
-			m_pDynScope->Set(idx,v);
+			return m_pDynScope->Set(idx,v);
 		}
 		else if (m_varFrame)
 		{
 			m_varFrame->Set(idx, v);
+			return true;
 		}
 		else
 		{
-			rt->Set(this, pContext, idx, v);
+			return rt->Set(this, pContext, idx, v);
 		}
 	}
 

@@ -186,7 +186,7 @@ public class XObj : IConvertible
 
 public class XLangEng
 {
-    private const string DllName = "C:\\ToGithub\\CantorAI\\out\\build\\x64-debug\\bin\\xlang_interop.dll"; // or "xlang_eng.so" for Linux
+    private const string DllName = "D:\\ToGithub\\CantorAI\\out\\build\\x64-debug\\bin\\xlang_interop.dll"; // or "xlang_eng.so" for Linux
     //private const string DllName = "C:\\ToGithub\\CantorAI\\xlang\\out\\build\\x64-Debug\\bin\\xlang_interop.dll";
     private IntPtr xlangContext = IntPtr.Zero;
     private xlang.net.ObjectRegistry objectRegistry = new xlang.net.ObjectRegistry();

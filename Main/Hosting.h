@@ -88,7 +88,7 @@ namespace X
 		bool Unload(AST::Module* pTopModule);
 		bool Run(AST::Module* pTopModule,X::Value& retVal,
 			std::vector<X::Value>& passInParams,
-			bool stopOnEntry = false);
+			bool stopOnEntry = false,bool keepModuleWithRuntime = false);
 		bool Run(const char* moduleName,
 			const char* code, int size,
 			std::vector<X::Value>& passInParams,

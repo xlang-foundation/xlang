@@ -190,7 +190,7 @@ namespace X
 	}
 	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
 		std::vector<X::Value>& passInParams,
-		bool stopOnEntry)
+		bool stopOnEntry, bool keepModuleWithRuntime)
 	{
 		pTopModule->SetArgs(passInParams);
 		XlangRuntime* pRuntime = new XlangRuntime();
@@ -212,7 +212,6 @@ namespace X
 		X::AST::ExecAction action;
 		//bool bOK = X::Exp::ExpExec(pTopModule,pRuntime,action,nullptr, v);
 		bool bOK = ExpExec(pTopModule, pRuntime, action, nullptr, v);
-		pRuntime->PopFrame();
 		X::Value v1 = pModuleFrame->GetReturnValue();
 		if (v1.IsValid())
 		{
@@ -222,7 +221,11 @@ namespace X
 		{
 			retVal = v;
 		}
-		delete pRuntime;
+		if (!keepModuleWithRuntime)
+		{
+			pRuntime->PopFrame();
+			delete pRuntime;
+		}
 		return bOK;
 	}
 	bool Hosting::RunFragmentInModule(
