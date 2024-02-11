@@ -138,6 +138,11 @@ namespace X
 				// Explore the children of 'current'
 				for (INDEX_TYPE i = 0; i < parent_array.size(); ++i) 
 				{
+					//Skip the root of the subtree if its parent equals itself
+					if (parent_array[i] == i)
+					{
+						continue;
+					}
 					if (parent_array[i] == current && !visited[i]) 
 					{
 						visited[i] = true;
