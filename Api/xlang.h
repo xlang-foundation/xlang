@@ -55,8 +55,55 @@ namespace X
 	};
 #define Internal_Reserve(cls_name)  cls_name(int){}
 
+	//Used for XList or other XObj's derived class to do iteration
+	//used for C++ native code
+	class XObj;
+	typedef unsigned long long XIterator_Pos;
+
+	template<class T>
+	class Iterator 
+	{
+	private:
+		T* mHost = nullptr;
+		XIterator_Pos mPos = (XIterator_Pos)(-1);//maybe a pointer
+	public:
+		FORCE_INLINE Iterator(T* host, XIterator_Pos pos =0)
+		{
+			mHost = host;
+			if (pos == (XIterator_Pos)(-1))
+			{
+				mPos = (XIterator_Pos)mHost->Size();
+			}
+			else
+			{
+				mPos = pos;
+			}
+		}
+
+		// Overload the increment operator
+		FORCE_INLINE Iterator& operator++()
+		{
+			mPos = mHost->IteratorAdd(mPos);
+			return *this;
+		}
+
+		FORCE_INLINE Value operator*() const
+		{
+			return mHost->IteratorGet(mPos);
+		}
+
+		// Overload the equality operator
+		FORCE_INLINE bool operator!=(const Iterator& other) const
+		{
+			return mPos != other.mPos;
+		}
+	};
+
+
 	class XObj
 	{
+		friend class Iterator<XObj>;
+		Iterator<XObj> mIterator;
 	protected:
 		XRuntime* m_rt = nullptr;
 		XObj* m_parent = nullptr;
@@ -69,9 +116,13 @@ namespace X
 		{
 			m_parent = p;
 		}
-		
+		virtual XIterator_Pos IteratorAdd(XIterator_Pos pos) { return (XIterator_Pos)(-1); }
+		virtual Value IteratorGet(XIterator_Pos pos) 
+		{ 
+			return X::Value();
+		}
 	public:
-		XObj()
+		XObj() :mIterator(this)
 		{
 
 		}
@@ -221,6 +272,14 @@ namespace X
 				v0.GetObj()->SetContext(m_rt,m_parent);
 			}
 			return v0;
+		}
+		FORCE_INLINE Iterator<XObj> begin()
+		{
+			return Iterator<XObj>(this);
+		}
+		FORCE_INLINE Iterator<XObj> end()
+		{
+			return Iterator<XObj>(this,-1);
 		}
 	};
 	class XRuntime :

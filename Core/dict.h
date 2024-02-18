@@ -185,7 +185,8 @@ namespace X
 			{
 				return true;
 			}
-			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, 
+				std::vector<Value>& vals, bool getOnly) override
 			{
 				long long offset = (long long)pos;
 				if (offset >= mMap.size())
@@ -198,7 +199,10 @@ namespace X
 				vals.push_back(it->first);
 				vals.push_back(it->second);
 				vals.push_back(offset);
-				pos = Iterator_Pos(offset + 1);
+				if (!getOnly)
+				{
+					pos = Iterator_Pos(offset + 1);
+				}
 				return true;
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
