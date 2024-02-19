@@ -107,7 +107,7 @@ export class XLangRuntime extends EventEmitter {
 	private get currentLine() {
 		return this._currentLine;
 	}
-	private set currentLine(x) {
+	public set currentLine(x) {
 		this._currentLine = x;
 		this.instruction = this.starts[x];
 	}
@@ -140,21 +140,29 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	public close() {
+		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Terminate')";
+		this.Call(code, (retData) => {
+			// do clean, clear moduleKey?
+		});
+		this.sourceModuleKeyMap.clear();
+		this._sourceFile = '';
+		this._moduleKey = 0;
 	}
-	private async loadSource(file: string): Promise<number> {
+	public async loadSource(file: string): Promise<number> {
 		let srcFile = this.normalizePathAndCasing(file);
 		let key = this.sourceModuleKeyMap.get(srcFile);
 		if (key != undefined) {
 			return key;
         }
 		let srcFile_x = srcFile.replaceAll('\\', '/');
-		let code = "m = load('" + srcFile_x
-			+ "')\nreturn m";
+		let code = "m = load('" + srcFile_x + "')\nreturn m";
 		let promise = new Promise((resolve, reject) => {
 			this.Call(code, resolve);
 		});
 		let retVal= await promise as number;
 		this.sourceModuleKeyMap.set(srcFile, retVal);
+		this._sourceFile = srcFile;
+		this._moduleKey = retVal;
 		return retVal;
 	}
 	private async fetchNotify()
@@ -211,13 +219,13 @@ export class XLangRuntime extends EventEmitter {
 		req.end();
 	}
 	/**
-	 * Start executing the given program.
+	 * Start executing the loaded program.
 	 */
-	public async start(program: string, stopOnEntry: boolean, debug: boolean): Promise<void> {
+	public async start(stopOnEntry: boolean, debug: boolean): Promise<void> {
 		this._sessionRunning = true;
 		this.fetchNotify();
-		this._sourceFile = this.normalizePathAndCasing(program);
-		this._moduleKey = await this.loadSource(this._sourceFile);
+		////this._sourceFile = this.normalizePathAndCasing(program);
+		////this._moduleKey = await this.loadSource(this._sourceFile);
 		if (this._moduleKey!=0) {
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
 				+ ", onFinish = 'fire(\"devops.dbg\",action=\"end\",tid=${tid})'"
@@ -226,15 +234,15 @@ export class XLangRuntime extends EventEmitter {
 				console.log(ret);
 				if (debug) {
 					//this.verifyBreakpoints(this._sourceFile);
-					this.GetStartLine((startLine) => {
+					//this.GetStartLine((startLine) => {
 						if (stopOnEntry) {
-							this.currentLine = startLine - 1;
+							//this.currentLine = startLine - 1;
 							this.sendEvent('stopOnEntry');
 						} else {
 							// we just start to run until we hit a breakpoint, an exception, or the end of the program
 							this.continue(false,()=>{ });
 						}
-					});
+					//});
 				} else {
 					this.continue(false, () => { });
 				}
@@ -288,8 +296,8 @@ export class XLangRuntime extends EventEmitter {
         });
 	}
 	public async setBreakPoints(path: string, lines: number[], cb: Function) {
-		let mKey = await this.loadSource(this.normalizePathAndCasing(path));
-		let code = "import xdb\nreturn xdb.set_breakpoints(" + mKey.toString()
+		////let mKey = await this.loadSource(this.normalizePathAndCasing(path));
+		let code = "import xdb\nreturn xdb.set_breakpoints(" + this._moduleKey.toString()
 			+ ",[" + lines.join() + "]"
 			+ ",path=\"" + path+"\""
 			+")";
