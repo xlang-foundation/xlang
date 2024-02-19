@@ -447,6 +447,17 @@ namespace X
 		return X::Hosting::I().Run(moduleName, code,
 			codeSize, passInParams,retVal);
 	}
+	bool XHost_Impl::RunCodeWithParam(const char* moduleName, 
+		const char* code, int codeSize, X::ARGS& args, X::Value& retVal)
+	{
+		std::vector<X::Value> passInParams;
+		for (auto& arg : args)
+		{
+			passInParams.push_back(arg);
+		}
+		return X::Hosting::I().Run(moduleName, code,
+			codeSize, passInParams, retVal);
+	}
 	bool XHost_Impl::LoadModule(const char* moduleName, 
 		const char* code, int codeSize, X::Value& objModule)
 	{
