@@ -147,7 +147,7 @@ namespace X
 			private:
 				T* ptr_;
 			};
-			vector(int size)
+			vector(int size = 0)
 			{
 				if (size > 0)
 				{

@@ -8,7 +8,7 @@
 
 /*  ABI
 this file use g_pXHost as bridge to XLang Core module
-make sure no other dependences except  g_pXHost
+make sure no other dependencies except  g_pXHost
 */
 namespace X
 {
