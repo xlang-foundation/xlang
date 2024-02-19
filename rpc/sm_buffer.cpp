@@ -389,7 +389,7 @@ namespace X
             std::cout << "ClientConnect:failed"<<std::endl;
             return false;
         }
-        std::cout  << "ClientConnect:OK" << std::endl;
+        //std::cout  << "ClientConnect:OK" << std::endl;
         mClosed = false;
         m_BufferSize = bufSize;
         return true;
