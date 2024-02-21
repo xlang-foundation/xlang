@@ -25,6 +25,7 @@ enum class dbg
 	StepOut,
 	StackTrace,
 	GetRuntime,
+	Terminate,
 };
 struct BreakPointInfo
 {

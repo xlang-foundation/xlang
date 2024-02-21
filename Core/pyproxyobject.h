@@ -208,8 +208,11 @@ namespace X
 				}
 
 			}
-			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals) override
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos,
+				std::vector<Value>& vals,bool getOnly) override
 			{
+				//todo: deal with getOnly
+
 				iterator_info* pIterator_info = nullptr;
 				if (pos == nullptr)
 				{

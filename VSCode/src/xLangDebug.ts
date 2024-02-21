@@ -1,4 +1,4 @@
-
+﻿
 import {
 	Logger, logger,
 	LoggingDebugSession,
@@ -57,6 +57,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 	private _useInvalidatedEvent = false;
 
 	private _addressesInHex = true;
+
+	private _isLaunch = true;
 
 	public getRuntime(){
 		return this._runtime;
@@ -208,13 +210,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 		response.body.supportSuspendDebuggee = true;
 		response.body.supportTerminateDebuggee = true;
 		response.body.supportsFunctionBreakpoints = true;
+		// request all stack frame at once
+		response.body.supportsDelayedStackTraceLoading = false;
 
 		this.sendResponse(response);
 
 		// since this debug adapter can accept configuration requests like 'setBreakpoint' at any time,
 		// we request them early by sending an 'initializeRequest' to the frontend.
 		// The frontend will end the configuration sequence by calling 'configurationDone' request.
-		this.sendEvent(new InitializedEvent());
+		//this.sendEvent(new InitializedEvent());
 	}
 
 	/**
@@ -230,24 +234,31 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
 		console.log(`disconnectRequest suspend: ${args.suspendDebuggee}, terminate: ${args.terminateDebuggee}`);
-		this._runtime.close();
+		if (this._isLaunch)
+			this._runtime.close();
+		this.sendResponse(response);
 	}
 
 	protected async attachRequest(response: DebugProtocol.AttachResponse, args: IAttachRequestArguments) {
-		return this.launchRequest(response, args);
+		this._isLaunch = false;
+		//get running module key and source file from runtime
+		//return this.launchRequest(response, args);
 	}
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
-
+		this._isLaunch = true;
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
+		
+		await this._runtime.loadSource(args.program);
+		this.sendEvent(new InitializedEvent());
 
 		// wait 1 second until configuration has finished (and configurationDoneRequest has been called)
-		await this._configurationDone.wait(1000);
+		await this._configurationDone.wait();
 
 		args.stopOnEntry = true;
 		// start the program in the runtime
-		await this._runtime.start(args.program, !!args.stopOnEntry, !args.noDebug);
+		await this._runtime.start(!!args.stopOnEntry, !args.noDebug);
 
 		if (args.compileError) {
 			// simulate a compile/build error in "launch" request:
@@ -375,6 +386,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 						sf.name = `${f.name} ${address}`;
 						sf.instructionPointerReference = address;
 					}
+					this._runtime.currentLine = sf.line;
 					return sf;
 				}),
 				// 4 options for 'totalFrames':

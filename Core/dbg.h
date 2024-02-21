@@ -159,6 +159,11 @@ public:
 					AST::dbg::StepOut);
 				mLoop = false;
 				break;
+			case AST::dbg::Terminate:
+				m_rt->M()->SetDbgType(AST::dbg::Terminate,
+					AST::dbg::Terminate);
+				mLoop = false;
+				break;
 			default:
 				break;
 			}
@@ -190,9 +195,11 @@ public:
 		int line = exp->GetStartLine();
 		if (m_rt->M()->HitBreakpoint(line))
 		{
-			WaitForCommnd(evt,
-				rt, pThisBlock, exp, pContext);
-			return true;
+			WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
+			if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)
+				return false;
+			else
+			        return true;
 		}
 		auto st = m_rt->M()->GetDbgType();
 		switch (st)
@@ -203,9 +210,17 @@ public:
 		{
 			if (m_rt->M()->InDbgScope(pThisBlock))
 			{
-				WaitForCommnd(evt,
-					rt, pThisBlock, exp, pContext);
+				WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
+				if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)
+					return false;
+				else
+					return true;
 			}
+		}
+		break;
+		case X::AST::dbg::Terminate:
+		{
+			return false;
 		}
 		break;
 		default:
