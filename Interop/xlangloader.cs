@@ -317,6 +317,10 @@ public class XLangEng
         for (int i = 0; i < parameters.Length; i++)
         {
             var param = managedArray[i];
+            if(param == null)
+            {
+                continue;
+            }
             Type paramType = parameters[i].ParameterType;
             convertedParameters[i] = Convert.ChangeType(param,paramType);
         }
