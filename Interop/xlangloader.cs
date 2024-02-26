@@ -186,8 +186,6 @@ public class XObj : IConvertible
 
 public class XLangEng
 {
-    private const string DllName = "D:\\ToGithub\\CantorAI\\out\\build\\x64-debug\\bin\\xlang_interop.dll"; // or "xlang_eng.so" for Linux
-    //private const string DllName = "C:\\ToGithub\\CantorAI\\xlang\\out\\build\\x64-Debug\\bin\\xlang_interop.dll";
     private IntPtr xlangContext = IntPtr.Zero;
     private xlang.net.ObjectRegistry objectRegistry = new xlang.net.ObjectRegistry();
 
@@ -368,15 +366,14 @@ public class XLangEng
 
         return variant;
     }
-
-    public XLangEng()
+    private bool Init(string xlang_interop_lib_folder)
     {
-        //string folder = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-        hModule = LoadLibrary(DllName);
+        const string DllName = "xlang_interop.dll";
+        string DllPath = xlang_interop_lib_folder +"\\"+ DllName;
+        hModule = LoadLibrary(DllPath);
         if (hModule == IntPtr.Zero)
         {
-            throw new Exception("Failed to load library: " + DllName);
+            return false;
         }
 
         load = Marshal.GetDelegateForFunctionPointer<LoadDelegate>(GetProcAddress(hModule, "Load"));
@@ -393,6 +390,11 @@ public class XLangEng
         loadXModule = Marshal.GetDelegateForFunctionPointer<LoadXModuleDelegate>(GetProcAddress(hModule, "LoadXModule"));
         unloadXModule = Marshal.GetDelegateForFunctionPointer<UnloadXModuleDelegate>(GetProcAddress(hModule, "UnloadXModule"));
         runXModule = Marshal.GetDelegateForFunctionPointer<RunXModuleDelegate>(GetProcAddress(hModule, "RunXModule"));
+
+        return true;    
+    }
+    public XLangEng()
+    {
 
     }
     public IntPtr RunXModule(string modulePath,string code, out Value returnValue)
@@ -429,6 +431,10 @@ public class XLangEng
     }
     public bool FireEvent(object obj, int evtId, object[] args)
     {
+        if(fireObjectEvent == null)
+        {
+            return false;
+        }
         IntPtr objPtr = GetPointerToObject(obj);
         IntPtr argsPtr = ConvertArrayToVariants(args);
         return fireObjectEvent(objPtr, evtId, argsPtr, args.Length);
@@ -556,11 +562,17 @@ public class XLangEng
     //keep here to avoid GC 
     private InvokeMethodDelegate _invokeMethodDelegate;
     private CreateOrGetClassInstanceDelegate _callbackDelegate;
-    public void Load()
+    public bool Load(string xlang_interop_lib_folder)
     {
+        bool bOK = Init(xlang_interop_lib_folder);
+        if(!bOK)
+        {
+            return false;
+        }
         _callbackDelegate = new CreateOrGetClassInstanceDelegate(CreateOrGetClassInstance);
         _invokeMethodDelegate = new InvokeMethodDelegate(InvokeMethod);
         load(_callbackDelegate, _invokeMethodDelegate,out this.xlangContext);
+        return true;
     }
 
     public void Unload()
