@@ -233,7 +233,7 @@ public class XLangEng
     public delegate bool LoadXModuleDelegate(string modulePath, string xlangCode, int size, out IntPtr ppModule);
     public delegate bool RunXModuleDelegate(IntPtr module,out Value returnValue);
     public delegate bool UnloadXModuleDelegate(IntPtr module);
-
+    public delegate bool UnloadXPackageDelegate(string packName);
 
     private LoadDelegate load;
     private UnloadDelegate unload;
@@ -249,6 +249,7 @@ public class XLangEng
     public LoadXModuleDelegate loadXModule;
     public UnloadXModuleDelegate unloadXModule;
     public RunXModuleDelegate runXModule;
+    public UnloadXPackageDelegate unloadXPackage;
 
     private object[] ConvertValueArray(IntPtr variantsPtr, int size)
     {
@@ -390,7 +391,7 @@ public class XLangEng
         loadXModule = Marshal.GetDelegateForFunctionPointer<LoadXModuleDelegate>(GetProcAddress(hModule, "LoadXModule"));
         unloadXModule = Marshal.GetDelegateForFunctionPointer<UnloadXModuleDelegate>(GetProcAddress(hModule, "UnloadXModule"));
         runXModule = Marshal.GetDelegateForFunctionPointer<RunXModuleDelegate>(GetProcAddress(hModule, "RunXModule"));
-
+        unloadXPackage = Marshal.GetDelegateForFunctionPointer<UnloadXPackageDelegate>(GetProcAddress(hModule, "UnloadXPackage"));
         return true;    
     }
     public XLangEng()
@@ -574,7 +575,10 @@ public class XLangEng
         load(_callbackDelegate, _invokeMethodDelegate,out this.xlangContext);
         return true;
     }
-
+    public bool UnloadXPackage(string packName)
+    {
+        return unloadXPackage(packName);
+    }
     public void Unload()
     {
         unload(this.xlangContext);

@@ -481,6 +481,11 @@ namespace X
 		}
 		return true;
 	}
+	bool XHost_Impl::UnloadXPackage(const char* packageName)
+	{
+		std::string strPackageName(packageName);
+		return X::Manager::I().UnloadPackage(strPackageName);
+	}
 	bool XHost_Impl::RunModule(X::Value objModule, X::Value& retVal, bool keepModuleWithRuntime)
 	{
 		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)

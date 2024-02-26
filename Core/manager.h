@@ -162,7 +162,16 @@ namespace X
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,objPackage }));
 			return true;
 		}
-
+		bool UnloadPackage(std::string packName)
+		{
+			auto it = m_mapPackage.find(packName);
+			if (it != m_mapPackage.end())
+			{
+				m_mapPackage.erase(it);
+				return true;
+			}
+			return false;
+		}
 		bool QueryPackage(std::string& name,Value& valPack)
 		{
 			bool bHave = false;
