@@ -67,7 +67,21 @@ namespace X
             pStub->Start();
         }
     }
-
+    bool RemotingManager::IsStubExist(unsigned long long sessionId)
+    {
+        bool bExist = false;
+        mStubLock.Lock();
+        for (auto it : mStubs)
+        {
+            if (it->GetSessionId() == sessionId)
+            {
+                bExist = true;
+                break;
+            }
+        }
+        mStubLock.Unlock();
+        return bExist;
+    }
     void RemotingManager::CloseStub(void* pStub)
     {
         XLangStub* pHostStub = (XLangStub*)pStub;
