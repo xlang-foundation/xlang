@@ -9,6 +9,7 @@
 #include <functional>
 #include "wait.h"
 
+
 namespace X
 {
 	class XLangStub;
@@ -109,6 +110,7 @@ namespace X
 			mLockCallWorkers.Unlock();
 			return pWorker;
 		}
+		bool IsStubExist(unsigned long long sessionId);
 	private:
 		Locker mStubLock;
 		unsigned long long mLastSessionID = 0;

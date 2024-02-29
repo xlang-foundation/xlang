@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xlang.netframework", "xlang.netframework.csproj", "{FE5E04CD-F6ED-43B6-8EB9-4A522C6C0147}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FE5E04CD-F6ED-43B6-8EB9-4A522C6C0147}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE5E04CD-F6ED-43B6-8EB9-4A522C6C0147}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE5E04CD-F6ED-43B6-8EB9-4A522C6C0147}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE5E04CD-F6ED-43B6-8EB9-4A522C6C0147}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {226504E6-E7F2-4802-AB91-DCEF50A88208}
+	EndGlobalSection
+EndGlobal

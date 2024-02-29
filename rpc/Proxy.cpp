@@ -322,7 +322,7 @@ namespace X
 
 		//Wait for pContext->Ready
 		//std::cout << "In CommitCall before wait" << std::endl;
-		pContext->pWait->Wait(-1);
+		pContext->pWait->Wait(mTimeout);
 		//std::cout << "In CommitCall after wait" << std::endl;
 		ReturnCallContext(pContext);
 		//Fetch Result
@@ -412,7 +412,7 @@ namespace X
 		{
 			if (bWaitOnBuffer2)
 			{
-				m_pBuffer2ReadyWait->Wait(-1);
+				m_pBuffer2ReadyWait->Wait(mTimeout);
 				bWaitOnBuffer2 = false;
 			}
 			if (!mSMSwapBuffer2->BeginRead())
@@ -426,7 +426,7 @@ namespace X
 				Call_Context* pContext = (Call_Context*)head.context;
 				pContext->pWait->Release();
 				//wait for call read out its return data
-				m_pCallReadyWait->Wait(-1);
+				m_pCallReadyWait->Wait(mTimeout);
 				mSMSwapBuffer2->EndRead();
 			}
 			else
@@ -502,7 +502,7 @@ namespace X
 		m_ConnectLock.Unlock();
 		if (!bReady)
 		{
-			if (m_pConnectWait->Wait(-1))
+			if (m_pConnectWait->Wait(mTimeout))
 			{
 				m_ConnectLock.Lock();
 				bReady = m_bConnected;

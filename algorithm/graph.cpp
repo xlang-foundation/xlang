@@ -91,6 +91,30 @@ namespace X
 			prim_minimum_spanning_tree(g, &p[0], boost::root_vertex(root));
 			return ArrayToValue(std::vector<long long>(p.begin(), p.end()));
 		}
+		X::Value XGraph::Dijkstra_Shortest_Paths(long long start, long long end)
+		{
+			Graph& g = *(Graph*)mGraph;
+			std::vector<Vertex> predecessors(num_vertices(g));
+			std::vector<int> distances(boost::num_vertices(g));
+
+			// Run Dijkstra's algorithm
+			boost::dijkstra_shortest_paths(g, start,
+				boost::predecessor_map(boost::make_iterator_property_map(predecessors.begin(), 
+					boost::get(boost::vertex_index, g)))
+				.distance_map(boost::make_iterator_property_map(distances.begin(), 
+					boost::get(boost::vertex_index, g))));
+
+			// Reconstruct the shortest path from start to goal
+			std::vector<Vertex> path;
+			for (Vertex v = end; v != start; v = predecessors[v]) 
+			{
+				path.push_back(v);
+			}
+			path.push_back(start);
+
+			std::reverse(path.begin(), path.end());
+			return ArrayToValue(std::vector<long long>(path.begin(), path.end()));
+		}
 		//tree is a tensor which's data hold the Parent-Tree array
 		X::Value XGraph::PTreeChildren(X::Value tree, long long node)
 		{
