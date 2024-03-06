@@ -29,6 +29,7 @@ namespace X {
 		std::unordered_map<Data::Object*, ObjInfo> Objects;
 		void* m_lock = nullptr;
 		OpRegistry* m_reg = nullptr;
+		void notityThread(const char* strType, int tid);
 	public:
 		G();
 		~G();
@@ -36,6 +37,26 @@ namespace X {
 		void UnbindRuntimeToThread(XlangRuntime* rt);
 		FORCE_INLINE OpRegistry& R() { return *m_reg;}
 		FORCE_INLINE void SetReg(OpRegistry* r) { m_reg = r; }
+		FORCE_INLINE std::unordered_map<long long, XlangRuntime*> GetThreadRuntimeIdMap() 
+		{
+			((Locker*)m_lockRTMap)->Lock();
+			std::unordered_map<long long, XlangRuntime*> ret(m_rtMap);
+			((Locker*)m_lockRTMap)->Unlock();
+			return  ret; 
+		}
+		FORCE_INLINE AST::Module* QueryModuleByThreadId(int threadId)
+		{
+			AST::Module* ret = nullptr;
+			((Locker*)m_lockRTMap)->Lock();
+			auto it = m_rtMap.find(threadId);
+			if (it != m_rtMap.end())
+			{
+				ret = it->second->M();
+			}
+			((Locker*)m_lockRTMap)->Unlock();
+			return  ret;
+		}
+
 		FORCE_INLINE XRuntime* GetCurrentRuntime(XRuntime* baseRt = nullptr)
 		{
 			unsigned long tid = GetThreadID();

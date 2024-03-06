@@ -1,4 +1,5 @@
 #include "glob.h"
+#include "event.h"
 #include "Locker.h"
 #include "object.h"
 
@@ -50,32 +51,43 @@ namespace X {
 #endif
 	void G::BindRuntimeToThread(XlangRuntime* rt)
 	{
+		bool bEvent = false;
 		long long curTId = rt->GetThreadId();
 		((Locker*)m_lockRTMap)->Lock();
 		auto it = m_rtMap.find(curTId);
 		if (it == m_rtMap.end())
 		{
 			m_rtMap.emplace(std::make_pair(curTId,rt));
+			bEvent = rt->GetTrace();
 		}
 		else
 		{
 			it->second = rt;
 		}
 		((Locker*)m_lockRTMap)->Unlock();
+
+		if (bEvent)
+			notityThread("ThreadStarted", curTId);
 	}
 	void G::UnbindRuntimeToThread(XlangRuntime* rt)
 	{
+		bool bEvent = false;
 		long long curTId = rt->GetThreadId();
 		((Locker*)m_lockRTMap)->Lock();
 		auto it = m_rtMap.find(curTId);
 		if (it != m_rtMap.end())
 		{
 			m_rtMap.erase(it);
+			bEvent = rt->GetTrace();
 		}
 		((Locker*)m_lockRTMap)->Unlock();
+
+		if (bEvent)
+			notityThread("ThreadExited", curTId);
 	}
 	XlangRuntime* G::MakeThreadRuntime(long long curTId, XlangRuntime* rt)
 	{
+		bool bEvent = false;
 		XlangRuntime* pRet = nullptr;
 		((Locker*)m_lockRTMap)->Lock();
 		auto it = m_rtMap.find(curTId);
@@ -88,13 +100,35 @@ namespace X {
 			}
 			m_rtMap.emplace(std::make_pair(curTId, pRuntime));
 			pRet = pRuntime;
+			bEvent = pRuntime->GetTrace();
 		}
 		else
 		{
 			pRet = it->second;
 		}
 		((Locker*)m_lockRTMap)->Unlock();
+
+		if (bEvent)
+			notityThread("ThreadStarted", curTId);
+		
 		return pRet;
+	}
+
+	void G::notityThread(const char* strType, int tid)
+	{
+		
+		KWARGS kwParams;
+		X::Value valAction("notify");
+		kwParams.Add("action", valAction);
+		const int online_len = 1000;
+		char strBuf[online_len];
+		sprintf_s(strBuf, online_len, "[{\"%s\":%d}]", strType, tid);
+		X::Value valParam(strBuf);
+		kwParams.Add("param", valParam);
+		std::cout << strType << " threadId: " << tid << std::endl;
+		std::string evtName("devops.dbg");
+		ARGS params(0);
+		X::EventSystem::I().Fire(nullptr, nullptr, evtName, params, kwParams);
 	}
 
 	void G::Lock()

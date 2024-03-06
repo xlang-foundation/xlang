@@ -30,14 +30,15 @@ namespace X
 				XObj* pContextCurrent,
 				X::Value& valGlobals);
 			bool BuildLocals(XlangRuntime* rt,
-				XObj* pContextCurrent, int frameId,
+				XObj* pContextCurrent, AST::StackFrame* frameId,
 				X::Value& valLocals);
 			bool BuildObjectContent(XlangRuntime* rt,
-				XObj* pContextCurrent, int frameId, X::Value& valParam,
+				XObj* pContextCurrent, AST::StackFrame* frameId, X::Value& valParam,
 				X::Value& valObject);
 			bool ObjectSetValue(XlangRuntime* rt,
-				XObj* pContextCurrent, int frameId, X::Value& valParam,
+				XObj* pContextCurrent, AST::StackFrame* frameId, X::Value& valParam,
 				X::Value& objRetValue);
+			bool BuildThreads(XlangRuntime* rt, XObj* pContextCurrent, X::Value& valThread);
 		public:
 			BEGIN_PACKAGE(DebugService)
 				APISET().AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);

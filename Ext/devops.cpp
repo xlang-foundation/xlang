@@ -25,20 +25,40 @@ namespace X
 				pEvt->IncRef();
 			}
 		}
+
+		bool DebugService::BuildThreads(XlangRuntime* rt, XObj* pContextCurrent, X::Value& valThread)
+		{
+			std::unordered_map<long long, XlangRuntime*> mapRt = X::G::I().GetThreadRuntimeIdMap();
+			bool bOK = false;
+			if (mapRt.size() > 0)
+			{
+				bool bOK = true;
+				Data::List* pList = new Data::List();
+				for (auto it = mapRt.begin(); it != mapRt.end(); ++it)
+				{
+					Data::Dict* dict = new Data::Dict();
+					dict->Set("id", X::Value(it->first));
+					dict->Set("name", X::Value(it->first));
+					X::Value valDict(dict);
+					pList->Add(valDict);
+				}
+				valThread = X::Value(pList);
+			}
+			return bOK;
+		}
+
 		bool DebugService::BuildLocals(XlangRuntime* rt,
-			XObj* pContextCurrent, int frameId,
+			XObj* pContextCurrent, AST::StackFrame* frameId,
 			X::Value& valLocals)
 		{
-			int index = 0;
 			AST::StackFrame* pCurStack = rt->GetCurrentStack();
 			while (pCurStack != nil)
 			{
-				if (index == frameId)
+				if (pCurStack == frameId)
 				{
 					break;
 				}
 				pCurStack = pCurStack->Prev();
-				index++;
 			}
 			bool bOK = false;
 			if (pCurStack)
@@ -191,7 +211,7 @@ namespace X
 			return true;
 		}
 		bool DebugService::ObjectSetValue(XlangRuntime* rt,
-			XObj* pContextCurrent, int frameId, X::Value& valParam,
+			XObj* pContextCurrent, AST::StackFrame* frameId, X::Value& valParam,
 			X::Value& objRetValue)
 		{
 			if (!valParam.IsObject())
@@ -223,16 +243,14 @@ namespace X
 			{
 				if (objType == "locals")
 				{
-					int index = 0;
 					AST::StackFrame* pCurStack = rt->GetCurrentStack();
 					while (pCurStack != nil)
 					{
-						if (index == frameId)
+						if (pCurStack == frameId)
 						{
 							break;
 						}
 						pCurStack = pCurStack->Prev();
-						index++;
 					}
 					if (pCurStack)
 					{
@@ -275,7 +293,7 @@ namespace X
 			return true;
 		}
 		bool DebugService::BuildObjectContent(XlangRuntime* rt,
-			XObj* pContextCurrent, int frameId, X::Value& valParam,
+			XObj* pContextCurrent, AST::StackFrame* frameId, X::Value& valParam,
 			X::Value& valObject)
 		{
 			if (!valParam.IsObject())
@@ -346,7 +364,6 @@ namespace X
 			X::Value& valStackInfo)
 		{
 			TraceEvent traceEvent = pCommandInfo->m_traceEvent;
-			int index = 0;
 			AST::StackFrame* pCurStack = rt->GetCurrentStack();
 			Data::List* pList = new Data::List();
 			while (pCurStack != nil)
@@ -359,7 +376,7 @@ namespace X
 				if (pMyScope)
 				{
 					Data::Dict* dict = new Data::Dict();
-					dict->Set("index", X::Value(index));
+					dict->Set("id", X::Value(pCurStack));
 					std::string name;
 					auto* pExp = pMyScope->GetExp();
 					if (pExp->m_type == X::AST::ObType::Func)
@@ -383,7 +400,6 @@ namespace X
 					dict->Set("column", X::Value(column));
 					X::Value valDict(dict);
 					pList->Add(rt, valDict);
-					index++;
 				}
 				pCurStack = pCurStack->Prev();
 			}
@@ -400,6 +416,7 @@ namespace X
 			}
 			return nStartLine;
 		}
+		// Breakpoints should work in both currently running and later created modules
 		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext,
 			unsigned long long moduleKey, Value& varLines)
 		{
@@ -439,8 +456,13 @@ namespace X
 				retValue = X::Value(false);
 				return true;
 			}
+			AST::Module* pModule = nullptr;
 			unsigned long long moduleKey = params[0].GetLongLong();
-			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
+			pModule = Hosting::I().QueryModule(moduleKey); // 
+			if (pModule == nullptr)
+			{
+				pModule = X::G::I().QueryModuleByThreadId(moduleKey);
+			}
 			if (pModule == nullptr)
 			{
 				retValue = X::Value(false);
@@ -483,13 +505,14 @@ namespace X
 			else if (strCmd == "Globals"
 				|| strCmd == "Locals"
 				|| strCmd == "Object"
-				|| strCmd == "SetObjectValue")
+				|| strCmd == "SetObjectValue"
+				|| strCmd == "Threads")
 			{
-				int frameId = 0;
+				AST::StackFrame* frameId = 0;
 				auto it2 = kwParams.find("frameId");
 				if (it2)
 				{
-					frameId = (int)it2->val.GetLongLong();
+					frameId = (AST::StackFrame*)it2->val.GetLongLong();
 				}
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				pCmdInfo->m_frameId = frameId;
@@ -537,6 +560,14 @@ namespace X
 						pCommandInfo->m_varParam,
 						retVal);
 				};
+				auto threadsPack = [](XlangRuntime* rt,
+					XObj* pContextCurrent,
+					AST::CommandInfo* pCommandInfo,
+					X::Value& retVal)
+					{
+						DebugService* pDebugService = (DebugService*)pCommandInfo->m_callContext;
+						pDebugService->BuildThreads(rt, pContextCurrent,retVal);
+					};
 				if (strCmd == "Locals")
 				{
 					pCmdInfo->m_process = localPack;
@@ -553,6 +584,10 @@ namespace X
 				{
 					pCmdInfo->m_process = objSetValuePack;
 				}
+				else if (strCmd == "Threads")
+				{
+					pCmdInfo->m_process = threadsPack;
+				}
 				pCmdInfo->m_varParam = valParam;
 				pCmdInfo->m_callContext = this;
 				pCmdInfo->m_needRetValue = true;
@@ -561,7 +596,7 @@ namespace X
 				retValue = pCmdInfo->m_retValueHolder;
 				pCmdInfo->DecRef();
 			}
-			if (strCmd == "Step")
+			else if (strCmd == "Step")
 			{
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo

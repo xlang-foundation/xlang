@@ -196,13 +196,12 @@ namespace X
 		XlangRuntime* pRuntime = new XlangRuntime();
 		pTopModule->SetRT(pRuntime);
 		pRuntime->SetM(pTopModule);
-		G::I().BindRuntimeToThread(pRuntime);
 		if (stopOnEntry)
 		{
 			pTopModule->SetDebug(true,pRuntime);
-			pTopModule->SetDbgType(X::AST::dbg::Step,
-				AST::dbg::Step);
+			pTopModule->SetDbgType(X::AST::dbg::Step, AST::dbg::None);
 		}
+		G::I().BindRuntimeToThread(pRuntime);
 
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 		pModuleFrame->SetLine(pTopModule->GetStartLine());

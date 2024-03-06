@@ -4,7 +4,8 @@ import {
 	LoggingDebugSession,
 	InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
 	ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent,
-	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent
+	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent,
+	ThreadEvent
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { basename } from 'path-browserify';
@@ -36,9 +37,6 @@ interface IAttachRequestArguments extends ILaunchRequestArguments { }
 
 export class XLangDebugSession extends LoggingDebugSession {
 
-	// we don't support multiple threads, so we can use a hardcoded ID for the default thread
-	private static threadID = 1;
-
 	// a XLang runtime (or debugger)
 	private _runtime: XLangRuntime;
 
@@ -60,6 +58,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private _isLaunch = true;
 
+	private _mapFrameIdThreadId : Map<Number, Number> = new Map();
+
 	public getRuntime(){
 		return this._runtime;
 	}
@@ -77,33 +77,38 @@ export class XLangDebugSession extends LoggingDebugSession {
 		this._runtime = new XLangRuntime();
 
 		// setup event handlers
-		this._runtime.on('stopOnEntry', () => {
-			this.sendEvent(new StoppedEvent('entry', XLangDebugSession.threadID));
+		this._runtime.on('threadStarted', (threadID) => {
+			this.sendEvent(new ThreadEvent('started', threadID));
 		});
-		this._runtime.on('stopOnStep', () => {
-			this.sendEvent(new StoppedEvent('step', XLangDebugSession.threadID));
+		this._runtime.on('threadExited', (threadID) => {
+			this.sendEvent(new ThreadEvent('exited', threadID));
 		});
-		this._runtime.on('stopOnBreakpoint', () => {
-			this.sendEvent(new StoppedEvent('breakpoint', XLangDebugSession.threadID));
+		this._runtime.on('stopOnEntry', (threadID) => {
+			this.sendEvent(new StoppedEvent('entry', threadID));
 		});
-		this._runtime.on('stopOnDataBreakpoint', () => {
-			this.sendEvent(new StoppedEvent('data breakpoint', XLangDebugSession.threadID));
+		this._runtime.on('stopOnStep', (threadID) => {
+			this.sendEvent(new StoppedEvent('step', threadID));
 		});
-		this._runtime.on('stopOnInstructionBreakpoint', () => {
-			this.sendEvent(new StoppedEvent('instruction breakpoint', XLangDebugSession.threadID));
+		this._runtime.on('stopOnBreakpoint', (threadID) => {
+			this.sendEvent(new StoppedEvent('breakpoint', threadID));
 		});
-		this._runtime.on('stopOnException', (exception) => {
+		this._runtime.on('stopOnDataBreakpoint', (threadID) => {
+			this.sendEvent(new StoppedEvent('data breakpoint', threadID));
+		});
+		this._runtime.on('stopOnInstructionBreakpoint', (threadID) => {
+			this.sendEvent(new StoppedEvent('instruction breakpoint', threadID));
+		});
+		this._runtime.on('stopOnException', (exception, threadID) => {
 			if (exception) {
-				this.sendEvent(new StoppedEvent(`exception(${exception})`, XLangDebugSession.threadID));
+				this.sendEvent(new StoppedEvent(`exception(${exception})`, threadID));
 			} else {
-				this.sendEvent(new StoppedEvent('exception', XLangDebugSession.threadID));
+				this.sendEvent(new StoppedEvent('exception', threadID));
 			}
 		});
 		this._runtime.on('breakpointValidated', (bp: IRuntimeBreakpoint) => {
 			this.sendEvent(new BreakpointEvent('changed', { verified: bp.verified, id: bp.id } as DebugProtocol.Breakpoint));
 		});
-		this._runtime.on('output', (type, text, filePath, line, column) => {
-
+		this._runtime.on('output', (type, text, filePath, line, column, threadID) => {
 			let category: string;
 			switch(type) {
 				case 'prio': category = 'important'; break;
@@ -294,7 +299,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected breakpointLocationsRequest(response: DebugProtocol.BreakpointLocationsResponse, args: DebugProtocol.BreakpointLocationsArguments, request?: DebugProtocol.Request): void {
-
 		if (args.source.path) {
 			const bps = this._runtime.getBreakpoints(args.source.path, this.convertClientLineToDebugger(args.line));
 			response.body = {
@@ -314,7 +318,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): Promise<void> {
-
 		let namedException: string | undefined = undefined;
 		let otherExceptions = false;
 
@@ -356,28 +359,45 @@ export class XLangDebugSession extends LoggingDebugSession {
 		this.sendResponse(response);
 	}
 
-	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
-
-		// runtime supports no threads so just return a default thread.
-		response.body = {
-			threads: [
-				new Thread(XLangDebugSession.threadID, "thread 1"),
-				new Thread(XLangDebugSession.threadID + 1, "thread 2"),
-			]
+	protected threadsRequest(response: DebugProtocol.ThreadsResponse){
+		this._runtime.getThreads((threads) => {
+			
+			let tids: Number[] = [];
+			response.body = {
+				threads: threads.map((t) => {
+					tids.push(t.id);
+					const thread: DebugProtocol.Thread = new Thread(t.id, t.name);
+					return thread;
+				}),
 		};
+
+			this._mapFrameIdThreadId.forEach((value, key) => {
+				if (!tids.includes(value)){
+					this._mapFrameIdThreadId.delete(key);
+				}
+			});
+
 		this.sendResponse(response);
+        });
 	}
 
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
-
+		const threadId = args.threadId;
 		const startFrame = typeof args.startFrame === 'number' ? args.startFrame : 0;
 		const maxLevels = typeof args.levels === 'number' ? args.levels : 1000;
 		const endFrame = startFrame + maxLevels;
 
-		this._runtime.stack(startFrame, endFrame, (stk) => {
+		this._mapFrameIdThreadId.forEach((value, key) => {
+			if (value === threadId){
+				this._mapFrameIdThreadId.delete(key);
+			}
+		});
+
+		this._runtime.stack(threadId, startFrame, endFrame, (stk) => {
 			response.body = {
 				stackFrames: stk.frames.map((f, ix) => {
-					const sf: DebugProtocol.StackFrame = new StackFrame(f.index, f.name, this.createSource(f.file), this.convertDebuggerLineToClient(f.line));
+					this._mapFrameIdThreadId.set(f.id, threadId);
+					const sf: DebugProtocol.StackFrame = new StackFrame(f.id, f.name, this.createSource(f.file), this.convertDebuggerLineToClient(f.line));
 					if (typeof f.column === 'number') {
 						sf.column = this.convertDebuggerColumnToClient(f.column);
 					}
@@ -400,7 +420,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-
 		response.body = {
 			scopes: [
 				new Scope("Locals", this._runtime.createScopeRef('locals',args.frameId,null,null), false),
@@ -449,7 +468,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.Request): Promise<void> {
-
 		let cb = (vs: RuntimeVariable[]) => {
 			response.body = {
 				variables: vs.map(v => this.convertFromRuntime(v))
@@ -461,12 +479,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const varType = v[0];
 		const frameId = v[1];
 		const objId = v[3];
+		const threadId = this._mapFrameIdThreadId.get(frameId);
 		if (varType === 'locals') {
-			this._runtime.getLocalVariables(frameId,cb);
+			this._runtime.getLocalVariables(threadId, frameId,cb);
 		} else if (varType === 'globals') {
-			this._runtime.getGlobalVariables(cb);
+			this._runtime.getGlobalVariables(threadId, cb);
 		} else {
-			this._runtime.getObject(frameId,varType,objId,
+			this._runtime.getObject(threadId, frameId,varType,objId,
 				args.start===undefined?0:args.start,
 				args.count===undefined?-1:args.count,
 				cb);
@@ -481,32 +500,35 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const varInfo = this._runtime.getScopeRef(args.variablesReference);
 		const varType = varInfo[0];
 		const frameId = varInfo[1];
-		const objId = varInfo[3];	
-		this._runtime.setObject(frameId,varType,objId,args.name,args.value,cb);
+		const objId = varInfo[3];
+		const threadId = this._mapFrameIdThreadId.get(frameId);
+		this._runtime.setObject(threadId, frameId,varType,objId,args.name,args.value,cb);
 	}
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
-		this._runtime.continue(false, () => {
+		this._runtime.continue(false, args.threadId, () => {
 			this.sendResponse(response);
 		});
 	}
 
 	protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): void {
-		this._runtime.continue(false, () => {
+		this._runtime.continue(false, args.threadId, () => {
 			this.sendResponse(response);
 		});
 	}
 
 	protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
-		this._runtime.step(args.granularity === 'instruction', false,
+		this._runtime.step(args.granularity === 'instruction', false, args.threadId,
 			() => {
 				this.sendResponse(response);
 			});
 	}
 
 	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
-		this._runtime.step(args.granularity === 'instruction', true);
+		this._runtime.step(args.granularity === 'instruction', true, args.threadId,
+		() => {
 		this.sendResponse(response);
+		});
 	}
 
 	protected stepInTargetsRequest(response: DebugProtocol.StepInTargetsResponse, args: DebugProtocol.StepInTargetsArguments) {
@@ -520,19 +542,18 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): void {
-		this._runtime.stepIn(args.targetId, () => {
+		this._runtime.stepIn(args.threadId, args.targetId, () => {
 			this.sendResponse(response);
 		});
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): void {
-		this._runtime.stepOut(() => {
+		this._runtime.stepOut(args.threadId, () => {
 			this.sendResponse(response);
 		});
 	}
 
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
-
 		let reply: string | undefined;
 		let rv: RuntimeVariable | undefined;
 
@@ -599,7 +620,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected setExpressionRequest(response: DebugProtocol.SetExpressionResponse, args: DebugProtocol.SetExpressionArguments): void {
-
 		if (args.expression.startsWith('$')) {
 			const rv = this._runtime.getLocalVariable(args.expression.substr(1));
 			if (rv) {
@@ -656,7 +676,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected dataBreakpointInfoRequest(response: DebugProtocol.DataBreakpointInfoResponse, args: DebugProtocol.DataBreakpointInfoArguments): void {
-
 		response.body = {
             dataId: null,
             description: "cannot break on data access",
@@ -683,7 +702,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected setDataBreakpointsRequest(response: DebugProtocol.SetDataBreakpointsResponse, args: DebugProtocol.SetDataBreakpointsArguments): void {
-
 		// clear all data breakpoints
 		this._runtime.clearAllDataBreakpoints();
 
@@ -702,7 +720,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected completionsRequest(response: DebugProtocol.CompletionsResponse, args: DebugProtocol.CompletionsArguments): void {
-
 		response.body = {
 			targets: [
 				{
@@ -745,7 +762,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected disassembleRequest(response: DebugProtocol.DisassembleResponse, args: DebugProtocol.DisassembleArguments) {
-
 		const baseAddress = parseInt(args.memoryReference);
 		const offset = args.instructionOffset || 0;
 		const count = args.instructionCount;
@@ -779,7 +795,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected setInstructionBreakpointsRequest(response: DebugProtocol.SetInstructionBreakpointsResponse, args: DebugProtocol.SetInstructionBreakpointsArguments) {
-
 		// clear all instruction breakpoints
 		this._runtime.clearInstructionBreakpoints();
 

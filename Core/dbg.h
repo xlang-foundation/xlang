@@ -210,6 +210,12 @@ public:
 		{
 			if (m_rt->M()->InDbgScope(pThisBlock))
 			{
+				// stopOnEntry
+				if (m_rt->M()->GetLastRequestDgbType() == X::AST::dbg::None)
+					m_rt->M()->StopOn("StopOnEntry");
+				else
+					m_rt->M()->StopOn("StopOnStep");
+
 				WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
 				if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)
 					return false;
