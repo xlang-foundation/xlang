@@ -62,7 +62,28 @@ namespace Data {
 			IncRef();
 			return this;
 		}
-		FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals)
+		FORCE_INLINE virtual X::XIterator_Pos IteratorAdd(X::XIterator_Pos pos) override
+		{
+			std::vector<Value> dummy;
+			Iterator_Pos myPos = (Iterator_Pos)pos;
+			GetAndUpdatePos(myPos,dummy, false);
+			return (X::XIterator_Pos)myPos;
+		}
+		FORCE_INLINE virtual Value IteratorGet(X::XIterator_Pos pos) override
+		{
+			std::vector<Value> vals;
+			Iterator_Pos myPos = (Iterator_Pos)pos;
+			bool bOK = GetAndUpdatePos(myPos, vals, true);
+			if (bOK && vals.size() > 1)
+			{
+				return vals[0];
+			}
+			else
+			{
+				return X::Value();
+			}
+		}
+		FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals,bool getOnly)
 		{
 			return true;
 		}
@@ -241,7 +262,7 @@ namespace Data {
 			std::string retStr(v);
 			return GetABIString(retStr);
 		}
-		virtual Object& operator +=(X::Value& r)
+		virtual Object& operator +=(X::Value& r) override
 		{
 			return *this;
 		}

@@ -33,14 +33,6 @@ protected:
 	std::vector<int> m_IndexofParamList;//same size with input positional param
 	Expression* RetType = nil;
 	void FindMyModule();
-	FORCE_INLINE Module* GetMyModule()
-	{
-		if (m_myModule == nullptr)
-		{
-			FindMyModule();
-		}
-		return m_myModule;
-	}
 	void SetName(Expression* n)
 	{
 		Var* vName = dynamic_cast<Var*>(n);
@@ -111,6 +103,14 @@ public:
 		}
 #endif
 		m_decors.clear();
+	}
+	FORCE_INLINE Module* GetMyModule()
+	{
+		if (m_myModule == nullptr)
+		{
+			FindMyModule();
+		}
+		return m_myModule;
 	}
 	FORCE_INLINE Scope* GetScope()
 	{

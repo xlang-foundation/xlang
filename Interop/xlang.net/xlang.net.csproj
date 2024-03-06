@@ -7,4 +7,9 @@
     <BaseOutputPath>C:\ToGithub\CantorAI\out\build\x64-debug</BaseOutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="..\registry.cs" Link="registry.cs" />
+    <Compile Include="..\xlangloader.cs" Link="xlangloader.cs" />
+  </ItemGroup>
+
 </Project>

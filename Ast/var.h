@@ -77,8 +77,7 @@ public:
 				return false;
 			}
 		}
-		m_scope->Set(rt,pContext, Index, v);
-		return true;
+		return m_scope->Set(rt,pContext, Index, v);
 	}
 	virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
 	{

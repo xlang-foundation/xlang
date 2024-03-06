@@ -25,7 +25,8 @@ Java_org_xlangfoundation_playground_xlang_loadJNI(
     _android = new X::Android::AndroidWrapper(env, objHost);
     _android->SetJVM(jvm);
     X::XLangStaticLoad();
-    X::RegisterPackage<X::Android::AndroidWrapper>("android",_android);
+    //X::RegisterPackage<X::Android::AndroidWrapper>("android",_android);
+    X::RegisterPackage<X::Android::AndroidWrapper>("android","android",_android);
     _android->Init();
     _android->AddPlugins();
     return true;
@@ -41,7 +42,7 @@ Java_org_xlangfoundation_playground_xlang_loadModuleJNI(
     const char* szCode = env->GetStringUTFChars( codeObj, nullptr );
     unsigned long long moduleKey = 0;
     std::string code(szCode);
-    auto* pModule = X::Hosting::I().Load(moduleName, code.c_str(), (int)code.size(), moduleKey);
+    auto* pModule = X::Hosting::I().Load(moduleName.c_str(), code.c_str(), (int)code.size(), moduleKey);
     env->ReleaseStringUTFChars(codeObj,szCode);
     X::Value retVal;
     X::Hosting::I().InitRun(pModule,retVal);

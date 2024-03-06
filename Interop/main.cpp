@@ -176,7 +176,7 @@ extern "C"  X_EXPORT bool RunXModule(void* pModule, X::Value * outReturnValue)
 {
 	X::XObj* pXObjModule = (X::XObj*)pModule;
 	X::Value retVal;
-	bool bOK =  X::g_pXHost->RunModule(X::Value(pXObjModule), retVal);
+	bool bOK =  X::g_pXHost->RunModule(X::Value(pXObjModule), retVal,true);
 	*outReturnValue = retVal;
 	return bOK;
 }
@@ -185,6 +185,11 @@ extern "C"  X_EXPORT bool UnloadXModule(void* pModule)
 	X::XObj* pXObjModule = (X::XObj*)pModule;
 	X::Value valModule(pXObjModule, false);//false to release Module;
 	return X::g_pXHost->UnloadModule(valModule);
+}
+
+extern "C"  X_EXPORT bool UnloadXPackage(const char* packName)
+{
+	return X::g_pXHost->UnloadXPackage(packName);
 }
 
 

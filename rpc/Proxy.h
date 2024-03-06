@@ -46,6 +46,10 @@ namespace X
 		virtual bool Call(XRuntime* rt, XObj* pContext,
 			X::ROBJ_ID parent_id, X::ROBJ_ID id, X::ROBJ_MEMBER_ID memId,
 			X::ARGS& params, X::KWARGS& kwParams, X::Value& trailer,X::Value& retValue);
+		virtual void SetTimeout(int timeout) override
+		{
+			mTimeout = timeout;
+		}
 		// GThread interface
 	protected:
 		bool mRun = true;
@@ -62,6 +66,7 @@ namespace X
 			m_CallContextLock.Unlock();
 		}
 	private:
+		int mTimeout = -1;
 		long m_port = 0;
 		unsigned long mHostProcessId = 0;
 		unsigned long long mSessionId = 0;

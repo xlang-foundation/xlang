@@ -9,6 +9,11 @@ namespace X
 	{
 		ROBJ_ID m_remote_Obj_id = { 0,0 };
 		XLangStub* m_stub = nullptr;
+		//we keep this one for case: if client side disconnected, 
+		//and connect back again, it will get a new session id
+		//but if just use m_stub pointer to compare
+		//maybe new stub allocated to same address, but it's not the same stub
+		unsigned long long m_stubSessionId = 0;
 	public:
 		RemoteClientObject(X::ROBJ_ID robjId) :
 			ObjRef(), Object()
@@ -25,6 +30,7 @@ namespace X
 		void SetStub(XLangStub* stub)
 		{
 			m_stub = stub;
+			m_stubSessionId = stub->GetSessionId();
 		}
 		~RemoteClientObject()
 		{
@@ -44,11 +50,6 @@ namespace X
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
-			X::Value& retValue) override
-		{
-			bool bOK = m_stub->CallClient(m_remote_Obj_id, params, kwParams);
-			retValue = X::Value(bOK);
-			return bOK;
-		}
+			X::Value& retValue) override;
 	};
 }

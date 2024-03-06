@@ -175,6 +175,24 @@ namespace X
 			{
 				return m_data;
 			}
+			virtual void SetData(char* data, long long size) override
+			{
+				if (m_data == nullptr)
+				{
+					m_data = new char[size];
+					m_dataSize = size;
+				}
+				else
+				{
+					if (m_dataSize != size)
+					{
+						delete[] m_data;
+						m_data = new char[size];
+						m_dataSize = size;
+					}
+				}
+				memcpy(m_data, data, size);
+			}
 			std::vector<TensorDim> GetDims() 
 			{
 				return m_dims;
@@ -577,10 +595,12 @@ namespace X
 				IterateAll(it_proc);			
 				if (!strElements.empty())
 				{
-					strElements.back() = 0; // to remove the last comma
+					if (strElements[strElements.size() - 1] == ',')
+					{
+						strElements[strElements.size() - 1] = ']';
+					}
 				}
 				strOut += strElements; 
-				strOut += "]";
 				strOut += ")";
 
 				return GetABIString(strOut);

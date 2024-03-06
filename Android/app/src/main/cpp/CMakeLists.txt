@@ -28,6 +28,9 @@ include_directories("${XLANG_ROOT}/Thread")
 include_directories("${XLANG_ROOT}/Ext")
 include_directories("${XLANG_ROOT}/Core")
 include_directories("${XLANG_ROOT}/Text")
+include_directories("${XLANG_ROOT}/Tensor")
+include_directories("${XLANG_ROOT}/Executor")
+include_directories("${XLANG_ROOT}/Jit")
 include_directories("${XLANG_ROOT}/Scripts")
 include_directories("${XLANG_ROOT}/Main")
 
@@ -40,6 +43,9 @@ FILE(GLOB Parse_SRC "${XLANG_ROOT}/Parse/*.cpp")
 FILE(GLOB Thread_SRC "${XLANG_ROOT}/Thread/*.cpp")
 FILE(GLOB Ext_SRC "${XLANG_ROOT}/Ext/*.cpp")
 FILE(GLOB Text_SRC "${XLANG_ROOT}/Text/*.cpp")
+FILE(GLOB Tensor_SRC "${XLANG_ROOT}/Tensor/*.cpp")
+FILE(GLOB Executor_SRC "${XLANG_ROOT}/Executor/*.cpp")
+FILE(GLOB Jit_SRC "${XLANG_ROOT}/Jit/*.cpp")
 FILE(GLOB Rpc_SRC "${XLANG_ROOT}/rpc/*.cpp")
 FILE(GLOB Main_SRC "${XLANG_ROOT}/Main/*.cpp")
 FILE(GLOB Android_SRC "*.cpp")
@@ -54,6 +60,9 @@ add_library(${PROJECT_NAME} SHARED
         ${Thread_SRC}
         ${Ext_SRC}
         ${Text_SRC}
+        ${Tensor_SRC}
+        ${Executor_SRC}
+        ${Jit_SRC}
         ${Rpc_SRC}
         ${Main_SRC}
         ${Android_SRC}

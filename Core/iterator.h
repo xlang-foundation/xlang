@@ -45,7 +45,7 @@ namespace X
 				{
 					auto* pDataObj = dynamic_cast<Data::Object*>(m_container.GetObj());
 					std::vector<Value> vals;
-					if (pDataObj->GetAndUpdatePos(m_pos, vals))
+					if (pDataObj->GetAndUpdatePos(m_pos, vals,false))
 					{
 						m_varToImpack->SetArry(dynamic_cast<XlangRuntime*>(rt), 
 							pContext, vals);

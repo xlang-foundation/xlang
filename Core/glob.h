@@ -91,7 +91,7 @@ namespace X {
 			Lock();
 			auto size = Objects.size();
 			UnLock();
-			std::cout << "Left Objects:" << size << std::endl;
+			//std::cout << "Left Objects:" << size << std::endl;
 		}
 #if XLANG_ENG_DBG
 		void ObjBindToStack(XObj* pXObj, AST::StackFrame* pStack);

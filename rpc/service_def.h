@@ -21,7 +21,7 @@ namespace X
 #define PAS_MSG_KEY 0x12344
 #endif
 
-#define SM_BUF_SIZE 1024*1024
+#define SM_BUF_SIZE 1024*1024*10
 
 #define ROOT_OBJECT_ID 1
 
