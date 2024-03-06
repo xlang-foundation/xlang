@@ -26,27 +26,6 @@ namespace X
 			}
 		}
 
-		bool DebugService::BuildThreads(XlangRuntime* rt, XObj* pContextCurrent, X::Value& valThread)
-		{
-			std::unordered_map<long long, XlangRuntime*> mapRt = X::G::I().GetThreadRuntimeIdMap();
-			bool bOK = false;
-			if (mapRt.size() > 0)
-			{
-				bool bOK = true;
-				Data::List* pList = new Data::List();
-				for (auto it = mapRt.begin(); it != mapRt.end(); ++it)
-				{
-					Data::Dict* dict = new Data::Dict();
-					dict->Set("id", X::Value(it->first));
-					dict->Set("name", X::Value(it->first));
-					X::Value valDict(dict);
-					pList->Add(valDict);
-				}
-				valThread = X::Value(pList);
-			}
-			return bOK;
-		}
-
 		bool DebugService::BuildLocals(XlangRuntime* rt,
 			XObj* pContextCurrent, AST::StackFrame* frameId,
 			X::Value& valLocals)
@@ -416,6 +395,27 @@ namespace X
 			}
 			return nStartLine;
 		}
+
+		X::Value DebugService::GetThreads()
+		{
+			X::Value valThread;
+			Data::List* pList = new Data::List();
+			std::unordered_map<long long, XlangRuntime*> mapRt = X::G::I().GetThreadRuntimeIdMap();
+			if (mapRt.size() > 0)
+			{
+				for (auto it = mapRt.begin(); it != mapRt.end(); ++it)
+				{
+					Data::Dict* dict = new Data::Dict();
+					dict->Set("id", X::Value(it->first));
+					dict->Set("name", X::Value(it->first));
+					X::Value valDict(dict);
+					pList->Add(valDict);
+				}
+			}
+			valThread = X::Value(pList);
+			return valThread;
+		}
+
 		// Breakpoints should work in both currently running and later created modules
 		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext,
 			unsigned long long moduleKey, Value& varLines)
@@ -505,8 +505,7 @@ namespace X
 			else if (strCmd == "Globals"
 				|| strCmd == "Locals"
 				|| strCmd == "Object"
-				|| strCmd == "SetObjectValue"
-				|| strCmd == "Threads")
+				|| strCmd == "SetObjectValue")
 			{
 				AST::StackFrame* frameId = 0;
 				auto it2 = kwParams.find("frameId");
@@ -560,14 +559,6 @@ namespace X
 						pCommandInfo->m_varParam,
 						retVal);
 				};
-				auto threadsPack = [](XlangRuntime* rt,
-					XObj* pContextCurrent,
-					AST::CommandInfo* pCommandInfo,
-					X::Value& retVal)
-					{
-						DebugService* pDebugService = (DebugService*)pCommandInfo->m_callContext;
-						pDebugService->BuildThreads(rt, pContextCurrent,retVal);
-					};
 				if (strCmd == "Locals")
 				{
 					pCmdInfo->m_process = localPack;
@@ -583,10 +574,6 @@ namespace X
 				else if (strCmd == "SetObjectValue")
 				{
 					pCmdInfo->m_process = objSetValuePack;
-				}
-				else if (strCmd == "Threads")
-				{
-					pCmdInfo->m_process = threadsPack;
 				}
 				pCmdInfo->m_varParam = valParam;
 				pCmdInfo->m_callContext = this;

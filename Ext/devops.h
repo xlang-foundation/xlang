@@ -38,15 +38,16 @@ namespace X
 			bool ObjectSetValue(XlangRuntime* rt,
 				XObj* pContextCurrent, AST::StackFrame* frameId, X::Value& valParam,
 				X::Value& objRetValue);
-			bool BuildThreads(XlangRuntime* rt, XObj* pContextCurrent, X::Value& valThread);
 		public:
 			BEGIN_PACKAGE(DebugService)
 				APISET().AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);
+				APISET().AddFunc<0>("get_threads", &DebugService::GetThreads);
 				APISET().AddRTFunc<2>("set_breakpoints", &DebugService::SetBreakpoints);
 				APISET().AddVarFunc("command", &DebugService::Command);
 			END_PACKAGE
 			DebugService();
 			int GetModuleStartLine(unsigned long long moduleKey);
+			X::Value GetThreads();
 			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext,
 				unsigned long long moduleKey, Value& varLines);
 			bool Command(X::XRuntime* rt, X::XObj* pContext,

@@ -362,7 +362,7 @@ export class XLangRuntime extends EventEmitter {
 
 	public getThreads(cb: Function)
 	{
-		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Threads')";
+		let code = "import xdb\nreturn xdb.get_threads()";
 		this.Call(code, (retVal) => {
 			var retObj = null;
 			try {
