@@ -128,6 +128,7 @@ namespace X
 	public:
 		BEGIN_PACKAGE(HttpClient)
 			APISET().AddFunc<1>("get", &HttpClient::Get);
+			APISET().AddFunc<3>("post", &HttpClient::Post);
 			APISET().AddPropL("status",[](auto* pThis, X::Value v) {},
 				[](auto* pThis){return pThis->GetStatus(); });
 			APISET().AddPropL("response_headers", [](auto* pThis, X::Value v) {},
@@ -138,6 +139,7 @@ namespace X
 		HttpClient(std::string scheme_host_port);
 		~HttpClient();
 		bool Get(std::string path);
+		bool Post(std::string path, std::string content_type, std::string body);
 		X::Value GetStatus();
 		X::Value GetBody();
 		X::Value GetResponseHeaders() { return m_headers; }
