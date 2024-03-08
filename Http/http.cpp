@@ -446,6 +446,29 @@ namespace X
 		}
 		return true;
 	}
+	bool HttpClient::Post(std::string path, std::string content_type, std::string body)
+	{
+		if (m_pClient) 
+		{
+			auto res = ((httplib::Client*)m_pClient)->Post(path, body, content_type);
+			if (res) 
+			{
+				m_status = res->status;
+				m_body = X::Value(res->body); 
+				X::Dict dict;
+				//dump response headers
+				for (auto& kv : res->headers)
+				{
+					X::Str key(kv.first.c_str(), (int)kv.first.size());
+					X::Str val(kv.second.c_str(), (int)kv.second.size());
+					dict->Set(key, val);
+				}
+				m_headers = dict;
+				return true;
+			}
+		}
+		return false;
+	}
 	X::Value HttpClient::GetStatus()
 	{
 		return m_status;

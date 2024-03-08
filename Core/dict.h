@@ -103,6 +103,17 @@ namespace X
 				}
 				return bOK;
 			}
+			bool Remove(X::Value& key)
+			{
+				bool bOK = false;
+				auto it = mMap.find(key);
+				if (it != mMap.end())
+				{
+					mMap.erase(it);
+					bOK = true;
+				}
+				return bOK;
+			}
 			void HookLValue(X::Value& key,X::LValue* lValue);
 			bool Get(X::Value& key, X::Value& val,
 				X::LValue* lValue = nullptr)
