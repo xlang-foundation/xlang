@@ -31,7 +31,8 @@ public:
 		InitializeCriticalSection(cs);
 		m_cs = (void*)cs;
 #else
-		m_cs = (void*)new std::mutex();
+		//std::mutex does not allow recursive lock
+		m_cs = (void*)new std::recursive_mutex();
 #endif
 	}
 	FORCE_INLINE ~Locker()
@@ -40,7 +41,7 @@ public:
 		DeleteCriticalSection((CRITICAL_SECTION*)m_cs);
 		delete (CRITICAL_SECTION*)m_cs;
 #else
-		delete (std::mutex*)m_cs;
+		delete (std::recursive_mutex*)m_cs;
 #endif
 	}
 
@@ -49,7 +50,7 @@ public:
 #if (WIN32)
 		::EnterCriticalSection((CRITICAL_SECTION*)m_cs);
 #else
-		((std::mutex*)m_cs)->lock();
+		((std::recursive_mutex*)m_cs)->lock();
 #endif
 	}
 	FORCE_INLINE void Unlock()
@@ -57,7 +58,7 @@ public:
 #if (WIN32)
 		::LeaveCriticalSection((CRITICAL_SECTION*)m_cs);
 #else
-		((std::mutex*)m_cs)->unlock();
+		((std::recursive_mutex*)m_cs)->unlock();
 #endif
 	}
 };

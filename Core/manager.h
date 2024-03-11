@@ -9,6 +9,7 @@
 #include "xlang.h"
 #include "Locker.h"
 #include "port.h"
+#include "xproxy.h"
 #include <iostream>
 
 namespace X 
@@ -107,15 +108,20 @@ namespace X
 			bFilterOut = false;
 			std::string proxyName;
 			std::string endpoint_url;
-			auto pos = url.find(':');
-			if (pos != url.npos)
+			int timeout = -1;
+
+			auto items = splitWithChars(url, ":~");
+			if (items.size() >= 1)
 			{
-				proxyName = url.substr(0, pos);
-				endpoint_url = url.substr(pos + 1);
+				proxyName = items[0];
 			}
-			else
+			if (items.size() >= 2)
 			{
-				proxyName = url;
+				endpoint_url = items[1];
+			}
+			if (items.size() >= 3)
+			{
+				timeout = atoi(items[2].c_str());
 			}
 
 			XProxy* pProxy = nullptr;
@@ -143,6 +149,7 @@ namespace X
 				}
 			}
 			m_proxyMapLock.Unlock();
+			pProxy->SetTimeout(timeout);
 			return pProxy;
 		}
 		bool Register(const char* name,PackageCreator creator,void* pContextForCreator = nullptr)
@@ -155,7 +162,16 @@ namespace X
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,objPackage }));
 			return true;
 		}
-
+		bool UnloadPackage(std::string packName)
+		{
+			auto it = m_mapPackage.find(packName);
+			if (it != m_mapPackage.end())
+			{
+				m_mapPackage.erase(it);
+				return true;
+			}
+			return false;
+		}
 		bool QueryPackage(std::string& name,Value& valPack)
 		{
 			bool bHave = false;

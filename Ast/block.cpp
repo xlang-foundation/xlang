@@ -72,7 +72,9 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		rt->GetCurrentStack()->SetCharPos(pos);
 		//std::cout << "Run Line(before check):" << line <<std::endl;
 
-		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Line, pCurScope, i);
+		bool bRet = Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Line, pCurScope, i);
+		if (!bRet)
+			break;
 
 		if (i->m_type == ObType::ActionOp)
 		{

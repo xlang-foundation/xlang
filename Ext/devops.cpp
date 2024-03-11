@@ -597,6 +597,15 @@ namespace X
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
+			else if (strCmd == "Terminate")
+			{
+				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
+				//and when this command be processed, will release it
+				pCmdInfo->dbgType = AST::dbg::Terminate;
+				pModule->AddCommand(pCmdInfo, false);
+				retValue = X::Value(true);
+			}
 			return true;
 		}
 	}

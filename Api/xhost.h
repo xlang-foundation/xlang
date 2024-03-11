@@ -102,6 +102,7 @@ namespace X
 		virtual bool RunCodeWithParam(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::Value& retVal) = 0;
 		virtual bool LoadModule(const char* moduleName, const char* code, int codeSize, X::Value& objModule) = 0;
 		virtual bool UnloadModule(X::Value objModule) = 0;
+		virtual bool UnloadXPackage(const char* packageName) = 0;
 		virtual bool RunModule(X::Value objModule, X::Value& retVal,bool keepModuleWithRuntime) = 0;
 		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
 		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal) = 0;

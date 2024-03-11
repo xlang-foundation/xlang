@@ -30,8 +30,36 @@ enum class ValueType
 #define ARITH_OP(op)\
 Value& operator op (const Value& r);
 
+#ifdef __ANDROID__
 #define ARITH_OP_IMPL(op)\
-FORCE_INLINE Value& Value::operator op (const Value& r)\
+inline Value& Value::operator op (Value const& r)\
+{\
+switch (t)\
+{\
+case ValueType::None:\
+	break; \
+case ValueType::Int64:\
+	x.l op ToInt64(r); \
+	break; \
+case ValueType::Double:\
+	x.d op ToDouble(r); \
+	break; \
+case ValueType::Str:\
+	ChangeToStrObject(); \
+case ValueType::Object:\
+{\
+Value v = r; \
+(*((XObj*)x.obj)) op v; \
+}\
+break; \
+default:\
+	break; \
+}\
+return *this; \
+}
+#else
+#define ARITH_OP_IMPL(op)\
+FORCE_INLINE Value& Value::operator op (Value const& r)\
 {\
 	switch (t)\
 	{\
@@ -56,6 +84,7 @@ FORCE_INLINE Value& Value::operator op (const Value& r)\
 	}\
 	return *this;\
 }
+#endif
 
 #define COMPARE_OP(op)\
 bool operator op (const Value& r) const\

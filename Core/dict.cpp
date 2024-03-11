@@ -9,7 +9,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<1> _dictScope;
+		static Obj_Func_Scope<3> _dictScope;
 		void Dict::Init()
 		{
 			_dictScope.Init();
@@ -24,6 +24,31 @@ namespace X
 					return true;
 				};
 				_dictScope.AddFunc("has", "has(key)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						retValue = X::Value(pObj->Remove(params[0]));
+						return true;
+					};
+				_dictScope.AddFunc("remove", "remove(key)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						pObj->Set(params[0], params[1]);
+						retValue = true;
+						return true;
+					};
+				_dictScope.AddFunc("set", "set(key,val)", f);
 			}
 		}
 		void Dict::cleanup()

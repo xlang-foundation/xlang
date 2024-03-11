@@ -29,6 +29,7 @@ namespace X
 		virtual bool Call(XRuntime* rt, XObj* pContext,
 			ROBJ_ID parent_id, ROBJ_ID id, ROBJ_MEMBER_ID memId,
 			ARGS& params, KWARGS& kwParams, X::Value& trailer,Value& retValue) = 0;
+		virtual void SetTimeout(int timeout) = 0;
 	};
 }
 

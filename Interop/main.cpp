@@ -187,6 +187,11 @@ extern "C"  X_EXPORT bool UnloadXModule(void* pModule)
 	return X::g_pXHost->UnloadModule(valModule);
 }
 
+extern "C"  X_EXPORT bool UnloadXPackage(const char* packName)
+{
+	return X::g_pXHost->UnloadXPackage(packName);
+}
+
 
 extern "C"  X_EXPORT bool Load(void* createCallback,void* invokeCallback,void** ppContext)
 {

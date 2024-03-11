@@ -107,7 +107,8 @@ namespace X
 			printf("Devops server has an error...\n");
 		}
 		std::cout << "DevServer listens on port:" << m_port << std::endl;
-		m_srv.listen("::", m_port);
+		if (!m_srv.listen("::", m_port))
+			std::cout << "listen failed" << std::endl;
 		//exit
 		notiWait.Release();
 		X::OffEvent("devops.dbg", dbg_handler_cookie);
