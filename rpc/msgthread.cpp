@@ -113,11 +113,19 @@ namespace X
         {
             msgKey += tostring(mPort);
         }
+
+        SECURITY_DESCRIPTOR sd;
+        InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
+        SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE);  // Grant access to everyone
+        SECURITY_ATTRIBUTES sa;
+        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sa.lpSecurityDescriptor = &sd;
+        sa.bInheritHandle = FALSE;
         HANDLE hSlot = CreateMailslot(
             msgKey.c_str(),
             0,
             MAILSLOT_WAIT_FOREVER,
-            (LPSECURITY_ATTRIBUTES)NULL);
+            &sa);
         while (mRun)
         {
             std::vector<pas_mesg_buffer> msgs;
