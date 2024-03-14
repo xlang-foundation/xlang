@@ -9,6 +9,7 @@
 #include "cli.h"
 
 #if (WIN32)
+#include <Windows.h>
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
 #else
@@ -50,16 +51,36 @@ void PrintUsage()
 bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 {
 	//first one is exe file name with path
-	std::string& progName = params[0];
+	std::string progName = params[0];
+	std::string strAppPath;
 	auto pos = progName.rfind(Path_Sep);
 	if (pos != progName.npos)
 	{
-		std::string strAppPath = progName.substr(0, pos);
-		paramCfg.config.appPath = new char[strAppPath.length() + 1];
-		memcpy((char*)paramCfg.config.appPath, strAppPath.data(), strAppPath.length() + 1);
+		strAppPath = progName.substr(0, pos);
 	}
+#if (WIN32)
+	else
+	{
+		char buffer[MAX_PATH];
+		DWORD length = GetModuleFileName(nullptr, buffer, MAX_PATH);
+		progName = buffer;
+		auto pos = progName.rfind(Path_Sep);
+		if (pos != progName.npos)
+		{
+			strAppPath = progName.substr(0, pos);
+		}
+		else
+		{
+			strAppPath = "";
+		}
+	}
+#endif
+	paramCfg.config.appPath = new char[strAppPath.length() + 1];
+	memcpy((char*)paramCfg.config.appPath, strAppPath.data(), strAppPath.length() + 1);
 	paramCfg.config.appFullName = new char[progName.length() + 1];
 	memcpy((char*)paramCfg.config.appFullName, progName.data(), progName.length() + 1);
+
+
 
 	if (params.size() == 1)
 	{
@@ -170,7 +191,6 @@ void Workaround_WSLThread_Problem()
 	static std::vector<std::thread> threads_;
 	threads_.emplace_back(func);
 }
-//#include <Windows.h>
 int main(int argc, char* argv[])
 {
 	//::MessageBox(NULL, "In Dbg", "XLang", MB_OK);
