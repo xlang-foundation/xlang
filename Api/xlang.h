@@ -287,6 +287,8 @@ namespace X
 	{
 	public:
 		virtual bool CreateEmptyModule() = 0;
+		virtual X::Value GetXModuleFileName() = 0;
+		virtual int GetTopStackCurrentLine() = 0;
 		virtual bool AddVar(const char* name, X::Value& val) = 0;
 	};
 	class XModule :

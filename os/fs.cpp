@@ -24,15 +24,6 @@ namespace X
 #endif
 		if (!IsAbsPath)
 		{
-			{
-				//std::cout << "Before Set Module" << std::endl;
-				auto m = FileSystem::I().GetModule();
-				//std::cout << "After Set Module" << std::endl;
-				X::XModule* pModule = dynamic_cast<X::XModule*>(m.GetObj());
-				auto p = pModule->GetPath();
-				g_pXHost->ReleaseString(p);
-			}
-			//std::cout << "End Set Module" << std::endl;
 			auto& modulePath = FileSystem::I().GetModulePath();
 			if (!modulePath.empty())
 			{

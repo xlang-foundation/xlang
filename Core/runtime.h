@@ -163,5 +163,7 @@ public:
 		}
 		return bOK;
 	}
+	virtual X::Value GetXModuleFileName() override;
+	virtual int GetTopStackCurrentLine() override;
 };
 }

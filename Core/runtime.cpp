@@ -5,6 +5,7 @@
 #include "glob.h"
 #include "list.h"
 #include "op.h"
+#include "moduleobject.h"
 
 namespace X 
 {
@@ -182,5 +183,22 @@ namespace X
 		PushFrame(pModuleFrame, m_pModule->GetMyScope()->GetVarNum());
 
 		return true;
+	}
+	X::Value XlangRuntime::GetXModuleFileName()
+	{
+		std::string moduleFileName;
+		if (m_pModule)
+		{
+			moduleFileName = m_pModule->GetModuleName();
+		} 
+		return X::Value(moduleFileName);
+	}
+	int XlangRuntime::GetTopStackCurrentLine()
+	{
+		if (m_stackBottom)
+		{
+			return m_stackBottom->GetStartLine();
+		}
+		return -1;
 	}
 }
