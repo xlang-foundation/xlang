@@ -73,7 +73,7 @@ class Parser
 
 private:
 	void ResetForNewLine();
-	void LineOpFeedIntoBlock(AST::Expression* line,
+	bool LineOpFeedIntoBlock(AST::Expression* line,
 		AST::Indent& lineIndent);
 	FORCE_INLINE AST::Expression* IsJitBlock(AST::Expression* lineStatment)
 	{
@@ -144,7 +144,7 @@ public:
 		return false;
 	}
 	BlockState* GetCurBlockState() {return m_curBlkState;}
-	void NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair = true);
+	bool NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair = true);
 	AST::Operator* PairLeft(short opIndex);//For "(","[","{"
 	void PairRight(OP_ID leftOpToMeetAsEnd); //For ')',']', and '}'
 	FORCE_INLINE bool PreTokenIsOp()
