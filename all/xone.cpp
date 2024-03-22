@@ -37,6 +37,7 @@
 //for OS Module
 #include "os/fs.h"
 #include "os/utils.h"
+#include "os/process.h"
 
 
 #if (WIN32)
@@ -374,6 +375,7 @@ namespace X
 		X::FileSystem::I().SetModulePath(path);
 		X::RegisterPackage<X::FileSystem>("xone", "fs", &X::FileSystem::I());
 		X::RegisterPackage<X::Utils>("xone", "utils");
+		X::RegisterPackage<X::OSService>("xone", "os", &X::OSService::I());
 
 		X::FileSystem::I().Run();
 	}
