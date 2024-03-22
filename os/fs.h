@@ -201,6 +201,10 @@ namespace X
 		{
 			return m_curModulePath;
 		}
+		void SetModulePath(std::string& path)
+		{
+			m_curModulePath = path;
+		}
 		X::Value& GetModule() 
 		{ 
 			return m_curModule; 
