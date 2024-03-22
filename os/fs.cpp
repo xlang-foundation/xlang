@@ -24,15 +24,6 @@ namespace X
 #endif
 		if (!IsAbsPath)
 		{
-			{
-				//std::cout << "Before Set Module" << std::endl;
-				auto m = FileSystem::I().GetModule();
-				//std::cout << "After Set Module" << std::endl;
-				X::XModule* pModule = dynamic_cast<X::XModule*>(m.GetObj());
-				auto p = pModule->GetPath();
-				g_pXHost->ReleaseString(p);
-			}
-			//std::cout << "End Set Module" << std::endl;
 			auto& modulePath = FileSystem::I().GetModulePath();
 			if (!modulePath.empty())
 			{
@@ -62,46 +53,4 @@ namespace X
 		}
 	}
 
-	Dir::Dir(std::string path) {
-
-		bool IsAbsPath = false;
-#if (WIN32)
-		//format like c:\\ or c:/
-		//or \\ at the begin
-		if (path.find(':') != std::string::npos
-			|| path.find("\\\\") == 0
-			|| path.find("/") == 0)
-		{
-			IsAbsPath = true;
-		}
-#else
-		if (path.find('/') == 0 || path.find("~") == 0)
-		{
-			IsAbsPath = true;
-		}
-
-#endif
-		if (!IsAbsPath)
-		{
-			{
-				//std::cout << "Before Set Module" << std::endl;
-				auto m = FileSystem::I().GetModule();
-				//std::cout << "After Set Module" << std::endl;
-				X::XModule* pModule = dynamic_cast<X::XModule*>(m.GetObj());
-				auto p = pModule->GetPath();
-				g_pXHost->ReleaseString(p);
-			}
-			//std::cout << "End Set Module" << std::endl;
-			auto& modulePath = FileSystem::I().GetModulePath();
-			if (!modulePath.empty())
-			{
-#if (WIN32)
-				path = modulePath + "\\" + path;
-#else
-				path = modulePath + "/" + path;
-#endif
-			}
-		}
-		m_path = path;
-	}
 }

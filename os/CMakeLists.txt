@@ -6,7 +6,7 @@ cmake_minimum_required (VERSION 3.8)
 project ("xlang_os")
 
 include_directories("../Api")
-
+include_directories("../Inc")
 FILE(GLOB API_SRC "../Api/value.cpp")
 FILE(GLOB Main_SRC "*.cpp")
 
