@@ -6,6 +6,9 @@
 #include <fstream>
 #include <filesystem>
 #include <sys/stat.h>
+
+#include "folder.h"
+
 namespace X
 {
 	class File
@@ -98,73 +101,6 @@ namespace X
 		}
 	};
 
-	//-------------------------------------------------------------------------------------
-	class Dir
-	{
-		std::string m_path;
-		enum ScanOption{
-			DirOnly,
-			FileOnly,
-			Both
-		};
-	public:
-		BEGIN_PACKAGE(Dir)
-		APISET().AddFunc<1>("scanDir", &Dir::scanDir);
-		APISET().AddFunc<0>("createDir", &Dir::createDir);		
-		END_PACKAGE
-		Dir()
-		{
-			m_path = "./";
-		}
-		Dir(std::string path);	
-		~Dir()
-		{
-		}
-		std::string scanDir(int option) {
-			std::string output;
-			std::error_code ec; // For using the non-throwing overloads of functions below.
-			std::filesystem::path fPath;
-			if (option == DirOnly) {
-				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
-					fPath = file.path();
-					if (std::filesystem::is_directory(fPath, ec)) {
-						//std::cout << fPath << std::endl;
-						output += fPath.generic_string();
-						output += '\n';
-					}
-				}
-			}
-			else if (option == FileOnly) {
-				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
-					fPath = file.path();
-					if (!std::filesystem::is_directory(fPath, ec)) {
-						//std::cout << fPath << std::endl;
-						output += fPath.generic_string();
-						output += '\n';
-					}
-				}
-			}
-			else { //both
-				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
-					fPath = file.path();
-					//std::cout << fPath << std::endl;
-					output += fPath.generic_string();
-					output += '\n';
-				}
-			}
-
-			return output;
-		}
-		bool createDir() {
-			std::filesystem::path fPath{ m_path };
-			if (std::filesystem::exists(fPath))
-				return false;
-			else
-				return std::filesystem::create_directory(fPath);
-		}
-
-	};
-
 	class FileSystem:
 		public Singleton<FileSystem>
 	{
@@ -211,7 +147,7 @@ namespace X
 		}
 		BEGIN_PACKAGE(FileSystem)
 			APISET().AddClass<2, File>("File");
-			APISET().AddClass<1, Dir>("Dir");
+			APISET().AddClass<1, Folder>("Folder");
 		END_PACKAGE
 	};
 }
