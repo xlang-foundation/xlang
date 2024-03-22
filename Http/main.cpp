@@ -1,6 +1,7 @@
 #include "http.h"
 #include "xhost.h"
 #include "xpackage.h"
+#include "cypher.h"
 
 #if (WIN32)
 #include <windows.h>
@@ -63,6 +64,7 @@ extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 
 	X::g_pXHost = (X::XHost*)pHost;
 	X::RegisterPackage<X::Http>(strFullPath.c_str(),"http");
+	X::RegisterPackage<X::Cypher>(strFullPath.c_str(), "cypher");
 }
 extern "C"  X_EXPORT void Unload()
 {

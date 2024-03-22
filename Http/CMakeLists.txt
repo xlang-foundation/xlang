@@ -20,7 +20,7 @@ add_library(${PROJECT_NAME}
 	SHARED
 	${API_SRC}
 	${Main_SRC}
-)
+ "cypher.cpp")
 
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static)
