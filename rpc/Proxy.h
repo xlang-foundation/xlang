@@ -27,10 +27,22 @@ namespace X
 		public X::XProxy,
 		public GThread2
 	{
+		X::Value mOwnerObject;
+		std::string mUrl;
+		std::string mProxyName;
 	public:
 		XLangProxy();
 		~XLangProxy();
-		void SetUrl(const char* url);
+		virtual void SetOwner(X::Value& ownerObject) override
+		{
+			mOwnerObject = ownerObject;
+		}
+		virtual void SetUrl(std::string& url) override;
+		virtual void SetName(std::string& name) override
+		{
+			mProxyName = name;
+		}
+		virtual std::string GetUrl() override { return mUrl; }
 		virtual ROBJ_ID QueryRootObject(std::string& name);
 		virtual X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
 			bool& KeepRawParams);
@@ -66,6 +78,9 @@ namespace X
 			m_CallContextLock.Unlock();
 		}
 	private:
+		int m_refCount = 0;
+		Locker mLockRefCount;
+
 		int mTimeout = -1;
 		long m_port = 0;
 		unsigned long mHostProcessId = 0;

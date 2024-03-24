@@ -296,6 +296,7 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 				remoteObj->SetObjName(im.name);
 				//todo: need to check here
 				v = Value(dynamic_cast<XObj*>(remoteObj));
+				proxy->SetOwner(v);
 				Manager::I().Register(im.name.c_str(), v);
 				return true;
 			}

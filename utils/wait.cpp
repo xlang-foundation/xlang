@@ -86,6 +86,19 @@ bool XWait::Wait(int timeoutMS)
 #endif
 }
 
+void XWait::Reset()
+{
+	if (m_waitHandle)
+	{
+#if (WIN32)
+		ResetEvent((HANDLE)m_waitHandle);
+#else
+		sem_t* pWait = (sem_t*)m_waitHandle;
+		sem_init(pWait, 0, 0);
+#endif
+	}
+}
+
 void XWait::Release()
 {
 	if (m_waitHandle)
