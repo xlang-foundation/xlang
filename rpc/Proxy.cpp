@@ -7,6 +7,8 @@
 #include "manager.h"
 #include <string>
 #include "ServerCallPool.h"
+#include "event.h"
+#include "remote_object.h"
 
 namespace X
 {
@@ -14,7 +16,10 @@ namespace X
 	{
 		Manager::I().RegisterProxy("lrpc",[](const char* url) {
 			XLangProxy* pProxy = new XLangProxy();
-			pProxy->SetUrl(url);
+			std::string strUrl(url);
+			std::string stName("lrpc");
+			pProxy->SetName(stName);
+			pProxy->SetUrl(strUrl);
 			pProxy->Start();
 			return dynamic_cast<XProxy*>(pProxy);
 			},
@@ -28,9 +33,10 @@ namespace X
 		m_pCallReadyWait = new XWait();
 		m_pBuffer2ReadyWait = new XWait();
 	}
-	void XLangProxy::SetUrl(const char* url)
+	void XLangProxy::SetUrl(std::string& url)
 	{
-		SCANF(url, "%d", &m_port);
+		SCANF(url.c_str(), "%d", &m_port);
+		mUrl = url;
 	}
 	XLangProxy::~XLangProxy()
 	{
@@ -359,6 +365,9 @@ namespace X
 	}
 	void XLangProxy::run()
 	{
+		mLockRefCount.Lock();
+		m_refCount++;
+		mLockRefCount.Unlock();
 		while (mRun)
 		{
 			bool bOK = Connect();
@@ -373,9 +382,31 @@ namespace X
 			m_ConnectLock.Unlock();
 			m_pConnectWait->Release();
 			WaitToHostExit();
+			m_pConnectWait->Reset();
+			//Fire event to notify server side exited
+			if(mOwnerObject.IsObject())
+			{
+				XObj* pObj = mOwnerObject.GetObj();
+				if (pObj->GetType() == X::ObjType::RemoteObject)
+				{
+					X::RemoteObject* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObj);
+					if (pRemoteObj)
+					{
+						std::string objName = pRemoteObj->GetObjName();
+						Manager::I().UnloadPackage(objName);
+						XlangRuntime* rt = G::I().Threading(nullptr);
+						std::string strEvtName("OnRemoteObjectDisconnected");
+						X::ARGS params(2);
+						params.push_back(objName);
+						params.push_back(mOwnerObject);
+						X::KWARGS kwargs;
+						X::EventSystem::I().Fire(rt, pObj, strEvtName, params, kwargs,true);
+					}
+				}
+			}
 			if (m_ExitOnHostExit)
 			{
-				std::cout << "Server Side Exited " << std::endl;
+				std::cout << "Local RPC Server Side Exited " << std::endl;
 				m_ConnectLock.Lock();
 				mRun = false;
 				m_Exited = true;
@@ -391,7 +422,7 @@ namespace X
 				m_ConnectLock.Unlock();
 				break;
 			}
-			std::cout << "Server Side Exited,wait to server run again " << std::endl;
+			std::cout << "Local RPC Server Side Exited,wait to server run again " << std::endl;
 			m_ConnectLock.Lock();
 			if (mSMSwapBuffer1)
 			{
@@ -404,9 +435,24 @@ namespace X
 			m_bConnected = false;
 			m_ConnectLock.Unlock();
 		}
+		bool bLastOne = false;
+		mLockRefCount.Lock();
+		m_refCount--;
+		if (m_refCount == 0)
+		{
+			bLastOne = true;
+		}
+		mLockRefCount.Unlock();
+		if (bLastOne)
+		{
+			Manager::I().RemoveProxy(mProxyName.c_str(), mUrl);
+		}
 	}
 	void XLangProxy::run2()
 	{
+		mLockRefCount.Lock();
+		m_refCount++;
+		mLockRefCount.Unlock();
 		bool bWaitOnBuffer2 = true;
 		while (mRun)
 		{
@@ -470,6 +516,18 @@ namespace X
 			//do an empty write to notify server side can write again
 			mSMSwapBuffer2->BeginWrite();
 			mSMSwapBuffer2->EndWrite();
+		}
+		bool bLastOne = false;
+		mLockRefCount.Lock();
+		m_refCount--;
+		if (m_refCount == 0)
+		{
+			bLastOne = true;
+		}
+		mLockRefCount.Unlock();
+		if (bLastOne)
+		{
+			Manager::I().RemoveProxy(mProxyName.c_str(), mUrl);
 		}
 	}
 	Call_Context* XLangProxy::GetCallContext()

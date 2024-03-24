@@ -14,6 +14,10 @@ namespace X
 	class XProxy
 	{
 	public:
+		virtual void SetUrl(std::string& url) = 0;
+		virtual void SetName(std::string& name) = 0;
+		virtual std::string GetUrl() = 0;
+		virtual void SetOwner(X::Value& ownerObject) = 0;
 		virtual ROBJ_ID QueryRootObject(std::string& name) = 0;
 		virtual ROBJ_MEMBER_ID QueryMember(ROBJ_ID id,std::string& name,
 			bool& KeepRawParams) = 0;

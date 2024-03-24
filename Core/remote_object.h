@@ -70,6 +70,10 @@ namespace X
 		{
 			delete m_stackFrame;
 		}
+		std::string& GetObjName()
+		{
+			return m_objName;
+		}
 		void SetObjName(std::string& name)
 		{
 			m_objName = name;
