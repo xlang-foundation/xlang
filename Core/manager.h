@@ -103,19 +103,23 @@ namespace X
 			m_proxyMapLock.Unlock();
 			return true;
 		}
-		void RemoveProxy(const char* name, std::string& url)
+		void RemoveProxy(const char* name,std::string& rootObjectName,XProxy* pProxy)
 		{
-			std::string strName = name;
+			UnloadPackage(rootObjectName);
+			std::string strName(name);
 			m_proxyMapLock.Lock();
 			auto it = m_mapXProxy.find(strName);
 			if (it != m_mapXProxy.end())
 			{
 				auto& proxyInfo = it->second;
-				auto it2 = proxyInfo.Instances.find(url);
-				if(it2 != proxyInfo.Instances.end())
+				for(auto it2 = proxyInfo.Instances.begin();it2 != proxyInfo.Instances.end();)
 				{
-					delete it2->second;
-					proxyInfo.Instances.erase(it2);
+					if(it2->second == pProxy)
+					{
+						proxyInfo.Instances.erase(it2);
+						break;
+					}
+					++it2;
 				}
 			}
 			m_proxyMapLock.Unlock();

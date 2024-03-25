@@ -7,6 +7,8 @@
 #include "remote_client_object.h"
 #include <vector>
 
+#define LRPC_NAME "lrpc"
+
 class XWait;
 namespace X
 {
@@ -27,22 +29,35 @@ namespace X
 		public X::XProxy,
 		public GThread2
 	{
-		X::Value mOwnerObject;
-		std::string mUrl;
-		std::string mProxyName;
+		std::string mRootObjectName;
 	public:
 		XLangProxy();
 		~XLangProxy();
-		virtual void SetOwner(X::Value& ownerObject) override
+		virtual void SetRootObjectName(const char* name)
 		{
-			mOwnerObject = ownerObject;
+			mRootObjectName = name;
 		}
-		virtual void SetUrl(std::string& url) override;
-		virtual void SetName(std::string& name) override
+		void SetUrl(std::string& url);
+		virtual int AddRef()
 		{
-			mProxyName = name;
+			int ret = 0;
+			mLockRefCount.Lock();
+			ret = ++m_refCount;
+			mLockRefCount.Unlock();
+			return ret;
 		}
-		virtual std::string GetUrl() override { return mUrl; }
+		virtual int Release()
+		{
+			int ret = 0;
+			mLockRefCount.Lock();
+			ret = --m_refCount;
+			mLockRefCount.Unlock();
+			if (ret == 0)
+			{
+				delete this;
+			}
+			return ret;
+		}
 		virtual ROBJ_ID QueryRootObject(std::string& name);
 		virtual X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
 			bool& KeepRawParams);
@@ -68,6 +83,7 @@ namespace X
 		virtual void run() override;
 		virtual void run2() override;
 
+		void Cleanup();
 		Locker m_CallContextLock;
 		std::vector<Call_Context*> mCallContexts;
 		Call_Context* GetCallContext();
@@ -79,8 +95,29 @@ namespace X
 		}
 	private:
 		int m_refCount = 0;
+		int m_ThreadRefCount = 0;//we have two threads there
 		Locker mLockRefCount;
 
+		virtual int ThreadAddRef()
+		{
+			int ret = 0;
+			mLockRefCount.Lock();
+			ret = ++m_ThreadRefCount;
+			mLockRefCount.Unlock();
+			return ret;
+		}
+		virtual int ThreadRelease()
+		{
+			int ret = 0;
+			mLockRefCount.Lock();
+			ret = --m_ThreadRefCount;
+			mLockRefCount.Unlock();
+			if (ret == 0)
+			{
+				Cleanup();
+			}
+			return ret;
+		}
 		int mTimeout = -1;
 		long m_port = 0;
 		unsigned long mHostProcessId = 0;

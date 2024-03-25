@@ -10,15 +10,14 @@
 #include "event.h"
 #include "remote_object.h"
 
+
 namespace X
 {
 	void XLangProxyManager::Register()
 	{
-		Manager::I().RegisterProxy("lrpc",[](const char* url) {
+		Manager::I().RegisterProxy(LRPC_NAME,[](const char* url) {
 			XLangProxy* pProxy = new XLangProxy();
 			std::string strUrl(url);
-			std::string stName("lrpc");
-			pProxy->SetName(stName);
 			pProxy->SetUrl(strUrl);
 			pProxy->Start();
 			return dynamic_cast<XProxy*>(pProxy);
@@ -36,7 +35,6 @@ namespace X
 	void XLangProxy::SetUrl(std::string& url)
 	{
 		SCANF(url.c_str(), "%d", &m_port);
-		mUrl = url;
 	}
 	XLangProxy::~XLangProxy()
 	{
@@ -365,9 +363,8 @@ namespace X
 	}
 	void XLangProxy::run()
 	{
-		mLockRefCount.Lock();
-		m_refCount++;
-		mLockRefCount.Unlock();
+		AddRef();
+		ThreadAddRef();
 		while (mRun)
 		{
 			bool bOK = Connect();
@@ -382,31 +379,9 @@ namespace X
 			m_ConnectLock.Unlock();
 			m_pConnectWait->Release();
 			WaitToHostExit();
-			m_pConnectWait->Reset();
-			//Fire event to notify server side exited
-			if(mOwnerObject.IsObject())
-			{
-				XObj* pObj = mOwnerObject.GetObj();
-				if (pObj->GetType() == X::ObjType::RemoteObject)
-				{
-					X::RemoteObject* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObj);
-					if (pRemoteObj)
-					{
-						std::string objName = pRemoteObj->GetObjName();
-						Manager::I().UnloadPackage(objName);
-						XlangRuntime* rt = G::I().Threading(nullptr);
-						std::string strEvtName("OnRemoteObjectDisconnected");
-						X::ARGS params(2);
-						params.push_back(objName);
-						params.push_back(mOwnerObject);
-						X::KWARGS kwargs;
-						X::EventSystem::I().Fire(rt, pObj, strEvtName, params, kwargs,true);
-					}
-				}
-			}
+
 			if (m_ExitOnHostExit)
 			{
-				std::cout << "Local RPC Server Side Exited " << std::endl;
 				m_ConnectLock.Lock();
 				mRun = false;
 				m_Exited = true;
@@ -422,7 +397,13 @@ namespace X
 				m_ConnectLock.Unlock();
 				break;
 			}
-			std::cout << "Local RPC Server Side Exited,wait to server run again " << std::endl;
+			else
+			{	
+				//for multiple re-entru, need to reset
+				//but this is not correct way, need to fix
+				//TODO: fix this
+				m_pConnectWait->Reset();
+			}
 			m_ConnectLock.Lock();
 			if (mSMSwapBuffer1)
 			{
@@ -435,24 +416,14 @@ namespace X
 			m_bConnected = false;
 			m_ConnectLock.Unlock();
 		}
-		bool bLastOne = false;
-		mLockRefCount.Lock();
-		m_refCount--;
-		if (m_refCount == 0)
-		{
-			bLastOne = true;
-		}
-		mLockRefCount.Unlock();
-		if (bLastOne)
-		{
-			Manager::I().RemoveProxy(mProxyName.c_str(), mUrl);
-		}
+		//cal this one before Release(),to avoid this pointer deleted by Release()
+		ThreadRelease();
+		Release();
 	}
 	void XLangProxy::run2()
 	{
-		mLockRefCount.Lock();
-		m_refCount++;
-		mLockRefCount.Unlock();
+		AddRef();
+		ThreadAddRef();
 		bool bWaitOnBuffer2 = true;
 		while (mRun)
 		{
@@ -517,18 +488,16 @@ namespace X
 			mSMSwapBuffer2->BeginWrite();
 			mSMSwapBuffer2->EndWrite();
 		}
-		bool bLastOne = false;
-		mLockRefCount.Lock();
-		m_refCount--;
-		if (m_refCount == 0)
-		{
-			bLastOne = true;
-		}
-		mLockRefCount.Unlock();
-		if (bLastOne)
-		{
-			Manager::I().RemoveProxy(mProxyName.c_str(), mUrl);
-		}
+		//cal this one before Release(),to avoid this pointer deleted by Release()
+		ThreadRelease();
+		Release();
+	}
+	void XLangProxy::Cleanup()
+	{
+		m_ConnectLock.Lock();
+		m_bConnected = false;
+		m_ConnectLock.Unlock();
+		Manager::I().RemoveProxy(LRPC_NAME,mRootObjectName,this);
 	}
 	Call_Context* XLangProxy::GetCallContext()
 	{
