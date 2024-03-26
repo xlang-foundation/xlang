@@ -566,7 +566,6 @@ int main(int argc, char* argv[])
 	ParamConfig paramConfig;
 
 	ParseCommandLine(params, paramConfig);
-	paramConfig.cli = true;
 	if (paramConfig.print_usage)
 	{
 		PrintUsage();
