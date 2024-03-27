@@ -140,21 +140,44 @@ namespace X
 
     bool SMSwapBuffer::HostCreate(unsigned long long key, int bufferSize)
     {
+        SECURITY_ATTRIBUTES sa;
+        SECURITY_DESCRIPTOR sd;
+
+        // Initialize the security descriptor
+        if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
+        {
+            // Handle error
+            return 1;
+        }
+
+        // Set the security descriptor DACL to a NULL DACL (grants access to everyone)
+        if (!SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE))
+        {
+            // Handle error
+            return 1;
+        }
+
+        // Set the security attributes
+        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sa.lpSecurityDescriptor = &sd;
+        sa.bInheritHandle = FALSE;
+
+
         m_user = SwapBufferUser::Server;
 
         const int Key_Len = 100;
         char szKey_s[Key_Len];
-        SPRINTF(szKey_s, Key_Len, "Galaxy_SM_Notify_Server_%llu", key);
+        SPRINTF(szKey_s, Key_Len, "Global\\Galaxy_SM_Notify_Server_%llu", key);
         char szKey_c[Key_Len];
-        SPRINTF(szKey_c, Key_Len, "Galaxy_SM_Notify_Client_%llu", key);
+        SPRINTF(szKey_c, Key_Len, "Global\\Galaxy_SM_Notify_Client_%llu", key);
 #if (WIN32)
-        mNotiEvent_Server = CreateEvent(NULL, FALSE, FALSE, szKey_s);
-        mNotiEvent_Client = CreateEvent(NULL, FALSE, FALSE, szKey_c);
+        mNotiEvent_Server = CreateEvent(&sa, FALSE, FALSE, szKey_s);
+        mNotiEvent_Client = CreateEvent(&sa, FALSE, FALSE, szKey_c);
         char mappingName[MAX_PATH];
-        SPRINTF(mappingName, MAX_PATH, "Galaxy_FileMappingObject_%llu", key);
+        SPRINTF(mappingName, MAX_PATH, "Global\\Galaxy_FileMappingObject_%llu", key);
         mShmID = CreateFileMapping(
             INVALID_HANDLE_VALUE,    // use paging file
-            NULL,                    // default security
+            &sa,                    // default security
             PAGE_READWRITE,          // read/write access
             0,                       // maximum object size (high-order DWORD)
             bufferSize,  // maximum object size (low-order DWORD)
@@ -255,13 +278,13 @@ namespace X
 
         const int Key_Len = 100;
         char szKey_s[Key_Len];
-        SPRINTF(szKey_s, Key_Len, "Galaxy_SM_Notify_Server_%llu", shKey);
+        SPRINTF(szKey_s, Key_Len, "Global\\Galaxy_SM_Notify_Server_%llu", shKey);
         char szKey_c[Key_Len];
-        SPRINTF(szKey_c, Key_Len, "Galaxy_SM_Notify_Client_%llu", shKey);
+        SPRINTF(szKey_c, Key_Len, "Global\\Galaxy_SM_Notify_Client_%llu", shKey);
 
 #if (WIN32)
         char mappingName[MAX_PATH];
-        sprintf_s(mappingName, "Galaxy_FileMappingObject_%llu", shKey);
+        sprintf_s(mappingName, "Global\\Galaxy_FileMappingObject_%llu", shKey);
         const int loopNum = 1000;
         int loopNo = 0;
         bool bSrvReady = false;
@@ -293,6 +316,11 @@ namespace X
         while (mNotiEvent_Server == nullptr && loopNo < loopNum)
         {
             mNotiEvent_Server = OpenEvent(EVENT_ALL_ACCESS, FALSE, szKey_s);
+            if (mNotiEvent_Server == nullptr)
+            {
+                DWORD error = GetLastError();
+                std::cout << "Error=" << error << std::endl;
+            }
             if (mNotiEvent_Server != nullptr)
             {
                 bSrvReady = true;

@@ -56,7 +56,10 @@ namespace X
 		RemoteObject(XProxy* p):
 			ObjRef(),XObj(),Object()
 		{
-			p->AddRef();
+			if (p != nullptr)
+			{
+				p->AddRef();
+			}
 			m_proxy = p;
 			m_t = ObjType::RemoteObject;
 			m_stackFrame = new AST::StackFrame();

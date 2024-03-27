@@ -547,6 +547,13 @@ namespace X
 		shmKey <<= 32;
 		shmKey |= pid;
 
+		//{
+		//	int loop = 100000000;
+		//	for (int i = 0; i < loop; i++)
+		//	{
+		//		Sleep(100);
+		//	}
+		//}
 		mSMSwapBuffer1 = new SMSwapBuffer();
 		mSMSwapBuffer2 = new SMSwapBuffer();
 
