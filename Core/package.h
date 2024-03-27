@@ -114,6 +114,7 @@ public:
 	{
 		return FromBytesImpl(m_pObject, stream);
 	}
+	virtual int GetPackageName(char* buffer, int bufferSize) override;
 	virtual bool RunCodeWithThisScope(const char* code) override;
 	virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
@@ -336,6 +337,10 @@ public:
 		//m_pPackage->Unlock();
 
 		delete m_pMyScope;
+	}
+	FORCE_INLINE virtual int GetPackageName(char* buffer, int bufferSize) override
+	{
+		return m_pPackage?m_pPackage->GetPackageName(buffer, bufferSize):0;
 	}
 	FORCE_INLINE virtual AST::Scope* GetMyScope() override
 	{

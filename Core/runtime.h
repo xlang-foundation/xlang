@@ -75,7 +75,10 @@ public:
 		m_stackBottom = rt->m_stackBottom;
 		m_tracefunc = rt->m_tracefunc;
 		//TODO:when stack remove from link, need to check if need to set back
-		m_stackBottom->SetShareFlag(true);
+		if (m_stackBottom)
+		{
+			m_stackBottom->SetShareFlag(true);
+		}
 	}
 	FORCE_INLINE bool SetVarCount(int cnt)
 	{

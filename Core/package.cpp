@@ -93,6 +93,20 @@ namespace X
 			}
 			m_loadedModules.clear();
 		}
+		int Package::GetPackageName(char* buffer, int bufferSize)
+		{
+			APISetBase* pAPISet = (APISetBase*)GetAPISet();
+			if(pAPISet)
+			{
+				std::string  strName(pAPISet->GetName());
+				if (strName.size() <= bufferSize)
+				{
+					strcpy(buffer, strName.c_str());
+					return strName.size();
+				}
+			}
+			return 0;
+		}
 		bool Package::RunCodeWithThisScope(const char* code)
 		{
 			auto* pTopModule = X::Hosting::I().LoadWithScope(m_pMyScope, code,strlen(code));

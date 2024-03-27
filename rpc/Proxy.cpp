@@ -7,14 +7,18 @@
 #include "manager.h"
 #include <string>
 #include "ServerCallPool.h"
+#include "event.h"
+#include "remote_object.h"
+
 
 namespace X
 {
 	void XLangProxyManager::Register()
 	{
-		Manager::I().RegisterProxy("lrpc",[](const char* url) {
+		Manager::I().RegisterProxy(LRPC_NAME,[](const char* url) {
 			XLangProxy* pProxy = new XLangProxy();
-			pProxy->SetUrl(url);
+			std::string strUrl(url);
+			pProxy->SetUrl(strUrl);
 			pProxy->Start();
 			return dynamic_cast<XProxy*>(pProxy);
 			},
@@ -28,9 +32,9 @@ namespace X
 		m_pCallReadyWait = new XWait();
 		m_pBuffer2ReadyWait = new XWait();
 	}
-	void XLangProxy::SetUrl(const char* url)
+	void XLangProxy::SetUrl(std::string& url)
 	{
-		SCANF(url, "%d", &m_port);
+		SCANF(url.c_str(), "%d", &m_port);
 	}
 	XLangProxy::~XLangProxy()
 	{
@@ -359,6 +363,8 @@ namespace X
 	}
 	void XLangProxy::run()
 	{
+		AddRef();
+		ThreadAddRef();
 		while (mRun)
 		{
 			bool bOK = Connect();
@@ -373,9 +379,9 @@ namespace X
 			m_ConnectLock.Unlock();
 			m_pConnectWait->Release();
 			WaitToHostExit();
+
 			if (m_ExitOnHostExit)
 			{
-				std::cout << "Server Side Exited " << std::endl;
 				m_ConnectLock.Lock();
 				mRun = false;
 				m_Exited = true;
@@ -391,7 +397,13 @@ namespace X
 				m_ConnectLock.Unlock();
 				break;
 			}
-			std::cout << "Server Side Exited,wait to server run again " << std::endl;
+			else
+			{	
+				//for multiple re-entru, need to reset
+				//but this is not correct way, need to fix
+				//TODO: fix this
+				m_pConnectWait->Reset();
+			}
 			m_ConnectLock.Lock();
 			if (mSMSwapBuffer1)
 			{
@@ -404,9 +416,14 @@ namespace X
 			m_bConnected = false;
 			m_ConnectLock.Unlock();
 		}
+		//cal this one before Release(),to avoid this pointer deleted by Release()
+		ThreadRelease();
+		Release();
 	}
 	void XLangProxy::run2()
 	{
+		AddRef();
+		ThreadAddRef();
 		bool bWaitOnBuffer2 = true;
 		while (mRun)
 		{
@@ -471,6 +488,16 @@ namespace X
 			mSMSwapBuffer2->BeginWrite();
 			mSMSwapBuffer2->EndWrite();
 		}
+		//cal this one before Release(),to avoid this pointer deleted by Release()
+		ThreadRelease();
+		Release();
+	}
+	void XLangProxy::Cleanup()
+	{
+		m_ConnectLock.Lock();
+		m_bConnected = false;
+		m_ConnectLock.Unlock();
+		Manager::I().RemoveProxy(LRPC_NAME,mRootObjectName,this);
 	}
 	Call_Context* XLangProxy::GetCallContext()
 	{
