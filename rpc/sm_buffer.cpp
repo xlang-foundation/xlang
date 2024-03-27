@@ -140,6 +140,14 @@ namespace X
 
     bool SMSwapBuffer::HostCreate(unsigned long long key, int bufferSize)
     {
+        m_user = SwapBufferUser::Server;
+
+        const int Key_Len = 100;
+        char szKey_s[Key_Len];
+        SPRINTF(szKey_s, Key_Len, "Global\\Galaxy_SM_Notify_Server_%llu", key);
+        char szKey_c[Key_Len];
+        SPRINTF(szKey_c, Key_Len, "Global\\Galaxy_SM_Notify_Client_%llu", key);
+
 #if (WIN32)
         SECURITY_ATTRIBUTES sa;
         SECURITY_DESCRIPTOR sd;
@@ -162,15 +170,6 @@ namespace X
         sa.nLength = sizeof(SECURITY_ATTRIBUTES);
         sa.lpSecurityDescriptor = &sd;
         sa.bInheritHandle = FALSE;
-
-
-        m_user = SwapBufferUser::Server;
-
-        const int Key_Len = 100;
-        char szKey_s[Key_Len];
-        SPRINTF(szKey_s, Key_Len, "Global\\Galaxy_SM_Notify_Server_%llu", key);
-        char szKey_c[Key_Len];
-        SPRINTF(szKey_c, Key_Len, "Global\\Galaxy_SM_Notify_Client_%llu", key);
 
         mNotiEvent_Server = CreateEvent(&sa, FALSE, FALSE, szKey_s);
         mNotiEvent_Client = CreateEvent(&sa, FALSE, FALSE, szKey_c);
