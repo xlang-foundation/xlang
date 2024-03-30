@@ -341,8 +341,31 @@ namespace X
 	{
 		m_pCallReadyWait->Release();
 	}
-
+	//use process as signal to host exit
+	//this way will not work for case host is in Admin or service mode
+	//so we need to use semaphore, in fact, in windows, we use event
 	void XLangProxy::WaitToHostExit()
+	{
+		//for wait to host exit
+		SEMAPHORE_HANDLE semaphore = nullptr;
+
+		auto ret = 1;
+		while (ret != 0)
+		{
+			std::string semaphoreName =
+				mHostUseGlobal ? "Global\\XlangServerSemaphore_" : "XlangServerSemaphore_";
+			semaphoreName += std::to_string(mHostProcessId);
+			semaphore = OPEN_SEMAPHORE(semaphoreName.c_str());
+			if (semaphore == nullptr)
+			{
+				std::cout << "Host semaphore" << semaphoreName << "is gone,host exited" << std::endl;
+				break;
+			}
+			ret = WAIT_FOR_SEMAPHORE(semaphore, 30);
+			CLOSE_SEMAPHORE(semaphore);
+		}
+	}
+	void XLangProxy::WaitToHostExit_ByProcess()
 	{
 #if (WIN32)
 		HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, mHostProcessId);
@@ -547,20 +570,13 @@ namespace X
 		shmKey <<= 32;
 		shmKey |= pid;
 
-		//{
-		//	int loop = 100000000;
-		//	for (int i = 0; i < loop; i++)
-		//	{
-		//		Sleep(100);
-		//	}
-		//}
 		mSMSwapBuffer1 = new SMSwapBuffer();
 		mSMSwapBuffer2 = new SMSwapBuffer();
 
-		bool bOK = mSMSwapBuffer1->ClientConnect(m_port,shmKey,SM_BUF_SIZE, timeoutMS);
+		bool bOK = mSMSwapBuffer1->ClientConnect(mHostUseGlobal,m_port,shmKey,SM_BUF_SIZE, timeoutMS);
 		if (bOK)
 		{
-			bOK = mSMSwapBuffer2->ClientConnect(m_port, shmKey+1,SM_BUF_SIZE, timeoutMS, false);
+			bOK = mSMSwapBuffer2->ClientConnect(mHostUseGlobal,m_port, shmKey+1,SM_BUF_SIZE, timeoutMS, false);
 			if (bOK)
 			{
 				m_pBuffer2ReadyWait->Release();

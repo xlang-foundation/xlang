@@ -6,6 +6,7 @@
 #include "gthread.h"
 #include "remote_client_object.h"
 #include <vector>
+#include "port.h"
 
 #define LRPC_NAME "lrpc"
 
@@ -94,6 +95,8 @@ namespace X
 			m_CallContextLock.Unlock();
 		}
 	private:
+		bool mHostUseGlobal = false;
+
 		int m_refCount = 0;
 		int m_ThreadRefCount = 0;//we have two threads there
 		Locker mLockRefCount;
@@ -125,6 +128,7 @@ namespace X
 		bool m_ExitOnHostExit = true;
 		bool m_Exited = false;
 		void WaitToHostExit();
+		void WaitToHostExit_ByProcess();
 
 		Locker m_ConnectLock;
 		bool m_bConnected = false;
