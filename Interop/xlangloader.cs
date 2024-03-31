@@ -370,7 +370,15 @@ public class XLangEng
     private bool Init(string xlang_interop_lib_folder)
     {
         const string DllName = "xlang_interop.dll";
-        string DllPath = xlang_interop_lib_folder +"\\"+ DllName;
+        string DllPath;
+        if (xlang_interop_lib_folder != "")
+        {
+            DllPath = xlang_interop_lib_folder + "\\" + DllName;
+        }
+        else
+        {
+            DllPath = DllName;
+        }
         hModule = LoadLibrary(DllPath);
         if (hModule == IntPtr.Zero)
         {
