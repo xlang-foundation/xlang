@@ -9,6 +9,7 @@
 
 #include "folder.h"
 
+namespace fs = std::filesystem;
 namespace X
 {
 	class File
@@ -145,9 +146,93 @@ namespace X
 		{ 
 			return m_curModule; 
 		}
+		std::string GetXModulePath()
+		{
+			std::string modulePath;
+			X::XRuntime* pRt = X::g_pXHost->GetCurrentRuntime();
+			if (pRt)
+			{
+				X::Value varModulePath = pRt->GetXModuleFileName();
+				if (varModulePath.IsValid())
+				{
+					std::string strModulePath = varModulePath.ToString();
+					if (!strModulePath.empty())
+					{
+						fs::path filePath(strModulePath);
+						modulePath = filePath.parent_path().string();
+					}
+				}
+				else
+				{
+					//todo:
+					modulePath = GetModulePath();
+				}
+			}
+			else
+			{
+				modulePath = GetModulePath();
+			}
+			return modulePath;
+		}
+
+		std::string ConvertReletivePathToFullPath(std::string strPath)
+		{
+			std::string modulePath = GetModulePath();
+			std::filesystem::path rootPath = modulePath;
+			std::filesystem::path fullPath;
+			// Check if the path is already absolute
+			if (std::filesystem::path(strPath).is_absolute())
+			{
+				fullPath = std::filesystem::canonical(strPath);
+			}
+			else {
+				// Combine the paths and normalize
+				try {
+					fullPath = std::filesystem::absolute(rootPath / strPath);
+					fullPath = std::filesystem::canonical(fullPath);
+				}
+				catch (const std::filesystem::filesystem_error& e) {
+					return "";
+				}
+			}
+			return fullPath.string();
+		}
+		std::string ReadAllTexts(std::string fileName)
+		{
+			auto fullPath = ConvertReletivePathToFullPath(fileName);
+			if (fullPath.empty())
+			{
+				return "";
+			}
+			// Check if the file exists
+			if (std::filesystem::exists(fullPath))
+			{
+				// Open the file for reading
+				std::ifstream file(fullPath);
+
+				if (file.is_open()) 
+				{
+					// Read the entire file into a string
+					std::string file_content((std::istreambuf_iterator<char>(file)),
+						std::istreambuf_iterator<char>());
+					file.close();
+					return file_content;
+				}
+				else 
+				{
+					return "";
+				}
+			}
+			else 
+			{
+				return "";
+			}
+			return "";
+		}
 		BEGIN_PACKAGE(FileSystem)
 			APISET().AddClass<2, File>("File");
 			APISET().AddClass<1, Folder>("Folder");
+			APISET().AddFunc<1>("ReadAllTexts", &FileSystem::ReadAllTexts);
 		END_PACKAGE
 	};
 }

@@ -63,7 +63,8 @@ extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 	GetCurLibInfo((void*)Load, strFullPath, strFolderPath, strLibName);
 
 	X::g_pXHost = (X::XHost*)pHost;
-	X::RegisterPackage<X::Http>(strFullPath.c_str(),"http");
+	X::Http::I().SetModulePath(strFolderPath);
+	X::RegisterPackage<X::Http>(strFullPath.c_str(),"http",&X::Http::I());
 	X::RegisterPackage<X::Cypher>(strFullPath.c_str(), "cypher");
 }
 extern "C"  X_EXPORT void Unload()

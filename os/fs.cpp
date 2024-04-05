@@ -1,5 +1,7 @@
 #include "fs.h"
 
+namespace fs = std::filesystem;
+
 namespace X
 {
 	File::File(std::string fileName, std::string mode) :
@@ -24,7 +26,29 @@ namespace X
 #endif
 		if (!IsAbsPath)
 		{
-			auto& modulePath = FileSystem::I().GetModulePath();
+			std::string modulePath;
+			X::XRuntime* pRt = X::g_pXHost->GetCurrentRuntime();
+			if (pRt)
+			{
+				X::Value varModulePath = pRt->GetXModuleFileName();
+				if (varModulePath.IsValid())
+				{
+					std::string strModulePath = varModulePath.ToString();
+					if (!strModulePath.empty())
+					{
+						fs::path filePath(strModulePath);
+						modulePath = filePath.parent_path().string();
+					}
+				}
+				else
+				{
+					modulePath = FileSystem::I().GetModulePath();
+				}
+			}
+			else
+			{
+				modulePath = FileSystem::I().GetModulePath();
+			}
 			if (!modulePath.empty())
 			{
 #if (WIN32)
@@ -33,7 +57,6 @@ namespace X
 				fileName = modulePath + "/" + fileName;
 #endif
 			}
-			
 		}
 		m_fileName = fileName;
 		m_IsBinary = (std::string::npos != mode.find_first_of('b'));

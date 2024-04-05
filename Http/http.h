@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <regex>
+#include "singleton.h"
 
 namespace X
 {
@@ -28,11 +29,48 @@ namespace X
 		std::string m_client_ca_cert_dir_path;
 		std::string m_private_key_password;
 		std::vector<void*> m_handlers;
+		bool m_SupportStaticFiles = true;
+		std::string m_staticIndexFile = "index.html";
+		std::vector<std::string> m_staticFileRoots;
 
 		std::string TranslateUrlToReqex(std::string& url);
+
+		bool HandleStaticFile(std::string path, void* pReq, void* pResp);
+		std::string GetModulePath();
+	
+		std::string ConvertReletivePathToFullPath(std::string path);
 	public:
 		BEGIN_PACKAGE(HttpServer)
 			APISET().AddEvent("OnConnect");
+			APISET().AddPropWithType<bool>("SupportStaticFiles", &HttpServer::m_SupportStaticFiles);
+			APISET().AddPropWithType<std::string>("StaticIndexFile", &HttpServer::m_staticIndexFile);
+			APISET().AddPropL("StaticRoots",
+				[](auto* pThis, X::Value v) {
+					if (v.IsList())
+					{
+						X::List l(v);
+						for (auto item : *l)
+						{
+							std::string strPath = item.ToString();
+							std::string steAbsolutePath = pThis->ConvertReletivePathToFullPath(strPath);
+							pThis->m_staticFileRoots.push_back(steAbsolutePath);
+						}
+					}
+					else
+					{
+						std::string strPath = v.ToString();
+						std::string steAbsolutePath = pThis->ConvertReletivePathToFullPath(strPath);
+						pThis->m_staticFileRoots.push_back(steAbsolutePath);
+					}
+				},
+				[](auto* pThis) {
+					X::List l;
+					for (auto& root : pThis->m_staticFileRoots)
+					{
+						l+=root;
+					}
+					return l;
+				});
 			APISET().AddFunc<2>("listen", &HttpServer::Listen);
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
@@ -144,8 +182,10 @@ namespace X
 		X::Value GetBody();
 		X::Value GetResponseHeaders() { return m_headers; }
 	};
-	class Http
+	class Http:
+		public Singleton<Http>
 	{
+		std::string m_curModulePath;
 	public:
 		BEGIN_PACKAGE(Http)
 			APISET().AddFunc<1>("WritePad", &Http::WritePad);
@@ -158,5 +198,13 @@ namespace X
 			APISET().AddClass<1, HttpClient>("Client");
 		END_PACKAGE
 		X::Value WritePad(X::Value& input);
+		std::string& GetModulePath()
+		{
+			return m_curModulePath;
+		}
+		void SetModulePath(std::string& path)
+		{
+			m_curModulePath = path;
+		}
 	};
 }
