@@ -104,7 +104,7 @@ namespace X
 		virtual bool UnloadModule(X::Value objModule) = 0;
 		virtual bool UnloadXPackage(const char* packageName) = 0;
 		virtual bool RunModule(X::Value objModule, X::Value& retVal,bool keepModuleWithRuntime) = 0;
-		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
+		virtual unsigned long long RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
 		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal) = 0;
 		virtual const char* GetInteractiveCode() = 0;
 		virtual long OnEvent(const char* evtName, EventHandler handler) = 0;
