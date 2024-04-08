@@ -8,6 +8,7 @@ project ("xlang_http")
 add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT)
 
 include_directories("../Api")
+include_directories("../Inc")
 if (WIN32)
 	include_directories("depends/windows/include")
 	link_directories("depends/windows/lib")

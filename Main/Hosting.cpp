@@ -44,11 +44,11 @@ namespace X
 			}, params0);
 		return true;
 	}
-	bool Hosting::RunAsBackend(std::string& moduleName, std::string& code, std::vector<X::Value>& args)
+	unsigned long long  Hosting::RunAsBackend(std::string& moduleName, std::string& code, std::vector<X::Value>& args)
 	{
 		Backend* pBackend = new Backend(moduleName,code, args);
 		pBackend->Start();
-		return true;
+		return (unsigned long long)(void*)pBackend;
 	}
 	AppEventCode Hosting::HandleAppEvent(int signum)
 	{
