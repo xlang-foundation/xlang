@@ -336,7 +336,7 @@ namespace X
 			}
 		}
 		//then Moudle Path
-		std::string& root = X::Http::I().GetModulePath(); 
+		std::string& root = X::Http::I().GetHttpModulePath(); 
 		fs::path fullPath = fs::path(root) / path;
 		if (fs::exists(fullPath)) {
 			return setResponseContent(fullPath.string());
