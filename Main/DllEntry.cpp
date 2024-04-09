@@ -291,7 +291,7 @@ void XLangRun()
 			passInParams,
 			retVal);
 	}
-	else if (fileName)
+	else if (fileName && strlen(fileName)>0)
 	{
 		std::string strFileName = fileName;
 		bool bOK = LoadStringFromFile(strFileName, code);

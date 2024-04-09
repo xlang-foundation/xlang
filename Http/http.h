@@ -185,7 +185,11 @@ namespace X
 	class Http:
 		public Singleton<Http>
 	{
+		//for calling XModule
+		X::Value m_curModule;
 		std::string m_curModulePath;
+		//for this http module
+		std::string m_httpModulePath;
 	public:
 		BEGIN_PACKAGE(Http)
 			APISET().AddFunc<1>("WritePad", &Http::WritePad);
@@ -202,9 +206,25 @@ namespace X
 		{
 			return m_curModulePath;
 		}
-		void SetModulePath(std::string& path)
+		void SetHttpModulePath(std::string path)
 		{
-			m_curModulePath = path;
+			m_httpModulePath = path;
 		}
+		std::string& GetHttpModulePath()
+		{
+			return m_httpModulePath;
+		}
+		void SetModule(X::Value curModule)
+		{
+			X::XModule* pModule = dynamic_cast<X::XModule*>(curModule.GetObj());
+			if (pModule)
+			{
+				auto path = pModule->GetPath();
+				m_curModulePath = path;
+				g_pXHost->ReleaseString(path);
+			}
+			m_curModule = curModule;
+		}
+
 	};
 }

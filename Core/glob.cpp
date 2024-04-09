@@ -50,7 +50,11 @@ namespace X {
 #endif
 	void G::BindRuntimeToThread(XlangRuntime* rt)
 	{
-		long long curTId = rt->GetThreadId();
+		//shawn@4/9/2024
+		// here we need to use current thread id as key
+		//not from the rt itself
+		//old code: long long curTId = rt->GetThreadId();
+		long long curTId = GetThreadID();
 		((Locker*)m_lockRTMap)->Lock();
 		auto it = m_rtMap.find(curTId);
 		if (it == m_rtMap.end())
@@ -65,7 +69,9 @@ namespace X {
 	}
 	void G::UnbindRuntimeToThread(XlangRuntime* rt)
 	{
-		long long curTId = rt->GetThreadId();
+		//see BindRuntimeToThread
+		//old code:long long curTId = rt->GetThreadId();
+		long long curTId = GetThreadID();
 		((Locker*)m_lockRTMap)->Lock();
 		auto it = m_rtMap.find(curTId);
 		if (it != m_rtMap.end())

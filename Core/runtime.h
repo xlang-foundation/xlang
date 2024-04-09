@@ -44,6 +44,7 @@ class XlangRuntime:
 	public XRuntime
 {
 	long long m_threadId = 0;
+	bool m_noThreadBinding = false;
 	AST::Module* m_pModule = nullptr;
 	AST::StackFrame* m_stackBottom = nullptr;
 	XTraceFunc m_tracefunc = nullptr;
@@ -54,6 +55,10 @@ public:
 	XlangRuntime()
 	{
 		m_threadId = GetThreadID();
+	}
+	void SetNoThreadBinding(bool b)
+	{
+		m_noThreadBinding = b;
 	}
 	~XlangRuntime();
 	FORCE_INLINE void SetTrace(XTraceFunc f)

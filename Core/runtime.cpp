@@ -11,7 +11,10 @@ namespace X
 {
 	XlangRuntime::~XlangRuntime()
 	{
-		G::I().UnbindRuntimeToThread(this);
+		if (!m_noThreadBinding)
+		{
+			G::I().UnbindRuntimeToThread(this);
+		}
 	}
 	bool XlangRuntime::GetWritePadNum(int& count, int& dataBindingCount)
 	{

@@ -93,6 +93,9 @@ namespace X
 			const char* code, int size,
 			std::vector<X::Value>& passInParams,
 			X::Value& retVal);
+		bool SimpleRun(const char* moduleName,
+			const char* code, int size,
+			X::Value& retVal);
 		unsigned long long RunAsBackend(std::string& moduleName,std::string& code,std::vector<X::Value>& args);
 		bool PostRunFragmentInMainThread(AST::ModuleObject* pModuleObj,std::string& code);
 	};
