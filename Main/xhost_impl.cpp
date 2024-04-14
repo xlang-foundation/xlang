@@ -496,7 +496,7 @@ namespace X
 		}
 		return false;
 	}
-	bool XHost_Impl::RunModuleInThread(const char* moduleName, 
+	unsigned long long XHost_Impl::RunModuleInThread(const char* moduleName,
 		const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs)
 	{
 		std::string strModuleName(moduleName);

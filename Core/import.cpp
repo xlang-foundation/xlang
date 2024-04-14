@@ -292,6 +292,7 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 		{
 			if (proxy)
 			{
+				proxy->SetRootObjectName(im.name.c_str());
 				auto* remoteObj = new RemoteObject(proxy);
 				remoteObj->SetObjName(im.name);
 				//todo: need to check here

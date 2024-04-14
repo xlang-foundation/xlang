@@ -1,6 +1,13 @@
 #include "http.h"
 #include "httplib.h"
 #include <iterator>
+#include <filesystem>
+#include <iostream>
+#include <string>
+#include <map>
+#include <tuple>
+
+namespace fs = std::filesystem;
 
 namespace X
 {
@@ -75,6 +82,17 @@ namespace X
 					}
 					break;
 				}
+			}
+			if (!bHandled)
+			{ 
+				//if not handled, check if this server support static files
+				bHandled = HandleStaticFile(url, (void*)&req, (void*)&res);
+			}
+			if (!bHandled)
+			{
+				res.status = 404;
+				res.set_content("Not Found", "text/plain");
+				bHandled = true;
 			}
 			return bHandled;
 		};
@@ -199,6 +217,180 @@ namespace X
 			url.begin(), url.end(), r, target);
 		return result.str();
 	}
+
+	// Function to extract the file extension from a file path
+	std::string getFileExtension(const std::string& filePath) 
+	{
+		size_t dotPos = filePath.find_last_of('.');
+		if (dotPos == std::string::npos) 
+		{
+			return ""; // No extension found
+		}
+		return filePath.substr(dotPos + 1);
+	}
+
+	// Function to get the MIME type and binary/text indicator based on the file extension
+	std::tuple<std::string, bool> getMimeTypeAndBinaryFlag(const std::string& extension) {
+		// Mapping of file extensions to MIME types and binary/text flag
+		std::map<std::string, std::tuple<std::string, bool>> mimeTypeMap = 
+		{
+			{"txt", {"text/plain", false}},
+			{"html", {"text/html", false}},
+			{"css", {"text/css", false}},
+			{"js", {"application/javascript", false}},
+			{"json", {"application/json", false}},
+			{"jpg", {"image/jpeg", true}},
+			{"jpeg", {"image/jpeg", true}},
+			{"png", {"image/png", true}},
+			{"gif", {"image/gif", true}},
+			{"svg", {"image/svg+xml", true}},
+			{"pdf", {"application/pdf", true}},
+			// Add more mappings as needed
+		};
+
+		// Find the MIME type and binary/text flag based on the extension
+		auto it = mimeTypeMap.find(extension);
+		if (it != mimeTypeMap.end()) 
+		{
+			return it->second;
+		}
+
+		// Return a default MIME type and binary flag if the extension is not recognized
+		return { "application/octet-stream", true };
+	}
+	// Function to read the entire contents of a binary file
+	std::vector<char> BinReadAll(const std::string& filePath) 
+	{
+		std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+		if (!file) 
+		{
+			throw std::runtime_error("Could not open file for reading: " + filePath);
+		}
+		std::streamsize size = file.tellg();
+		file.seekg(0, std::ios::beg);
+
+		std::vector<char> buffer(size);
+		if (!file.read(buffer.data(), size)) 
+		{
+			throw std::runtime_error("Could not read file: " + filePath);
+		}
+		return buffer;
+	}
+
+	// Function to read the entire contents of a text file
+	std::string TextReadAll(const std::string& filePath) 
+	{
+		std::ifstream file(filePath);
+		if (!file) 
+		{
+			throw std::runtime_error("Could not open file for reading: " + filePath);
+		}
+		std::string content((std::istreambuf_iterator<char>(file)),
+			std::istreambuf_iterator<char>());
+		return content;
+	}
+
+	bool HttpServer::HandleStaticFile(std::string path, void* pReq, void* pResp) 
+	{
+		if (!m_SupportStaticFiles)
+		{
+			return false;
+		}
+
+		auto setResponseContent = [&](const std::string& filePath) {
+			std::string extension = getFileExtension(filePath);
+			auto [mimeType, isBinary] = getMimeTypeAndBinaryFlag(extension);
+
+			try {
+				if (isBinary) {
+					std::vector<char> data = BinReadAll(filePath);
+					((httplib::Response*)pResp)->set_content(std::string(data.begin(), data.end()), mimeType.c_str());
+				}
+				else {
+					std::string data = TextReadAll(filePath);
+					((httplib::Response*)pResp)->set_content(data, mimeType.c_str());
+				}
+				return true;
+			}
+			catch (const std::exception& e) {
+				// Handle file reading errors
+				((httplib::Response*)pResp)->status = 500; // Internal Server Error
+				((httplib::Response*)pResp)->set_content("Error reading file: " + std::string(e.what()), "text/plain");
+				return false;
+			}
+		};
+		if (path == "/")
+		{
+			path = m_staticIndexFile;
+		}
+		else if (path.starts_with("/")) //Stip the leading slash
+		{
+			path = path.substr(1);
+		}
+		//Try root first
+		for (auto& root : m_staticFileRoots) {
+			fs::path fullPath = fs::path(root) / path;
+			// Check if this exists
+			if (fs::exists(fullPath)) {
+				return setResponseContent(fullPath.string());
+			}
+		}
+		//then Moudle Path
+		std::string& root = X::Http::I().GetHttpModulePath(); 
+		fs::path fullPath = fs::path(root) / path;
+		if (fs::exists(fullPath)) {
+			return setResponseContent(fullPath.string());
+		}
+
+		return false;
+	}
+	std::string HttpServer::GetModulePath()
+	{
+		std::string modulePath;
+		X::XRuntime* pRt = X::g_pXHost->GetCurrentRuntime();
+		if (pRt)
+		{
+			X::Value varModulePath = pRt->GetXModuleFileName();
+			if (varModulePath.IsValid())
+			{
+				std::string strModulePath = varModulePath.ToString();
+				if (!strModulePath.empty())
+				{
+					fs::path filePath(strModulePath);
+					modulePath = filePath.parent_path().string();
+				}
+			}
+			else
+			{
+				//todo:
+				modulePath = X::Http::I().GetModulePath();
+			}
+		}
+		else
+		{
+			modulePath = X::Http::I().GetModulePath();
+		}
+		return modulePath;
+	}
+
+	std::string HttpServer::ConvertReletivePathToFullPath(std::string strPath)
+	{
+		std::string modulePath = GetModulePath();
+		std::filesystem::path rootPath = modulePath;
+		std::filesystem::path fullPath;
+		// Check if the path is already absolute
+		if (std::filesystem::path(strPath).is_absolute())
+		{
+			fullPath = std::filesystem::canonical(strPath);
+		}
+		else {
+			// Combine the paths and normalize
+			fullPath = std::filesystem::absolute(rootPath / strPath);
+			fullPath = std::filesystem::canonical(fullPath);
+		}
+		return fullPath.string();
+	}
+
 	bool HttpServer::Route(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		X::ARGS& params, X::KWARGS& kwParams,
 		X::Value& trailer, X::Value& retValue)
@@ -445,6 +637,29 @@ namespace X
 			}
 		}
 		return true;
+	}
+	bool HttpClient::Post(std::string path, std::string content_type, std::string body)
+	{
+		if (m_pClient) 
+		{
+			auto res = ((httplib::Client*)m_pClient)->Post(path, body, content_type);
+			if (res) 
+			{
+				m_status = res->status;
+				m_body = X::Value(res->body); 
+				X::Dict dict;
+				//dump response headers
+				for (auto& kv : res->headers)
+				{
+					X::Str key(kv.first.c_str(), (int)kv.first.size());
+					X::Str val(kv.second.c_str(), (int)kv.second.size());
+					dict->Set(key, val);
+				}
+				m_headers = dict;
+				return true;
+			}
+		}
+		return false;
 	}
 	X::Value HttpClient::GetStatus()
 	{

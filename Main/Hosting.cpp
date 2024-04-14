@@ -46,11 +46,11 @@ namespace X
 			}, params0);
 		return true;
 	}
-	bool Hosting::RunAsBackend(std::string& moduleName, std::string& code, std::vector<X::Value>& args)
+	unsigned long long  Hosting::RunAsBackend(std::string& moduleName, std::string& code, std::vector<X::Value>& args)
 	{
 		Backend* pBackend = new Backend(moduleName,code, args);
 		pBackend->Start();
-		return true;
+		return (unsigned long long)(void*)pBackend;
 	}
 	AppEventCode Hosting::HandleAppEvent(int signum)
 	{
@@ -341,6 +341,34 @@ namespace X
 			return false;
 		}
 		bool bOK =  Run(pTopModule,retVal, passInParams);
+		Unload(pTopModule);
+		return bOK;
+	}
+
+	//this SimpleRun not bind thread to runtime
+	//for json parser
+	bool Hosting::SimpleRun(const char* moduleName,
+		const char* code, int size,
+		X::Value& retVal)
+	{
+		unsigned long long moduleKey = 0;
+		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
+		if (pTopModule == nullptr)
+		{
+			return false;
+		}
+		XlangRuntime* pRuntime = new XlangRuntime();
+		pRuntime->SetNoThreadBinding(true);
+		pTopModule->SetRT(pRuntime);
+		pRuntime->SetM(pTopModule);
+
+		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
+		X::AST::ExecAction action;
+		bool bOK = ExpExec(pTopModule, pRuntime, action, nullptr, retVal);
+		pRuntime->PopFrame();
+		delete pRuntime;
+
 		Unload(pTopModule);
 		return bOK;
 	}

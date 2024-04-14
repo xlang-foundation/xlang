@@ -34,6 +34,14 @@ namespace X {
 		{
 			m_lock.Unlock();
 		}
+		virtual int GetPackageName(char* buffer, int bufferSize) override
+		{
+			std::string myName("Builtin");
+			if (bufferSize < myName.size() + 1)
+				return 0;
+			strcpy(buffer, myName.c_str());
+			return myName.size();
+		}
 		virtual bool RunCodeWithThisScope(const char* code) override
 		{
 			return true;

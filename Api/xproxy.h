@@ -14,6 +14,9 @@ namespace X
 	class XProxy
 	{
 	public:
+		virtual int AddRef() = 0;
+		virtual int Release() = 0;
+		virtual void SetRootObjectName(const char* name) = 0;
 		virtual ROBJ_ID QueryRootObject(std::string& name) = 0;
 		virtual ROBJ_MEMBER_ID QueryMember(ROBJ_ID id,std::string& name,
 			bool& KeepRawParams) = 0;

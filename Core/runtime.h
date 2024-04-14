@@ -44,6 +44,7 @@ class XlangRuntime:
 	public XRuntime
 {
 	long long m_threadId = 0;
+	bool m_noThreadBinding = false;
 	AST::Module* m_pModule = nullptr;
 	AST::StackFrame* m_stackBottom = nullptr;
 	XTraceFunc m_tracefunc = nullptr;
@@ -54,6 +55,10 @@ public:
 	XlangRuntime()
 	{
 		m_threadId = GetThreadID();
+	}
+	void SetNoThreadBinding(bool b)
+	{
+		m_noThreadBinding = b;
 	}
 	~XlangRuntime();
 	FORCE_INLINE void SetTrace(XTraceFunc f)
@@ -75,7 +80,10 @@ public:
 		m_stackBottom = rt->m_stackBottom;
 		m_tracefunc = rt->m_tracefunc;
 		//TODO:when stack remove from link, need to check if need to set back
-		m_stackBottom->SetShareFlag(true);
+		if (m_stackBottom)
+		{
+			m_stackBottom->SetShareFlag(true);
+		}
 	}
 	FORCE_INLINE bool SetVarCount(int cnt)
 	{
@@ -163,5 +171,7 @@ public:
 		}
 		return bOK;
 	}
+	virtual X::Value GetXModuleFileName() override;
+	virtual int GetTopStackCurrentLine() override;
 };
 }

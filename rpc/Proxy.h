@@ -6,6 +6,9 @@
 #include "gthread.h"
 #include "remote_client_object.h"
 #include <vector>
+#include "port.h"
+
+#define LRPC_NAME "lrpc"
 
 class XWait;
 namespace X
@@ -27,10 +30,35 @@ namespace X
 		public X::XProxy,
 		public GThread2
 	{
+		std::string mRootObjectName;
 	public:
 		XLangProxy();
 		~XLangProxy();
-		void SetUrl(const char* url);
+		virtual void SetRootObjectName(const char* name)
+		{
+			mRootObjectName = name;
+		}
+		void SetUrl(std::string& url);
+		virtual int AddRef()
+		{
+			int ret = 0;
+			mLockRefCount.Lock();
+			ret = ++m_refCount;
+			mLockRefCount.Unlock();
+			return ret;
+		}
+		virtual int Release()
+		{
+			int ret = 0;
+			mLockRefCount.Lock();
+			ret = --m_refCount;
+			mLockRefCount.Unlock();
+			if (ret == 0)
+			{
+				delete this;
+			}
+			return ret;
+		}
 		virtual ROBJ_ID QueryRootObject(std::string& name);
 		virtual X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
 			bool& KeepRawParams);
@@ -56,6 +84,7 @@ namespace X
 		virtual void run() override;
 		virtual void run2() override;
 
+		void Cleanup();
 		Locker m_CallContextLock;
 		std::vector<Call_Context*> mCallContexts;
 		Call_Context* GetCallContext();
@@ -66,6 +95,32 @@ namespace X
 			m_CallContextLock.Unlock();
 		}
 	private:
+		bool mHostUseGlobal = false;
+
+		int m_refCount = 0;
+		int m_ThreadRefCount = 0;//we have two threads there
+		Locker mLockRefCount;
+
+		virtual int ThreadAddRef()
+		{
+			int ret = 0;
+			mLockRefCount.Lock();
+			ret = ++m_ThreadRefCount;
+			mLockRefCount.Unlock();
+			return ret;
+		}
+		virtual int ThreadRelease()
+		{
+			int ret = 0;
+			mLockRefCount.Lock();
+			ret = --m_ThreadRefCount;
+			mLockRefCount.Unlock();
+			if (ret == 0)
+			{
+				Cleanup();
+			}
+			return ret;
+		}
 		int mTimeout = -1;
 		long m_port = 0;
 		unsigned long mHostProcessId = 0;
@@ -73,6 +128,7 @@ namespace X
 		bool m_ExitOnHostExit = true;
 		bool m_Exited = false;
 		void WaitToHostExit();
+		void WaitToHostExit_ByProcess();
 
 		Locker m_ConnectLock;
 		bool m_bConnected = false;

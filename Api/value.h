@@ -168,6 +168,10 @@ public:
 	{
 		return (t == ValueType::Invalid);
 	}
+	FORCE_INLINE bool IsNone()
+	{
+		return (t == ValueType::None);
+	}
 	FORCE_INLINE bool IsValid()
 	{
 		return (t != ValueType::Invalid);

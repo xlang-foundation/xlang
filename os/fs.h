@@ -6,6 +6,10 @@
 #include <fstream>
 #include <filesystem>
 #include <sys/stat.h>
+
+#include "folder.h"
+
+namespace fs = std::filesystem;
 namespace X
 {
 	class File
@@ -98,73 +102,6 @@ namespace X
 		}
 	};
 
-	//-------------------------------------------------------------------------------------
-	class Dir
-	{
-		std::string m_path;
-		enum ScanOption{
-			DirOnly,
-			FileOnly,
-			Both
-		};
-	public:
-		BEGIN_PACKAGE(Dir)
-		APISET().AddFunc<1>("scanDir", &Dir::scanDir);
-		APISET().AddFunc<0>("createDir", &Dir::createDir);		
-		END_PACKAGE
-		Dir()
-		{
-			m_path = "./";
-		}
-		Dir(std::string path);	
-		~Dir()
-		{
-		}
-		std::string scanDir(int option) {
-			std::string output;
-			std::error_code ec; // For using the non-throwing overloads of functions below.
-			std::filesystem::path fPath;
-			if (option == DirOnly) {
-				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
-					fPath = file.path();
-					if (std::filesystem::is_directory(fPath, ec)) {
-						//std::cout << fPath << std::endl;
-						output += fPath.generic_string();
-						output += '\n';
-					}
-				}
-			}
-			else if (option == FileOnly) {
-				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
-					fPath = file.path();
-					if (!std::filesystem::is_directory(fPath, ec)) {
-						//std::cout << fPath << std::endl;
-						output += fPath.generic_string();
-						output += '\n';
-					}
-				}
-			}
-			else { //both
-				for (const auto& file : std::filesystem::recursive_directory_iterator(m_path)) {
-					fPath = file.path();
-					//std::cout << fPath << std::endl;
-					output += fPath.generic_string();
-					output += '\n';
-				}
-			}
-
-			return output;
-		}
-		bool createDir() {
-			std::filesystem::path fPath{ m_path };
-			if (std::filesystem::exists(fPath))
-				return false;
-			else
-				return std::filesystem::create_directory(fPath);
-		}
-
-	};
-
 	class FileSystem:
 		public Singleton<FileSystem>
 	{
@@ -201,13 +138,101 @@ namespace X
 		{
 			return m_curModulePath;
 		}
+		void SetModulePath(std::string& path)
+		{
+			m_curModulePath = path;
+		}
 		X::Value& GetModule() 
 		{ 
 			return m_curModule; 
 		}
+		std::string GetXModulePath()
+		{
+			std::string modulePath;
+			X::XRuntime* pRt = X::g_pXHost->GetCurrentRuntime();
+			if (pRt)
+			{
+				X::Value varModulePath = pRt->GetXModuleFileName();
+				if (varModulePath.IsValid())
+				{
+					std::string strModulePath = varModulePath.ToString();
+					if (!strModulePath.empty())
+					{
+						fs::path filePath(strModulePath);
+						modulePath = filePath.parent_path().string();
+					}
+				}
+				else
+				{
+					//todo:
+					modulePath = GetModulePath();
+				}
+			}
+			else
+			{
+				modulePath = GetModulePath();
+			}
+			return modulePath;
+		}
+
+		std::string ConvertReletivePathToFullPath(std::string strPath)
+		{
+			std::string modulePath = GetModulePath();
+			std::filesystem::path rootPath = modulePath;
+			std::filesystem::path fullPath;
+			// Check if the path is already absolute
+			if (std::filesystem::path(strPath).is_absolute())
+			{
+				fullPath = std::filesystem::canonical(strPath);
+			}
+			else {
+				// Combine the paths and normalize
+				try {
+					fullPath = std::filesystem::absolute(rootPath / strPath);
+					fullPath = std::filesystem::canonical(fullPath);
+				}
+				catch (const std::filesystem::filesystem_error& e) {
+					return "";
+				}
+			}
+			return fullPath.string();
+		}
+		std::string ReadAllTexts(std::string fileName)
+		{
+			auto fullPath = ConvertReletivePathToFullPath(fileName);
+			if (fullPath.empty())
+			{
+				return "";
+			}
+			// Check if the file exists
+			if (std::filesystem::exists(fullPath))
+			{
+				// Open the file for reading
+				std::ifstream file(fullPath);
+
+				if (file.is_open()) 
+				{
+					// Read the entire file into a string
+					std::string file_content((std::istreambuf_iterator<char>(file)),
+						std::istreambuf_iterator<char>());
+					file.close();
+					return file_content;
+				}
+				else 
+				{
+					return "";
+				}
+			}
+			else 
+			{
+				return "";
+			}
+			return "";
+		}
 		BEGIN_PACKAGE(FileSystem)
 			APISET().AddClass<2, File>("File");
-			APISET().AddClass<1, Dir>("Dir");
+			APISET().AddClass<1, Folder>("Folder");
+			APISET().AddFunc<1>("ReadAllTexts", &FileSystem::ReadAllTexts);
 		END_PACKAGE
 	};
 }

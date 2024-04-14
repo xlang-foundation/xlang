@@ -47,7 +47,15 @@ namespace X
 			}
 			virtual void Set(X::Value& key, X::Value& val) override
 			{
-				mMap.emplace(std::make_pair(key, val));
+				auto it = mMap.find(key);
+				if (it != mMap.end())
+				{
+					it->second = val;
+				}
+				else
+				{
+					mMap.emplace(std::make_pair(key, val));
+				}
 			}
 			void SetKV(X::Value& key,const X::Value& val)
 			{
@@ -99,6 +107,17 @@ namespace X
 				auto it = mMap.find(key);
 				if (it != mMap.end())
 				{
+					bOK = true;
+				}
+				return bOK;
+			}
+			bool Remove(X::Value& key)
+			{
+				bool bOK = false;
+				auto it = mMap.find(key);
+				if (it != mMap.end())
+				{
+					mMap.erase(it);
 					bOK = true;
 				}
 				return bOK;
