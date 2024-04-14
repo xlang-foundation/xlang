@@ -10,6 +10,7 @@
 #include "port.h"
 #include "event.h"
 #include "utility.h"
+#include "dbg.h"
 
 namespace X
 {
@@ -351,13 +352,14 @@ namespace X
 				int column = pCurStack->GetCharPos();
 
 				AST::Scope* pMyScope = pCurStack->GetScope();
-				std::string moduleFileName = rt->M()->GetModuleName();
+				//std::string moduleFileName = rt->M()->GetModuleName();
 				if (pMyScope)
 				{
 					Data::Dict* dict = new Data::Dict();
 					dict->Set("id", X::Value(pCurStack));
 					std::string name;
 					auto* pExp = pMyScope->GetExp();
+					std::string moduleFileName = Dbg::GetExpModule(pExp)->GetModuleName();
 					if (pExp->m_type == X::AST::ObType::Func)
 					{
 						AST::Func* pFunc = dynamic_cast<AST::Func*>(pExp);
@@ -417,35 +419,61 @@ namespace X
 		}
 
 		// Breakpoints should work in both currently running and later created modules
-		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext,
-			unsigned long long moduleKey, Value& varLines)
+		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext, Value& varPath, Value& varLines)
 		{
-			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
-			if (pModule == nullptr)
-			{
-				return varLines;
-			}
 			if (!varLines.IsObject()
 				|| varLines.GetObj()->GetType() != X::ObjType::List)
 			{
 				return X::Value(false);
 			}
+
+			std::string path = varPath.ToString();
 			auto* pLineList = dynamic_cast<X::Data::List*>(varLines.GetObj());
 			auto lines = pLineList->Map<int>(
 				[](X::Value& elm, unsigned long long idx) {
 					return elm; }
 			);
-			pModule->ClearBreakpoints();
+
+			G::I().SetBreakPoints(path, lines);
+			std::vector<AST::Module*> modules = Hosting::I().QueryModulesByPath(path);
+			bool bValid = false;
 			Data::List* pList = new Data::List();
+			if (modules.size() > 0)
+			{
+				for (auto m : modules)
+				{
+					m->ClearBreakpoints();
 			for (auto l : lines)
 			{
-				l = pModule->SetBreakpoint(l, (int)GetThreadID());
+						l = m->SetBreakpoint(l, (int)GetThreadID());
+						if (!bValid && l >= 0)
+						{
 				if (l >= 0)
 				{
 					X::Value varL(l);
 					pList->Add((XlangRuntime*)rt, varL);
 				}
+							else
+							{
+								X::Value varL(l + 100000); // failed state
+								pList->Add((XlangRuntime*)rt, varL);
+							}
 			}
+					}
+					if (!bValid)
+						G::I().AddBreakpointValid(path);
+					bValid = true;
+				}
+			}
+			else
+			{
+				for (auto l : lines)
+				{
+					X::Value varL(l + 200000); // pending state
+					pList->Add((XlangRuntime*)rt, varL);
+				}
+			}
+
 			return X::Value(pList);
 		}
 		bool DebugService::Command(X::XRuntime* rt, XObj* pContext,

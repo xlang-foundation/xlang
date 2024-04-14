@@ -200,6 +200,9 @@ export class XLangRuntime extends EventEmitter {
 							else if(kv.hasOwnProperty("ThreadExited")){
 								this.sendEvent('threadExited', kv["ThreadExited"]);
 						}
+							else if(kv.hasOwnProperty("BreakpointPath")){
+								this.sendEvent('breakpointState', kv["BreakpointPath"], kv["line"]);
+							}
 					}
 				}
 			}
@@ -308,10 +311,8 @@ export class XLangRuntime extends EventEmitter {
 	}
 	public async setBreakPoints(path: string, lines: number[], cb: Function) {
 		////let mKey = await this.loadSource(this.normalizePathAndCasing(path));
-		let code = "import xdb\nreturn xdb.set_breakpoints(" + this._moduleKey.toString()
-			+ ",[" + lines.join() + "]"
-			+ ",path=\"" + path+"\""
-			+")";
+		let path_x = path.replaceAll('\\', '/');
+		let code = "import xdb\nreturn xdb.set_breakpoints(\"" + path_x + "\",[" + lines.join() + "])";
 		this.Call(code, (retData) => {
 			var retLines = JSON.parse(retData);
 			cb(retLines);

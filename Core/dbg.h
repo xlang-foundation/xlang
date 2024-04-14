@@ -183,17 +183,41 @@ public:
 		}
 		return true;
 	}
+
+	FORCE_INLINE static AST::Module* GetExpModule(AST::Expression* exp)
+	{
+		if (exp->m_type == AST::ObType::Module)
+			return dynamic_cast<AST::Module*>(exp);
+
+		auto pa = exp->GetParent();
+		while (pa)
+		{
+			if (pa->m_type == AST::ObType::Module)
+			{
+				return dynamic_cast<AST::Module*>(pa);
+				break;
+			}
+			else
+			{
+				pa = pa->GetParent();
+			}
+		}
+		return nullptr;
+	}
+
 	FORCE_INLINE bool Check(TraceEvent evt,XlangRuntime* rt,
 		AST::Scope* pThisBlock,
 		AST::Expression* exp, XObj* pContext)
 	{
-		if (!m_rt->M()->IsInDebug())
+		
+		AST::Module* expModule = GetExpModule(exp);
+		if (!expModule && !expModule->IsInDebug())
 		{
 			return false;
 		}
 		//check breakpoints
 		int line = exp->GetStartLine();
-		if (m_rt->M()->HitBreakpoint(line))
+		if (expModule->HitBreakpoint(line))
 		{
 			WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
 			if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)

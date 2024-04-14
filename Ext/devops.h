@@ -48,8 +48,7 @@ namespace X
 			DebugService();
 			int GetModuleStartLine(unsigned long long moduleKey);
 			X::Value GetThreads();
-			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext,
-				unsigned long long moduleKey, Value& varLines);
+			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext, Value& varPath, Value& varLines);
 			bool Command(X::XRuntime* rt, X::XObj* pContext,
 				ARGS& params,
 				KWARGS& kwParams,

@@ -8,6 +8,8 @@ namespace X {
 	{
 		m_lock = (void*)new Locker();
 		m_lockRTMap = (void*)new Locker();
+		m_lockBreakpointsMap = (void*)new Locker();
+		m_lockBreakpointsValid = (void*)new Locker();
 	}
 	G::~G()
 	{
@@ -75,7 +77,7 @@ namespace X {
 		long long curTId = rt->GetThreadId();
 		((Locker*)m_lockRTMap)->Lock();
 		auto it = m_rtMap.find(curTId);
-		if (it != m_rtMap.end())
+		if (it != m_rtMap.end() && it->second == rt)
 		{
 			m_rtMap.erase(it);
 			bEvent = rt->GetTrace();

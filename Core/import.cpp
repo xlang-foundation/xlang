@@ -152,7 +152,7 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 				for (auto& pa : searchPaths)
 				{
 					std::vector<std::string> candiateFiles;
-					bool bRet = file_search(pa + Path_Sep_S + prefixPath,
+					bool bRet = file_search(pa + (prefixPath.empty() ? "" : Path_Sep_S + prefixPath),
 						loadingModuleName + ".x", candiateFiles);
 					if (bRet && candiateFiles.size() > 0)
 					{

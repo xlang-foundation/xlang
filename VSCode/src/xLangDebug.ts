@@ -5,13 +5,16 @@ import {
 	InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
 	ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent,
 	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent,
-	ThreadEvent
+	ThreadEvent,
+	DebugSession
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { basename } from 'path-browserify';
 import { XLangRuntime, IRuntimeBreakpoint,RuntimeVariable, timeout, IRuntimeVariableType } from './xLangRuntime';
 import { Subject } from 'await-notify';
 import * as base64 from 'base64-js';
+import * as vscode from 'vscode';
+import * as path from 'path';
 
 /**
  * This interface describes the xLang specific launch attributes
@@ -59,6 +62,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 	private _isLaunch = true;
 
 	private _mapFrameIdThreadId : Map<Number, Number> = new Map();
+
+	private _srcList : string[] = [];
 
 	public getRuntime(){
 		return this._runtime;
@@ -131,6 +136,16 @@ export class XLangDebugSession extends LoggingDebugSession {
 		this._runtime.on('end', () => {
 			this.sendEvent(new TerminatedEvent());
 		});
+		this._runtime.on('breakpointState', (path, line) => {
+			path = path.replaceAll('/', '\\');
+			let srcIdx = this._srcList.indexOf(path);
+			if (line >= 100000){ // failed
+				line -= 100000; 
+				this.sendEvent(new BreakpointEvent('changed', {verified: false, id: srcIdx * 10000000 + line * 1000}));
+			}else{
+				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: srcIdx * 10000000 + line * 1000}));
+			}
+		});
 	}
 
 	/**
@@ -169,7 +184,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		response.body.supportsCancelRequest = true;
 
 		// make VS Code send the breakpointLocations request
-		response.body.supportsBreakpointLocationsRequest = true;
+		response.body.supportsBreakpointLocationsRequest = false;
 
 		// make VS Code provide "Step in Target" functionality
 		response.body.supportsStepInTargetsRequest = true;
@@ -262,6 +277,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		await this._configurationDone.wait();
 
 		args.stopOnEntry = true;
+		
 		// start the program in the runtime
 		await this._runtime.start(!!args.stopOnEntry, !args.noDebug);
 
@@ -284,12 +300,37 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
-		const path = args.source.path as string;
+		const path = (args.source.path as string).toLowerCase();
 		const clientLines = args.lines || [];
-
+		
+		let srcIdx = this._srcList.indexOf(path);
+		if ( srcIdx < 0){
+			this._srcList.push(path);
+			srcIdx = this._srcList.length - 1;
+		}
+		
 		this._runtime.setBreakPoints(path, clientLines, (lines) => {
 			let actualBreakpoints = lines.map(l => {
-				return new Breakpoint(true, l);
+				if (l >= 200000){
+					l -= 200000;
+					//let ret = new Breakpoint(false, l, undefined, new Source(path, path));
+					let ret = new Breakpoint(false, l);
+					ret.reason = 'pending';
+					ret.setId(srcIdx * 10000000 + l * 1000); // ret.setId(srcIdx * 10000000 + l * 1000 + c);
+					return ret;
+				}
+				else if (l >= 100000){
+					l -= 100000;
+					let ret = new Breakpoint(false, l);
+					ret.reason = 'failed';
+					ret.setId(srcIdx * 10000000 +  + l * 1000);
+					return ret;
+				}
+				else{
+					let ret = new Breakpoint(true, l);
+					ret.setId(srcIdx * 10000000 +  + l * 1000);
+					return ret;
+				}
 			});
 			response.body = {
 				breakpoints: actualBreakpoints

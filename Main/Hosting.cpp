@@ -5,6 +5,8 @@
 #include "module.h"
 #include "event.h"
 #include "exp_exec.h"
+#include "port.h"
+#include <algorithm>
 
 namespace X
 {
@@ -137,6 +139,27 @@ namespace X
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);
 
+		strModuleName = pTopModule->GetModuleName();
+		std::transform(strModuleName.begin(), strModuleName.end(), strModuleName.begin(), std::tolower);
+		std::vector<int> breakpoints = G::I().GetBreakPoints(strModuleName);
+		bool bValid = G::I().IsBreakpointValid(strModuleName); // Whether the source file's breakpoints have been checked 
+		pTopModule->ClearBreakpoints();
+		for (auto l : breakpoints)
+		{
+			l = pTopModule->SetBreakpoint(l, (int)GetThreadID());
+
+			if (!bValid && l >= 0)
+			{
+				if (l >= 0)
+					SendBreakpointState(strModuleName, l);
+				else
+					SendBreakpointState(strModuleName, l + 100000); // failed state
+			}
+		}
+		if (!bValid)
+			G::I().AddBreakpointValid(strModuleName); // add to checked list
+
+
 		moduleKey = AddModule(pTopModule);
 		return pTopModule;
 	}
@@ -193,15 +216,21 @@ namespace X
 		bool stopOnEntry, bool keepModuleWithRuntime)
 	{
 		pTopModule->SetArgs(passInParams);
-		XlangRuntime* pRuntime = new XlangRuntime();
+		XlangRuntime* pRuntime = G::I().Threading(nullptr);
+		// 如果runtime的module不为nullptr，则pTopModule是import的module
+		AST::Module* pOldModule = pRuntime->M(); 
 		pTopModule->SetRT(pRuntime);
 		pRuntime->SetM(pTopModule);
-		if (stopOnEntry)
+		G::I().BindRuntimeToThread(pRuntime);
+		
+		if (stopOnEntry || pRuntime->GetTrace())
 		{
 			pTopModule->SetDebug(true,pRuntime);
+			if (stopOnEntry && !pOldModule)
 			pTopModule->SetDbgType(X::AST::dbg::Step, AST::dbg::None);
+			else
+				pTopModule->SetDbgType(X::AST::dbg::Continue, AST::dbg::Continue);			
 		}
-		G::I().BindRuntimeToThread(pRuntime);
 
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
 		pModuleFrame->SetLine(pTopModule->GetStartLine());
@@ -223,8 +252,12 @@ namespace X
 		if (!keepModuleWithRuntime)
 		{
 			pRuntime->PopFrame();
+			if (pOldModule)
+				pRuntime->SetM(pOldModule);
+			else
 			delete pRuntime;
 		}
+
 		return bOK;
 	}
 	bool Hosting::RunFragmentInModule(
@@ -344,5 +377,20 @@ namespace X
 			Run("Cleanup.x", onFinishExpr.c_str(), (int)onFinishExpr.size(), passInParams,valRet0);
 		}
 		return bOK;
+	}
+
+	void Hosting::SendBreakpointState(const std::string& path, int line)
+	{
+		KWARGS kwParams;
+		X::Value valAction("notify");
+		kwParams.Add("action", valAction);
+		const int online_len = 1000;
+		char strBuf[online_len];
+		SPRINTF(strBuf, online_len, "[{\"BreakpointPath\":\"%s\", \"line\":%d}]", path.c_str(), line);
+		X::Value valParam(strBuf);
+		kwParams.Add("param", valParam);
+		std::string evtName("devops.dbg");
+		ARGS params(0);
+		X::EventSystem::I().Fire(nullptr, nullptr, evtName, params, kwParams);
 	}
 }
