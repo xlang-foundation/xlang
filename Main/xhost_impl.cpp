@@ -720,4 +720,12 @@ namespace X
 		auto* pProxyObj = new Data::PyProxyObject(pyObj);
 		return  Value(pProxyObj);
 	}
+	bool XHost_Impl::PyRun(const char* code)
+	{
+		if (g_pPyHost)
+		{
+			return g_pPyHost->Exec(code);
+		}
+		return false;
+	}
 }

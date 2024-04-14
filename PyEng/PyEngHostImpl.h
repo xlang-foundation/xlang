@@ -104,4 +104,5 @@ private:
 		PyEngObjectPtr& key, PyEngObjectPtr& val) override;
 
 	virtual bool CallReleaseForTupleItems(PyEngObjectPtr tuple) override;
+	virtual bool Exec(const char* code) override;
 };

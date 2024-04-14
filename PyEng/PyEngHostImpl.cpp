@@ -698,3 +698,9 @@ bool GrusPyEngHost::CallReleaseForTupleItems(PyEngObjectPtr tuple)
 	std::cout << result << std::endl;
 	return true;
 }
+
+bool GrusPyEngHost::Exec(const char* code)
+{
+	int ret = PyRun_SimpleString(code);
+	return (ret ==0);
+}
