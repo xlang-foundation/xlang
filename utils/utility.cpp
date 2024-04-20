@@ -235,7 +235,7 @@ std::string StringifyString(const std::string& str)
 	{
 		char chr = *iter;
 
-		if (chr == '"' || chr == '\\' || chr == '/')
+		if (chr == '"' || chr == '\\' /*|| chr == '/'*/)
 		{
 			str_out += '\\';
 			str_out += chr;
