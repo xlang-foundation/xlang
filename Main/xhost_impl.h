@@ -73,7 +73,7 @@ namespace X
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() override;
 		virtual void* GetUIThreadRunContext() override;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) override;
-		virtual bool PyRun(const char* code) override;
+		virtual bool PyRun(const char* code, X::ARGS& args) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

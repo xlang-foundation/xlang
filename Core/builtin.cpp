@@ -1385,7 +1385,9 @@ bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	}
 	if (g_pPyHost)
 	{
-		retValue = g_pPyHost->Exec(code.c_str());
+		std::vector<X::Value> aryValues(params.Data()+1, params.Data() + params.size());
+		PyEng::Tuple objParams(aryValues);
+		retValue = g_pPyHost->Exec(code.c_str(), objParams);
 	}
 	return true;
 }

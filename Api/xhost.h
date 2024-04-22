@@ -125,7 +125,7 @@ namespace X
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() = 0;
 		virtual void* GetUIThreadRunContext() =0;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) = 0;
-		virtual bool PyRun(const char* code) = 0;
+		virtual bool PyRun(const char* code, X::ARGS& args) = 0;
 	};
 	extern XHost* g_pXHost;
 }

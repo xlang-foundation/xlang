@@ -81,7 +81,7 @@ public:
 	virtual PyEngObjectPtr GetGlobals() = 0;
 	virtual PyEngObjectPtr GetLocals() = 0;
 	virtual bool CallReleaseForTupleItems(PyEngObjectPtr tuple) = 0;
-	virtual bool Exec(const char* code) = 0;
+	virtual bool Exec(const char* code, PyEngObjectPtr args) = 0;
 };
 
 extern PyEngHost* g_pPyHost;

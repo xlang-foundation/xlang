@@ -699,8 +699,35 @@ bool GrusPyEngHost::CallReleaseForTupleItems(PyEngObjectPtr tuple)
 	return true;
 }
 
-bool GrusPyEngHost::Exec(const char* code)
+bool GrusPyEngHost::Exec(const char* code, PyEngObjectPtr args)
 {
+	PyObject* argsTuple = (PyObject*)args;
+	PyObject* sysModule = PyImport_ImportModule("sys");
+	if (!sysModule) 
+	{
+		return false;
+	}
+
+	PyObject* sysArgv = PyObject_GetAttrString(sysModule, "argv");
+	if (!sysArgv || !PyList_Check(sysArgv)) 
+	{
+		Py_DECREF(sysModule);
+		return false;
+	}
+	Py_ssize_t n = PyTuple_Size(argsTuple);
+	for (Py_ssize_t i = 0; i < n; i++) 
+	{
+		PyObject* item = PyTuple_GetItem(argsTuple, i); // Borrowed reference, no need to decref
+		if (PyList_Append(sysArgv, item) < 0) 
+		{
+			Py_DECREF(sysModule);
+			Py_DECREF(sysArgv);
+			return false;
+		}
+	}
 	int ret = PyRun_SimpleString(code);
+	Py_DECREF(sysModule);
+	Py_DECREF(sysArgv);
+
 	return (ret ==0);
 }
