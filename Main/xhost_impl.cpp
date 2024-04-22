@@ -720,4 +720,14 @@ namespace X
 		auto* pProxyObj = new Data::PyProxyObject(pyObj);
 		return  Value(pProxyObj);
 	}
+	bool XHost_Impl::PyRun(const char* code, X::ARGS& args)
+	{
+		if (g_pPyHost)
+		{
+			std::vector<X::Value> aryValues(args.Data(), args.Data() + args.size());
+			PyEng::Tuple objParams(aryValues);
+			return g_pPyHost->Exec(code, objParams);
+		}
+		return false;
+	}
 }

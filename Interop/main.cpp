@@ -102,10 +102,10 @@ extern "C" X_EXPORT long long GetObjectBinaryData(void* objPtr, unsigned char** 
 //if return value is string, need to consider memory allocation and deallocation
 //so need to use sepreated function to call paring with string releease function
 
-extern "C"  X_EXPORT const char* CallObjectToString(void* pObjPtr)
+extern "C"  X_EXPORT const char* CallObjectToString(void* pObjPtr,bool WithFormat)
 {
 	X::XObj* pXObj = (X::XObj*)pObjPtr;
-	const char* str = pXObj->ToString();
+	const char* str = pXObj->ToString(WithFormat);
 	return str;
 }
 
@@ -237,7 +237,24 @@ extern "C"  X_EXPORT void Unload(void* pContext)
 	xLoad.Unload();
 	delete pXLanEngineContext;
 }
-
+extern "C" X_EXPORT bool CallXModuleFunc(void* pModule,const char* funcName,
+	X::Value * variantArray, int arrayLength, X::Value * outReturnValue)
+{
+	X::XObj* pXObjModule = (X::XObj*)pModule;
+	X::Value moduleObj(pXObjModule);
+	X::ARGS args(arrayLength);
+	X::KWARGS kwArgs;
+	for (int i = 0; i < arrayLength; i++)
+	{
+		args.push_back(variantArray[i]);
+	}
+	X::Value funcObj = moduleObj[funcName];
+	if (funcObj.IsObject())
+	{
+		*outReturnValue = funcObj.ObjCall(args);
+	}
+	return true;
+}
 extern "C" X_EXPORT bool FireObjectEvent(void* objPtr, int evtId, 
 	X::Value * variantArray, int arrayLength)
 {
