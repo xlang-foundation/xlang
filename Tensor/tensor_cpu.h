@@ -550,7 +550,7 @@ namespace X
 				auto it_proc_scaler_add = [pTensor, input2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val *= input2;
+					val *= (const X::Value&)input2;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_add);
@@ -563,7 +563,7 @@ namespace X
 				auto it_proc_scaler_add = [pTensor, input1, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val *= input1;
+					val *= (const X::Value&)input1;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_add);
@@ -666,7 +666,7 @@ namespace X
 				auto it_proc_scaler_div = [pTensor, input2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val /= input2;
+					val /= (const X::Value&)input2;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_div);
@@ -680,7 +680,7 @@ namespace X
 				auto it_proc_scaler_div = [pTensor, input1, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = input1;
-					val /= pTensor->GetDataWithIndices(indices);
+					val /= (const X::Value&)pTensor->GetDataWithIndices(indices);
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_div);
