@@ -59,7 +59,7 @@ return *this; \
 }
 #else
 #define ARITH_OP_IMPL(op)\
-FORCE_INLINE Value& Value::operator op (Value const& r)\
+FORCE_INLINE Value& Value::operator op (const Value & r)\
 {\
 	switch (t)\
 	{\
