@@ -3,6 +3,7 @@
 #
 cmake_minimum_required(VERSION 3.8)
 project ("xone")
+set(CMAKE_CXX_STANDARD 20)
 
 include_directories("..")
 include_directories("../Api")
@@ -64,6 +65,6 @@ add_executable (${PROJECT_NAME}
 	${Os_SRC}
 )
 if(NOT (WIN32))
-target_link_libraries(${PROJECT_NAME} pthread dl)
+target_link_libraries(${PROJECT_NAME} pthread dl uuid)
 endif()
 

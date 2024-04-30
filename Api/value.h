@@ -28,11 +28,11 @@ enum class ValueType
 	std::string((char*)p,(size_t)size)
 
 #define ARITH_OP(op)\
-Value& operator op (const Value& r);
+void operator op (const Value& r);
 
 #ifdef __ANDROID__
 #define ARITH_OP_IMPL(op)\
-inline Value& Value::operator op (Value const& r)\
+inline void Value::operator op (Value const& r)\
 {\
 switch (t)\
 {\
@@ -55,11 +55,10 @@ break; \
 default:\
 	break; \
 }\
-return *this; \
 }
 #else
 #define ARITH_OP_IMPL(op)\
-FORCE_INLINE Value& Value::operator op (Value const& r)\
+void Value::operator op (const Value & r)\
 {\
 	switch (t)\
 	{\
@@ -82,7 +81,6 @@ FORCE_INLINE Value& Value::operator op (Value const& r)\
 	default:\
 		break;\
 	}\
-	return *this;\
 }
 #endif
 
