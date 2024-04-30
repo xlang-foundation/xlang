@@ -65,6 +65,6 @@ add_executable (${PROJECT_NAME}
 	${Os_SRC}
 )
 if(NOT (WIN32))
-target_link_libraries(${PROJECT_NAME} pthread dl)
+target_link_libraries(${PROJECT_NAME} pthread dl uuid)
 endif()
 

@@ -58,7 +58,7 @@ default:\
 }
 #else
 #define ARITH_OP_IMPL(op)\
-FORCE_INLINE void Value::operator op (const Value & r)\
+void Value::operator op (const Value & r)\
 {\
 	switch (t)\
 	{\
