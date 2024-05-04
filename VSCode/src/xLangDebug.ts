@@ -15,6 +15,8 @@ import { Subject } from 'await-notify';
 import * as base64 from 'base64-js';
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as net from 'net';
+import * as cp from 'child_process';
 
 /**
  * This interface describes the xLang specific launch attributes
@@ -47,6 +49,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private _configurationDone = new Subject();
 
+	private _xlangStarted = new Subject();
+
 	private _cancellationTokens = new Map<number, boolean>();
 
 	private _reportProgress = false;
@@ -64,6 +68,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 	private _mapFrameIdThreadId : Map<Number, Number> = new Map();
 
 	private _srcList : string[] = [];
+
+	private _xlangProcess;
 
 	public getRuntime(){
 		return this._runtime;
@@ -145,6 +151,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 			}else{
 				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: srcIdx * 10000000 + line * 1000}));
 			}
+		});
+		this._runtime.on('xlangStarted', (started) => {
+			this._xlangStarted.notifyValue = started;
+			this._xlangStarted.notify();
 		});
 	}
 
@@ -255,7 +265,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
 		console.log(`disconnectRequest suspend: ${args.suspendDebuggee}, terminate: ${args.terminateDebuggee}`);
 		if (this._isLaunch)
+		{
 			this._runtime.close();
+		}
 		this.sendResponse(response);
 	}
 
@@ -266,6 +278,18 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
+		let port = await this.getValidPort();
+		let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
+		this._xlangProcess = cp.spawn(xlangBin, ['-event_loop', '-dbg', '-enable_python', `-port ${port}`], { shell: true, detached: true });
+		this._runtime.checkStarted();
+		await this._xlangStarted.wait();
+		if (!this._xlangStarted.notifyValue)
+		{
+			this.sendResponse(response);
+			this.sendEvent(new TerminatedEvent());
+			return;
+		}
+
 		this._isLaunch = true;
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
@@ -1037,6 +1061,36 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private createSource(filePath: string): Source {
 		return new Source(basename(filePath), this.convertDebuggerPathToClient(filePath), undefined, undefined, 'xLang-adapter-data');
+	}
+
+	private async getValidPort() : Promise<number>
+	{
+		let port : number = 35000;
+		for(let i = 0; i < 1000; ++i)
+		{
+			const ret = await this.checkPort(port);
+			if (ret > 0) {
+				return ret;
+			}
+			else{
+				port += 1;
+			}
+		}
+		return 0;
+	}
+
+	private async checkPort(port) : Promise<number> {
+        return new Promise((resolve, reject) => {
+            let server = net.createServer().listen(port);
+            server.on('listening', function () {
+                server.close();
+                resolve(port);
+            });
+            server.on('error', function (err) {
+				server.close();
+                resolve(0);
+            });
+        });
 	}
 }
 

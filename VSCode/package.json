@@ -154,6 +154,10 @@
       {
         "command": "extension.xlang.toggleFormatting",
         "title": "Toggle between decimal and hex formatting"
+      },
+      {
+        "command": "extension.xlang.setExcutablePath",
+        "title": "Set XLang Executable Path"
       }
     ],
     "breakpoints": [
@@ -270,6 +274,14 @@
           "AskForProgramName": "extension.xlang.getProgramName"
         }
       }
-    ]
+    ],
+    "configuration": {
+      "properties": {
+        "XLangDebugger.ExePath": {
+          "type": "string",
+          "description": "Path to the XLang executable file"
+        }
+      }
+    }
   }
 }

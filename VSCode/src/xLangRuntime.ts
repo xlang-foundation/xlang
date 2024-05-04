@@ -112,6 +112,10 @@ export class XLangRuntime extends EventEmitter {
 		this.instruction = this.starts[x];
 	}
 
+	public set serverPort(port){
+		this._srvPort = port;
+	}
+
 	// This is the next instruction that will be 'executed'
 	public instruction= 0;
 
@@ -163,6 +167,37 @@ export class XLangRuntime extends EventEmitter {
 		this._moduleKey = retVal;
 		return retVal;
 	}
+
+	public async checkStarted()
+	{
+		const https = require('http');
+		const options = {
+			hostname: this._srvaddress,
+			port: this._srvPort,
+			path: '/devops/checkStarted',
+			method: 'GET',
+			timeout: 2000
+		};
+		const req = https.request(options, res => {
+			this.sendEvent('xlangStarted', true);
+		});
+	
+		req.on('error', error => {
+			if (error.errno === -4078)
+			{
+				var thisObj = this;
+				setTimeout(function() {
+					thisObj.checkStarted();
+				}, 1000);
+			}
+			else
+			{
+				this.sendEvent('xlangStarted', false);
+			}
+		});
+		req.end();
+	}
+
 	private async fetchNotify()
 	{
 		const https = require('http');
