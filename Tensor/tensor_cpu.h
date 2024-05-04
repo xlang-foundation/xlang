@@ -307,14 +307,13 @@ namespace X
 			{
 				if (!IsNum(input2))	//the other must be a number
 					return;
-				X::Value& input = input2;
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_add = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				auto it_proc_scaler_add = [pTensor, input2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val += input;
+					val += input2;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_add);
@@ -322,14 +321,14 @@ namespace X
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
 				if (!IsNum(input1))	//the other must be a number
 					return;
-				X::Value& input = input1;
+
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_add = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				auto it_proc_scaler_add = [pTensor, input1, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val += input;
+					val += input1;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_add);
@@ -427,15 +426,13 @@ namespace X
 			{
 				if (!IsNum(input2))	//the other must be a number
 					return;
-				X::Value& input = input2;
-
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_minus = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				auto it_proc_scaler_minus = [pTensor, input2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val += input;  //t1-10 is changed to t1+(-10)
+					val += input2;  //t1-10 is changed to t1+(-10)
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_minus);
@@ -443,14 +440,12 @@ namespace X
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
 				if (!IsNum(input1))	//the other must be a number
 					return;
-				X::Value& input = input1;
-
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_minus = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				auto it_proc_scaler_minus = [pTensor, input1, pRetVal](std::vector<long long>& indices)
 				{
-					X::Value val = input;
+					X::Value val = input1;
 					val -= pTensor->GetDataWithIndices(indices);
 					pRetVal->SetDataWithIndices(indices, val);
 				};
@@ -550,13 +545,12 @@ namespace X
 			{
 				if (!IsNum(input2))	//the other must be a number
 					return;
-				X::Value& input = input2;
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_add = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				auto it_proc_scaler_add = [pTensor, input2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val *= input;
+					val *= input2;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_add);
@@ -564,13 +558,12 @@ namespace X
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
 				if (!IsNum(input1))	//the other must be a number
 					return;
-				X::Value& input = input1;
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_add = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				auto it_proc_scaler_add = [pTensor, input1, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val *= input;
+					val *= input1;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_add);
@@ -668,13 +661,12 @@ namespace X
 			{
 				if (!IsNum(input2))	//the other must be a number
 					return;
-				X::Value& input = input2;
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_div = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				auto it_proc_scaler_div = [pTensor, input2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val /= input;
+					val /= input2;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_div);
@@ -683,12 +675,11 @@ namespace X
 				std::cout << "In tensor_cpu.h::Divide(), input1 is not a tensor, input2 is a tensor" << std::endl;
 				if (!IsNum(input1))	//the other must be a number
 					return;
-				X::Value& input = input1;
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor);
-				auto it_proc_scaler_div = [pTensor, input, pRetVal](std::vector<long long>& indices)
+				auto it_proc_scaler_div = [pTensor, input1, pRetVal](std::vector<long long>& indices)
 				{
-					X::Value val = input;
+					X::Value val = input1;
 					val /= pTensor->GetDataWithIndices(indices);
 					pRetVal->SetDataWithIndices(indices, val);
 				};

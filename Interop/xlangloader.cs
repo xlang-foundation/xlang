@@ -129,7 +129,7 @@ public class XObj : IConvertible
 
     public string ToString(IFormatProvider? provider)
     {
-        var str = xLangEng.callObjectToString(xObjPtr);
+        var str = xLangEng.callObjectToString(xObjPtr, true);
         if(str!=IntPtr.Zero)
         {
             string? retStr =  Marshal.PtrToStringAnsi(str);
@@ -220,8 +220,9 @@ public class XLangEng
          IntPtr pVoidApiSet, bool singleInstance, IntPtr createFuncOrInstance);
     public delegate bool CallObjectFuncDelegate(IntPtr pObjPtr, string funcName,
                      IntPtr variantArray, int arrayLength, out Value returnValue);
+    public delegate bool CallXModuleFuncDelegate(IntPtr objPtr, string funcName, IntPtr variantArray, int arrayLength, out Value returnValue);
     public delegate bool FireObjectEventDelegate(IntPtr objPtr, int evtId,IntPtr variantArray, int arrayLength);
-    public delegate IntPtr CallObjectToStringDelegate(IntPtr pObjPtr);
+    public delegate IntPtr CallObjectToStringDelegate(IntPtr pObjPtr,Boolean WithFormat);
     public delegate void ReleaseStringDelegate(IntPtr str);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -245,6 +246,7 @@ public class XLangEng
     public CallObjectToStringDelegate callObjectToString;
     public GetObjectBinaryDataDelegate getObjectBinaryData;
     public ReleaseStringDelegate releaseString;
+    public CallXModuleFuncDelegate callXModuleFuncDelegate;
     public FireObjectEventDelegate fireObjectEvent;
     public LoadXModuleDelegate loadXModule;
     public UnloadXModuleDelegate unloadXModule;
@@ -264,7 +266,7 @@ public class XLangEng
             switch (variant.t)
             {
                 case ValueType.Int64:
-                    if(variant.flags == 1)
+                    if (variant.flags == 1)
                     {
                         result[i] = (variant.l > 0);
                     }
@@ -278,12 +280,49 @@ public class XLangEng
                     result[i] = variant.d;
                     break;
                 case ValueType.Str:
-                    result[i] = Marshal.PtrToStringAnsi(variant.str,variant.flags);
+                    result[i] = Marshal.PtrToStringAnsi(variant.str, variant.flags);
                     break;
                 case ValueType.Object:
-                    result[i] = new XObj(this,variant.obj);
+                    result[i] = new XObj(this, variant.obj);
                     break;
             }
+        }
+
+        return result;
+    }
+
+    public object ConvertValueToObject(Value variant)
+    {
+        object result = null;
+        switch (variant.t)
+        {
+            case ValueType.Int64:
+                if (variant.flags == 1)
+                {
+                    result = (variant.l > 0);
+                }
+                else
+                {
+                    result = variant.l;
+                }
+                result = variant.l;
+                break;
+            case ValueType.Double:
+                result = variant.d;
+                break;
+            case ValueType.Str:
+                result = Marshal.PtrToStringAnsi(variant.str, variant.flags);
+                break;
+            case ValueType.Object:
+                {
+                    var str = callObjectToString(variant.obj,true);
+                    if (str != IntPtr.Zero)
+                    {
+                        result = Marshal.PtrToStringAnsi(str);
+                        releaseString(str);
+                    }
+                }
+                break;
         }
 
         return result;
@@ -394,6 +433,7 @@ public class XLangEng
         callObjectFunc = Marshal.GetDelegateForFunctionPointer<CallObjectFuncDelegate>(GetProcAddress(hModule, "CallObjectFunc"));
         callObjectToString = Marshal.GetDelegateForFunctionPointer<CallObjectToStringDelegate>(GetProcAddress(hModule, "CallObjectToString"));
         releaseString = Marshal.GetDelegateForFunctionPointer<ReleaseStringDelegate>(GetProcAddress(hModule, "ReleaseString"));
+        callXModuleFuncDelegate = Marshal.GetDelegateForFunctionPointer<CallXModuleFuncDelegate>(GetProcAddress(hModule, "CallXModuleFunc"));
         fireObjectEvent = Marshal.GetDelegateForFunctionPointer<FireObjectEventDelegate>(GetProcAddress(hModule, "FireObjectEvent"));
         getObjectBinaryData = Marshal.GetDelegateForFunctionPointer<GetObjectBinaryDataDelegate>(GetProcAddress(hModule, "GetObjectBinaryData"));
         loadXModule = Marshal.GetDelegateForFunctionPointer<LoadXModuleDelegate>(GetProcAddress(hModule, "LoadXModule"));
@@ -437,6 +477,11 @@ public class XLangEng
         return objectRegistry.GetObject(pointer);
         //GCHandle handle = GCHandle.FromIntPtr(pointer);
         //return handle.Target;
+    }
+    public bool CallXModuleFunc(IntPtr modulePtr, string funcName, object[] args, out Value returnValue)
+    {
+        IntPtr argsPtr = ConvertArrayToVariants(args);
+        return callXModuleFuncDelegate(modulePtr, funcName, argsPtr, args.Length, out returnValue);
     }
     public bool FireEvent(object obj, int evtId, object[] args)
     {

@@ -100,7 +100,7 @@ namespace X
 			int ref = Ref();
 			if ((m_proxy!=nullptr) && (ref == 1))
 			{
-				std::cout << "RemoteObject::DecRef() " << m_remote_Obj_id.objId << std::endl;
+				//std::cout << "RemoteObject::DecRef() " << m_remote_Obj_id.objId << std::endl;
 				m_proxy->ReleaseObject(m_remote_Obj_id);
 			}
 			Unlock();

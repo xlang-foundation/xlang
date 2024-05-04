@@ -186,6 +186,47 @@ bool U_LoadS(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(moduleKey);
 	return true;
 }
+
+bool U_LoadModule(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if(params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	std::string modulePath = params[0].ToString();
+	std::ifstream moduleFile(modulePath);
+	std::string code((std::istreambuf_iterator<char>(
+		moduleFile)), std::istreambuf_iterator<char>());
+	moduleFile.close();
+	if (code.size() == 0)
+	{
+		retValue = X::Value();
+		return false;
+	}
+
+	X::Value objModule;
+	bool bOK = X::g_pXHost->LoadModule(modulePath.c_str(), code.c_str(),(int)code.size(), objModule);
+	if (bOK)
+	{
+		X::Value moduleRet;
+		X::g_pXHost->RunModule(objModule, moduleRet, true);
+	}
+	retValue = objModule;
+	return bOK;
+}
+bool U_UnloadModule(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	bool bOK =  X::g_pXHost->UnloadModule(params[0]);
+	retValue = X::Value(bOK);
+	return bOK;	
+}
 bool U_RunByteCode(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1327,6 +1368,29 @@ bool U_CreateTaskPool(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(pPool);
 	return true;
 }
+bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	std::string code;
+	if (params.size() > 0)
+	{
+		code = params[0].ToString();
+	}
+	else
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	if (g_pPyHost)
+	{
+		std::vector<X::Value> aryValues(params.Data()+1, params.Data() + params.size());
+		PyEng::Tuple objParams(aryValues);
+		retValue = g_pPyHost->Exec(code.c_str(), objParams);
+	}
+	return true;
+}
 bool U_CreateDict(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1448,6 +1512,8 @@ bool Builtin::RegisterInternals()
 	Register("alert", (X::U_FUNC)U_Alert, params, "alert(...)");
 	Register("load", (X::U_FUNC)U_Load, params,"moodule = load(filename)");
 	Register("loads", (X::U_FUNC)U_LoadS, params, "moodule = loads(code)");
+	Register("loadModule", (X::U_FUNC)U_LoadModule, params, "moduleObj = loadModule(filename)");
+	Register("unloadModule", (X::U_FUNC)U_UnloadModule, params, "unloadModule(moduleObj)");
 	Register("run", (X::U_FUNC)U_Run, params,"run(module:loaded by call load func)");
 	Register("runcode", (X::U_FUNC)U_RunCode, params,"runcode(moduleName,code)");
 	Register("runfragmentcode", (X::U_FUNC)U_RunFragmentCode, params, "runfragmentcode(code)");
@@ -1496,6 +1562,7 @@ bool Builtin::RegisterInternals()
 	Register("set", (X::U_FUNC)U_CreateSetObject, params);
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
+	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 	return true;
 }
