@@ -18,6 +18,10 @@ import * as path from 'path';
 import * as net from 'net';
 import * as cp from 'child_process';
 
+const ipPortRegex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2}):([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/;
+const ipRegex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})$/;
+
+
 /**
  * This interface describes the xLang specific launch attributes
  * (which are not part of the Debug Adapter Protocol).
@@ -278,13 +282,40 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
-		let port = await this.getValidPort();
-		let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
-		this._xlangProcess = cp.spawn(xlangBin, ['-event_loop', '-dbg', '-enable_python', `-port ${port}`], { shell: true, detached: true });
+		let runXlang = true;
+		let dbgAddr = await vscode.window.showInputBox({value: "192.168.1.100:35000", prompt: "input remote xlang dbg address and port, empty or cancel to run xlang on a random port locally", placeHolder: "192.168.1.100:35000"});
+		if (dbgAddr)
+		{
+			dbgAddr = dbgAddr.replace(/\s/g, '');
+			if(ipPortRegex.test(dbgAddr))
+			{
+				const strList = dbgAddr.split(":");
+				this._runtime.serverAddress = strList[0];
+				this._runtime.serverPort = Number(strList[1]);
+				runXlang = false;
+			}
+			else
+			{
+				await vscode.window.showErrorMessage("please input address and port, debugging stopped", { modal: true }, "ok");
+				this.sendResponse(response);
+				this.sendEvent(new TerminatedEvent());
+				return;
+			}
+		}
+		if (runXlang)
+		{
+			let port = await this.getValidPort();
+			let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
+			this._xlangProcess = cp.spawn(xlangBin, ['-event_loop', '-dbg', '-enable_python', `-port ${port}`], { shell: true, detached: true });
+			this._runtime.serverAddress = "localhost";
+			this._runtime.serverPort = port;
+		}
+		
 		this._runtime.checkStarted();
 		await this._xlangStarted.wait();
 		if (!this._xlangStarted.notifyValue)
 		{
+			await vscode.window.showErrorMessage(`can not connect to a xlang dbg server at ${this._runtime.serverAddress}:${this._runtime.serverPort} debugging stopped`, { modal: true }, "ok");
 			this.sendResponse(response);
 			this.sendEvent(new TerminatedEvent());
 			return;

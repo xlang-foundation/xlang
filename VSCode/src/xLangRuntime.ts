@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 import { EventEmitter } from 'events';
+import * as vscode from 'vscode';
 
 
 export interface IRuntimeBreakpoint {
@@ -112,8 +113,20 @@ export class XLangRuntime extends EventEmitter {
 		this.instruction = this.starts[x];
 	}
 
+	public get serverPort(){
+		return this._srvPort;
+	}
+
 	public set serverPort(port){
 		this._srvPort = port;
+	}
+
+	public get serverAddress(){
+		return this._srvaddress;
+	}
+
+	public set serverAddress(addr){
+		this._srvaddress = addr;
 	}
 
 	// This is the next instruction that will be 'executed'
@@ -167,9 +180,10 @@ export class XLangRuntime extends EventEmitter {
 		this._moduleKey = retVal;
 		return retVal;
 	}
-
+	private tryTimes = 1;
 	public async checkStarted()
 	{
+		vscode.window.showInformationMessage(`try connecting to a xlang dbg server at ${this.serverAddress}:${this.serverPort}, try ${this.tryTimes}`);
 		const https = require('http');
 		const options = {
 			hostname: this._srvaddress,
@@ -180,18 +194,21 @@ export class XLangRuntime extends EventEmitter {
 		};
 		const req = https.request(options, res => {
 			this.sendEvent('xlangStarted', true);
+			vscode.window.showInformationMessage(`connecting to a xlang dbg server at ${this.serverAddress}:${this.serverPort} successed`);
 		});
 	
 		req.on('error', error => {
-			if (error.errno === -4078)
+			if (error.errno === -4078 && this.tryTimes <= 3)
 			{
 				var thisObj = this;
 				setTimeout(function() {
 					thisObj.checkStarted();
 				}, 1000);
+				++this.tryTimes;
 			}
 			else
 			{
+				this.tryTimes = 1;
 				this.sendEvent('xlangStarted', false);
 			}
 		});
