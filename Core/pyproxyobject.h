@@ -192,7 +192,10 @@ namespace X
 			virtual void Assign(const X::Value& val) override
 			{
 				PyEng::Object newObj((X::Value&)val);
-				m_parent_obj[m_name.c_str()] = newObj;
+				if (m_parent_obj.ref() != nullptr)
+				{
+					m_parent_obj[m_name.c_str()] = newObj;
+				}
 				m_obj = newObj;
 			}
 			FORCE_INLINE virtual void CloseIterator(Iterator_Pos pos) override
