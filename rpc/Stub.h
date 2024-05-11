@@ -35,9 +35,36 @@ namespace X
         public GThread,
         public RemotingProc
     {
+        int mRefCount = 0;
+        Locker m_lock;
     public:
         XLangStub();
         ~XLangStub();
+        int GetRefCount()
+        {
+            m_lock.Lock();
+            int ref =  mRefCount;
+            m_lock.Unlock();
+            return ref;
+		}
+        virtual int AddRef() override
+        {
+            m_lock.Lock();
+            int ref = ++mRefCount;
+            m_lock.Unlock();
+            return ref;
+        }
+        virtual int Release() override
+        {
+            m_lock.Lock();
+			int ref = --mRefCount;
+			m_lock.Unlock();
+            if (ref == 0)
+            {
+				delete this;
+			}
+			return 0;
+		}
         void SetSessionId(unsigned long long sid)
         {
             m_sessionId = sid;
