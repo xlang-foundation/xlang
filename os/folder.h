@@ -38,7 +38,7 @@ namespace X {
             }
 #else
             // Remove trailing separator if present
-            if (!folderPath.empty() folderPath.back() == '/') {
+            if (!folderPath.empty() && folderPath.back() == '/') {
                 folderPath.pop_back();
             }
 #endif
