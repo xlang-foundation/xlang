@@ -437,7 +437,10 @@ namespace X
 				}
 			}
 			pProc->FinishCall(pCallContext, stream, bOK);
+			pProc->Release();
 		};
+		pProc->AddRef();//add a ref for call in thread,
+		//will call release end of callProc
 		auto* pWorker = RemotingManager::I().GetIdleCallWorker();
 		pWorker->Call(callProc);
 		return true;
@@ -447,6 +450,7 @@ namespace X
 		SwapBufferStream& stream, RemotingProc* pProc)
 	{
 		bool bOK = false;
+		pProc->AddRef();
 		RPC_CALL_TYPE callType = (RPC_CALL_TYPE)nCallType;
 		switch (callType)
 		{
@@ -477,6 +481,7 @@ namespace X
 		default:
 			break;
 		}
+		pProc->Release();
 		return bOK;
 	}
 	bool RemoteObjectStub::ExtractNativeObjectFromRemoteObject(
