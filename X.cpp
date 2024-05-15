@@ -152,6 +152,11 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 				paramCfg.config.enterEventLoop = true;
 				i++;
 			}
+			else if (s == "-port")
+			{
+				paramCfg.config.dbgPort =  std::stoi(params[i + 1]);
+				i += 2;
+			}
 		}
 		else if(!starFile)
 		{
