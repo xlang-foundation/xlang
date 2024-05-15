@@ -5401,6 +5401,28 @@ namespace httplib {
         return false;
     }
 
+    inline std::string GetLastErrorMessage() {
+        DWORD errorCode = WSAGetLastError();
+        LPSTR errorMessage = nullptr;
+        DWORD result = FormatMessageA(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            errorCode,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPSTR)&errorMessage,
+            0,
+            NULL
+        );
+
+        if (result == 0) {
+            return "Failed to get error message";
+        }
+
+        std::string errorMessageStr(errorMessage);
+        LocalFree(errorMessage);
+        return errorMessageStr;
+    }
+
     inline socket_t
         Server::create_server_socket(const std::string& host, int port,
             int socket_flags,
@@ -5410,6 +5432,7 @@ namespace httplib {
             std::move(socket_options),
             [](socket_t sock, struct addrinfo& ai) -> bool {
                 if (::bind(sock, ai.ai_addr, static_cast<socklen_t>(ai.ai_addrlen))) {
+                    GetLastErrorMessage();
                     return false;
                 }
                 if (::listen(sock, CPPHTTPLIB_LISTEN_BACKLOG)) { return false; }

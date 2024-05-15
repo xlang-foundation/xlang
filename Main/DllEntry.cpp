@@ -249,7 +249,7 @@ void XLangRun()
 	BuildOps();
 	if (g_pXload->GetConfig().dbg)
 	{
-		LoadDevopsEngine();
+		LoadDevopsEngine(g_pXload->GetConfig().dbgPort);
 	}
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();

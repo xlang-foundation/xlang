@@ -19,6 +19,7 @@ namespace AST
 {
 enum class dbg
 {
+	None,
 	Continue,
 	Step,
 	StepIn,
@@ -68,7 +69,7 @@ public:
 	void* m_callContext = nullptr;
 	//vars below used in BuildLocals and BuildObjectContent
 	TraceEvent m_traceEvent= TraceEvent::None;
-	int m_frameId;
+	AST::StackFrame* m_frameId;
 	AST::Expression* m_pExpToRun = nullptr;
 	X::Value m_varParam;//for input when add command
 	bool m_needRetValue = false;
@@ -281,6 +282,7 @@ public:
 	void ClearBreakpoints();
 	int SetBreakpoint(int line,int sessionTid);
 	bool HitBreakpoint(int line);
+	void StopOn(const char* stopType);
 	std::string& GetModulePath()
 	{
 		return m_path;

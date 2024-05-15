@@ -329,6 +329,9 @@ bool file_search(std::string folder,
 		{
 			if (f == fileName)
 			{
+				if (folder.find('/') != std::string::npos)
+					outFiles.push_back(folder + "/" + f);
+				else
 				outFiles.push_back(folder + Path_Sep_S + f);
 				bFind = true;
 				break;
@@ -336,7 +339,11 @@ bool file_search(std::string folder,
 		}
 		for (auto& fd : subfolders)
 		{
-			bool bRet = file_search(folder + Path_Sep_S + fd, fileName, outFiles, findAll);
+			bool bRet;
+			if (folder.find('/') != std::string::npos)
+				bRet = file_search(folder + "/" + fd, fileName, outFiles, findAll);
+			else
+				bRet = file_search(folder + Path_Sep_S + fd, fileName, outFiles, findAll);
 			if (bRet)
 			{
 				bFind = true;

@@ -10,7 +10,12 @@
 #include "port.h"
 #include "event.h"
 #include "utility.h"
+#include "dbg.h"
 
+#if (WIN32)
+#include <crtdbg.h>
+#else
+#endif
 namespace X
 {
 	namespace DevOps
@@ -25,20 +30,19 @@ namespace X
 				pEvt->IncRef();
 			}
 		}
+
 		bool DebugService::BuildLocals(XlangRuntime* rt,
-			XObj* pContextCurrent, int frameId,
+			XObj* pContextCurrent, AST::StackFrame* frameId,
 			X::Value& valLocals)
 		{
-			int index = 0;
 			AST::StackFrame* pCurStack = rt->GetCurrentStack();
 			while (pCurStack != nil)
 			{
-				if (index == frameId)
+				if (pCurStack == frameId)
 				{
 					break;
 				}
 				pCurStack = pCurStack->Prev();
-				index++;
 			}
 			bool bOK = false;
 			if (pCurStack)
@@ -191,7 +195,7 @@ namespace X
 			return true;
 		}
 		bool DebugService::ObjectSetValue(XlangRuntime* rt,
-			XObj* pContextCurrent, int frameId, X::Value& valParam,
+			XObj* pContextCurrent, AST::StackFrame* frameId, X::Value& valParam,
 			X::Value& objRetValue)
 		{
 			if (!valParam.IsObject())
@@ -223,16 +227,14 @@ namespace X
 			{
 				if (objType == "locals")
 				{
-					int index = 0;
 					AST::StackFrame* pCurStack = rt->GetCurrentStack();
 					while (pCurStack != nil)
 					{
-						if (index == frameId)
+						if (pCurStack == frameId)
 						{
 							break;
 						}
 						pCurStack = pCurStack->Prev();
-						index++;
 					}
 					if (pCurStack)
 					{
@@ -275,7 +277,7 @@ namespace X
 			return true;
 		}
 		bool DebugService::BuildObjectContent(XlangRuntime* rt,
-			XObj* pContextCurrent, int frameId, X::Value& valParam,
+			XObj* pContextCurrent, AST::StackFrame* frameId, X::Value& valParam,
 			X::Value& valObject)
 		{
 			if (!valParam.IsObject())
@@ -346,7 +348,6 @@ namespace X
 			X::Value& valStackInfo)
 		{
 			TraceEvent traceEvent = pCommandInfo->m_traceEvent;
-			int index = 0;
 			AST::StackFrame* pCurStack = rt->GetCurrentStack();
 			Data::List* pList = new Data::List();
 			while (pCurStack != nil)
@@ -355,13 +356,14 @@ namespace X
 				int column = pCurStack->GetCharPos();
 
 				AST::Scope* pMyScope = pCurStack->GetScope();
-				std::string moduleFileName = rt->M()->GetModuleName();
+				//std::string moduleFileName = rt->M()->GetModuleName();
 				if (pMyScope)
 				{
 					Data::Dict* dict = new Data::Dict();
-					dict->Set("index", X::Value(index));
+					dict->Set("id", X::Value(pCurStack));
 					std::string name;
 					auto* pExp = pMyScope->GetExp();
+					std::string moduleFileName = Dbg::GetExpModule(pExp)->GetModuleName();
 					if (pExp->m_type == X::AST::ObType::Func)
 					{
 						AST::Func* pFunc = dynamic_cast<AST::Func*>(pExp);
@@ -383,7 +385,6 @@ namespace X
 					dict->Set("column", X::Value(column));
 					X::Value valDict(dict);
 					pList->Add(rt, valDict);
-					index++;
 				}
 				pCurStack = pCurStack->Prev();
 			}
@@ -400,35 +401,83 @@ namespace X
 			}
 			return nStartLine;
 		}
-		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext,
-			unsigned long long moduleKey, Value& varLines)
+
+		X::Value DebugService::GetThreads()
 		{
-			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
-			if (pModule == nullptr)
+			X::Value valThread;
+			Data::List* pList = new Data::List();
+			std::unordered_map<long long, XlangRuntime*> mapRt = X::G::I().GetThreadRuntimeIdMap();
+			if (mapRt.size() > 0)
 			{
-				return varLines;
+				for (auto it = mapRt.begin(); it != mapRt.end(); ++it)
+				{
+					Data::Dict* dict = new Data::Dict();
+					dict->Set("id", X::Value(it->first));
+					dict->Set("name", X::Value(it->first));
+					X::Value valDict(dict);
+					pList->Add(valDict);
+				}
 			}
+			valThread = X::Value(pList);
+			return valThread;
+		}
+
+		// Breakpoints should work in both currently running and later created modules
+		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext, Value& varPath, Value& varLines)
+		{
 			if (!varLines.IsObject()
 				|| varLines.GetObj()->GetType() != X::ObjType::List)
 			{
 				return X::Value(false);
 			}
+
+			std::string path = varPath.ToString();
 			auto* pLineList = dynamic_cast<X::Data::List*>(varLines.GetObj());
 			auto lines = pLineList->Map<int>(
 				[](X::Value& elm, unsigned long long idx) {
 					return elm; }
 			);
-			pModule->ClearBreakpoints();
+
+			G::I().SetBreakPoints(path, lines);
+			std::vector<AST::Module*> modules = Hosting::I().QueryModulesByPath(path);
+			bool bValid = false;
 			Data::List* pList = new Data::List();
+			if (modules.size() > 0)
+			{
+				for (auto m : modules)
+				{
+					m->ClearBreakpoints();
 			for (auto l : lines)
 			{
-				l = pModule->SetBreakpoint(l, (int)GetThreadID());
+						l = m->SetBreakpoint(l, (int)GetThreadID());
+						if (!bValid && l >= 0)
+						{
 				if (l >= 0)
 				{
 					X::Value varL(l);
 					pList->Add((XlangRuntime*)rt, varL);
 				}
+							else
+							{
+								X::Value varL(l + 100000); // failed state
+								pList->Add((XlangRuntime*)rt, varL);
+							}
 			}
+					}
+					if (!bValid)
+						G::I().AddBreakpointValid(path);
+					bValid = true;
+				}
+			}
+			else
+			{
+				for (auto l : lines)
+				{
+					X::Value varL(l + 200000); // pending state
+					pList->Add((XlangRuntime*)rt, varL);
+				}
+			}
+
 			return X::Value(pList);
 		}
 		bool DebugService::Command(X::XRuntime* rt, XObj* pContext,
@@ -439,8 +488,13 @@ namespace X
 				retValue = X::Value(false);
 				return true;
 			}
+			AST::Module* pModule = nullptr;
 			unsigned long long moduleKey = params[0].GetLongLong();
-			AST::Module* pModule = Hosting::I().QueryModule(moduleKey);
+			pModule = Hosting::I().QueryModule(moduleKey); // 
+			if (pModule == nullptr)
+			{
+				pModule = X::G::I().QueryModuleByThreadId(moduleKey);
+			}
 			if (pModule == nullptr)
 			{
 				retValue = X::Value(false);
@@ -485,11 +539,11 @@ namespace X
 				|| strCmd == "Object"
 				|| strCmd == "SetObjectValue")
 			{
-				int frameId = 0;
+				AST::StackFrame* frameId = 0;
 				auto it2 = kwParams.find("frameId");
 				if (it2)
 				{
-					frameId = (int)it2->val.GetLongLong();
+					frameId = (AST::StackFrame*)it2->val.GetLongLong();
 				}
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				pCmdInfo->m_frameId = frameId;
@@ -561,7 +615,7 @@ namespace X
 				retValue = pCmdInfo->m_retValueHolder;
 				pCmdInfo->DecRef();
 			}
-			if (strCmd == "Step")
+			else if (strCmd == "Step")
 			{
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
@@ -602,9 +656,17 @@ namespace X
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
-				pCmdInfo->dbgType = AST::dbg::Terminate;
-				pModule->AddCommand(pCmdInfo, false);
-				retValue = X::Value(true);
+				//pCmdInfo->dbgType = AST::dbg::Terminate;
+				//pModule->AddCommand(pCmdInfo, false); // todo£ºstop run every module
+				//retValue = X::Value(true);
+
+#if (WIN32)     
+				//exit without debug error
+				_set_error_mode(_OUT_TO_STDERR);
+				_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
+#else
+#endif
+				std::terminate(); // force exit
 			}
 			return true;
 		}

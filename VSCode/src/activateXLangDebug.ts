@@ -4,7 +4,45 @@ import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { XLangDebugSession } from './xLangDebug';
 
-export function activateXLangDebug(context: vscode.ExtensionContext, factory?: vscode.DebugAdapterDescriptorFactory) {
+async function SetExePath() : Promise<string | undefined>
+{
+	let exePath : any;
+	if (process.platform === "win32") {
+		const ret = await vscode.window.showOpenDialog({
+			openLabel:'choose',
+			canSelectFiles: true,
+			canSelectMany: false,
+			filters:{'xlang executable file': ['exe']},
+			title: 'Select XLang Executable File'
+		});
+		if (ret?.length > 0)
+			exePath = ret[0].fsPath;
+	} else if (process.platform === "linux") {
+		const ret = await vscode.window.showOpenDialog({
+			openLabel:'choose',
+			canSelectFiles: true,
+			canSelectMany: false,
+			filters:{'xlang executable file': ['*']},
+			title: 'Select XLang Executable File'
+		});
+		if (ret?.length > 0)
+			exePath = ret[0].fsPath;
+	}
+	if (exePath)
+	{
+		await vscode.workspace.getConfiguration('XLangDebugger').update('ExePath', exePath, vscode.ConfigurationTarget.Global);//save to global config
+	}
+	//exePath = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
+	return exePath;
+};
+
+export async function activateXLangDebug(context: vscode.ExtensionContext, factory?: vscode.DebugAdapterDescriptorFactory) {
+	// check and set the xlang executable file
+	let exePath = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
+	if (!exePath || exePath === '')
+	{
+		exePath = await SetExePath();
+	}
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.xlang.runEditorContents', (resource: vscode.Uri) => {
@@ -51,6 +89,11 @@ export function activateXLangDebug(context: vscode.ExtensionContext, factory?: v
 			placeHolder: "Please enter the name of a xlang file in the workspace folder",
 			value: "test.x"
 		});
+	}));
+
+	// extension command for set xlang executable file
+	context.subscriptions.push(vscode.commands.registerCommand('extension.xlang.setExcutablePath', config => {
+		return SetExePath();
 	}));
 
 	// register a configuration provider for 'xlang' debug type
