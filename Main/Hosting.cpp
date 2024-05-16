@@ -140,7 +140,8 @@ namespace X
 		parser.Compile(pTopModule,(char*)code, size);
 
 		strModuleName = pTopModule->GetModuleName();
-		std::transform(strModuleName.begin(), strModuleName.end(), strModuleName.begin(), std::tolower);
+		std::transform(strModuleName.begin(), strModuleName.end(), strModuleName.begin(),
+			[](unsigned char c) { return std::tolower(c); });
 		std::vector<int> breakpoints = G::I().GetBreakPoints(strModuleName);
 		bool bValid = G::I().IsBreakpointValid(strModuleName); // Whether the source file's breakpoints have been checked 
 		pTopModule->ClearBreakpoints();
