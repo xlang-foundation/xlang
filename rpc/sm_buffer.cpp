@@ -11,6 +11,10 @@
 
 #define RESETEVENT(evt)  ResetEvent(evt)
 #define SETEVENT(evt)  SetEvent(evt)
+#elif defined(__APPLE__)
+#include <dispatch/dispatch.h>
+#define RESETEVENT(evt)
+#define SETEVENT(evt)  dispatch_semaphore_signal(evt);
 #else
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -74,6 +78,15 @@ namespace X
     {
 #if (WIN32)
         return (WAIT_OBJECT_0 == ::WaitForSingleObject(h, timeoutMS));
+#elif defined(__APPLE__)
+        dispatch_time_t timeout = timeoutMS == -1 ? DISPATCH_TIME_FOREVER :
+            dispatch_time(DISPATCH_TIME_NOW, timeoutMS * NSEC_PER_MSEC);
+        bool result = dispatch_semaphore_wait((dispatch_semaphore_t)h, timeout) == 0;
+        if (result && m_autoReset) 
+        {
+            dispatch_semaphore_signal((dispatch_semaphore_t)h);
+        }
+        return result;
 #else
         struct timeval now;
         struct timespec ts;
@@ -126,6 +139,8 @@ namespace X
 #if (WIN32)
             SetEvent(mNotiEvent_Server);
             CloseHandle(mNotiEvent_Server);
+#elif defined(__APPLE__)
+            dispatch_release(mNotiEvent_Server);
 #else
             sem_post(mNotiEvent_Server);
             sem_destroy(mNotiEvent_Server);
@@ -137,6 +152,8 @@ namespace X
 #if (WIN32)
             SetEvent(mNotiEvent_Client);
             CloseHandle(mNotiEvent_Client);
+#elif defined(__APPLE__)
+            dispatch_release(mNotiEvent_Client);
 #else
             sem_post(mNotiEvent_Client);
             sem_destroy(mNotiEvent_Client);
@@ -267,7 +284,9 @@ namespace X
             return false;
         }
 #elif __ANDROID__
-
+#elif defined(__APPLE__)
+        mNotiEvent_Server = dispatch_semaphore_create(0);
+        mNotiEvent_Client = dispatch_semaphore_create(0);
 #else
         mShmID = shmget(key, (size_t)(bufferSize), IPC_CREAT | 0666);
         mShmPtr = (char*)shmat(mShmID, 0, 0);
