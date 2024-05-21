@@ -59,6 +59,7 @@ namespace X
         HANDLE mNotiEvent_Server = nullptr;
         HANDLE mNotiEvent_Client = nullptr;
 #elif defined(__APPLE__)
+        int mShmID = 0;
         dispatch_semaphore_t mNotiEvent_Server = nullptr;
         dispatch_semaphore_t mNotiEvent_Client = nullptr;
 #else
