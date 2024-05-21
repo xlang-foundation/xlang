@@ -11,7 +11,7 @@
 #include <sys/time.h>
 #include <errno.h>
 
-int sem_timedwait(sem_t* sem, const struct timespec* abs_timeout) {
+static int sem_timedwait(sem_t* sem, const struct timespec* abs_timeout) {
     pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
     int result = 0;
