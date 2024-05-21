@@ -434,6 +434,8 @@ PyEngObjectPtr GrusPyEngHost::ImportWithPreloadRequired(const char* key)
 		std::string fullPath = path + Path_Sep_S + key+ Path_Sep_S+key;
 #if (WIN32)
 		fullPath += ".pyd";
+#elif defined(__APPLE__)
+		fullPath += ".dylib";
 #else
 		fullPath += ".so";
 #endif
