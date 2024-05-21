@@ -7,6 +7,11 @@ project ("xlang_http")
 
 add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT)
 
+if(APPLE)
+	find_package(OpenSSL REQUIRED)
+	include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
 include_directories("../Api")
 include_directories("../Inc")
 if (WIN32)

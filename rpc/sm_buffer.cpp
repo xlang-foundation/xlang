@@ -5,7 +5,12 @@
 #include <iostream>
 #include "msgthread.h"
 
+#if defined(__APPLE__)
+extern "C" {
+	int sem_timedwait(sem_t* sem, const struct timespec* abs_timeout);
+}
 
+#endif
 #if (WIN32)
 #include <Windows.h>
 

@@ -10,6 +10,11 @@ include_directories("../Inc")
 include_directories("../Api")
 include_directories("../utils")
 
+if(APPLE)
+	find_package(OpenSSL REQUIRED)
+	include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
 if (WIN32)
 	include_directories("../ThirdParty/OpenSSL/Win64/include")
 	link_directories("../ThirdParty/OpenSSL/Win64/lib")
