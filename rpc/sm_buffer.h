@@ -8,6 +8,8 @@
 
 #if (WIN32)
 #include <Windows.h>
+#elif defined(__APPLE__)
+#include <dispatch/dispatch.h>
 #else
 #include <semaphore.h>
 #endif
