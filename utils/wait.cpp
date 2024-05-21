@@ -1,7 +1,7 @@
 #include "wait.h"
 #if (WIN32)
 #include <Windows.h>
-#elif defined(__APPLE__)
+#elif defined(__APPLE__1)
 #include <dispatch/dispatch.h>
 #else
 #include <semaphore.h>
@@ -12,7 +12,7 @@ XWait::XWait(bool autoReset) : m_autoReset(autoReset) {
 #if defined(WIN32)
     HANDLE hEvt = CreateEvent(NULL, !autoReset, FALSE, NULL);
     m_waitHandle = hEvt;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__1)
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
     m_waitHandle = sem;
 #else
@@ -31,7 +31,7 @@ XWait::~XWait() {
 #if defined(WIN32)
         HANDLE hEvt = (HANDLE)m_waitHandle;
         CloseHandle(hEvt);
-#elif defined(__APPLE__)
+#elif defined(__APPLE__1)
         dispatch_release((dispatch_semaphore_t)m_waitHandle);
 #else
         sem_t* sem = (sem_t*)m_waitHandle;
@@ -47,7 +47,7 @@ bool XWait::Wait(int timeoutMS) {
     }
 #if defined(WIN32)
     return (WAIT_OBJECT_0 == WaitForSingleObject((HANDLE)m_waitHandle, timeoutMS));
-#elif defined(__APPLE__)
+#elif defined(__APPLE__1)
     dispatch_time_t timeout = timeoutMS == -1 ? DISPATCH_TIME_FOREVER :
         dispatch_time(DISPATCH_TIME_NOW, timeoutMS * NSEC_PER_MSEC);
     bool result = dispatch_semaphore_wait((dispatch_semaphore_t)m_waitHandle, timeout) == 0;
@@ -79,7 +79,7 @@ bool XWait::Wait(int timeoutMS) {
 void XWait::Reset() {
 #if defined(WIN32)
     ResetEvent((HANDLE)m_waitHandle);
-#elif defined(__APPLE__)
+#elif defined(__APPLE__1)
     // macOS does not support resetting dispatch semaphores directly.
     // This action is complex and usually not needed with dispatch semaphores.
     // Consider whether this functionality is necessary or if another pattern can be used.
@@ -93,7 +93,7 @@ void XWait::Release() {
     if (m_waitHandle) {
 #if defined(WIN32)
         SetEvent((HANDLE)m_waitHandle);
-#elif defined(__APPLE__)
+#elif defined(__APPLE__1)
         dispatch_semaphore_signal((dispatch_semaphore_t)m_waitHandle);
 #else
         sem_post((sem_t*)m_waitHandle);
