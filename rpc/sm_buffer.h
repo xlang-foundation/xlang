@@ -8,8 +8,6 @@
 
 #if (WIN32)
 #include <Windows.h>
-#elif defined(__APPLE__1)
-#include <dispatch/dispatch.h>
 #else
 #include <semaphore.h>
 #endif
@@ -58,10 +56,6 @@ namespace X
         HANDLE mShmID = 0;
         HANDLE mNotiEvent_Server = nullptr;
         HANDLE mNotiEvent_Client = nullptr;
-#elif defined(__APPLE__1)
-        int mShmID = 0;
-        dispatch_semaphore_t mNotiEvent_Server = nullptr;
-        dispatch_semaphore_t mNotiEvent_Client = nullptr;
 #else
         int mShmID = 0;
         sem_t* mNotiEvent_Server = nullptr;
