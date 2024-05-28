@@ -76,7 +76,7 @@ namespace X
 						return true;
 					};
 				_listScope.AddFunc("size", "size()", f);
-				_listScope.AddFunc("count ", "count()", f);
+				_listScope.AddFunc("count", "count()", f);
 			}
 
 			// Insert function
