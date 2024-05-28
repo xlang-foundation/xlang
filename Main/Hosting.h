@@ -53,6 +53,8 @@ namespace X
 			}
 			m_lock.Unlock();
 		}
+
+		void SendBreakpointState(const std::string& path, int line);
 	public:
 		void Cleanup()
 		{
@@ -74,6 +76,20 @@ namespace X
 			m_lock.Unlock();
 			return pModule;
 		}
+		std::vector<AST::Module*> QueryModulesByPath(const std::string& path)
+		{
+			std::vector<AST::Module*> modules;
+			m_lock.Lock();
+			auto mapIt = m_ModuleMap.begin();
+			while (mapIt != m_ModuleMap.end())
+			{
+				if (mapIt->second->GetModuleName() == path)
+					modules.push_back(mapIt->second);
+				++mapIt;
+			}
+			m_lock.Unlock();
+			return modules;
+		}
 		AppEventCode HandleAppEvent(int signum);
 		AST::Module* Load(const char* moduleName,
 			const char* code, int size,unsigned long long& moduleKey);
@@ -93,7 +109,10 @@ namespace X
 			const char* code, int size,
 			std::vector<X::Value>& passInParams,
 			X::Value& retVal);
-		bool RunAsBackend(std::string& moduleName,std::string& code,std::vector<X::Value>& args);
+		bool SimpleRun(const char* moduleName,
+			const char* code, int size,
+			X::Value& retVal);
+		unsigned long long RunAsBackend(std::string& moduleName,std::string& code,std::vector<X::Value>& args);
 		bool PostRunFragmentInMainThread(AST::ModuleObject* pModuleObj,std::string& code);
 	};
 }

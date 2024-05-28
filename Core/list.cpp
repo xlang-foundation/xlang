@@ -9,48 +9,246 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<3> _listScope;
+		static Obj_Func_Scope<12> _listScope;
+
 		void List::Init()
 		{
 			_listScope.Init();
+
+			// Remove function
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 					X::ARGS& params,
 					X::KWARGS& kwParams,
 					X::Value& retValue)
-				{
-					List* pObj = dynamic_cast<List*>(pContext);
-					long long idx = params[0];
-					pObj->Remove(idx);
-					retValue = Value(true);
-					return true;
-				};
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						long long idx = params[0];
+						pObj->Remove(idx);
+						retValue = Value(true);
+						return true;
+					};
 				_listScope.AddFunc("remove", "remove(index)", f);
 			}
+
+			// Clear function
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 					X::ARGS& params,
 					X::KWARGS& kwParams,
 					X::Value& retValue)
-				{
-					List* pObj = dynamic_cast<List*>(pContext);
-					pObj->Clear();
-					retValue = Value(true);
-					return true;
-				};
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						pObj->Clear();
+						retValue = Value(true);
+						return true;
+					};
 				_listScope.AddFunc("clear", "clear()", f);
 			}
+
+			// Append function
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 					X::ARGS& params,
 					X::KWARGS& kwParams,
 					X::Value& retValue)
-				{
-					List* pObj = dynamic_cast<List*>(pContext);
-					retValue = Value(pObj->Size());
-					return true;
-				};
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						for (auto& item : params)
+						{
+							pObj->Add((XlangRuntime*)rt, item);
+						}
+						retValue = Value(true);
+						return true;
+					};
+				_listScope.AddFunc("append", "append()", f);
+			}
+
+			// Size function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						retValue = Value(pObj->Size());
+						return true;
+					};
 				_listScope.AddFunc("size", "size()", f);
+				_listScope.AddFunc("count ", "count()", f);
+			}
+
+			// Insert function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						long long idx = params[0];
+						X::Value item = params[1];
+						pObj->Insert(idx, (XlangRuntime*)rt, item);
+						retValue = Value(true);
+						return true;
+					};
+				_listScope.AddFunc("insert", "insert(index, item)", f);
+			}
+
+			// Pop function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						long long idx = params.size() > 0 ? (long long)params[0] : (pObj->Size() - 1);
+						retValue = pObj->Get(idx);
+						pObj->Remove(idx);
+						return true;
+					};
+				_listScope.AddFunc("pop", "pop([index])", f);
+			}
+			// Index function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						X::Value item = params[0];
+						long long index = -1;  // Default to -1 if not found
+
+						for (long long i = 0; i < pObj->Size(); ++i) 
+						{
+							if (pObj->Get(i) == item) 
+							{
+								index = i;
+								break;
+							}
+						}
+
+						retValue = Value(index);
+						return true;
+					};
+				_listScope.AddFunc("index", "index(item)", f);
+			}
+
+			// Reverse function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+
+						// Create a temporary list to hold the reversed items
+						List* temp = new List();
+						for (long long i = pObj->Size() - 1; i >= 0; --i) {
+							temp->Add(pObj->Get(i));
+						}
+
+						// Clear the original list and refill it with items from the temporary list
+						pObj->Clear();
+						for (long long i = 0; i < temp->Size(); ++i) {
+							pObj->Add(temp->Get(i));
+						}
+
+						delete temp;  // Clean up the temporary list
+						retValue = Value(true);
+						return true;
+					};
+				_listScope.AddFunc("reverse", "reverse()", f);
+			}
+
+			// Copy function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+
+						// Create a new list to be the copy
+						List* copy = new List();
+						for (long long i = 0; i < pObj->Size(); ++i) {
+							copy->Add(pObj->Get(i));  // Copy each element
+						}
+
+						retValue = Value(copy);
+						return true;
+					};
+				_listScope.AddFunc("copy", "copy()", f);
+			}
+
+			// Sort function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						bool ascending = true;  // Default sort order is ascending
+						if (params.size() > 0 && params[0].IsBool()) {
+							ascending = (bool)params[0];
+						}
+
+						// Selection sort implementation
+						for (long long i = 0; i < pObj->Size() - 1; ++i) {
+							long long min_index = i;
+							for (long long j = i + 1; j < pObj->Size(); ++j) {
+								if (ascending ? pObj->Get(j) < 
+									pObj->Get(min_index) : pObj->Get(j) > pObj->Get(min_index)) 
+								{
+									min_index = j;
+								}
+							}
+							if (min_index != i) 
+							{
+								X::Value temp = pObj->Get(min_index);
+								X::Value temp2 = pObj->Get(i);
+								pObj->Set(min_index,temp2);  // Set is assumed to replace the item at index
+								pObj->Set(i, temp);
+							}
+						}
+
+						retValue = Value(true);
+						return true;
+					};
+				_listScope.AddFunc("sort", "sort([ascending])", f);
+			}
+
+			// Extend function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						X::Value other = params[0];
+						bool bOK = false;
+						if (other.IsList())
+						{
+							List* pObj = dynamic_cast<List*>(pContext);
+							List* otherObj = dynamic_cast<List*>(other.GetObj());
+
+							// Add each element from the other list to the current list
+							for (long long i = 0; i < otherObj->Size(); ++i)
+							{
+								pObj->Add(otherObj->Get(i));
+							}
+							bOK = true;
+						}
+						retValue = Value(bOK);
+						return true;
+					};
+				_listScope.AddFunc("extend", "extend(other)", f);
 			}
 		}
 		void List::cleanup()

@@ -7,14 +7,21 @@
 #include "manager.h"
 #include <string>
 #include "ServerCallPool.h"
+#include "event.h"
+#include "remote_object.h"
+
+#if defined(__APPLE__)
+#include <signal.h>
+#endif
 
 namespace X
 {
 	void XLangProxyManager::Register()
 	{
-		Manager::I().RegisterProxy("lrpc",[](const char* url) {
+		Manager::I().RegisterProxy(LRPC_NAME,[](const char* url) {
 			XLangProxy* pProxy = new XLangProxy();
-			pProxy->SetUrl(url);
+			std::string strUrl(url);
+			pProxy->SetUrl(strUrl);
 			pProxy->Start();
 			return dynamic_cast<XProxy*>(pProxy);
 			},
@@ -28,9 +35,9 @@ namespace X
 		m_pCallReadyWait = new XWait();
 		m_pBuffer2ReadyWait = new XWait();
 	}
-	void XLangProxy::SetUrl(const char* url)
+	void XLangProxy::SetUrl(std::string& url)
 	{
-		SCANF(url, "%d", &m_port);
+		SCANF(url.c_str(), "%d", &m_port);
 	}
 	XLangProxy::~XLangProxy()
 	{
@@ -337,8 +344,31 @@ namespace X
 	{
 		m_pCallReadyWait->Release();
 	}
-
+	//use process as signal to host exit
+	//this way will not work for case host is in Admin or service mode
+	//so we need to use semaphore, in fact, in windows, we use event
 	void XLangProxy::WaitToHostExit()
+	{
+		//for wait to host exit
+		SEMAPHORE_HANDLE semaphore = nullptr;
+
+		auto ret = 1;
+		while (ret != 0)
+		{
+			std::string semaphoreName =
+				mHostUseGlobal ? "Global\\XlangServerSemaphore_" : "XlangServerSemaphore_";
+			semaphoreName += std::to_string(mHostProcessId);
+			semaphore = OPEN_SEMAPHORE(semaphoreName.c_str());
+			if (semaphore == nullptr)
+			{
+				std::cout << "Host semaphore" << semaphoreName << "is gone,host exited" << std::endl;
+				break;
+			}
+			ret = WAIT_FOR_SEMAPHORE(semaphore, 30);
+			CLOSE_SEMAPHORE(semaphore);
+		}
+	}
+	void XLangProxy::WaitToHostExit_ByProcess()
 	{
 #if (WIN32)
 		HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, mHostProcessId);
@@ -359,6 +389,8 @@ namespace X
 	}
 	void XLangProxy::run()
 	{
+		AddRef();
+		ThreadAddRef();
 		while (mRun)
 		{
 			bool bOK = Connect();
@@ -373,9 +405,9 @@ namespace X
 			m_ConnectLock.Unlock();
 			m_pConnectWait->Release();
 			WaitToHostExit();
+
 			if (m_ExitOnHostExit)
 			{
-				std::cout << "Server Side Exited " << std::endl;
 				m_ConnectLock.Lock();
 				mRun = false;
 				m_Exited = true;
@@ -391,7 +423,13 @@ namespace X
 				m_ConnectLock.Unlock();
 				break;
 			}
-			std::cout << "Server Side Exited,wait to server run again " << std::endl;
+			else
+			{	
+				//for multiple re-entru, need to reset
+				//but this is not correct way, need to fix
+				//TODO: fix this
+				m_pConnectWait->Reset();
+			}
 			m_ConnectLock.Lock();
 			if (mSMSwapBuffer1)
 			{
@@ -404,9 +442,14 @@ namespace X
 			m_bConnected = false;
 			m_ConnectLock.Unlock();
 		}
+		//cal this one before Release(),to avoid this pointer deleted by Release()
+		ThreadRelease();
+		Release();
 	}
 	void XLangProxy::run2()
 	{
+		AddRef();
+		ThreadAddRef();
 		bool bWaitOnBuffer2 = true;
 		while (mRun)
 		{
@@ -471,6 +514,16 @@ namespace X
 			mSMSwapBuffer2->BeginWrite();
 			mSMSwapBuffer2->EndWrite();
 		}
+		//cal this one before Release(),to avoid this pointer deleted by Release()
+		ThreadRelease();
+		Release();
+	}
+	void XLangProxy::Cleanup()
+	{
+		m_ConnectLock.Lock();
+		m_bConnected = false;
+		m_ConnectLock.Unlock();
+		Manager::I().RemoveProxy(LRPC_NAME,mRootObjectName,this);
 	}
 	Call_Context* XLangProxy::GetCallContext()
 	{
@@ -523,10 +576,10 @@ namespace X
 		mSMSwapBuffer1 = new SMSwapBuffer();
 		mSMSwapBuffer2 = new SMSwapBuffer();
 
-		bool bOK = mSMSwapBuffer1->ClientConnect(m_port,shmKey,SM_BUF_SIZE, timeoutMS);
+		bool bOK = mSMSwapBuffer1->ClientConnect(mHostUseGlobal,m_port,shmKey,SM_BUF_SIZE, timeoutMS);
 		if (bOK)
 		{
-			bOK = mSMSwapBuffer2->ClientConnect(m_port, shmKey+1,SM_BUF_SIZE, timeoutMS, false);
+			bOK = mSMSwapBuffer2->ClientConnect(mHostUseGlobal,m_port, shmKey+1,SM_BUF_SIZE, timeoutMS, false);
 			if (bOK)
 			{
 				m_pBuffer2ReadyWait->Release();

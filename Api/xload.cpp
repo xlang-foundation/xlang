@@ -20,7 +20,11 @@
 #define Path_Sep_S "/"
 #define Path_Sep '/'
 #define LibPrefix "lib"
+#if defined(__APPLE__)
+#define ShareLibExt ".dylib"
+#else
 #define ShareLibExt ".so"
+#endif
 #define LOADLIB(path) dlopen(path, RTLD_LAZY)
 #define GetProc(handle,funcName) dlsym(handle, funcName)
 #define UNLOADLIB(handle) dlclose(handle)

@@ -152,7 +152,7 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 				for (auto& pa : searchPaths)
 				{
 					std::vector<std::string> candiateFiles;
-					bool bRet = file_search(pa + Path_Sep_S + prefixPath,
+					bool bRet = file_search(pa + (prefixPath.empty() ? "" : Path_Sep_S + prefixPath),
 						loadingModuleName + ".x", candiateFiles);
 					if (bRet && candiateFiles.size() > 0)
 					{
@@ -292,6 +292,7 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 		{
 			if (proxy)
 			{
+				proxy->SetRootObjectName(im.name.c_str());
 				auto* remoteObj = new RemoteObject(proxy);
 				remoteObj->SetObjName(im.name);
 				//todo: need to check here

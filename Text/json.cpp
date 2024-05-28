@@ -11,8 +11,8 @@ namespace X
 	{
 		X::Value retValue;
 		std::vector<X::Value> passInParams;
-		X::Hosting::I().Run("inline_code", jsonStr.c_str(),
-			(int)jsonStr.size(), passInParams,retValue);
+		X::Hosting::I().SimpleRun("inline_code", jsonStr.c_str(),
+			(int)jsonStr.size(),retValue);
 		return retValue;
 	}
 	X::Value  JsonWrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,

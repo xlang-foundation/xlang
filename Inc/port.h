@@ -26,7 +26,11 @@
 #define Path_Sep_S "/"
 #define Path_Sep '/'
 #define LibPrefix "lib"
+#if defined(__APPLE__)
+#define ShareLibExt ".dylib"
+#else
 #define ShareLibExt ".so"
+#endif
 #define LOADLIB(path) dlopen(path, RTLD_LAZY)
 #define GetProc(handle,funcName) dlsym(handle, funcName)
 #define UNLOADLIB(handle) dlclose(handle)
@@ -39,3 +43,22 @@
 
 
 #define LIST_PASS_PROCESS_SIZE 100
+
+
+#if (WIN32)
+#include <windows.h>
+#define SEMAPHORE_HANDLE HANDLE
+#define CREATE_SEMAPHORE(sa,name) CreateEvent(&sa, FALSE,FALSE, name)
+#define OPEN_SEMAPHORE(name) OpenEvent(EVENT_ALL_ACCESS, FALSE, name)
+#define WAIT_FOR_SEMAPHORE(handle, timeout) WaitForSingleObject(handle, timeout)
+#define CLOSE_SEMAPHORE(handle) CloseHandle(handle)
+#else
+#include <fcntl.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#define SEMAPHORE_HANDLE sem_t*
+#define CREATE_SEMAPHORE(sa,name) sem_open(name, O_CREAT | O_EXCL, 0644, 1)
+#define OPEN_SEMAPHORE(name) sem_open(name, 0)
+#define WAIT_FOR_SEMAPHORE(handle, timeout) sem_wait(handle) // Implement timeout if needed
+#define CLOSE_SEMAPHORE(handle) sem_close(handle)
+#endif

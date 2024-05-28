@@ -103,6 +103,27 @@ namespace X
 			m_proxyMapLock.Unlock();
 			return true;
 		}
+		void RemoveProxy(const char* name,std::string& rootObjectName,XProxy* pProxy)
+		{
+			UnloadPackage(rootObjectName);
+			std::string strName(name);
+			m_proxyMapLock.Lock();
+			auto it = m_mapXProxy.find(strName);
+			if (it != m_mapXProxy.end())
+			{
+				auto& proxyInfo = it->second;
+				for(auto it2 = proxyInfo.Instances.begin();it2 != proxyInfo.Instances.end();)
+				{
+					if(it2->second == pProxy)
+					{
+						proxyInfo.Instances.erase(it2);
+						break;
+					}
+					++it2;
+				}
+			}
+			m_proxyMapLock.Unlock();
+		}
 		XProxy* QueryProxy(std::string& url,bool& bFilterOut)
 		{
 			bFilterOut = false;
@@ -140,7 +161,7 @@ namespace X
 					if (it2 == proxyInfo.Instances.end())
 					{
 						pProxy = proxyInfo.creator(endpoint_url.c_str());
-						proxyInfo.Instances.emplace(std::make_pair(url, pProxy));
+						proxyInfo.Instances.emplace(std::make_pair(endpoint_url, pProxy));
 					}
 					else
 					{
@@ -149,7 +170,10 @@ namespace X
 				}
 			}
 			m_proxyMapLock.Unlock();
-			pProxy->SetTimeout(timeout);
+			if (pProxy)
+			{
+				pProxy->SetTimeout(timeout);
+			}
 			return pProxy;
 		}
 		bool Register(const char* name,PackageCreator creator,void* pContextForCreator = nullptr)

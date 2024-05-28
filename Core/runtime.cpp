@@ -5,12 +5,16 @@
 #include "glob.h"
 #include "list.h"
 #include "op.h"
+#include "moduleobject.h"
 
 namespace X 
 {
 	XlangRuntime::~XlangRuntime()
 	{
-		G::I().UnbindRuntimeToThread(this);
+		if (!m_noThreadBinding)
+		{
+			G::I().UnbindRuntimeToThread(this);
+		}
 	}
 	bool XlangRuntime::GetWritePadNum(int& count, int& dataBindingCount)
 	{
@@ -182,5 +186,22 @@ namespace X
 		PushFrame(pModuleFrame, m_pModule->GetMyScope()->GetVarNum());
 
 		return true;
+	}
+	X::Value XlangRuntime::GetXModuleFileName()
+	{
+		std::string moduleFileName;
+		if (m_pModule)
+		{
+			moduleFileName = m_pModule->GetModuleName();
+		} 
+		return X::Value(moduleFileName);
+	}
+	int XlangRuntime::GetTopStackCurrentLine()
+	{
+		if (m_stackBottom)
+		{
+			return m_stackBottom->GetStartLine();
+		}
+		return -1;
 	}
 }

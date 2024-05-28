@@ -496,7 +496,7 @@ namespace X
 		}
 		return false;
 	}
-	bool XHost_Impl::RunModuleInThread(const char* moduleName, 
+	unsigned long long XHost_Impl::RunModuleInThread(const char* moduleName,
 		const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs)
 	{
 		std::string strModuleName(moduleName);
@@ -719,5 +719,15 @@ namespace X
 		PyEng::Object pyObj(objPtr);
 		auto* pProxyObj = new Data::PyProxyObject(pyObj);
 		return  Value(pProxyObj);
+	}
+	bool XHost_Impl::PyRun(const char* code, X::ARGS& args)
+	{
+		if (g_pPyHost)
+		{
+			std::vector<X::Value> aryValues(args.Data(), args.Data() + args.size());
+			PyEng::Tuple objParams(aryValues);
+			return g_pPyHost->Exec(code, objParams);
+		}
+		return false;
 	}
 }

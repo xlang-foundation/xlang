@@ -54,7 +54,11 @@ namespace X
 				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
 					TraceEvent::Call, m_pMyScope, this);
 			}
-			if (fromPath.empty())
+			if (name == "sys")//for sys module, import directly
+			{
+				m_obj = PyEng::Object::Import("sys");
+			}
+			else if (fromPath.empty())
 			{
 				std::string strFileName = GetPyModuleFileName();
 				PyObjectCache::I().AddModule(strFileName, this);

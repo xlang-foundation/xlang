@@ -46,7 +46,7 @@ void Parser::ResetForNewLine()
 	m_curBlkState->m_TabCountAtLineBegin = 0;
 	m_curBlkState->m_LeadingSpaceCountAtLineBegin = 0;
 }
-void Parser::LineOpFeedIntoBlock(AST::Expression* line,
+bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 	AST::Indent& lineIndent)
 {
 	if (m_bMeetJitBlock)
@@ -61,7 +61,12 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 			m_blockStartCharPos = line->GetCharPos();
 		}
 	}
+	if (m_stackBlocks.empty())
+	{
+		return false;
+	}
 	auto* pCurBlockState = m_stackBlocks.top();
+
 	auto curBlock = pCurBlockState->Block();
 	auto indentCnt_CurBlock = 
 		curBlock->GetIndentCount();
@@ -89,13 +94,27 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		}
 		else
 		{
-			//error
+			if (line->GetEndLine() > line->GetStartLine())
+			{
+				std::cout << "Line:" << line->GetStartLine()
+					<< "-" << line->GetEndLine()
+					<< "Error: line indent not match" << std::endl;
+			}
+			else
+			{
+				std::cout << "Line:" << line->GetStartLine()
+					<< ", Compile Error: line indent not match" << std::endl;
+			}
+			return false;
 		}
 	}
 	else
 	{//go back to parent
-		delete m_stackBlocks.top();
-		m_stackBlocks.pop();
+		if (!m_stackBlocks.empty())
+		{
+			delete m_stackBlocks.top();
+			m_stackBlocks.pop();
+		}
 		curBlock = nil;
 		while (!m_stackBlocks.empty())
 		{
@@ -125,16 +144,18 @@ void Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		}
 		else
 		{
-			//TODO:: error
+			std::cout << "Error: no block to add line" << std::endl;
+			return false;
 		}
 	}
+	return true;
 }
-void Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
+bool Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 {
 	if (meetLineFeed_n && m_curBlkState->m_SkipLineFeedN)
 	{
 		ResetForNewLine();
-		return;
+		return true;
 	}
 	//this case deals with { is in next line
 	// f = (x,y)
@@ -146,7 +167,7 @@ void Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 		lastToken == TokenID 
 		&& LastIsLambda())
 	{
-		return;
+		return true;
 	}
 	bool bInsideLambda = false;
 	if (m_curBlkState->StackPair().size() > 0)
@@ -166,7 +187,7 @@ void Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 				m_curBlkState->OpPop();
 				pop_preceding_token();//pop Slash
 			}
-			return;
+			return true;
 		}
 		switch (topOpId)
 		{
@@ -175,7 +196,7 @@ void Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 			delete top;
 			m_curBlkState->OpPop();
 			pop_preceding_token();//pop Slash
-			return;
+			return true;
 		case OP_ID::Colon:
 			if (lastToken == topIdx)
 			{
@@ -204,7 +225,11 @@ void Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 		AST::Indent lineIndent = { leftMostCharPos,
 			m_curBlkState->m_TabCountAtLineBegin,
 			m_curBlkState->m_LeadingSpaceCountAtLineBegin };
-		LineOpFeedIntoBlock(line, lineIndent);
+		bool bOK = LineOpFeedIntoBlock(line, lineIndent);
+		if (!bOK)
+		{
+			return false;
+		}
 		if(m_lastComingBlock)
 		{
 			auto pOpBlock = m_lastComingBlock;
@@ -216,6 +241,7 @@ void Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 		}
 	}
 	ResetForNewLine();
+	return true;
 }
 void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
@@ -464,7 +490,11 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 					get_last_token(), op);
 				m_curBlkState->PushOp(op);
 				push_preceding_token(idx);
-				NewLine(false);
+				bool bOKWithNewLine = NewLine(false);
+				if (!bOKWithNewLine)
+				{
+					return false;
+				}
 			}
 			break;
 		case TokenComment:
@@ -582,7 +612,11 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 			break;
 		}//end switch
 	}
-	NewLine(false);//just call it to process the last line
+	bool bOKWithNewLine = NewLine(false);//just call it to process the last line
+	if (!bOKWithNewLine)
+	{
+		return false;
+	}
 	while (m_stackBlocks.size() > 1)
 	{
 		auto top = m_stackBlocks.top();

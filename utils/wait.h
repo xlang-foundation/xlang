@@ -7,6 +7,7 @@ public:
 	XWait(bool autoReset=true);
 	~XWait();
 	bool Wait(int timeoutMS);
+	void Reset();
 	void Release();
 private:
 	bool m_autoReset = true;

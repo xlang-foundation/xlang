@@ -249,7 +249,7 @@ void XLangRun()
 	BuildOps();
 	if (g_pXload->GetConfig().dbg)
 	{
-		LoadDevopsEngine();
+		LoadDevopsEngine(g_pXload->GetConfig().dbgPort);
 	}
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
@@ -291,7 +291,7 @@ void XLangRun()
 			passInParams,
 			retVal);
 	}
-	else if (fileName)
+	else if (fileName && strlen(fileName)>0)
 	{
 		std::string strFileName = fileName;
 		bool bOK = LoadStringFromFile(strFileName, code);

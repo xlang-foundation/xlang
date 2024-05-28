@@ -56,6 +56,10 @@ namespace X
 		RemoteObject(XProxy* p):
 			ObjRef(),XObj(),Object()
 		{
+			if (p != nullptr)
+			{
+				p->AddRef();
+			}
 			m_proxy = p;
 			m_t = ObjType::RemoteObject;
 			m_stackFrame = new AST::StackFrame();
@@ -68,7 +72,15 @@ namespace X
 		}
 		~RemoteObject()
 		{
+			if (m_proxy)
+			{
+				m_proxy->Release();
+			}
 			delete m_stackFrame;
+		}
+		std::string& GetObjName()
+		{
+			return m_objName;
 		}
 		void SetObjName(std::string& name)
 		{
@@ -88,6 +100,7 @@ namespace X
 			int ref = Ref();
 			if ((m_proxy!=nullptr) && (ref == 1))
 			{
+				//std::cout << "RemoteObject::DecRef() " << m_remote_Obj_id.objId << std::endl;
 				m_proxy->ReleaseObject(m_remote_Obj_id);
 			}
 			Unlock();

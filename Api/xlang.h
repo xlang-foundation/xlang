@@ -287,6 +287,8 @@ namespace X
 	{
 	public:
 		virtual bool CreateEmptyModule() = 0;
+		virtual X::Value GetXModuleFileName() = 0;
+		virtual int GetTopStackCurrentLine() = 0;
 		virtual bool AddVar(const char* name, X::Value& val) = 0;
 	};
 	class XModule :
@@ -494,6 +496,7 @@ namespace X
 		virtual void SetPackageWaitFunc(PackageWaitFunc func) = 0;
 		virtual void SetPackageAccessor(PackageAccessor func) = 0;
 		virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) = 0;
+		virtual int GetPackageName(char* buffer,int bufferSize)= 0;
 		virtual void* GetEmbedObj() = 0;
 		virtual void SetEmbedObj(void* p) = 0;
 		virtual bool Init(int varNum) = 0;

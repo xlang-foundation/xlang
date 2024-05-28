@@ -23,7 +23,7 @@ namespace X
 {
 	namespace Text
 	{
-		enum class YamlNodeType
+		enum class YamlNodeType: unsigned int
 		{
 			Node,
 			Doc,
@@ -47,22 +47,20 @@ namespace X
 		class YamlNode
 		{
 		protected:
-			char* m_start_pos =nullptr;
-			char* m_end_pos = nullptr;
-			bool m_inQuote = false;
-			int m_startLineNo = 0;
-			int m_endLineNo = 0;
+			alignas(8) char* m_start_pos = nullptr;
+			alignas(8) char* m_end_pos = nullptr;
+			alignas(8) YamlNode* m_parent = nullptr;
+			alignas(8) YamlNode* m_valueNode = nullptr; // Ensure pointer alignment
 			std::vector<YamlNode*> m_children;
-			YamlNode* m_parent = nullptr;
-			YamlNode* m_valueNode = nullptr;//for dict node
-			YamlNodeType m_type = YamlNodeType::Node;
+			alignas(4) YamlNodeType m_type = YamlNodeType::Node; // Typically requires less strict alignment
+			alignas(4) int m_startLineNo = 0;
+			alignas(4) int m_endLineNo = 0;
+			alignas(4) int m_leadingSpaces = 0;
+			alignas(4) int m_leadingTabs = 0;
+			alignas(4) int m_inQuote = (int)false; // Treat boolean as int for alignment
+			alignas(8) char* m_comment_start = nullptr;
+			alignas(8) char* m_comment_end = nullptr;
 
-			int m_leadingSpaces = 0;
-			int m_leadingTabs = 0;
-
-			//for comment
-			char* m_comment_start = nullptr;
-			char* m_comment_end = nullptr;
 		public:
 			YamlNode(char* startPos,Status& s)
 			{
@@ -88,7 +86,7 @@ namespace X
 			}
 			FORCE_INLINE bool HaveQuote()
 			{
-				return m_inQuote;
+				return (bool)m_inQuote;
 			}
 			bool IsSingleValueType()
 			{
@@ -107,7 +105,7 @@ namespace X
 				}
 				else
 				{
-					m_inQuote = inQuote;
+					m_inQuote = (int)inQuote;
 					m_end_pos = p;
 					m_endLineNo = lineNo;
 				}

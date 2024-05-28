@@ -18,6 +18,10 @@
 #include <fstream>
 #include <chrono>
 
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#endif
+
 bool RunProcess(std::string cmd,
 	std::string initPath, bool newConsole, unsigned long& processId)
 {
@@ -91,13 +95,16 @@ unsigned long GetPID()
 #endif
 	return processId;
 }
+
 unsigned long GetThreadID()
 {
 	unsigned long tid = 0;
-#if (WIN32)
+#if defined(WIN32)
 	tid = ::GetCurrentThreadId();
+#elif defined(__APPLE__)
+	tid = (unsigned long)mach_thread_self();
+	mach_port_deallocate(mach_task_self(), tid);
 #else
-
 #if __GLIBC__ == 2 && __GLIBC_MINOR__ < 30
 #include <sys/syscall.h>
 #define gettid() syscall(SYS_gettid)
@@ -235,7 +242,7 @@ std::string StringifyString(const std::string& str)
 	{
 		char chr = *iter;
 
-		if (chr == '"' || chr == '\\' || chr == '/')
+		if (chr == '"' || chr == '\\' /*|| chr == '/'*/)
 		{
 			str_out += '\\';
 			str_out += chr;
@@ -329,6 +336,9 @@ bool file_search(std::string folder,
 		{
 			if (f == fileName)
 			{
+				if (folder.find('/') != std::string::npos)
+					outFiles.push_back(folder + "/" + f);
+				else
 				outFiles.push_back(folder + Path_Sep_S + f);
 				bFind = true;
 				break;
@@ -336,7 +346,11 @@ bool file_search(std::string folder,
 		}
 		for (auto& fd : subfolders)
 		{
-			bool bRet = file_search(folder + Path_Sep_S + fd, fileName, outFiles, findAll);
+			bool bRet;
+			if (folder.find('/') != std::string::npos)
+				bRet = file_search(folder + "/" + fd, fileName, outFiles, findAll);
+			else
+				bRet = file_search(folder + Path_Sep_S + fd, fileName, outFiles, findAll);
 			if (bRet)
 			{
 				bFind = true;

@@ -52,7 +52,7 @@ namespace X
 		virtual bool UnloadModule(X::Value objModule) override;
 		virtual bool UnloadXPackage(const char* packageName) override;
 		virtual bool RunModule(X::Value objModule, X::Value& retVal, bool keepModuleWithRuntime) override;
-		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
+		virtual unsigned long long RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
 		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal) override;
 		virtual const char* GetInteractiveCode() override;
 		virtual long OnEvent(const char* evtName, EventHandler handler) override;
@@ -73,6 +73,7 @@ namespace X
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() override;
 		virtual void* GetUIThreadRunContext() override;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) override;
+		virtual bool PyRun(const char* code, X::ARGS& args) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

@@ -104,7 +104,7 @@ namespace X
 		virtual bool UnloadModule(X::Value objModule) = 0;
 		virtual bool UnloadXPackage(const char* packageName) = 0;
 		virtual bool RunModule(X::Value objModule, X::Value& retVal,bool keepModuleWithRuntime) = 0;
-		virtual bool RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
+		virtual unsigned long long RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
 		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal) = 0;
 		virtual const char* GetInteractiveCode() = 0;
 		virtual long OnEvent(const char* evtName, EventHandler handler) = 0;
@@ -125,6 +125,7 @@ namespace X
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() = 0;
 		virtual void* GetUIThreadRunContext() =0;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) = 0;
+		virtual bool PyRun(const char* code, X::ARGS& args) = 0;
 	};
 	extern XHost* g_pXHost;
 }

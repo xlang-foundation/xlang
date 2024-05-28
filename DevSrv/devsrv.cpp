@@ -102,6 +102,12 @@ namespace X
 				res.set_content(notifyInfo, "text/html");
 			}
 		);
+		m_srv.Get("/devops/checkStarted",
+			[](const httplib::Request& req, httplib::Response& res)
+			{
+				return;
+			}
+		);
 		if (!m_srv.is_valid())
 		{
 			printf("Devops server has an error...\n");

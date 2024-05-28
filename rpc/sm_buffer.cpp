@@ -5,6 +5,32 @@
 #include <iostream>
 #include "msgthread.h"
 
+#if defined(__APPLE__)
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/time.h>
+#include <errno.h>
+
+static int sem_timedwait(sem_t* sem, const struct timespec* abs_timeout) {
+    pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+    int result = 0;
+
+    pthread_mutex_lock(&mtx);
+    while (sem_trywait(sem) != 0) {
+        result = pthread_cond_timedwait(&cond, &mtx, abs_timeout);
+        if (result == ETIMEDOUT) break;
+    }
+    pthread_mutex_unlock(&mtx);
+
+    pthread_cond_destroy(&cond);
+    pthread_mutex_destroy(&mtx);
+
+    return result;
+}
+
+#endif
+
 #if (WIN32)
 #include <Windows.h>
 
@@ -22,6 +48,37 @@
 #endif
 
 #define SLEEP() US_SLEEP(1)
+
+#if (WIN32)
+#include <Windows.h>
+#include <sddl.h>
+bool CheckIfAdmin() 
+{
+    BOOL isAdmin = FALSE;
+    PSID adminGroup = NULL;
+
+    // Create a SID for the administrators group
+    SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
+    if (!AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup)) {
+        return false;
+    }
+
+    // Check if the current token contains the admin SID
+    if (!CheckTokenMembership(NULL, adminGroup, &isAdmin)) {
+        isAdmin = FALSE;
+    }
+
+    FreeSid(adminGroup);
+    return isAdmin;
+}
+#else
+//in linux, we don't need to add global as prefix for IPC objects
+//so we just return false
+bool CheckIfAdmin()
+{
+	return false;
+}
+#endif
 
 namespace X
 {
@@ -136,25 +193,80 @@ namespace X
 #endif
         }
         mSharedMemLock.Unlock();
-    }
 
+        if (mSemaphore_For_Process)
+        {
+            CLOSE_SEMAPHORE(mSemaphore_For_Process);
+			mSemaphore_For_Process = nullptr;
+        }
+    }
+    
     bool SMSwapBuffer::HostCreate(unsigned long long key, int bufferSize)
     {
+#if (WIN32)
+        SECURITY_ATTRIBUTES sa;
+        SECURITY_DESCRIPTOR sd;
+
+        // Initialize the security descriptor
+        if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
+        {
+            // Handle error
+            return 1;
+        }
+
+        // Set the security descriptor DACL to a NULL DACL (grants access to everyone)
+        if (!SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE))
+        {
+            // Handle error
+            return 1;
+        }
+
+        // Set the security attributes
+        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sa.lpSecurityDescriptor = &sd;
+        sa.bInheritHandle = FALSE;
+
+#endif
+        bool IsAdmin = CheckIfAdmin();
+        auto pid = GetPID();
+        std::string semaphoreName =
+            IsAdmin ? "Global\\XlangServerSemaphore_" : "XlangServerSemaphore_";
+        semaphoreName += std::to_string(pid);
+        mSemaphore_For_Process = CREATE_SEMAPHORE(sa,semaphoreName.c_str());
+        if (mSemaphore_For_Process == nullptr)
+        {
+            std::cout << "Create semaphore "<< semaphoreName <<" failed"<<std::endl;
+            return false;
+        }
+        else
+        {
+            std::cout << "Create semaphore " << semaphoreName << " OK" << std::endl;
+		}
         m_user = SwapBufferUser::Server;
 
         const int Key_Len = 100;
         char szKey_s[Key_Len];
-        SPRINTF(szKey_s, Key_Len, "Galaxy_SM_Notify_Server_%llu", key);
+        SPRINTF(szKey_s, Key_Len, 
+            IsAdmin ? "Global\\Galaxy_SM_Notify_Server_%llu": 
+                    "Galaxy_SM_Notify_Server_%llu", key);
         char szKey_c[Key_Len];
-        SPRINTF(szKey_c, Key_Len, "Galaxy_SM_Notify_Client_%llu", key);
+        SPRINTF(szKey_c, Key_Len, 
+            IsAdmin ? "Global\\Galaxy_SM_Notify_Client_%llu":
+                    "Galaxy_SM_Notify_Client_%llu", key);
+
 #if (WIN32)
-        mNotiEvent_Server = CreateEvent(NULL, FALSE, FALSE, szKey_s);
-        mNotiEvent_Client = CreateEvent(NULL, FALSE, FALSE, szKey_c);
+
+        mNotiEvent_Server = CreateEvent(&sa, FALSE, FALSE, szKey_s);
+        std::cout << "CreateEvent, Name:" << szKey_s << std::endl;
+        mNotiEvent_Client = CreateEvent(&sa, FALSE, FALSE, szKey_c);
+        std::cout << "CreateEvent, Name:" << szKey_c << std::endl;
         char mappingName[MAX_PATH];
-        SPRINTF(mappingName, MAX_PATH, "Galaxy_FileMappingObject_%llu", key);
+        SPRINTF(mappingName, MAX_PATH, 
+            IsAdmin ? "Global\\Galaxy_FileMappingObject_%llu":
+                    "Galaxy_FileMappingObject_%llu", key);
         mShmID = CreateFileMapping(
             INVALID_HANDLE_VALUE,    // use paging file
-            NULL,                    // default security
+            &sa,                    // default security
             PAGE_READWRITE,          // read/write access
             0,                       // maximum object size (high-order DWORD)
             bufferSize,  // maximum object size (low-order DWORD)
@@ -162,8 +274,13 @@ namespace X
         if (mShmID == nullptr)
         {
             DWORD error = GetLastError();
+            std::cout << "CreateFileMapping:" << mappingName << " failed:"<< error << std::endl;
             return false;
         }
+        else
+        {
+            std::cout << "CreateFileMapping:"<< mappingName <<" OK" << std::endl;
+		}
         mShmPtr = (char*)MapViewOfFile(mShmID,   // handle to map object
             FILE_MAP_ALL_ACCESS, // read/write permission
             0,
@@ -175,7 +292,6 @@ namespace X
             return false;
         }
 #elif __ANDROID__
-
 #else
         mShmID = shmget(key, (size_t)(bufferSize), IPC_CREAT | 0666);
         mShmPtr = (char*)shmat(mShmID, 0, 0);
@@ -233,7 +349,7 @@ namespace X
 #endif
         return true;
     }
-    bool SMSwapBuffer::ClientConnect(long port, unsigned long long shKey,
+    bool SMSwapBuffer::ClientConnect(bool& usGlobal,long port, unsigned long long shKey,
         int bufSize,int timeoutMS, bool needSendMsg)
     {
         if (needSendMsg)
@@ -253,31 +369,42 @@ namespace X
         }
         m_user = SwapBufferUser::Client;
 
+        usGlobal = false;
         const int Key_Len = 100;
         char szKey_s[Key_Len];
-        SPRINTF(szKey_s, Key_Len, "Galaxy_SM_Notify_Server_%llu", shKey);
+        SPRINTF(szKey_s, Key_Len, "Global\\Galaxy_SM_Notify_Server_%llu", shKey);
         char szKey_c[Key_Len];
-        SPRINTF(szKey_c, Key_Len, "Galaxy_SM_Notify_Client_%llu", shKey);
+        SPRINTF(szKey_c, Key_Len, "Global\\Galaxy_SM_Notify_Client_%llu", shKey);
 
 #if (WIN32)
+        //Non-Global
+        char szKey_s_l[Key_Len];
+        SPRINTF(szKey_s_l, Key_Len, "Galaxy_SM_Notify_Server_%llu", shKey);
+        char szKey_c_l[Key_Len];
+        SPRINTF(szKey_c_l, Key_Len, "Galaxy_SM_Notify_Client_%llu", shKey);
+
         char mappingName[MAX_PATH];
-        sprintf_s(mappingName, "Galaxy_FileMappingObject_%llu", shKey);
+        sprintf_s(mappingName, "Global\\Galaxy_FileMappingObject_%llu", shKey);
+
+        char mappingName_l[MAX_PATH];
+        sprintf_s(mappingName_l, "Galaxy_FileMappingObject_%llu", shKey);
+
         const int loopNum = 1000;
         int loopNo = 0;
         bool bSrvReady = false;
-        while (loopNo < loopNum)
+        while (mNotiEvent_Server == nullptr && loopNo < loopNum)
         {
-            mShmID = CreateFileMapping(
-                INVALID_HANDLE_VALUE,
-                NULL,
-                PAGE_READWRITE,
-                0,
-                bufSize,
-                mappingName);
-            if (mShmID != NULL)
+            mNotiEvent_Server = OpenEvent(EVENT_ALL_ACCESS, FALSE,szKey_s);
+            if (mNotiEvent_Server == nullptr)
             {
-                mShmPtr = (char*)MapViewOfFile(mShmID, FILE_MAP_ALL_ACCESS,
-                    0, 0, bufSize);
+                mNotiEvent_Server = OpenEvent(EVENT_ALL_ACCESS, FALSE, szKey_s_l);
+            }
+            else
+            {
+                usGlobal = true;
+            }
+            if (mNotiEvent_Server != nullptr)
+            {
                 bSrvReady = true;
                 break;
             }
@@ -290,22 +417,32 @@ namespace X
         }
         loopNo = 0;
         bSrvReady = false;
-        while (mNotiEvent_Server == nullptr && loopNo < loopNum)
+        while (loopNo < loopNum)
         {
-            mNotiEvent_Server = OpenEvent(EVENT_ALL_ACCESS, FALSE, szKey_s);
-            if (mNotiEvent_Server != nullptr)
+            mShmID = CreateFileMapping(
+                INVALID_HANDLE_VALUE,
+                NULL,
+                PAGE_READWRITE,
+                0,
+                bufSize,
+                usGlobal?mappingName: mappingName_l);
+            if (mShmID != NULL)
             {
+                mShmPtr = (char*)MapViewOfFile(mShmID, FILE_MAP_ALL_ACCESS,
+                    0, 0, bufSize);
                 bSrvReady = true;
                 break;
             }
             MS_SLEEP(100);
             loopNo++;
         }
+
         loopNo = 0;
         bSrvReady = false;
         while (mNotiEvent_Client == nullptr && loopNo < loopNum)
         {
-            mNotiEvent_Client = OpenEvent(EVENT_ALL_ACCESS, FALSE, szKey_c);
+            mNotiEvent_Client = OpenEvent(EVENT_ALL_ACCESS, FALSE, 
+                usGlobal?szKey_c: szKey_c_l);
             if (mNotiEvent_Client != nullptr)
             {
                 bSrvReady = true;
