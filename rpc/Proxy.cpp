@@ -10,6 +10,9 @@
 #include "event.h"
 #include "remote_object.h"
 
+#if defined(__APPLE__)
+#include <signal.h>
+#endif
 
 namespace X
 {

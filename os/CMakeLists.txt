@@ -17,6 +17,7 @@ add_library(${PROJECT_NAME}
 )
 
 if (WIN32)
+elseif(APPLE)
 else()
     target_link_libraries(${PROJECT_NAME} uuid)
 endif()

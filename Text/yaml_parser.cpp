@@ -272,6 +272,17 @@ namespace X
 		}
 		bool YamlParser::Parse()
 		{
+			{
+				//test
+				Status s;
+				YamlNode* pRootNode = new YamlNode(nullptr, s);
+				YamlNode* pNewNode = new YamlNode(nullptr, s);
+				pNewNode->SetLeadingInfo(10, 20);
+				pNewNode->SetParent(pRootNode);
+				pRootNode->Add(pNewNode);
+				delete pRootNode;
+				delete pNewNode;
+			}
 			m_cur = m_data;
 			m_last = m_data + m_size;
 			m_bRun = true;

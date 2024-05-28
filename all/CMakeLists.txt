@@ -64,7 +64,10 @@ add_executable (${PROJECT_NAME}
 	${XOne_SRC}
 	${Os_SRC}
 )
-if(NOT (WIN32))
+if (WIN32)
+elseif(APPLE)
+target_link_libraries(${PROJECT_NAME} pthread dl)
+else()
 target_link_libraries(${PROJECT_NAME} pthread dl uuid)
 endif()
 
