@@ -245,6 +245,12 @@ namespace X
 	}
 	template<>
 	template<>
+	void V<XBin>::Create(char* s, unsigned long long size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin(s, size, bOwnData));
+	}
+	template<>
+	template<>
 	void V<XPackage>::Create(void* pRealObj)
 	{
 		SetObj(g_pXHost->CreatePackage(pRealObj));
