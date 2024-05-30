@@ -4,7 +4,8 @@
 
 import { EventEmitter } from 'events';
 import * as vscode from 'vscode';
-
+import * as os from 'os';
+import * as fs from 'fs';
 
 export interface IRuntimeBreakpoint {
 	id: number;
@@ -129,6 +130,19 @@ export class XLangRuntime extends EventEmitter {
 		this._srvaddress = addr;
 	}
 
+	private isLocalServer() : boolean
+	{
+		for (const iface of Object.values(os.networkInterfaces())) {
+			for (const details of iface) {
+				if (details.family === 'IPv4' && !details.internal) {
+					if (this._srvaddress === details.address)
+						return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	// This is the next instruction that will be 'executed'
 	public instruction= 0;
 
@@ -170,7 +184,16 @@ export class XLangRuntime extends EventEmitter {
 			return key;
         }
 		let srcFile_x = srcFile.replaceAll('\\', '/');
-		let code = "m = load('" + srcFile_x + "')\nreturn m";
+		let code;
+		if (this.isLocalServer())
+		{
+			code = "m = load('" + srcFile_x + "')\nreturn m";
+		}
+		else
+		{
+			const content = fs.readFileSync(file);
+			code = "m = load('" + srcFile_x + "','" + content + "')\nreturn m";
+		}
 		let promise = new Promise((resolve, reject) => {
 			this.Call(code, resolve);
 		});
