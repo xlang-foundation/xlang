@@ -17,6 +17,8 @@ namespace X
 	class RemotingProc
 	{
 	public:
+		virtual int AddRef() = 0;
+		virtual int Release() = 0;
 		virtual void NotifyBeforeCall(SwapBufferStream& stream) = 0;
 		virtual void NotifyAfterCall(SwapBufferStream& stream, bool callIsOk) = 0;
 		virtual void FinishCall(void* pCallContext,SwapBufferStream& stream,bool callIsOk) = 0;

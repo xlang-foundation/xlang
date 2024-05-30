@@ -222,6 +222,24 @@ public:
 		flags |= (int)ValueSubType::CHAR;
 		x.l = c;
 	}
+	FORCE_INLINE Value(unsigned char c)
+	{
+		t = ValueType::Int64;
+		flags |= (int)ValueSubType::UCHAR;
+		x.l = c;
+	}
+	FORCE_INLINE Value(short s)
+	{
+		t = ValueType::Int64;
+		flags |= (int)ValueSubType::SHORT;
+		x.l = s;
+	}
+	FORCE_INLINE Value(unsigned short s)
+	{
+		t = ValueType::Int64;
+		flags |= (int)ValueSubType::USHORT;
+		x.l = s;
+	}
 	FORCE_INLINE Value(int l)
 	{
 		t = ValueType::Int64;
@@ -337,6 +355,23 @@ public:
 	FORCE_INLINE operator bool() const
 	{
 		return (x.l != 0);
+	}
+	FORCE_INLINE operator unsigned char() const
+	{
+		return (t == ValueType::Int64) ? (unsigned char)x.l : (unsigned char)x.d;
+	}
+	FORCE_INLINE operator char() const
+	{
+		return (t == ValueType::Int64) ? (char)x.l : (char)x.d;
+	}
+
+	FORCE_INLINE operator short() const
+	{
+		return (t == ValueType::Int64) ? (short)x.l : (short)x.d;
+	}
+	FORCE_INLINE operator unsigned short() const
+	{
+		return (t == ValueType::Int64) ? (unsigned short)x.l : (unsigned short)x.d;
 	}
 	FORCE_INLINE operator double() const
 	{

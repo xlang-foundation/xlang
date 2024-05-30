@@ -104,7 +104,7 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			X::XObj* pObj = outputPrimitive.primitive.GetObj();
 			if (pObj)
 			{
-				X::ARGS params_p(0);
+				X::ARGS params_p(1);
 				X::KWARGS kwargs_p;
 				params_p.push_back(allOut);
 				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,

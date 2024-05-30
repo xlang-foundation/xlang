@@ -1,5 +1,6 @@
 #include "StubMgr.h"
 #include "Stub.h"
+#include "port.h"
 
 namespace X
 {
@@ -56,6 +57,7 @@ namespace X
         if (pStub == NULL)
         {
             pStub = new XLangStub();
+            pStub->AddRef();//keep a reference for mStubs
             mStubLock.Lock();
             unsigned long long sid = ++mLastSessionID;
             pStub->SetSessionId(sid);
@@ -89,19 +91,34 @@ namespace X
         {
             return;
         }
+        //check if this is only one reference to hold for this stub
+        //because the reference in mStubs
+        int cnt = 0;
+        while ((cnt < 9999) && pHostStub->GetRefCount() > 1)
+        {
+            US_SLEEP(33000);
+            cnt++;
+        }
+
         pHostStub->Quit();
+
         pHostStub->Stop();
+        bool bExist = false;
         mStubLock.Lock();
         for (auto it = mStubs.begin(); it != mStubs.end(); it++)
         {
             if (*it == pHostStub)
             {
                 mStubs.erase(it);
+                bExist = true;
                 break;
             }
         }
         mStubLock.Unlock();
-        delete pHostStub;
+        if (bExist)
+        {
+			pHostStub->Release();
+		}
     }
     void CallWorker::run()
     {

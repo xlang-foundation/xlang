@@ -29,7 +29,11 @@ namespace X
 			strGuid = szGuid;
 #else
 			uuid_t uuid;
+#if defined(__linux__)
 			uuid_generate_time_safe(uuid);
+#else
+			uuid_generate_time(uuid);
+#endif
 			char szGuid[128];
 			uuid_unparse(uuid, szGuid);
 

@@ -1,30 +1,22 @@
 #include "moduleobject.h"
 #include "function.h"
 #include "Hosting.h"
+#include "obj_func_scope.h"
 
 namespace X
 {
 	namespace AST
 	{
-		class ModuleOp :
-			public Scope
+		static Obj_Func_Scope<2> _listScope;
+		void ModuleObject::Init()
 		{
-			std::vector<X::Value> m_funcs;
-		public:
-			ModuleOp()
+			_listScope.Init();
+			//API: runfragment
 			{
-				m_Vars =
-				{
-					{"runfragment",0},
-					{"setprimitive",1},
-				};
-				//API: runfragment
-				{
-					std::string name("runfragment");
-					auto f = [](X::XRuntime* rt, XObj* pThis,XObj* pContext,
-						ARGS& params,
-						KWARGS& kwParams,
-						X::Value& retValue)
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params,
+					KWARGS& kwParams,
+					X::Value& retValue)
 					{
 						bool bPost = false;
 						auto kwIt = kwParams.find("post");
@@ -64,20 +56,15 @@ namespace X
 							return true;
 						}
 					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						"retVal = runfragment(code[,post = True|False])",
-						func);
-					auto* pFuncObj = new Data::Function(extFunc, true);
-					m_funcs.push_back(X::Value(pFuncObj));
-				}
-				//API: setprimitive
-				{
-					std::string name("setprimitive");
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						ARGS& params,
-						KWARGS& kwParams,
-						X::Value& retValue)
+				_listScope.AddFunc("runfragment", "runfragment(code)", f);
+			}
+			//API: setprimitive
+			{
+				std::string name("setprimitive");
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params,
+					KWARGS& kwParams,
+					X::Value& retValue)
 					{
 						if (params.size() == 2)
 						{
@@ -87,68 +74,23 @@ namespace X
 						}
 						return true;
 					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(name,
-						"setprimitive(name,obj)",func);
-					auto* pFuncObj = new Data::Function(extFunc, true);
-					m_funcs.push_back(X::Value(pFuncObj));
-				}
+				_listScope.AddFunc("setprimitive", "setprimitive(key,func)", f);
 			}
-			void clean()
-			{
-				m_funcs.clear();
-			}
-			virtual Scope* GetParentScope()
-			{
-				return nullptr;
-			}
-			FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
-				int idx, X::Value& v)
-			{
-				return false;
-			}
-			int QueryMethod(const char* name)
-			{
-				auto it = m_Vars.find(name);
-				if (it != m_Vars.end())
-				{
-					return it->second;
-				}
-				else
-				{
-					return -1;
-				}
-			}
-			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
-				int idx, X::Value& v, X::LValue* lValue = nullptr)
-			{
-				v = m_funcs[idx];
-				return true;
-			}
-		};
-		static ModuleOp* _module_op = nullptr;
-		void ModuleObject::Init()
-		{
-			_module_op = new ModuleOp();
 		}
 		void ModuleObject::cleanup()
 		{
-			if (_module_op)
-			{
-				_module_op->clean();
-				delete _module_op;
-				_module_op = nullptr;
-			}
+			_listScope.Clean();
 		}
 		void ModuleObject::GetBaseScopes(std::vector<Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			bases.push_back(_module_op);
+			bases.push_back(_listScope.GetMyScope());
 			bases.push_back(m_pModule->GetMyScope());
 		}
 		int ModuleObject::QueryMethod(const char* name, bool* pKeepRawParams)
 		{
-			int idx = _module_op->QueryMethod(name);
+			std::string strName(name);
+			int idx = _listScope.GetMyScope()->AddOrGet(strName,true);
 			if (idx >= 0)
 			{
 				return -2-idx;//start from -2,then -3...
@@ -164,7 +106,8 @@ namespace X
 		{
 			if (idx <= -2)
 			{
-				return _module_op->Get(nullptr, nullptr, -idx-2, v);
+				_listScope.GetMyScope()->Get(nullptr, nullptr, -idx-2, v);
+				return true;
 			}
 			else
 			{
