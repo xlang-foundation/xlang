@@ -132,11 +132,15 @@ export class XLangRuntime extends EventEmitter {
 
 	private isLocalServer() : boolean
 	{
+		if (this._srvaddress === "127.0.0.1" || this._srvaddress.toLowerCase() === "localhost"){
+			return true;
+		}
 		for (const iface of Object.values(os.networkInterfaces())) {
 			for (const details of iface) {
 				if (details.family === 'IPv4' && !details.internal) {
-					if (this._srvaddress === details.address)
+					if (this._srvaddress === details.address){
 						return true;
+					}
 				}
 			}
 		}
