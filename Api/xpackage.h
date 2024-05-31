@@ -67,6 +67,20 @@ namespace X
 
 	namespace HelpFuncs
 	{
+		// Specialization for void return type
+		// Helper to determine return type and set X::Value accordingly
+		template<typename Func, typename... Args>
+		FORCE_INLINE auto All_Call(Func f, Args&&... args) {
+			using ReturnType = decltype(f(std::forward<Args>(args)...));
+			if constexpr (std::is_void_v<ReturnType>) {
+				f(std::forward<Args>(args)...);
+				return true;
+			}
+			else {
+				return f(std::forward<Args>(args)...);
+			}
+		}
+
 		template<class class_T, typename F, typename Array, std::size_t... I>
 		FORCE_INLINE auto VarCall_impl(class_T* pThis, F f, Array& a, std::index_sequence<I...>)
 		{
@@ -458,7 +472,11 @@ namespace X
 					{
 						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
 						auto* tThis = (T*)pPackage->GetEmbedObj();
-						auto _retVal = HelpFuncs::VarCall<Parameter_Num>(tThis,f,params);
+						//auto _retVal = HelpFuncs::VarCall<Parameter_Num>(tThis,f,params);
+						//f maybe is a void return function
+						auto _retVal = HelpFuncs::All_Call([&]() -> decltype(auto) {
+							return HelpFuncs::VarCall<Parameter_Num>(tThis, f, params);
+							});
 						retValue = X::Value(_retVal);
 						return true;
 					}),dummy,dummyEx,false,std::string(doc) });
@@ -474,7 +492,10 @@ namespace X
 					{
 						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
 						auto* tThis = (T*)pPackage->GetEmbedObj();
-						auto _retVal = HelpFuncs::VarCallEx<Parameter_Num>(tThis,f, trailer,params);
+						//auto _retVal = HelpFuncs::VarCallEx<Parameter_Num>(tThis,f, trailer,params);
+						auto _retVal = HelpFuncs::All_Call([&]() -> decltype(auto) {
+							return HelpFuncs::VarCallEx<Parameter_Num>(tThis, f, trailer, params);
+							});
 						retValue = X::Value(_retVal);
 						return true;
 					}),false,std::string(doc) });
@@ -491,7 +512,10 @@ namespace X
 					{
 						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
 						auto* tThis = (T*)pPackage->GetEmbedObj();
-						auto _retVal = HelpFuncs::VarCall_Extra<Parameter_Num>(rt, pContext,tThis,f,params);
+						//auto _retVal = HelpFuncs::VarCall_Extra<Parameter_Num>(rt, pContext,tThis,f,params);
+						auto _retVal = HelpFuncs::All_Call([&]() -> decltype(auto) {
+							return HelpFuncs::VarCall_Extra<Parameter_Num>(rt, pContext, tThis, f, params);
+							});
 						retValue = X::Value(_retVal);
 						return true;
 					}),dummy,dummyEx,false,std::string(doc) });

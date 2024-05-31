@@ -104,7 +104,7 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			X::XObj* pObj = outputPrimitive.primitive.GetObj();
 			if (pObj)
 			{
-				X::ARGS params_p(0);
+				X::ARGS params_p(1);
 				X::KWARGS kwargs_p;
 				params_p.push_back(allOut);
 				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,
@@ -161,10 +161,17 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		retValue = X::Value(0);
 		return true;
 	}
-	std::ifstream moduleFile(fileName);
-	std::string code((std::istreambuf_iterator<char>(
-		moduleFile)), std::istreambuf_iterator<char>());
-	moduleFile.close();
+	std::string code;
+	if (params.size() == 2)
+	{
+		code = params[1].ToString();
+	}
+	else
+	{
+		std::ifstream moduleFile(fileName);
+		code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
+		moduleFile.close();
+	}
 	unsigned long long moduleKey = 0;
 	X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
 	retValue = X::Value(moduleKey);
@@ -296,8 +303,7 @@ bool U_RunFragmentCode(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	std::string code = params[0].ToString();
 	std::vector<std::string> passInParams;
-	return X::Hosting::I().RunCodeLine(code.c_str(),
-		(int)code.size(), retValue);
+	return X::Hosting::I().RunCodeLine(code.c_str(), (int)code.size(), retValue, exeNum);
 }
 bool U_RunInMain(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,

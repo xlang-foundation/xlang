@@ -208,7 +208,11 @@ public:
 	FORCE_INLINE void Clear()
 	{
 		AutoLock autoLock(m_lock);
-		m_bases.clear();
+		//first one is initial scope,keep it
+		if (m_bases.size() > 1) 
+		{
+			m_bases.erase(m_bases.begin() + 1, m_bases.end());
+		}
 		m_ptrs.clear();
 		m_data.clear();
 	}

@@ -2,6 +2,7 @@
 #include "event.h"
 #include "Locker.h"
 #include "object.h"
+#include "service_def.h"
 
 namespace X {
 	G::G()
@@ -130,7 +131,7 @@ namespace X {
 		kwParams.Add("action", valAction);
 		const int online_len = 1000;
 		char strBuf[online_len];
-		sprintf_s(strBuf, online_len, "[{\"%s\":%d}]", strType, tid);
+		SPRINTF(strBuf, online_len, "[{\"%s\":%d}]", strType, tid);
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
 		std::cout << strType << " threadId: " << tid << std::endl;
