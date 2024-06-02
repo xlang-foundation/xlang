@@ -303,7 +303,7 @@ bool U_RunFragmentCode(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	std::string code = params[0].ToString();
 	std::vector<std::string> passInParams;
-	return X::Hosting::I().RunCodeLine(code.c_str(), (int)code.size(), retValue, exeNum);
+	return X::Hosting::I().RunCodeLine(code.c_str(), (int)code.size(), retValue);
 }
 bool U_RunInMain(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
