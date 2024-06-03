@@ -107,9 +107,21 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 				X::ARGS params_p(1);
 				X::KWARGS kwargs_p;
 				params_p.push_back(allOut);
-				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,
-					nullptr, params_p, kwargs_p, retValue);
+				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,	nullptr, params_p, kwargs_p, retValue);
 			}
+		}
+		int iExeNum = X::Hosting::I().GetInteractiveExeNum();
+		if (iExeNum != -1) //
+		{
+			X::KWARGS kw;
+			X::Value valExeNum(iExeNum);
+			kw.Add("exe_num", valExeNum);
+			X::Value valParam(allOut);
+			kw.Add("data", valParam);
+			std::cout << "print to jupyter (execute number: " << std::to_string(iExeNum) << "): " << allOut << std::endl;
+			std::string evtName("devops.print2jupyter");
+			X::ARGS p(0);
+			X::EventSystem::I().Fire(nullptr, nullptr, evtName, p, kw);
 		}
 	}
 	//_printLock.Unlock();
@@ -301,6 +313,11 @@ bool U_RunFragmentCode(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		retValue = X::Value(false);
 		return false;
 	}
+	int exeNum = -1;
+	auto it = kwParams.find("ExeNum");
+	if (it)
+		exeNum = it->val.GetLongLong();
+
 	std::string code = params[0].ToString();
 	std::vector<std::string> passInParams;
 	return X::Hosting::I().RunCodeLine(code.c_str(), (int)code.size(), retValue, exeNum);
