@@ -95,8 +95,8 @@ namespace X
 		{
 			return -1;
 		}
-		//TODO: Scope Issue
-		auto* pScope = dynamic_cast<AST::Scope*>(valObj.GetObj());
+		X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(valObj.GetObj());
+		auto* pScope = pObj->GetMyScope();
 		if (pScope == nullptr)
 		{
 			return -1;
@@ -108,7 +108,8 @@ namespace X
 		if (index >= 0)
 		{
 			X::Value varFunc;
-			if (!Get(pScope,nullptr, index, varFunc))
+			pScope->Get(this, valObj.GetObj(), index, varFunc);
+			if(varFunc.IsInvalid() || !varFunc.IsObject())
 			{
 				return -1;
 			}
@@ -128,7 +129,8 @@ namespace X
 			return -1;
 		}
 		X::Value varFunc;
-		if (!Get(pScope, nullptr, index, varFunc))
+		pScope->Get(this, valObj.GetObj(), index, varFunc);
+		if (varFunc.IsInvalid() || !varFunc.IsObject())
 		{
 			return -1;
 		}
