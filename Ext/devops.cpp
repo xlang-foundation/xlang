@@ -447,22 +447,22 @@ namespace X
 				for (auto m : modules)
 				{
 					m->ClearBreakpoints();
-			for (auto l : lines)
-			{
+					for (auto l : lines)
+					{
 						l = m->SetBreakpoint(l, (int)GetThreadID());
 						if (!bValid && l >= 0)
 						{
-				if (l >= 0)
-				{
-					X::Value varL(l);
-					pList->Add((XlangRuntime*)rt, varL);
-				}
+							if (l >= 0)
+							{
+								X::Value varL(l);
+								pList->Add((XlangRuntime*)rt, varL);
+							}
 							else
 							{
 								X::Value varL(l + 100000); // failed state
 								pList->Add((XlangRuntime*)rt, varL);
 							}
-			}
+						}
 					}
 					if (!bValid)
 						G::I().AddBreakpointValid(path);
@@ -666,7 +666,8 @@ namespace X
 				_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
 #else
 #endif
-				std::terminate(); // force exit
+				//std::terminate(); // force exit
+				std::exit(0);
 			}
 			return true;
 		}

@@ -508,9 +508,9 @@ namespace X
 		}
 		return X::Hosting::I().RunAsBackend(strModuleName, strCode, passinParams);
 	}
-	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal)
+	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal, int exeNum /*= -1*/)
 	{
-		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal);
+		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal, exeNum);
 	}
 	const char* XHost_Impl::GetInteractiveCode()
 	{
