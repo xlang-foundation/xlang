@@ -290,8 +290,9 @@ namespace X
 		keep a module to run lines from interactive mode
 		such as commmand line input
 	*/
-	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal)
+	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
 	{
+		m_pInteractiveExeNum = exeNum;
 		if (m_pInteractiveModule == nullptr)
 		{
 			auto* pTopModule = new AST::Module();
@@ -320,6 +321,7 @@ namespace X
 		}
 		m_pInteractiveRuntime->AdjustStack(m_pInteractiveModule->GetMyScope()->GetVarNum());
 		bOK = m_pInteractiveModule->RunLast(m_pInteractiveRuntime, nullptr, retVal);
+		m_pInteractiveExeNum = -1;
 		return bOK;
 	}
 	bool Hosting::GetInteractiveCode(std::string& code)
