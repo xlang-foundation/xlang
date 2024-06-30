@@ -1,6 +1,6 @@
 #include "wait.h"
 #if defined(BARE_METAL)
-    XWait::XWait(bool autoReset=true){
+    XWait::XWait(bool autoReset){
 
     }
 	XWait::~XWait(){

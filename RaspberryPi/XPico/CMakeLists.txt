@@ -22,7 +22,7 @@ include_directories("../../Jit")
 
 
 FILE(GLOB Api_SRC "../../Api/value.cpp")
-FILE(GLOB Utils_SRC "../../utils/wait_bare_metal.cpp" "../../utils/gthread_bare_metal.cpp")
+FILE(GLOB Utils_SRC "../../utils/wait_bare_metal.cpp" "../../utils/gthread_bare_metal.cpp" "../../utils/utility.cpp")
 FILE(GLOB Core_SRC "../../Core/*.cpp")
 FILE(GLOB Ast_SRC "../../Ast/*.cpp")
 FILE(GLOB Serialize_SRC "../../Serialize/*.cpp")
