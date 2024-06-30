@@ -1,5 +1,5 @@
 add_executable(test
-        test.c
+        test.cpp
         )
 
 # pull in common dependencies

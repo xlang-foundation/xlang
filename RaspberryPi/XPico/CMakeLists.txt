@@ -1,5 +1,7 @@
 project ("xlang_pico")
 
+add_definitions(-DBARE_METAL)
+
 include_directories("../..")
 include_directories("../../Api")
 include_directories("../../Inc")
@@ -20,7 +22,7 @@ include_directories("../../Jit")
 
 
 FILE(GLOB Api_SRC "../../Api/value.cpp")
-FILE(GLOB Utils_SRC "../../utils/*.cpp")
+FILE(GLOB Utils_SRC "../../utils/wait_bare_metal.cpp" "../../utils/gthread_bare_metal.cpp")
 FILE(GLOB Core_SRC "../../Core/*.cpp")
 FILE(GLOB Ast_SRC "../../Ast/*.cpp")
 FILE(GLOB Serialize_SRC "../../Serialize/*.cpp")
@@ -51,13 +53,13 @@ add_executable (${PROJECT_NAME}
 	${Thread_SRC}
 	${Ext_SRC}
 	${Text_SRC}
-	${Rpc_SRC}
-	${Nn_SRC}
+#	${Rpc_SRC}
+#	${Nn_SRC}
 	${Main_SRC}
-	${AppEntry_SRC}
-	${Jit_SRC}
+#	${AppEntry_SRC}
+#	${Jit_SRC}
 	${Pico_SRC}
-	${Os_SRC}
+#	${Os_SRC}
 )
 
 # pull in common dependencies

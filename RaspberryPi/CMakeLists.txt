@@ -19,7 +19,7 @@ endif()
 pico_sdk_init()
 
 
-add_subdirectory(XPico)
+# add_subdirectory(XPico)
 
 # Add test example
 add_subdirectory(test)
