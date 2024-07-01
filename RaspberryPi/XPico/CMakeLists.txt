@@ -65,5 +65,24 @@ add_executable (${PROJECT_NAME}
 # pull in common dependencies
 target_link_libraries(xlang_pico pico_stdlib)
 
+set_source_files_properties(	
+	${Api_SRC}
+	${Utils_SRC}
+	${Core_SRC}
+	${Ast_SRC}
+	${Parse_SRC}
+	${Serialize_SRC}
+	${Thread_SRC}
+	${Ext_SRC}
+	${Text_SRC}
+	#	${Rpc_SRC}
+	#	${Nn_SRC}
+	${Main_SRC}
+	#	${AppEntry_SRC}
+	#	${Jit_SRC}
+	${Pico_SRC}
+	#	${Os_SRC}
+	PROPERTIES COMPILE_OPTIONS "-frtti")
+
 # create map/bin/hex file etc.
 pico_add_extra_outputs(xlang_pico)

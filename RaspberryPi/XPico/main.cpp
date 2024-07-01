@@ -6,8 +6,56 @@
 
 #include "pico/stdlib.h"
 #include <stdio.h>
+#include "xlang.h"
+#include "xload.h"
+#include "utility.h"
+#include "port.h"
+#include <vector>
+#include "PyEngObject.h"
+#include "pyproxyobject.h"
+#include "cli.h"
+#include "Hosting.h"
+#include "action.h"
+#include "xhost_impl.h"
+#include "builtin.h"
+#include "AddScripts.h"
+#include "Proxy.h"
+#include "EventLoopInThread.h"
+#include "Proxy.h"
+#include "str.h"
+#include "list.h"
+#include "dict.h"
+#include "bin.h"
+#include "metascope.h"
+#include "pyproxyobject.h"
+#include "moduleobject.h"
+#include "BlockStream.h"
+#include "future.h"
+#include "tensor.h"
+#include "utility.h"
+#include "set.h"
+#include "deferred_object.h"
+#include "typeobject.h"
+#include "tensor.h"
+#include "tensor_graph.h"
+#include "manager.h"
+
+/*
+void XLangStaticLoad()
+{
+    X::CreatXHost();
+    X::Builtin::I().RegisterInternals();
+    X::BuildOps();
+    X::ScriptsManager::I().Load();
+    X::ScriptsManager::I().Run();
+    //X::XLangProxyManager::I().Register();
+}
+*/
 
 int main() {
+
+    //XLangStaticLoad();
+
 #ifndef PICO_DEFAULT_LED_PIN
 #warning blink example requires a board with a regular LED
 #else

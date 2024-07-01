@@ -9,6 +9,13 @@
 #include <vector>
 #include <string>
 
+class Base {
+    public:
+    virtual ~Base() {}
+};
+
+class Derived : public Base {};
+
 int main() {
 #ifndef PICO_DEFAULT_LED_PIN
 #warning blink example requires a board with a regular LED
@@ -21,6 +28,8 @@ int main() {
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     
+    Derived* d = dynamic_cast<Derived*>(new Base());
+
     while (true) {
         int x = ary[0];
         x=x+10;

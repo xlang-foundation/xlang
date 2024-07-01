@@ -4,7 +4,7 @@
 #if defined(WIN32)
 #include <Windows.h>
 #elif defined(BARE_METAL)
-#include <climits>
+#include <cstring>
 #include <cstdlib>
 #else
 #include <dirent.h>
@@ -419,9 +419,9 @@ bool GetCurLibInfo(void* EntryFuncName, std::string& strFullPath, std::string& s
         strLibName = strPath.substr(pos + 1);
     }
 #endif
-    pos = strLibName.rfind(".");
-    if (pos != std::string::npos) {
-        strLibName = strLibName.substr(0, pos);
+    auto pos0 = strLibName.rfind(".");
+    if (pos0 != std::string::npos) {
+        strLibName = strLibName.substr(0, pos0);
     }
     return true;
 }

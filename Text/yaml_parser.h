@@ -245,7 +245,11 @@ namespace X
 				}
 				else
 				{
-					throw eventType::End;
+					#if defined(BARE_METAL)
+	                    return 0;
+                    #else
+						throw eventType::End;
+					#endif
 				}
 				return ch;
 			}
