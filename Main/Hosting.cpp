@@ -82,14 +82,20 @@ namespace X
 				return AppEventCode::Continue;
 			}
 			int idx = 0;
-			try
-			{
+			
+			#if defined(BARE_METAL)
 				idx = std::stoi(input);
-			}
-			catch (...)
-			{
-				idx = -1;
-			}
+			#else
+				try
+				{
+					idx = std::stoi(input);
+				}
+				catch (...)
+				{
+					idx = -1;
+				}
+			#endif
+
 			if (idx >= 1 && idx <= m_Modules.size())
 			{
 				auto m = m_Modules[idx - 1];
@@ -218,7 +224,7 @@ namespace X
 	{
 		pTopModule->SetArgs(passInParams);
 		XlangRuntime* pRuntime = G::I().Threading(nullptr);
-		// Èç¹ûruntimeµÄmodule²»Îªnullptr£¬ÔòpTopModuleÊÇimportµÄmodule
+		// ï¿½ï¿½ï¿½runtimeï¿½ï¿½moduleï¿½ï¿½Îªnullptrï¿½ï¿½ï¿½ï¿½pTopModuleï¿½ï¿½importï¿½ï¿½module
 		AST::Module* pOldModule = pRuntime->M(); 
 		pTopModule->SetRT(pRuntime);
 		pRuntime->SetM(pTopModule);
