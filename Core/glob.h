@@ -111,7 +111,7 @@ namespace X {
 		{
 			bool ret;
 			((Locker*)m_lockBreakpointsMap)->Lock();
-			ret = std::find(m_srcPathBreakpointsValid.begin(), m_srcPathBreakpointsValid.end(), path) != m_srcPathBreakpointsValid.end();
+			ret = std::find(m_srcPathBreakpointsValid.begin(), m_srcPathBreakpointsValid.end(),path) != m_srcPathBreakpointsValid.end();
 			((Locker*)m_lockBreakpointsMap)->Unlock();
 			return ret;
 		}

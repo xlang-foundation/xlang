@@ -62,7 +62,12 @@ namespace X
             // View the top element of the stack
             FORCE_INLINE T& top() {
                 if (empty()) {
-                    throw std::out_of_range("Stack<>::top(): empty stack");
+                    #if defined(BARE_METAL)
+                        static T t;
+                        return t;
+                    #else
+                        throw std::out_of_range("Stack<>::top(): empty stack");
+                    #endif
                 }
                 return elements[topIndex - 1];
             }
