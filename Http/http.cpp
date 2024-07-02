@@ -565,7 +565,14 @@ namespace X
 				auto it0 = response.headers.find("Content-Type");
 				if (it0 != response.headers.end())
 				{
-					if (it0->second.find("text/") != it0->second.npos)
+					if ((it0->second.find("text/") != it0->second.npos) ||
+						(it0->second.find("application/x-csh") != it0->second.npos) ||
+						(it0->second.find("application/x-sh") != it0->second.npos) ||
+						(it0->second.find("application/json") != it0->second.npos) ||
+						(it0->second.find("application/x-httpd-php") != it0->second.npos) ||
+						(it0->second.find("application/xml") != it0->second.npos) ||
+						(it0->second.find("application/xhtml+xml") != it0->second.npos) ||
+						(it0->second.find("application/x-httpd-php") != it0->second.npos))
 					{
 						isText = true;
 					}
