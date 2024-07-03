@@ -234,17 +234,22 @@ namespace X
 		// Mapping of file extensions to MIME types and binary/text flag
 		std::map<std::string, std::tuple<std::string, bool>> mimeTypeMap = 
 		{
-			{"txt", {"text/plain", false}},
-			{"html", {"text/html", false}},
-			{"css", {"text/css", false}},
-			{"js", {"application/javascript", false}},
-			{"json", {"application/json", false}},
-			{"jpg", {"image/jpeg", true}},
-			{"jpeg", {"image/jpeg", true}},
-			{"png", {"image/png", true}},
-			{"gif", {"image/gif", true}},
-			{"svg", {"image/svg+xml", true}},
-			{"pdf", {"application/pdf", true}},
+			{"txt",		{"text/plain", false}},
+			{"html",	{"text/html", false}},
+			{"css",		{"text/css", false}},
+			{"js",		{"application/javascript", false}},
+			{"json",	{"application/json", false}},
+			{"csh",		{"application/x-csh", false}},
+			{"sh",		{"application/x-sh", false}},
+			{"php",		{"application/x-httpd-php", false}},
+			{"xml",		{"application/xml", false}},
+			{"xhtml",	{"application/xhtml+xml", false}},
+			{"jpg",		{"image/jpeg", true}},
+			{"jpeg",	{"image/jpeg", true}},
+			{"png",		{"image/png", true}},
+			{"gif",		{"image/gif", true}},
+			{"svg",		{"image/svg+xml", true}},
+			{"pdf",		{"application/pdf", true}},
 			// Add more mappings as needed
 		};
 
@@ -565,7 +570,14 @@ namespace X
 				auto it0 = response.headers.find("Content-Type");
 				if (it0 != response.headers.end())
 				{
-					if (it0->second.find("text/") != it0->second.npos)
+					if ((it0->second.find("text/") != it0->second.npos) ||
+						(it0->second.find("application/x-javascript") != it0->second.npos) ||
+						(it0->second.find("application/x-csh") != it0->second.npos) ||
+						(it0->second.find("application/x-sh") != it0->second.npos) ||
+						(it0->second.find("application/json") != it0->second.npos) ||
+						(it0->second.find("application/xml") != it0->second.npos) ||
+						(it0->second.find("application/xhtml+xml") != it0->second.npos) ||
+						(it0->second.find("application/x-httpd-php") != it0->second.npos))
 					{
 						isText = true;
 					}
