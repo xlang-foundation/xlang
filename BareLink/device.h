@@ -10,9 +10,12 @@ namespace X
 		{
 		public:
 			BEGIN_PACKAGE(Device)
-
-				END_PACKAGE
+				APISET().AddFunc<0>("Connect", &Device::Connect);
+				APISET().AddFunc<0>("Disconnect", &Device::Disconnect);
+			END_PACKAGE
 			Device(std::string deviceId);
+			bool Connect();
+			bool Disconnect();
 			~Device();
 		};
 	}
