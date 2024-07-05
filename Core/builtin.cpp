@@ -1241,6 +1241,20 @@ bool U_GetModuleFileName(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	}
 	return true;
 }
+bool U_GetModuleFolderPath(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	auto* pRuntime = dynamic_cast<XlangRuntime*>(rt);
+	if (pRuntime->M())
+	{
+		std::string modulePath = pRuntime->M()->GetModulePath();
+		retValue = X::Value(modulePath);
+	}
+	return true;
+}
+
 bool U_GetArgs(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1572,6 +1586,7 @@ bool Builtin::RegisterInternals()
 	Register("to_bin", (X::U_FUNC)U_Extract_Data_ToBin, params, "to_bin", true);
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
 	Register("get_module_filename", (X::U_FUNC)U_GetModuleFileName, params);
+	Register("get_module_folder_path", (X::U_FUNC)U_GetModuleFolderPath, params);
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
 	Register("get_modulebykey", (X::U_FUNC)U_GetModuleFromKey, params);
 	Register("run_new_instance", (X::U_FUNC)U_RunNewInstance, params);

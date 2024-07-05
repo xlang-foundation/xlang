@@ -580,9 +580,9 @@ namespace X
 		{
 			return *m_obj;
 		}
-		operator T() const
+		const T& operator()() const 
 		{
-			return *m_obj;
+			return *m_obj; 
 		}
 	};
 	class XLangException

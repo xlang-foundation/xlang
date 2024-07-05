@@ -2,7 +2,12 @@
 #include <vector>
 #include <string>
 #include <float.h>
-#include "limits.h"
+
+#if defined(BARE_METAL)
+#include <climits>
+#else
+#include <limits.h>
+#endif
 
 bool RunProcess(std::string cmd,
 	std::string initPath,

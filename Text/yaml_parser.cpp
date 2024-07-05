@@ -281,15 +281,20 @@ namespace X
 			YamlNode* pCurNode = nullptr;
 			while (m_bRun)
 			{
-				try
-				{
-					pCurNode = Scan(pCurNode, status);
-				}
-				catch (eventType e)
-				{
-					//std::cout << (int)e << std::endl;
-					break;
-				}
+				#if defined(BARE_METAL)
+	                pCurNode = Scan(pCurNode, status);
+				#else
+					try
+					{
+						pCurNode = Scan(pCurNode, status);
+					}
+					catch (eventType e)
+					{
+						//std::cout << (int)e << std::endl;
+						break;
+					}
+				#endif
+
 				if (pRootNode == nullptr)
 				{
 					if (status.rootNode)
