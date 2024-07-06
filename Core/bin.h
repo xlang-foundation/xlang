@@ -1,6 +1,8 @@
 #pragma once
 #include "object.h"
 #include "port.h"
+#include "dict.h"
+#include "list.h"
 
 namespace X
 {
@@ -141,6 +143,55 @@ namespace X
 				X::Value& retValue) override
 			{
 				return true;
+			}
+
+			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
+				std::vector<std::string>& IdList, int id_offset,
+				long long startIndex, long long count)
+			{
+				AutoLock autoLock(m_lock);
+				if (startIndex < 0 || startIndex >= Size())
+				{
+					return nullptr;
+				}
+				if (count == -1)
+				{
+					count = Size() - startIndex;
+				}
+				if ((startIndex + count) > Size())
+				{
+					return nullptr;
+				}
+				List* pOutList = new List();
+				pOutList->IncRef();
+				for (long long i = 0; i < count; i++)
+				{
+					long long idx = startIndex + i;
+					X::Value val((unsigned char)m_data[idx]);
+					Dict* dict = new Dict();
+					auto objIds = CombinObjectIds(IdList, (unsigned long long)idx);
+					dict->Set("Id", objIds);
+					//Data::Str* pStrName = new Data::Str(it.first);
+					//dict->Set("Name", X::Value(pStrName));
+					std::string valType = "byte";
+					Data::Str* pStrType = new Data::Str(valType);
+					dict->Set("Type", X::Value(pStrType));
+					if (!val.IsObject() || (val.IsObject() &&
+						dynamic_cast<Object*>(val.GetObj())->IsStr()))
+					{
+						dict->Set("Value", val);
+					}
+					else if (val.IsObject())
+					{
+						X::Value objId((unsigned long long)val.GetObj());
+						dict->Set("Value", objId);
+						X::Value valSize(val.GetObj()->Size());
+						dict->Set("Size", valSize);
+					}
+					X::Value valDict(dict);
+					pOutList->Add(rt, valDict);
+				}
+				return pOutList;
 			}
 		};
 	}

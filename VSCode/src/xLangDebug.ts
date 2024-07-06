@@ -957,6 +957,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.value = "None";
 				dapVariable.type = 'None';
 				break;
+			case 'byte':
+				dapVariable.value = "0x" + v.Val.toString(16).padStart(2, '0');
+				if (v.Val >= 32 && v.Val <= 126) {
+					dapVariable.value += "'" + String.fromCharCode(v.Val) + "'";
+				}
+				dapVariable.type = 'byte';
+				break;
 			case 'Int64':
 				dapVariable.value = v.Val.toString();
 				dapVariable.type = 'integer';
@@ -1074,7 +1081,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 				dapVariable.type = "DeferredObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
-				break;						
+				break;
+			case 'Binary':
+				v.reference = this._runtime.createScopeRef(v.Type,v.FrameId,v.Val,v.Id);
+				dapVariable.value = 'Binary(Size:'+v.Size.toString()+")";
+				dapVariable.type = "Binary";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = v.Size;
+				break;
 			default:
 				break;
 		}

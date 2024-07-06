@@ -12,10 +12,6 @@
 #include "utility.h"
 #include "dbg.h"
 
-#if (WIN32)
-#include <crtdbg.h>
-#else
-#endif
 namespace X
 {
 	namespace DevOps
@@ -653,21 +649,12 @@ namespace X
 			}
 			else if (strCmd == "Terminate")
 			{
-				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				//AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
 				//pCmdInfo->dbgType = AST::dbg::Terminate;
 				//pModule->AddCommand(pCmdInfo, false); // todo£ºstop run every module
 				//retValue = X::Value(true);
-
-#if (WIN32)     
-				//exit without debug error
-				_set_error_mode(_OUT_TO_STDERR);
-				_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
-#else
-#endif
-				//std::terminate(); // force exit
-				std::exit(0);
 			}
 			return true;
 		}
