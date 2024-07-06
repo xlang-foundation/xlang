@@ -175,11 +175,11 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	public close() {
-		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Terminate')";
-		this.Call(code, (retData) => {});
+		this.terminateXlang();
 		this.sourceModuleKeyMap.clear();
 		this._sourceFile = '';
 		this._moduleKey = 0;
+		this._sessionRunning = false;
 	}
 	public async loadSource(file: string): Promise<number> {
 		let srcFile = this.normalizePathAndCasing(file);
@@ -227,12 +227,12 @@ export class XLangRuntime extends EventEmitter {
 		});
 	
 		req.on('error', error => {
-			if (error.errno === -4078 && this.tryTimes <= this.tryCount)
+			if (error.code === 'ECONNREFUSED' && this.tryTimes <= this.tryCount)
 			{
 				var thisObj = this;
 				setTimeout(function() {
 					thisObj.checkStarted();
-				}, 1000);
+				}, 2000);
 				++this.tryTimes;
 			}
 			else
@@ -242,6 +242,19 @@ export class XLangRuntime extends EventEmitter {
 			}
 		});
 		req.end();
+	}
+
+	public terminateXlang()
+	{
+		const https = require('http');
+		const options = {
+			hostname: this._srvaddress,
+			port: this._srvPort,
+			path: '/devops/terminate',
+			method: 'GET'
+		};
+
+		https.request(options).end();
 	}
 
 	private async fetchNotify()

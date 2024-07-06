@@ -4,12 +4,29 @@
 #include "wait.h"
 #include <iostream>
 #include <atomic>
+#include <thread>
+#include <chrono>
 
 namespace X
 {
+	
 	DevServer::DevServer(int port):
 		m_port(port)
 	{
+		// if started by vscode and not connected in 10 seconds, exit xlang
+		if (port >= 35000 && port < 36000)
+		{
+			std::thread connectionCheck([this] {
+				std::this_thread::sleep_for(std::chrono::seconds(10));
+				if (!m_Connected) {
+					m_srv.stop();
+					std::cout << "no connection in 10 seconds, xlang exited" << std::endl;
+					system("pause");
+					std::exit(0);
+				}
+			});
+			connectionCheck.detach();
+		}
 	}
 	DevServer::~DevServer()
 	{
@@ -205,9 +222,17 @@ namespace X
 			}
 		);
 		m_srv.Get("/devops/checkStarted",
-			[](const httplib::Request& req, httplib::Response& res)
+			[this](const httplib::Request& req, httplib::Response& res)
 			{
-				return;
+				m_Connected = true;
+			}
+		);
+		m_srv.Get("/devops/terminate",
+			[this](const httplib::Request& req, httplib::Response& res)
+			{
+				m_srv.stop();
+				system("pause");
+				std::exit(0);
 			}
 		);
 		if (!m_srv.is_valid())
