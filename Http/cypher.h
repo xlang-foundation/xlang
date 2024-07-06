@@ -19,7 +19,7 @@ namespace X
 				}, [](auto* pThis) {
 					return pThis->mStoreName;
 				});
-			APISET().AddFunc<3>("generate_key_pair", &Cypher::GenerateKeyPair);
+			APISET().AddFunc<2>("generate_key_pair", &Cypher::GenerateKeyPair);
 			APISET().AddFunc<1>("remove_private_key", &Cypher::RemovePrivateKey);
 			APISET().AddFunc<2>("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
 			APISET().AddFunc<2>("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
@@ -31,7 +31,8 @@ namespace X
 		Cypher();
 		~Cypher();
 		//return public key
-		std::string GenerateKeyPair(int key_size,std::string keyName,std::string storeFolder);
+		//std::string GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder);
+		std::string GenerateKeyPair(int key_size,std::string keyName);
 		bool RemovePrivateKey(std::string keyName);
 		X::Value EncryptWithPrivateKey(std::string msg, std::string keyName);
 		std::string DecryptWithPrivateKey(X::Value& encrypted, std::string keyName);
