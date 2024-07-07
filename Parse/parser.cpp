@@ -623,11 +623,13 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		m_stackBlocks.pop();//only keep top one
 		delete top;
 	}
+#if not defined(BARE_METAL)
 	if (pJitLib)
 	{
 		pModule->SetJitLib(pJitLib);
 		pJitLib->Build();
 	}
+#endif
 	return true;
 }
 

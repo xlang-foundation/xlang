@@ -32,3 +32,12 @@
 #include "manager.h"
 
 PyEngHost* g_pPyHost = nullptr;
+
+namespace X
+{
+	XLoad* g_pXload = nullptr;
+	bool LoadPythonEngine()
+	{
+		return true;
+	}
+}

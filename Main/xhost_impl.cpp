@@ -578,6 +578,7 @@ namespace X
 	bool XHost_Impl::Lrpc_Listen(int port, bool blockMode)
 	{
 		bool bOK = true;
+#if not defined(BARE_METAL)
 		Manager::I().AddLrpcPort(port);
 		MsgThread::I().SetPort(port);
 		if (blockMode)
@@ -589,6 +590,7 @@ namespace X
 		{
 			bOK = MsgThread::I().Start();
 		}
+#endif
 		return bOK;
 	}
 	bool XHost_Impl::Import(XRuntime* rt, const char* moduleName, 
@@ -689,7 +691,12 @@ namespace X
 	bool XHost_Impl::ExtractNativeObjectFromRemoteObject(X::Value& remoteObj,
 		X::Value& nativeObj)
 	{
+#if not defined(BARE_METAL)
 		return RemoteObjectStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
+#else
+		return false;
+#endif
+
 	}
 	void XHost_Impl::RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler, void* pContext)
 	{
