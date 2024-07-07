@@ -637,10 +637,58 @@ bool U_ToString(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(retStr);
 	return true;
 }
+
+// if only one param, and params[0] is a number, then as size of binary
+//if one param and it is list of integer between 0-255, then as binary data
+
 bool U_ToBytes(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
+	if(params.size() == 0)
+	{
+		X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, 0, false);
+		retValue = X::Value(pBinOut);
+		return true;
+	}
+	else if(params.size() == 1)
+	{
+		auto& v = params[0];
+		if (v.IsNumber())
+		{
+			size_t size = (unsigned long long)v;
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, size, false);
+			retValue = X::Value(pBinOut);
+			return true;
+		}
+		else if (v.IsList())
+		{
+			X::List list(v);
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, v.Size(), false);
+			unsigned char* p = (unsigned char*)pBinOut->Data();
+			for(auto item : *list)
+			{
+				if (!item.IsNumber())
+				{
+					retValue = X::Value();
+					return false;
+				}
+				auto n = (long long)item;
+				if (n < 0 || n > 255)
+				{
+					retValue = X::Value();
+					return false;
+				}
+				else
+				{
+					*p++ = (unsigned char)n;
+				}
+			}
+			retValue = X::Value(pBinOut);
+			return true;
+		}
+	}
+
 	X::BlockStream stream;
 	for (auto& v : params)
 	{
