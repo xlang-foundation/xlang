@@ -1184,6 +1184,7 @@ bool U_LRpc_Listen(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	long port = 0;
 	if (params.size() > 0)
 	{
@@ -1201,6 +1202,7 @@ bool U_LRpc_Listen(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		X::MsgThread::I().Start();
 	}
+#endif
 	return true;
 }
 bool U_PushWritePad(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
