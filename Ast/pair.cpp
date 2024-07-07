@@ -256,11 +256,13 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 			break;
 		case X::ObjType::Table:
 			break;
+#if not defined(BARE_METAL)
 		case X::ObjType::Tensor:
 		case X::ObjType::TensorExpression:
 			bOK = GetItemFromTensor(rt, pContext,
 				dynamic_cast<Data::Tensor*>(pDataObj), R, v, lValue);
 			break;
+#endif
 		case X::ObjType::PyProxyObject:
 		{
 			auto* pPyObj = dynamic_cast<Data::PyProxyObject*>(pDataObj);
