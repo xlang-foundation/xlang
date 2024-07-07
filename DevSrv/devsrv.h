@@ -17,5 +17,7 @@ namespace X
 
 		// Inherited via GThread
 		virtual void run() override;
+	private:
+		bool m_Connected = false;
 	};
 }

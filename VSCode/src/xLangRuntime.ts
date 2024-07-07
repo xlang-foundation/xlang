@@ -175,11 +175,11 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	public close() {
-		let code = "import xdb\nreturn xdb.command(" + this._moduleKey.toString() + ",cmd='Terminate')";
-		this.Call(code, (retData) => {});
+		this.terminateXlang();
 		this.sourceModuleKeyMap.clear();
 		this._sourceFile = '';
 		this._moduleKey = 0;
+		this._sessionRunning = false;
 	}
 	public async loadSource(file: string): Promise<number> {
 		let srcFile = this.normalizePathAndCasing(file);
@@ -208,6 +208,7 @@ export class XLangRuntime extends EventEmitter {
 		return retVal;
 	}
 	private tryTimes = 1;
+	private tryCount = 5;
 	public async checkStarted()
 	{
 		vscode.window.showInformationMessage(`try connecting to a xlang dbg server at ${this.serverAddress}:${this.serverPort}, try ${this.tryTimes}`);
@@ -222,15 +223,16 @@ export class XLangRuntime extends EventEmitter {
 		const req = https.request(options, res => {
 			this.sendEvent('xlangStarted', true);
 			vscode.window.showInformationMessage(`connecting to a xlang dbg server at ${this.serverAddress}:${this.serverPort} successed`);
+			this.tryTimes = 1;
 		});
 	
 		req.on('error', error => {
-			if (error.errno === -4078 && this.tryTimes <= 3)
+			if (error.code === 'ECONNREFUSED' && this.tryTimes <= this.tryCount)
 			{
 				var thisObj = this;
 				setTimeout(function() {
 					thisObj.checkStarted();
-				}, 1000);
+				}, 2000);
 				++this.tryTimes;
 			}
 			else
@@ -240,6 +242,19 @@ export class XLangRuntime extends EventEmitter {
 			}
 		});
 		req.end();
+	}
+
+	public terminateXlang()
+	{
+		const https = require('http');
+		const options = {
+			hostname: this._srvaddress,
+			port: this._srvPort,
+			path: '/devops/terminate',
+			method: 'GET'
+		};
+
+		https.request(options).end();
 	}
 
 	private async fetchNotify()
@@ -254,50 +269,50 @@ export class XLangRuntime extends EventEmitter {
 		console.log(`fetchNotify request started`);
 		const req = https.request(options, res => {
 			console.log(`fetchNotify->statusCode: ${res.statusCode}`);
-		res.on('data', d => {
-			var strData = new TextDecoder().decode(d);
-			console.log(strData);
-			let tagNoti = "$notify$";
-			if (strData.startsWith(tagNoti)){
-				var param = strData.substring(tagNoti.length);
-				var notis = JSON.parse(param);
-				if (notis) {
-					for (let n in notis) {
-						let kv = notis[n];
-							if(kv.hasOwnProperty("HitBreakpoint")){
-								this.sendEvent('stopOnBreakpoint', kv["threadId"]);
+			res.on('data', d => {
+				var strData = new TextDecoder().decode(d);
+				console.log(strData);
+				let tagNoti = "$notify$";
+				if (strData.startsWith(tagNoti)){
+					var param = strData.substring(tagNoti.length);
+					var notis = JSON.parse(param);
+					if (notis) {
+						for (let n in notis) {
+							let kv = notis[n];
+								if(kv.hasOwnProperty("HitBreakpoint")){
+									this.sendEvent('stopOnBreakpoint', kv["threadId"]);
+								}
+								else if(kv.hasOwnProperty("StopOnEntry")){
+									this.sendEvent('stopOnEntry', kv["StopOnEntry"]);
+								}
+								else if(kv.hasOwnProperty("StopOnStep")){
+									this.sendEvent('stopOnStep', kv["StopOnStep"]);
+								}
+								else if(kv.hasOwnProperty("ThreadStarted")){
+									this.sendEvent('threadStarted', kv["ThreadStarted"]);
+								}
+								else if(kv.hasOwnProperty("ThreadExited")){
+									this.sendEvent('threadExited', kv["ThreadExited"]);
 							}
-							else if(kv.hasOwnProperty("StopOnEntry")){
-								this.sendEvent('stopOnEntry', kv["StopOnEntry"]);
-							}
-							else if(kv.hasOwnProperty("StopOnStep")){
-								this.sendEvent('stopOnStep', kv["StopOnStep"]);
-							}
-							else if(kv.hasOwnProperty("ThreadStarted")){
-								this.sendEvent('threadStarted', kv["ThreadStarted"]);
-							}
-							else if(kv.hasOwnProperty("ThreadExited")){
-								this.sendEvent('threadExited', kv["ThreadExited"]);
+								else if(kv.hasOwnProperty("BreakpointPath")){
+									this.sendEvent('breakpointState', kv["BreakpointPath"], kv["line"]);
+								}
 						}
-							else if(kv.hasOwnProperty("BreakpointPath")){
-								this.sendEvent('breakpointState', kv["BreakpointPath"], kv["line"]);
-							}
 					}
 				}
-			}
-			else if(strData === "end" || strData === "error")
-			{
-				this._sessionRunning = false;
-				this.sendEvent('end');
-			}
+				else if(strData === "end" || strData === "error")
+				{
+					this._sessionRunning = false;
+					this.sendEvent('end');
+				}
 			});
 
 			res.on('end', ()=>{
-			if(this._sessionRunning )
-			{
-				this.fetchNotify();
-			}
-		});
+				if(this._sessionRunning )
+				{
+					this.fetchNotify();
+				}
+			});
 		});
 	
 		req.on('error', error => {

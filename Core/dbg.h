@@ -160,9 +160,8 @@ public:
 				mLoop = false;
 				break;
 			case AST::dbg::Terminate:
-				m_rt->M()->SetDbgType(AST::dbg::Terminate,
-					AST::dbg::Terminate);
-				mLoop = false;
+				//m_rt->M()->SetDbgType(AST::dbg::Terminate, AST::dbg::Terminate);
+				//mLoop = false;
 				break;
 			default:
 				break;
