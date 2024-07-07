@@ -663,6 +663,7 @@ bool U_ToBytes(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		}
 		else if (v.IsList())
 		{
+			bool bWorking = true;
 			X::List list(v);
 			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, v.Size(), false);
 			unsigned char* p = (unsigned char*)pBinOut->Data();
@@ -670,22 +671,25 @@ bool U_ToBytes(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			{
 				if (!item.IsNumber())
 				{
-					retValue = X::Value();
-					return false;
+					bWorking = false;
+					break;
 				}
 				auto n = (long long)item;
 				if (n < 0 || n > 255)
 				{
-					retValue = X::Value();
-					return false;
+					bWorking = false;
+					break;
 				}
 				else
 				{
 					*p++ = (unsigned char)n;
 				}
 			}
-			retValue = X::Value(pBinOut);
-			return true;
+			if (bWorking)
+			{
+				retValue = X::Value(pBinOut);
+				return true;
+			}
 		}
 	}
 
