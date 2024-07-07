@@ -1589,6 +1589,7 @@ bool Builtin::RegisterInternals()
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
 	X::Value valBuiltinPack(pBuiltinPack);
 	X::Manager::I().Register("builtin", valBuiltinPack);
+#if not defined(BARE_METAL)
 	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
 	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
 	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml");
@@ -1596,7 +1597,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
 	X::RegisterPackage<X::TimeObject>(m_libName.c_str(), "time");
-
+#endif
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
