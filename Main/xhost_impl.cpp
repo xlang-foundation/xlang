@@ -278,9 +278,13 @@ namespace X
 	}
 	XTensor* XHost_Impl::CreateTensor()
 	{
+#if not defined(BARE_METAL)
 		auto* pTensor = new X::Data::Tensor();
 		pTensor->IncRef();
 		return pTensor;
+#else
+return nullptr;
+#endif
 	}
 	XStruct* XHost_Impl::CreateStruct(char* data,int size, bool asRef)
 	{
@@ -296,9 +300,13 @@ namespace X
 	}
 	XTensorGraph* XHost_Impl::CreateTensorGraph()
 	{
+#if not defined(BARE_METAL)
 		auto* pTensorGraph = new X::Data::TensorGraph();
 		pTensorGraph->IncRef();
 		return pTensorGraph;
+#else
+return nullptr;
+#endif
 	}
 	
 	XDict* XHost_Impl::CreateDict()
