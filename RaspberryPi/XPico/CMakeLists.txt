@@ -54,7 +54,7 @@ add_executable (${PROJECT_NAME}
 	${Ext_SRC}
 	${Text_SRC}
 #	${Rpc_SRC}
-#	${Nn_SRC}
+	${Nn_SRC}
 	${Main_SRC}
 #	${AppEntry_SRC}
 #	${Jit_SRC}
@@ -76,7 +76,7 @@ set_source_files_properties(
 	${Ext_SRC}
 	${Text_SRC}
 	#	${Rpc_SRC}
-	#	${Nn_SRC}
+	${Nn_SRC}
 	${Main_SRC}
 	#	${AppEntry_SRC}
 	#	${Jit_SRC}
