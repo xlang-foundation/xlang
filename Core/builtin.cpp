@@ -1438,6 +1438,7 @@ bool U_CreateTaskPool(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	X::Data::TaskPool* pPool = new X::Data::TaskPool();
 	int num = 1;
 	if (params.size() > 0)
@@ -1461,6 +1462,7 @@ bool U_CreateTaskPool(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	pPool->SetThreadNum(num);
 	pPool->SetInUIThread(bRunInUI);
 	retValue = X::Value(pPool);
+#endif
 	return true;
 }
 bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
@@ -1516,6 +1518,7 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::Value& retValue)
 {
 	bool bOK = true;
+#if not defined(BARE_METAL)
 	auto* pTensor = new X::Data::Tensor();
 
 	std::string name;
@@ -1586,6 +1589,7 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		delete pTensor;
 	}
+#endif
 	return bOK;
 }
 bool Builtin::RegisterInternals()
