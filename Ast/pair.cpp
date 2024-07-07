@@ -78,7 +78,7 @@ bool PairOp::GetItemFromTensor(XlangRuntime* rt, XObj* pContext,
 	Value& v, LValue* lValue)
 {
 	bool bOK = true;
-
+#if not defined(BARE_METAL)
 	auto extract_from_param = [&](Param* pParam)
 	{
 		Data::TensorIndex retIdx = { 0,-1 };
@@ -140,6 +140,7 @@ bool PairOp::GetItemFromTensor(XlangRuntime* rt, XObj* pContext,
 		IdxAry.push_back(idx);
 	}
 	bOK = pTensor->Get(IdxAry,v);
+#endif
 	return bOK;
 }
 bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,

@@ -801,6 +801,7 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params,KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	//if params has a TaskPool, will get it
 	X::Value taskPool;
 	ARGS params0(params.size());
@@ -882,6 +883,9 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		retValue = X::Value(pFuture);
 	}
 	return bOK;
+#else
+	return false;
+#endif
 }
 bool U_OnEvent(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
