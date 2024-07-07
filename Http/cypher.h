@@ -25,7 +25,9 @@ namespace X
 			APISET().AddFunc<2>("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
 			APISET().AddFunc<2>("encrypt_with_public_key", &Cypher::EncryptWithPublicKey);
 			APISET().AddFunc<2>("decrypt_with_public_key", &Cypher::DecryptWithPublicKey);
-		END_PACKAGE
+			APISET().AddFunc<2>("encrypt_with_public_key_G", &Cypher::EncryptWithPublicKeyG);
+			APISET().AddFunc<2>("decrypt_with_private_key_G", &Cypher::DecryptWithPrivateKeyG);
+			END_PACKAGE
 
 	public:
 		Cypher();
@@ -36,7 +38,9 @@ namespace X
 		bool RemovePrivateKey(std::string keyName);
 		X::Value EncryptWithPrivateKey(std::string msg, std::string keyName);
 		std::string DecryptWithPrivateKey(X::Value& encrypted, std::string keyName);
+		std::string DecryptWithPrivateKeyG(X::Value& encrypted, std::string keyName);
 		X::Value EncryptWithPublicKey(std::string msg, std::string perm_key);
+		X::Value EncryptWithPublicKeyG(std::string msg, std::string perm_key);
 		std::string DecryptWithPublicKey(X::Value& encrypted, std::string perm_key);
 	};
 }

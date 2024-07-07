@@ -766,7 +766,6 @@ X::Value X::Cypher::EncryptWithPrivateKey(std::string msg, std::string keyName)
 	return valEncrypted;
 }
 
-/*
 std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string keyName)
 {
 	RSA* rsa = get_stored_private_key(keyName,mStorePath);
@@ -781,9 +780,8 @@ std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string ke
 	RSA_free(rsa);
 	return msg;
 }
-*/
 
-std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string keyName)
+std::string X::Cypher::DecryptWithPrivateKeyG(X::Value& encrypted, std::string keyName)
 {
 	std::string retMsg;
 	std::string filename = get_private_key_filename(keyName, mStorePath);
@@ -866,7 +864,7 @@ std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string ke
 }
 
 
-/*
+
 X::Value X::Cypher::EncryptWithPublicKey(std::string msg, std::string perm_key)
 {
 	RSA* rsa = create_rsa_from_public_key_pem(perm_key);
@@ -882,8 +880,8 @@ X::Value X::Cypher::EncryptWithPublicKey(std::string msg, std::string perm_key)
 	X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
 	return valEncrypted;
 }
-*/
-X::Value X::Cypher::EncryptWithPublicKey(std::string msg, std::string perm_key)
+
+X::Value X::Cypher::EncryptWithPublicKeyG(std::string msg, std::string perm_key)
 {
 	BIO* keybio = BIO_new_mem_buf((unsigned char*)perm_key.c_str(), -1);
 	RSA* rsa = RSA_new();
