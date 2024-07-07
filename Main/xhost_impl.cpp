@@ -278,9 +278,13 @@ namespace X
 	}
 	XTensor* XHost_Impl::CreateTensor()
 	{
+#if not defined(BARE_METAL)
 		auto* pTensor = new X::Data::Tensor();
 		pTensor->IncRef();
 		return pTensor;
+#else
+return nullptr;
+#endif
 	}
 	XStruct* XHost_Impl::CreateStruct(char* data,int size, bool asRef)
 	{
@@ -296,9 +300,13 @@ namespace X
 	}
 	XTensorGraph* XHost_Impl::CreateTensorGraph()
 	{
+#if not defined(BARE_METAL)
 		auto* pTensorGraph = new X::Data::TensorGraph();
 		pTensorGraph->IncRef();
 		return pTensorGraph;
+#else
+return nullptr;
+#endif
 	}
 	
 	XDict* XHost_Impl::CreateDict()
@@ -578,6 +586,7 @@ namespace X
 	bool XHost_Impl::Lrpc_Listen(int port, bool blockMode)
 	{
 		bool bOK = true;
+#if not defined(BARE_METAL)
 		Manager::I().AddLrpcPort(port);
 		MsgThread::I().SetPort(port);
 		if (blockMode)
@@ -589,6 +598,7 @@ namespace X
 		{
 			bOK = MsgThread::I().Start();
 		}
+#endif
 		return bOK;
 	}
 	bool XHost_Impl::Import(XRuntime* rt, const char* moduleName, 
@@ -689,7 +699,12 @@ namespace X
 	bool XHost_Impl::ExtractNativeObjectFromRemoteObject(X::Value& remoteObj,
 		X::Value& nativeObj)
 	{
+#if not defined(BARE_METAL)
 		return RemoteObjectStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
+#else
+		return false;
+#endif
+
 	}
 	void XHost_Impl::RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler, void* pContext)
 	{

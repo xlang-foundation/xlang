@@ -50,9 +50,9 @@ add_executable (${PROJECT_NAME}
 	${Ast_SRC}
 	${Parse_SRC}
 	${Serialize_SRC}
-	${Thread_SRC}
+#	${Thread_SRC}
 	${Ext_SRC}
-	${Text_SRC}
+#	${Text_SRC}
 #	${Rpc_SRC}
 #	${Nn_SRC}
 	${Main_SRC}
@@ -72,9 +72,9 @@ set_source_files_properties(
 	${Ast_SRC}
 	${Parse_SRC}
 	${Serialize_SRC}
-	${Thread_SRC}
+	#	${Thread_SRC}
 	${Ext_SRC}
-	${Text_SRC}
+	#	${Text_SRC}
 	#	${Rpc_SRC}
 	#	${Nn_SRC}
 	${Main_SRC}

@@ -801,6 +801,7 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params,KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	//if params has a TaskPool, will get it
 	X::Value taskPool;
 	ARGS params0(params.size());
@@ -882,6 +883,9 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		retValue = X::Value(pFuture);
 	}
 	return bOK;
+#else
+	return false;
+#endif
 }
 bool U_OnEvent(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
@@ -1184,6 +1188,7 @@ bool U_LRpc_Listen(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	long port = 0;
 	if (params.size() > 0)
 	{
@@ -1201,6 +1206,7 @@ bool U_LRpc_Listen(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		X::MsgThread::I().Start();
 	}
+#endif
 	return true;
 }
 bool U_PushWritePad(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
@@ -1432,6 +1438,7 @@ bool U_CreateTaskPool(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	X::Data::TaskPool* pPool = new X::Data::TaskPool();
 	int num = 1;
 	if (params.size() > 0)
@@ -1455,6 +1462,7 @@ bool U_CreateTaskPool(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	pPool->SetThreadNum(num);
 	pPool->SetInUIThread(bRunInUI);
 	retValue = X::Value(pPool);
+#endif
 	return true;
 }
 bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
@@ -1510,6 +1518,7 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::Value& retValue)
 {
 	bool bOK = true;
+#if not defined(BARE_METAL)
 	auto* pTensor = new X::Data::Tensor();
 
 	std::string name;
@@ -1580,6 +1589,7 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		delete pTensor;
 	}
+#endif
 	return bOK;
 }
 bool Builtin::RegisterInternals()
@@ -1587,6 +1597,7 @@ bool Builtin::RegisterInternals()
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
 	X::Value valBuiltinPack(pBuiltinPack);
 	X::Manager::I().Register("builtin", valBuiltinPack);
+#if not defined(BARE_METAL)
 	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
 	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
 	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml");
@@ -1594,7 +1605,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
 	X::RegisterPackage<X::TimeObject>(m_libName.c_str(), "time");
-
+#endif
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
@@ -1653,7 +1664,9 @@ bool Builtin::RegisterInternals()
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");
+#if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
+#endif
 	return true;
 }
 
