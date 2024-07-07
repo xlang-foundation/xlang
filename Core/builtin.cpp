@@ -1589,6 +1589,7 @@ bool Builtin::RegisterInternals()
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
 	X::Value valBuiltinPack(pBuiltinPack);
 	X::Manager::I().Register("builtin", valBuiltinPack);
+#if not defined(BARE_METAL)
 	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
 	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
 	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml");
@@ -1596,7 +1597,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
 	X::RegisterPackage<X::TimeObject>(m_libName.c_str(), "time");
-
+#endif
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
@@ -1655,7 +1656,9 @@ bool Builtin::RegisterInternals()
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");
+#if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
+#endif
 	return true;
 }
 
