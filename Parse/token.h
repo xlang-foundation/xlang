@@ -9,6 +9,8 @@
 #elif defined(__GNUC__) || defined(__clang__)
 // GCC or Clang Compiler
 #define FORCE_INLINE __attribute__((always_inline)) inline
+#elif defined(BARE_METAL)
+#define FORCE_INLINE 
 #else
 // Fallback for other compilers
 #define FORCE_INLINE inline

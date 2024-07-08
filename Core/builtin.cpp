@@ -645,13 +645,22 @@ bool U_ToBytes(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
+	bool bSerialization = false;
+	auto it = kwParams.find("Serialization");
+	if (it)
+	{
+		if (it->val.IsBool())
+		{
+			bSerialization = (bool)it->val;
+		}
+	}
 	if(params.size() == 0)
 	{
 		X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, 0, false);
 		retValue = X::Value(pBinOut);
 		return true;
 	}
-	else if(params.size() == 1)
+	else if(!bSerialization && params.size() == 1)
 	{
 		auto& v = params[0];
 		if (v.IsNumber())
@@ -1636,7 +1645,7 @@ bool Builtin::RegisterInternals()
 	Register("addpath", (X::U_FUNC)U_AddPath, params);
 	Register("removepath", (X::U_FUNC)U_RemovePath, params);
 	Register("tostring", (X::U_FUNC)U_ToString, params);
-	Register("bytes", (X::U_FUNC)U_ToBytes, params);
+	Register("bytes", (X::U_FUNC)U_ToBytes, params, "bytes([size])|bytes([list,item in [0,256)])|bytes(others,[Serialization=true])");
 	Register("fromBytes", (X::U_FUNC)U_FromBytes, params);
 	Register("setattr", (X::U_FUNC)U_SetAttribute, params, "", true);
 	Register("getattr", (X::U_FUNC)U_GetAttribute, params, "", true);

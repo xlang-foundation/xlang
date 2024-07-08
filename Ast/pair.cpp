@@ -184,6 +184,14 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 	}
 	return bOK;
 }
+bool PairOp::GetItemFromBin(XlangRuntime* rt, 
+	XObj* pContext, Data::Binary* pDataBin, 
+	Expression* r, Value& v, LValue* lValue)
+{
+	bool bOK = true;
+
+	return false;
+}
 bool PairOp::GetItemFromPackage(XlangRuntime* rt, XObj* pContext,
 	Data::Object* pPackage, Expression* r,
 	Value& v, LValue* lValue)
