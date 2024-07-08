@@ -36,6 +36,27 @@ namespace X
 				}
 				m_size = size;
 			}
+			virtual Binary& operator +=(X::Value& r) override
+			{
+				if (r.IsObject() && r.GetObj()->GetType() == X::ObjType::Binary)
+				{
+					auto pBin = dynamic_cast<Binary*>(r.GetObj());
+					if (pBin)
+					{
+						size_t newSize = m_size + pBin->Size();
+						char* newData = new char[newSize];
+						memcpy(newData, m_data, m_size);
+						memcpy(newData + m_size, pBin->Data(), pBin->Size());
+						if (m_OwnData)
+						{
+							delete m_data;
+						}
+						m_data = newData;
+						m_size = newSize;
+					}
+				}
+				return *this;
+			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 			{
 				Object::ToBytes(rt, pContext,stream);
@@ -149,7 +170,15 @@ namespace X
 				std::vector<std::string>& IdList, int id_offset,
 				long long startIndex, long long count)
 			{
+
 				AutoLock autoLock(m_lock);
+				if(Size() == 0)
+				{
+					List* pOutList = new List();
+					pOutList->IncRef();
+					return pOutList;
+				}
+
 				if (startIndex < 0 || startIndex >= Size())
 				{
 					return nullptr;
