@@ -3,9 +3,14 @@
 #include "op.h"
 #include "exp_exec.h"
 
+
 namespace X
 {
-	namespace Data { class List; class Dict; class Tensor; class mSet; }
+	namespace Data { class List; 
+				class Dict; 
+				class Tensor; 
+				class mSet; 
+				class Binary; }
 namespace AST
 {
 	class PairOp :
@@ -18,6 +23,9 @@ namespace AST
 		bool TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
 		bool GetItemFromList(XlangRuntime* rt, XObj* pContext,
 			Data::List* pDataList, Expression* r,
+			Value& v, LValue* lValue);
+		bool GetItemFromBin(XlangRuntime* rt, XObj* pContext,
+			Data::Binary* pDataBin, Expression* r,
 			Value& v, LValue* lValue);
 		bool GetItemFromPackage(XlangRuntime* rt, XObj* pContext,
 			Data::Object* pPackage, Expression* r,
