@@ -22,11 +22,11 @@ namespace X
 			APISET().AddFunc<2>("generate_key_pair", &Cypher::GenerateKeyPair);
 			APISET().AddFunc<1>("remove_private_key", &Cypher::RemovePrivateKey);
 			APISET().AddFunc<2>("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
-			APISET().AddFunc<2>("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
-			APISET().AddFunc<2>("encrypt_with_public_key", &Cypher::EncryptWithPublicKey);
+			APISET().AddFunc<2>("decrypt_with_private_key", &Cypher::DecryptWithPrivateKeyG);
+			APISET().AddFunc<2>("encrypt_with_public_key", &Cypher::EncryptWithPublicKeyG);
 			APISET().AddFunc<2>("decrypt_with_public_key", &Cypher::DecryptWithPublicKey);
-			APISET().AddFunc<2>("encrypt_with_public_key_G", &Cypher::EncryptWithPublicKeyG);
-			APISET().AddFunc<2>("decrypt_with_private_key_G", &Cypher::DecryptWithPrivateKeyG);
+			//APISET().AddFunc<2>("encrypt_with_public_key_G", &Cypher::EncryptWithPublicKeyG);
+			//APISET().AddFunc<2>("decrypt_with_private_key_G", &Cypher::DecryptWithPrivateKeyG);
 			END_PACKAGE
 
 	public:
