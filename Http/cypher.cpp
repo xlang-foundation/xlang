@@ -539,7 +539,7 @@ std::string decrypt_with_private_key(std::vector<unsigned char>& encrypted, RSA*
 }
 
 // Function to create an RSA structure from a PEM-formatted public key string
-RSA* create_rsa_from_public_key_pem(const std::string& public_key_pem) {
+RSA* create_rsa_from_public_key_pem_old(const std::string& public_key_pem) {
 	BIO* bio = BIO_new_mem_buf((void*)public_key_pem.c_str(), -1);
 	if (!bio) {
 		// Handle error
@@ -547,6 +547,26 @@ RSA* create_rsa_from_public_key_pem(const std::string& public_key_pem) {
 	}
 
 	RSA* rsa = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL);
+	BIO_free(bio);
+
+	if (!rsa) {
+		// Handle error
+		return nullptr;
+	}
+
+	return rsa;
+}
+
+// Function to create an RSA structure from a PEM-formatted public key string
+RSA* create_rsa_from_public_key_pem(const std::string& public_key_pem) {
+	BIO* bio = BIO_new_mem_buf((void*)public_key_pem.c_str(), -1);
+	if (!bio) {
+		// Handle error
+		return nullptr;
+	}
+
+	RSA* rsa = RSA_new();
+	rsa = PEM_read_bio_RSAPublicKey(bio, &rsa, NULL, NULL);
 	BIO_free(bio);
 
 	if (!rsa) {
@@ -659,7 +679,7 @@ X::Cypher::~Cypher()
 	EVP_cleanup();
 	ERR_free_strings();
 }
-
+/*
 std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder)
 {
 	// Generate RSA key pair
@@ -673,6 +693,54 @@ std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName, std::s
 	store_private_key(rsa, keyName, mStorePath);
 	// Clean up
 	RSA_free(rsa);
+	return public_key_pem;
+}
+*/
+//std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder)
+std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName)
+{
+	size_t pri_len;
+	size_t pub_len;
+	char* pri_key = NULL;
+	char* pub_key = NULL;
+
+	// Generate RSA key pair
+	RSA* rsa = RSA_generate_key(key_size, RSA_F4, NULL, NULL);
+
+	if (rsa == nullptr)
+	{
+		std::cerr << "Failed to generate RSA key pair." << std::endl;
+		return "";
+	}
+	BIO* pri = BIO_new(BIO_s_mem());
+	BIO* pub = BIO_new(BIO_s_mem());
+	PEM_write_bio_RSAPrivateKey(pri, rsa, NULL, NULL, 0, NULL, NULL);
+	PEM_write_bio_RSAPublicKey(pub, rsa);
+	pri_len = BIO_pending(pri);
+	pub_len = BIO_pending(pub);
+	pri_key = (char*)malloc(pri_len + 1);
+	pub_key = (char*)malloc(pub_len + 1);
+	BIO_read(pri, pri_key, pri_len);
+	BIO_read(pub, pub_key, pub_len);
+	pri_key[pri_len] = '\0';
+	pub_key[pub_len] = '\0';
+
+	// Write the private key to a file with restricted permissions
+	std::string filename = get_private_key_filename(keyName, mStorePath);
+	//std::ofstream file(filename, std::ofstream::out| std::ofstream::trunc);
+	std::ofstream file(filename, std::ofstream::out | std::ofstream::trunc);
+	file.write(pri_key, pri_len);
+	file.close();
+
+	//X::Value public_key_pem(X::g_pXHost->CreateBin(pub_key, pub_len, true), false);
+	std::string public_key_pem(pub_key, pub_len);
+	// Clean up
+	RSA_free(rsa);
+	BIO_free_all(pub);
+	BIO_free_all(pri);
+	free(pri_key);
+	free(pub_key);
+
 	return public_key_pem;
 }
 
@@ -713,6 +781,90 @@ std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string ke
 	return msg;
 }
 
+std::string X::Cypher::DecryptWithPrivateKeyG(X::Value& encrypted, std::string keyName)
+{
+	std::string retMsg;
+	std::string filename = get_private_key_filename(keyName, mStorePath);
+	//std::ifstream infile(filename, std::ios_base::binary);
+	std::ifstream infile(filename);
+	// Get the length of the file
+	infile.seekg(0, std::ios::end);
+	size_t length = infile.tellg();
+	infile.seekg(0, std::ios::beg);
+	// Create a buffer to hold the file content
+	std::vector<char> buffer(length);
+	// Read the entire file into the buffer
+	infile.read(buffer.data(), length);
+	infile.close();
+
+	RSA* rsa = RSA_new();
+	BIO* keybio;
+	keybio = BIO_new_mem_buf((unsigned char*)buffer.data(), -1);
+
+	rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa, NULL, NULL);
+	if (rsa == nullptr)
+	{
+		return retMsg;
+	}
+
+	// rsa max length
+	int key_len = RSA_size(rsa);
+	static char stemp[128] = { 0 };
+	char* sub_text = stemp;
+	bool bNewFlag = false;
+	if (key_len > 128)
+	{
+		sub_text = new char[key_len];
+		bNewFlag = true;
+	}
+
+	int ret = 0;
+	unsigned char* sub_str;
+	int pos = 0;
+	int desLen = key_len;
+	std::vector<unsigned char> vecTemp;
+	std::vector<unsigned char> outDataStr;
+	X::Bin binEnc(encrypted);
+	auto pData = binEnc->Data();
+	unsigned char* ptr = (unsigned char*)pData;
+	int msg_size = encrypted.Size();
+	while (pos < msg_size) {
+		ptr += pos;
+		sub_str = (unsigned char* )ptr;
+		memset(sub_text, 0, key_len);
+		ret = RSA_private_decrypt(desLen, sub_str, (unsigned char*)sub_text, rsa, RSA_PKCS1_PADDING);
+		if (ret >= 0) {
+			//outDataStr.append(std::string(sub_text, ret));
+			vecTemp.resize(ret);
+			memcpy(vecTemp.data(), sub_text, ret);
+			outDataStr.insert(outDataStr.end(), vecTemp.begin(), vecTemp.end());
+			pos += desLen;
+			desLen = msg_size - pos;
+			if (desLen > key_len)
+			{
+				desLen = key_len;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if (bNewFlag)
+	{
+		delete[] sub_text;
+	}
+	retMsg = std::string(outDataStr.begin(), outDataStr.end());
+	BIO_free_all(keybio);
+	RSA_free(rsa);
+
+	return retMsg;
+
+}
+
+
+
 X::Value X::Cypher::EncryptWithPublicKey(std::string msg, std::string perm_key)
 {
 	RSA* rsa = create_rsa_from_public_key_pem(perm_key);
@@ -728,6 +880,82 @@ X::Value X::Cypher::EncryptWithPublicKey(std::string msg, std::string perm_key)
 	X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
 	return valEncrypted;
 }
+
+X::Value X::Cypher::EncryptWithPublicKeyG(std::string msg, std::string perm_key)
+{
+	BIO* keybio = BIO_new_mem_buf((unsigned char*)perm_key.c_str(), -1);
+	RSA* rsa = RSA_new();
+	if (rsa == NULL)
+	{
+		return false;
+	}
+	rsa = PEM_read_bio_RSAPublicKey(keybio, &rsa, NULL, NULL);
+	if (rsa == NULL)
+	{
+		return false;
+	}
+
+	int key_len = RSA_size(rsa);
+	int block_len = key_len - 11;
+	static char stemp[128] = { 0 };
+	char* sub_text = stemp;
+
+	bool bNewFlag = false;
+	if (key_len > 128)
+	{
+		sub_text = new char[key_len];
+		memset(sub_text, 0, key_len);
+		bNewFlag = true;
+	}
+
+	int ret = 0;
+	int pos = 0;
+	std::string sub_str;
+	const char* pstr = NULL;
+	std::vector<unsigned char> vecTemp;
+	std::vector<unsigned char> outDataStr;
+	int msg_size = msg.size();
+	while (pos < msg_size) {
+		pstr = msg.c_str() + pos; //clear_text.substr(pos, block_len);
+
+		memset(sub_text, 0, key_len);
+		if ((msg_size - pos) >= block_len)
+		{
+			ret = RSA_public_encrypt(block_len, (const unsigned char*)pstr, (unsigned char*)sub_text, rsa, RSA_PKCS1_PADDING);
+		}
+		else
+		{
+			block_len = (msg_size - pos);
+			ret = RSA_public_encrypt(block_len, (const unsigned char*)pstr, (unsigned char*)sub_text, rsa, RSA_PKCS1_PADDING);
+		}
+
+		if (ret >= 0) {
+			vecTemp.resize(ret);
+			memcpy(vecTemp.data(), sub_text, ret);
+			outDataStr.insert(outDataStr.end(), vecTemp.begin(), vecTemp.end());
+		}
+		else
+		{
+			break;
+		}
+		pos += block_len;
+	}//while
+
+	if (bNewFlag)
+	{
+		delete[] sub_text;
+	}
+	BIO_free_all(keybio);
+	RSA_free(rsa);
+
+	size_t size = outDataStr.size();
+	char* pBuf = new char[size];
+	memcpy(pBuf, outDataStr.data(), size);
+	X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
+	return valEncrypted;
+
+}
+
 
 std::string X::Cypher::DecryptWithPublicKey(X::Value& encrypted, std::string perm_key)
 {
