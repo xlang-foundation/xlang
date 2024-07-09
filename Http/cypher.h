@@ -14,33 +14,28 @@ namespace X
 	public:
 		BEGIN_PACKAGE(Cypher)
 			APISET().AddPropL("StorePath", [](auto* pThis, X::Value v) {
-				pThis->mStoreName = v.ToString();
-				pThis->CheckAndCreateStoreFolder();
+			pThis->mStoreName = v.ToString();
+			pThis->CheckAndCreateStoreFolder();
 				}, [](auto* pThis) {
 					return pThis->mStoreName;
-				});
-			APISET().AddFunc<2>("generate_key_pair", &Cypher::GenerateKeyPair);
-			APISET().AddFunc<1>("remove_private_key", &Cypher::RemovePrivateKey);
-			APISET().AddFunc<2>("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
-			APISET().AddFunc<2>("decrypt_with_private_key", &Cypher::DecryptWithPrivateKeyG);
-			APISET().AddFunc<2>("encrypt_with_public_key", &Cypher::EncryptWithPublicKeyG);
-			APISET().AddFunc<2>("decrypt_with_public_key", &Cypher::DecryptWithPublicKey);
-			//APISET().AddFunc<2>("encrypt_with_public_key_G", &Cypher::EncryptWithPublicKeyG);
-			//APISET().AddFunc<2>("decrypt_with_private_key_G", &Cypher::DecryptWithPrivateKeyG);
-			END_PACKAGE
+					});
+		APISET().AddFunc<3>("generate_key_pair", &Cypher::GenerateKeyPair);
+		APISET().AddFunc<1>("remove_private_key", &Cypher::RemovePrivateKey);
+		APISET().AddFunc<2>("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
+		APISET().AddFunc<2>("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
+		APISET().AddFunc<2>("encrypt_with_public_key", &Cypher::EncryptWithPublicKey);
+		APISET().AddFunc<2>("decrypt_with_public_key", &Cypher::DecryptWithPublicKey);
+		END_PACKAGE
 
 	public:
 		Cypher();
 		~Cypher();
 		//return public key
-		//std::string GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder);
-		std::string GenerateKeyPair(int key_size,std::string keyName);
+		std::string GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder);
 		bool RemovePrivateKey(std::string keyName);
 		X::Value EncryptWithPrivateKey(std::string msg, std::string keyName);
 		std::string DecryptWithPrivateKey(X::Value& encrypted, std::string keyName);
-		std::string DecryptWithPrivateKeyG(X::Value& encrypted, std::string keyName);
 		X::Value EncryptWithPublicKey(std::string msg, std::string perm_key);
-		X::Value EncryptWithPublicKeyG(std::string msg, std::string perm_key);
 		std::string DecryptWithPublicKey(X::Value& encrypted, std::string perm_key);
 	};
 }
