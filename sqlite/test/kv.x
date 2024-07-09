@@ -8,7 +8,7 @@ def create_db():
     %kv_store_if = SELECT name FROM sqlite_master WHERE type='table' AND name='kv_store';
     re = kv_store_if.fetch()
     if re == None:
-        %CREATE TABLE kv_store (key TEXT, value TEXT, value2 INTEGER);
+        %CREATE TABLE kv_store (key TEXT PRIMARY KEY, value TEXT, value2 INTEGER);
     popWritepad()
 
 def query_key(key):
@@ -28,19 +28,21 @@ def query_key(key):
 def set_kv(key, value, value2):
     pushWritepad(sqlite)
     %USE kv;
-    %INSERT INTO kv_store (key, value, value2) VALUES (${key}, ${value}, ${value2});
+    %INSERT OR REPLACE INTO kv_store (key, value, value2) VALUES (${key}, ${value}, ${value2});
     popWritepad()
 
 def set_kv_text(key, value):
     pushWritepad(sqlite)
     %USE kv;
-    %INSERT INTO kv_store (key, value) VALUES (${key}, ${value});
+    %INSERT OR REPLACE INTO kv_store (key, value) VALUES (${key}, ${value});
     popWritepad()
+
 def set_kv_int(key, value):
     pushWritepad(sqlite)
     %USE kv;
-    %INSERT INTO kv_store (key, value2) VALUES (${key}, ${value});
+    %INSERT OR REPLACE INTO kv_store (key, value2) VALUES (${key}, ${value});
     popWritepad()
+
 
 def remove_key(key):
     pushWritepad(sqlite)
@@ -60,5 +62,6 @@ def test():
     v1 = query_key('kv2.x')
     v2 = query_key('kv2.y')
     v3 = query_key('kv2.z')
+    print("Done!")
 
-# test()
+test()
