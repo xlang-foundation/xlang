@@ -108,7 +108,7 @@ bool ChmodWin(const std::string& filename) {
 
 #endif
 // Function to generate RSA key pair
-RSA* generate_key_pair(int keySize = 2048) {
+RSA* generate_key_pair(int keySize = 1024) {
 	RSA* rsa = RSA_new();
 	BIGNUM* e = BN_new();
 	BN_set_word(e, RSA_F4);  // Use 65537 as the public exponent
@@ -399,11 +399,10 @@ RSA* create_rsa_from_public_key_pem(const std::string& public_key_pem) {
 
 	RSA* rsa = nullptr;  // Initialize RSA pointer to null
 	if (!PEM_read_bio_RSA_PUBKEY(bio, &rsa, NULL, NULL)) {
-		// Handle error more explicitly here if necessary
-		BIO_free(bio);  // Ensure bio is freed in case of failure
-		return nullptr;
+		BIO_reset(bio); 
+		PEM_read_bio_RSAPublicKey(bio, &rsa, nullptr, nullptr); 
 	}
-
+	
 	BIO_free(bio);  // Free BIO after use
 	return rsa;  // rsa should now be properly initialized
 }
