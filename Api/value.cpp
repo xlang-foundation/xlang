@@ -414,7 +414,13 @@ namespace X
 	}
 	void Value::AssignObject(XObj* p, bool bAddRef)
 	{
-		if (p && bAddRef)
+		//for string object, need to clone a new one to assign
+		//for other object, just assign the pointer
+		if (p && p->GetType() == ObjType::Str)
+		{
+			p = p->Clone();
+		}
+		else if (p && bAddRef)
 		{
 			p->IncRef();
 		}
@@ -441,6 +447,14 @@ namespace X
 
 	int Value::obj_cmp(Value* r) const
 	{
+		if (t != r->t)
+		{
+			return 1;
+		}
+		if (x.obj->GetType() != r->x.obj->GetType())
+		{
+			return 1;
+		}
 		return x.obj->cmp(r);
 	}
 	bool Value::ChangeToStrObject()
