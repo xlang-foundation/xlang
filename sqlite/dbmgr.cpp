@@ -23,7 +23,7 @@ namespace X
 		}
 		SqliteDB::SqliteDB(std::string dbPath)
 		{
-			if (dbPath.find(".") == std::string::npos)
+			if (dbPath.rfind(".db") == std::string::npos)
 			{
 				dbPath = dbPath + ".db";
 			}
@@ -226,7 +226,7 @@ namespace X
 			if (pos != std::string::npos)
 			{
 				std::string dbPath = strSql.substr(pos+4);
-				if (dbPath.find(".") == std::string::npos)
+				if (dbPath.rfind(".db") == std::string::npos)
 				{
 					dbPath = dbPath + ".db";
 				}
