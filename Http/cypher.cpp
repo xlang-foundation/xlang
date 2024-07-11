@@ -295,11 +295,11 @@ void send_to_server(const std::string& data) {
 
 // Function to encrypt a message using a private key
 
-std::vector<unsigned char> encrypt_with_private_key(const std::string& message, RSA* rsa) {
+std::vector<unsigned char> encrypt_with_private_key(int paddingMode,const std::string& message, RSA* rsa) {
 	auto rsa_size = RSA_size(rsa);
 	if (rsa_size < message.size())
 	{
-		return long_msg_encrypt_with_private_key(message, rsa);
+		return long_msg_encrypt_with_private_key(paddingMode,message, rsa);
 	}
 	std::vector<unsigned char> encrypted(rsa_size);
 	int encrypted_length = RSA_private_encrypt(
@@ -307,7 +307,7 @@ std::vector<unsigned char> encrypt_with_private_key(const std::string& message, 
 		reinterpret_cast<const unsigned char*>(message.data()),
 		encrypted.data(),
 		rsa,
-		RSA_PKCS1_PADDING
+		paddingMode
 	);
 
 	if (encrypted_length == -1) {
@@ -320,11 +320,11 @@ std::vector<unsigned char> encrypt_with_private_key(const std::string& message, 
 }
 
 // Function to encrypt a message using a public key
-std::vector<unsigned char> encrypt_with_public_key(const std::string& message, RSA* rsa) {
+std::vector<unsigned char> encrypt_with_public_key(int paddingMode, const std::string& message, RSA* rsa) {
 	auto rsa_size = RSA_size(rsa);
 	if (rsa_size < message.size())
 	{
-		return long_msg_encrypt_with_public_key(message, rsa);
+		return long_msg_encrypt_with_public_key(paddingMode,message, rsa);
 	}
 	std::vector<unsigned char> encrypted(rsa_size);
 	int encrypted_length = RSA_public_encrypt(
@@ -332,7 +332,7 @@ std::vector<unsigned char> encrypt_with_public_key(const std::string& message, R
 		reinterpret_cast<const unsigned char*>(message.data()),
 		reinterpret_cast<unsigned char*>(encrypted.data()),
 		rsa,
-		RSA_PKCS1_OAEP_PADDING
+		paddingMode
 	);
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
@@ -343,11 +343,11 @@ std::vector<unsigned char> encrypt_with_public_key(const std::string& message, R
 }
 
 // Function to decrypt a message using a public key
-std::string decrypt_with_public_key(std::vector<unsigned char>& encrypted, RSA* rsa) {
+std::string decrypt_with_public_key(int paddingMode, std::vector<unsigned char>& encrypted, RSA* rsa) {
 	auto rsa_size = RSA_size(rsa);
 	if (rsa_size < encrypted.size())
 	{
-		return long_msg_decrypt_with_public_key(encrypted, rsa);
+		return long_msg_decrypt_with_public_key(paddingMode,encrypted, rsa);
 	}
 	std::string decrypted(rsa_size, '\0');
 	int decrypted_length = RSA_public_decrypt(
@@ -355,7 +355,7 @@ std::string decrypt_with_public_key(std::vector<unsigned char>& encrypted, RSA* 
 		reinterpret_cast<const unsigned char*>(encrypted.data()),
 		reinterpret_cast<unsigned char*>(decrypted.data()),
 		rsa,
-		RSA_PKCS1_PADDING
+		paddingMode
 	);
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
@@ -366,11 +366,11 @@ std::string decrypt_with_public_key(std::vector<unsigned char>& encrypted, RSA* 
 }
 
 // Function to decrypt a message using a private key
-std::string decrypt_with_private_key(std::vector<unsigned char>& encrypted, RSA* rsa) {
+std::string decrypt_with_private_key(int paddingMode, std::vector<unsigned char>& encrypted, RSA* rsa) {
 	auto rsa_size = RSA_size(rsa);
 	if (rsa_size < encrypted.size())
 	{
-		return long_msg_decrypt_with_private_key(encrypted, rsa);
+		return long_msg_decrypt_with_private_key(paddingMode, encrypted, rsa);
 	}
 	std::string decrypted(rsa_size, '\0');
 	int decrypted_length = RSA_private_decrypt(
@@ -378,7 +378,7 @@ std::string decrypt_with_private_key(std::vector<unsigned char>& encrypted, RSA*
 		reinterpret_cast<const unsigned char*>(encrypted.data()),
 		reinterpret_cast<unsigned char*>(decrypted.data()),
 		rsa,
-		RSA_PKCS1_OAEP_PADDING
+		paddingMode
 	);
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
@@ -517,7 +517,7 @@ X::Value X::Cypher::EncryptWithPrivateKey(std::string msg, std::string keyName)
 		std::cerr << "Failed to retrieve the stored private key." << std::endl;
 		return "";
 	}
-	auto encrypted = encrypt_with_private_key(msg, rsa);
+	auto encrypted = encrypt_with_private_key(m_rsa_padding_mode,msg, rsa);
 	RSA_free(rsa);
 	size_t size = encrypted.size();
 	char* pBuf = new char[size];
@@ -536,7 +536,7 @@ std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string ke
 	X::Bin binEnc(encrypted);
 	auto pData = binEnc->Data();
 	std::vector<unsigned char> ary_encrypted(pData, pData + binEnc.Size());
-	std::string msg = decrypt_with_private_key(ary_encrypted, rsa);
+	std::string msg = decrypt_with_private_key(m_rsa_padding_mode,ary_encrypted, rsa);
 	RSA_free(rsa);
 	return msg;
 }
@@ -548,7 +548,7 @@ X::Value X::Cypher::EncryptWithPublicKey(std::string msg, std::string perm_key)
 		std::cerr << "Failed to create RSA from public key." << std::endl;
 		return "";
 	}
-	auto encrypted = encrypt_with_public_key(msg, rsa);
+	auto encrypted = encrypt_with_public_key(m_rsa_padding_mode,msg, rsa);
 	RSA_free(rsa);
 	size_t size = encrypted.size();
 	char* pBuf = new char[size];
@@ -567,7 +567,7 @@ std::string X::Cypher::DecryptWithPublicKey(X::Value& encrypted, std::string per
 	X::Bin binEnc(encrypted);
 	auto pData = binEnc->Data();
 	std::vector<unsigned char> ary_encrypted(pData, pData + binEnc.Size());
-	std::string msg = decrypt_with_public_key(ary_encrypted, rsa);
+	std::string msg = decrypt_with_public_key(m_rsa_padding_mode,ary_encrypted, rsa);
 	RSA_free(rsa);
 	return msg;
 }

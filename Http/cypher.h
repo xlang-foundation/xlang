@@ -9,7 +9,7 @@ namespace X
 	{
 		std::string mStorePath;//full path
 		std::string mStoreName;//just the folder's name
-
+		int m_rsa_padding_mode = 4;// RSA_PKCS1_OAEP_PADDING;
 		bool CheckAndCreateStoreFolder();
 	public:
 		BEGIN_PACKAGE(Cypher)
@@ -19,6 +19,14 @@ namespace X
 				}, [](auto* pThis) {
 					return pThis->mStoreName;
 					});
+		APISET().AddConst("RSA_PKCS1_PADDING",1);
+		APISET().AddConst("RSA_SSLV23_PADDING", 2);
+		APISET().AddConst("RSA_NO_PADDING", 3);
+		APISET().AddConst("RSA_PKCS1_OAEP_PADDING", 4);
+		APISET().AddConst("RSA_X931_PADDING", 5);
+
+		APISET().AddPropWithType<int>("rsa_padding_mode", &Cypher::m_rsa_padding_mode);
+
 		APISET().AddFunc<3>("generate_key_pair", &Cypher::GenerateKeyPair);
 		APISET().AddFunc<1>("remove_private_key", &Cypher::RemovePrivateKey);
 		APISET().AddFunc<2>("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
