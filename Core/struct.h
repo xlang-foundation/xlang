@@ -6,14 +6,95 @@ namespace X
 {
 	namespace Data
 	{
+		enum class CType 
+		{
+			c_char,
+			c_wchar,
+			c_byte,
+			c_ubyte,
+			c_short,
+			c_ushort,
+			c_int,
+			c_uint,
+			c_long,
+			c_ulong,
+			c_longlong,
+			c_ulonglong,
+			c_float,
+			c_double,
+			c_bool,
+			c_void_p  // Pointer type, simplification for general pointers
+		};
+		enum class DataType
+		{
+			c_struct,
+			c_union
+		};
 		class XlangStruct :
 			virtual public XStruct,
 			virtual public Object
 		{
+			DataType m_type = DataType::c_struct;
 			bool m_bOwnData = true;
 			char* m_pData = nullptr;//hold Structs data
 			int m_size = 0;
+			static const size_t typeSizes[];
 		public:
+			struct Field {
+				std::string name;
+				CType type;
+				bool isPointer;
+				int bits;  // Number of bits for the field, applicable for bit fields
+
+				Field(const std::string& name, CType type, bool isPointer = false, int bits = 0)
+					: name(name), type(type), isPointer(isPointer), bits(bits) {}
+			};
+			void addField(const std::string& name, CType type, bool isPointer = false, int bits = 0) {
+				m_fields.emplace_back(name, type, isPointer, bits);
+			}
+
+		private:
+			// List of fields in the struct
+			std::vector<Field> m_fields;
+			size_t calculateUnionSize() const {
+				size_t maxSize = 0;
+				for (const auto& field : m_fields) {
+					size_t size = typeSizes[static_cast<int>(field.type)];
+					if (field.isPointer) {
+						size = sizeof(void*);
+					}
+					maxSize = maxSize>size? maxSize:size;
+				}
+				return maxSize;
+			}
+
+			size_t calculateStructureSize() const {
+				size_t totalSize = 0;
+				size_t maxAlignment = 0;
+
+				for (const auto& field : m_fields) {
+					size_t size = typeSizes[static_cast<int>(field.type)];
+					size_t alignment = size;  // Simplistic alignment assumption
+
+					if (field.isPointer) {
+						size = sizeof(void*);
+						alignment = size;
+					}
+
+					// Align the current offset
+					totalSize = (totalSize + alignment - 1) & ~(alignment - 1);
+					totalSize += size;  // Add size of the current field
+					maxAlignment = maxAlignment>alignment? maxAlignment: alignment;
+				}
+
+				// Final alignment of the structure
+				totalSize = (totalSize + maxAlignment - 1) & ~(maxAlignment - 1);
+				return totalSize;
+			}
+
+		public:
+			static void Init();
+			static void cleanup();
 			XlangStruct():
 				XStruct(0),
 				Object()
@@ -46,6 +127,7 @@ namespace X
 					delete m_pData;
 				}
 			}
+			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 			FORCE_INLINE virtual long long Size() { return m_size; }
 			virtual char* Data() override
 			{

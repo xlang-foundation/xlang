@@ -326,7 +326,6 @@ namespace X
 			X::XEvent* pEvt = nullptr;
 			if (pPack && evtIndex >= 0 && evtIndex < (int)__events.size())
 			{
-				auto* rt = X::g_pXHost->GetCurrentRuntime();
 				X::Value vEvt;
 				pPack->GetIndexValue(__events[evtIndex], vEvt);
 				pEvt = dynamic_cast<X::XEvent*>(vEvt.GetObj());
@@ -768,8 +767,6 @@ namespace X
 				(X::U_FUNC)([](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
 					{
-						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
-						auto* tThis = (T*)pPackage->GetEmbedObj();
 						auto* pTensorGraph = X::g_pXHost->CreateTensorGraph();
 						pTensorGraph->Create(pContext,params, kwParams);
 						retValue = X::Value(pTensorGraph);

@@ -447,6 +447,12 @@ namespace X
 
 	int Value::obj_cmp(Value* r) const
 	{
+		//if r is const str and this is a string object 
+		if (t == X::ValueType::Object && GetObj()->GetType() == X::ObjType::Str
+			&& r->t == X::ValueType::Str)
+		{
+			return x.obj->cmp(r);
+		}
 		if (t != r->t)
 		{
 			return 1;
