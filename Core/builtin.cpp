@@ -1386,8 +1386,10 @@ bool U_CreateStructObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 				{
 					X::Dict dictField(field);
 					std::string name = dictField["name"].ToString();
-					X::Data::CType type = X::Data::CType::c_long;
-					pStructObj->addField(name, type);
+					std::string type = dictField["type"].ToString();
+					bool isPointer = (bool)dictField["isPointer"];
+					int bits = (int)dictField["bits"];
+					pStructObj->addField(name, type, isPointer,bits);
 				}
 			}
 		}
