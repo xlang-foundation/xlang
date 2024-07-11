@@ -633,7 +633,12 @@ namespace X
 				// return 'false' if you want to cancel the request.
 			});
 
+		if (!res)
+		{
+			return false;
+		}
 		m_status = res->status;
+
 		if (data_cur_size >0)
 		{
 			if (isText)
