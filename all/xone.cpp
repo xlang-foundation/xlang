@@ -33,6 +33,7 @@
 #include "tensor.h"
 #include "tensor_graph.h"
 #include "manager.h"
+#include "struct.h"
 
 //for OS Module
 #include "os/fs.h"
@@ -167,6 +168,7 @@ namespace X
 		X::AST::MetaScope().I().Init();
 		X::Data::DeferredObject::Init();
 		X::Data::TypeObject::Init();
+		X::Data::XlangStruct::Init();
 	}
 	void UnloadDevopsEngine()
 	{
@@ -364,6 +366,7 @@ namespace X
 		X::Data::DeferredObject::cleanup();
 		X::Data::TypeObject::cleanup();
 		X::AST::MetaScope().I().Cleanup();
+		X::Data::XlangStruct::cleanup();
 		Hosting::I().Cleanup();
 		G::I().Check();
 		DestoryXHost();

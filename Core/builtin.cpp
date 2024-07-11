@@ -46,7 +46,7 @@
 #include "xport.h"
 #include "ast.h"
 #include "time_object.h"
-
+#include "struct.h"
 
 namespace X
 {
@@ -1368,7 +1368,34 @@ bool U_CreateComplexObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	return true;
 }
 
-bool U_CreateSetObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+bool U_CreateStructObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	auto* pStructObj = new X::Data::XlangStruct();
+	if (params.size() > 0)
+	{
+		X::Value fields = params[0];
+		if (fields.IsList())
+		{
+			X::List liFields(fields);
+			for (auto field : *liFields)
+			{
+				if (field.IsObject() && field.GetObj()->GetType() == X::ObjType::Dict)
+				{
+					X::Dict dictField(field);
+					std::string name = dictField["name"].ToString();
+					X::Data::CType type = X::Data::CType::c_long;
+					pStructObj->addField(name, type);
+				}
+			}
+		}
+	}
+	retValue = X::Value(pStructObj);
+	return true;
+}
+bool U_CreateSetObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -1384,7 +1411,6 @@ bool U_CreateSetObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(pSetObj);
 	return true;
 }
-
 bool U_Event_Loop(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1670,6 +1696,7 @@ bool Builtin::RegisterInternals()
 	Register("event_loop", (X::U_FUNC)U_Event_Loop, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
 	Register("set", (X::U_FUNC)U_CreateSetObject, params);
+	Register("struct", (X::U_FUNC)U_CreateStructObject, params);
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");

@@ -228,7 +228,12 @@ public:
 		//format like folder1/folder2/.../folderN
 		if (R)
 		{
-			if (R->m_type == ObType::Var)
+			if (R->m_type == ObType::Str)
+			{
+				Str* pStr = dynamic_cast<Str*>(R);
+				m_path = std::string(pStr->GetChars(), pStr->Size());
+			}
+			else if (R->m_type == ObType::Var)
 			{
 				m_path = (dynamic_cast<Var*>(R))->GetNameString();
 			}

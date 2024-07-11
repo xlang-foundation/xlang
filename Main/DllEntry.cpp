@@ -32,6 +32,7 @@
 #include "typeobject.h"
 #include "tensor.h"
 #include "tensor_graph.h"
+#include "struct.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -237,6 +238,7 @@ static void XLangInternalInit()
 	X::AST::MetaScope().I().Init();
 	X::Data::DeferredObject::Init();
 	X::Data::TypeObject::Init();
+	X::Data::XlangStruct::Init();
 }
 void XLangRun()
 {
@@ -369,6 +371,7 @@ void XLangStaticUnload()
 	X::Data::DeferredObject::cleanup();
 	X::Data::TypeObject::cleanup();
 	X::AST::MetaScope().I().Cleanup();
+	X::Data::XlangStruct::cleanup();
 	Hosting::I().Cleanup();
 	G::I().Check();
 	DestoryXHost();
@@ -385,6 +388,7 @@ void XLangUnload()
 	X::AST::MetaScope().I().Cleanup();
 	X::Data::DeferredObject::cleanup();
 	X::Data::TypeObject::cleanup();
+	X::Data::XlangStruct::cleanup();
 
 	if (g_pXload->GetConfig().enablePython)
 	{
