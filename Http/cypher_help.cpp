@@ -7,7 +7,8 @@
 #include <iostream>
 
 // Function to encrypt a message using a private key
-std::vector<unsigned char> long_msg_encrypt_with_private_key(const std::string& message, RSA* rsa) {
+std::vector<unsigned char> long_msg_encrypt_with_private_key(int paddingMode, 
+    const std::string& message, RSA* rsa) {
     size_t rsa_size = RSA_size(rsa);
     size_t block_size = rsa_size - 11; // Padding reduces the usable block size
     std::vector<unsigned char> encrypted;
@@ -36,7 +37,8 @@ std::vector<unsigned char> long_msg_encrypt_with_private_key(const std::string& 
 }
 
 // Function to decrypt a message using a public key
-std::string long_msg_decrypt_with_public_key(const std::vector<unsigned char>& encrypted, RSA* rsa) {
+std::string long_msg_decrypt_with_public_key(int paddingMode, 
+    const std::vector<unsigned char>& encrypted, RSA* rsa) {
     size_t rsa_size = RSA_size(rsa);
     std::string decrypted;
     decrypted.reserve(encrypted.size());
@@ -63,7 +65,8 @@ std::string long_msg_decrypt_with_public_key(const std::vector<unsigned char>& e
 }
 
 // Function to encrypt a message using a public key
-std::vector<unsigned char> long_msg_encrypt_with_public_key(const std::string& message, RSA* rsa) {
+std::vector<unsigned char> long_msg_encrypt_with_public_key(int paddingMode, 
+    const std::string& message, RSA* rsa) {
     size_t rsa_size = RSA_size(rsa);
     size_t block_size = rsa_size - 42; // OAEP Padding reduces the usable block size more
     std::vector<unsigned char> encrypted;
@@ -92,7 +95,8 @@ std::vector<unsigned char> long_msg_encrypt_with_public_key(const std::string& m
 }
 
 // Function to decrypt a message using a private key
-std::string long_msg_decrypt_with_private_key(const std::vector<unsigned char>& encrypted, RSA* rsa) {
+std::string long_msg_decrypt_with_private_key(int paddingMode, 
+    const std::vector<unsigned char>& encrypted, RSA* rsa) {
     size_t rsa_size = RSA_size(rsa);
     std::string decrypted;
     decrypted.reserve(encrypted.size());
@@ -123,8 +127,8 @@ int long_msg_test() {
     RSA* rsa = RSA_generate_key(2048, RSA_F4, NULL, NULL);
 
     std::string message = "Hello, this is a test message!";
-    std::vector<unsigned char> encrypted = long_msg_encrypt_with_private_key(message, rsa);
-    std::string decrypted = long_msg_decrypt_with_public_key(encrypted, rsa);
+    std::vector<unsigned char> encrypted = long_msg_encrypt_with_private_key(RSA_PKCS1_OAEP_PADDING,message, rsa);
+    std::string decrypted = long_msg_decrypt_with_public_key(RSA_PKCS1_OAEP_PADDING,encrypted, rsa);
 
     std::cout << "Decrypted message: " << decrypted << std::endl;
 

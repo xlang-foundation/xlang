@@ -23,7 +23,8 @@ namespace X
 			c_float,
 			c_double,
 			c_bool,
-			c_void_p  // Pointer type, simplification for general pointers
+			c_void_p,  // Pointer type, simplification for general pointers
+			c_invalid
 		};
 		enum class DataType
 		{
@@ -39,6 +40,7 @@ namespace X
 			char* m_pData = nullptr;//hold Structs data
 			int m_size = 0;
 			static const size_t typeSizes[];
+			static const std::string typeNames[];
 		public:
 			struct Field {
 				std::string name;
@@ -49,10 +51,16 @@ namespace X
 				Field(const std::string& name, CType type, bool isPointer = false, int bits = 0)
 					: name(name), type(type), isPointer(isPointer), bits(bits) {}
 			};
-			void addField(const std::string& name, CType type, bool isPointer = false, int bits = 0) {
+			inline void addField(const std::string& name, CType type, bool isPointer = false, int bits = 0) {
 				m_fields.emplace_back(name, type, isPointer, bits);
 			}
-
+			inline void addField(const std::string& name, std::string& type, bool isPointer = false, int bits = 0) {
+				auto ty = getCTypeFromName(type);
+				if (ty != CType::c_invalid)
+				{
+					m_fields.emplace_back(name, ty, isPointer, bits);
+				}
+			}
 		private:
 			// List of fields in the struct
 			std::vector<Field> m_fields;
@@ -91,7 +99,14 @@ namespace X
 				totalSize = (totalSize + maxAlignment - 1) & ~(maxAlignment - 1);
 				return totalSize;
 			}
-
+			static CType getCTypeFromName(const std::string& name) {
+				for (int i = 0; i < static_cast<int>(CType::c_invalid); ++i) {
+					if (typeNames[i] == name) {
+						return static_cast<CType>(i);
+					}
+				}
+				return CType::c_invalid;
+			}
 		public:
 			static void Init();
 			static void cleanup();

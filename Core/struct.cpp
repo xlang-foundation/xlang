@@ -23,7 +23,14 @@ namespace X
             sizeof(float),           // c_float
             sizeof(double),          // c_double
             sizeof(bool),            // c_bool
-            sizeof(void*)            // c_void_p
+            sizeof(void*),            // c_void_p
+            0                       //c_invalid
+        };
+        const std::string XlangStruct::typeNames[] = {
+            "char", "wchar_t", "byte", "unsigned byte",
+            "short", "unsigned short", "int", "unsigned int",
+            "long", "unsigned long", "long long", "unsigned long long",
+            "float", "double", "bool", "void*"
         };
         static Obj_Func_Scope<1> _scope;
         void XlangStruct::Init()
