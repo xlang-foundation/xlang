@@ -50,6 +50,7 @@ namespace X
 					};
 				_dictScope.AddFunc("set", "set(key,val)", f);
 			}
+			_dictScope.Close();
 		}
 		void Dict::cleanup()
 		{

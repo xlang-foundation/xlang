@@ -147,6 +147,7 @@ namespace X
 				_tensorScope.AddFunc("reshape",
 					"reshape(list of shape: [10,40,10], need to have same amount of items)", f);
 			}
+			_tensorScope.Close();
 		}
 
 		void Tensor::cleanup()

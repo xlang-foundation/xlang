@@ -26,6 +26,7 @@ namespace X
 				};
 				_tensorGraphScope.AddFunc("run", "graph.run()", f);
 			}
+			_tensorGraphScope.Close();
 		}
 
 		void TensorGraph::cleanup()

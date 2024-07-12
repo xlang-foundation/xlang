@@ -9,6 +9,7 @@
 #include "op_registry.h"
 #include "remote_object.h"
 #include "iterator.h"
+#include "struct.h"
 
 namespace X
 {
@@ -40,6 +41,13 @@ namespace AST
 		{
 			auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
 			bOK = pPropObj->SetPropValue(rt, lValue_L.GetContext(), v_r);
+			v = Value(bOK);
+		}
+		break;
+		case X::ObjType::StructField:
+		{
+			auto* pXlangStructField = dynamic_cast<Data::XlangStructField*>(pObj);
+			bOK = pXlangStructField->SetValue(rt, lValue_L.GetContext(), v_r);
 			v = Value(bOK);
 		}
 		break;

@@ -6,6 +6,7 @@
 #include <iostream>
 #include "module.h"
 #include "xclass_object.h"
+#include "struct.h"
 
 namespace X
 {
@@ -234,10 +235,21 @@ namespace X
 		bool Var::GetPropValue(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& val)
 		{
 			bool bOK = false;
-			auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
-			if (pPropObj)
+			if (pObj->GetType() == ObjType::StructField)
 			{
-				bOK = pPropObj->GetPropValue(rt, pContext, val);
+				auto* pStructField = dynamic_cast<Data::XlangStructField*>(pObj);
+				if (pStructField)
+				{
+					bOK = pStructField->GetValue(rt, pContext, val);
+				}
+			}
+			else
+			{
+				auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
+				if (pPropObj)
+				{
+					bOK = pPropObj->GetPropValue(rt, pContext, val);
+				}
 			}
 			return bOK;
 		}

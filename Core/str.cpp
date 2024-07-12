@@ -204,6 +204,7 @@ namespace X
 				};
 				_strScope.AddFunc("regex_replace", "new_str = regex_replace(regex_expr,target_chars)", f);
 			}
+			_strScope.Close();
 		}
 		void Str::cleanup()
 		{

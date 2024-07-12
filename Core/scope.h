@@ -94,7 +94,6 @@ class Scope
 	//same namespace scope with Package, but different m_varFrame
 	//we add this method to make scope's variable access is very fast
 	//by removing all function calls
-
 	Scope* m_pNamespaceScope = nullptr;
 	bool m_NoAddVar = false;//if set to true, can't add new var
 protected:
