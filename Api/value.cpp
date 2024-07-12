@@ -414,13 +414,29 @@ namespace X
 	}
 	void Value::AssignObject(XObj* p, bool bAddRef)
 	{
-		//for string object, need to clone a new one to assign
-		//for other object, just assign the pointer
-		if (p && p->GetType() == ObjType::Str)
+		if (p == nullptr)
 		{
-			p = p->Clone();
+			x.obj = nullptr;
+			return;
 		}
-		else if (p && bAddRef)
+		if (bAddRef)
+		{
+			//for string object, need to clone a new one to assign
+			//for other object, just assign the pointer
+			if (p->GetType() == ObjType::Str)
+			{
+				p = p->Clone();
+			}
+			else
+			{
+				p->IncRef();
+			}
+		}
+		x.obj = p;
+	}
+	void Value::SetObject(XObj* p)
+	{
+		if (p != nullptr)
 		{
 			p->IncRef();
 		}
@@ -429,7 +445,7 @@ namespace X
 	void Value::SetString(std::string& s)
 	{
 		t = ValueType::Object;
-		x.obj = g_pXHost->CreateStr(s.c_str(), (int)s.size());
+		x.obj = dynamic_cast<XObj*>(g_pXHost->CreateStr(s.c_str(), (int)s.size()));
 	}
 	void Value::SetString(std::string&& s)
 	{

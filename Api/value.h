@@ -193,6 +193,7 @@ public:
 		if (t == ValueType::Object)
 		{
 			ReleaseObject(x.obj);
+			x.obj = nullptr;
 		}
 		t = ValueType::Invalid;
 	}
@@ -312,6 +313,7 @@ public:
 	bool Clone();
 	bool ChangeToStrObject();
 	void AssignObject(XObj* p,bool bAddRef = true);
+	void SetObject(XObj* p);
 	void ReleaseObject(XObj* p);
 	FORCE_INLINE Value Negative() const
 	{
@@ -332,8 +334,8 @@ public:
 	FORCE_INLINE Value(const Value& v)
 	{
 		flags = v.flags;
-		x.l = 0;
 		t = v.t;
+		x.l = 0;
 		switch (t)
 		{
 		case ValueType::Int64:
@@ -346,7 +348,7 @@ public:
 			x.str = v.x.str;
 			break;
 		case ValueType::Object:
-			AssignObject(v.x.obj);
+			SetObject(v.x.obj);	
 			break;
 		default:
 			break;
@@ -513,6 +515,7 @@ public:
 				return;
 			}
 			ReleaseObject(x.obj);
+			x.obj = nullptr;
 		}
 		flags = v.flags;
 		t = v.t;

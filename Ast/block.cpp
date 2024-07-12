@@ -119,6 +119,11 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		{
 			v = v0;
 		}
+		if (action0.type == ExecActionType::Return)
+		{
+			action = action0;
+			break;
+		}
 	}
 	m_bRunning = false;
 	if (bEnterBlock && (m_type == ObType::Func || m_type == ObType::Module))

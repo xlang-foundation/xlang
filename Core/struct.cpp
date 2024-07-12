@@ -54,6 +54,7 @@ namespace X
         void XlangStruct::GetBaseScopes(std::vector<AST::Scope*>& bases)
         {
             bases.push_back(_scope.GetMyScope());
+            bases.push_back(m_fieldScope.GetMyScope());
         }
 	}
 }

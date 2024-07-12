@@ -1394,6 +1394,7 @@ bool U_CreateStructObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			}
 		}
 	}
+	pStructObj->Build();
 	retValue = X::Value(pStructObj);
 	return true;
 }

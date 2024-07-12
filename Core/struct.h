@@ -1,6 +1,7 @@
 #pragma once
 
 #include "object.h"
+#include "obj_func_scope.h"
 
 namespace X
 {
@@ -31,6 +32,18 @@ namespace X
 			c_struct,
 			c_union
 		};
+		class XlangStructField :
+			virtual public Object
+		{
+			std::string m_name;
+		public:
+			XlangStructField(std::string& name) :
+				Object()
+			{
+				m_name = name;
+				m_t = ObjType::StructField;
+			}
+		};
 		class XlangStruct :
 			virtual public XStruct,
 			virtual public Object
@@ -39,6 +52,7 @@ namespace X
 			bool m_bOwnData = true;
 			char* m_pData = nullptr;//hold Structs data
 			int m_size = 0;
+			Obj_Func_Scope<0> m_fieldScope;
 			static const size_t typeSizes[];
 			static const std::string typeNames[];
 		public:
@@ -60,6 +74,27 @@ namespace X
 				{
 					m_fields.emplace_back(name, ty, isPointer, bits);
 				}
+			}
+			bool Build()
+			{
+				int cnt = m_fields.size();
+				m_fieldScope.InitWithNumber(cnt);
+				for (int i = 0; i < cnt; i++)
+				{
+					auto& field = m_fields[i];
+					XlangStructField* pField = new XlangStructField(field.name);
+					X::Value objField(pField);
+					m_fieldScope.AddObject(field.name.c_str(), objField);
+				}
+				if (m_type == DataType::c_struct)
+				{
+					m_size = calculateStructureSize();
+				}
+				else
+				{
+					m_size = calculateUnionSize();
+				}
+				return true;
 			}
 		private:
 			// List of fields in the struct

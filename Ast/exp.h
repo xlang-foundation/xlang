@@ -65,6 +65,7 @@ enum class ExecActionType
 	None,
 	Break,
 	Continue,
+	Return,
 };
 
 struct ExecAction
