@@ -246,6 +246,11 @@ namespace X
 					{
 						v = v0;
 					}
+					if (action0.type == ExecActionType::Return)
+					{
+						action = action0;
+						break;
+					}
 				}
 				m_bRunning = false;
 				return bOk;

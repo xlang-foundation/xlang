@@ -34,6 +34,7 @@ namespace X
 		Complex,
 		Set,
 		Struct,
+		StructField,
 		TableRow,
 		Table,
 		DeferredObject,

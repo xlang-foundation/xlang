@@ -435,6 +435,7 @@ void Register(OpRegistry* reg)
 	RegOP(":").SetId(reg, OP_ID::Colon);
 	RegOP(",").SetId(reg, OP_ID::Comma);
 	RegOP("\t").SetId(reg, OP_ID::Tab);
+	RegOP("return").SetId(reg, OP_ID::ReturnOp);
 	RegOP("break").SetId(reg, OP_ID::Break);
 	RegOP("continue").SetId(reg, OP_ID::Continue);
 	RegOP("pass").SetId(reg, OP_ID::Pass);

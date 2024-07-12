@@ -32,6 +32,7 @@ enum class OP_ID
 	And,Or,
 	Break,Continue,Pass,
 	ReturnType,
+	ReturnOp,//return operator
 	Count
 };
 

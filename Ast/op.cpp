@@ -144,6 +144,10 @@ bool UnaryOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,L
 		return false;
 	}
 	auto func = G::I().R().OpAct(Op).unaryop;
+	if (opId == OP_ID::ReturnOp)
+	{
+		action.type = ExecActionType::Return;
+	}
 	return func ? func(rt,this, v_r, v) : false;
 }
 

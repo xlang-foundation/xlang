@@ -1,15 +1,16 @@
 
-str1 = "Hello"
-str2 = str1
-str2 += " World"
-if str1 != None:
-    print(str1)
-if str2 != "":
-    print(str2)
-print(str2)
+def test_return(x):
+	if x == 1:
+		x +=100
+		return x
+	elif x == 2:
+		return 2
+	elif x == 3:
+		return 3
+	print("This is last code")
+	return 10
 
-x = {"df":1,"xyz":34}
-y = bytes(x)
-if y != None and y != "":
-    print(x)
-print("done")
+y = test_return(1)
+print(y)
+y = test_return(9)
+print(y)

@@ -72,7 +72,7 @@ namespace X
 	{
 		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
 		pStrObj->IncRef();
-		return pStrObj;
+		return dynamic_cast<XStr*>(pStrObj);
 	}
 	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator, void* pContext)
 	{
