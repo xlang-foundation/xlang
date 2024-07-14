@@ -76,6 +76,7 @@ namespace X
 					};
 				_listScope.AddFunc("setprimitive", "setprimitive(key,func)", f);
 			}
+			_listScope.Close();
 		}
 		void ModuleObject::cleanup()
 		{

@@ -250,6 +250,7 @@ namespace X
 					};
 				_listScope.AddFunc("extend", "extend(other)", f);
 			}
+			_listScope.Close();
 		}
 		void List::cleanup()
 		{

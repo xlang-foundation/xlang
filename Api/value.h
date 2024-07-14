@@ -375,6 +375,10 @@ public:
 	{
 		return (t == ValueType::Int64) ? (unsigned short)x.l : (unsigned short)x.d;
 	}
+	FORCE_INLINE operator long() const
+	{
+		return (t == ValueType::Int64) ? (long)x.l : (long)x.d;
+	}
 	FORCE_INLINE operator double() const
 	{
 		return (t == ValueType::Int64)?(double)x.l:x.d;

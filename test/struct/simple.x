@@ -3,6 +3,7 @@ s = struct([
 	{name:"startPos",type:"int"}
 	])
 s.len =10.0
-print("s=",s.len)
+sl = s.len
+print("s.len=",sl)
 s.startPos = 100
 print("s=",s)

@@ -46,6 +46,7 @@ namespace X
                     };
                 _scope.AddFunc("AddFields", "AddFields([{name,type,asPointer,bits}])", f);
             }
+            _scope.Close();
         }
         void XlangStruct::cleanup()
         {
@@ -55,6 +56,29 @@ namespace X
         {
             bases.push_back(_scope.GetMyScope());
             bases.push_back(m_fieldScope.GetMyScope());
+        }
+        bool XlangStruct::Build()
+        {
+            int cnt = m_fields.size();
+            m_fieldScope.InitWithNumber(cnt);
+            for (int i = 0; i < cnt; i++)
+            {
+                auto& field = m_fields[i];
+                XlangStructField* pField = new XlangStructField(field.name,i);
+                X::Value objField(pField);
+                m_fieldScope.AddObject(field.name.c_str(), objField);
+            }
+            m_fieldScope.Close();
+            if (m_type == DataType::c_struct)
+            {
+                m_size = calculateStructureSize();
+            }
+            else
+            {
+                m_size = calculateUnionSize();
+            }
+            m_pData = new char[m_size];
+            return true;
         }
 	}
 }
