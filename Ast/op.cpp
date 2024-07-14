@@ -146,6 +146,12 @@ namespace AST
 
 bool UnaryOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
+	//for case: return without value
+	if (opId == OP_ID::ReturnOp && R == nullptr)
+	{
+		action.type = ExecActionType::Return;
+		return true;
+	}
 	Value v_r;
 	if (!ExpExec(R,rt,action,pContext,v_r))
 	{
