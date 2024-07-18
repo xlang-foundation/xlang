@@ -126,13 +126,14 @@ namespace X
 			bool Get(X::Value& key, X::Value& val,
 				X::LValue* lValue = nullptr)
 			{
-				bool bOK = false;
 				auto it = mMap.find(key);
 				if (it != mMap.end())
 				{
 					val = it->second;
-					if (lValue) *lValue = &it->second;
-					bOK = true;
+					if (lValue)
+					{
+						*lValue = &it->second;
+					}
 				}
 				else
 				{
@@ -141,7 +142,8 @@ namespace X
 						HookLValue(key, lValue);
 					}
 				}
-				return bOK;
+				//Always true to say this call is OK
+				return true;
 			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 			{
