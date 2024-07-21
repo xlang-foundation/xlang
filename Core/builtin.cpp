@@ -736,6 +736,27 @@ bool U_FromBytes(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	stream >> retValue;
 	return true;
 }
+bool U_GetLength(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(0);
+		return true;
+	}
+	X::Value p = params[0];
+	if (p.IsObject())
+	{
+		retValue = X::Value(p.GetObj()->Size());
+		return true;
+	}
+	else
+	{
+		retValue = X::Value(0);
+		return true;
+	}
+}
 bool U_GetType(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
@@ -1695,6 +1716,7 @@ bool Builtin::RegisterInternals()
 	Register("float", (X::U_FUNC)U_ToFloat, params);
 	Register("str", (X::U_FUNC)U_ToString, params);
 	Register("type", (X::U_FUNC)U_GetType, params);
+	Register("len", (X::U_FUNC)U_GetLength, params);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
 	Register("event_loop", (X::U_FUNC)U_Event_Loop, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);

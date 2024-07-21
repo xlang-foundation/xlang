@@ -192,7 +192,22 @@ namespace X
 	X::Value XlangRuntime::GetXModuleFileName()
 	{
 		std::string moduleFileName;
-		if (m_pModule)
+		bool bFind = false;
+		//trust stack's current module
+		if (m_stackBottom)
+		{
+			auto* pExp = m_stackBottom->GetCurExp();
+			if (pExp)
+			{
+				auto* pModule = pExp->FindModule();
+				if (pModule)
+				{
+					moduleFileName = pModule->GetModuleName();
+					bFind = true;
+				}
+			}
+		}
+		if (!bFind && m_pModule)
 		{
 			moduleFileName = m_pModule->GetModuleName();
 		} 
@@ -204,6 +219,9 @@ namespace X
 		{
 			return m_stackBottom->GetStartLine();
 		}
-		return -1;
+		else
+		{
+			return -1;
+		}
 	}
 }
