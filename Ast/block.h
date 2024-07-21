@@ -225,6 +225,11 @@ namespace X
 					}
 					Value v0;
 					int line = i->GetStartLine();
+					int pos = i->GetCharPos();
+					//Update Stack Frame
+					rt->GetCurrentStack()->SetLine(line);
+					rt->GetCurrentStack()->SetCharPos(pos);
+					rt->GetCurrentStack()->SetCurExp(i);
 					ExecAction action0;
 					bOk = ExpExec(i, rt, action0, pContext, v0, lValue);
 					//if break or cotinue action passed back

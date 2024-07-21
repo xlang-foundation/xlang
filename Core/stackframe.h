@@ -22,6 +22,7 @@ protected:
 	int m_varCnt = 0;
 	X::Value* m_Values = nil;
 	X::Value m_retVal;
+	Expression* m_curExp = nullptr;
 	int m_lineStart = -1;
 	int m_charPos = 0;
 #if XLANG_ENG_DBG
@@ -94,6 +95,8 @@ public:
 	bool AddVar(XlangRuntime* rt,std::string& name, X::Value& val);
 	FORCE_INLINE virtual int GetStartLine() { return m_lineStart; }
 	FORCE_INLINE void SetLine(int l) { m_lineStart = l; }
+	FORCE_INLINE void SetCurExp(Expression* exp) { m_curExp = exp; }
+	FORCE_INLINE Expression* GetCurExp() { return m_curExp; }
 	FORCE_INLINE void SetCharPos(int c) { m_charPos = c; }
 	FORCE_INLINE virtual int GetCharPos() { return m_charPos; }
 	FORCE_INLINE Scope* GetScope() { return m_pScope; }
