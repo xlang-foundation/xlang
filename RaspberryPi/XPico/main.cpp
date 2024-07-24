@@ -2,7 +2,7 @@
  * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
  *
  * SPDX-License-Identifier: BSD-3-Clause
- */
+ **/
 
 #include "pico/stdlib.h"
 #include <stdio.h>
@@ -40,25 +40,71 @@
 #include "tensor_graph.h"
 #include "manager.h"
 
-
-void XLangStaticLoad()
+namespace X
 {
-    X::CreatXHost();
-    X::Builtin::I().RegisterInternals();
-    X::BuildOps();
-    X::ScriptsManager::I().Load();
-    X::ScriptsManager::I().Run();
-    //X::XLangProxyManager::I().Register();
+    void XLangStaticLoad()
+    {
+        X::CreatXHost();
+        X::Builtin::I().RegisterInternals();
+        X::BuildOps();
+    }
+
+    static void XLangInternalInit()
+    {
+        X::Data::Str::Init();
+        X::AST::ModuleObject::Init();
+        X::Data::List::Init();
+        X::Data::Dict::Init();
+        X::Data::mSet::Init();
+        X::AST::MetaScope().I().Init();
+        X::Data::DeferredObject::Init();
+        X::Data::TypeObject::Init();
+    }
+
+    void XLangRun(X::Config& config)
+    {
+        XLangInternalInit();
+        Builtin::I().RegisterInternals();
+        BuildOps();
+        /* 
+        if (config.dbg)
+        {
+            LoadDevopsEngine();
+        }
+        */
+
+        bool HasCode = false;
+        std::string code;
+        const char* fileName = config.fileName;
+        const char* inlineCode = "print('this is pico')";
+        if (inlineCode)
+        {
+            Value retVal;
+            HasCode = true;
+            code = inlineCode;
+            ReplaceAll(code, "\\n", "\n");
+            ReplaceAll(code, "\\t", "\t");
+            std::vector<X::Value> passInParams;
+            Hosting::I().Run("inline_code", inlineCode,
+                (int)strlen(inlineCode),
+                passInParams,
+                retVal);
+        }
+    }
 }
 
 int main() {
 
-    XLangStaticLoad();
+    stdio_init_all();
+	
+    X::Config config;
+    X::XLangStaticLoad();
+	X::XLangRun(config);
 
 #ifndef PICO_DEFAULT_LED_PIN
 #warning blink example requires a board with a regular LED
 #else
-    stdio_init_all();
+
     const uint LED_PIN = PICO_DEFAULT_LED_PIN;
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
