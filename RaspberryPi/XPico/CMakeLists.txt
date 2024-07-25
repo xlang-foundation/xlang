@@ -28,14 +28,14 @@ FILE(GLOB Ast_SRC "../../Ast/*.cpp")
 FILE(GLOB Serialize_SRC "../../Serialize/*.cpp")
 FILE(GLOB Parse_SRC "../../Parse/*.cpp")
 FILE(GLOB Thread_SRC "../../Thread/*.cpp")
-FILE(GLOB Ext_SRC "../../Ext/*.cpp")
+FILE(GLOB Ext_SRC "../../Ext/event.cpp")
 FILE(GLOB Text_SRC "../../Text/*.cpp")
 FILE(GLOB Rpc_SRC "../../rpc/*.cpp")
 FILE(GLOB Nn_SRC "../../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../../Jit/*.cpp")
 FILE(GLOB Main_SRC "../../Main/AddScripts.cpp" "../../Main/Hosting.cpp" "../../Main/xhost_impl.cpp")
 
-FILE(GLOB AppEntry_SRC "../../cli.cpp","./*.cpp")
+FILE(GLOB AppEntry_SRC "../../cli.cpp")
 FILE(GLOB Pico_SRC "./*.cpp")
 
 #Add xlang os module into this standalone app

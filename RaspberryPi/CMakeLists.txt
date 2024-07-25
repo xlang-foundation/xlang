@@ -19,7 +19,7 @@ pico_sdk_init()
 add_subdirectory(XPico)
 
 # Add test example
-add_subdirectory(test)
+# add_subdirectory(test)
 
 add_compile_options(
         -Wall

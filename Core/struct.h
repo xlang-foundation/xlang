@@ -269,7 +269,10 @@ namespace X
 					*reinterpret_cast<void**>(fieldAddress) = (void*)(uintptr_t)v;  // Using uintptr_t for pointer conversion
 					break;
 				default:
+#if not defined(BARE_METAL)				
 					throw std::invalid_argument("Unsupported field type.");
+#endif				
+					break;	
 				}
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
