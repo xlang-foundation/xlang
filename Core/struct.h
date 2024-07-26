@@ -9,6 +9,7 @@ namespace X
 	{
 		enum class CType 
 		{
+			c_struct,
 			c_char,
 			c_wchar,
 			c_byte,

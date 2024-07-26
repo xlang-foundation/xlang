@@ -8,6 +8,7 @@ namespace X
 	{
         // Initialize the size array
         const size_t XlangStruct::typeSizes[] = {
+            0,
             sizeof(char),            // c_char
             sizeof(wchar_t),         // c_wchar
             sizeof(char),            // c_byte
@@ -27,6 +28,7 @@ namespace X
             0                       //c_invalid
         };
         const std::string XlangStruct::typeNames[] = {
+            "strut",
             "char", "wchar_t", "byte", "unsigned byte",
             "short", "unsigned short", "int", "unsigned int",
             "long", "unsigned long", "long long", "unsigned long long",
