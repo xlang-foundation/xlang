@@ -39,6 +39,7 @@
 #include "tensor.h"
 #include "tensor_graph.h"
 #include "manager.h"
+#include "DeviceLoop.h"
 
 namespace X
 {
@@ -48,7 +49,24 @@ namespace X
         X::Builtin::I().RegisterInternals();
         X::BuildOps();
     }
-
+    void XLangStaticUnload()
+    {
+        Builtin::I().Cleanup();
+        Manager::I().Cleanup();
+        X::AST::ModuleObject::cleanup();
+        X::Data::Str::cleanup();
+        X::Data::List::cleanup();
+        X::Data::Dict::cleanup();
+        X::Data::Future::cleanup();
+        X::Data::Function::cleanup();
+        X::Data::DeferredObject::cleanup();
+        X::Data::TypeObject::cleanup();
+        X::AST::MetaScope().I().Cleanup();
+        X::Data::XlangStruct::cleanup();
+        Hosting::I().Cleanup();
+        G::I().Check();
+        DestoryXHost();
+    }
     static void XLangInternalInit()
     {
         X::Data::Str::Init();
@@ -91,6 +109,7 @@ namespace X
                 retVal);
         }
     }
+
 }
 
 int main() {
@@ -100,20 +119,11 @@ int main() {
     X::Config config;
     X::XLangStaticLoad();
 	X::XLangRun(config);
+    
+    DeviceLoop loop;
+    //enter loop
+    loop.start();
 
-#ifndef PICO_DEFAULT_LED_PIN
-#warning blink example requires a board with a regular LED
-#else
-
-    const uint LED_PIN = PICO_DEFAULT_LED_PIN;
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-    while (true) {
-        gpio_put(LED_PIN, 1);
-        sleep_ms(250);
-        gpio_put(LED_PIN, 0);
-        printf("xxx");
-        sleep_ms(250);
-    }
-#endif
+    XLangStaticUnload();
+    return 0;
 }
