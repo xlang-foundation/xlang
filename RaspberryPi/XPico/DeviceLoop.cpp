@@ -16,11 +16,10 @@ void DeviceLoop::start() {
 void DeviceLoop::processCommand(const std::vector<char>& command) {
 	X::Value result;
 	X::XLStream* pStream = X::g_pXHost->CreateStream(command.data(), command.size());
-	X::Value commandParams;
-	commandParams.FromBytes(pStream);
+	X::Value params;
+	params.FromBytes(pStream);
 	X::g_pXHost->ReleaseStream(pStream);
 
-	X::List params(commandParams);
 	if (params.size() < 2) {
 		return; // Invalid command format
 	}

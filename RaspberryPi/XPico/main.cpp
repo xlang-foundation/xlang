@@ -40,6 +40,7 @@
 #include "tensor_graph.h"
 #include "manager.h"
 #include "DeviceLoop.h"
+#include "struct.h"
 
 namespace X
 {
@@ -120,7 +121,14 @@ int main() {
     X::XLangStaticLoad();
 	X::XLangRun(config);
     
-    DeviceLoop loop;
+    // Initialize UART0 with TX on GPIO 0 and RX on GPIO 1
+    uart_inst_t* uart = uart0;
+    uint txPin = 0;
+    uint rxPin = 1;
+
+    // Create DeviceLoop instance
+    DeviceLoop loop(uart, txPin, rxPin);
+
     //enter loop
     loop.start();
 
