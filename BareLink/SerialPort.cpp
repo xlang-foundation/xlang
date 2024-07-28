@@ -148,7 +148,7 @@ void SerialPort::readLoop() {
         }
         else if (bytesRead == 0) {
             // Connection closed by the other side, attempt to reconnect
-            reconnect();
+            //reconnect();
         }
     }
 }
@@ -165,7 +165,7 @@ void SerialPort::writeLoop() {
             bool written = write(packet.data(), packet.size());
             if (!written) {
                 // Handle write error or connection closure, attempt to reconnect
-                reconnect();
+                //reconnect();
             }
         }
     }
