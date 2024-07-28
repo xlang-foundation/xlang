@@ -1,3 +1,4 @@
+#include <string.h>
 #include "serial_port_bm.h"
 
 SerialPortBM::SerialPortBM(uart_inst_t* uart, uint txPin, uint rxPin) : uart(uart), txPin(txPin), rxPin(rxPin) {
@@ -44,7 +45,7 @@ bool SerialPortBM::write(const char* data, unsigned int length) {
     return true;
 }
 
-void SerialPortBM::asyncRead(DataCallback callback) {
+void SerialPortBM::asyncRead(DataCallback callback,void* context) {
     while (true) {
         std::vector<char> buffer(4);
         int bytesRead = read(buffer.data(), buffer.size());
@@ -53,12 +54,8 @@ void SerialPortBM::asyncRead(DataCallback callback) {
             buffer.resize(dataSize);
             bytesRead = read(buffer.data(), buffer.size());
             if (bytesRead == dataSize) {
-                callback(buffer);
+                callback(buffer,context);
             }
-        }
-        else if (bytesRead == 0) {
-            // Connection closed by the other side, attempt to reconnect
-            reconnect();
         }
     }
 }
@@ -66,8 +63,8 @@ void SerialPortBM::asyncRead(DataCallback callback) {
 void SerialPortBM::asyncWrite(const std::vector<char>& data) {
     std::vector<char> packet(4 + data.size());
     int dataSize = data.size();
-    std::memcpy(packet.data(), &dataSize, 4);
-    std::memcpy(packet.data() + 4, data.data(), data.size());
+    memcpy(packet.data(), &dataSize, 4);
+    memcpy(packet.data() + 4, data.data(), data.size());
 
     bool written = write(packet.data(), packet.size());
     if (!written) {

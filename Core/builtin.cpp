@@ -232,7 +232,8 @@ bool U_LoadModule(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	if (bOK)
 	{
 		X::Value moduleRet;
-		X::g_pXHost->RunModule(objModule, moduleRet, true);
+		X::ARGS args(0);
+		X::g_pXHost->RunModule(objModule, args,moduleRet, true);
 	}
 	retValue = objModule;
 	return bOK;

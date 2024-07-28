@@ -494,12 +494,16 @@ return nullptr;
 		std::string strPackageName(packageName);
 		return X::Manager::I().UnloadPackage(strPackageName);
 	}
-	bool XHost_Impl::RunModule(X::Value objModule, X::Value& retVal, bool keepModuleWithRuntime)
+	bool XHost_Impl::RunModule(X::Value objModule, X::ARGS& args,X::Value& retVal, bool keepModuleWithRuntime)
 	{
 		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
 		{
 			auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(objModule.GetObj());
 			std::vector<X::Value> passInParams;
+			for (auto& arg : args)
+			{
+				passInParams.push_back(arg);
+			}
 			return X::Hosting::I().Run(pModuleObj->M(), retVal, passInParams,false,keepModuleWithRuntime);
 		}
 		return false;
