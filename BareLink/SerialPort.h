@@ -42,8 +42,8 @@ private:
     int baudRate;
     unsigned int readTimeout;
     unsigned int writeTimeout;
-
-    void readLoop(std::function<void(const std::vector<char>&)> callback);
+    std::function<void(const std::vector<char>&)> m_read_callback;
+    void readLoop();
     void writeLoop();
     void reconnect();
     bool openPort();
@@ -52,6 +52,10 @@ public:
     SerialPort(const char* portName);
     ~SerialPort();
     void configure(int baudRate = 115200, unsigned int readTimeout = 1000, unsigned int writeTimeout = 1000);
+    inline bool open()
+    {
+        return openPort();
+    }
     int read(char* buffer, unsigned int size);
     bool write(const char* data, unsigned int length);
     void asyncRead(std::function<void(const std::vector<char>&)> callback);

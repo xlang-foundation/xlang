@@ -51,7 +51,7 @@ namespace X
 		virtual bool LoadModule(const char* moduleName, const char* code, int codeSize, X::Value& objModule) override;
 		virtual bool UnloadModule(X::Value objModule) override;
 		virtual bool UnloadXPackage(const char* packageName) override;
-		virtual bool RunModule(X::Value objModule, X::Value& retVal, bool keepModuleWithRuntime) override;
+		virtual bool RunModule(X::Value objModule, X::ARGS& args,X::Value& retVal, bool keepModuleWithRuntime) override;
 		virtual unsigned long long RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
 		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal, int exeNum = -1) override;
 		virtual const char* GetInteractiveCode() override;

@@ -176,7 +176,8 @@ extern "C"  X_EXPORT bool RunXModule(void* pModule, X::Value * outReturnValue)
 {
 	X::XObj* pXObjModule = (X::XObj*)pModule;
 	X::Value retVal;
-	bool bOK =  X::g_pXHost->RunModule(X::Value(pXObjModule), retVal,true);
+	X::ARGS args;
+	bool bOK =  X::g_pXHost->RunModule(X::Value(pXObjModule), args,retVal,true);
 	*outReturnValue = retVal;
 	return bOK;
 }

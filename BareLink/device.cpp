@@ -12,6 +12,7 @@ namespace X
 		{
 			m_serialPort = std::make_unique<SerialPort>(m_deviceId.c_str());
 			m_serialPort->configure(115200, 1000, 1000);
+			m_serialPort->open();
 			m_running = true;
 			m_readThread = std::thread(&Device::ReadLoop, this);
 			return m_serialPort != nullptr;
@@ -51,7 +52,7 @@ namespace X
 				list += params[i];
 			}
 			auto  it = kwParams.find("timeoutMs");
-			int timeoutMs = 10;
+			int timeoutMs = 100000000;
 			if (it)
 			{
 				timeoutMs = (int)it->val;
@@ -74,7 +75,6 @@ namespace X
 			{
 				std::lock_guard<std::mutex> lock(m_responseMutex);
 				m_pendingCommands.erase(commandIndex);
-				throw std::runtime_error("Timeout waiting for response");
 			}
 
 			X::Value response = m_pendingCommands[commandIndex]->first;

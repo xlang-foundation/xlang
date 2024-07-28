@@ -25,6 +25,10 @@ bool SerialPort::openPort() {
     tcgetattr(fd, &tty);
 #endif
     configure(baudRate, readTimeout, writeTimeout);
+    running = true;
+
+    writeThread = std::thread(&SerialPort::writeLoop, this);
+    readThread = std::thread(&SerialPort::readLoop, this);
     return true;
 }
 
@@ -66,6 +70,7 @@ void SerialPort::configure(int baudRate, unsigned int readTimeout, unsigned int 
     tcsetattr(fd, TCSANOW, &tty);
 #endif
 }
+
 
 int SerialPort::read(char* buffer, unsigned int size) {
 #ifdef _WIN32
@@ -129,7 +134,7 @@ bool SerialPort::write(const char* data, unsigned int length) {
 #endif
 }
 
-void SerialPort::readLoop(std::function<void(const std::vector<char>&)> callback) {
+void SerialPort::readLoop() {
     while (running) {
         std::vector<char> buffer(4);
         int bytesRead = read(buffer.data(), buffer.size());
@@ -138,7 +143,7 @@ void SerialPort::readLoop(std::function<void(const std::vector<char>&)> callback
             buffer.resize(dataSize);
             bytesRead = read(buffer.data(), buffer.size());
             if (bytesRead == dataSize) {
-                callback(buffer);
+                m_read_callback(buffer);
             }
         }
         else if (bytesRead == 0) {
@@ -180,8 +185,7 @@ void SerialPort::reconnect() {
 }
 
 void SerialPort::asyncRead(std::function<void(const std::vector<char>&)> callback) {
-    running = true;
-    readThread = std::thread(&SerialPort::readLoop, this, callback);
+    m_read_callback = callback;
 }
 
 void SerialPort::asyncWrite(const std::vector<char>& data) {
