@@ -57,10 +57,6 @@ void SerialPortBM::asyncRead(DataCallback callback,void* context) {
                 callback(buffer,context);
             }
         }
-        else if (bytesRead == 0) {
-            // Connection closed by the other side, attempt to reconnect
-            reconnect();
-        }
     }
 }
 
