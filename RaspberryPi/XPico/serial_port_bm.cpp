@@ -1,3 +1,4 @@
+#include <string.h>
 #include "serial_port_bm.h"
 
 SerialPortBM::SerialPortBM(uart_inst_t* uart, uint txPin, uint rxPin) : uart(uart), txPin(txPin), rxPin(rxPin) {
@@ -66,8 +67,8 @@ void SerialPortBM::asyncRead(DataCallback callback) {
 void SerialPortBM::asyncWrite(const std::vector<char>& data) {
     std::vector<char> packet(4 + data.size());
     int dataSize = data.size();
-    std::memcpy(packet.data(), &dataSize, 4);
-    std::memcpy(packet.data() + 4, data.data(), data.size());
+    memcpy(packet.data(), &dataSize, 4);
+    memcpy(packet.data() + 4, data.data(), data.size());
 
     bool written = write(packet.data(), packet.size());
     if (!written) {

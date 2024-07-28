@@ -20,12 +20,11 @@ void DeviceLoop::processCommand(const std::vector<char>& command) {
     commandParams.FromBytes(pStream);
     X::g_pXHost->ReleaseStream(pStream);
 
-    X::List params(commandParams);
-    if (params.size() < 2) {
+    if (commandParams.Size() < 2) {
         return; // Invalid command format
     }
-    int commandIndex = (int)params[0];
-    auto commandType = (X::BareLink::CommandType)(int)params[1];
+    int commandIndex = (int)commandParams[0];
+    auto commandType = (X::BareLink::CommandType)(int)commandParams[1];
     switch (commandType) {
     case X::BareLink::LoadCode:
         // Process LoadCode command with params
