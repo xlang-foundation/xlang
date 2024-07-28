@@ -1,4 +1,5 @@
 #include "DeviceLoop.h"
+#include "xlstream.h"
 
 DeviceLoop::DeviceLoop(uart_inst_t* uart, uint txPin, uint rxPin) :
 	m_serialPort(uart, txPin, rxPin) {
@@ -6,13 +7,12 @@ DeviceLoop::DeviceLoop(uart_inst_t* uart, uint txPin, uint rxPin) :
 }
 
 void DeviceLoop::start() {
-	while (true) {
-		m_serialPort.asyncRead([this](const std::vector<char>& command) {
-			processCommand(command);
-			});
-	}
+		m_serialPort.asyncRead(DeviceLoop::onDataReceived, this);
 }
-
+void DeviceLoop::onDataReceived(const std::vector<char>& data, void* context) {
+    DeviceLoop* self = static_cast<DeviceLoop*>(context);
+    self->processCommand(data);
+}
 void DeviceLoop::processCommand(const std::vector<char>& command) {
 	X::Value result;
 	X::XLStream* pStream = X::g_pXHost->CreateStream(command.data(), command.size());
@@ -20,16 +20,16 @@ void DeviceLoop::processCommand(const std::vector<char>& command) {
 	params.FromBytes(pStream);
 	X::g_pXHost->ReleaseStream(pStream);
 
-	if (params.size() < 2) {
+	if (params.Size() < 2) {
 		return; // Invalid command format
 	}
-	int commandIndex = (int)params[0];
-	auto commandType = (X::BareLink::CommandType)(int)params[1];
+	int commandIndex = (int)params[(int)0];
+	auto commandType = (CommandType)(int)params[(int)1];
 	switch (commandType) {
-	case X::BareLink::LoadCode:
-		if (params.size() >= 4)
+	case CommandType::LoadCode:
+		if (params.Size() >= 4)
 		{
-			std::string moduleName = params[2].ToString();
+			std::string moduleName = params[(int)2].ToString();
 			std::string code = params[3].ToString();
 			unsigned long long moduleKey = 0;
 			LoadCode(moduleName, code, moduleKey);
@@ -40,13 +40,13 @@ void DeviceLoop::processCommand(const std::vector<char>& command) {
 			result = X::Value(0);
 		}
 		break;
-	case X::BareLink::RunCode:
-		if (params.size() >= 3)
+	case CommandType::RunCode:
+		if (params.Size() >= 3)
 		{
 			//pass in the module key and a flag: true for debug run, false for normal run
-			unsigned long long moduleKey = (unsigned long long)params[2];
+			unsigned long long moduleKey = (unsigned long long)params[(int)2];
 			bool debug = false;
-			if (params.size() >= 4)
+			if (params.Size() >= 4)
 			{
 				debug = (bool)params[3];
 			}
@@ -54,8 +54,8 @@ void DeviceLoop::processCommand(const std::vector<char>& command) {
 			if (it != m_moduleMap.end())
 			{
 				X::Value objModule = it->second;
-				int argNum = params.size() - 4;
-				X::Args args(argNum);
+				int argNum = params.Size() - 4;
+				X::ARGS args(argNum);
 				for (int i = 0; i < argNum; i++)
 				{
 					args[i] = params[i + 4];
@@ -68,7 +68,7 @@ void DeviceLoop::processCommand(const std::vector<char>& command) {
 			}
 		}
 		break;
-	case X::BareLink::StopCodeRun:
+	case CommandType::StopCodeRun:
 		// Process StopCodeRun command with params
 		//result = ...; // Set the result
 		break;

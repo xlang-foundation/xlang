@@ -45,7 +45,7 @@ bool SerialPortBM::write(const char* data, unsigned int length) {
     return true;
 }
 
-void SerialPortBM::asyncRead(DataCallback callback) {
+void SerialPortBM::asyncRead(DataCallback callback,void* context) {
     while (true) {
         std::vector<char> buffer(4);
         int bytesRead = read(buffer.data(), buffer.size());
@@ -54,7 +54,7 @@ void SerialPortBM::asyncRead(DataCallback callback) {
             buffer.resize(dataSize);
             bytesRead = read(buffer.data(), buffer.size());
             if (bytesRead == dataSize) {
-                callback(buffer);
+                callback(buffer,context);
             }
         }
         else if (bytesRead == 0) {

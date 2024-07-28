@@ -58,7 +58,6 @@ namespace X
         X::Data::Str::cleanup();
         X::Data::List::cleanup();
         X::Data::Dict::cleanup();
-        X::Data::Future::cleanup();
         X::Data::Function::cleanup();
         X::Data::DeferredObject::cleanup();
         X::Data::TypeObject::cleanup();
@@ -132,6 +131,6 @@ int main() {
     //enter loop
     loop.start();
 
-    XLangStaticUnload();
+    X::XLangStaticUnload();
     return 0;
 }
