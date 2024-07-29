@@ -94,7 +94,7 @@ namespace X {
 		if (bEvent)
 			notityThread("ThreadExited", curTId);
 	}
-	XlangRuntime* G::MakeThreadRuntime(long long curTId, XlangRuntime* rt)
+	XlangRuntime* G::MakeThreadRuntime(std::string& name,long long curTId, XlangRuntime* rt)
 	{
 		bool bEvent = false;
 		XlangRuntime* pRet = nullptr;
@@ -103,6 +103,7 @@ namespace X {
 		if (it == m_rtMap.end())
 		{
 			X::XlangRuntime* pRuntime = new X::XlangRuntime();
+			pRuntime->SetName(name);
 			if (rt)
 			{
 				pRuntime->MirrorStacksFrom(rt);

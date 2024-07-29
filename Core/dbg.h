@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include "pyproxyobject.h"
+#include "glob.h"
 
 namespace X
 {
@@ -110,6 +111,13 @@ public:
 				continue;
 				//break;
 			}
+			//get runtime for this thread with threadId in pCmdInfo
+			XlangRuntime* rtForDebugThread =dynamic_cast<XlangRuntime*>(G::I().QueryRuntimeForThreadId(pCmdInfo->m_threadId));
+			if (rtForDebugThread == nullptr)
+			{
+				//happend when debugger is launching 
+				rtForDebugThread = rt;
+			}
 			switch (pCmdInfo->dbgType)
 			{
 			case AST::dbg::GetRuntime:
@@ -120,7 +128,7 @@ public:
 				if (pCmdInfo->m_process)
 				{
 					X::Value retVal;
-					pCmdInfo->m_process(rt, pContext, pCmdInfo, retVal);
+					pCmdInfo->m_process(rtForDebugThread, pContext, pCmdInfo, retVal);
 					if (pCmdInfo->m_needRetValue)
 					{
 						pCmdInfo->m_retValueHolder = retVal.ToString(true);
@@ -140,7 +148,7 @@ public:
 			case AST::dbg::StepIn:
 				{
 					std::vector<AST::Scope*> callables;
-					if (exp->CalcCallables(rt,pContext,callables))
+					if (exp->CalcCallables(rtForDebugThread,pContext,callables))
 					{
 						for (auto& ca : callables)
 						{
@@ -216,7 +224,7 @@ public:
 		}
 		//check breakpoints
 		int line = exp->GetStartLine();
-		if (expModule->HitBreakpoint(line))
+		if (expModule->HitBreakpoint(rt,line))
 		{
 			WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
 			if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)

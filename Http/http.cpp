@@ -82,7 +82,7 @@ namespace X
 					}
 					break;
 				}
-			}
+				}
 			if (!bHandled)
 			{ 
 				//if not handled, check if this server support static files

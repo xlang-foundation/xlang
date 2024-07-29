@@ -223,7 +223,8 @@ namespace X
 		bool stopOnEntry, bool keepModuleWithRuntime)
 	{
 		pTopModule->SetArgs(passInParams);
-		XlangRuntime* pRuntime = G::I().Threading(nullptr);
+		std::string name("main");
+		XlangRuntime* pRuntime = G::I().Threading(name,nullptr);
 		// ���runtime��module��Ϊnullptr����pTopModule��import��module
 		AST::Module* pOldModule = pRuntime->M(); 
 		pTopModule->SetRT(pRuntime);

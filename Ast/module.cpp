@@ -85,7 +85,7 @@ int Module::SetBreakpoint(int line, int sessionTid)
 	m_lockBreakpoints.Unlock();
 	return line;
 }
-bool Module::HitBreakpoint(int line)
+bool Module::HitBreakpoint(XlangRuntime* rt,int line)
 {
 	bool bHit = false;
 	int hitSessionTid = 0;
@@ -109,7 +109,7 @@ bool Module::HitBreakpoint(int line)
 		kwParams.Add("action", valAction);
 		const int online_len = 1000;
 		char strBuf[online_len];
-		int thread = m_pRuntime->GetThreadId();
+		int thread = rt->GetThreadId();
 		SPRINTF(strBuf, online_len, "[{\"HitBreakpoint\":%d, \"threadId\":%d}]", line, thread);
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);

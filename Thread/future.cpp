@@ -149,7 +149,9 @@ namespace X
 				{
 					continue;
 				}
-				XlangRuntime* rt = X::G::I().Threading(nullptr);
+				//TODO: which name we should use?
+				std::string name("future");
+				XlangRuntime* rt = X::G::I().Threading(name,nullptr);
 				X::ARGS params(1);
 				X::KWARGS kwargs;
 				X::Value retValue;
