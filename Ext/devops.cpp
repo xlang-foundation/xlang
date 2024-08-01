@@ -410,6 +410,7 @@ namespace X
 					Data::Dict* dict = new Data::Dict();
 					dict->Set("id", X::Value(it->first));
 					dict->Set("name", X::Value(it->first));
+					//dict->Set("name", X::Value(it->second->GetName()));
 					X::Value valDict(dict);
 					pList->Add(valDict);
 				}
@@ -484,13 +485,10 @@ namespace X
 				retValue = X::Value(false);
 				return true;
 			}
-			AST::Module* pModule = nullptr;
-			unsigned long long moduleKey = params[0].GetLongLong();
-			pModule = Hosting::I().QueryModule(moduleKey); // 
-			if (pModule == nullptr)
-			{
-				pModule = X::G::I().QueryModuleByThreadId(moduleKey);
-			}
+			//we had use first parameter as ModuleKey,
+			//now change to threadId
+			unsigned long long threadId = params[0].GetLongLong();
+			AST::Module* pModule = X::G::I().QueryModuleByThreadId(threadId);
 			if (pModule == nullptr)
 			{
 				retValue = X::Value(false);
@@ -523,6 +521,7 @@ namespace X
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				pCmdInfo->m_callContext = this;
 				pCmdInfo->m_process = stackTracePack;
+				pCmdInfo->m_threadId = threadId;
 				pCmdInfo->m_needRetValue = true;
 				pCmdInfo->dbgType = AST::dbg::StackTrace;
 				pCmdInfo->IncRef();//we need keep it for return, will removing in below

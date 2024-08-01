@@ -647,6 +647,7 @@ bool U_ToBytes(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::Value& retValue)
 {
 	bool bSerialization = false;
+	bool bGenData = false;
 	auto it = kwParams.find("Serialization");
 	if (it)
 	{
@@ -655,11 +656,68 @@ bool U_ToBytes(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			bSerialization = (bool)it->val;
 		}
 	}
+	it = kwParams.find("GenData");
+	if (it)
+	{
+		if (it->val.IsBool())
+		{
+			bGenData = (bool)it->val;
+		}
+	}
 	if(params.size() == 0)
 	{
 		X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, 0, false);
 		retValue = X::Value(pBinOut);
 		return true;
+	}
+	else if (bGenData && params.size() >= 1)
+	{
+		//generate binary data randomly
+		auto& v = params[0];
+		size_t size = (unsigned long long)v;
+		if (size>0 && params.size() == 1)
+		{
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, size, false);
+			unsigned char* p = (unsigned char*)pBinOut->Data();
+			for (size_t i = 0; i < size; i++)
+			{
+				*p++ = rand() % 256;
+			}
+			retValue = X::Value(pBinOut);
+			return true;
+		}
+		else if (size>0 && params.size() ==2)
+		{
+			// like bytes(100,value,GenData =True)
+			//set the item to value
+			auto val = (char)params[1];
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, size, false);
+			unsigned char* p = (unsigned char*)pBinOut->Data();
+			memset(p, val, size);
+			retValue = X::Value(pBinOut);
+			return true;
+		}
+		else if (size > 0 && params.size() == 3)
+		{// like bytes(100,MinValue,maxValue,GenData =True)
+			//set the value between MinValue and MaxValue randomly
+			auto minVal = (char)params[1];
+			auto maxVal = (char)params[2];
+			if (minVal > maxVal)
+			{
+				auto t = minVal;
+				minVal = maxVal;
+				maxVal = t;
+			}
+			auto len = maxVal - minVal + 1;
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, size, false);
+			unsigned char* p = (unsigned char*)pBinOut->Data();
+			for (size_t i = 0; i < size; i++)
+			{
+				*p++ = minVal + rand() % len;
+			}
+			retValue = X::Value(pBinOut);
+			return true;
+		}
 	}
 	else if(!bSerialization && params.size() == 1)
 	{

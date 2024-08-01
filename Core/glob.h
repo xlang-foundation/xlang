@@ -25,7 +25,7 @@ namespace X {
 		};
 		std::unordered_map<long long, XlangRuntime*> m_rtMap;//for multiple threads
 		void* m_lockRTMap = nullptr;
-		XlangRuntime* MakeThreadRuntime(long long curTId, XlangRuntime* rt);
+		XlangRuntime* MakeThreadRuntime(std::string& name,long long curTId, XlangRuntime* rt);
 		std::unordered_map<Data::Object*, ObjInfo> Objects;
 		void* m_lock = nullptr;
 		OpRegistry* m_reg = nullptr;
@@ -60,7 +60,18 @@ namespace X {
 			((Locker*)m_lockRTMap)->Unlock();
 			return  ret;
 		}
-
+		FORCE_INLINE XRuntime* QueryRuntimeForThreadId(unsigned long threadId)
+		{
+			XRuntime* pRet = nullptr;
+			((Locker*)m_lockRTMap)->Lock();
+			auto it = m_rtMap.find(threadId);
+			if (it != m_rtMap.end())
+			{
+				pRet = dynamic_cast<XRuntime*>(it->second);
+			}
+			((Locker*)m_lockRTMap)->Unlock();
+			return pRet;
+		}
 		FORCE_INLINE XRuntime* GetCurrentRuntime(XRuntime* baseRt = nullptr)
 		{
 			unsigned long tid = GetThreadID();
@@ -74,16 +85,18 @@ namespace X {
 			((Locker*)m_lockRTMap)->Unlock();
 			if (pRet == nullptr)
 			{
-				pRet =  MakeThreadRuntime(tid, baseRt?dynamic_cast<XlangRuntime*>(baseRt):nullptr);
+				//TODO:
+				std::string defName;
+				pRet =  MakeThreadRuntime(defName, tid,baseRt?dynamic_cast<XlangRuntime*>(baseRt):nullptr);
 			}
 			return pRet;
 		}
-		FORCE_INLINE XlangRuntime* Threading(XlangRuntime* fromRt)
+		FORCE_INLINE XlangRuntime* Threading(std::string& name,XlangRuntime* fromRt)
 		{
 			long long curTId = GetThreadID();
 			if (fromRt == nullptr || fromRt->GetThreadId() != curTId)
 			{
-				fromRt = MakeThreadRuntime(curTId, fromRt);
+				fromRt = MakeThreadRuntime(name,curTId, fromRt);
 			}
 			return fromRt;
 		}
