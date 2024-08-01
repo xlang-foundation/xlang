@@ -73,6 +73,37 @@ FORCE_INLINE static std::string CombineParamsToString(X::ARGS& params)
 	return allOut;
 }
 Locker _printLock;
+
+
+bool U_RegisterRemoteObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	std::string objName = params[0].ToString();
+	X::Value obj;
+	if(params.size() > 1)
+	{
+		obj = params[1];
+	}
+	else
+	{
+		X::XlangRuntime* pRT = dynamic_cast<X::XlangRuntime*>(rt);
+		auto* pModule = pRT->M();
+		if (pModule)
+		{
+			auto* pModuleObj = new X::AST::ModuleObject(pModule);
+			obj = X::Value(pModuleObj);
+		}
+	}
+	X::Manager::I().Register(objName.c_str(), obj);
+	return true;
+}
 bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1725,6 +1756,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::TimeObject>(m_libName.c_str(), "time");
 #endif
 	std::vector<std::pair<std::string, std::string>> params;
+	Register("register_remote_object", (X::U_FUNC)U_RegisterRemoteObject, params, "register_remote_object(name[,obj])");
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
 	Register("alert", (X::U_FUNC)U_Alert, params, "alert(...)");
