@@ -19,7 +19,7 @@ devices = barelink.EnumDevices()
 print("Device:",devices)
 
 # Connect to the first device
-device = barelink.Device("COM4")
+device = barelink.Device("COM3")
 device.Connect()
 device.RunCommand(0,code)
 device.RunCommand(1,"")

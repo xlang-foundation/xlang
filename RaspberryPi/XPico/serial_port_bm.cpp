@@ -23,8 +23,9 @@ int SerialPortBM::read(char* buffer, unsigned int size) {
     while (bytesRead < size) {
         if (uart_is_readable(uart)) {
             buffer[bytesRead++] = uart_getc(uart);
-        }
-        if (absolute_time_diff_us(start, get_absolute_time()) > readTimeout * 1000) {
+            start = get_absolute_time();
+            continue;
+        } else if (absolute_time_diff_us(start, get_absolute_time()) > readTimeout * 1000) {
             break; // Timeout
         }
     }
@@ -47,6 +48,7 @@ bool SerialPortBM::write(const char* data, unsigned int length) {
 
 void SerialPortBM::asyncRead(DataCallback callback,void* context) {
     while (true) {
+        //TODO:CHECK HEADER
         std::vector<char> buffer(4);
         int bytesRead = read(buffer.data(), buffer.size());
         if (bytesRead == 4) {
