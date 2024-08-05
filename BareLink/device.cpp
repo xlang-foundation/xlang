@@ -11,11 +11,17 @@ namespace X
 		bool Device::Connect()
 		{
 			m_serialPort = std::make_unique<SerialPort>(m_deviceId.c_str());
-			m_serialPort->configure(115200, 1000, 1000);
-			m_serialPort->open();
-			m_running = true;
-			m_readThread = std::thread(&Device::ReadLoop, this);
-			return m_serialPort != nullptr;
+			if (m_serialPort->open()) {
+				m_serialPort->configure(115200, 1000, 1000);
+				m_serialPort->run();
+				m_running = true;
+				m_readThread = std::thread(&Device::ReadLoop, this);
+				return true;
+			}
+			else {
+				m_serialPort.reset();
+				return false;
+			}
 		}
 
 		bool Device::Disconnect()
@@ -28,9 +34,8 @@ namespace X
 				}
 				m_serialPort->close();
 				m_serialPort.reset();
-				return true;
 			}
-			return false;
+			return true;
 		}
 
 		bool Device::RunCommand(

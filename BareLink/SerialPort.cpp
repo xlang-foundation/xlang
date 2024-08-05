@@ -1,16 +1,14 @@
 #include "SerialPort.h"
 
 SerialPort::SerialPort(const char* portName) : running(false), portName(portName) {
-    if (!openPort()) {
-        throw std::runtime_error("Error opening serial port");
-    }
+
 }
 
 SerialPort::~SerialPort() {
     close();
 }
 
-bool SerialPort::openPort() {
+bool SerialPort::open() {
 #ifdef _WIN32
     hSerial = CreateFile(portName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (hSerial == INVALID_HANDLE_VALUE) {
@@ -24,11 +22,6 @@ bool SerialPort::openPort() {
     }
     tcgetattr(fd, &tty);
 #endif
-    configure(baudRate, readTimeout, writeTimeout);
-    running = true;
-
-    writeThread = std::thread(&SerialPort::writeLoop, this);
-    readThread = std::thread(&SerialPort::readLoop, this);
     return true;
 }
 
@@ -71,6 +64,11 @@ void SerialPort::configure(int baudRate, unsigned int readTimeout, unsigned int 
 #endif
 }
 
+void SerialPort::run() {
+    running = true;
+    writeThread = std::thread(&SerialPort::writeLoop, this);
+    readThread = std::thread(&SerialPort::readLoop, this);
+}
 
 int SerialPort::read(char* buffer, unsigned int size) {
 #ifdef _WIN32
@@ -176,7 +174,8 @@ void SerialPort::reconnect() {
     close();
 
     while (running) {
-        if (openPort()) {
+        if (open()) {
+            run();
             std::cout << "Reconnected to serial port" << std::endl;
             return;
         }
