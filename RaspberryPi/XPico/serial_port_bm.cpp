@@ -1,8 +1,9 @@
 #include <string.h>
 #include "serial_port_bm.h"
+#include "pico/stdlib.h"
+#include <stdio.h>
 
 SerialPortBM::SerialPortBM(uart_inst_t* uart, uint txPin, uint rxPin) : uart(uart), txPin(txPin), rxPin(rxPin) {
-    stdio_init_all();
     uart_init(uart, baudRate);
     gpio_set_function(txPin, GPIO_FUNC_UART);
     gpio_set_function(rxPin, GPIO_FUNC_UART);
@@ -23,8 +24,9 @@ int SerialPortBM::read(char* buffer, unsigned int size) {
     while (bytesRead < size) {
         if (uart_is_readable(uart)) {
             buffer[bytesRead++] = uart_getc(uart);
-        }
-        if (absolute_time_diff_us(start, get_absolute_time()) > readTimeout * 1000) {
+            start = get_absolute_time();
+            continue;
+        } else if (absolute_time_diff_us(start, get_absolute_time()) > readTimeout * 1000) {
             break; // Timeout
         }
     }
@@ -45,16 +47,22 @@ bool SerialPortBM::write(const char* data, unsigned int length) {
     return true;
 }
 
+#define MAX_DATASIZE 1024
+
 void SerialPortBM::asyncRead(DataCallback callback,void* context) {
     while (true) {
+        //TODO:CHECK HEADER!!!
         std::vector<char> buffer(4);
         int bytesRead = read(buffer.data(), buffer.size());
         if (bytesRead == 4) {
             int dataSize = *(reinterpret_cast<int*>(buffer.data()));
-            buffer.resize(dataSize);
-            bytesRead = read(buffer.data(), buffer.size());
-            if (bytesRead == dataSize) {
-                callback(buffer,context);
+            printf("dataSize = %d\n",dataSize);
+            if(dataSize < MAX_DATASIZE){
+                buffer.resize(dataSize);
+                bytesRead = read(buffer.data(), buffer.size());
+                if (bytesRead == dataSize) {
+                    callback(buffer,context);
+                }
             }
         }
     }

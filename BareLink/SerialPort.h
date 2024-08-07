@@ -46,16 +46,12 @@ private:
     void readLoop();
     void writeLoop();
     void reconnect();
-    bool openPort();
-
 public:
     SerialPort(const char* portName);
     ~SerialPort();
+    bool open();
     void configure(int baudRate = 115200, unsigned int readTimeout = 1000, unsigned int writeTimeout = 1000);
-    inline bool open()
-    {
-        return openPort();
-    }
+    void run();
     int read(char* buffer, unsigned int size);
     bool write(const char* data, unsigned int length);
     void asyncRead(std::function<void(const std::vector<char>&)> callback);
