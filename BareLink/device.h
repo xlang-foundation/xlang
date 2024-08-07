@@ -45,7 +45,7 @@ namespace X
 			std::unordered_map<int, std::shared_ptr<std::pair<X::Value, std::condition_variable>>> m_pendingCommands;
 
 			inline std::vector<char> ConvertToBytes(X::Value& val);
-			void ReadLoop();
+			void SetReadCallBack();
 		};
 	}
 }
