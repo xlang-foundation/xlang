@@ -26,10 +26,9 @@ namespace X
 			bOK = Dbg(rt).Check(traceEvent,rt,pThisBlock,
 				pCurrentObj, pContext);
 			break;
-		case X::TraceEvent::Return:
-			bOK = Dbg(rt).ExitBlockRun(rt, pContext, 
-				pThisBlock);
-			break;
+		/*case X::TraceEvent::Return:
+			bOK = Dbg(rt).ExitBlockRun(rt, pContext, pThisBlock);
+			break;*/
 		case X::TraceEvent::C_Call:
 			break;
 		case X::TraceEvent::C_Exception:

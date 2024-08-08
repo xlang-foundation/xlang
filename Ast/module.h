@@ -17,21 +17,11 @@ namespace X
 	}
 namespace AST
 {
-enum class dbg
-{
-	None,
-	Continue,
-	Step,
-	StepIn,
-	StepOut,
-	StackTrace,
-	GetRuntime,
-	Terminate,
-};
+
 struct BreakPointInfo
 {
 	int line;
-	int sessionTid;
+	int sessionTid; // needed ?
 };
 
 class CommandInfo;
@@ -118,9 +108,7 @@ class Module :
 	std::vector<X::Value> m_args;
 	//for debug
 	//Locker m_addCommandLock;
-	bool m_inDebug = false;
-	dbg m_dbgLastRequest = dbg::Continue;
-	dbg m_dbg = dbg::Continue;
+	
 	std::vector<Scope*> m_dbgScopes;
 	XWait m_commandWait;
 	Locker m_lockCommands;
@@ -380,17 +368,6 @@ public:
 		return idx;
 	}
 	void SetDebug(bool b,XlangRuntime* runtime);
-	FORCE_INLINE bool IsInDebug()
-	{
-		return m_inDebug;
-	}
-	FORCE_INLINE void SetDbgType(dbg d,dbg lastRequest)
-	{
-		m_dbg = d;
-		m_dbgLastRequest = lastRequest;
-	}
-	FORCE_INLINE dbg GetDbgType() { return m_dbg; }
-	FORCE_INLINE dbg GetLastRequestDgbType() { return m_dbgLastRequest; }
 	FORCE_INLINE bool InDbgScope(Scope* s)
 	{ 
 		if (s == m_pMyScope)
@@ -433,18 +410,18 @@ public:
 	}
 	FORCE_INLINE void RemoveDbgScope(Scope* s)
 	{
-		auto it = m_dbgScopes.begin();
-		while (it != m_dbgScopes.end())
+		auto rit = m_dbgScopes.rbegin();
+		while (rit != m_dbgScopes.rend())
 		{
-			Scope* s0 = (*it);
+			Scope* s0 = (*rit);
 			if (s0->isEqual(s))
 			{
-				m_dbgScopes.erase(it);
+				m_dbgScopes.erase((++rit).base());
 				break;
 			}
 			else
 			{
-				++it;
+				++rit;
 			}
 		}
 	}

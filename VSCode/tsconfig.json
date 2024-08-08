@@ -1,11 +1,11 @@
 {
 	"compilerOptions": {
 		"module": "commonjs",
-		"target": "ES2020",
+		"target": "ES2021",
 		"outDir": "out",
 		"lib": [
 			"WebWorker",
-			"ES2020"
+			"ES2021"
 		],
 		"sourceMap": true,
 		"rootDir": "src",

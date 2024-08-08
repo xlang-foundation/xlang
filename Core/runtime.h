@@ -10,7 +10,21 @@ namespace AST
 {
 	class Module;
 	class Scope;
+	class Expression;
 }
+
+enum class dbg
+{
+	None,
+	Continue,
+	Step,
+	StepIn,
+	StepOut,
+	StackTrace,
+	GetRuntime,
+	Terminate,
+};
+
 class XlangRuntime;
 enum class TraceEvent
 {
@@ -47,6 +61,7 @@ class XlangRuntime:
 	std::string m_name;//top stack name( function name)
 	bool m_noThreadBinding = false;
 	AST::Module* m_pModule = nullptr;
+	//AST::Module* m_pDbgModule = nullptr;
 	AST::StackFrame* m_stackBottom = nullptr;
 	//when thread is created, this is the mirror stack
 	//will set as this stack chain's parent
@@ -55,6 +70,9 @@ class XlangRuntime:
 
 	std::vector<WritePadInfo> m_WritePads;
 	std::unordered_map<std::string, int> m_WritePadMap;
+
+	dbg m_dbgLastRequest = dbg::Continue;
+	dbg m_dbg = dbg::Continue;
 public:
 	XlangRuntime()
 	{
@@ -65,10 +83,15 @@ public:
 		m_noThreadBinding = b;
 	}
 	~XlangRuntime();
-	FORCE_INLINE void SetTrace(XTraceFunc f)
+	bool m_bNoDbg = false;
+	AST::Expression* m_pFirstStepOutExp = nullptr;
+	FORCE_INLINE void SetDbgType(dbg d, dbg lastRequest)
 	{
-		m_tracefunc = f;
+		m_dbg = d;
+		m_dbgLastRequest = lastRequest;
 	}
+	FORCE_INLINE dbg GetDbgType() { return m_dbg; }
+	FORCE_INLINE dbg GetLastRequestDgbType() { return m_dbgLastRequest; }
 	bool GetWritePadNum(int& count, int& dataBindingCount);
 	bool CallWritePads(Value& fmtString,Value& bindingString,
 		Value& indexOrAlias,
@@ -78,7 +101,6 @@ public:
 	virtual bool CreateEmptyModule() override;
 	FORCE_INLINE void SetName(std::string& name) { m_name = name; }
 	FORCE_INLINE std::string& GetName() { return m_name; }
-	FORCE_INLINE XTraceFunc GetTrace() { return m_tracefunc; }
 	FORCE_INLINE long long GetThreadId() { return m_threadId; }
 	FORCE_INLINE void MirrorStacksFrom(XlangRuntime* rt)
 	{
@@ -101,7 +123,9 @@ public:
 		return m_stackBottom ? m_stackBottom->AddVar(this, strName, val) : false;
 	}
 	FORCE_INLINE void SetM(AST::Module* m) { m_pModule = m; }
+	//FORCE_INLINE void SetDbgM(AST::Module* m) { m_pDbgModule = m; }
 	FORCE_INLINE AST::Module* M() { return m_pModule; }
+	//FORCE_INLINE AST::Module* DbgM() { return m_pDbgModule; }
 	FORCE_INLINE void AdjustStack(int varNum)
 	{
 		if (m_stackBottom)

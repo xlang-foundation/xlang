@@ -65,7 +65,7 @@ namespace X {
 		if (it == m_rtMap.end())
 		{
 			m_rtMap.emplace(std::make_pair(curTId,rt));
-			bEvent = rt->GetTrace();
+			bEvent = G::I().GetTrace();
 		}
 		else
 		{
@@ -87,7 +87,7 @@ namespace X {
 		if (it != m_rtMap.end() && it->second == rt)
 		{
 			m_rtMap.erase(it);
-			bEvent = rt->GetTrace();
+			bEvent = G::I().GetTrace() && !rt->m_bNoDbg;
 		}
 		((Locker*)m_lockRTMap)->Unlock();
 
@@ -103,6 +103,9 @@ namespace X {
 		if (it == m_rtMap.end())
 		{
 			X::XlangRuntime* pRuntime = new X::XlangRuntime();
+			if (name == "devops_run.x")
+				pRuntime->m_bNoDbg = true;
+
 			pRuntime->SetName(name);
 			if (rt)
 			{
@@ -110,7 +113,7 @@ namespace X {
 			}
 			m_rtMap.emplace(std::make_pair(curTId, pRuntime));
 			pRet = pRuntime;
-			bEvent = pRuntime->GetTrace();
+			bEvent = G::I().GetTrace() && !pRuntime->m_bNoDbg;
 		}
 		else
 		{

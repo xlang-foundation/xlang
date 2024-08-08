@@ -44,6 +44,7 @@ namespace X
 				APISET().AddFunc<0>("get_threads", &DebugService::GetThreads);
 				APISET().AddRTFunc<2>("set_breakpoints", &DebugService::SetBreakpoints);
 				APISET().AddVarFunc("command", &DebugService::Command);
+				APISET().AddFunc<1>("set_debug", &DebugService::SetDebug);
 			END_PACKAGE
 			DebugService();
 			int GetModuleStartLine(unsigned long long moduleKey);
@@ -53,6 +54,7 @@ namespace X
 				ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue);
+			void SetDebug(int iVal);
 		};
 	}
 }

@@ -34,9 +34,12 @@ namespace X {
 		std::unordered_map<std::string, std::vector<int>> m_srcPathBreakpointsMap;// 
 		void* m_lockBreakpointsValid = nullptr;
 		std::vector<std::string> m_srcPathBreakpointsValid;
+		XTraceFunc m_tracefunc = nullptr;
 	public:
 		G();
 		~G();
+		FORCE_INLINE void SetTrace(XTraceFunc f){m_tracefunc = f; }
+		FORCE_INLINE XTraceFunc GetTrace() { return m_tracefunc; }
 		void BindRuntimeToThread(XlangRuntime* rt);
 		void UnbindRuntimeToThread(XlangRuntime* rt);
 		FORCE_INLINE OpRegistry& R() { return *m_reg;}

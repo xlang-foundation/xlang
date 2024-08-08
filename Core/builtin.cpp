@@ -47,6 +47,8 @@
 #include "ast.h"
 #include "time_object.h"
 #include "struct.h"
+#include "glob.h"
+#include "dbg.h"
 
 namespace X
 {
@@ -205,19 +207,38 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		return true;
 	}
 	std::string code;
-	if (params.size() == 2)
+	std::string runMode;
+	bool loadFromFile = true;
+	if (params.size() == 3) // launch or attach with source code
 	{
-		code = params[1].ToString();
+		runMode = params[1].ToString();
+		code = params[2].ToString();
+		loadFromFile = false;
 	}
-	else
+	else if (params.size() == 2) // launch or attach without source code
 	{
-		std::ifstream moduleFile(fileName);
-		code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
-		moduleFile.close();
+		runMode = params[1].ToString();
 	}
+
+	if (!runMode.empty()) // enable debug
+		X::G::I().SetTrace(X::Dbg::xTraceFunc);
+
+	std::vector<X::AST::Module*> modules = X::Hosting::I().QueryModulesByPath(fileName);
 	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
-	retValue = X::Value(moduleKey);
+	/*if (runMode.empty() || runMode == "launch" || modules.size() == 0)
+	{*/
+		if (loadFromFile)
+		{
+			std::ifstream moduleFile(fileName);
+			code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
+			moduleFile.close();
+		}
+		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
+		retValue = X::Value(moduleKey);
+	/*}
+	else
+		retValue = X::Value((unsigned long long)modules[0]);*/
+	
 	return true;
 }
 bool U_LoadS(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
@@ -645,8 +666,8 @@ bool U_BreakPoint(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	KWARGS& kwParams,
 	X::Value& retValue)
 {
-	((X::XlangRuntime*)rt)->M()->SetDbgType(AST::dbg::Step,
-		AST::dbg::Step);
+	((X::XlangRuntime*)rt)->SetDbgType(dbg::Step,
+		dbg::Step);
 	retValue = X::Value(true);
 	return true;
 }
@@ -1741,6 +1762,7 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 #endif
 	return bOK;
 }
+
 bool Builtin::RegisterInternals()
 {
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);

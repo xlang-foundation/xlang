@@ -363,7 +363,7 @@ namespace X
 					if (pExp->m_type == X::AST::ObType::Func)
 					{
 						AST::Func* pFunc = dynamic_cast<AST::Func*>(pExp);
-						std::string name = pFunc->GetNameString();
+						name = pFunc->GetNameString();
 						if (name.empty())
 						{
 							char v[1000];
@@ -396,6 +396,23 @@ namespace X
 				nStartLine = pModule->GetStartLine();
 			}
 			return nStartLine;
+		}
+
+		void DebugService::SetDebug(int iVal)
+		{
+			if (iVal > 0)
+				G::I().SetTrace(Dbg::xTraceFunc);
+			else
+			{
+				G::I().SetTrace(nullptr);
+				std::unordered_map<long long, XlangRuntime*> rtMap = G::I().GetThreadRuntimeIdMap();
+				for(auto& item : rtMap)
+				{
+					AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+					pCmdInfo->dbgType = dbg::Continue;
+					item.second->M()->AddCommand(pCmdInfo, false);
+				}
+			}
 		}
 
 		X::Value DebugService::GetThreads()
@@ -435,10 +452,9 @@ namespace X
 					return elm; }
 			);
 
-			G::I().SetBreakPoints(path, lines);
+			G::I().SetBreakPoints(path, lines); // record 
 			std::vector<AST::Module*> modules = Hosting::I().QueryModulesByPath(path);
-			bool bValid = false;
-			Data::List* pList = new Data::List();
+			X::List list;
 			if (modules.size() > 0)
 			{
 				for (auto m : modules)
@@ -446,36 +462,31 @@ namespace X
 					m->ClearBreakpoints();
 					for (auto l : lines)
 					{
-						l = m->SetBreakpoint(l, (int)GetThreadID());
-						if (!bValid && l >= 0)
+						int al = m->SetBreakpoint(l, (int)GetThreadID());
+						if (al >= 0)
 						{
-							if (l >= 0)
-							{
-								X::Value varL(l);
-								pList->Add((XlangRuntime*)rt, varL);
-							}
-							else
-							{
-								X::Value varL(l + 100000); // failed state
-								pList->Add((XlangRuntime*)rt, varL);
-							}
+							list += l;
+							list += al; // actual line
+						}
+						else
+						{
+							list += l;
+							list += -1;// failed state
 						}
 					}
-					if (!bValid)
-						G::I().AddBreakpointValid(path);
-					bValid = true;
+					G::I().AddBreakpointValid(path); // record this source file's breakpoints has been checked
 				}
 			}
 			else
 			{
 				for (auto l : lines)
 				{
-					X::Value varL(l + 200000); // pending state
-					pList->Add((XlangRuntime*)rt, varL);
+					list += l;
+					list += -2;// pending state
 				}
 			}
 
-			return X::Value(pList);
+			return X::Value(list);
 		}
 		bool DebugService::Command(X::XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
@@ -488,8 +499,16 @@ namespace X
 			//we had use first parameter as ModuleKey,
 			//now change to threadId
 			unsigned long long threadId = params[0].GetLongLong();
-			AST::Module* pModule = X::G::I().QueryModuleByThreadId(threadId);
-			if (pModule == nullptr)
+			//AST::Module* pModule = X::G::I().QueryModuleByThreadId(threadId);
+			XlangRuntime* threadRt = (XlangRuntime*)X::G::I().QueryRuntimeForThreadId(threadId);
+			if (threadRt == nullptr)
+			{
+				retValue = X::Value(false);
+				return true;
+			}
+			
+			AST::Module* pModule;
+			if (!(pModule = threadRt->M()))
 			{
 				retValue = X::Value(false);
 				return true;
@@ -523,7 +542,7 @@ namespace X
 				pCmdInfo->m_process = stackTracePack;
 				pCmdInfo->m_threadId = threadId;
 				pCmdInfo->m_needRetValue = true;
-				pCmdInfo->dbgType = AST::dbg::StackTrace;
+				pCmdInfo->dbgType = dbg::StackTrace;
 				pCmdInfo->IncRef();//we need keep it for return, will removing in below
 				pModule->AddCommand(pCmdInfo, true);
 				retValue = pCmdInfo->m_retValueHolder;
@@ -542,7 +561,7 @@ namespace X
 				}
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				pCmdInfo->m_frameId = frameId;
-				pCmdInfo->dbgType = AST::dbg::GetRuntime;
+				pCmdInfo->dbgType = dbg::GetRuntime;
 				auto globalPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
 					AST::CommandInfo* pCommandInfo,
@@ -615,7 +634,7 @@ namespace X
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
-				pCmdInfo->dbgType = AST::dbg::Step;
+				pCmdInfo->dbgType = dbg::Step;
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
@@ -624,7 +643,7 @@ namespace X
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
-				pCmdInfo->dbgType = AST::dbg::Continue;
+				pCmdInfo->dbgType = dbg::Continue;
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
@@ -633,7 +652,7 @@ namespace X
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
-				pCmdInfo->dbgType = AST::dbg::StepIn;
+				pCmdInfo->dbgType = dbg::StepIn;
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
@@ -642,7 +661,7 @@ namespace X
 				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
-				pCmdInfo->dbgType = AST::dbg::StepOut;
+				pCmdInfo->dbgType = dbg::StepOut;
 				pModule->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
@@ -651,7 +670,7 @@ namespace X
 				//AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
-				//pCmdInfo->dbgType = AST::dbg::Terminate;
+				//pCmdInfo->dbgType = dbg::Terminate;
 				//pModule->AddCommand(pCmdInfo, false); // todo£ºstop run every module
 				//retValue = X::Value(true);
 			}

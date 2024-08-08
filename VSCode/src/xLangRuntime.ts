@@ -147,6 +147,8 @@ export class XLangRuntime extends EventEmitter {
 		return false;
 	}
 
+	public runMode = "";
+
 	// This is the next instruction that will be 'executed'
 	public instruction= 0;
 
@@ -183,26 +185,27 @@ export class XLangRuntime extends EventEmitter {
 	}
 	public async loadSource(file: string): Promise<number> {
 		let srcFile = this.normalizePathAndCasing(file);
-		let key = this.sourceModuleKeyMap.get(srcFile);
-		if (key != undefined) {
-			return key;
-        }
+		// let key = this.sourceModuleKeyMap.get(srcFile);
+		// if (key !== undefined) {
+		// 	this.setDebug(true);
+		// 	return key;
+        // }
 		let srcFile_x = srcFile.replaceAll('\\', '/');
 		let code;
 		if (this.isLocalServer())
 		{
-			code = "m = load('" + srcFile_x + "')\nreturn m";
+			code = "m = load('" + srcFile_x + "','" + this.runMode + "')\nreturn m";
 		}
 		else
 		{
-			const content = fs.readFileSync(file);
-			code = "m = load('" + srcFile_x + "','" + content + "')\nreturn m";
+			const content = fs.readFileSync(file); // only the fist file
+			code = "m = load('" + srcFile_x + "','" + this.runMode + "','" + content + "')\nreturn m";
 		}
 		let promise = new Promise((resolve, reject) => {
 			this.Call(code, resolve);
 		});
 		let retVal= await promise as number;
-		this.sourceModuleKeyMap.set(srcFile, retVal);
+		//this.sourceModuleKeyMap.set(srcFile, retVal);
 		this._sourceFile = srcFile;
 		this._moduleKey = retVal;
 		return retVal;
@@ -295,7 +298,7 @@ export class XLangRuntime extends EventEmitter {
 									this.sendEvent('threadExited', kv["ThreadExited"]);
 							}
 								else if(kv.hasOwnProperty("BreakpointPath")){
-									this.sendEvent('breakpointState', kv["BreakpointPath"], kv["line"]);
+									this.sendEvent('breakpointState', kv["BreakpointPath"], kv["line"], kv["actualLine"]);
 								}
 						}
 					}
@@ -358,7 +361,7 @@ export class XLangRuntime extends EventEmitter {
 			});
 		}
 	}
-	private Call(code,cb)
+	private Call(code,cb?)
 	{
 		const https = require('http');
 		const querystring = require('querystring');
@@ -376,7 +379,7 @@ export class XLangRuntime extends EventEmitter {
 		console.log(`statusCode: ${res.statusCode}`);
 		var allData = "";
 		res.on('end', () => {
-			cb(allData);			
+			cb?.(allData);			
 		  });
 		res.on('data', d => {
 			var strData = new TextDecoder().decode(d);
@@ -453,6 +456,12 @@ export class XLangRuntime extends EventEmitter {
 				label: `target: ${c}`
 			};
 		});
+	}
+	
+	public setDebug(bDebug : boolean)
+	{
+		let code = "import xdb\nreturn xdb.set_debug(" + (bDebug ? '1' : '0') +")";
+		this.Call(code);
 	}
 
 	public getThreads(cb: Function)
