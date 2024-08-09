@@ -54,7 +54,7 @@ public:
     void run();
     int read(char* buffer, unsigned int size);
     bool write(const char* data, unsigned int length);
-    void asyncRead(std::function<void(const std::vector<char>&)> callback);
+    void setReadCallback(std::function<void(const std::vector<char>&)> callback);
     void asyncWrite(const std::vector<char>& data);
     void close();
 };

@@ -183,7 +183,7 @@ void SerialPort::reconnect() {
     }
 }
 
-void SerialPort::asyncRead(std::function<void(const std::vector<char>&)> callback) {
+void SerialPort::setReadCallback(std::function<void(const std::vector<char>&)> callback) {
     m_read_callback = callback;
 }
 

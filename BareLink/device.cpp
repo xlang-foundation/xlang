@@ -16,7 +16,7 @@ namespace X
 				m_serialPort->run();
 				m_running = true;
 				//m_readThread = std::thread(&Device::ReadLoop, this);
-				SetReadCallBack();
+				setReadCallback();
 				return true;
 			}
 			else {
@@ -92,9 +92,9 @@ namespace X
 			return response;
 		}
 
-		void Device::SetReadCallBack()
+		void Device::setReadCallback()
 		{
-			m_serialPort->asyncRead([this](const std::vector<char>& data) {
+			m_serialPort->setReadCallback([this](const std::vector<char>& data) {
 				X::XLStream* pStream = X::g_pXHost->CreateStream(data.data(), data.size());
 				X::Value returns;
 				returns.FromBytes(pStream);
