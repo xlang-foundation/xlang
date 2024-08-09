@@ -20,6 +20,9 @@ namespace X
 			bool m_OwnData = true;
 			size_t m_size;
 		public:
+			static void Init();
+			static void cleanup();
+
 			Binary(char* data, size_t size,bool bOwnData):
 				XBin(0)
 			{//new copy

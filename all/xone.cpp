@@ -161,6 +161,7 @@ namespace X
 		X::Data::Str::Init();
 		X::AST::ModuleObject::Init();
 		X::Data::List::Init();
+		X::Data::Binary::Init();
 		X::Data::Dict::Init();
 		X::Data::mSet::Init();
 		X::Data::Tensor::Init();
@@ -358,6 +359,7 @@ namespace X
 		X::AST::ModuleObject::cleanup();
 		X::Data::Str::cleanup();
 		X::Data::List::cleanup();
+		X::Data::Binary::cleanup();
 		X::Data::Dict::cleanup();
 		X::Data::Tensor::cleanup();
 		X::Data::TensorGraph::cleanup();

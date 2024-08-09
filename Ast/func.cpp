@@ -199,7 +199,8 @@ bool Func::Call(XRuntime* rt0,
 		needAddScopeToTrace = true;
 	}
 	auto* rt_from = (XlangRuntime*)rt0;
-	XlangRuntime* rt = G::I().Threading(rt_from);
+	std::string name = GetNameString();
+	XlangRuntime* rt = G::I().Threading(name,rt_from);
 	if (!rt->M())
 	{
 		rt->SetM(GetMyModule());

@@ -7,6 +7,7 @@
 #include "set.h"
 #include "table.h"
 #include "pyproxyobject.h"
+#include "bin.h"
 
 namespace X
 {
@@ -148,16 +149,19 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 	Value& v, LValue* lValue)
 {
 	bool bOK = true;
+	bool isRange = false;
 	//Get Index
 	std::vector<long long> IdxAry;
-	if (R->m_type == ObType::List)
+	switch (R->m_type)
+	{
+	case ObType::List:
 	{
 		auto& list = (dynamic_cast<List*>(R))->GetList();
 		for (auto e : list)
 		{
 			Value v1;
 			ExecAction action;
-			if (ExpExec(e,rt, action, pContext, v1))
+			if (ExpExec(e, rt, action, pContext, v1))
 			{
 				IdxAry.push_back(v1.GetLongLong());
 			}
@@ -168,18 +172,72 @@ bool PairOp::GetItemFromList(XlangRuntime* rt, XObj* pContext,
 			}
 		}
 	}
-	else
+	break;
+	case ObType::Param:
+	{
+		auto* param = dynamic_cast<Param*>(R);
+		if (param->GetName())
+		{
+			Value vIdx;
+			ExecAction action;
+			bOK = ExpExec(param->GetName(), rt, action, pContext, vIdx);
+			IdxAry.push_back(vIdx.GetLongLong());
+		}
+		else
+		{
+			IdxAry.push_back(0);
+		}
+		if (param->GetType())
+		{
+			Value vIdx;
+			ExecAction action;
+			bOK = ExpExec(param->GetType(), rt, action, pContext, vIdx);
+			IdxAry.push_back(vIdx.GetLongLong());
+		}
+		else
+		{
+			IdxAry.push_back(-1);
+		}
+		isRange = true;
+		bOK = true;
+	}
+	break;
+	default:
 	{
 		Value vIdx;
 		ExecAction action;
-		bOK = ExpExec(R,rt, action, pContext, vIdx);
+		bOK = ExpExec(R, rt, action, pContext, vIdx);
 		IdxAry.push_back(vIdx.GetLongLong());
 	}
+	break;
+	}
+
 	if (bOK)
 	{
-		if (IdxAry.size() > 0)
+		if (IdxAry.size() ==1)
 		{
 			pDataList->Get(IdxAry[0], v, lValue);
+		}
+		else if (isRange && IdxAry.size() == 2)
+		{
+			pDataList->GetRange(IdxAry[0], IdxAry[1], v, lValue);
+		}
+		else if(IdxAry.size()>0)
+		{
+			//get each of them and return a list
+			Data::List* pList = new Data::List();
+			for (auto idx : IdxAry)
+			{
+				Value v1;
+				pDataList->Get(idx, v1);
+				pList->Add(rt, v1);
+			}
+			v = Value(pList);
+		}
+		else
+		{
+			bOK = false;
+
 		}
 	}
 	return bOK;
@@ -189,8 +247,84 @@ bool PairOp::GetItemFromBin(XlangRuntime* rt,
 	Expression* r, Value& v, LValue* lValue)
 {
 	bool bOK = true;
+	
+	long long idx1 = 0;
+	long long idx2 = -1;
+	bool isRange = false;
+	auto size = pDataBin->Size();
 
-	return false;
+	switch (R->m_type)
+	{
+	case ObType::Param:
+	{
+		auto* param = dynamic_cast<Param*>(R);
+		if (param->GetName())
+		{
+			Value vIdx;
+			ExecAction action;
+			bOK = ExpExec(param->GetName(), rt, action, pContext, vIdx);
+			idx1 = vIdx.GetLongLong();
+		}
+		else
+		{
+			idx1 = 0;
+		}
+		if (param->GetType())
+		{
+			Value vIdx;
+			ExecAction action;
+			bOK = ExpExec(param->GetType(), rt, action, pContext, vIdx);
+			idx2 = vIdx.GetLongLong();
+		}
+		else
+		{
+			idx2 = size-1;
+		}
+		isRange = true;
+		bOK = true;
+	}
+	break;
+	default:
+	{
+		Value vIdx;
+		ExecAction action;
+		bOK = ExpExec(R, rt, action, pContext, vIdx);
+		idx1 = vIdx.GetLongLong();
+	}
+	break;
+	}
+
+	if (bOK)
+	{
+		char* data = pDataBin->Data();
+		if (idx1 >=0 && idx1 <size)
+		{
+			if (isRange && idx2 >= 0 && idx2 < size)
+			{
+				auto len = idx2 - idx1 + 1;
+				if (len > 0)
+				{
+					char* pNewData = new char[len];
+					memcpy(pNewData, data + idx1, len);
+					v = Value(new Data::Binary(pNewData, len,true));
+				}
+				else
+				{
+					v = Value();
+				}
+			}
+			else
+			{
+				v = Value(data[idx1]);
+			}
+		}
+		else
+		{
+			bOK = false;
+
+		}
+	}
+	return bOK;
 }
 bool PairOp::GetItemFromPackage(XlangRuntime* rt, XObj* pContext,
 	Data::Object* pPackage, Expression* r,
@@ -240,7 +374,7 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 {
 	bool bOK = false;
 	if (L)
-	{//usage: x[1,2]
+	{//usage: x[1,2] or x[a:b]
 		Value v0;
 		ExecAction action;
 		bOK = ExpExec(L,rt,action, pContext, v0);
@@ -258,6 +392,10 @@ bool PairOp::BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lVal
 		case X::ObjType::List:
 			bOK = GetItemFromList(rt, pContext, 
 				dynamic_cast<Data::List*>(pDataObj), R, v, lValue);
+			break;
+		case X::ObjType::Binary:
+			bOK = GetItemFromBin(rt, pContext,
+				dynamic_cast<Data::Binary*>(pDataObj), R, v, lValue);
 			break;
 		case X::ObjType::Dict:
 			bOK = GetItemFromDict(rt, pContext, dynamic_cast<Data::Dict*>(pDataObj), R, v, lValue);

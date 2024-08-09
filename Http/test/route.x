@@ -2,9 +2,10 @@ from xlang_http import http
 
 srv = http.Server()
 
-
+out_var ="out side variable"
 @srv.route("^/$")
 def IndexPage():
+	x = out_var
 	mime = "text/html"
 	content = "
 		<div>

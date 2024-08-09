@@ -469,6 +469,53 @@ public:
 		}
 		return true;
 	}
-};
+	FORCE_INLINE bool GetRange(long long idx1, long long idx2, X::Value& v,
+		X::LValue* lValue = nullptr)
+	{
+		//create a new list and use [] to copy the range
+		AutoLock autoLock(m_lock);
+		if (m_useLValue)
+		{
+			if (idx1 >= (long long)m_ptrs.size())
+			{
+				return false;
+			}
+			if (idx2 == -1 || idx2 >= (long long)m_ptrs.size())
+			{
+				idx2 = (long long)m_ptrs.size()-1;
+			}
+			List* pOutList = new List();
+			pOutList->IncRef();
+			for (long long i = idx1; i <= idx2; i++)
+			{
+				X::LValue l = m_ptrs[i];
+				if (l)
+				{
+					pOutList->Add(l);
+				}
+			}
+			v = pOutList;
+		}
+		else
+		{
+			if (idx1 >= (long long)m_data.size())
+			{
+				return false;
+			}
+			if (idx2 == -1 || idx2 >= (long long)m_data.size())
+			{
+				idx2 = (long long)m_data.size() - 1;
+			}
+			List* pOutList = new List();
+			pOutList->IncRef();
+			for (long long i = idx1; i <= idx2; i++)
+			{
+				X::Value& v0 = m_data[i];
+				pOutList->Add(v0);
+			}
+			v = pOutList;
+		}
+		return true;
+	}};
 }
 }
