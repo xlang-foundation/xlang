@@ -13,10 +13,10 @@ namespace X
 			m_serialPort = std::make_unique<SerialPort>(m_deviceId.c_str());
 			if (m_serialPort->open()) {
 				m_serialPort->configure(115200, 1000, 1000);
+				SetReadCallBack();
 				m_serialPort->run();
 				m_running = true;
 				//m_readThread = std::thread(&Device::ReadLoop, this);
-				SetReadCallBack();
 				return true;
 			}
 			else {
