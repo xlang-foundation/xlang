@@ -92,7 +92,6 @@ namespace X
 			return response;
 		}
 
-		void Device::SetReadCallback()
 		void Device::setReadCallback()
 		{
 			m_serialPort->setReadCallback([this](const std::vector<char>& data) {
