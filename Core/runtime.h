@@ -83,7 +83,8 @@ public:
 		m_noThreadBinding = b;
 	}
 	~XlangRuntime();
-	bool m_bNoDbg = false;
+	bool m_bNoDbg = false; // do not trace
+	bool m_bStoped = false; // stopped on breakpoint or step
 	AST::Expression* m_pFirstStepOutExp = nullptr;
 	FORCE_INLINE void SetDbgType(dbg d, dbg lastRequest)
 	{

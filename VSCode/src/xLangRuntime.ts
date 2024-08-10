@@ -176,12 +176,18 @@ export class XLangRuntime extends EventEmitter {
 		return this.varRefMap[refId];
 	}
 
-	public close() {
-		this.terminateXlang();
+	public close(closeXlang: boolean) {
+		if (closeXlang){
+			this.terminateXlang();
+		}
+		else{
+			this.setDebug(false);
+		}
 		this.sourceModuleKeyMap.clear();
 		this._sourceFile = '';
 		this._moduleKey = 0;
 		this._sessionRunning = false;
+		this.reqNotify?.abort();
 	}
 	public async loadSource(file: string): Promise<number> {
 		let srcFile = this.normalizePathAndCasing(file);
@@ -207,7 +213,7 @@ export class XLangRuntime extends EventEmitter {
 		let retVal= await promise as number;
 		//this.sourceModuleKeyMap.set(srcFile, retVal);
 		this._sourceFile = srcFile;
-		this._moduleKey = retVal;
+		this._moduleKey = retVal; // 0 for a previous loaded module
 		return retVal;
 	}
 	private tryTimes = 1;
@@ -260,6 +266,7 @@ export class XLangRuntime extends EventEmitter {
 		https.request(options).end();
 	}
 
+	private reqNotify;
 	private async fetchNotify()
 	{
 		const https = require('http');
@@ -270,7 +277,7 @@ export class XLangRuntime extends EventEmitter {
 			method: 'GET'
 		};
 		console.log(`fetchNotify request started`);
-		const req = https.request(options, res => {
+		this.reqNotify = https.request(options, res => {
 			console.log(`fetchNotify->statusCode: ${res.statusCode}`);
 			res.on('data', d => {
 				var strData = new TextDecoder().decode(d);
@@ -318,7 +325,7 @@ export class XLangRuntime extends EventEmitter {
 			});
 		});
 	
-		req.on('error', error => {
+		this.reqNotify.on('error', error => {
 			console.error("fetchNotify->",error);
 			if(this._sessionRunning )
 			{
@@ -328,7 +335,7 @@ export class XLangRuntime extends EventEmitter {
 				}, 100);
 			}
 		});
-		req.end();
+		this.reqNotify.end();
 	}
 	/**
 	 * Start executing the loaded program.
@@ -458,7 +465,7 @@ export class XLangRuntime extends EventEmitter {
 		});
 	}
 	
-	public setDebug(bDebug : boolean)
+	private setDebug(bDebug : boolean)
 	{
 		let code = "import xdb\nreturn xdb.set_debug(" + (bDebug ? '1' : '0') +")";
 		this.Call(code);

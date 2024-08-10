@@ -315,7 +315,9 @@ public:
 		{
 			bRet = false;
 			m_lockCommands.Unlock();
+			m_pRuntime->m_bStoped = true; //should get runtime by thread id
 			bRet = m_commandWait.Wait(-1);
+			m_pRuntime->m_bStoped = false;
 			m_lockCommands.Lock();
 		}
 		if (bRet && m_commands.size()>0)

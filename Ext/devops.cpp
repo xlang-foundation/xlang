@@ -408,9 +408,12 @@ namespace X
 				std::unordered_map<long long, XlangRuntime*> rtMap = G::I().GetThreadRuntimeIdMap();
 				for(auto& item : rtMap)
 				{
-					AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
-					pCmdInfo->dbgType = dbg::Continue;
-					item.second->M()->AddCommand(pCmdInfo, false);
+					if (item.second->m_bStoped)
+					{
+						AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+						pCmdInfo->dbgType = dbg::Continue;
+						item.second->M()->AddCommand(pCmdInfo, false);
+					}
 				}
 			}
 		}

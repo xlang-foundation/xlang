@@ -274,12 +274,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 		console.log(`disconnectRequest suspend: ${args.suspendDebuggee}, terminate: ${args.terminateDebuggee}`);
 		if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart))
 		{
-			this._runtime.close();
+			this._runtime.close(true);
 		}
 		else
 		{
-			this._runtime.setDebug(false);
+			this._runtime.close(false);
 		}
+		
 		this.sendResponse(response);
 	}
 

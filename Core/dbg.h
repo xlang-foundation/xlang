@@ -143,13 +143,13 @@ public:
 			{
 				std::vector<AST::Scope*> callables;
 				exp->CalcCallables(rtForDebugThread, pContext, callables);
-				if (callables.size() > 0 && callables[0]->GetExp()->GetStartLine() > 0) // how to check exp could trace into
+				if (callables.size() > 0 && callables[0]->GetExp()->m_type == AST::ObType::Func)// can trace into
 				{
 					m_rt->SetDbgType(dbg::StepOut, dbg::Step); // set DbgType to StepOut to skip trace in this exp
 					m_rt->m_pFirstStepOutExp = callables[0]->GetExp();
 				}
 				else
-					m_rt->SetDbgType(dbg::Step, dbg::Step);
+					m_rt->SetDbgType(dbg::Step, dbg::Step);// can not trace into
 				mLoop = false;
 				break;
 			}
@@ -157,7 +157,7 @@ public:
 			{
 				std::vector<AST::Scope*> callables;
 				exp->CalcCallables(rtForDebugThread, pContext, callables);
-				if (callables.size() > 0 && callables[0]->GetExp()->GetStartLine() > 0)
+				if (callables.size() > 0 && callables[0]->GetExp()->m_type == AST::ObType::Func)
 					m_rt->SetDbgType(dbg::StepIn, dbg::StepIn);// can trace into
 				else
 					m_rt->SetDbgType(dbg::Step, dbg::StepIn);// can not trace into

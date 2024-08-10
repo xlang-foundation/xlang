@@ -18,6 +18,8 @@ namespace X
 		// Inherited via GThread
 		virtual void run() override;
 	private:
+		std::condition_variable m_cvConnect;
+		std::mutex m_mtxConnect;
 		bool m_Connected = false;
 	};
 }

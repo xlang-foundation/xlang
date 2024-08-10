@@ -225,8 +225,8 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 
 	std::vector<X::AST::Module*> modules = X::Hosting::I().QueryModulesByPath(fileName);
 	unsigned long long moduleKey = 0;
-	/*if (runMode.empty() || runMode == "launch" || modules.size() == 0)
-	{*/
+	if (/*runMode.empty() || */modules.size() == 0)
+	{
 		if (loadFromFile)
 		{
 			std::ifstream moduleFile(fileName);
@@ -235,9 +235,14 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		}
 		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
 		retValue = X::Value(moduleKey);
-	/*}
+	}
 	else
-		retValue = X::Value((unsigned long long)modules[0]);*/
+	{
+		if (!runMode.empty())
+			retValue = X::Value(0); // for vscode debug extension
+		else
+			retValue = X::Value((unsigned long long)modules[0]);
+	}
 	
 	return true;
 }

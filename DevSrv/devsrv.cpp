@@ -17,7 +17,8 @@ namespace X
 		if (port >= 35000 && port < 36000)
 		{
 			std::thread connectionCheck([this] {
-				std::this_thread::sleep_for(std::chrono::seconds(10));
+				std::unique_lock<std::mutex> lock(m_mtxConnect);
+				m_cvConnect.wait_for(lock, std::chrono::seconds(10), [this] { return m_Connected; });
 				if (!m_Connected) {
 					m_srv.stop();
 					std::cout << "no connection in 10 seconds, xlang exited" << std::endl;
@@ -179,7 +180,7 @@ namespace X
 				if (notis.size() == 0)
 				{
 					notiLock.Unlock();
-					notiWait.Wait(-1);
+					notiWait.Wait(1000);
 					notiLock.Lock();
 				}
 				if (notis.size() > 0)
@@ -187,6 +188,8 @@ namespace X
 					notifyInfo = notis[0];
 					notis.erase(notis.begin());
 				}
+				else
+					notifyInfo = "null";
 				notiLock.Unlock();
 				res.set_content(notifyInfo, "text/html");
 			}
@@ -224,7 +227,9 @@ namespace X
 		m_srv.Get("/devops/checkStarted",
 			[this](const httplib::Request& req, httplib::Response& res)
 			{
+				std::lock_guard<std::mutex> lock(m_mtxConnect);
 				m_Connected = true;
+				m_cvConnect.notify_one();
 			}
 		);
 		m_srv.Get("/devops/terminate",
