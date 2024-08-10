@@ -71,7 +71,6 @@ void SerialPort::configure(int baudRate, unsigned int readTimeout, unsigned int 
 #endif
 }
 
-
 int SerialPort::read(char* buffer, unsigned int size) {
 #ifdef _WIN32
     DWORD bytesRead;
@@ -135,20 +134,35 @@ bool SerialPort::write(const char* data, unsigned int length) {
 }
 
 void SerialPort::readLoop() {
+    std::vector<char> packet;
     while (running) {
-        std::vector<char> buffer(4);
-        int bytesRead = read(buffer.data(), buffer.size());
-        if (bytesRead == 4) {
-            int dataSize = *(reinterpret_cast<int*>(buffer.data()));
-            buffer.resize(dataSize);
-            bytesRead = read(buffer.data(), buffer.size());
-            if (bytesRead == dataSize) {
-                m_read_callback(buffer);
+        std::vector<char> chunk(32); // 1 byte for length + up to 31 bytes of data
+        int bytesRead = read(chunk.data(), 1); // First byte is the length of the chunk
+
+        if (bytesRead == 1) {
+            int chunkSize = static_cast<unsigned char>(chunk[0]);
+            if (chunkSize > 31) {
+                // Handle invalid chunk size
+                break;
             }
-        }
-        else if (bytesRead == 0) {
-            // Connection closed by the other side, attempt to reconnect
-            //reconnect();
+            bytesRead = read(chunk.data() + 1, chunkSize);
+            if (bytesRead == chunkSize) {
+                packet.insert(packet.end(), chunk.begin() + 1, chunk.begin() + 1 + chunkSize);
+
+                // Send acknowledgment for each received payload
+                char ack = 0x06; // Example ACK byte
+                write(&ack, 1);
+
+                // If the packet is complete, process it
+                if (packet.size() >= 4) {
+                    int dataSize = *(reinterpret_cast<int*>(packet.data()));
+                    if (packet.size() - 4 == dataSize) {
+                        std::vector<char> fullData(packet.begin() + 4, packet.end());
+                        m_read_callback(fullData);
+                        packet.clear();
+                    }
+                }
+            }
         }
     }
 }
@@ -162,25 +176,40 @@ void SerialPort::writeLoop() {
             std::vector<char> packet = writeQueue.front();
             writeQueue.pop();
 
-            bool written = write(packet.data(), packet.size());
-            if (!written) {
-                // Handle write error or connection closure, attempt to reconnect
-                //reconnect();
+            size_t dataSize = *(reinterpret_cast<int*>(packet.data()));
+            size_t offset = 0;
+
+            while (offset < dataSize + 4) { // Include the 4-byte header in the chunks
+                size_t chunkSize = (dataSize + 4 - offset > 31) ? 31 : (dataSize + 4 - offset);
+                std::vector<char> chunk = createChunk(packet.data(), offset, chunkSize);
+                sendChunk(chunk);
+                offset += chunkSize;
+
+                // Wait for acknowledgment before sending the next chunk
+                char ackBuffer;
+                int ackBytes = read(&ackBuffer, 1);
+                if (ackBytes != 1 || ackBuffer != 0x06) {  // Check for the ACK byte (0x06)
+                    std::cerr << "Failed to receive ACK, retrying..." << std::endl;
+                    offset -= chunkSize; // Retry the same chunk
+                }
             }
         }
     }
 }
 
-void SerialPort::reconnect() {
-    std::cout << "Attempting to reconnect..." << std::endl;
-    close();
+std::vector<char> SerialPort::createChunk(const char* data, size_t offset, size_t chunkSize) {
+    std::vector<char> chunk(chunkSize + 1); // 1 byte for length + chunk data
+    chunk[0] = static_cast<char>(chunkSize); // Length of the chunk
+    std::memcpy(chunk.data() + 1, data + offset, chunkSize);
+    return chunk;
+}
 
-    while (running) {
-        if (openPort()) {
-            std::cout << "Reconnected to serial port" << std::endl;
-            return;
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // Retry every 1 second
+void SerialPort::sendChunk(const std::vector<char>& chunk) {
+    bool written = write(chunk.data(), chunk.size());
+    if (!written) {
+        // Handle write error or connection closure, attempt to reconnect
+        std::cerr << "Failed to send chunk, handling error..." << std::endl;
+        // reconnect();  // Uncomment and implement this if needed
     }
 }
 
@@ -191,7 +220,7 @@ void SerialPort::asyncRead(std::function<void(const std::vector<char>&)> callbac
 void SerialPort::asyncWrite(const std::vector<char>& data) {
     std::vector<char> packet(4 + data.size());
     int dataSize = data.size();
-    std::memcpy(packet.data(), &dataSize, 4);
+    std::memcpy(packet.data(), &dataSize, 4);  // 4-byte header for the length of the data
     std::memcpy(packet.data() + 4, data.data(), data.size());
 
     {

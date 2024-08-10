@@ -43,19 +43,20 @@ private:
     unsigned int readTimeout;
     unsigned int writeTimeout;
     std::function<void(const std::vector<char>&)> m_read_callback;
+
     void readLoop();
     void writeLoop();
     void reconnect();
     bool openPort();
+    bool isAckPacket(const std::vector<char>& packet);
+    void sendChunk(const std::vector<char>& chunk);
+    std::vector<char> createChunk(const char* data, size_t offset, size_t chunkSize);
 
 public:
     SerialPort(const char* portName);
     ~SerialPort();
     void configure(int baudRate = 115200, unsigned int readTimeout = 1000, unsigned int writeTimeout = 1000);
-    inline bool open()
-    {
-        return openPort();
-    }
+    bool open();
     int read(char* buffer, unsigned int size);
     bool write(const char* data, unsigned int length);
     void asyncRead(std::function<void(const std::vector<char>&)> callback);
