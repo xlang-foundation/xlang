@@ -12,7 +12,7 @@ namespace X
 		{
 			m_serialPort = std::make_unique<SerialPort>(m_deviceId.c_str());
 			if (m_serialPort->open()) {
-				m_serialPort->configure(115200, 1000, 1000);
+				m_serialPort->configure(115200, 10000, 10000);
 				setReadCallback();
 				m_serialPort->run();
 				m_running = true;
@@ -58,7 +58,7 @@ namespace X
 				list += params[i];
 			}
 			auto  it = kwParams.find("timeoutMs");
-			int timeoutMs = 100000000;
+			int timeoutMs = 1000;
 			if (it)
 			{
 				timeoutMs = (int)it->val;
@@ -71,23 +71,23 @@ namespace X
 				m_pendingCommands.emplace(std::make_pair(commandIndex,commandPair));
 			}
 
-
 			m_serialPort->asyncWrite(data);
 
 			std::unique_lock<std::mutex> lock(m_responseMutex);
-			if (!commandPair->second.wait_for(lock, std::chrono::milliseconds(timeoutMs), [&] {
-				return m_pendingCommands[commandIndex]->first.IsValid();
-				}))
+			auto it0 = m_pendingCommands.find(commandIndex);
+
+			if (it0 != m_pendingCommands.end() &&
+				!commandPair->second.wait_for(lock, std::chrono::milliseconds(timeoutMs), [&] {
+					return it0->second->first.IsValid();
+					}))
 			{
-				std::lock_guard<std::mutex> lock(m_responseMutex);
-				m_pendingCommands.erase(commandIndex);
+				m_pendingCommands.erase(it0);
+				lock.unlock(); // Unlock before returning to avoid holding the mutex for too long
+				return X::Value(); // Return an invalid or default response
 			}
 
-			X::Value response = m_pendingCommands[commandIndex]->first;
-			{
-				std::lock_guard<std::mutex> lock(m_responseMutex);
-				m_pendingCommands.erase(commandIndex);
-			}
+			X::Value response = it0->second->first;
+			m_pendingCommands.erase(it0);
 
 			return response;
 		}

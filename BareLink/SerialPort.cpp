@@ -105,6 +105,7 @@ bool SerialPort::write(const char* data, unsigned int length) {
 #ifdef _WIN32
     DWORD bytesWritten;
     if (!WriteFile(hSerial, data, length, &bytesWritten, NULL) || bytesWritten != length) {
+        auto errorcode = GetLastError();
         return false; // Handle write error
     }
     return true;
@@ -159,12 +160,13 @@ void SerialPort::writeLoop() {
         while (!writeQueue.empty()) {
             std::vector<char> packet = writeQueue.front();
             writeQueue.pop();
-
+            lock.unlock();
             bool written = write(packet.data(), packet.size());
             if (!written) {
                 // Handle write error or connection closure, attempt to reconnect
                 //reconnect();
             }
+            lock.lock();
         }
     }
 }
