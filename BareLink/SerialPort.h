@@ -39,26 +39,25 @@ private:
     std::condition_variable writeCondition;
 
     std::string portName;
-    int baudRate;
-    unsigned int readTimeout;
-    unsigned int writeTimeout;
+    int baudRate = 115200;
+    unsigned int readTimeout = 1000;
+    unsigned int writeTimeout = 1000;
     std::function<void(const std::vector<char>&)> m_read_callback;
 
     void readLoop();
     void writeLoop();
     void reconnect();
-    bool openPort();
     bool isAckPacket(const std::vector<char>& packet);
     void sendChunk(const std::vector<char>& chunk);
     std::vector<char> createChunk(const char* data, size_t offset, size_t chunkSize);
-
-public:
-    SerialPort(const char* portName);
-    ~SerialPort();
-    void configure(int baudRate = 115200, unsigned int readTimeout = 1000, unsigned int writeTimeout = 1000);
-    bool open();
+    bool openPort(int baudRate, unsigned int readTimeout, unsigned int writeTimeout);
+    void configure(int baudRate , unsigned int readTimeout, unsigned int writeTimeout );
     int read(char* buffer, unsigned int size);
     bool write(const char* data, unsigned int length);
+
+public:
+    SerialPort(const char* portName, int baudRate, unsigned int readTimeout, unsigned int writeTimeout);
+    ~SerialPort();
     void asyncRead(std::function<void(const std::vector<char>&)> callback);
     void asyncWrite(const std::vector<char>& data);
     void close();

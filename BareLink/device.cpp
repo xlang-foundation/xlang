@@ -8,11 +8,9 @@ namespace X
 	{
 		Device::Device(std::string deviceId) : m_deviceId(deviceId), m_serialPort(nullptr), m_commandIndex(0), m_running(false) {}
 
-		bool Device::Connect()
+		bool Device::Connect(int baudRate, unsigned int readTimeout, unsigned int writeTimeout)
 		{
-			m_serialPort = std::make_unique<SerialPort>(m_deviceId.c_str());
-			m_serialPort->configure(115200, 1000, 1000);
-			m_serialPort->open();
+			m_serialPort = std::make_unique<SerialPort>(m_deviceId.c_str(),baudRate,readTimeout,writeTimeout);
 			m_running = true;
 			m_readThread = std::thread(&Device::ReadLoop, this);
 			return m_serialPort != nullptr;
@@ -73,13 +71,11 @@ namespace X
 				return m_pendingCommands[commandIndex]->first.IsValid();
 				}))
 			{
-				std::lock_guard<std::mutex> lock(m_responseMutex);
 				m_pendingCommands.erase(commandIndex);
 			}
 
 			X::Value response = m_pendingCommands[commandIndex]->first;
 			{
-				std::lock_guard<std::mutex> lock(m_responseMutex);
 				m_pendingCommands.erase(commandIndex);
 			}
 

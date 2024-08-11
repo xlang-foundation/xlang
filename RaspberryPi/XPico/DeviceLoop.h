@@ -5,7 +5,7 @@
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
 #include <unordered_map>
-#include "serial_port_bm.h"
+#include "SerialPortBM.h"
 #include "xlang.h"
 
 class DeviceLoop {

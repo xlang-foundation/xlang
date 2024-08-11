@@ -21,13 +21,13 @@ namespace X
 		{
 		public:
 			BEGIN_PACKAGE(Device)
-				APISET().AddFunc<0>("Connect", &Device::Connect);
+				APISET().AddFunc<3>("Connect", &Device::Connect);
 			APISET().AddFunc<0>("Disconnect", &Device::Disconnect);
 			APISET().AddVarFunc("RunCommand", &Device::RunCommand);
 			END_PACKAGE
 
 				Device(std::string deviceId);
-			bool Connect();
+			bool Connect(int baudRate, unsigned int readTimeout, unsigned int writeTimeout);
 			bool Disconnect();
 			bool RunCommand(
 				X::XRuntime* rt, X::XObj* pContext,

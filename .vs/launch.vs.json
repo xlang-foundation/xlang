@@ -6,9 +6,22 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "xlang.exe (bin\\xlang.exe)",
-      "args": [ "-event_loop", "-dbg", "-enable_python" ],
-      "args_": [ "C:\\ToGithub\\CantorAI\\xlang\\test\\misc\\simple.x" ],
+      "args": [
+        "-event_loop",
+        "-dbg",
+        "-enable_python"
+      ],
+      "args_": [
+        "C:\\ToGithub\\CantorAI\\xlang\\test\\misc\\simple.x"
+      ],
       "name": "xlang.exe (bin\\xlang.exe)"
+    },
+    {
+      "type": "dll",
+      "exe": "",
+      "project": "CMakeLists.txt",
+      "projectTarget": "xlang_barelink.dll (bin\\xlang_barelink.dll)",
+      "name": "xlang_barelink.dll (bin\\xlang_barelink.dll)"
     }
   ]
 }

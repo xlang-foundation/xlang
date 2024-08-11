@@ -1,7 +1,8 @@
 #include "SerialPort.h"
 
-SerialPort::SerialPort(const char* portName) : running(false), portName(portName) {
-    if (!openPort()) {
+SerialPort::SerialPort(const char* portName, int baudRate, unsigned int readTimeout, unsigned int writeTimeout) :
+    running(false), portName(portName){
+    if (!openPort(baudRate,readTimeout,writeTimeout)) {
         throw std::runtime_error("Error opening serial port");
     }
 }
@@ -10,7 +11,7 @@ SerialPort::~SerialPort() {
     close();
 }
 
-bool SerialPort::openPort() {
+bool SerialPort::openPort(int baudRate, unsigned int readTimeout, unsigned int writeTimeout) {
 #ifdef _WIN32
     hSerial = CreateFile(portName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (hSerial == INVALID_HANDLE_VALUE) {
@@ -175,7 +176,7 @@ void SerialPort::writeLoop() {
         while (!writeQueue.empty()) {
             std::vector<char> packet = writeQueue.front();
             writeQueue.pop();
-
+            lock.unlock();
             size_t dataSize = *(reinterpret_cast<int*>(packet.data()));
             size_t offset = 0;
 
@@ -193,6 +194,7 @@ void SerialPort::writeLoop() {
                     offset -= chunkSize; // Retry the same chunk
                 }
             }
+            lock.lock();
         }
     }
 }
