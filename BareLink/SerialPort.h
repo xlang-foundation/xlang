@@ -22,6 +22,8 @@
 #endif
 
 #define CHUNK_ACK 0xFF // Use macro for ACK byte
+#define CHUNK_DATASIZE 31
+#define CHUNK_SIZE 32
 
 class SerialPort {
 private:

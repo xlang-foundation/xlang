@@ -19,15 +19,16 @@ void DeviceLoop::processCommand(const std::vector<char>& command) {
 	X::Value params;
 	params.FromBytes(pStream);
 	X::g_pXHost->ReleaseStream(pStream);
+	int params_size = (int)params.Size();
 
-	if (params.Size() < 2) {
+	if (params_size < 2) {
 		return; // Invalid command format
 	}
 	int commandIndex = (int)params[(int)0];
 	auto commandType = (CommandType)(int)params[(int)1];
 	switch (commandType) {
 	case CommandType::LoadCode:
-		if (params.Size() >= 4)
+		if (params_size >= 4)
 		{
 			std::string moduleName = params[(int)2].ToString();
 			std::string code = params[3].ToString();
@@ -41,12 +42,12 @@ void DeviceLoop::processCommand(const std::vector<char>& command) {
 		}
 		break;
 	case CommandType::RunCode:
-		if (params.Size() >= 3)
+		if (params_size >= 3)
 		{
 			//pass in the module key and a flag: true for debug run, false for normal run
 			unsigned long long moduleKey = (unsigned long long)params[(int)2];
 			bool debug = false;
-			if (params.Size() >= 4)
+			if (params_size >= 4)
 			{
 				debug = (bool)params[3];
 			}
@@ -54,7 +55,7 @@ void DeviceLoop::processCommand(const std::vector<char>& command) {
 			if (it != m_moduleMap.end())
 			{
 				X::Value objModule = it->second;
-				int argNum = params.Size() - 4;
+				int argNum = params_size - 4;
 				X::ARGS args(argNum);
 				for (int i = 0; i < argNum; i++)
 				{

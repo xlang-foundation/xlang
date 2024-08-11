@@ -21,7 +21,7 @@ print("Device:",devices)
 # Connect to the first device
 device = barelink.Device("COM5")
 device.Connect(115200,1000,1000)
-device.RunCommand(0,code)
+device.RunCommand(0,"first",code)
 device.RunCommand(1,"")
 print("Connected to device")
 

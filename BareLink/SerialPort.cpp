@@ -137,25 +137,26 @@ bool SerialPort::write(const char* data, unsigned int length) {
 void SerialPort::readLoop() {
     std::vector<char> packet;
     while (running) {
-        std::vector<char> chunk(32); // 1 byte for length + up to 31 bytes of data
+        std::vector<char> chunk(CHUNK_SIZE); // 1 byte for length + up to 31 bytes of data
         int bytesRead = read(chunk.data(), 1); // First byte is the length of the chunk or ACK
 
         if (bytesRead == 1) {
             char firstByte = chunk[0];
-            if (firstByte == CHUNK_ACK) { // ACK packet
+            if (firstByte ==(char)CHUNK_ACK) { // ACK packet
                 std::unique_lock<std::mutex> lock(writeMutex);
                 ackReceived = true;
                 ackCondition.notify_one();  // Notify writeLoop that ACK was received
+                continue;
             }
             else {
-                int chunkSize = static_cast<unsigned char>(firstByte);
-                if (chunkSize > 31) {
+                int chunkDataSize = static_cast<unsigned char>(firstByte);
+                if (chunkDataSize > CHUNK_DATASIZE) {
                     // Handle invalid chunk size
                     break;
                 }
-                bytesRead = read(chunk.data() + 1, chunkSize);
-                if (bytesRead == chunkSize) {
-                    packet.insert(packet.end(), chunk.begin() + 1, chunk.begin() + 1 + chunkSize);
+                bytesRead = read(chunk.data() + 1, chunkDataSize);
+                if (bytesRead == chunkDataSize) {
+                    packet.insert(packet.end(), chunk.begin() + 1, chunk.begin() + 1 + chunkDataSize);
 
                     // If the packet is complete, process it
                     if (packet.size() >= 4) {
@@ -168,7 +169,7 @@ void SerialPort::readLoop() {
                     }
                 }
                 // Send ACK for each received chunk
-                std::vector<char> ackPacket = { CHUNK_ACK };
+                std::vector<char> ackPacket = { (char)CHUNK_ACK };
                 {
                     std::lock_guard<std::mutex> lock(writeMutex);
                     writeQueue.push(ackPacket);
@@ -187,18 +188,19 @@ void SerialPort::writeLoop() {
         while (!writeQueue.empty()) {
             std::vector<char> packet = writeQueue.front();
             writeQueue.pop();
-
+            lock.unlock();
             // If the packet is just an ACK, send it immediately as a single byte
-            if (packet.size() == 1 && packet[0] == CHUNK_ACK) {
+            if (packet.size() == 1 && packet[0] == (char)CHUNK_ACK) {
                 write(&packet[0], 1); // Send just the ACK byte
+                lock.lock();
                 continue;
             }
 
-            size_t dataSize = *(reinterpret_cast<int*>(packet.data()));
+            size_t packetSize = packet.size();
             size_t offset = 0;
 
-            while (offset < dataSize + 4) { // Include the 4-byte header in the chunks
-                size_t chunkSize = (dataSize + 4 - offset > 31) ? 31 : (dataSize + 4 - offset);
+            while (offset < packetSize) { // Include the 4-byte header in the chunks
+                size_t chunkSize = (packetSize - offset > CHUNK_DATASIZE) ? CHUNK_DATASIZE : (packetSize - offset);
                 std::vector<char> chunk = createChunk(packet.data(), offset, chunkSize);
                 sendChunk(chunk);
                 offset += chunkSize;
@@ -208,6 +210,7 @@ void SerialPort::writeLoop() {
                 ackCondition.wait(ackLock, [this]() { return ackReceived; });
                 ackReceived = false;  // Reset ACK flag for the next chunk
             }
+            lock.lock();
         }
     }
 }
