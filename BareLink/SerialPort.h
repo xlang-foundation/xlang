@@ -21,6 +21,8 @@
 #include <sys/select.h>
 #endif
 
+#define CHUNK_ACK 0xFF // Use macro for ACK byte
+
 class SerialPort {
 private:
 #ifdef _WIN32
@@ -37,6 +39,8 @@ private:
     std::queue<std::vector<char>> writeQueue;
     std::mutex writeMutex;
     std::condition_variable writeCondition;
+    std::condition_variable ackCondition;  // New condition variable for ACK synchronization
+    bool ackReceived = false;  // Flag to track ACK reception
 
     std::string portName;
     int baudRate = 115200;
@@ -51,7 +55,7 @@ private:
     void sendChunk(const std::vector<char>& chunk);
     std::vector<char> createChunk(const char* data, size_t offset, size_t chunkSize);
     bool openPort(int baudRate, unsigned int readTimeout, unsigned int writeTimeout);
-    void configure(int baudRate , unsigned int readTimeout, unsigned int writeTimeout );
+    void configure(int baudRate, unsigned int readTimeout, unsigned int writeTimeout);
     int read(char* buffer, unsigned int size);
     bool write(const char* data, unsigned int length);
 
