@@ -18,7 +18,9 @@
 #include <limits>
 #include <fstream>
 #include "port.h"
-
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#endif
 
 bool RunProcess(std::string cmd,
 	std::string initPath, bool newConsole, unsigned long& processId)
@@ -98,6 +100,9 @@ unsigned long GetThreadID()
 	unsigned long tid = 0;
 #if (WIN32)
 	tid = ::GetCurrentThreadId();
+#elif defined(__APPLE__)
+	tid = (unsigned long)mach_thread_self();
+	mach_port_deallocate(mach_task_self(), tid);
 #else
 #if __GLIBC__ == 2 && __GLIBC_MINOR__ < 30
 #include <sys/syscall.h>

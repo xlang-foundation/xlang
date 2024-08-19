@@ -46,7 +46,7 @@
 #include "xport.h"
 #include "ast.h"
 #include "time_object.h"
-
+#include "struct.h"
 
 namespace X
 {
@@ -104,12 +104,24 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			X::XObj* pObj = outputPrimitive.primitive.GetObj();
 			if (pObj)
 			{
-				X::ARGS params_p(0);
+				X::ARGS params_p(1);
 				X::KWARGS kwargs_p;
 				params_p.push_back(allOut);
-				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,
-					nullptr, params_p, kwargs_p, retValue);
+				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,	nullptr, params_p, kwargs_p, retValue);
 			}
+		}
+		int iExeNum = X::Hosting::I().GetInteractiveExeNum();
+		if (iExeNum != -1) //
+		{
+			X::KWARGS kw;
+			X::Value valExeNum(iExeNum);
+			kw.Add("exe_num", valExeNum);
+			X::Value valParam(allOut);
+			kw.Add("data", valParam);
+			std::cout << "print to jupyter (execute number: " << std::to_string(iExeNum) << "): " << allOut << std::endl;
+			std::string evtName("devops.print2jupyter");
+			X::ARGS p(0);
+			X::EventSystem::I().Fire(nullptr, nullptr, evtName, p, kw);
 		}
 	}
 	//_printLock.Unlock();
@@ -161,10 +173,17 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		retValue = X::Value(0);
 		return true;
 	}
-	std::ifstream moduleFile(fileName);
-	std::string code((std::istreambuf_iterator<char>(
-		moduleFile)), std::istreambuf_iterator<char>());
-	moduleFile.close();
+	std::string code;
+	if (params.size() == 2)
+	{
+		code = params[1].ToString();
+	}
+	else
+	{
+		std::ifstream moduleFile(fileName);
+		code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
+		moduleFile.close();
+	}
 	unsigned long long moduleKey = 0;
 	X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
 	retValue = X::Value(moduleKey);
@@ -213,7 +232,8 @@ bool U_LoadModule(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	if (bOK)
 	{
 		X::Value moduleRet;
-		X::g_pXHost->RunModule(objModule, moduleRet, true);
+		X::ARGS args(0);
+		X::g_pXHost->RunModule(objModule, args,moduleRet, true);
 	}
 	retValue = objModule;
 	return bOK;
@@ -294,10 +314,14 @@ bool U_RunFragmentCode(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		retValue = X::Value(false);
 		return false;
 	}
+	int exeNum = -1;
+	auto it = kwParams.find("ExeNum");
+	if (it)
+		exeNum = it->val.GetLongLong();
+
 	std::string code = params[0].ToString();
 	std::vector<std::string> passInParams;
-	return X::Hosting::I().RunCodeLine(code.c_str(),
-		(int)code.size(), retValue);
+	return X::Hosting::I().RunCodeLine(code.c_str(), (int)code.size(), retValue);
 }
 bool U_RunInMain(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
@@ -614,10 +638,129 @@ bool U_ToString(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(retStr);
 	return true;
 }
+
+// if only one param, and params[0] is a number, then as size of binary
+//if one param and it is list of integer between 0-255, then as binary data
+
 bool U_ToBytes(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
+	bool bSerialization = false;
+	bool bGenData = false;
+	auto it = kwParams.find("Serialization");
+	if (it)
+	{
+		if (it->val.IsBool())
+		{
+			bSerialization = (bool)it->val;
+		}
+	}
+	it = kwParams.find("GenData");
+	if (it)
+	{
+		if (it->val.IsBool())
+		{
+			bGenData = (bool)it->val;
+		}
+	}
+	if(params.size() == 0)
+	{
+		X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, 0, false);
+		retValue = X::Value(pBinOut);
+		return true;
+	}
+	else if (bGenData && params.size() >= 1)
+	{
+		//generate binary data randomly
+		auto& v = params[0];
+		size_t size = (unsigned long long)v;
+		if (size>0 && params.size() == 1)
+		{
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, size, false);
+			unsigned char* p = (unsigned char*)pBinOut->Data();
+			for (size_t i = 0; i < size; i++)
+			{
+				*p++ = rand() % 256;
+			}
+			retValue = X::Value(pBinOut);
+			return true;
+		}
+		else if (size>0 && params.size() ==2)
+		{
+			// like bytes(100,value,GenData =True)
+			//set the item to value
+			auto val = (char)params[1];
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, size, false);
+			unsigned char* p = (unsigned char*)pBinOut->Data();
+			memset(p, val, size);
+			retValue = X::Value(pBinOut);
+			return true;
+		}
+		else if (size > 0 && params.size() == 3)
+		{// like bytes(100,MinValue,maxValue,GenData =True)
+			//set the value between MinValue and MaxValue randomly
+			auto minVal = (char)params[1];
+			auto maxVal = (char)params[2];
+			if (minVal > maxVal)
+			{
+				auto t = minVal;
+				minVal = maxVal;
+				maxVal = t;
+			}
+			auto len = maxVal - minVal + 1;
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, size, false);
+			unsigned char* p = (unsigned char*)pBinOut->Data();
+			for (size_t i = 0; i < size; i++)
+			{
+				*p++ = minVal + rand() % len;
+			}
+			retValue = X::Value(pBinOut);
+			return true;
+		}
+	}
+	else if(!bSerialization && params.size() == 1)
+	{
+		auto& v = params[0];
+		if (v.IsNumber())
+		{
+			size_t size = (unsigned long long)v;
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, size, false);
+			retValue = X::Value(pBinOut);
+			return true;
+		}
+		else if (v.IsList())
+		{
+			bool bWorking = true;
+			X::List list(v);
+			X::Data::Binary* pBinOut = new X::Data::Binary(nullptr, v.Size(), false);
+			unsigned char* p = (unsigned char*)pBinOut->Data();
+			for(auto item : *list)
+			{
+				if (!item.IsNumber())
+				{
+					bWorking = false;
+					break;
+				}
+				auto n = (long long)item;
+				if (n < 0 || n > 255)
+				{
+					bWorking = false;
+					break;
+				}
+				else
+				{
+					*p++ = (unsigned char)n;
+				}
+			}
+			if (bWorking)
+			{
+				retValue = X::Value(pBinOut);
+				return true;
+			}
+		}
+	}
+
 	X::BlockStream stream;
 	for (auto& v : params)
 	{
@@ -651,6 +794,27 @@ bool U_FromBytes(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	stream.ScopeSpace().SetContext(pXLangRt, pContext);
 	stream >> retValue;
 	return true;
+}
+bool U_GetLength(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(0);
+		return true;
+	}
+	X::Value p = params[0];
+	if (p.IsObject())
+	{
+		retValue = X::Value(p.GetObj()->Size());
+		return true;
+	}
+	else
+	{
+		retValue = X::Value(0);
+		return true;
+	}
 }
 bool U_GetType(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
@@ -726,6 +890,7 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params,KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	//if params has a TaskPool, will get it
 	X::Value taskPool;
 	ARGS params0(params.size());
@@ -807,6 +972,9 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		retValue = X::Value(pFuture);
 	}
 	return bOK;
+#else
+	return false;
+#endif
 }
 bool U_OnEvent(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
@@ -1109,6 +1277,7 @@ bool U_LRpc_Listen(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	long port = 0;
 	if (params.size() > 0)
 	{
@@ -1126,6 +1295,7 @@ bool U_LRpc_Listen(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		X::MsgThread::I().Start();
 	}
+#endif
 	return true;
 }
 bool U_PushWritePad(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
@@ -1218,6 +1388,20 @@ bool U_GetModuleFileName(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	}
 	return true;
 }
+bool U_GetModuleFolderPath(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	auto* pRuntime = dynamic_cast<XlangRuntime*>(rt);
+	if (pRuntime->M())
+	{
+		std::string modulePath = pRuntime->M()->GetModulePath();
+		retValue = X::Value(modulePath);
+	}
+	return true;
+}
+
 bool U_GetArgs(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1264,7 +1448,37 @@ bool U_CreateComplexObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	return true;
 }
 
-bool U_CreateSetObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+bool U_CreateStructObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	auto* pStructObj = new X::Data::XlangStruct();
+	if (params.size() > 0)
+	{
+		X::Value fields = params[0];
+		if (fields.IsList())
+		{
+			X::List liFields(fields);
+			for (auto field : *liFields)
+			{
+				if (field.IsObject() && field.GetObj()->GetType() == X::ObjType::Dict)
+				{
+					X::Dict dictField(field);
+					std::string name = dictField["name"].ToString();
+					std::string type = dictField["type"].ToString();
+					bool isPointer = (bool)dictField["isPointer"];
+					int bits = (int)dictField["bits"];
+					pStructObj->addField(name, type, isPointer,bits);
+				}
+			}
+		}
+	}
+	pStructObj->Build();
+	retValue = X::Value(pStructObj);
+	return true;
+}
+bool U_CreateSetObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -1280,7 +1494,6 @@ bool U_CreateSetObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(pSetObj);
 	return true;
 }
-
 bool U_Event_Loop(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1343,6 +1556,7 @@ bool U_CreateTaskPool(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
+#if not defined(BARE_METAL)
 	X::Data::TaskPool* pPool = new X::Data::TaskPool();
 	int num = 1;
 	if (params.size() > 0)
@@ -1366,6 +1580,7 @@ bool U_CreateTaskPool(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	pPool->SetThreadNum(num);
 	pPool->SetInUIThread(bRunInUI);
 	retValue = X::Value(pPool);
+#endif
 	return true;
 }
 bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
@@ -1421,6 +1636,7 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::Value& retValue)
 {
 	bool bOK = true;
+#if not defined(BARE_METAL)
 	auto* pTensor = new X::Data::Tensor();
 
 	std::string name;
@@ -1491,6 +1707,7 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		delete pTensor;
 	}
+#endif
 	return bOK;
 }
 bool Builtin::RegisterInternals()
@@ -1498,6 +1715,7 @@ bool Builtin::RegisterInternals()
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
 	X::Value valBuiltinPack(pBuiltinPack);
 	X::Manager::I().Register("builtin", valBuiltinPack);
+#if not defined(BARE_METAL)
 	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
 	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
 	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml");
@@ -1505,7 +1723,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
 	X::RegisterPackage<X::TimeObject>(m_libName.c_str(), "time");
-
+#endif
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
@@ -1536,7 +1754,7 @@ bool Builtin::RegisterInternals()
 	Register("addpath", (X::U_FUNC)U_AddPath, params);
 	Register("removepath", (X::U_FUNC)U_RemovePath, params);
 	Register("tostring", (X::U_FUNC)U_ToString, params);
-	Register("bytes", (X::U_FUNC)U_ToBytes, params);
+	Register("bytes", (X::U_FUNC)U_ToBytes, params, "bytes([size])|bytes([list,item in [0,256)])|bytes(others,[Serialization=true])");
 	Register("fromBytes", (X::U_FUNC)U_FromBytes, params);
 	Register("setattr", (X::U_FUNC)U_SetAttribute, params, "", true);
 	Register("getattr", (X::U_FUNC)U_GetAttribute, params, "", true);
@@ -1549,6 +1767,7 @@ bool Builtin::RegisterInternals()
 	Register("to_bin", (X::U_FUNC)U_Extract_Data_ToBin, params, "to_bin", true);
 	Register("get_args", (X::U_FUNC)U_GetArgs, params);
 	Register("get_module_filename", (X::U_FUNC)U_GetModuleFileName, params);
+	Register("get_module_folder_path", (X::U_FUNC)U_GetModuleFolderPath, params);
 	Register("new_module", (X::U_FUNC)U_NewModule, params);
 	Register("get_modulebykey", (X::U_FUNC)U_GetModuleFromKey, params);
 	Register("run_new_instance", (X::U_FUNC)U_RunNewInstance, params);
@@ -1556,14 +1775,18 @@ bool Builtin::RegisterInternals()
 	Register("float", (X::U_FUNC)U_ToFloat, params);
 	Register("str", (X::U_FUNC)U_ToString, params);
 	Register("type", (X::U_FUNC)U_GetType, params);
+	Register("len", (X::U_FUNC)U_GetLength, params);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
 	Register("event_loop", (X::U_FUNC)U_Event_Loop, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
 	Register("set", (X::U_FUNC)U_CreateSetObject, params);
+	Register("struct", (X::U_FUNC)U_CreateStructObject, params);
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");
+#if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
+#endif
 	return true;
 }
 

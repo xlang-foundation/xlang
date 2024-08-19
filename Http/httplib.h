@@ -5400,7 +5400,6 @@ namespace httplib {
         }
         return false;
     }
-
     inline socket_t
         Server::create_server_socket(const std::string& host, int port,
             int socket_flags,

@@ -95,8 +95,8 @@ namespace X
 		{
 			return -1;
 		}
-		//TODO: Scope Issue
-		auto* pScope = dynamic_cast<AST::Scope*>(valObj.GetObj());
+		X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(valObj.GetObj());
+		auto* pScope = pObj->GetMyScope();
 		if (pScope == nullptr)
 		{
 			return -1;
@@ -108,7 +108,8 @@ namespace X
 		if (index >= 0)
 		{
 			X::Value varFunc;
-			if (!Get(pScope,nullptr, index, varFunc))
+			pScope->Get(this, valObj.GetObj(), index, varFunc);
+			if(varFunc.IsInvalid() || !varFunc.IsObject())
 			{
 				return -1;
 			}
@@ -128,7 +129,8 @@ namespace X
 			return -1;
 		}
 		X::Value varFunc;
-		if (!Get(pScope, nullptr, index, varFunc))
+		pScope->Get(this, valObj.GetObj(), index, varFunc);
+		if (varFunc.IsInvalid() || !varFunc.IsObject())
 		{
 			return -1;
 		}
@@ -190,7 +192,22 @@ namespace X
 	X::Value XlangRuntime::GetXModuleFileName()
 	{
 		std::string moduleFileName;
-		if (m_pModule)
+		bool bFind = false;
+		//trust stack's current module
+		if (m_stackBottom)
+		{
+			auto* pExp = m_stackBottom->GetCurExp();
+			if (pExp)
+			{
+				auto* pModule = pExp->FindModule();
+				if (pModule)
+				{
+					moduleFileName = pModule->GetModuleName();
+					bFind = true;
+				}
+			}
+		}
+		if (!bFind && m_pModule)
 		{
 			moduleFileName = m_pModule->GetModuleName();
 		} 
@@ -202,6 +219,9 @@ namespace X
 		{
 			return m_stackBottom->GetStartLine();
 		}
-		return -1;
+		else
+		{
+			return -1;
+		}
 	}
 }

@@ -28,11 +28,11 @@ enum class ValueType
 	std::string((char*)p,(size_t)size)
 
 #define ARITH_OP(op)\
-Value& operator op (const Value& r);
+void operator op (const Value& r);
 
 #ifdef __ANDROID__
 #define ARITH_OP_IMPL(op)\
-inline Value& Value::operator op (Value const& r)\
+inline void Value::operator op (Value const& r)\
 {\
 switch (t)\
 {\
@@ -55,11 +55,10 @@ break; \
 default:\
 	break; \
 }\
-return *this; \
 }
 #else
 #define ARITH_OP_IMPL(op)\
-FORCE_INLINE Value& Value::operator op (Value const& r)\
+void Value::operator op (const Value & r)\
 {\
 	switch (t)\
 	{\
@@ -82,7 +81,6 @@ FORCE_INLINE Value& Value::operator op (Value const& r)\
 	default:\
 		break;\
 	}\
-	return *this;\
 }
 #endif
 
@@ -195,6 +193,7 @@ public:
 		if (t == ValueType::Object)
 		{
 			ReleaseObject(x.obj);
+			x.obj = nullptr;
 		}
 		t = ValueType::Invalid;
 	}
@@ -223,6 +222,24 @@ public:
 		t = ValueType::Int64;
 		flags |= (int)ValueSubType::CHAR;
 		x.l = c;
+	}
+	FORCE_INLINE Value(unsigned char c)
+	{
+		t = ValueType::Int64;
+		flags |= (int)ValueSubType::UCHAR;
+		x.l = c;
+	}
+	FORCE_INLINE Value(short s)
+	{
+		t = ValueType::Int64;
+		flags |= (int)ValueSubType::SHORT;
+		x.l = s;
+	}
+	FORCE_INLINE Value(unsigned short s)
+	{
+		t = ValueType::Int64;
+		flags |= (int)ValueSubType::USHORT;
+		x.l = s;
 	}
 	FORCE_INLINE Value(int l)
 	{
@@ -296,6 +313,7 @@ public:
 	bool Clone();
 	bool ChangeToStrObject();
 	void AssignObject(XObj* p,bool bAddRef = true);
+	void SetObject(XObj* p);
 	void ReleaseObject(XObj* p);
 	FORCE_INLINE Value Negative() const
 	{
@@ -316,8 +334,8 @@ public:
 	FORCE_INLINE Value(const Value& v)
 	{
 		flags = v.flags;
-		x.l = 0;
 		t = v.t;
+		x.l = 0;
 		switch (t)
 		{
 		case ValueType::Int64:
@@ -330,7 +348,7 @@ public:
 			x.str = v.x.str;
 			break;
 		case ValueType::Object:
-			AssignObject(v.x.obj);
+			SetObject(v.x.obj);	
 			break;
 		default:
 			break;
@@ -339,6 +357,27 @@ public:
 	FORCE_INLINE operator bool() const
 	{
 		return (x.l != 0);
+	}
+	FORCE_INLINE operator unsigned char() const
+	{
+		return (t == ValueType::Int64) ? (unsigned char)x.l : (unsigned char)x.d;
+	}
+	FORCE_INLINE operator char() const
+	{
+		return (t == ValueType::Int64) ? (char)x.l : (char)x.d;
+	}
+
+	FORCE_INLINE operator short() const
+	{
+		return (t == ValueType::Int64) ? (short)x.l : (short)x.d;
+	}
+	FORCE_INLINE operator unsigned short() const
+	{
+		return (t == ValueType::Int64) ? (unsigned short)x.l : (unsigned short)x.d;
+	}
+	FORCE_INLINE operator long() const
+	{
+		return (t == ValueType::Int64) ? (long)x.l : (long)x.d;
 	}
 	FORCE_INLINE operator double() const
 	{
@@ -480,6 +519,7 @@ public:
 				return;
 			}
 			ReleaseObject(x.obj);
+			x.obj = nullptr;
 		}
 		flags = v.flags;
 		t = v.t;

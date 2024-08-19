@@ -27,6 +27,8 @@
 #include <iostream>
 #include <string>
 
+#include "cypher_help.h"
+
 bool ChmodWin(const std::string& filename) {
 	// Get the SID of the current user
 	HANDLE hToken = NULL;
@@ -106,7 +108,7 @@ bool ChmodWin(const std::string& filename) {
 
 #endif
 // Function to generate RSA key pair
-RSA* generate_key_pair(int keySize = 2048) {
+RSA* generate_key_pair(int keySize = 1024) {
 	RSA* rsa = RSA_new();
 	BIGNUM* e = BN_new();
 	BN_set_word(e, RSA_F4);  // Use 65537 as the public exponent
@@ -215,7 +217,7 @@ std::string get_and_make_store_path(std::string& storePath) {
 		char userProfilePath[MAX_PATH];
 		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_PROFILE, NULL, 0, userProfilePath))) {
 			std::string profile_folderPath = std::string(userProfilePath) + "\\AppData\\Roaming\\";
-			folderPath = profile_folderPath+storePath+"\\";
+			folderPath = profile_folderPath + storePath + "\\";
 		}
 		else {
 			return "";
@@ -226,7 +228,7 @@ std::string get_and_make_store_path(std::string& storePath) {
 			struct passwd* pw = getpwuid(getuid());
 			home_dir = pw->pw_dir;
 		}
-		folderPath =  std::string(home_dir) + "/"+ storePath+"/";
+		folderPath = std::string(home_dir) + "/" + storePath + "/";
 #endif
 	}
 	bool bOK = create_directory_recursive(folderPath);
@@ -243,66 +245,8 @@ inline std::string get_private_key_filename(const std::string& key_name, std::st
 	return storePath + key_name + "_private_key.pem";
 }
 
-#if (WIN32_PORT)
-// Function to generate a self-signed certificate from an RSA key
-static X509* generate_certificate(RSA* rsa, const std::string& cert_name) {
-	X509* x509 = X509_new();
-	X509_set_version(x509, 2);
-	ASN1_INTEGER_set(X509_get_serialNumber(x509), 1);
-
-	X509_NAME* name = X509_get_subject_name(x509);
-	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char*)cert_name.c_str(), -1, -1, 0);
-	X509_set_issuer_name(x509, name);
-
-	X509_gmtime_adj(X509_get_notBefore(x509), 0);
-	X509_gmtime_adj(X509_get_notAfter(x509), 31536000L);  // Valid for 1 year
-
-	EVP_PKEY* pkey = EVP_PKEY_new();
-	EVP_PKEY_assign_RSA(pkey, rsa);
-	X509_set_pubkey(x509, pkey);
-
-	X509_sign(x509, pkey, EVP_sha256());
-
-	EVP_PKEY_free(pkey);
-	return x509;
-}
-
-// Function to store the certificate in the Windows Certificate Store
-static void store_certificate(X509* x509) {
-	PCCERT_CONTEXT pCertContext = NULL;
-	BYTE* derCert = NULL;
-	int derCertLen = i2d_X509(x509, &derCert);
-
-	if (derCertLen > 0) {
-		pCertContext = CertCreateCertificateContext(X509_ASN_ENCODING, derCert, derCertLen);
-		if (pCertContext != NULL) {
-			HCERTSTORE hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, NULL, CERT_SYSTEM_STORE_CURRENT_USER, L"MY");
-			if (hCertStore != NULL) {
-				if (!CertAddCertificateContextToStore(hCertStore, pCertContext, CERT_STORE_ADD_NEW, NULL)) {
-					// Handle error
-				}
-				CertCloseStore(hCertStore, 0);
-			}
-			CertFreeCertificateContext(pCertContext);
-		}
-		OPENSSL_free(derCert);
-	}
-}
-
-void store_private_key(RSA* rsa, const std::string& key_name) {
-	// Generate a self-signed certificate from the RSA key
-	X509* x509 = generate_certificate(rsa, key_name);
-
-	// Store the certificate in the Windows Certificate Store
-	store_certificate(x509);
-
-	// Free the certificate
-	X509_free(x509);
-}
-
-#else
 // Function to store the private key (Linux)
-void store_private_key(RSA* rsa, const std::string& key_name,std::string& storePath) {
+void store_private_key(RSA* rsa, const std::string& key_name, std::string& storePath) {
 	// Get the private key in PEM format
 	BIO* bio = BIO_new(BIO_s_mem());
 	PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
@@ -324,10 +268,9 @@ void store_private_key(RSA* rsa, const std::string& key_name,std::string& storeP
 	// Clean up
 	BIO_free(bio);
 }
-#endif
 
 // Function to retrieve the stored private key
-RSA* get_stored_private_key(const std::string& key_name,std::string& storePath) {
+RSA* get_stored_private_key(const std::string& key_name, std::string& storePath) {
 	std::string filename = get_private_key_filename(key_name, storePath);
 
 	BIO* bio = BIO_new_file(filename.c_str(), "rb");
@@ -351,148 +294,45 @@ void send_to_server(const std::string& data) {
 
 
 // Function to encrypt a message using a private key
-#if (WIN32_PORT)
-// Function to encrypt data using a private key associated with a certificate
-std::string encrypt_with_private_key_win(const std::string& cert_name, const std::string& data) {
-	// Convert the input string to a vector of bytes
-	std::vector<BYTE> byte_data(data.begin(), data.end());
 
-	// Open the "MY" certificate store
-	HCERTSTORE hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, NULL, CERT_SYSTEM_STORE_CURRENT_USER, L"MY");
-	if (!hCertStore) {
-		throw std::runtime_error("Failed to open certificate store.");
+std::vector<unsigned char> encrypt_with_private_key(int paddingMode,const std::string& message, RSA* rsa) {
+	auto rsa_size = RSA_size(rsa);
+	if (rsa_size < message.size())
+	{
+		return long_msg_encrypt_with_private_key(paddingMode,message, rsa);
+	}
+	std::vector<unsigned char> encrypted(rsa_size);
+	int encrypted_length = RSA_private_encrypt(
+		message.size(),
+		reinterpret_cast<const unsigned char*>(message.data()),
+		encrypted.data(),
+		rsa,
+		paddingMode
+	);
+
+	if (encrypted_length == -1) {
+		ERR_print_errors_fp(stderr);
+		throw std::runtime_error("Encryption failed.");
 	}
 
-	// Find the certificate by its subject name
-	PCCERT_CONTEXT pCertContext = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING, 0, CERT_FIND_SUBJECT_STR, std::wstring(cert_name.begin(), cert_name.end()).c_str(), NULL);
-	if (!pCertContext) {
-		CertCloseStore(hCertStore, 0);
-		throw std::runtime_error("Failed to find certificate.");
-	}
-
-	// Acquire a handle to the private key
-	HCRYPTPROV_OR_NCRYPT_KEY_HANDLE hCryptProvOrNCryptKey = 0;
-	DWORD dwKeySpec = 0;
-	BOOL fCallerFreeProvOrNCryptKey = FALSE;
-	if (!CryptAcquireCertificatePrivateKey(pCertContext, 0, NULL, &hCryptProvOrNCryptKey, &dwKeySpec, &fCallerFreeProvOrNCryptKey)) {
-		CertFreeCertificateContext(pCertContext);
-		CertCloseStore(hCertStore, 0);
-		throw std::runtime_error("Failed to acquire private key handle.");
-	}
-
-	// Encrypt the data using the private key
-	DWORD dwEncryptedDataLen = 0;
-	if (!CryptEncrypt(hCryptProvOrNCryptKey, 0, TRUE, 0, NULL, &dwEncryptedDataLen, 0)) {
-		if (fCallerFreeProvOrNCryptKey) CryptReleaseContext(hCryptProvOrNCryptKey, 0);
-		CertFreeCertificateContext(pCertContext);
-		CertCloseStore(hCertStore, 0);
-		throw std::runtime_error("Failed to get encrypted data length.");
-	}
-
-	std::vector<BYTE> encrypted_data(dwEncryptedDataLen);
-	std::copy(byte_data.begin(), byte_data.end(), encrypted_data.begin());
-	if (!CryptEncrypt(hCryptProvOrNCryptKey, 0, TRUE, 0, encrypted_data.data(), &dwEncryptedDataLen, encrypted_data.size())) {
-		if (fCallerFreeProvOrNCryptKey) CryptReleaseContext(hCryptProvOrNCryptKey, 0);
-		CertFreeCertificateContext(pCertContext);
-		CertCloseStore(hCertStore, 0);
-		throw std::runtime_error("Failed to encrypt data.");
-	}
-
-	// Clean up
-	if (fCallerFreeProvOrNCryptKey) CryptReleaseContext(hCryptProvOrNCryptKey, 0);
-	CertFreeCertificateContext(pCertContext);
-	CertCloseStore(hCertStore, 0);
-
-	// Convert the encrypted data back to a string
-	return std::string(encrypted_data.begin(), encrypted_data.end());
+	encrypted.resize(encrypted_length);
+	return encrypted;
 }
 
-
-// Function to encrypt data using a private key associated with a certificate
-std::string encrypt_with_private_key(const std::string& key_name, const std::string& data) {
-	// Convert the input string to a vector of bytes
-	std::vector<BYTE> byte_data(data.begin(), data.end());
-
-	// Open the "MY" certificate store
-	HCERTSTORE hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, NULL, CERT_SYSTEM_STORE_CURRENT_USER, L"MY");
-	if (!hCertStore) {
-		throw std::runtime_error("Failed to open certificate store.");
-	}
-
-	// Find the certificate by its subject name
-	PCCERT_CONTEXT pCertContext = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING, 0, CERT_FIND_SUBJECT_STR, std::wstring(key_name.begin(), key_name.end()).c_str(), NULL);
-	if (!pCertContext) {
-		CertCloseStore(hCertStore, 0);
-		throw std::runtime_error("Failed to find certificate.");
-	}
-
-	// Get a handle to the private key
-	HCRYPTPROV_OR_NCRYPT_KEY_HANDLE hCryptProvOrNCryptKey = 0;
-	DWORD dwKeySpec = 0;
-	BOOL fCallerFreeProvOrNCryptKey = FALSE;
-	if (!CryptAcquireCertificatePrivateKey(pCertContext, 0, NULL, &hCryptProvOrNCryptKey, &dwKeySpec, &fCallerFreeProvOrNCryptKey)) {
-		CertFreeCertificateContext(pCertContext);
-		CertCloseStore(hCertStore, 0);
-		throw std::runtime_error("Failed to acquire private key handle.");
-	}
-
-	// Encrypt the data using the private key
-	HCRYPTKEY hPrivateKey = (HCRYPTKEY)hCryptProvOrNCryptKey;
-	DWORD dwEncryptedDataLen = 0;
-	if (!CryptEncrypt(hPrivateKey, 0, TRUE, 0, NULL, &dwEncryptedDataLen, 0)) {
-		if (fCallerFreeProvOrNCryptKey) CryptReleaseContext(hCryptProvOrNCryptKey, 0);
-		CertFreeCertificateContext(pCertContext);
-		CertCloseStore(hCertStore, 0);
-		throw std::runtime_error("Failed to get encrypted data length.");
-	}
-
-	std::vector<BYTE> encrypted_data(dwEncryptedDataLen);
-	std::copy(byte_data.begin(), byte_data.end(), encrypted_data.begin());
-	if (!CryptEncrypt(hPrivateKey, 0, TRUE, 0, encrypted_data.data(), &dwEncryptedDataLen, encrypted_data.size())) {
-		if (fCallerFreeProvOrNCryptKey) CryptReleaseContext(hCryptProvOrNCryptKey, 0);
-		CertFreeCertificateContext(pCertContext);
-		CertCloseStore(hCertStore, 0);
-		throw std::runtime_error("Failed to encrypt data.");
-	}
-
-	// Clean up
-	if (fCallerFreeProvOrNCryptKey) CryptReleaseContext(hCryptProvOrNCryptKey, 0);
-	CertFreeCertificateContext(pCertContext);
-	CertCloseStore(hCertStore, 0);
-
-	// Convert the encrypted data back to a string
-	return std::string(encrypted_data.begin(), encrypted_data.end());
-}
-
-#else
-std::vector<unsigned char> encrypt_with_private_key(const std::string& message, RSA* rsa) {
-    std::vector<unsigned char> encrypted(RSA_size(rsa));
-    int encrypted_length = RSA_private_encrypt(
-        message.size(),
-        reinterpret_cast<const unsigned char*>(message.data()),
-        encrypted.data(),
-        rsa,
-        RSA_PKCS1_PADDING
-    );
-
-    if (encrypted_length == -1) {
-        ERR_print_errors_fp(stderr);
-        throw std::runtime_error("Encryption failed.");
-    }
-
-    encrypted.resize(encrypted_length);
-    return encrypted;
-}
-#endif
 // Function to encrypt a message using a public key
-std::vector<unsigned char> encrypt_with_public_key(const std::string& message, RSA* rsa) {
-	std::vector<unsigned char> encrypted(RSA_size(rsa));
+std::vector<unsigned char> encrypt_with_public_key(int paddingMode, const std::string& message, RSA* rsa) {
+	auto rsa_size = RSA_size(rsa);
+	if (rsa_size < message.size())
+	{
+		return long_msg_encrypt_with_public_key(paddingMode,message, rsa);
+	}
+	std::vector<unsigned char> encrypted(rsa_size);
 	int encrypted_length = RSA_public_encrypt(
 		message.size(),
 		reinterpret_cast<const unsigned char*>(message.data()),
 		reinterpret_cast<unsigned char*>(encrypted.data()),
 		rsa,
-		RSA_PKCS1_OAEP_PADDING
+		paddingMode
 	);
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
@@ -503,14 +343,19 @@ std::vector<unsigned char> encrypt_with_public_key(const std::string& message, R
 }
 
 // Function to decrypt a message using a public key
-std::string decrypt_with_public_key(std::vector<unsigned char>& encrypted, RSA* rsa) {
-	std::string decrypted(RSA_size(rsa), '\0');
+std::string decrypt_with_public_key(int paddingMode, std::vector<unsigned char>& encrypted, RSA* rsa) {
+	auto rsa_size = RSA_size(rsa);
+	if (rsa_size < encrypted.size())
+	{
+		return long_msg_decrypt_with_public_key(paddingMode,encrypted, rsa);
+	}
+	std::string decrypted(rsa_size, '\0');
 	int decrypted_length = RSA_public_decrypt(
 		encrypted.size(),
 		reinterpret_cast<const unsigned char*>(encrypted.data()),
 		reinterpret_cast<unsigned char*>(decrypted.data()),
 		rsa,
-		RSA_PKCS1_PADDING
+		paddingMode
 	);
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
@@ -521,14 +366,19 @@ std::string decrypt_with_public_key(std::vector<unsigned char>& encrypted, RSA* 
 }
 
 // Function to decrypt a message using a private key
-std::string decrypt_with_private_key(std::vector<unsigned char>& encrypted, RSA* rsa) {
-	std::string decrypted(RSA_size(rsa), '\0');
+std::string decrypt_with_private_key(int paddingMode, std::vector<unsigned char>& encrypted, RSA* rsa) {
+	auto rsa_size = RSA_size(rsa);
+	if (rsa_size < encrypted.size())
+	{
+		return long_msg_decrypt_with_private_key(paddingMode, encrypted, rsa);
+	}
+	std::string decrypted(rsa_size, '\0');
 	int decrypted_length = RSA_private_decrypt(
 		encrypted.size(),
 		reinterpret_cast<const unsigned char*>(encrypted.data()),
 		reinterpret_cast<unsigned char*>(decrypted.data()),
 		rsa,
-		RSA_PKCS1_OAEP_PADDING
+		paddingMode
 	);
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
@@ -539,62 +389,40 @@ std::string decrypt_with_private_key(std::vector<unsigned char>& encrypted, RSA*
 }
 
 // Function to create an RSA structure from a PEM-formatted public key string
+
 RSA* create_rsa_from_public_key_pem(const std::string& public_key_pem) {
 	BIO* bio = BIO_new_mem_buf((void*)public_key_pem.c_str(), -1);
 	if (!bio) {
-		// Handle error
+		// Handle error more explicitly, perhaps with a custom log or exception
 		return nullptr;
 	}
 
-	RSA* rsa = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL);
-	BIO_free(bio);
-
-	if (!rsa) {
-		// Handle error
-		return nullptr;
+	RSA* rsa = nullptr;  // Initialize RSA pointer to null
+	if (!PEM_read_bio_RSA_PUBKEY(bio, &rsa, NULL, NULL)) {
+		BIO_reset(bio); 
+		PEM_read_bio_RSAPublicKey(bio, &rsa, nullptr, nullptr); 
 	}
-
-	return rsa;
+	
+	BIO_free(bio);  // Free BIO after use
+	return rsa;  // rsa should now be properly initialized
 }
 
 // Function to remove the stored private key
 bool remove_private_key(const std::string& key_name, std::string& storePath) {
 	bool bOK = true;
-#if (WIN32_PORT)
-	// Open the "MY" certificate store.
-	HCERTSTORE hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, NULL, CERT_SYSTEM_STORE_CURRENT_USER, L"MY");
-	if (!hCertStore) {
-		std::cerr << "Failed to open certificate store." << std::endl;
-		return false;
-	}
 
-	// Find the certificate by its subject name.
-	PCCERT_CONTEXT pCertContext = NULL;
-	while ((pCertContext = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_FIND_SUBJECT_STR, L"My Certificate", pCertContext)) != NULL) {
-		// Delete the certificate.
-		if (!CertDeleteCertificateFromStore(pCertContext)) {
-			std::cerr << "Failed to delete certificate." << std::endl;
-			bOK = false;
-		}
-	}
-
-	// Close the certificate store.
-	CertCloseStore(hCertStore, 0);
-#else
 	// Construct the file path for the private key.
 	std::string filename = get_private_key_filename(key_name, storePath);
-
 	// Remove the private key file.
 #if (WIN32)
-	if (!DeleteFile(filename.c_str())) 
+	if (!DeleteFile(filename.c_str()))
 #else
-	if (unlink(filename.c_str()) != 0) 
+	if (unlink(filename.c_str()) != 0)
 #endif
 	{
 		std::cerr << "Failed to remove private key file: " << filename << std::endl;
 		return false;
 	}
-#endif
 	return bOK;
 }
 
@@ -678,18 +506,18 @@ std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName, std::s
 
 bool X::Cypher::RemovePrivateKey(std::string keyName)
 {
-	return remove_private_key(keyName,mStorePath);
+	return remove_private_key(keyName, mStorePath);
 }
 
 X::Value X::Cypher::EncryptWithPrivateKey(std::string msg, std::string keyName)
 {
-	RSA* rsa = get_stored_private_key(keyName,mStorePath);
-	if (!rsa) 
+	RSA* rsa = get_stored_private_key(keyName, mStorePath);
+	if (!rsa)
 	{
 		std::cerr << "Failed to retrieve the stored private key." << std::endl;
 		return "";
 	}
-	auto encrypted = encrypt_with_private_key(msg, rsa);
+	auto encrypted = encrypt_with_private_key(m_rsa_padding_mode,msg, rsa);
 	RSA_free(rsa);
 	size_t size = encrypted.size();
 	char* pBuf = new char[size];
@@ -700,7 +528,7 @@ X::Value X::Cypher::EncryptWithPrivateKey(std::string msg, std::string keyName)
 
 std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string keyName)
 {
-	RSA* rsa = get_stored_private_key(keyName,mStorePath);
+	RSA* rsa = get_stored_private_key(keyName, mStorePath);
 	if (!rsa) {
 		std::cerr << "Failed to retrieve the stored private key." << std::endl;
 		return "";
@@ -708,7 +536,7 @@ std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string ke
 	X::Bin binEnc(encrypted);
 	auto pData = binEnc->Data();
 	std::vector<unsigned char> ary_encrypted(pData, pData + binEnc.Size());
-	std::string msg = decrypt_with_private_key(ary_encrypted, rsa);
+	std::string msg = decrypt_with_private_key(m_rsa_padding_mode,ary_encrypted, rsa);
 	RSA_free(rsa);
 	return msg;
 }
@@ -720,7 +548,7 @@ X::Value X::Cypher::EncryptWithPublicKey(std::string msg, std::string perm_key)
 		std::cerr << "Failed to create RSA from public key." << std::endl;
 		return "";
 	}
-	auto encrypted = encrypt_with_public_key(msg, rsa);
+	auto encrypted = encrypt_with_public_key(m_rsa_padding_mode,msg, rsa);
 	RSA_free(rsa);
 	size_t size = encrypted.size();
 	char* pBuf = new char[size];
@@ -738,8 +566,8 @@ std::string X::Cypher::DecryptWithPublicKey(X::Value& encrypted, std::string per
 	}
 	X::Bin binEnc(encrypted);
 	auto pData = binEnc->Data();
-	std::vector<unsigned char> ary_encrypted(pData, pData+binEnc.Size());
-	std::string msg = decrypt_with_public_key(ary_encrypted, rsa);
+	std::vector<unsigned char> ary_encrypted(pData, pData + binEnc.Size());
+	std::string msg = decrypt_with_public_key(m_rsa_padding_mode,ary_encrypted, rsa);
 	RSA_free(rsa);
 	return msg;
 }

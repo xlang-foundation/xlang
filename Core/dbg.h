@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include "pyproxyobject.h"
+#include "glob.h"
 
 namespace X
 {
@@ -110,6 +111,13 @@ public:
 				continue;
 				//break;
 			}
+			//get runtime for this thread with threadId in pCmdInfo
+			XlangRuntime* rtForDebugThread =dynamic_cast<XlangRuntime*>(G::I().QueryRuntimeForThreadId(pCmdInfo->m_threadId));
+			if (rtForDebugThread == nullptr)
+			{
+				//happend when debugger is launching 
+				rtForDebugThread = rt;
+			}
 			switch (pCmdInfo->dbgType)
 			{
 			case AST::dbg::GetRuntime:
@@ -120,7 +128,7 @@ public:
 				if (pCmdInfo->m_process)
 				{
 					X::Value retVal;
-					pCmdInfo->m_process(rt, pContext, pCmdInfo, retVal);
+					pCmdInfo->m_process(rtForDebugThread, pContext, pCmdInfo, retVal);
 					if (pCmdInfo->m_needRetValue)
 					{
 						pCmdInfo->m_retValueHolder = retVal.ToString(true);
@@ -140,7 +148,7 @@ public:
 			case AST::dbg::StepIn:
 				{
 					std::vector<AST::Scope*> callables;
-					if (exp->CalcCallables(rt,pContext,callables))
+					if (exp->CalcCallables(rtForDebugThread,pContext,callables))
 					{
 						for (auto& ca : callables)
 						{
@@ -160,9 +168,8 @@ public:
 				mLoop = false;
 				break;
 			case AST::dbg::Terminate:
-				m_rt->M()->SetDbgType(AST::dbg::Terminate,
-					AST::dbg::Terminate);
-				mLoop = false;
+				//m_rt->M()->SetDbgType(AST::dbg::Terminate, AST::dbg::Terminate);
+				//mLoop = false;
 				break;
 			default:
 				break;
@@ -183,17 +190,41 @@ public:
 		}
 		return true;
 	}
+
+	FORCE_INLINE static AST::Module* GetExpModule(AST::Expression* exp)
+	{
+		if (exp->m_type == AST::ObType::Module)
+			return dynamic_cast<AST::Module*>(exp);
+
+		auto pa = exp->GetParent();
+		while (pa)
+		{
+			if (pa->m_type == AST::ObType::Module)
+			{
+				return dynamic_cast<AST::Module*>(pa);
+				break;
+			}
+			else
+			{
+				pa = pa->GetParent();
+			}
+		}
+		return nullptr;
+	}
+
 	FORCE_INLINE bool Check(TraceEvent evt,XlangRuntime* rt,
 		AST::Scope* pThisBlock,
 		AST::Expression* exp, XObj* pContext)
 	{
-		if (!m_rt->M()->IsInDebug())
+		
+		AST::Module* expModule = GetExpModule(exp);
+		if (!expModule && !expModule->IsInDebug())
 		{
 			return false;
 		}
 		//check breakpoints
 		int line = exp->GetStartLine();
-		if (m_rt->M()->HitBreakpoint(line))
+		if (expModule->HitBreakpoint(rt,line))
 		{
 			WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
 			if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)
@@ -210,6 +241,12 @@ public:
 		{
 			if (m_rt->M()->InDbgScope(pThisBlock))
 			{
+				// stopOnEntry
+				if (m_rt->M()->GetLastRequestDgbType() == X::AST::dbg::None)
+					m_rt->M()->StopOn("StopOnEntry");
+				else
+					m_rt->M()->StopOn("StopOnStep");
+
 				WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
 				if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)
 					return false;

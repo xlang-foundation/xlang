@@ -32,6 +32,7 @@
 #include "typeobject.h"
 #include "tensor.h"
 #include "tensor_graph.h"
+#include "struct.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -230,6 +231,7 @@ static void XLangInternalInit()
 	X::Data::Str::Init();
 	X::AST::ModuleObject::Init();
 	X::Data::List::Init();
+	X::Data::Binary::Init();
 	X::Data::Dict::Init();
 	X::Data::mSet::Init();
 	X::Data::Tensor::Init();
@@ -237,6 +239,7 @@ static void XLangInternalInit()
 	X::AST::MetaScope().I().Init();
 	X::Data::DeferredObject::Init();
 	X::Data::TypeObject::Init();
+	X::Data::XlangStruct::Init();
 }
 void XLangRun()
 {
@@ -249,7 +252,7 @@ void XLangRun()
 	BuildOps();
 	if (g_pXload->GetConfig().dbg)
 	{
-		LoadDevopsEngine();
+		LoadDevopsEngine(g_pXload->GetConfig().dbgPort);
 	}
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
@@ -361,6 +364,7 @@ void XLangStaticUnload()
 	X::AST::ModuleObject::cleanup();
 	X::Data::Str::cleanup();
 	X::Data::List::cleanup();
+	X::Data::Binary::cleanup();
 	X::Data::Dict::cleanup();
 	X::Data::Tensor::cleanup();
 	X::Data::TensorGraph::cleanup();
@@ -369,6 +373,7 @@ void XLangStaticUnload()
 	X::Data::DeferredObject::cleanup();
 	X::Data::TypeObject::cleanup();
 	X::AST::MetaScope().I().Cleanup();
+	X::Data::XlangStruct::cleanup();
 	Hosting::I().Cleanup();
 	G::I().Check();
 	DestoryXHost();
@@ -380,11 +385,13 @@ void XLangUnload()
 	X::AST::ModuleObject::cleanup();
 	X::Data::Str::cleanup();
 	X::Data::List::cleanup();
+	X::Data::Binary::cleanup();
 	X::Data::Dict::cleanup();
 	X::Data::mSet::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 	X::Data::DeferredObject::cleanup();
 	X::Data::TypeObject::cleanup();
+	X::Data::XlangStruct::cleanup();
 
 	if (g_pXload->GetConfig().enablePython)
 	{

@@ -10,19 +10,40 @@ namespace X
 {
 	namespace Database
 	{
+		std::string getDirectoryFromPath(const std::string& path)
+		{
+			size_t pos = path.find_last_of("/\\");
+			if (pos != std::string::npos) {
+				return path.substr(0, pos);
+			}
+			return path; // Return the original path if no separator is found
+		}
 		SqliteDB::SqliteDB()
 		{
 		}
 		SqliteDB::SqliteDB(std::string dbPath)
 		{
-			if (dbPath.find(".") == std::string::npos)
+			if (dbPath.rfind(".db") == std::string::npos)
 			{
 				dbPath = dbPath + ".db";
 			}
 			if (!IsAbsPath(dbPath))
 			{
-				auto path = Manager::I().GetCurrentPath();
-				dbPath = path + Path_Sep_S + dbPath;
+				auto* rt = g_pXHost->GetCurrentRuntime();
+				std::string curPath;
+				//check this .x module path first
+				X::Value valXModulePath = rt->GetXModuleFileName();
+				if (valXModulePath.IsValid())
+				{
+					curPath = valXModulePath.ToString();
+					curPath = getDirectoryFromPath(curPath);
+				}
+				else
+				{
+					curPath = Manager::I().GetCurrentPath();
+				}
+
+				dbPath = curPath + Path_Sep_S + dbPath;
 			}
 			Open(dbPath);
 		}
@@ -184,7 +205,19 @@ namespace X
 				}
 				else
 				{
-					auto modulePath = Manager::I().GetCurrentPath();
+					std::string modulePath;
+					//check this .x module path first
+					X::Value valXModulePath = rt->GetXModuleFileName();
+					if (valXModulePath.IsValid())
+					{
+						modulePath = valXModulePath.ToString();
+						modulePath = getDirectoryFromPath(modulePath);
+					}
+					else
+					{
+						modulePath = Manager::I().GetCurrentPath();
+					}
+
 					m_curPath = modulePath + Path_Sep_S + path;
 				}
 				return X::Value(true);
@@ -193,7 +226,7 @@ namespace X
 			if (pos != std::string::npos)
 			{
 				std::string dbPath = strSql.substr(pos+4);
-				if (dbPath.find(".") == std::string::npos)
+				if (dbPath.rfind(".db") == std::string::npos)
 				{
 					dbPath = dbPath + ".db";
 				}
@@ -201,8 +234,19 @@ namespace X
 				{
 					if (m_curPath.empty())
 					{
-						auto path = Manager::I().GetCurrentPath();
-						dbPath = path + Path_Sep_S + dbPath;
+						std::string curPath;
+						//check this .x module path first
+						X::Value valXModulePath = rt->GetXModuleFileName();
+						if (valXModulePath.IsValid())
+						{
+							curPath = valXModulePath.ToString();
+							curPath = getDirectoryFromPath(curPath);
+						}
+						else
+						{
+							curPath = Manager::I().GetCurrentPath();
+						}
+						dbPath = curPath + Path_Sep_S + dbPath;
 					}
 					else
 					{

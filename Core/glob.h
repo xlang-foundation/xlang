@@ -25,10 +25,15 @@ namespace X {
 		};
 		std::unordered_map<long long, XlangRuntime*> m_rtMap;//for multiple threads
 		void* m_lockRTMap = nullptr;
-		XlangRuntime* MakeThreadRuntime(long long curTId, XlangRuntime* rt);
+		XlangRuntime* MakeThreadRuntime(std::string& name,long long curTId, XlangRuntime* rt);
 		std::unordered_map<Data::Object*, ObjInfo> Objects;
 		void* m_lock = nullptr;
 		OpRegistry* m_reg = nullptr;
+		void notityThread(const char* strType, int tid);
+		void* m_lockBreakpointsMap = nullptr;
+		std::unordered_map<std::string, std::vector<int>> m_srcPathBreakpointsMap;// 
+		void* m_lockBreakpointsValid = nullptr;
+		std::vector<std::string> m_srcPathBreakpointsValid;
 	public:
 		G();
 		~G();
@@ -36,6 +41,37 @@ namespace X {
 		void UnbindRuntimeToThread(XlangRuntime* rt);
 		FORCE_INLINE OpRegistry& R() { return *m_reg;}
 		FORCE_INLINE void SetReg(OpRegistry* r) { m_reg = r; }
+		FORCE_INLINE std::unordered_map<long long, XlangRuntime*> GetThreadRuntimeIdMap() 
+		{
+			((Locker*)m_lockRTMap)->Lock();
+			std::unordered_map<long long, XlangRuntime*> ret(m_rtMap);
+			((Locker*)m_lockRTMap)->Unlock();
+			return  ret; 
+		}
+		FORCE_INLINE AST::Module* QueryModuleByThreadId(int threadId)
+		{
+			AST::Module* ret = nullptr;
+			((Locker*)m_lockRTMap)->Lock();
+			auto it = m_rtMap.find(threadId);
+			if (it != m_rtMap.end())
+			{
+				ret = it->second->M();
+			}
+			((Locker*)m_lockRTMap)->Unlock();
+			return  ret;
+		}
+		FORCE_INLINE XRuntime* QueryRuntimeForThreadId(unsigned long threadId)
+		{
+			XRuntime* pRet = nullptr;
+			((Locker*)m_lockRTMap)->Lock();
+			auto it = m_rtMap.find(threadId);
+			if (it != m_rtMap.end())
+			{
+				pRet = dynamic_cast<XRuntime*>(it->second);
+			}
+			((Locker*)m_lockRTMap)->Unlock();
+			return pRet;
+		}
 		FORCE_INLINE XRuntime* GetCurrentRuntime(XRuntime* baseRt = nullptr)
 		{
 			unsigned long tid = GetThreadID();
@@ -49,18 +85,56 @@ namespace X {
 			((Locker*)m_lockRTMap)->Unlock();
 			if (pRet == nullptr)
 			{
-				pRet =  MakeThreadRuntime(tid, baseRt?dynamic_cast<XlangRuntime*>(baseRt):nullptr);
+				//TODO:
+				std::string defName;
+				pRet =  MakeThreadRuntime(defName, tid,baseRt?dynamic_cast<XlangRuntime*>(baseRt):nullptr);
 			}
 			return pRet;
 		}
-		FORCE_INLINE XlangRuntime* Threading(XlangRuntime* fromRt)
+		FORCE_INLINE XlangRuntime* Threading(std::string& name,XlangRuntime* fromRt)
 		{
 			long long curTId = GetThreadID();
 			if (fromRt == nullptr || fromRt->GetThreadId() != curTId)
 			{
-				fromRt = MakeThreadRuntime(curTId, fromRt);
+				fromRt = MakeThreadRuntime(name,curTId, fromRt);
 			}
 			return fromRt;
+		}
+
+		FORCE_INLINE void SetBreakPoints(const std::string& path, std::vector<int> breakPoints)
+		{
+			((Locker*)m_lockBreakpointsMap)->Lock();
+			m_srcPathBreakpointsMap[path] = breakPoints;
+			((Locker*)m_lockBreakpointsMap)->Unlock();
+		}
+
+		FORCE_INLINE std::vector<int> GetBreakPoints(const std::string& path)
+		{
+			std::vector<int> points;
+			((Locker*)m_lockBreakpointsMap)->Lock();
+			auto it = m_srcPathBreakpointsMap.find(path);
+			if (it != m_srcPathBreakpointsMap.end())
+				points = it->second;
+			((Locker*)m_lockBreakpointsMap)->Unlock();
+
+			return points;
+		}
+
+		FORCE_INLINE bool IsBreakpointValid(const std::string& path)
+		{
+			bool ret;
+			((Locker*)m_lockBreakpointsMap)->Lock();
+			ret = std::find(m_srcPathBreakpointsValid.begin(), m_srcPathBreakpointsValid.end(),path) != m_srcPathBreakpointsValid.end();
+			((Locker*)m_lockBreakpointsMap)->Unlock();
+			return ret;
+		}
+
+		FORCE_INLINE void AddBreakpointValid(const std::string& path)
+		{
+			((Locker*)m_lockBreakpointsMap)->Lock();
+			if(std::find(m_srcPathBreakpointsValid.begin(), m_srcPathBreakpointsValid.end(), path) == m_srcPathBreakpointsValid.end())
+				m_srcPathBreakpointsValid.push_back(path);
+			((Locker*)m_lockBreakpointsMap)->Unlock();
 		}
 
 		void Lock();

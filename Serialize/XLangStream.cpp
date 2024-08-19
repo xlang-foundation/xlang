@@ -456,6 +456,7 @@ namespace X
 				case X::ObjType::Table:
 					assert(false);
 					break;
+#if not defined(BARE_METAL)
 				case X::ObjType::RemoteObject:
 					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
 					pObjToRestore->IncRef();
@@ -464,6 +465,7 @@ namespace X
 					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteClientObject(nullptr));
 					pObjToRestore->IncRef();
 					break;
+#endif
 				case X::ObjType::PyProxyObject:
 					assert(false);
 					break;

@@ -7,6 +7,13 @@ project ("xlang_http")
 
 add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT)
 
+if(APPLE)
+	find_package(OpenSSL REQUIRED)
+	include_directories(${OPENSSL_INCLUDE_DIR})
+	link_directories(${OPENSSL_LIB_DIR})
+    link_libraries(${OPENSSL_LIBRARIES})
+endif()
+
 include_directories("../Api")
 include_directories("../Inc")
 if (WIN32)
@@ -21,10 +28,11 @@ add_library(${PROJECT_NAME}
 	SHARED
 	${API_SRC}
 	${Main_SRC}
- "cypher.cpp")
+ "cypher.cpp" "cypher_help.h")
 
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static)
+elseif(APPLE)
 else()
     target_link_libraries(${PROJECT_NAME} ssl)
 endif()

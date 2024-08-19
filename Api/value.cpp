@@ -245,6 +245,12 @@ namespace X
 	}
 	template<>
 	template<>
+	void V<XBin>::Create(char* s, unsigned long long size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin(s, size, bOwnData));
+	}
+	template<>
+	template<>
 	void V<XPackage>::Create(void* pRealObj)
 	{
 		SetObj(g_pXHost->CreatePackage(pRealObj));
@@ -408,7 +414,29 @@ namespace X
 	}
 	void Value::AssignObject(XObj* p, bool bAddRef)
 	{
-		if (p && bAddRef)
+		if (p == nullptr)
+		{
+			x.obj = nullptr;
+			return;
+		}
+		if (bAddRef)
+		{
+			//for string object, need to clone a new one to assign
+			//for other object, just assign the pointer
+			if (p->GetType() == ObjType::Str)
+			{
+				p = p->Clone();
+			}
+			else
+			{
+				p->IncRef();
+			}
+		}
+		x.obj = p;
+	}
+	void Value::SetObject(XObj* p)
+	{
+		if (p != nullptr)
 		{
 			p->IncRef();
 		}
@@ -417,7 +445,7 @@ namespace X
 	void Value::SetString(std::string& s)
 	{
 		t = ValueType::Object;
-		x.obj = g_pXHost->CreateStr(s.c_str(), (int)s.size());
+		x.obj = dynamic_cast<XObj*>(g_pXHost->CreateStr(s.c_str(), (int)s.size()));
 	}
 	void Value::SetString(std::string&& s)
 	{
@@ -435,6 +463,20 @@ namespace X
 
 	int Value::obj_cmp(Value* r) const
 	{
+		//if r is const str and this is a string object 
+		if (t == X::ValueType::Object && GetObj()->GetType() == X::ObjType::Str
+			&& r->t == X::ValueType::Str)
+		{
+			return x.obj->cmp(r);
+		}
+		if (t != r->t)
+		{
+			return 1;
+		}
+		if (x.obj->GetType() != r->x.obj->GetType())
+		{
+			return 1;
+		}
 		return x.obj->cmp(r);
 	}
 	bool Value::ChangeToStrObject()

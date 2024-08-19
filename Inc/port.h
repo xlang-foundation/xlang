@@ -1,4 +1,7 @@
-#if (WIN32)
+#ifndef Platform_H
+#define Platform_H
+
+#if defined(WIN32)
 #include <Windows.h>
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
@@ -15,6 +18,22 @@
 #ifndef strcasecmp
 #define strcasecmp _stricmp
 #endif // strcasecmp
+
+#elif defined(BARE_METAL)
+// Bare metal does not support these features, use empty implementations or placeholders
+#define Path_Sep_S "/"
+#define Path_Sep '/'
+#define LibPrefix ""
+#define ShareLibExt ".lib" // No shared libraries in bare metal, use a placeholder
+#define LOADLIB(path) nullptr // No dynamic loading in bare metal
+#define GetProc(handle,funcName) nullptr // No dynamic loading in bare metal
+#define UNLOADLIB(handle) // No dynamic loading in bare metal
+
+#define SPRINTF snprintf
+#define SCANF sscanf
+#define MS_SLEEP(t) // No sleep in bare metal
+#define US_SLEEP(t) // No sleep in bare metal
+
 #else
 #include <unistd.h>
 #include <sys/ipc.h>
@@ -26,7 +45,11 @@
 #define Path_Sep_S "/"
 #define Path_Sep '/'
 #define LibPrefix "lib"
+#if defined(__APPLE__)
+#define ShareLibExt ".dylib"
+#else
 #define ShareLibExt ".so"
+#endif
 #define LOADLIB(path) dlopen(path, RTLD_LAZY)
 #define GetProc(handle,funcName) dlsym(handle, funcName)
 #define UNLOADLIB(handle) dlclose(handle)
@@ -37,17 +60,24 @@
 #define US_SLEEP(t) usleep(t)
 #endif
 
-
 #define LIST_PASS_PROCESS_SIZE 100
 
-
-#if (WIN32)
+#if defined(WIN32)
 #include <windows.h>
 #define SEMAPHORE_HANDLE HANDLE
 #define CREATE_SEMAPHORE(sa,name) CreateEvent(&sa, FALSE,FALSE, name)
 #define OPEN_SEMAPHORE(name) OpenEvent(EVENT_ALL_ACCESS, FALSE, name)
 #define WAIT_FOR_SEMAPHORE(handle, timeout) WaitForSingleObject(handle, timeout)
 #define CLOSE_SEMAPHORE(handle) CloseHandle(handle)
+
+#elif defined(BARE_METAL)
+// Bare metal does not support semaphores, use empty implementations or placeholders
+#define SEMAPHORE_HANDLE void*
+#define CREATE_SEMAPHORE(sa,name) nullptr // No semaphores in bare metal
+#define OPEN_SEMAPHORE(name) nullptr // No semaphores in bare metal
+#define WAIT_FOR_SEMAPHORE(handle, timeout) // No semaphores in bare metal
+#define CLOSE_SEMAPHORE(handle) // No semaphores in bare metal
+
 #else
 #include <fcntl.h>
 #include <semaphore.h>
@@ -58,3 +88,5 @@
 #define WAIT_FOR_SEMAPHORE(handle, timeout) sem_wait(handle) // Implement timeout if needed
 #define CLOSE_SEMAPHORE(handle) sem_close(handle)
 #endif
+
+#endif // Platform_H

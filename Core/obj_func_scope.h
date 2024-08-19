@@ -36,13 +36,17 @@ namespace X
 		{
 			Clean();
 		}
-		void Init()
+		FORCE_INLINE void InitWithNumber(int cnt)
 		{
 			m_pMyScope = new AST::Scope();
 			m_variableFrame = new AST::StackFrame();
-			m_variableFrame->SetVarCount(N);
+			m_variableFrame->SetVarCount(cnt);
 			m_pMyScope->SetVarFrame(m_variableFrame);
 
+		}
+		FORCE_INLINE void Init()
+		{
+			InitWithNumber(N);
 		}
 		void Close()
 		{
@@ -53,6 +57,12 @@ namespace X
 			std::string strName(name);
 			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, false);
 			m_variableFrame->Set(idx, val);
+		}
+		void AddObject(const char* name, X::Value& object)
+		{
+			std::string strName(name);
+			SCOPE_FAST_CALL_AddOrGet0(idx, m_pMyScope, strName, false);
+			m_variableFrame->Set(idx, object);
 		}
 		void AddFunc(const char* name,const char* doc, U_FUNC func)
 		{

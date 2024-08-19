@@ -1,9 +1,9 @@
 {
   "name": "xlang",
   "displayName": "xlang",
-  "version": "0.99.0",
+  "version": "1.0.1",
   "publisher": "cantorai",
-  "description": "xlang's debugger and more",
+  "description": "XLang's debugger and more",
   "author": {
     "name": "The XLang Foundation"
   },
@@ -64,7 +64,6 @@
   },
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onStartupFinished",
     "onLanguage:xlang",
     "onDebugResolve:xlang",
     "onDebugDynamicConfigurations:xlang",
@@ -154,6 +153,10 @@
       {
         "command": "extension.xlang.toggleFormatting",
         "title": "Toggle between decimal and hex formatting"
+      },
+      {
+        "command": "extension.xlang.setExcutablePath",
+        "title": "Set XLang Executable Path"
       }
     ],
     "breakpoints": [
@@ -270,6 +273,14 @@
           "AskForProgramName": "extension.xlang.getProgramName"
         }
       }
-    ]
+    ],
+    "configuration": {
+      "properties": {
+        "XLangDebugger.ExePath": {
+          "type": "string",
+          "description": "Path to the XLang executable file"
+        }
+      }
+    }
   }
 }

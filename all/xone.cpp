@@ -33,6 +33,7 @@
 #include "tensor.h"
 #include "tensor_graph.h"
 #include "manager.h"
+#include "struct.h"
 
 //for OS Module
 #include "os/fs.h"
@@ -160,6 +161,7 @@ namespace X
 		X::Data::Str::Init();
 		X::AST::ModuleObject::Init();
 		X::Data::List::Init();
+		X::Data::Binary::Init();
 		X::Data::Dict::Init();
 		X::Data::mSet::Init();
 		X::Data::Tensor::Init();
@@ -167,6 +169,7 @@ namespace X
 		X::AST::MetaScope().I().Init();
 		X::Data::DeferredObject::Init();
 		X::Data::TypeObject::Init();
+		X::Data::XlangStruct::Init();
 	}
 	void UnloadDevopsEngine()
 	{
@@ -356,6 +359,7 @@ namespace X
 		X::AST::ModuleObject::cleanup();
 		X::Data::Str::cleanup();
 		X::Data::List::cleanup();
+		X::Data::Binary::cleanup();
 		X::Data::Dict::cleanup();
 		X::Data::Tensor::cleanup();
 		X::Data::TensorGraph::cleanup();
@@ -364,6 +368,7 @@ namespace X
 		X::Data::DeferredObject::cleanup();
 		X::Data::TypeObject::cleanup();
 		X::AST::MetaScope().I().Cleanup();
+		X::Data::XlangStruct::cleanup();
 		Hosting::I().Cleanup();
 		G::I().Check();
 		DestoryXHost();
@@ -516,6 +521,11 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 			{
 				paramCfg.config.enterEventLoop = true;
 				i++;
+			}
+			else if (s == "-port")
+			{
+				paramCfg.config.dbgPort = std::stoi(params[i + 1]);
+				i += 2;
 			}
 		}
 		else if (!starFile)

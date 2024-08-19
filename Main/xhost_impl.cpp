@@ -72,7 +72,7 @@ namespace X
 	{
 		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
 		pStrObj->IncRef();
-		return pStrObj;
+		return dynamic_cast<XStr*>(pStrObj);
 	}
 	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator, void* pContext)
 	{
@@ -278,9 +278,13 @@ namespace X
 	}
 	XTensor* XHost_Impl::CreateTensor()
 	{
+#if not defined(BARE_METAL)
 		auto* pTensor = new X::Data::Tensor();
 		pTensor->IncRef();
 		return pTensor;
+#else
+return nullptr;
+#endif
 	}
 	XStruct* XHost_Impl::CreateStruct(char* data,int size, bool asRef)
 	{
@@ -296,9 +300,13 @@ namespace X
 	}
 	XTensorGraph* XHost_Impl::CreateTensorGraph()
 	{
+#if not defined(BARE_METAL)
 		auto* pTensorGraph = new X::Data::TensorGraph();
 		pTensorGraph->IncRef();
 		return pTensorGraph;
+#else
+return nullptr;
+#endif
 	}
 	
 	XDict* XHost_Impl::CreateDict()
@@ -486,12 +494,16 @@ namespace X
 		std::string strPackageName(packageName);
 		return X::Manager::I().UnloadPackage(strPackageName);
 	}
-	bool XHost_Impl::RunModule(X::Value objModule, X::Value& retVal, bool keepModuleWithRuntime)
+	bool XHost_Impl::RunModule(X::Value objModule, X::ARGS& args,X::Value& retVal, bool keepModuleWithRuntime)
 	{
 		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
 		{
 			auto* pModuleObj = dynamic_cast<X::AST::ModuleObject*>(objModule.GetObj());
 			std::vector<X::Value> passInParams;
+			for (auto& arg : args)
+			{
+				passInParams.push_back(arg);
+			}
 			return X::Hosting::I().Run(pModuleObj->M(), retVal, passInParams,false,keepModuleWithRuntime);
 		}
 		return false;
@@ -508,9 +520,9 @@ namespace X
 		}
 		return X::Hosting::I().RunAsBackend(strModuleName, strCode, passinParams);
 	}
-	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal)
+	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal, int exeNum /*= -1*/)
 	{
-		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal);
+		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal, exeNum);
 	}
 	const char* XHost_Impl::GetInteractiveCode()
 	{
@@ -578,6 +590,7 @@ namespace X
 	bool XHost_Impl::Lrpc_Listen(int port, bool blockMode)
 	{
 		bool bOK = true;
+#if not defined(BARE_METAL)
 		Manager::I().AddLrpcPort(port);
 		MsgThread::I().SetPort(port);
 		if (blockMode)
@@ -589,6 +602,7 @@ namespace X
 		{
 			bOK = MsgThread::I().Start();
 		}
+#endif
 		return bOK;
 	}
 	bool XHost_Impl::Import(XRuntime* rt, const char* moduleName, 
@@ -689,7 +703,12 @@ namespace X
 	bool XHost_Impl::ExtractNativeObjectFromRemoteObject(X::Value& remoteObj,
 		X::Value& nativeObj)
 	{
+#if not defined(BARE_METAL)
 		return RemoteObjectStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
+#else
+		return false;
+#endif
+
 	}
 	void XHost_Impl::RegisterUIThreadRunHandler(UI_THREAD_RUN_HANDLER handler, void* pContext)
 	{

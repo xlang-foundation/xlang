@@ -44,9 +44,13 @@ class XlangRuntime:
 	public XRuntime
 {
 	long long m_threadId = 0;
+	std::string m_name;//top stack name( function name)
 	bool m_noThreadBinding = false;
 	AST::Module* m_pModule = nullptr;
 	AST::StackFrame* m_stackBottom = nullptr;
+	//when thread is created, this is the mirror stack
+	//will set as this stack chain's parent
+	AST::StackFrame* m_mirrorStack = nullptr;
 	XTraceFunc m_tracefunc = nullptr;
 
 	std::vector<WritePadInfo> m_WritePads;
@@ -72,17 +76,19 @@ public:
 	int PushWritePad(X::Value valObj, std::string alias);
 	void PopWritePad();
 	virtual bool CreateEmptyModule() override;
+	FORCE_INLINE void SetName(std::string& name) { m_name = name; }
+	FORCE_INLINE std::string& GetName() { return m_name; }
 	FORCE_INLINE XTraceFunc GetTrace() { return m_tracefunc; }
 	FORCE_INLINE long long GetThreadId() { return m_threadId; }
 	FORCE_INLINE void MirrorStacksFrom(XlangRuntime* rt)
 	{
 		m_pModule = rt->m_pModule;
-		m_stackBottom = rt->m_stackBottom;
+		m_mirrorStack = rt->m_stackBottom;
 		m_tracefunc = rt->m_tracefunc;
 		//TODO:when stack remove from link, need to check if need to set back
-		if (m_stackBottom)
+		if (m_mirrorStack)
 		{
-			m_stackBottom->SetShareFlag(true);
+			m_mirrorStack->SetShareFlag(true);
 		}
 	}
 	FORCE_INLINE bool SetVarCount(int cnt)
@@ -109,6 +115,12 @@ public:
 		if (m_stackBottom)
 		{
 			m_stackBottom->SetNext(frame);
+		}
+		else
+		{
+			//set as top frame for this thread
+			//and set its parent to mirror stack
+			frame->SetParent(m_mirrorStack);
 		}
 		m_stackBottom = frame;
 	}

@@ -6,6 +6,8 @@
 #if defined(_MSC_VER)
 // Microsoft Visual C++ Compiler
 #define FORCE_INLINE __forceinline
+#elif defined(BARE_METAL) 
+#define FORCE_INLINE inline
 #elif defined(__GNUC__) || defined(__clang__)
 // GCC or Clang Compiler
 #define FORCE_INLINE __attribute__((always_inline)) inline
@@ -42,6 +44,7 @@ namespace X
 		const char* appFullName = nullptr;//include path and exe name
 		const char* xlangEnginePath = nullptr;//for XLang engine dll path
 		const char* dllSearchPath = nullptr;
+		int dbgPort = 3142;
 		~Config()
 		{
 			if (inlineCode) delete inlineCode;

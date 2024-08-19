@@ -70,6 +70,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		int pos = i->GetCharPos();
 		rt->GetCurrentStack()->SetLine(line);
 		rt->GetCurrentStack()->SetCharPos(pos);
+		rt->GetCurrentStack()->SetCurExp(i);
 		//std::cout << "Run Line(before check):" << line <<std::endl;
 
 		bool bRet = Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Line, pCurScope, i);
@@ -118,6 +119,11 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		if (v0.IsValid() && (i == last))
 		{
 			v = v0;
+		}
+		if (action0.type == ExecActionType::Return)
+		{
+			action = action0;
+			break;
 		}
 	}
 	m_bRunning = false;
@@ -239,8 +245,8 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 	while (true)
 	{
 		bool bContinue = false;
-		ExecAction action;
-		bool bC0 = ExpExec(R, rt, action, pContext, v0, lValue);
+		ExecAction action_r;
+		bool bC0 = ExpExec(R, rt, action_r, pContext, v0, lValue);
 		if (bC0)
 		{
 			if (v0.IsObject())
@@ -262,13 +268,18 @@ bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValu
 		}
 		if (bContinue)
 		{
-			ExecAction action;
-			Block::Exec_i(rt,action, pContext, v);
+			ExecAction action0;
+			Block::Exec_i(rt,action0, pContext, v);
 			//if break, will break this while loop
 			//if continue, continue loop
-			if (action.type == ExecActionType::Break)
+			if (action0.type == ExecActionType::Break)
 			{
 				break;//break while
+			}
+			else if (action0.type == ExecActionType::Return)
+			{
+				action = action0;//need to pass back to up level if got return until it meet function
+				break;
 			}
 		}
 		else

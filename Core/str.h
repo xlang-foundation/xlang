@@ -44,7 +44,7 @@ namespace Data
 		{
 			auto* newObj =  new Str(m_s);
 			newObj->IncRef();
-			return newObj;
+			return dynamic_cast<XObj*>(newObj);
 		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 

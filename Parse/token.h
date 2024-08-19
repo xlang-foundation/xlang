@@ -6,6 +6,8 @@
 #if defined(_MSC_VER)
 // Microsoft Visual C++ Compiler
 #define FORCE_INLINE __forceinline
+#elif defined(BARE_METAL) 
+#define FORCE_INLINE inline
 #elif defined(__GNUC__) || defined(__clang__)
 // GCC or Clang Compiler
 #define FORCE_INLINE __attribute__((always_inline)) inline

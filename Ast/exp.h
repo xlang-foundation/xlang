@@ -65,6 +65,7 @@ enum class ExecActionType
 	None,
 	Break,
 	Continue,
+	Return,
 };
 
 struct ExecAction
@@ -207,6 +208,21 @@ public:
 		}
 		return m_scope;
 	}
+	Module* FindModule()
+	{
+		Module* pModule = nullptr;
+		Expression* pa = this;
+		while (pa != nullptr)
+		{
+			if (pa->m_type == ObType::Module)
+			{
+				pModule = (Module*)pa;
+				break;
+			}
+			pa = pa->GetParent();
+		}
+		return pModule;
+	}
 	//Find MyScope from ancestor wich has RealScope
 	Scope* FindScope()
 	{
@@ -232,7 +248,7 @@ public:
 	{
 		m_parent = p;
 	}
-	Expression* GetParent()
+	FORCE_INLINE Expression* GetParent()
 	{
 		return m_parent;
 	}

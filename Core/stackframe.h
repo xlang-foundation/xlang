@@ -16,12 +16,17 @@ class StackFrame
 	//will be set to true
 	bool m_bShared = false;
 protected:
+	//m_parent points to the parent stack frame with the callee thread
+	//can be null 
+	StackFrame* m_parent = nil;
 	StackFrame* m_prev = nil;
 	StackFrame* m_next = nil;
+
 	Scope* m_pScope = nil;
 	int m_varCnt = 0;
 	X::Value* m_Values = nil;
 	X::Value m_retVal;
+	Expression* m_curExp = nullptr;
 	int m_lineStart = -1;
 	int m_charPos = 0;
 #if XLANG_ENG_DBG
@@ -94,11 +99,15 @@ public:
 	bool AddVar(XlangRuntime* rt,std::string& name, X::Value& val);
 	FORCE_INLINE virtual int GetStartLine() { return m_lineStart; }
 	FORCE_INLINE void SetLine(int l) { m_lineStart = l; }
+	FORCE_INLINE void SetCurExp(Expression* exp) { m_curExp = exp; }
+	FORCE_INLINE Expression* GetCurExp() { return m_curExp; }
 	FORCE_INLINE void SetCharPos(int c) { m_charPos = c; }
 	FORCE_INLINE virtual int GetCharPos() { return m_charPos; }
 	FORCE_INLINE Scope* GetScope() { return m_pScope; }
+	FORCE_INLINE void SetParent(StackFrame* p) { m_parent = p; }
 	FORCE_INLINE void SetNext(StackFrame* n) { m_next = n; if(n) n->m_prev = this; }
 	FORCE_INLINE void SetPrev(StackFrame* p) { m_prev = p; if(p) p->m_next = this; }
+	FORCE_INLINE StackFrame* Parent() { return m_parent; }
 	FORCE_INLINE StackFrame* Next() { return m_next; }
 	FORCE_INLINE StackFrame* Prev() { return m_prev; }
 	FORCE_INLINE bool belongTo(Scope* s) { return s == m_pScope; }

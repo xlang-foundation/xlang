@@ -5,6 +5,8 @@
 #include "module.h"
 #include "event.h"
 #include "exp_exec.h"
+#include "port.h"
+#include <algorithm>
 
 namespace X
 {
@@ -80,14 +82,20 @@ namespace X
 				return AppEventCode::Continue;
 			}
 			int idx = 0;
-			try
-			{
+			
+			#if defined(BARE_METAL)
 				idx = std::stoi(input);
-			}
-			catch (...)
-			{
-				idx = -1;
-			}
+			#else
+				try
+				{
+					idx = std::stoi(input);
+				}
+				catch (...)
+				{
+					idx = -1;
+				}
+			#endif
+
 			if (idx >= 1 && idx <= m_Modules.size())
 			{
 				auto m = m_Modules[idx - 1];
@@ -136,6 +144,28 @@ namespace X
 		pTopModule->SetModuleName(strModuleName);
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);
+
+		strModuleName = pTopModule->GetModuleName();
+		std::transform(strModuleName.begin(), strModuleName.end(), strModuleName.begin(),
+			[](unsigned char c) { return std::tolower(c); });
+		std::vector<int> breakpoints = G::I().GetBreakPoints(strModuleName);
+		bool bValid = G::I().IsBreakpointValid(strModuleName); // Whether the source file's breakpoints have been checked 
+		pTopModule->ClearBreakpoints();
+		for (auto l : breakpoints)
+		{
+			l = pTopModule->SetBreakpoint(l, (int)GetThreadID());
+
+			if (!bValid && l >= 0)
+			{
+				if (l >= 0)
+					SendBreakpointState(strModuleName, l);
+				else
+					SendBreakpointState(strModuleName, l + 100000); // failed state
+			}
+		}
+		if (!bValid)
+			G::I().AddBreakpointValid(strModuleName); // add to checked list
+
 
 		moduleKey = AddModule(pTopModule);
 		return pTopModule;
@@ -193,15 +223,21 @@ namespace X
 		bool stopOnEntry, bool keepModuleWithRuntime)
 	{
 		pTopModule->SetArgs(passInParams);
-		XlangRuntime* pRuntime = new XlangRuntime();
+		std::string name("main");
+		XlangRuntime* pRuntime = G::I().Threading(name,nullptr);
+		// ���runtime��module��Ϊnullptr����pTopModule��import��module
+		AST::Module* pOldModule = pRuntime->M(); 
 		pTopModule->SetRT(pRuntime);
 		pRuntime->SetM(pTopModule);
 		G::I().BindRuntimeToThread(pRuntime);
-		if (stopOnEntry)
+		
+		if (stopOnEntry || pRuntime->GetTrace())
 		{
 			pTopModule->SetDebug(true,pRuntime);
-			pTopModule->SetDbgType(X::AST::dbg::Step,
-				AST::dbg::Step);
+			if (stopOnEntry && !pOldModule)
+			pTopModule->SetDbgType(X::AST::dbg::Step, AST::dbg::None);
+			else
+				pTopModule->SetDbgType(X::AST::dbg::Continue, AST::dbg::Continue);			
 		}
 
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
@@ -224,8 +260,12 @@ namespace X
 		if (!keepModuleWithRuntime)
 		{
 			pRuntime->PopFrame();
+			if (pOldModule)
+				pRuntime->SetM(pOldModule);
+			else
 			delete pRuntime;
 		}
+
 		return bOK;
 	}
 	bool Hosting::RunFragmentInModule(
@@ -257,8 +297,9 @@ namespace X
 		keep a module to run lines from interactive mode
 		such as commmand line input
 	*/
-	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal)
+	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
 	{
+		m_pInteractiveExeNum = exeNum;
 		if (m_pInteractiveModule == nullptr)
 		{
 			auto* pTopModule = new AST::Module();
@@ -287,6 +328,7 @@ namespace X
 		}
 		m_pInteractiveRuntime->AdjustStack(m_pInteractiveModule->GetMyScope()->GetVarNum());
 		bOK = m_pInteractiveModule->RunLast(m_pInteractiveRuntime, nullptr, retVal);
+		m_pInteractiveExeNum = -1;
 		return bOK;
 	}
 	bool Hosting::GetInteractiveCode(std::string& code)
@@ -373,5 +415,20 @@ namespace X
 			Run("Cleanup.x", onFinishExpr.c_str(), (int)onFinishExpr.size(), passInParams,valRet0);
 		}
 		return bOK;
+	}
+
+	void Hosting::SendBreakpointState(const std::string& path, int line)
+	{
+		KWARGS kwParams;
+		X::Value valAction("notify");
+		kwParams.Add("action", valAction);
+		const int online_len = 1000;
+		char strBuf[online_len];
+		SPRINTF(strBuf, online_len, "[{\"BreakpointPath\":\"%s\", \"line\":%d}]", path.c_str(), line);
+		X::Value valParam(strBuf);
+		kwParams.Add("param", valParam);
+		std::string evtName("devops.dbg");
+		ARGS params(0);
+		X::EventSystem::I().Fire(nullptr, nullptr, evtName, params, kwParams);
 	}
 }

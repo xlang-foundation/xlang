@@ -28,18 +28,21 @@ namespace X {
 
     public:
         Folder(const std::string& path) {
-            // Normalize the input path
             folderPath = path;
 #if (WIN32)
+            // Normalize the input path
             std::replace(folderPath.begin(), folderPath.end(), '/', '\\');
-#else
-            std::replace(folderPath.begin(), folderPath.end(), '\\', '/');
-#endif
             // Remove trailing separator if present
-            if (!folderPath.empty() && (folderPath.back() == '\\' 
-                || folderPath.back() == '/')) {
+            if (!folderPath.empty() && folderPath.back() == '\\') {
                 folderPath.pop_back();
             }
+#else
+            // Remove trailing separator if present
+            if (!folderPath.empty() && folderPath.back() == '/') {
+                folderPath.pop_back();
+            }
+#endif
+
         }
 
 
@@ -50,8 +53,6 @@ namespace X {
             std::string normalizedSubPath = subPath;
 #if (WIN32)
             std::replace(normalizedSubPath.begin(), normalizedSubPath.end(), '/', '\\');
-#else
-            std::replace(normalizedSubPath.begin(), normalizedSubPath.end(), '\\', '/');
 #endif
 
             // Ensure the folder path ends with the correct separator
