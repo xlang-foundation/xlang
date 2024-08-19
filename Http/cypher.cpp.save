@@ -20,13 +20,14 @@
 #include <pwd.h>
 #endif
 
-#include "cypher_help.h"
 
 #if (WIN32)
 #include <windows.h>
 #include <aclapi.h>
 #include <iostream>
 #include <string>
+
+#include "cypher_help.h"
 
 bool ChmodWin(const std::string& filename) {
 	// Get the SID of the current user
