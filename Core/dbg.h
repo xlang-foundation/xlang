@@ -100,11 +100,11 @@ public:
 		AST::Expression* exp, XObj* pContext)
 	{
 		auto* pModule = rt->M();
-		AST::CommandInfo* pCmdInfo;
+		CommandInfo* pCmdInfo;
 		bool mLoop = true;
 		while (mLoop)
 		{
-			pCmdInfo = pModule->PopCommand();
+			pCmdInfo = rt->PopCommand();
 			if (pCmdInfo == nullptr)
 			{
 				//todo:

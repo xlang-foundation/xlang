@@ -340,7 +340,7 @@ namespace X
 		}
 		bool DebugService::BuildStackInfo(
 			XlangRuntime* rt, XObj* pContextCurrent,
-			AST::CommandInfo* pCommandInfo,
+			CommandInfo* pCommandInfo,
 			X::Value& valStackInfo)
 		{
 			TraceEvent traceEvent = pCommandInfo->m_traceEvent;
@@ -410,9 +410,9 @@ namespace X
 				{
 					if (item.second->m_bStoped)
 					{
-						AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+						CommandInfo* pCmdInfo = new CommandInfo();
 						pCmdInfo->dbgType = dbg::Continue;
-						item.second->M()->AddCommand(pCmdInfo, false);
+						item.second->AddCommand(pCmdInfo, false);
 					}
 				}
 			}
@@ -532,7 +532,7 @@ namespace X
 			{
 				auto stackTracePack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
-					AST::CommandInfo* pCommandInfo,
+					CommandInfo* pCommandInfo,
 					X::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
@@ -540,14 +540,14 @@ namespace X
 					pDebugService->BuildStackInfo(rt, pContextCurrent,
 						pCommandInfo, retVal);
 				};
-				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				CommandInfo* pCmdInfo = new CommandInfo();
 				pCmdInfo->m_callContext = this;
 				pCmdInfo->m_process = stackTracePack;
 				pCmdInfo->m_threadId = threadId;
 				pCmdInfo->m_needRetValue = true;
 				pCmdInfo->dbgType = dbg::StackTrace;
 				pCmdInfo->IncRef();//we need keep it for return, will removing in below
-				pModule->AddCommand(pCmdInfo, true);
+				threadRt->AddCommand(pCmdInfo, true);
 				retValue = pCmdInfo->m_retValueHolder;
 				pCmdInfo->DecRef();
 			}
@@ -562,12 +562,12 @@ namespace X
 				{
 					frameId = (AST::StackFrame*)it2->val.GetLongLong();
 				}
-				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				CommandInfo* pCmdInfo = new CommandInfo();
 				pCmdInfo->m_frameId = frameId;
 				pCmdInfo->dbgType = dbg::GetRuntime;
 				auto globalPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
-					AST::CommandInfo* pCommandInfo,
+					CommandInfo* pCommandInfo,
 					X::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
@@ -576,7 +576,7 @@ namespace X
 				};
 				auto localPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
-					AST::CommandInfo* pCommandInfo,
+					CommandInfo* pCommandInfo,
 					X::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
@@ -586,7 +586,7 @@ namespace X
 				};
 				auto objPack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
-					AST::CommandInfo* pCommandInfo,
+					CommandInfo* pCommandInfo,
 					X::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
@@ -598,7 +598,7 @@ namespace X
 				};
 				auto objSetValuePack = [](XlangRuntime* rt,
 					XObj* pContextCurrent,
-					AST::CommandInfo* pCommandInfo,
+					CommandInfo* pCommandInfo,
 					X::Value& retVal)
 				{
 					DebugService* pDebugService = (DebugService*)
@@ -628,44 +628,44 @@ namespace X
 				pCmdInfo->m_callContext = this;
 				pCmdInfo->m_needRetValue = true;
 				pCmdInfo->IncRef();// we need pCmdInfo keep for return
-				pModule->AddCommand(pCmdInfo, true);
+				threadRt->AddCommand(pCmdInfo, true);
 				retValue = pCmdInfo->m_retValueHolder;
 				pCmdInfo->DecRef();
 			}
 			else if (strCmd == "Step")
 			{
-				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				CommandInfo* pCmdInfo = new CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
 				pCmdInfo->dbgType = dbg::Step;
-				pModule->AddCommand(pCmdInfo, false);
+				threadRt->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
 			else if (strCmd == "Continue")
 			{
-				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				CommandInfo* pCmdInfo = new CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
 				pCmdInfo->dbgType = dbg::Continue;
-				pModule->AddCommand(pCmdInfo, false);
+				threadRt->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
 			else if (strCmd == "StepIn")
 			{
-				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				CommandInfo* pCmdInfo = new CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
 				pCmdInfo->dbgType = dbg::StepIn;
-				pModule->AddCommand(pCmdInfo, false);
+				threadRt->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
 			else if (strCmd == "StepOut")
 			{
-				AST::CommandInfo* pCmdInfo = new AST::CommandInfo();
+				CommandInfo* pCmdInfo = new CommandInfo();
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
 				pCmdInfo->dbgType = dbg::StepOut;
-				pModule->AddCommand(pCmdInfo, false);
+				threadRt->AddCommand(pCmdInfo, false);
 				retValue = X::Value(true);
 			}
 			else if (strCmd == "Terminate")

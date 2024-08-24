@@ -24,51 +24,7 @@ struct BreakPointInfo
 	int sessionTid; // needed ?
 };
 
-class CommandInfo;
-typedef void (*CommandProcessProc)(XlangRuntime* rt,
-	XObj* pContextCurrent,
-	CommandInfo* pCommandInfo,
-	X::Value& retVal);
-class CommandInfo:
-	virtual public ObjRef
-{
-	Locker _lock;
-public:
-	FORCE_INLINE virtual int IncRef()
-	{
-		AutoLock lock(_lock);
-		return ObjRef::AddRef();
-	}
-	FORCE_INLINE virtual int DecRef()
-	{
-		_lock.Lock();
-		int ref = ObjRef::Release();
-		if (ref == 0)
-		{
-			_lock.Unlock();
-			delete this;
-		}
-		else
-		{
-			_lock.Unlock();
-		}
-		return ref;
-	}
-	dbg dbgType;
 
-	void* m_callContext = nullptr;
-	//vars below used in BuildLocals and BuildObjectContent
-	TraceEvent m_traceEvent= TraceEvent::None;
-	AST::StackFrame* m_frameId;
-	int m_threadId = 0;
-	AST::Expression* m_pExpToRun = nullptr;
-	X::Value m_varParam;//for input when add command
-	bool m_needRetValue = false;
-	std::string m_retValueHolder;//for command output
-
-	CommandProcessProc m_process = nullptr;
-	XWait* m_wait = nullptr;
-};
 enum class module_primitive
 {
 	Output,
@@ -110,9 +66,7 @@ class Module :
 	//Locker m_addCommandLock;
 	
 	std::vector<Scope*> m_dbgScopes;
-	XWait m_commandWait;
-	Locker m_lockCommands;
-	std::vector<CommandInfo*> m_commands;
+	
 	Locker m_lockBreakpoints;
 	std::vector<BreakPointInfo> m_breakpoints;
 	//only keep for AST Query
@@ -148,16 +102,7 @@ public:
 	}
 	~Module()
 	{
-		m_lockCommands.Lock();
-		for (auto& it : m_commands)
-		{
-			if (it->m_wait)
-			{
-				it->m_wait->Release();
-			}
-		}
-		m_lockCommands.Unlock();
-		m_commandWait.Release();
+		
 		delete m_stackFrame;
 		if (!m_bMyScopeIsRef)
 		{
@@ -280,57 +225,7 @@ public:
 	{
 		return m_moduleName;
 	}
-	FORCE_INLINE void AddCommand(CommandInfo* pCmdInfo,bool bWaitFinish)
-	{
-		//m_addCommandLock.Lock();
-		if (bWaitFinish)
-		{
-			pCmdInfo->m_wait = new XWait();
-		}
-		//auto tid = GetThreadID();
-		//std::cout << "AddCommand,before add,bWaitFinish=" 
-		//	<< bWaitFinish<<"pCmdInfo="<< pCmdInfo <<"tid="<<tid << std::endl;
-		pCmdInfo->IncRef();//for keeping in m_commands
-		m_lockCommands.Lock();
-		m_commands.push_back(pCmdInfo);
-		m_lockCommands.Unlock();
-		m_commandWait.Release();
-		//std::cout << "AddCommand,after add,pCmdInfo="<< pCmdInfo << "tid=" << tid << std::endl;
-		if (bWaitFinish)
-		{
-			pCmdInfo->m_wait->Wait(-1);
-			delete pCmdInfo->m_wait;
-		}
-		//std::cout << "AddCommand,end,pCmdInfo = "<< pCmdInfo << "tid=" << tid << std::endl;
-		//m_addCommandLock.Unlock();
-	}
-	FORCE_INLINE CommandInfo* PopCommand()
-	{
-		//auto tid = GetThreadID();
-		//std::cout << "PopCommand,Begin"<< "tid=" << tid << std::endl;
-		bool bRet = true;
-		CommandInfo* pCommandInfo = nullptr;
-		m_lockCommands.Lock();
-		if (m_commands.size() == 0)
-		{
-			bRet = false;
-			m_lockCommands.Unlock();
-			m_pRuntime->m_bStoped = true; //should get runtime by thread id
-			bRet = m_commandWait.Wait(-1);
-			m_pRuntime->m_bStoped = false;
-			m_lockCommands.Lock();
-		}
-		if (bRet && m_commands.size()>0)
-		{
-			pCommandInfo = m_commands[0];
-			// pCommandInfo already have refcount when adding into m_commands
-			//so don't call IncRef here
-			m_commands.erase(m_commands.begin());
-		}
-		m_lockCommands.Unlock();
-		//std::cout << "PopCommand,end,pCommandInfo=" << pCommandInfo << "tid=" << tid << std::endl;
-		return pCommandInfo;
-	}
+	
 	FORCE_INLINE char* SetCode(char* code, int size)
 	{
 		std::string strCode(code, size);

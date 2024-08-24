@@ -15,6 +15,16 @@ namespace X
 		{
 			G::I().UnbindRuntimeToThread(this);
 		}
+		m_lockCommands.Lock();
+		for (auto& it : m_commands)
+		{
+			if (it->m_wait)
+			{
+				it->m_wait->Release();
+			}
+		}
+		m_lockCommands.Unlock();
+		m_commandWait.Release();
 	}
 	bool XlangRuntime::GetWritePadNum(int& count, int& dataBindingCount)
 	{

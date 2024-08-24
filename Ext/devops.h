@@ -18,7 +18,7 @@ namespace X
 			bool BuildStackInfo(
 				XlangRuntime* rt,
 				XObj* pContextCurrent,
-				AST::CommandInfo* pCommandInfo,
+				CommandInfo* pCommandInfo,
 				X::Value& valStackInfo);
 			bool PackScopeVars(XlangRuntime* rt, 
 				XObj* pContextCurrent, AST::Scope* pScope,

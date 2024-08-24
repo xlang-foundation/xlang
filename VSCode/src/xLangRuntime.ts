@@ -327,7 +327,12 @@ export class XLangRuntime extends EventEmitter {
 	
 		this.reqNotify.on('error', error => {
 			console.error("fetchNotify->",error);
-			if(this._sessionRunning )
+			if (error?.code === "ECONNRESET")
+			{
+				vscode.window.showErrorMessage(`disconnect from xlang dbg server at ${this.serverAddress}:${this.serverPort} debugging stopped`, { modal: true }, "ok");
+				this.sendEvent('end');
+			}
+			else if(this._sessionRunning )
 			{
 				var thisObj = this;
 				setTimeout(function() {
