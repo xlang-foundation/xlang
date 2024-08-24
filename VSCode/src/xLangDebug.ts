@@ -146,20 +146,24 @@ export class XLangDebugSession extends LoggingDebugSession {
 		this._runtime.on('end', () => {
 			this.sendEvent(new TerminatedEvent());
 		});
-		this._runtime.on('breakpointState', (path, line) => {
+		this._runtime.on('breakpointState', (path, line, actualLine) => {
 			path = path.replaceAll('/', '\\');
-			let srcIdx = this._srcList.indexOf(path);
-			if (line >= 100000){ // failed
-				line -= 100000; 
-				this.sendEvent(new BreakpointEvent('changed', {verified: false, id: srcIdx * 10000000 + line * 1000}));
+			if (actualLine === -1){ // failed
+				this.sendEvent(new BreakpointEvent('changed', {verified: false, id: this.getBreakpointId(path, line, 0)}));
 			}else{
-				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: srcIdx * 10000000 + line * 1000}));
+				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: this.getBreakpointId(path, line, 0), line: actualLine}));
 			}
 		});
 		this._runtime.on('xlangStarted', (started) => {
 			this._xlangStarted.notifyValue = started;
 			this._xlangStarted.notify();
 		});
+	}
+	// use src path index， origin line and column to make a unique id 
+	private getBreakpointId(path :string, line : number, column: number) : number
+	{
+		let srcIdx = this._srcList.indexOf(path);
+		return srcIdx * 10000000 + line * 1000 + column;
 	}
 
 	/**
@@ -268,49 +272,44 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
 		console.log(`disconnectRequest suspend: ${args.suspendDebuggee}, terminate: ${args.terminateDebuggee}`);
-		if (this._isLaunch)
+		if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart))
 		{
-			this._runtime.close();
+			this._runtime.close(true);
 		}
+		else
+		{
+			this._runtime.close(false);
+		}
+		
+		this.sendResponse(response);
+	}
+
+	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): void
+	{
 		this.sendResponse(response);
 	}
 
 	protected async attachRequest(response: DebugProtocol.AttachResponse, args: IAttachRequestArguments) {
 		this._isLaunch = false;
-		//get running module key and source file from runtime
-		//return this.launchRequest(response, args);
+		this._runtime.runMode = 'attach';
+		this._runtime.serverAddress = args.dbgIp;
+		this._runtime.serverPort = Number(args.dbgPort);
+		this.startDebug(response, args);
 	}
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
-		let runXlang = true;
-		let dbgAddr = await vscode.window.showInputBox({value: "localhost:3142", prompt: "input remote xlang dbg address and port, empty or cancel to run xlang on a random port locally", placeHolder: "ip or host name:port"});
-		if (dbgAddr)
-		{
-			dbgAddr = dbgAddr.replace(/\s/g, '');
-			if(ipHostPortRegex.test(dbgAddr))
-			{
-				const strList = dbgAddr.split(":");
-				this._runtime.serverAddress = strList[0];
-				this._runtime.serverPort = Number(strList[1]);
-				runXlang = false;
-			}
-			else
-			{
-				await vscode.window.showErrorMessage("please input address and port, debugging stopped", { modal: true }, "ok");
-				this.sendResponse(response);
-				this.sendEvent(new TerminatedEvent());
-				return;
-			}
-		}
-		if (runXlang)
-		{
-			let port = await this.getValidPort();
-			let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
-			this._xlangProcess = cp.spawn(xlangBin, ['-event_loop', '-dbg', '-enable_python', `-port ${port}`], { shell: true, detached: true });
-			this._runtime.serverAddress = "localhost";
-			this._runtime.serverPort = port;
-		}
-		
+		let port = await this.getValidPort();
+		let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
+		this._xlangProcess = cp.spawn(xlangBin, ['-event_loop', '-dbg', '-enable_python', `-port ${port}`], { shell: true, detached: true });
+		this._runtime.serverAddress = "localhost";
+		this._runtime.serverPort = port;
+		this._isLaunch = true;
+		this._runtime.runMode = 'launch';
+		this.startDebug(response, args);
+	}
+
+	private async startDebug(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments)
+	{
 		this._runtime.checkStarted();
 		await this._xlangStarted.wait();
 		if (!this._xlangStarted.notifyValue)
@@ -320,22 +319,19 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this.sendEvent(new TerminatedEvent());
 			return;
 		}
+		
+		//todo: if attach mode, enable xlang debug state
 
-		this._isLaunch = true;
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
-		
 		await this._runtime.loadSource(args.program);
 		this.sendEvent(new InitializedEvent());
-
-		// wait 1 second until configuration has finished (and configurationDoneRequest has been called)
+		// wait configuration has finished (and configurationDoneRequest has been called)
 		await this._configurationDone.wait();
 
 		args.stopOnEntry = true;
-		
 		// start the program in the runtime
 		await this._runtime.start(!!args.stopOnEntry, !args.noDebug);
-
 		if (args.compileError) {
 			// simulate a compile/build error in "launch" request:
 			// the error should not result in a modal dialog since 'showUser' is set to false.
@@ -356,8 +352,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
 		const path = (args.source.path as string).toLowerCase();
-		const clientLines = args.lines || [];
-		
+		//const clientLines = args.lines || [];
+		const clientLines = args.breakpoints?.map(col => {return col.line;}) || [];
 		let srcIdx = this._srcList.indexOf(path);
 		if ( srcIdx < 0){
 			this._srcList.push(path);
@@ -365,28 +361,27 @@ export class XLangDebugSession extends LoggingDebugSession {
 		}
 		
 		this._runtime.setBreakPoints(path, clientLines, (lines) => {
-			let actualBreakpoints = lines.map(l => {
-				if (l >= 200000){
-					l -= 200000;
-					//let ret = new Breakpoint(false, l, undefined, new Source(path, path));
-					let ret = new Breakpoint(false, l);
-					ret.reason = 'pending';
-					ret.setId(srcIdx * 10000000 + l * 1000); // ret.setId(srcIdx * 10000000 + l * 1000 + c);
-					return ret;
+			let actualBreakpoints: Breakpoint[] = [];
+			for(let i = 0; i < lines.length; i += 2)
+			{
+				let bp: Breakpoint;
+				let l = lines[i]; // origin line
+				let al = lines[i + 1]; // actual line
+				let id = this.getBreakpointId(path, l, 0); // breakpoint id
+				if (al === -2){ //'pending'
+					bp = new Breakpoint(false, l);
+					bp.setId(id);
 				}
-				else if (l >= 100000){
-					l -= 100000;
-					let ret = new Breakpoint(false, l);
-					ret.reason = 'failed';
-					ret.setId(srcIdx * 10000000 +  + l * 1000);
-					return ret;
+				else if (l === -1){ // 'failed'
+					bp = new Breakpoint(false, l);
+					bp.setId(id);
 				}
-				else{
-					let ret = new Breakpoint(true, l);
-					ret.setId(srcIdx * 10000000 +  + l * 1000);
-					return ret;
+				else{ // 'valid'
+					bp = new Breakpoint(true, al);
+					bp.setId(id);
 				}
-			});
+				actualBreakpoints.push(bp);
+			}
 			response.body = {
 				breakpoints: actualBreakpoints
 			};

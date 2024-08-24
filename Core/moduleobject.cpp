@@ -116,5 +116,17 @@ namespace X
 				return true;
 			}
 		}
+		long long ModuleObject::Size()
+		{
+			if (m_pModule)
+			{
+				auto* pMyScope = m_pModule->GetMyScope();
+				if (pMyScope)
+				{
+					return pMyScope->GetVarNum();
+				}
+			}
+			return 0;
+		}
 	}
 }

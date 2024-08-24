@@ -99,7 +99,7 @@ namespace X
 			if (idx >= 1 && idx <= m_Modules.size())
 			{
 				auto m = m_Modules[idx - 1];
-				m->SetDbgType(AST::dbg::Step, AST::dbg::Step);
+				//m->SetDbgType(dbg::Step, dbg::Step);
 				break;
 			}
 			else
@@ -148,23 +148,23 @@ namespace X
 		strModuleName = pTopModule->GetModuleName();
 		std::transform(strModuleName.begin(), strModuleName.end(), strModuleName.begin(),
 			[](unsigned char c) { return std::tolower(c); });
-		std::vector<int> breakpoints = G::I().GetBreakPoints(strModuleName);
+		// if source file has breakpoint data, set breakpoint for this new created module
+		std::vector<int> lines = G::I().GetBreakPoints(strModuleName);
 		bool bValid = G::I().IsBreakpointValid(strModuleName); // Whether the source file's breakpoints have been checked 
-		pTopModule->ClearBreakpoints();
-		for (auto l : breakpoints)
+		for (const auto& l : lines)
 		{
-			l = pTopModule->SetBreakpoint(l, (int)GetThreadID());
+			int al = pTopModule->SetBreakpoint(l, (int)GetThreadID());
 
-			if (!bValid && l >= 0)
+			if (!bValid) // if source file has not been checked, return breakpoint's state to debugger
 			{
-				if (l >= 0)
-					SendBreakpointState(strModuleName, l);
+				if (al >= 0)
+					SendBreakpointState(strModuleName, l, al);
 				else
-					SendBreakpointState(strModuleName, l + 100000); // failed state
+					SendBreakpointState(strModuleName, l, -1); // failed state
 			}
 		}
 		if (!bValid)
-			G::I().AddBreakpointValid(strModuleName); // add to checked list
+			G::I().AddBreakpointValid(strModuleName); // add source file path to the checked list
 
 
 		moduleKey = AddModule(pTopModule);
@@ -224,20 +224,21 @@ namespace X
 	{
 		pTopModule->SetArgs(passInParams);
 		std::string name("main");
-		XlangRuntime* pRuntime = G::I().Threading(name,nullptr);
-		// ���runtime��module��Ϊnullptr����pTopModule��import��module
+		if (pTopModule->GetModuleName() != "devops_run.x")
+			std::string dname = pTopModule->GetModuleName();
+		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(),nullptr);
 		AST::Module* pOldModule = pRuntime->M(); 
 		pTopModule->SetRT(pRuntime);
 		pRuntime->SetM(pTopModule);
 		G::I().BindRuntimeToThread(pRuntime);
-		
-		if (stopOnEntry || pRuntime->GetTrace())
+				
+		if (stopOnEntry || (!pRuntime->m_bNoDbg && G::I().GetTrace()))
 		{
 			pTopModule->SetDebug(true,pRuntime);
 			if (stopOnEntry && !pOldModule)
-			pTopModule->SetDbgType(X::AST::dbg::Step, AST::dbg::None);
+				pRuntime->SetDbgType(X::dbg::Step, dbg::None);
 			else
-				pTopModule->SetDbgType(X::AST::dbg::Continue, AST::dbg::Continue);			
+				pRuntime->SetDbgType(X::dbg::Continue, dbg::Continue);
 		}
 
 		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
@@ -417,14 +418,14 @@ namespace X
 		return bOK;
 	}
 
-	void Hosting::SendBreakpointState(const std::string& path, int line)
+	void Hosting::SendBreakpointState(const std::string& path, int line, int actualLine)
 	{
 		KWARGS kwParams;
 		X::Value valAction("notify");
 		kwParams.Add("action", valAction);
 		const int online_len = 1000;
 		char strBuf[online_len];
-		SPRINTF(strBuf, online_len, "[{\"BreakpointPath\":\"%s\", \"line\":%d}]", path.c_str(), line);
+		SPRINTF(strBuf, online_len, "[{\"BreakpointPath\":\"%s\", \"line\":%d, \"actualLine\":%d}]", path.c_str(), line, actualLine);
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
 		std::string evtName("devops.dbg");

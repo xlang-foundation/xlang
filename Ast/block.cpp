@@ -38,7 +38,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 {
 	bool bOk = true;
 	m_bRunning = true;
-	auto Trace = rt->GetTrace();
+	auto Trace = G::I().GetTrace();
 	Scope* pCurScope = nullptr;
 	bool useMyScope = (m_type == ObType::Func 
 		|| m_type == ObType::Class 
@@ -54,13 +54,13 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 
 	//if being traced, go to here
 	bool bEnterBlock = false;
-	if (useMyScope && rt->M()->GetDbgType() == X::AST::dbg::StepIn)
+	if (useMyScope && rt->GetDbgType() == X::dbg::StepIn)
 	{
 		bEnterBlock = true;
-		Trace(rt, pContext,rt->GetCurrentStack(),TraceEvent::Call, pCurScope,nullptr);
+		Trace(rt, pContext,rt->GetCurrentStack(),TraceEvent::Call, pCurScope,nullptr); // do nothing
 		//then we need to change DbgType to Step from StepIn
 		//because the lines exec in Body will be step by step
-		rt->M()->SetDbgType(X::AST::dbg::Step, X::AST::dbg::StepIn);
+		rt->SetDbgType(X::dbg::Step, X::dbg::StepIn); // 
 	}
 	auto last = Body[Body.size() - 1];
 	for (auto& i : Body)
@@ -73,9 +73,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		rt->GetCurrentStack()->SetCurExp(i);
 		//std::cout << "Run Line(before check):" << line <<std::endl;
 
-		bool bRet = Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Line, pCurScope, i);
-		if (!bRet)
-			break;
+		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Line, pCurScope, i);
 
 		if (i->m_type == ObType::ActionOp)
 		{
@@ -129,8 +127,19 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 	m_bRunning = false;
 	if (bEnterBlock && (m_type == ObType::Func || m_type == ObType::Module))
 	{
-		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Return, pCurScope,nullptr);
+		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Return, pCurScope,nullptr); //
+		
 	}
+	if (useMyScope)
+	{
+		// change DbgType from StepOut to Step, if this block is the root function to step over or step out this block only(not step over a function or step over a function but interrupted by a breakpoint )
+		if (rt->GetDbgType() == X::dbg::StepOut && (this == rt->m_pFirstStepOutExp || !rt->m_pFirstStepOutExp)) // 
+		{
+			rt->SetDbgType(dbg::Step, X::dbg::StepOut);
+			rt->m_pFirstStepOutExp = nullptr;
+		}
+	}
+
 	return bOk;
 }
 

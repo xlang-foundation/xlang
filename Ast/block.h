@@ -185,7 +185,7 @@ namespace X
 				{
 					return true;
 				}
-				if (rt->GetTrace())
+				if (!rt->m_bNoDbg && G::I().GetTrace())
 				{
 					return ExecForTrace(rt, action, pContext, v, lValue);
 				}
