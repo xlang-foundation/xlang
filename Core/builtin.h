@@ -40,7 +40,7 @@ namespace X {
 			if (bufferSize < myName.size() + 1)
 				return 0;
 			strcpy(buffer, myName.c_str());
-			return myName.size();
+			return (int)myName.size();
 		}
 		virtual bool RunCodeWithThisScope(const char* code) override
 		{
