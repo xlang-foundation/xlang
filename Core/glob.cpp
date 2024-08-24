@@ -103,7 +103,7 @@ namespace X {
 		if (it == m_rtMap.end())
 		{
 			X::XlangRuntime* pRuntime = new X::XlangRuntime();
-			if (name == "devops_run.x")
+			if (name == "devops_run.x" || name == "Cleanup.x")
 				pRuntime->m_bNoDbg = true;
 
 			pRuntime->SetName(name);
