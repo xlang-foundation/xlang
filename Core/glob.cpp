@@ -65,7 +65,7 @@ namespace X {
 		if (it == m_rtMap.end())
 		{
 			m_rtMap.emplace(std::make_pair(curTId,rt));
-			bEvent = G::I().GetTrace();
+			bEvent = G::I().GetTrace() && !rt->m_bNoDbg;
 		}
 		else
 		{

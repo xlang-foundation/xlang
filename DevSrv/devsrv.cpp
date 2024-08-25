@@ -244,9 +244,15 @@ namespace X
 		{
 			printf("Devops server has an error...\n");
 		}
+		std::cout << "DevServer set debug mode: true" << std::endl;
+		X::g_pXHost->SetDebugMode(true);
 		std::cout << "DevServer listens on port:" << m_port << std::endl;
 		if (!m_srv.listen("::", m_port))
+		{
 			std::cout << "listen failed" << std::endl;
+			std::cout << "DevServer set debug mode: false" << std::endl;
+			X::g_pXHost->SetDebugMode(false);
+		}
 		//exit
 		notiWait.Release();
 		X::OffEvent("devops.dbg", dbg_handler_cookie);

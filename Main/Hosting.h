@@ -116,5 +116,6 @@ namespace X
 			X::Value& retVal);
 		unsigned long long RunAsBackend(std::string& moduleName,std::string& code,std::vector<X::Value>& args);
 		bool PostRunFragmentInMainThread(AST::ModuleObject* pModuleObj,std::string& code);
+		void SetDebugMode(bool bDebug);
 	};
 }

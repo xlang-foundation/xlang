@@ -753,4 +753,9 @@ return nullptr;
 		}
 		return false;
 	}
+
+	void XHost_Impl::SetDebugMode(bool bDebug)
+	{
+		Hosting::I().SetDebugMode(bDebug);
+	}
 }
