@@ -400,22 +400,7 @@ namespace X
 
 		void DebugService::SetDebug(int iVal)
 		{
-			if (iVal > 0)
-				G::I().SetTrace(Dbg::xTraceFunc);
-			else
-			{
-				G::I().SetTrace(nullptr);
-				std::unordered_map<long long, XlangRuntime*> rtMap = G::I().GetThreadRuntimeIdMap();
-				for(auto& item : rtMap)
-				{
-					if (item.second->m_bStoped)
-					{
-						CommandInfo* pCmdInfo = new CommandInfo();
-						pCmdInfo->dbgType = dbg::Continue;
-						item.second->AddCommand(pCmdInfo, false);
-					}
-				}
-			}
+			Hosting::I().SetDebugMode(iVal > 0);
 		}
 
 		X::Value DebugService::GetThreads()
@@ -674,7 +659,7 @@ namespace X
 				//we don't need return from pCmdInfo, so dont' call IncRef for pCmdInfo
 				//and when this command be processed, will release it
 				//pCmdInfo->dbgType = dbg::Terminate;
-				//pModule->AddCommand(pCmdInfo, false); // todo£ºstop run every module
+				//pModule->AddCommand(pCmdInfo, false); // todoï¿½ï¿½stop run every module
 				//retValue = X::Value(true);
 			}
 			return true;
