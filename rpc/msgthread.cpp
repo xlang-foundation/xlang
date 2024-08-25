@@ -122,7 +122,7 @@ namespace X
         sa.lpSecurityDescriptor = &sd;
         sa.bInheritHandle = FALSE;
         HANDLE hSlot = INVALID_HANDLE_VALUE;
-        while (hSlot == INVALID_HANDLE_VALUE)
+        while (hSlot == INVALID_HANDLE_VALUE && mRun)
         {
             hSlot = CreateMailslot(
                 msgKey.c_str(),
