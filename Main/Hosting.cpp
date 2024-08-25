@@ -6,6 +6,7 @@
 #include "event.h"
 #include "exp_exec.h"
 #include "port.h"
+#include "dbg.h"
 #include <algorithm>
 
 namespace X
@@ -46,6 +47,27 @@ namespace X
 			}, params0);
 		return true;
 	}
+
+	void Hosting::SetDebugMode(bool bDebug)
+	{
+		if (bDebug)
+			G::I().SetTrace(Dbg::xTraceFunc);
+		else
+		{
+			G::I().SetTrace(nullptr);
+			std::unordered_map<long long, XlangRuntime*> rtMap = G::I().GetThreadRuntimeIdMap();
+			for (auto& item : rtMap)
+			{
+				if (item.second->m_bStoped)
+				{
+					CommandInfo* pCmdInfo = new CommandInfo();
+					pCmdInfo->dbgType = dbg::Continue;
+					item.second->AddCommand(pCmdInfo, false);
+				}
+			}
+		}
+	}
+
 	unsigned long long  Hosting::RunAsBackend(std::string& moduleName, std::string& code, std::vector<X::Value>& args)
 	{
 		Backend* pBackend = new Backend(moduleName,code, args);
