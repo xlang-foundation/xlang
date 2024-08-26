@@ -275,6 +275,7 @@ namespace X
 			{
 				m_type = ObType::For;
 			}
+			virtual void ScopeLayout() override;
 			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 		};
 		class While :

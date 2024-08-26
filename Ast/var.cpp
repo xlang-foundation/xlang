@@ -318,7 +318,12 @@ namespace X
 				{
 					if (pa->m_type == ObType::Pair)
 					{
-						IsInsidePair = true;
+						//we need to exclude for (var,var2,..) in case
+						PairOp* pPair = dynamic_cast<PairOp*>(pa);
+						if (pPair->GetL() != nullptr)
+						{
+							IsInsidePair = true;
+						}
 						break;
 					}
 					pa = pa->GetParent();

@@ -249,6 +249,26 @@ bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LVa
 	return true;
 }
 
+void For::ScopeLayout()
+{
+	if (R->m_type != ObType::In)
+	{
+		return;
+	}
+	InOp* pIn = dynamic_cast<InOp*>(R);
+	Expression* iterableExp = pIn->GetR();
+	Expression* varExp = pIn->GetL();
+	if (varExp == nullptr || iterableExp == nullptr)
+	{
+		return;
+	}
+	//change varExp's to left value
+	varExp->SetIsLeftValue(true);
+
+	varExp->ScopeLayout();
+	iterableExp->ScopeLayout();
+}
+
 bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	//R must be InOp
