@@ -595,98 +595,14 @@ public:
 
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
-class Range :
-	public UnaryOp
-{
-	bool m_evaluated = false;
-	long long m_start=0;
-	long long m_stop =0;
-	long long m_step = 1;
 
-	bool Eval(XlangRuntime* rt);
-public:
-	Range() :
-		UnaryOp()
-	{
-		m_type = ObType::Range;
-	}
-	Range(short op) :
-		UnaryOp(op)
-	{
-		m_type = ObType::Range;
-	}
-	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
-	{
-		UnaryOp::ToBytes(rt,pContext,stream);
-		SaveToStream(rt, pContext,R, stream);
-		stream << m_evaluated << m_start<< m_stop<< m_step;
-		return true;
-	}
-	virtual bool FromBytes(X::XLangStream& stream) override
-	{
-		UnaryOp::FromBytes(stream);
-		R = BuildFromStream<Expression>(stream);
-		stream >> m_evaluated >> m_start >> m_stop >> m_step;
-		return true;
-	}
-	FORCE_INLINE bool Step(X::Value& curVal)
-	{
-		if (!m_evaluated)
-		{
-			return false;
-		}
-		if (curVal.GetType() != ValueType::Int64)
-		{//not started
-			curVal = Value(m_start);
-		}
-		else
-		{
-			curVal += m_step;
-		}
-		return (curVal.GetLongLong() < m_stop);
-	}
-	FORCE_INLINE bool ExpRun(XlangRuntime* rt, X::Exp::ExpValue& rightValue, X::Value& retVal)
-	{
-		if (!m_evaluated)
-		{
-			//TODO:
-			if (rightValue.v.GetType() == ValueType::Int64)
-			{
-				m_stop = rightValue.v.GetLongLong();
-			}
-			m_evaluated = true;
-		}
-		if (retVal.GetType() != ValueType::Int64)
-		{//not started
-			retVal = Value(m_start);
-		}
-		else
-		{
-			retVal += m_step;
-		}
-		return (retVal.GetLongLong() < m_stop);
-	}
-	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
-	{
-		if (!m_evaluated)
-		{
-			Eval(rt);
-		}
-		if (v.GetType() != ValueType::Int64)
-		{//not started
-			v = Value(m_start);
-		}
-		else
-		{
-			v += m_step;
-		}
-		return (v.GetLongLong() < m_stop);
-	}
-};
+//will be used in if x in container or while x in container 
+//but for x in container doesn't need to be handled by this InOp
+//for will handle it by itself
 class InOp :
 	public BinaryOp
 {
-	void DoIterator(Value& var0, Value& v);
+
 public:
 	InOp() :
 		BinaryOp()
@@ -698,70 +614,7 @@ public:
 	{
 		m_type = ObType::In;
 	}
-	FORCE_INLINE bool ExpRun(XlangRuntime* rt, X::Exp::ExpValue& leftValue, X::Exp::ExpValue& rightValue, X::Value& retVal)
-	{
-		bool bRet = false;
-		Value& var0 = rightValue.v;
-		if (var0.IsObject())
-		{
-			DoIterator(var0, retVal);
-		}
-		else
-		{//such as range which return integer(64)
-			if (rightValue.exp->m_type == X::AST::ObType::Range)
-			{
-				retVal = leftValue.v;
-				bRet = static_cast<Range*>(rightValue.exp)->Step(retVal);
-				if(leftValue.exp->m_type == X::AST::ObType::Var)
-				{
-					static_cast<Var*>(leftValue.exp)->Set(rt, nullptr, retVal);
-				}
-				//ExpSet(leftValue.exp, rt, nullptr, retVal);
-			}
-		}
-		return bRet;
-	}
-	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
-	{
-		bool bOK = true;
-		if (v.IsInvalid())
-		{
-			Value  var0;
-			ExecAction action;
-			bOK = ExpExec(R, rt, action, pContext, var0);
-			if (bOK)
-			{
-				if (var0.IsObject())
-				{
-					DoIterator(var0, v);
-				}
-				else
-				{//such as range which return integer(64)
-					ExpSet(L,rt, pContext, var0);
-					v = var0;
-				}
-			}
-		}
-		else if (!v.IsObject())
-		{//for range case after first run
-			ExecAction action;
-			bOK = ExpExec(R, rt, action, pContext, v);
-			if (bOK)
-			{
-				ExpSet(L,rt, pContext, v);
-			}
-		}
-		return bOK;
-	}
-
-	virtual void SetL(Expression* l) override
-	{
-		BinaryOp::SetL(l);
-		if (l)
-		{
-			l->SetIsLeftValue(true);
-		}
-	}
+	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 };
 class ExternDecl :
 	public UnaryOp

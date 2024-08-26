@@ -94,6 +94,31 @@ public:
 		}
 		return true;
 	}
+	virtual bool IsContain(X::Value& val) override
+	{
+		AutoLock autoLock(m_lock);
+		if (m_useLValue)
+		{
+			for (size_t i = 0; i < m_ptrs.size(); i++)
+			{
+				if (val == (X::Value)(*m_ptrs[i]))
+				{
+					return true;
+				}
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < m_data.size(); i++)
+			{
+				if (val == (X::Value)(m_data[i]))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 	void Each(EnumProc proc)
 	{
 		AutoLock autoLock(m_lock);

@@ -6,6 +6,7 @@
 #include <iostream>
 #include "utility.h"
 #include "InlineCall.h"
+#include "iterator.h"
 
 extern bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
@@ -250,49 +251,51 @@ bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LVa
 
 bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
-	Value v0;
-	while (true)
+	//R must be InOp
+	//so its left is a variable
+	//right is iterable object for example:list,dict,range
+	if (R->m_type != ObType::In)
 	{
-		bool bContinue = false;
-		ExecAction action_r;
-		bool bC0 = ExpExec(R, rt, action_r, pContext, v0, lValue);
-		if (bC0)
+		return false;
+	}
+	InOp* pIn = dynamic_cast<InOp*>(R);
+	Expression* iterableExp = pIn->GetR();
+	Expression* varExp = pIn->GetL();
+	if(varExp == nullptr || iterableExp == nullptr)
+	{
+		return false;
+	}
+
+	ExecAction action_it;
+	X::Value iterableObj;
+	LValue* lValue_it = nullptr;
+	bool bOK = ExpExec(iterableExp, rt, action_it, pContext, iterableObj, lValue_it);
+	if (!bOK)
+	{
+		return false;
+	}
+	auto* pDataObj = dynamic_cast<Data::Object*>(iterableObj.GetObj());
+	if(!pDataObj)
+	{
+		return false;
+	}
+	X::Data::Iterator_Pos curPos = nullptr;
+	std::vector<Value> vals;
+	while (pDataObj->GetAndUpdatePos(curPos, vals, false))
+	{
+		varExp->SetArry(dynamic_cast<XlangRuntime*>(rt),pContext, vals);
+		vals.clear();
+		ExecAction action0;
+		Block::Exec_i(rt, action0, pContext, v);
+		//if break, will break this while loop
+		//if continue, continue loop
+		if (action0.type == ExecActionType::Break)
 		{
-			if (v0.IsObject())
-			{
-				ARGS params(0);
-				KWARGS kwParams;
-				X::Value retBoolValue;
-				if (v0.GetObj()->Call(rt, pContext, 
-					params, kwParams, retBoolValue) 
-					&& retBoolValue.IsTrue())
-				{
-					bContinue = true;
-				}
-			}
-			else//range case
-			{
-				bContinue = true;
-			}
+			break;//break while
 		}
-		if (bContinue)
+		else if (action0.type == ExecActionType::Return)
 		{
-			ExecAction action0;
-			Block::Exec_i(rt,action0, pContext, v);
-			//if break, will break this while loop
-			//if continue, continue loop
-			if (action0.type == ExecActionType::Break)
-			{
-				break;//break while
-			}
-			else if (action0.type == ExecActionType::Return)
-			{
-				action = action0;//need to pass back to up level if got return until it meet function
-				break;
-			}
-		}
-		else
-		{
+			action = action0;//need to pass back to up level if got return until it meet function
 			break;
 		}
 	}

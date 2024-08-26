@@ -46,9 +46,6 @@ namespace X
 			case X::AST::ObType::In:
 				bOK = static_cast<InOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;
-			case X::AST::ObType::Range:
-				bOK = static_cast<Range*>(pExp)->Exec(rt, action, pContext, v, lValue);
-				break;
 			case X::AST::ObType::Var:
 				bOK = static_cast<Var*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;

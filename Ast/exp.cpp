@@ -64,9 +64,6 @@ Expression* Expression::CreateByType(ObType t)
 	case ObType::In:
 		pExp = new InOp();
 		break;
-	case ObType::Range:
-		pExp = new Range();
-		break;
 	case ObType::Var:
 		pExp = new Var();
 		break;

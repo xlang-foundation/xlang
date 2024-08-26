@@ -60,6 +60,10 @@ namespace Data
 			stream >> m_s;
 			return true;
 		}
+		virtual bool IsContain(X::Value& val) override
+		{
+			return m_s.find(val.ToString()) != std::string::npos;
+		}
 		FORCE_INLINE virtual const char* ToString(bool WithFormat = false) override
 		{
 			return GetABIString(m_s);

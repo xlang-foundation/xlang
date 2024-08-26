@@ -45,6 +45,12 @@ namespace X
 				Get(key, val);
 				return val;
 			}
+			virtual bool IsContain(X::Value& val) override
+			{
+				//search the key
+				auto it = mMap.find(val);
+				return it != mMap.end();
+			}
 			virtual void Set(X::Value& key, X::Value& val) override
 			{
 				auto it = mMap.find(key);
