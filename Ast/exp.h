@@ -22,7 +22,6 @@ enum class ObType
 	UnaryOp,
 	PipeOp,
 	In,
-	Range,
 	Var,
 	Str,
 	Const,

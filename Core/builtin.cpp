@@ -49,6 +49,7 @@
 #include "struct.h"
 #include "glob.h"
 #include "dbg.h"
+#include "range.h"
 
 namespace X
 {
@@ -501,6 +502,36 @@ bool U_Time(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(t);
 	return true;
 }
+bool U_CreateRange(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	long long start = 0;
+	long long stop = 0;
+	long long step = 1;
+
+	if (params.size() ==1)
+	{
+		stop = params[0].GetLongLong();
+	}
+	else if(params.size() ==2)
+	{
+		start = params[0].GetLongLong();
+		stop = params[1].GetLongLong();
+	}
+	else if(params.size() ==3)
+	{
+		start = params[0].GetLongLong();
+		stop = params[1].GetLongLong();
+		step = params[2].GetLongLong();
+	}
+	auto* pRangeObj = new X::Data::Range(start, stop, step);
+
+	retValue = X::Value(pRangeObj);
+	return true;
+}
+
 bool U_NewModule(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1800,6 +1831,7 @@ bool Builtin::RegisterInternals()
 		"sleep(milliseconds|time=milliseconds) or a_func.sleep(time=milliseconds), \
 		after the sleep will call this function");
 	Register("time", (X::U_FUNC)U_Time, params);
+	Register("range", (X::U_FUNC)U_CreateRange, params,"range(start,stop,step) or range(stop)");
 	Register("breakpoint", (X::U_FUNC)U_BreakPoint, params);
 	Register("pushWritepad", (X::U_FUNC)U_PushWritePad, params,"pushWritepad(obj which has WritePad(input) func)");
 	Register("popWritepad", (X::U_FUNC)U_PopWritePad, params,"popWritepad() pop up last WritePad");

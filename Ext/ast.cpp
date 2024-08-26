@@ -86,7 +86,6 @@ namespace X
             case X::AST::ObType::Pair:
             case X::AST::ObType::In:
             case X::AST::ObType::PipeOp:
-            case X::AST::ObType::Range:
             case X::AST::ObType::BinaryOp:
             {
                 X::List list;
@@ -309,8 +308,6 @@ namespace X
                 break;
             case X::AST::ObType::In:
                 break;
-            case X::AST::ObType::Range:
-                break;
             case X::AST::ObType::Var:
             {
                 Var* pVar = dynamic_cast<Var*>(m_pNode);
@@ -475,9 +472,6 @@ namespace X
                 break;
             case X::AST::ObType::In:
                 return X::Value("In");
-                break;
-            case X::AST::ObType::Range:
-                return X::Value("Range");
                 break;
             case X::AST::ObType::Var:
                 return X::Value("Var");

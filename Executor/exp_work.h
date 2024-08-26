@@ -37,9 +37,6 @@ namespace X
 			case X::AST::ObType::In:
 				static_cast<X::AST::InOp*>(pExp)->Expanding(expStack);
 				break;
-			case X::AST::ObType::Range:
-				static_cast<X::AST::Range*>(pExp)->Expanding(expStack);
-				break;
 			case X::AST::ObType::Var:
 			{
 				X::AST::ExecAction exeAction;
@@ -191,16 +188,6 @@ namespace X
 				X::Value retVal;
 				auto ok = static_cast<X::AST::InOp*>(pExp)->ExpRun(rt, left, right, retVal);
 				valueStack.push({ pExp,ok,nullptr });
-			}
-			break;
-			case X::AST::ObType::Range:
-			{
-				auto* pRange = static_cast<X::AST::Range*>(pExp);
-				auto& rightValue = valueStack.top();
-				valueStack.pop();
-				X::Value retVal;
-				auto ok = static_cast<X::AST::Range*>(pExp)->ExpRun(rt, rightValue, retVal);
-				valueStack.push({ pExp,retVal,nullptr });
 			}
 			break;
 			case X::AST::ObType::Var:

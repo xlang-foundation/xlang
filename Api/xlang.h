@@ -25,6 +25,7 @@ namespace X
 		Future,
 		TaskPool,
 		Iterator,
+		Range,
 		List,
 		Dict,
 		Tensor,

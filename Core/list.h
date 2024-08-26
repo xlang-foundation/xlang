@@ -434,6 +434,31 @@ public:
 		vals.push_back(X::Value(nPos));
 		return true;
 	}
+	virtual bool IsContain(X::Value& val) override
+	{
+		AutoLock autoLock(m_lock);
+		if (m_useLValue)
+		{
+			for (auto& it : m_ptrs)
+			{
+				if (*it == val)
+				{
+					return true;
+				}
+			}
+		}
+		else
+		{
+			for (auto& it : m_data)
+			{
+				if (it == val)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 	virtual Value Get(long long idx) override
 	{
 		Value v0;
