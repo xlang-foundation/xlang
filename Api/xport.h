@@ -414,7 +414,7 @@ namespace X
 				}
 				else
 				{
-					int keyLen = strlen(key)+1;
+					int keyLen = (int)strlen(key)+1;
 					item.key = new char[keyLen];
 					memcpy((char*)item.key, key, keyLen);
 				}
