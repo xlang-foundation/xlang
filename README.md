@@ -32,7 +32,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 
 #### Linux (Ubuntu):
 1. Install prerequisites:
-    - UUID: `sudo apt-get install uuid-dev`
+    - UUID(required): `sudo apt-get install uuid-dev`
     - OpenSSL (for HTTP plugin): `sudo apt-get install libssl-dev`
     - Python3 (optional for Python library integration): 
       ```bash
@@ -63,9 +63,9 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 
 #### macOS:
 1. Install prerequisites:
-    - UUID: `brew install ossp-uuid`
+    - UUID(required): `brew install ossp-uuid`
     - OpenSSL (for HTTP plugin): `brew install openssl`
-    - Turbo-jpeg(optional for image module): 'brew install jpeg-turbo'
+    - Turbo-jpeg(optional for image module): `brew install jpeg-turbo`
 
     - Python3 (optional for Python library integration): 
       ```bash
