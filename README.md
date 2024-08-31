@@ -1,5 +1,3 @@
-Here’s how the updated README.md would look with the added examples:
-
 ---
 
 # XLang™
