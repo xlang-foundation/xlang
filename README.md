@@ -18,7 +18,7 @@ XLang has been thoroughly tested on Linux platforms, including successful deploy
 ### Building XLang™
 
 ## For `optimal performance`, please ensure that XLang is built in `Release mode`. You can do this by running:
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release .. 
 
 
 #### Windows:
