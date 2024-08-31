@@ -226,7 +226,7 @@ namespace X
 		bool PyProxyObject::CalcCallables(XlangRuntime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
-			callables.push_back(dynamic_cast<AST::Scope*>(this));
+			callables.push_back(m_pMyScope);
 			return true;
 		}
 		bool PyProxyObject::Call(XRuntime* rt, XObj* pContext,
