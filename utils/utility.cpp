@@ -312,7 +312,7 @@ bool file_search(std::string folder, std::string fileName, std::vector<std::stri
     if (bOK) {
         for (auto& f : files) {
             if (f == fileName) {
-                outFiles.push_back(folder + "/" + f);
+                outFiles.push_back(folder + Path_Sep_S + f);
                 bFind = true;
                 if (!findAll) {
                     break;
@@ -320,7 +320,7 @@ bool file_search(std::string folder, std::string fileName, std::vector<std::stri
             }
         }
         for (auto& fd : subfolders) {
-            bool bRet = file_search(folder + "/" + fd, fileName, outFiles, findAll);
+            bool bRet = file_search(folder + Path_Sep_S + fd, fileName, outFiles, findAll);
             if (bRet) {
                 bFind = true;
                 if (!findAll) {
