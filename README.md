@@ -65,6 +65,8 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 1. Install prerequisites:
     - UUID: `brew install ossp-uuid`
     - OpenSSL (for HTTP plugin): `brew install openssl`
+    - Turbo-jpeg(optional for image module): 'brew install jpeg-turbo'
+
     - Python3 (optional for Python library integration): 
       ```bash
       brew install python3
