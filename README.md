@@ -117,12 +117,14 @@ xlang -help | -? | -h for help
   ```bash
   $ ./xlang -cli
   ```
+> Under the test folder, you'll find numerous XLang and Python code examples that can be used for testing. While some files may currently break, we are actively working on improving compatibility with Python syntax and its ecosystem.
 
 #### Debugging in VS Code:
 - Install the XLang™ plugin.
 - Start XLang™ with `-event_loop -dbg -enable_python`.
 - Open or create a `.x` file and begin debugging from the VS Code menu.
 > **Note:** Debugging in VS Code has not been tested on Linux and macOS.
+
 ### Building for Android:
 1. On Windows, install Android Studio.
 2. Open the XLang™ project from the `xlang\Android` folder.
