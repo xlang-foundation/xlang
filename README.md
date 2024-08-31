@@ -4,10 +4,16 @@
 
 XLang™ is a next-generation programming language crafted for AI and IoT applications, designed to deliver dynamic, high-performance computing. It excels in distributed computing and offers seamless integration with popular languages like C++, Python, and JavaScript, making it a versatile choice across diverse operating systems.
 
+Unlike Python or other instruction-based languages, XLang is an expression language. It runs directly from the Abstract Syntax Tree (AST) and parallelly executes expression-based data flows across multiple available execution pipelines.
+
 ### Key Features
 - **High Efficiency**: XLang™ runs 3 to 5 times faster than Python, particularly in AI and deep learning applications.
 - **Optimized Tensor Computing**: The language includes a fully optimized tensor computing architecture, enabling effortless neural network construction through tensor expressions.
 - **Performance Boost on GPU**: In CUDA-enabled GPU environments, XLang™ can enhance inference and training performance by 6 to 10 times, automating tensor data flow graph generation and target-specific compilation.
+
+If you're interested in contributing to the XLang project, we would love to hear from you. Whether you're a developer, tester, or simply passionate about advancing this technology, please don't hesitate to reach out. For more information or to get involved, send us an email at info@xlangfoundation.org, and we'll be happy to provide you with the necessary details.
+
+XLang has been thoroughly tested on Linux platforms, including successful deployment on Raspberry Pi boards. It also works on the Raspberry Pi Pico, offering flexibility for a wide range of projects. However, if you need specific build instructions or have any questions regarding the setup for the Raspberry Pi Pico, please contact us at the same email address. We're here to support you and ensure your experience with XLang is as smooth as possible.
 
 ### Building XLang™
 
@@ -81,6 +87,8 @@ XLang™ is a next-generation programming language crafted for AI and IoT applic
     ```bash
     make
     ```
+
+`You can also use Xcode to open the XLang folder for compilation.`
 
 ### Running XLang™
 
