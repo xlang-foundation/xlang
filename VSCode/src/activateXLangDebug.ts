@@ -105,19 +105,13 @@ export async function activateXLangDebug(context: vscode.ExtensionContext, facto
 		provideDebugConfigurations(folder: WorkspaceFolder | undefined): ProviderResult<DebugConfiguration[]> {
 			return [
 				{
-					name: "Dynamic Launch",
+					name: "Launch",
 					request: "launch",
 					type: "xlang",
 					program: "${file}"
 				},
 				{
-					name: "Another Dynamic Launch",
-					request: "launch",
-					type: "xlang",
-					program: "${file}"
-				},
-				{
-					name: "xlang Launch",
+					name: "Attach",
 					request: "launch",
 					type: "xlang",
 					program: "${file}"
@@ -188,21 +182,58 @@ export async function activateXLangDebug(context: vscode.ExtensionContext, facto
 	return factory;
 }
 
+const ipPortRegex = /^((localhost)|((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)):([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/i
+const ipRegex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})$/;
+const ipHostPortRegex = /^(?:(?:\d{1,3}\.){3}\d{1,3}|\[(?:[a-fA-F0-9:]+)\]|(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+|\w+):\d{1,5}$/;
+
 class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 
 	/**
 	 * Massage a debug configuration just before a debug session is being launched,
 	 * e.g. add all missing attributes to the debug configuration.
 	 */
-	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+	async resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
 
 		// if launch.json is missing or empty
 		if (!config.type && !config.request && !config.name) {
 			const editor = vscode.window.activeTextEditor;
 			if (editor && editor.document.languageId === 'xlang') {
+				const items = ['launch', 'attach'];
+				const options: vscode.QuickPickOptions = {
+					title: 'Select a mode to run debug',
+					placeHolder: 'launch'
+				};
+				let mode = await vscode.window.showQuickPick(items, options);
+				if (mode)
+				{
+					config.request = mode;
+				}
+				else
+				{
+					config.request = 'launch';
+				}
+				if (config.request === 'attach')
+				{
+					let dbgAddr = await vscode.window.showInputBox({value: "localhost:3142", prompt: "input remote xlang dbg address and port, empty or cancel to run xlang on a random port locally", placeHolder: "ip or host name:port"});
+					if (dbgAddr)
+					{
+						dbgAddr = dbgAddr.replace(/\s/g, '');
+						if(ipHostPortRegex.test(dbgAddr))
+						{
+							const strList = dbgAddr.split(":");
+							config.dbgIp = strList[0];
+							config.dbgPort = Number(strList[1]);
+						}
+						else
+						{
+							await vscode.window.showErrorMessage("please input valid address and port to attach, debugging stopped", { modal: true }, "ok");
+							return undefined;
+						}
+					}
+				}
+				
 				config.type = 'xlang';
-				config.name = 'Launch';
-				config.request = 'launch';
+				config.name = 'Dynamic Debug';
 				config.program = '${file}';
 				config.stopOnEntry = true;
 			}

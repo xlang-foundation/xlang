@@ -44,14 +44,14 @@ public:
 			std::getline(std::cin, input);
 			if (input == "c" || input == "C")
 			{
-				m_rt->M()->SetDbgType(AST::dbg::Continue,
-					AST::dbg::Continue);
+				m_rt->SetDbgType(dbg::Continue,
+					dbg::Continue);
 				break;
 			}
 			else if (input == "s" || input == "S")
 			{
-				m_rt->M()->SetDbgType(AST::dbg::Step,
-					AST::dbg::Step);
+				m_rt->SetDbgType(dbg::Step,
+					dbg::Step);
 				break;
 			}
 			else if(input == "l" || input == "L")
@@ -100,11 +100,11 @@ public:
 		AST::Expression* exp, XObj* pContext)
 	{
 		auto* pModule = rt->M();
-		AST::CommandInfo* pCmdInfo;
+		CommandInfo* pCmdInfo;
 		bool mLoop = true;
 		while (mLoop)
 		{
-			pCmdInfo = pModule->PopCommand();
+			pCmdInfo = rt->PopCommand();
 			if (pCmdInfo == nullptr)
 			{
 				//todo:
@@ -120,8 +120,8 @@ public:
 			}
 			switch (pCmdInfo->dbgType)
 			{
-			case AST::dbg::GetRuntime:
-			case AST::dbg::StackTrace:
+			case dbg::GetRuntime:
+			case dbg::StackTrace:
 				//just get back the current exp, then
 				//will calcluate out stack frames
 				//by call AddCommand
@@ -135,40 +135,41 @@ public:
 					}
 				}
 				break;
-			case AST::dbg::Continue:
-				m_rt->M()->SetDbgType(AST::dbg::Continue,
-					AST::dbg::Continue);
+			case dbg::Continue:
+				m_rt->SetDbgType(dbg::Continue,	dbg::Continue);
 				mLoop = false;
 				break;
-			case AST::dbg::Step:
-				m_rt->M()->SetDbgType(AST::dbg::Step,
-					AST::dbg::Step);
-				mLoop = false;
-				break;
-			case AST::dbg::StepIn:
+			case dbg::Step:
+			{
+				std::vector<AST::Scope*> callables;
+				exp->CalcCallables(rtForDebugThread, pContext, callables);
+				if (callables.size() > 0 && callables[0]->GetExp() && callables[0]->GetExp()->m_type == AST::ObType::Func)// can trace into
 				{
-					std::vector<AST::Scope*> callables;
-					if (exp->CalcCallables(rtForDebugThread,pContext,callables))
-					{
-						for (auto& ca : callables)
-						{
-							m_rt->M()->AddDbgScope(ca);
-						}
-					}
+					m_rt->SetDbgType(dbg::StepOut, dbg::Step); // set DbgType to StepOut to skip trace in this exp
+					m_rt->m_pFirstStepOutExp = callables[0]->GetExp();
 				}
-				//TODO: check here 
-				//m_rt->M()->SetDbgType(AST::dbg::Step,AST::dbg::StepIn);
-				m_rt->M()->SetDbgType(AST::dbg::StepIn, AST::dbg::StepIn);
+				else
+					m_rt->SetDbgType(dbg::Step, dbg::Step);// can not trace into
 				mLoop = false;
 				break;
-			case AST::dbg::StepOut:
-				m_rt->M()->RemoveDbgScope(pThisBlock);
-				m_rt->M()->SetDbgType(AST::dbg::Step,
-					AST::dbg::StepOut);
+			}
+			case dbg::StepIn:
+			{
+				std::vector<AST::Scope*> callables;
+				exp->CalcCallables(rtForDebugThread, pContext, callables);
+				if (callables.size() > 0 && callables[0]->GetExp()->m_type == AST::ObType::Func)
+					m_rt->SetDbgType(dbg::StepIn, dbg::StepIn);// can trace into
+				else
+					m_rt->SetDbgType(dbg::Step, dbg::StepIn);// can not trace into
 				mLoop = false;
 				break;
-			case AST::dbg::Terminate:
-				//m_rt->M()->SetDbgType(AST::dbg::Terminate, AST::dbg::Terminate);
+			}
+			case dbg::StepOut:
+				m_rt->SetDbgType(dbg::StepOut,	dbg::StepOut);
+				mLoop = false;
+				break;
+			case dbg::Terminate:
+				//m_rt->SetDbgType(dbg::Terminate, dbg::Terminate);
 				//mLoop = false;
 				break;
 			default:
@@ -184,7 +185,7 @@ public:
 	FORCE_INLINE bool ExitBlockRun(XlangRuntime* rt,XObj* pContext,
 		AST::Scope* pThisBlock)
 	{
-		if (m_rt->M()->IsInDebug())
+		if (G::I().GetTrace())
 		{
 			m_rt->M()->RemoveDbgScope(pThisBlock);
 		}
@@ -216,46 +217,48 @@ public:
 		AST::Scope* pThisBlock,
 		AST::Expression* exp, XObj* pContext)
 	{
-		
+		if (!G::I().GetTrace())
+			return true;
+
 		AST::Module* expModule = GetExpModule(exp);
-		if (!expModule && !expModule->IsInDebug())
+		if (!expModule && !G::I().GetTrace())
 		{
 			return false;
 		}
 		//check breakpoints
 		int line = exp->GetStartLine();
-		if (expModule->HitBreakpoint(rt,line))
+		if (G::I().GetTrace() && expModule->HitBreakpoint(rt,line)) // if attached, check if a breakpoint hitted
 		{
 			WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
-			if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)
+			if (m_rt->GetDbgType() == X::dbg::Terminate)
 				return false;
 			else
-			        return true;
+			    return true;
 		}
-		auto st = m_rt->M()->GetDbgType();
+		auto st = G::I().GetTrace() ? m_rt->GetDbgType() : X::dbg::Continue; // if detached, set DbgType to Continue
 		switch (st)
 		{
-		case X::AST::dbg::Continue:
+		case X::dbg::Continue:
 			break;
-		case X::AST::dbg::Step:
+		case X::dbg::Step:
 		{
 			if (m_rt->M()->InDbgScope(pThisBlock))
 			{
 				// stopOnEntry
-				if (m_rt->M()->GetLastRequestDgbType() == X::AST::dbg::None)
+				if (m_rt->GetLastRequestDgbType() == X::dbg::None)
 					m_rt->M()->StopOn("StopOnEntry");
 				else
 					m_rt->M()->StopOn("StopOnStep");
 
 				WaitForCommnd(evt, rt, pThisBlock, exp, pContext);
-				if (m_rt->M()->GetDbgType() == X::AST::dbg::Terminate)
+				if (m_rt->GetDbgType() == X::dbg::Terminate)
 					return false;
 				else
 					return true;
 			}
 		}
 		break;
-		case X::AST::dbg::Terminate:
+		case X::dbg::Terminate:
 		{
 			return false;
 		}

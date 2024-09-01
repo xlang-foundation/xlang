@@ -147,6 +147,8 @@ export class XLangRuntime extends EventEmitter {
 		return false;
 	}
 
+	public runMode = "";
+
 	// This is the next instruction that will be 'executed'
 	public instruction= 0;
 
@@ -174,37 +176,44 @@ export class XLangRuntime extends EventEmitter {
 		return this.varRefMap[refId];
 	}
 
-	public close() {
-		this.terminateXlang();
+	public close(closeXlang: boolean) {
+		if (closeXlang){
+			this.terminateXlang();
+		}
+		else{
+			this.setDebug(false);
+		}
 		this.sourceModuleKeyMap.clear();
 		this._sourceFile = '';
 		this._moduleKey = 0;
 		this._sessionRunning = false;
+		this.reqNotify?.abort();
 	}
 	public async loadSource(file: string): Promise<number> {
 		let srcFile = this.normalizePathAndCasing(file);
-		let key = this.sourceModuleKeyMap.get(srcFile);
-		if (key != undefined) {
-			return key;
-        }
+		// let key = this.sourceModuleKeyMap.get(srcFile);
+		// if (key !== undefined) {
+		// 	this.setDebug(true);
+		// 	return key;
+        // }
 		let srcFile_x = srcFile.replaceAll('\\', '/');
 		let code;
 		if (this.isLocalServer())
 		{
-			code = "m = load('" + srcFile_x + "')\nreturn m";
+			code = "m = load('" + srcFile_x + "','" + this.runMode + "')\nreturn m";
 		}
 		else
 		{
-			const content = fs.readFileSync(file);
-			code = "m = load('" + srcFile_x + "','" + content + "')\nreturn m";
+			const content = fs.readFileSync(file); // only the fist file
+			code = "m = load('" + srcFile_x + "','" + this.runMode + "','" + content + "')\nreturn m";
 		}
 		let promise = new Promise((resolve, reject) => {
 			this.Call(code, resolve);
 		});
 		let retVal= await promise as number;
-		this.sourceModuleKeyMap.set(srcFile, retVal);
+		//this.sourceModuleKeyMap.set(srcFile, retVal);
 		this._sourceFile = srcFile;
-		this._moduleKey = retVal;
+		this._moduleKey = retVal; // 0 for a previous loaded module
 		return retVal;
 	}
 	private tryTimes = 1;
@@ -257,6 +266,7 @@ export class XLangRuntime extends EventEmitter {
 		https.request(options).end();
 	}
 
+	private reqNotify;
 	private async fetchNotify()
 	{
 		const https = require('http');
@@ -267,7 +277,7 @@ export class XLangRuntime extends EventEmitter {
 			method: 'GET'
 		};
 		console.log(`fetchNotify request started`);
-		const req = https.request(options, res => {
+		this.reqNotify = https.request(options, res => {
 			console.log(`fetchNotify->statusCode: ${res.statusCode}`);
 			res.on('data', d => {
 				var strData = new TextDecoder().decode(d);
@@ -295,7 +305,7 @@ export class XLangRuntime extends EventEmitter {
 									this.sendEvent('threadExited', kv["ThreadExited"]);
 							}
 								else if(kv.hasOwnProperty("BreakpointPath")){
-									this.sendEvent('breakpointState', kv["BreakpointPath"], kv["line"]);
+									this.sendEvent('breakpointState', kv["BreakpointPath"], kv["line"], kv["actualLine"]);
 								}
 						}
 					}
@@ -315,9 +325,14 @@ export class XLangRuntime extends EventEmitter {
 			});
 		});
 	
-		req.on('error', error => {
+		this.reqNotify.on('error', error => {
 			console.error("fetchNotify->",error);
-			if(this._sessionRunning )
+			if (error?.code === "ECONNRESET")
+			{
+				vscode.window.showErrorMessage(`disconnect from xlang dbg server at ${this.serverAddress}:${this.serverPort} debugging stopped`, { modal: true }, "ok");
+				this.sendEvent('end');
+			}
+			else if(this._sessionRunning )
 			{
 				var thisObj = this;
 				setTimeout(function() {
@@ -325,7 +340,7 @@ export class XLangRuntime extends EventEmitter {
 				}, 100);
 			}
 		});
-		req.end();
+		this.reqNotify.end();
 	}
 	/**
 	 * Start executing the loaded program.
@@ -358,7 +373,7 @@ export class XLangRuntime extends EventEmitter {
 			});
 		}
 	}
-	private Call(code,cb)
+	private Call(code,cb?)
 	{
 		const https = require('http');
 		const querystring = require('querystring');
@@ -376,7 +391,7 @@ export class XLangRuntime extends EventEmitter {
 		console.log(`statusCode: ${res.statusCode}`);
 		var allData = "";
 		res.on('end', () => {
-			cb(allData);			
+			cb?.(allData);			
 		  });
 		res.on('data', d => {
 			var strData = new TextDecoder().decode(d);
@@ -453,6 +468,12 @@ export class XLangRuntime extends EventEmitter {
 				label: `target: ${c}`
 			};
 		});
+	}
+	
+	private setDebug(bDebug : boolean)
+	{
+		let code = "import xdb\nreturn xdb.set_debug(" + (bDebug ? '1' : '0') +")";
+		this.Call(code);
 	}
 
 	public getThreads(cb: Function)

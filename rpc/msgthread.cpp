@@ -121,11 +121,17 @@ namespace X
         sa.nLength = sizeof(SECURITY_ATTRIBUTES);
         sa.lpSecurityDescriptor = &sd;
         sa.bInheritHandle = FALSE;
-        HANDLE hSlot = CreateMailslot(
-            msgKey.c_str(),
-            0,
-            MAILSLOT_WAIT_FOREVER,
-            &sa);
+        HANDLE hSlot = INVALID_HANDLE_VALUE;
+        while (hSlot == INVALID_HANDLE_VALUE && mRun)
+        {
+            hSlot = CreateMailslot(
+                msgKey.c_str(),
+                0,
+                MAILSLOT_WAIT_FOREVER,
+                &sa);
+            if (hSlot == INVALID_HANDLE_VALUE)
+                Sleep(100);
+        }
         while (mRun)
         {
             std::vector<pas_mesg_buffer> msgs;

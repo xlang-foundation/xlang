@@ -47,6 +47,9 @@
 #include "ast.h"
 #include "time_object.h"
 #include "struct.h"
+#include "glob.h"
+#include "dbg.h"
+#include "range.h"
 
 namespace X
 {
@@ -73,6 +76,37 @@ FORCE_INLINE static std::string CombineParamsToString(X::ARGS& params)
 	return allOut;
 }
 Locker _printLock;
+
+
+bool U_RegisterRemoteObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	std::string objName = params[0].ToString();
+	X::Value obj;
+	if(params.size() > 1)
+	{
+		obj = params[1];
+	}
+	else
+	{
+		X::XlangRuntime* pRT = dynamic_cast<X::XlangRuntime*>(rt);
+		auto* pModule = pRT->M();
+		if (pModule)
+		{
+			auto* pModuleObj = new X::AST::ModuleObject(pModule);
+			obj = X::Value(pModuleObj);
+		}
+	}
+	X::Manager::I().Register(objName.c_str(), obj);
+	return true;
+}
 bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -174,19 +208,43 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		return true;
 	}
 	std::string code;
-	if (params.size() == 2)
+	std::string runMode;
+	bool loadFromFile = true;
+	if (params.size() == 3) // launch or attach with source code
 	{
-		code = params[1].ToString();
+		runMode = params[1].ToString();
+		code = params[2].ToString();
+		loadFromFile = false;
+	}
+	else if (params.size() == 2) // launch or attach without source code
+	{
+		runMode = params[1].ToString();
+	}
+
+	if (!runMode.empty()) // enable debug
+		X::G::I().SetTrace(X::Dbg::xTraceFunc);
+
+	std::vector<X::AST::Module*> modules = X::Hosting::I().QueryModulesByPath(fileName);
+	unsigned long long moduleKey = 0;
+	if (/*runMode.empty() || */modules.size() == 0)
+	{
+		if (loadFromFile)
+		{
+			std::ifstream moduleFile(fileName);
+			code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
+			moduleFile.close();
+		}
+		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
+		retValue = X::Value(moduleKey);
 	}
 	else
 	{
-		std::ifstream moduleFile(fileName);
-		code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
-		moduleFile.close();
+		if (!runMode.empty())
+			retValue = X::Value(0); // for vscode debug extension
+		else
+			retValue = X::Value((unsigned long long)modules[0]);
 	}
-	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
-	retValue = X::Value(moduleKey);
+	
 	return true;
 }
 bool U_LoadS(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
@@ -444,6 +502,36 @@ bool U_Time(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(t);
 	return true;
 }
+bool U_CreateRange(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	long long start = 0;
+	long long stop = 0;
+	long long step = 1;
+
+	if (params.size() ==1)
+	{
+		stop = params[0].GetLongLong();
+	}
+	else if(params.size() ==2)
+	{
+		start = params[0].GetLongLong();
+		stop = params[1].GetLongLong();
+	}
+	else if(params.size() ==3)
+	{
+		start = params[0].GetLongLong();
+		stop = params[1].GetLongLong();
+		step = params[2].GetLongLong();
+	}
+	auto* pRangeObj = new X::Data::Range(start, stop, step);
+
+	retValue = X::Value(pRangeObj);
+	return true;
+}
+
 bool U_NewModule(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -614,8 +702,8 @@ bool U_BreakPoint(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	KWARGS& kwParams,
 	X::Value& retValue)
 {
-	((X::XlangRuntime*)rt)->M()->SetDbgType(AST::dbg::Step,
-		AST::dbg::Step);
+	((X::XlangRuntime*)rt)->SetDbgType(dbg::Step,
+		dbg::Step);
 	retValue = X::Value(true);
 	return true;
 }
@@ -1710,6 +1798,7 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 #endif
 	return bOK;
 }
+
 bool Builtin::RegisterInternals()
 {
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
@@ -1725,6 +1814,7 @@ bool Builtin::RegisterInternals()
 	X::RegisterPackage<X::TimeObject>(m_libName.c_str(), "time");
 #endif
 	std::vector<std::pair<std::string, std::string>> params;
+	Register("register_remote_object", (X::U_FUNC)U_RegisterRemoteObject, params, "register_remote_object(name[,obj])");
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
 	Register("alert", (X::U_FUNC)U_Alert, params, "alert(...)");
@@ -1741,6 +1831,7 @@ bool Builtin::RegisterInternals()
 		"sleep(milliseconds|time=milliseconds) or a_func.sleep(time=milliseconds), \
 		after the sleep will call this function");
 	Register("time", (X::U_FUNC)U_Time, params);
+	Register("range", (X::U_FUNC)U_CreateRange, params,"range(start,stop,step) or range(stop)");
 	Register("breakpoint", (X::U_FUNC)U_BreakPoint, params);
 	Register("pushWritepad", (X::U_FUNC)U_PushWritePad, params,"pushWritepad(obj which has WritePad(input) func)");
 	Register("popWritepad", (X::U_FUNC)U_PopWritePad, params,"popWritepad() pop up last WritePad");

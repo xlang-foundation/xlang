@@ -15,16 +15,39 @@ namespace X
 {
 namespace AST
 {
-	void InOp::DoIterator(Value& var0, Value& v)
+	bool InOp::Exec(XlangRuntime* rt, ExecAction& action, 
+		XObj* pContext, Value& v, LValue* lValue)
 	{
-		auto* pIt = new Data::Iterator();
-		pIt->SetContainer(var0);
-		if (L)
+		bool bOK = true;
+		if (L == nullptr || R == nullptr)
 		{
-			pIt->SetImpactVar(L);
+			return false;
 		}
-		v = X::Value(dynamic_cast<XObj*>(pIt));
+		ExecAction action_getVal;
+		X::Value valLeft;
+		bOK = ExpExec(L, rt, action_getVal, pContext, valLeft);
+		if (!bOK)
+		{
+			return false;
+		}
+		X::Value containerObj;
+		bOK = ExpExec(R, rt, action_getVal, pContext, containerObj);
+		if (!bOK)
+		{
+			return false;
+		}
+		if (containerObj.IsObject())
+		{
+			auto* pObj = dynamic_cast<X::Data::Object*>(containerObj.GetObj());
+			v = pObj->IsContain(valLeft);
+		}
+		else
+		{
+			v = Value(false);
+		}
+		return bOK;
 	}
+
 	bool Assign::ObjectAssign(XlangRuntime* rt, XObj* pContext,XObj* pObj, Value& v, Value& v_r, LValue& lValue_L)
 	{
 		bool bOK = true;
@@ -163,35 +186,6 @@ bool UnaryOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,L
 		action.type = ExecActionType::Return;
 	}
 	return func ? func(rt,this, v_r, v) : false;
-}
-
-bool Range::Eval(XlangRuntime* rt)
-{
-	if (R && R->m_type == ObType::Pair)
-	{
-		PairOp* p = dynamic_cast<PairOp*>(R);
-		Expression* param = p->GetR();
-		if (param)
-		{
-			if (param->m_type == ObType::List)
-			{
-
-			}
-			else
-			{//only one parameter, means stop
-				Value vStop;
-				ExecAction action;
-				ExpExec(param,rt, action,nullptr, vStop);
-				if (vStop.GetType() == ValueType::Int64)
-				{
-					m_stop = vStop.GetLongLong();
-				}
-			}
-		}
-
-	}
-	m_evaluated = true;
-	return true;
 }
 
 bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands, int LeftTokenIndex)

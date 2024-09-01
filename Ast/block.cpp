@@ -6,6 +6,7 @@
 #include <iostream>
 #include "utility.h"
 #include "InlineCall.h"
+#include "iterator.h"
 
 extern bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
@@ -38,7 +39,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 {
 	bool bOk = true;
 	m_bRunning = true;
-	auto Trace = rt->GetTrace();
+	auto Trace = G::I().GetTrace();
 	Scope* pCurScope = nullptr;
 	bool useMyScope = (m_type == ObType::Func 
 		|| m_type == ObType::Class 
@@ -54,13 +55,13 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 
 	//if being traced, go to here
 	bool bEnterBlock = false;
-	if (useMyScope && rt->M()->GetDbgType() == X::AST::dbg::StepIn)
+	if (useMyScope && rt->GetDbgType() == X::dbg::StepIn)
 	{
 		bEnterBlock = true;
-		Trace(rt, pContext,rt->GetCurrentStack(),TraceEvent::Call, pCurScope,nullptr);
+		Trace(rt, pContext,rt->GetCurrentStack(),TraceEvent::Call, pCurScope,nullptr); // do nothing
 		//then we need to change DbgType to Step from StepIn
 		//because the lines exec in Body will be step by step
-		rt->M()->SetDbgType(X::AST::dbg::Step, X::AST::dbg::StepIn);
+		rt->SetDbgType(X::dbg::Step, X::dbg::StepIn); // 
 	}
 	auto last = Body[Body.size() - 1];
 	for (auto& i : Body)
@@ -73,9 +74,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		rt->GetCurrentStack()->SetCurExp(i);
 		//std::cout << "Run Line(before check):" << line <<std::endl;
 
-		bool bRet = Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Line, pCurScope, i);
-		if (!bRet)
-			break;
+		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Line, pCurScope, i);
 
 		if (i->m_type == ObType::ActionOp)
 		{
@@ -129,8 +128,19 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 	m_bRunning = false;
 	if (bEnterBlock && (m_type == ObType::Func || m_type == ObType::Module))
 	{
-		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Return, pCurScope,nullptr);
+		Trace(rt, pContext, rt->GetCurrentStack(),TraceEvent::Return, pCurScope,nullptr); //
+		
 	}
+	if (useMyScope)
+	{
+		// change DbgType from StepOut to Step, if this block is the root function to step over or step out this block only(not step over a function or step over a function but interrupted by a breakpoint )
+		if (rt->GetDbgType() == X::dbg::StepOut && (this == rt->m_pFirstStepOutExp || !rt->m_pFirstStepOutExp)) // 
+		{
+			rt->SetDbgType(dbg::Step, X::dbg::StepOut);
+			rt->m_pFirstStepOutExp = nullptr;
+		}
+	}
+
 	return bOk;
 }
 
@@ -239,51 +249,73 @@ bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LVa
 	return true;
 }
 
+void For::ScopeLayout()
+{
+	if (R->m_type != ObType::In)
+	{
+		return;
+	}
+	InOp* pIn = dynamic_cast<InOp*>(R);
+	Expression* iterableExp = pIn->GetR();
+	Expression* varExp = pIn->GetL();
+	if (varExp == nullptr || iterableExp == nullptr)
+	{
+		return;
+	}
+	//change varExp's to left value
+	varExp->SetIsLeftValue(true);
+
+	varExp->ScopeLayout();
+	iterableExp->ScopeLayout();
+}
+
 bool For::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
-	Value v0;
-	while (true)
+	//R must be InOp
+	//so its left is a variable
+	//right is iterable object for example:list,dict,range
+	if (R->m_type != ObType::In)
 	{
-		bool bContinue = false;
-		ExecAction action_r;
-		bool bC0 = ExpExec(R, rt, action_r, pContext, v0, lValue);
-		if (bC0)
+		return false;
+	}
+	InOp* pIn = dynamic_cast<InOp*>(R);
+	Expression* iterableExp = pIn->GetR();
+	Expression* varExp = pIn->GetL();
+	if(varExp == nullptr || iterableExp == nullptr)
+	{
+		return false;
+	}
+
+	ExecAction action_it;
+	X::Value iterableObj;
+	LValue* lValue_it = nullptr;
+	bool bOK = ExpExec(iterableExp, rt, action_it, pContext, iterableObj, lValue_it);
+	if (!bOK)
+	{
+		return false;
+	}
+	auto* pDataObj = dynamic_cast<Data::Object*>(iterableObj.GetObj());
+	if(!pDataObj)
+	{
+		return false;
+	}
+	X::Data::Iterator_Pos curPos = nullptr;
+	std::vector<Value> vals;
+	while (pDataObj->GetAndUpdatePos(curPos, vals, false))
+	{
+		varExp->SetArry(dynamic_cast<XlangRuntime*>(rt),pContext, vals);
+		vals.clear();
+		ExecAction action0;
+		Block::Exec_i(rt, action0, pContext, v);
+		//if break, will break this while loop
+		//if continue, continue loop
+		if (action0.type == ExecActionType::Break)
 		{
-			if (v0.IsObject())
-			{
-				ARGS params(0);
-				KWARGS kwParams;
-				X::Value retBoolValue;
-				if (v0.GetObj()->Call(rt, pContext, 
-					params, kwParams, retBoolValue) 
-					&& retBoolValue.IsTrue())
-				{
-					bContinue = true;
-				}
-			}
-			else//range case
-			{
-				bContinue = true;
-			}
+			break;//break while
 		}
-		if (bContinue)
+		else if (action0.type == ExecActionType::Return)
 		{
-			ExecAction action0;
-			Block::Exec_i(rt,action0, pContext, v);
-			//if break, will break this while loop
-			//if continue, continue loop
-			if (action0.type == ExecActionType::Break)
-			{
-				break;//break while
-			}
-			else if (action0.type == ExecActionType::Return)
-			{
-				action = action0;//need to pass back to up level if got return until it meet function
-				break;
-			}
-		}
-		else
-		{
+			action = action0;//need to pass back to up level if got return until it meet function
 			break;
 		}
 	}

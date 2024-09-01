@@ -156,12 +156,6 @@ void Register(OpRegistry* reg)
 				auto op = new AST::ExternDecl(opIndex);
 				return (AST::Operator*)op;
 			});
-	RegOP("range")
-		.SetProcess(
-			[](Parser* p, short opIndex) {
-				auto op = new AST::Range(opIndex);
-				return (AST::Operator*)op;
-			});
 	RegOP("break","continue","pass")
 		.SetProcess([](Parser* p, short opIndex) {
 			auto op = new AST::ActionOperator(opIndex);

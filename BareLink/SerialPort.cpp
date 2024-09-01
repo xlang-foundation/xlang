@@ -18,7 +18,7 @@ bool SerialPort::openPort() {
     }
     GetCommTimeouts(hSerial, &timeouts);
 #else
-    fd = open(portName.c_str(), O_RDWR | O_NOCTTY);
+    fd = ::open(portName.c_str(), O_RDWR | O_NOCTTY);
     if (fd == -1) {
         return false;
     }

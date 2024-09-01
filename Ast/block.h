@@ -185,7 +185,7 @@ namespace X
 				{
 					return true;
 				}
-				if (rt->GetTrace())
+				if (!rt->m_bNoDbg && G::I().GetTrace())
 				{
 					return ExecForTrace(rt, action, pContext, v, lValue);
 				}
@@ -275,6 +275,7 @@ namespace X
 			{
 				m_type = ObType::For;
 			}
+			virtual void ScopeLayout() override;
 			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 		};
 		class While :

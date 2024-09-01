@@ -55,7 +55,7 @@ namespace X
 			m_lock.Unlock();
 		}
 
-		void SendBreakpointState(const std::string& path, int line);
+		void SendBreakpointState(const std::string& path, int line, int actualLine);
 	public:
 		void Cleanup()
 		{
@@ -116,5 +116,6 @@ namespace X
 			X::Value& retVal);
 		unsigned long long RunAsBackend(std::string& moduleName,std::string& code,std::vector<X::Value>& args);
 		bool PostRunFragmentInMainThread(AST::ModuleObject* pModuleObj,std::string& code);
+		void SetDebugMode(bool bDebug);
 	};
 }

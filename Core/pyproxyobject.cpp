@@ -49,9 +49,9 @@ namespace X
 			//need to addRef()??
 			//changed to IncRef for lock?? 2/2/2023
 			Object::IncRef();
-			if (rt->GetTrace())
+			if (G::I().GetTrace())
 			{
-				rt->GetTrace()(rt, pContext, rt->GetCurrentStack(),
+				G::I().GetTrace()(rt, pContext, rt->GetCurrentStack(),
 					TraceEvent::Call, m_pMyScope, this);
 			}
 			if (name == "sys")//for sys module, import directly
@@ -226,7 +226,7 @@ namespace X
 		bool PyProxyObject::CalcCallables(XlangRuntime* rt, XObj* pContext,
 			std::vector<AST::Scope*>& callables)
 		{
-			callables.push_back(dynamic_cast<AST::Scope*>(this));
+			callables.push_back(m_pMyScope);
 			return true;
 		}
 		bool PyProxyObject::Call(XRuntime* rt, XObj* pContext,

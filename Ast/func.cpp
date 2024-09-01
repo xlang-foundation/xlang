@@ -191,24 +191,18 @@ bool Func::Call(XRuntime* rt0,
 	KWARGS& kwParams,
 	Value& retValue)
 {
-	bool needAddScopeToTrace = false;
-	if (rt0 == nullptr)
-	{
-		auto* pMyModule = GetMyModule();
-		rt0 = pMyModule->GetRT();
-		needAddScopeToTrace = true;
-	}
 	auto* rt_from = (XlangRuntime*)rt0;
 	std::string name = GetNameString();
 	XlangRuntime* rt = G::I().Threading(name,rt_from);
+	auto oldModule = rt->M();
+
 	if (!rt->M())
 	{
 		rt->SetM(GetMyModule());
 	}
-	//TODO: check cost
-	if (needAddScopeToTrace && rt->GetTrace())
+	
+	if (G::I().GetTrace())
 	{
-		//check if this func's scope in debug scope list or not
 		rt->M()->AddDbgScope(m_pMyScope);
 	}
 
@@ -252,6 +246,10 @@ bool Func::Call(XRuntime* rt0,
 	rt->PopFrame();
 	retValue = pCurFrame->GetReturnValue();
 	delete pCurFrame;
+	if (G::I().GetTrace())
+	{
+		rt->M()->RemoveDbgScope(m_pMyScope);
+	}
 	return true;
 }
 XObj* ExternFunc::GetRightContextForClass(XObj* pContext)

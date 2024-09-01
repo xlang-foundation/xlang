@@ -26,6 +26,7 @@
 #include <sstream>
 #include "moduleobject.h"
 #include "parser.h"
+#include <algorithm> 
 
 namespace X 
 {
@@ -469,8 +470,11 @@ return nullptr;
 	bool XHost_Impl::LoadModule(const char* moduleName, 
 		const char* code, int codeSize, X::Value& objModule)
 	{
+		std::string path(moduleName);
+		std::replace(path.begin(), path.end(), '\\', '/');
+		std::transform(path.begin(), path.end(), path.begin(),[](unsigned char c) { return std::tolower(c); });
 		unsigned long long moduleKey = 0;
-		AST::Module* pModule = X::Hosting::I().Load(moduleName, code, codeSize, moduleKey);
+		AST::Module* pModule = X::Hosting::I().Load(path.c_str(), code, codeSize, moduleKey);
 		if (pModule == nullptr)
 		{
 			return false;
@@ -748,5 +752,10 @@ return nullptr;
 			return g_pPyHost->Exec(code, objParams);
 		}
 		return false;
+	}
+
+	void XHost_Impl::SetDebugMode(bool bDebug)
+	{
+		Hosting::I().SetDebugMode(bDebug);
 	}
 }
