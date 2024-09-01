@@ -550,7 +550,7 @@ namespace X
 				auto it_proc_scaler_add = [pTensor, input2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val *= input;
+					val *= input2;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_add);
@@ -563,7 +563,7 @@ namespace X
 				auto it_proc_scaler_add = [pTensor, input1, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val *= input;
+					val *= input1;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_add);
@@ -620,7 +620,7 @@ namespace X
 
 							val_1 = pTensor1->GetDataWithIndices(indices1);
 							val_2 = pTensor2->GetDataWithIndices(indices2);
-							val_1 = val_1 * val_2;
+							val_1 *= val_2;
 							pRetVal->SetDataWithIndices(indices1, val_1);
 						};
 						indices1.resize(tensor1_dims);
@@ -631,7 +631,7 @@ namespace X
 						X::Value val, val_1, val_2;
 						val_1 = pTensor1->GetDataWithIndices(indices);
 						val_2 = pTensor2->GetDataWithIndices(indices);
-						val_1 = val_1 * val_2;
+						val_1 *= val_2;
 						pRetVal->SetDataWithIndices(indices, val_1);
 					};
 
@@ -666,7 +666,7 @@ namespace X
 				auto it_proc_scaler_div = [pTensor, input2, pRetVal](std::vector<long long>& indices)
 				{
 					X::Value val = pTensor->GetDataWithIndices(indices);
-					val /= input;
+					val /= input2;
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_div);
@@ -679,8 +679,8 @@ namespace X
 				pRetVal->CreateBaseOnTensor(pTensor);
 				auto it_proc_scaler_div = [pTensor, input1, pRetVal](std::vector<long long>& indices)
 				{
-					X::Value val = input;
-					val /= (pTensor->GetDataWithIndices(indices));
+					X::Value val = input1;
+					val /= pTensor->GetDataWithIndices(indices);
 					pRetVal->SetDataWithIndices(indices, val);
 				};
 				pTensor->IterateAll(it_proc_scaler_div);
@@ -739,7 +739,7 @@ namespace X
 
 							val_1 = pTensor1->GetDataWithIndices(indices1);
 							val_2 = pTensor2->GetDataWithIndices(indices2);
-							val_1 = val_1/val_2;
+							val_1 /= val_2;
 							pRetVal->SetDataWithIndices(indices1, val_1);
 						};
 						indices1.resize(tensor1_dims);
@@ -750,7 +750,7 @@ namespace X
 						X::Value val, val_1, val_2;
 						val_1 = pTensor1->GetDataWithIndices(indices);
 						val_2 = pTensor2->GetDataWithIndices(indices);
-						val_1 = val_1/val_2;
+						val_1 /= val_2;
 						pRetVal->SetDataWithIndices(indices, val_1);
 					};
 
@@ -797,7 +797,7 @@ namespace X
 								indices2[1] = j;
 								val_1 = pTensor1->GetDataWithIndices(indices1);
 								val_2 = pTensor2->GetDataWithIndices(indices2);								
-								val_1 = val_1 * val_2;
+								val_1 *= val_2;
 								val += val_1;
 							}
 							pRetVal->SetDataWithIndices(indices, val);
@@ -834,7 +834,7 @@ namespace X
 							indices2[0] = j;
 							val_1 = pTensor1->GetDataWithIndices(indices1);
 							val_2 = pTensor2->GetDataWithIndices(indices2);								
-							val_1 = val_1 * val_2;
+							val_1 *= val_2;
 							val += val_1;
 						}
 						pRetVal->SetDataWithIndices(indices, val);
@@ -899,7 +899,7 @@ namespace X
 								indices2[1] = j-l;
 								val_1 = pTensor1->GetDataWithIndices(indices1);
 								val_2 = pTensor2->GetDataWithIndices(indices2);								
-								val_1 = val_1 * val_2;
+								val_1 *= val_2;
 								val += val_1;
 							} //if
 						} //for l
@@ -1095,7 +1095,7 @@ namespace X
 					else
 						val_1 = padding; 
 					std::cout << "Input matrix(" << indices1[0] << "," << indices1[1] <<") = " << val_1.GetLongLong() << "  |  ";
-					val_1 = val_1 * val_2;
+					val_1 *= val_2;
 					val += val_1;
 					std::cout << "val_1 *= val_2 = " << val_1.GetLongLong() << ", val = " << val.GetLongLong() << std::endl;
 
@@ -1206,7 +1206,7 @@ namespace X
 						for (int k = 0; k < tensor1_dims; k++)
 							std::cout << indices1n[k] << ",";
 						std::cout << ") = " << val_1.GetLongLong() << "  |  ";
-						val_1 = val_1 * val_2;
+						val_1 *= val_2;
 						val += val_1;
 						std::cout << "val_1 *= val_2 = " << val_1.GetLongLong() << ", val = " << val.GetLongLong() << std::endl;
 					};
@@ -1226,7 +1226,7 @@ namespace X
 				X::Value val, val_1, val_2;
 				val_1 = pTensor1->GetDataWithIndices(indices);
 				val_2 = pTensor2->GetDataWithIndices(indices);
-				val_1 = val_1/val_2;
+				val_1 /= val_2;
 				pRetVal->SetDataWithIndices(indices, val_1);
 			};
 
