@@ -305,16 +305,24 @@ namespace X
             xStruct->Build(); // Finalize the structure layout
 
             char* data = xStruct->Data();
+#ifdef _WIN32
             std::memcpy(data, &tm, sizeof(std::tm)); // Copy the tm structure into the XlangStruct's data
             std::memcpy(data + sizeof(std::tm), &milliseconds, sizeof(int)); // Copy the milliseconds
-
+#else
+            memcpy(data, &tm, sizeof(std::tm)); // Copy the tm structure into the XlangStruct's data
+            memcpy(data + sizeof(std::tm), &milliseconds, sizeof(int)); // Copy the milliseconds
+#endif
             return X::Value(xStruct);
         }
 
         std::tm ConvertXlangStructToTM(X::Data::XlangStruct* xStruct, int& milliseconds) {
             std::tm tm = {};
             char* data = xStruct->Data();
+#ifdef _WIN32
             std::memcpy(&tm, data, sizeof(std::tm)); // Copy the data back into a tm structure
+#else
+            memcpy(&tm, data, sizeof(std::tm)); // Copy the data back into a tm structure
+#endif
 
             X::Value millisecondsValue;
             xStruct->GetFieldValue(9, millisecondsValue);
