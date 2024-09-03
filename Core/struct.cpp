@@ -24,6 +24,7 @@ namespace X
             sizeof(float),           // c_float
             sizeof(double),          // c_double
             sizeof(bool),            // c_bool
+            sizeof(X::Value),        // X::Value
             sizeof(void*),            // c_void_p
             0                       //c_invalid
         };
@@ -32,7 +33,7 @@ namespace X
             "char", "wchar_t", "byte", "unsigned byte",
             "short", "unsigned short", "int", "unsigned int",
             "long", "unsigned long", "long long", "unsigned long long",
-            "float", "double", "bool", "void*"
+            "float", "double", "bool", "xvalue","void*"
         };
         static Obj_Func_Scope<1> _scope;
         void XlangStruct::Init()

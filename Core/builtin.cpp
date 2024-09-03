@@ -168,16 +168,17 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	return true;
 }
-bool U_Input(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+bool U_Input(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
 	std::string in;
-	std::cin >> in;
+	std::getline(std::cin, in);
 	retValue = X::Value(in);
 	return true;
 }
+
 bool U_Alert(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
