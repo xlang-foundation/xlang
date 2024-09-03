@@ -25,6 +25,7 @@ namespace X
 			c_float,
 			c_double,
 			c_bool,
+			c_xvalue,
 			c_void_p,  // Pointer type, simplification for general pointers
 			c_invalid
 		};
@@ -59,14 +60,23 @@ namespace X
 			inline void addField(const std::string& name, CType type, bool isPointer = false, int bits = 0) {
 				m_fields.emplace_back(name, type, isPointer, bits);
 			}
-			inline void addField(const std::string& name, std::string& type, bool isPointer = false, int bits = 0) {
+			virtual void addField(
+				const char* name, const char* type, 
+				bool isPointer = false, int bits = 0) override
+			{
+				std::string strName(name);
+				std::string strType(type);
+				addField(strName, strType, isPointer, bits);
+			}
+			inline void addField(const std::string& name, std::string& type, 
+				bool isPointer = false, int bits = 0) {
 				auto ty = getCTypeFromName(type);
 				if (ty != CType::c_invalid)
 				{
 					m_fields.emplace_back(name, ty, isPointer, bits);
 				}
 			}
-			bool Build();
+			virtual bool Build() override;
 		private:
 			// List of fields in the struct
 			std::vector<Field> m_fields;
@@ -133,7 +143,7 @@ namespace X
 					m_pData = data;
 					m_bOwnData = false;
 				}
-				else
+				else if(size>0)
 				{
 					m_bOwnData = true;
 					m_pData = new char[size];
@@ -206,6 +216,9 @@ namespace X
 				case CType::c_bool:
 					v = *(reinterpret_cast<const bool*>(fieldAddress));
 					break;
+				case CType::c_xvalue:
+					v = *(reinterpret_cast<const X::Value*>(fieldAddress));
+					break;
 				case CType::c_void_p:
 					v = *(reinterpret_cast<const void* const*>(fieldAddress));
 					break;
@@ -265,6 +278,9 @@ namespace X
 					break;
 				case CType::c_bool:
 					*reinterpret_cast<bool*>(fieldAddress) = (bool)v;
+					break;
+				case CType::c_xvalue:
+					*reinterpret_cast<X::Value*>(fieldAddress) = v;
 					break;
 				case CType::c_void_p:
 					*reinterpret_cast<void**>(fieldAddress) = (void*)(uintptr_t)v;  // Using uintptr_t for pointer conversion

@@ -21,6 +21,10 @@ namespace X
 			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
+			virtual X::Value GetName() override
+			{
+				return m_func->GetNameString();
+			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 			{
 				AST::Expression exp;

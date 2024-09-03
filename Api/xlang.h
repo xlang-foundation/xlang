@@ -110,10 +110,6 @@ namespace X
 		XRuntime* m_rt = nullptr;
 		XObj* m_parent = nullptr;
 
-		FORCE_INLINE void SetRT(XRuntime* rt)
-		{
-			m_rt = rt;
-		}
 		FORCE_INLINE void SetParent(XObj* p)
 		{
 			m_parent = p;
@@ -130,6 +126,10 @@ namespace X
 		}
 		~XObj()
 		{
+		}
+		FORCE_INLINE void SetRT(XRuntime* rt)
+		{
+			m_rt = rt;
 		}
 		void SetContext(XRuntime* rt, XObj* pa)
 		{
@@ -352,6 +352,9 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XStruct)
+		virtual void addField(
+			const char* name,const char* type, bool isPointer = false, int bits = 0) = 0;
+		virtual bool Build() = 0;
 		virtual char* Data() = 0;
 	};
 
@@ -444,7 +447,8 @@ namespace X
 	class XFunc:
 		virtual public XObj
 	{
-
+	public:
+		virtual X::Value GetName() = 0;
 	};
 	class XLangClass :
 		virtual public XObj
@@ -586,6 +590,7 @@ namespace X
 		{
 			return *m_obj; 
 		}
+		T* GetRealObj() { return m_obj; }
 	};
 	class XLangException
 		: public std::exception

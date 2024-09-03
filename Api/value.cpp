@@ -231,6 +231,12 @@ namespace X
 	{
 		SetObj(g_pXHost->CreateStruct(data, size, asRef));
 	}
+	//only need one template<>
+	template<>
+	void V<XStruct>::Create(void)
+	{
+		SetObj(g_pXHost->CreateStruct(nullptr,0,false));
+	}
 	template<>
 	template<>
 	void V<XStr>::Create(const char* s, int size)
