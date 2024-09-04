@@ -55,12 +55,13 @@ else()
     #set(Python3_LIBRARIES,"${_Python3_LIBRARY_RELEASE})
     FILE(GLOB SRC *.cpp)
     FILE(GLOB Out_SRC ../utils/utility.cpp)
+    file(GLOB Xlang_Api_SRC "../Api/*.cpp")
 
     add_library(${PROJECT_NAME} 
 	    SHARED
         ${Out_SRC}
-	    ${SRC}
-    )
+        ${Xlang_Api_SRC}
+	    ${SRC})
 
     target_include_directories(${PROJECT_NAME} 
 	    PUBLIC
@@ -77,6 +78,25 @@ else()
     target_link_libraries(${PROJECT_NAME} PUBLIC 
         "${Python3_LIBRARIES}" Ws2_32
 	    )
+
+    # Custom post-build step for Windows
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${Python3_SITELIB}/xlang.pyd"
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${Python3_SITELIB}/xlang.pdb"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${Python3_SITELIB}/xlang"
+    )
+
+    # Find all xlang_*.dll and xlang_*.pdb files
+    file(GLOB XLANG_DLLS "${CMAKE_BINARY_DIR}/bin/xlang_*.dll")
+    file(GLOB XLANG_PDBS "${CMAKE_BINARY_DIR}/bin/xlang_*.pdb")
+
+    # Copy each DLL and PDB file individually
+    foreach(file ${XLANG_DLLS} ${XLANG_PDBS})
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${file} "${Python3_SITELIB}/xlang"
+        )
+    endforeach()
+
     else()
     target_link_libraries(${PROJECT_NAME} PUBLIC 
         "${Python3_LIBRARIES}"
@@ -84,3 +104,4 @@ else()
     endif()
 
 endif()
+
