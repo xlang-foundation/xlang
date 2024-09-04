@@ -327,7 +327,7 @@ export class XLangRuntime extends EventEmitter {
 	
 		this.reqNotify.on('error', error => {
 			console.error("fetchNotify->",error);
-			if (error?.code === "ECONNRESET")
+			if ((error?.code === "ECONNRESET" || error?.code === "ECONNREFUSED") && this._sessionRunning )
 			{
 				vscode.window.showErrorMessage(`disconnect from xlang dbg server at ${this.serverAddress}:${this.serverPort} debugging stopped`, { modal: true }, "ok");
 				this.sendEvent('end');
@@ -721,7 +721,7 @@ export class XLangRuntime extends EventEmitter {
 		}, 0);
 	}
 
-	private normalizePathAndCasing(path: string) {
+	public normalizePathAndCasing(path: string) {
 		if (process.platform === 'win32') {
 			return path.replace(/\//g, '\\').toLowerCase();
 		} else {

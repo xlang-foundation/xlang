@@ -18,7 +18,7 @@ namespace X
 		{
 			std::thread connectionCheck([this] {
 				std::unique_lock<std::mutex> lock(m_mtxConnect);
-				m_cvConnect.wait_for(lock, std::chrono::seconds(10), [this] { return m_Connected; });
+				m_cvConnect.wait_for(lock, std::chrono::seconds(10));
 				if (!m_Connected) {
 					m_srv.stop();
 					std::cout << "no connection in 10 seconds, xlang exited" << std::endl;
