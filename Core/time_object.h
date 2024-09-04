@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include "struct.h"
 
 namespace X

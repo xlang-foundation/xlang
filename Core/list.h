@@ -471,7 +471,11 @@ public:
 		AutoLock autoLock(m_lock);
 		if (m_useLValue)
 		{
-			if (idx >= (long long)m_ptrs.size())
+			if (idx <0)
+			{
+				idx = (long long)m_ptrs.size() +idx;
+			}
+			if (idx >= (long long)m_ptrs.size() || idx<0)
 			{
 				return false;
 			}
@@ -484,6 +488,14 @@ public:
 		}
 		else
 		{
+			if (idx < 0)
+			{
+				idx = (long long)m_ptrs.size() + idx;
+			}
+			if (idx < 0)
+			{
+				return false;
+			}
 			if (idx >= (long long)m_data.size())
 			{
 				m_data.resize(idx + 1);
