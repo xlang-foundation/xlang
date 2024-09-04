@@ -351,7 +351,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
-		const path = (args.source.path as string).toLowerCase();
+		const path = this._runtime.normalizePathAndCasing(args.source.path as string);
 		//const clientLines = args.lines || [];
 		const clientLines = args.breakpoints?.map(col => {return col.line;}) || [];
 		let srcIdx = this._srcList.indexOf(path);
