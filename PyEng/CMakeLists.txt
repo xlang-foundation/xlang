@@ -79,29 +79,12 @@ else()
         "${Python3_LIBRARIES}" Ws2_32
 	    )
 
-    # Custom post-build step for Windows
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${Python3_SITELIB}/xlang.pyd"
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${Python3_SITELIB}/xlang.pdb"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${Python3_SITELIB}/xlang"
-    )
-
-    # Find all xlang_*.dll and xlang_*.pdb files
-    file(GLOB XLANG_DLLS "${CMAKE_BINARY_DIR}/bin/xlang_*.dll")
-    file(GLOB XLANG_PDBS "${CMAKE_BINARY_DIR}/bin/xlang_*.pdb")
-
-    # Copy each DLL and PDB file individually
-    foreach(file ${XLANG_DLLS} ${XLANG_PDBS})
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${file} "${Python3_SITELIB}/xlang"
-        )
-    endforeach()
+    configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.bat" "${CMAKE_BINARY_DIR}/bin/install_py_xlang.bat")
 
     else()
     target_link_libraries(${PROJECT_NAME} PUBLIC 
         "${Python3_LIBRARIES}"
 	    )
     endif()
-
 endif()
 

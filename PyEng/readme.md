@@ -8,7 +8,9 @@ range(0, 10);
 
 
 # How to install xlang python package
-    in the release folder wiht pyeng.dll or pyeng.so
-    copy the pyeng.dll or.so to   to the python site-packages folder
-    and change name to xlang.pyd
-	then you can import xlang in python
+ for windows only,in the release bin folder, run the following command:
+ ```bash
+ install_py_xlang.bat
+ ``` 
+
+
