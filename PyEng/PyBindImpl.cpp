@@ -1,3 +1,5 @@
+#include "xlang.h"
+#include "xhost.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -14,6 +16,9 @@ extern "C"
 }
 #endif
 
+
+extern PyObject* CreateXlangObjectWrapper(X::Value& realObj);
+
 static PyObject*
 Xlang_main(PyObject* self, PyObject* args, PyObject* kwargs)
 {
@@ -21,9 +26,22 @@ Xlang_main(PyObject* self, PyObject* args, PyObject* kwargs)
 	return PyLong_FromLong(0);
 }
 static PyObject*
-Xlang_register(PyObject* self, PyObject* args, PyObject* kwargs)
+Xlang_import(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-	return PyLong_FromLong(0);
+	const char* moduleName;
+	if (!PyArg_ParseTuple(args, "s", &moduleName))
+	{
+		return nullptr;
+	}
+	auto* rt = X::g_pXHost->GetCurrentRuntime();
+	X::Value obj;
+	bool bOK = X::g_pXHost->Import(rt,moduleName,nullptr,nullptr, obj);
+	if (!bOK)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Import failed");
+		return nullptr;
+	}
+	return CreateXlangObjectWrapper(obj);
 }
 
 static PyObject*
@@ -49,6 +67,11 @@ PyMethodDef RootMethods[] =
 		(PyCFunction)Xlang_Function,
 		METH_VARARGS|METH_KEYWORDS,
 		"Syntax: wrapper = xlang.func(*args,**kwargs)" 
+	},
+	{	"importModule",
+		(PyCFunction)Xlang_import,
+		METH_VARARGS | METH_KEYWORDS,
+		"Syntax: wrapper = xlang.importModule(*args,**kwargs)"
 	},
 	{	"object",
 		(PyCFunction)Xlang_Class,

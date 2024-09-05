@@ -70,6 +70,8 @@ static void register_cleanup() {
     }
 }
 
+extern PyObject* CreateXlangObjectWrapper(X::Value& realObj);
+
 PyMODINIT_FUNC PyInit_xlang(void)
 {
     X::PyBind::ParamConfig paramCfg;
@@ -113,7 +115,9 @@ PyMODINIT_FUNC PyInit_xlang(void)
     {
         Py_DECREF(gObj);
     }
-
+    X::Value rootObj;
+    PyObject* xlangObj = CreateXlangObjectWrapper(rootObj);
+    PyModule_AddObject(m, "xobj", xlangObj);
     // Register the cleanup function
     register_cleanup();
 
