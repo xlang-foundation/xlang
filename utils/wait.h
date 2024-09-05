@@ -1,5 +1,22 @@
 #pragma once
 
+#define USE_MYWAIT
+
+#if defined(USE_MYWAIT)
+typedef void* XWaitHandle;
+class XWait
+{
+public:
+    XWait(bool autoReset = true);
+    ~XWait();
+    bool Wait(int timeoutMS);
+    void Reset();
+    void Release();
+private:
+    bool m_autoReset = true;
+    XWaitHandle m_waitHandle = nullptr;
+};
+#else
 #include <condition_variable>
 #include <mutex>
 #include <chrono>
@@ -43,3 +60,5 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_condition;
 };
+
+#endif

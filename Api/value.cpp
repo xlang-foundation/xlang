@@ -692,6 +692,23 @@ namespace X
 		return (t == ValueType::Object)
 			&& (x.obj != nullptr && x.obj->GetType() == ObjType::List);
 	}
+	bool Value::IsDict() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Dict);
+	}
+	bool Value::IsString() const
+	{ 
+		if (t == ValueType::Str)
+		{
+			return true;
+		}
+		else
+		{
+			return (t == ValueType::Object)
+				&& (x.obj != nullptr && x.obj->GetType() == ObjType::Str);
+		}
+	}
 	bool Value::ToBytes(XLStream* pStream)
 	{
 		return g_pXHost->ConvertToBytes(*this, pStream);
