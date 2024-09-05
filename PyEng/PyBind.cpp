@@ -107,7 +107,7 @@ PyMODINIT_FUNC PyInit_xlang(void)
 #endif
     PyObject* m = PyModule_Create(&XlangPackageTypeModule);
     std::string xlangSearchPath = paramCfg.appPath;
-    X::PyBind::LoadXLangEngine(paramCfg, xlangSearchPath, true);
+    X::PyBind::LoadXLangEngine(paramCfg, xlangSearchPath);
 
     // JITManager::I().SetThisModule(m);
     PyObject* gObj = PyDict_New();

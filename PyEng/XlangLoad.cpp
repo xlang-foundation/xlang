@@ -21,7 +21,7 @@ namespace X {
             cfg.appPath = NewFromString(paramConfig.appPath);
             cfg.dbg = dbg;
             cfg.enablePythonDebug = python_dbg;
-            cfg.enablePython = true;
+            cfg.enablePython = python_dbg;
             cfg.enterEventLoop = false;//will call g_xLoad.EventLoop() later
             cfg.runEventLoopInThread = false;
             cfg.dllSearchPath = NewFromString(searchPath);

@@ -28,14 +28,19 @@ Xlang_main(PyObject* self, PyObject* args, PyObject* kwargs)
 static PyObject*
 Xlang_import(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-	const char* moduleName;
-	if (!PyArg_ParseTuple(args, "s", &moduleName))
+	const char* moduleName = nullptr;
+	const char* from = nullptr;
+	const char* thru = nullptr;
+	static char* kwlist[] = { "moduleName", "from", "thru", nullptr };
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ss", kwlist, &moduleName, &from, &thru))
 	{
 		return nullptr;
 	}
+
 	auto* rt = X::g_pXHost->GetCurrentRuntime();
 	X::Value obj;
-	bool bOK = X::g_pXHost->Import(rt,moduleName,nullptr,nullptr, obj);
+	bool bOK = X::g_pXHost->Import(rt, moduleName, from, thru, obj);
 	if (!bOK)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Import failed");
@@ -43,6 +48,7 @@ Xlang_import(PyObject* self, PyObject* args, PyObject* kwargs)
 	}
 	return CreateXlangObjectWrapper(obj);
 }
+
 
 static PyObject*
 Xlang_Function(PyObject* self, PyObject* args, PyObject* kwargs)

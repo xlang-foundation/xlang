@@ -35,6 +35,11 @@ static void XlangObject_dealloc(PyXlangObject* self) {
 static PyObject* XlangObject_getattr(PyXlangObject* self, PyObject* name) {
     const char* attr_name = PyUnicode_AsUTF8(name);
     X::Value newObj = self->realObj[attr_name];
+    if (newObj.IsInvalid())
+    {
+        Py_IncRef(Py_None);      
+        return Py_None;
+    }
     PyXlangObject* new_obj = NewXlangObject(newObj);
     return (PyObject*)new_obj;
 }
