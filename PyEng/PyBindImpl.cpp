@@ -53,6 +53,11 @@ Xlang_import(PyObject* self, PyObject* args, PyObject* kwargs)
 static PyObject*
 Xlang_Function(PyObject* self, PyObject* args, PyObject* kwargs)
 {
+	Py_ssize_t size = PyTuple_Size(args);
+	for (Py_ssize_t i = 0; i < size; ++i) {
+		PyObject* item = PyTuple_GetItem(args, i);
+		item = item;
+	}
 	return PyLong_FromLong(0);
 }
 static PyObject*

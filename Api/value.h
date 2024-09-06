@@ -604,7 +604,7 @@ public:
 
 	Value ObjCall(Port::vector<X::Value>& params);
 	Value ObjCall(Port::vector<X::Value>& params,Port::StringMap<X::Value>& kwParams);
-
+	Value ObjCallEx(Port::vector<X::Value>& params, Port::StringMap<X::Value>& kwParams, X::Value& trailer);
 	template<typename... VarList>
 	FORCE_INLINE Value operator()(VarList... args)
 	{

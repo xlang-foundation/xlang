@@ -144,11 +144,11 @@ namespace X
 		stream >> name;
 		pProc->NotifyBeforeCall(stream);
 		auto pXObj = CovertIdToXObj(objId);
-		bool keepRawParams = false;
-		int idx = pXObj->QueryMethod(name.c_str(),&keepRawParams);
+		int flags = 0;
+		int idx = pXObj->QueryMethod(name.c_str(),&flags);
 		pProc->NotifyAfterCall(stream, true);
 		stream << idx;
-		stream << keepRawParams;
+		stream << flags;
 		pProc->FinishCall(pCallContext, stream, true);
 		return true;
 	}

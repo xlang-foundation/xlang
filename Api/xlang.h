@@ -44,9 +44,18 @@ namespace X
 		PyProxyObject
 	};
 
+	enum class MemberFlag
+	{
+		//Flag's first bye is for PackageMemberType
+		//second byte:
+		KeepRawParams = 0x00000100,
+	};
+	#define IS_KEEP_RAW_PARAMS(flag) ((flag & int(MemberFlag::KeepRawParams)) != 0)
+
 	//For XPackage
 	enum class PackageMemberType
 	{
+		None,
 		Func,
 		FuncEx,
 		Prop,
@@ -54,6 +63,7 @@ namespace X
 		ObjectEvent,
 		Class,
 		ClassInstance,
+		Module
 	};
 #define Internal_Reserve(cls_name)  cls_name(int){}
 
@@ -147,7 +157,7 @@ namespace X
 		virtual XObj* Clone() { return nullptr; }
 		virtual bool SupportAssign() { return false; }
 		virtual void Assign(const X::Value& val) {}
-		virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) { return -1; };
+		virtual int QueryMethod(const char* name, int* pFlags = nullptr) { return -1; };
 		virtual bool GetIndexValue(int idx, Value& v) { return false; };
 		virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry, X::Value& val) { return false; }
 		virtual int IncRef() { return 0; }
@@ -470,6 +480,7 @@ namespace X
 	{
 	public:
 		virtual void SetObjID(unsigned long pid,void* objid) = 0;
+		virtual int GetMemberFlags() = 0;
 	};
 	class XDeferredObject :
 		virtual public XObj

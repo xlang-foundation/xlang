@@ -39,7 +39,7 @@ namespace X
 				std::string str = m_pModule ? m_pModule->GetModulePath() : "";
 				return GetABIString(str);
 			}
-			virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override;
+			virtual int QueryMethod(const char* name, int* pFlags = nullptr) override;
 			virtual bool GetIndexValue(int idx, Value& v) override;
 			//return size of Module's member count
 			virtual long long Size() override;

@@ -44,7 +44,7 @@ namespace X
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
-			virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override;
+			virtual int QueryMethod(const char* name, int* pFlags) override;
 			virtual bool GetIndexValue(int idx, Value& v) override;
 
 			std::string GetDoc()

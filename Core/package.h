@@ -163,13 +163,19 @@ public:
 		}
 		return idx;
 	}
-	FORCE_INLINE virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
+	FORCE_INLINE virtual int QueryMethod(const char* name, int* pFlags = nullptr) override
 	{
 		std::string strName(name);
 		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, true);
-		if (idx>=0 && pKeepRawParams)
+		if (idx>=0 && pFlags)
 		{
-			*pKeepRawParams = m_memberInfos[idx].KeepRawParams;
+			auto& memberInfo = m_memberInfos[idx];
+			int flags = 0xFF&int(memberInfo.type);
+			if (memberInfo.KeepRawParams)
+			{
+				flags |=(int)X::MemberFlag::KeepRawParams;
+			}
+			*pFlags = flags;
 		}
 		return idx;
 	}
@@ -393,9 +399,9 @@ public:
 	{
 		return m_pPackage->AddMember(type,name,doc,keepRawParams);
 	}
-	FORCE_INLINE virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
+	FORCE_INLINE virtual int QueryMethod(const char* name, int* pFlags = nullptr) override
 	{
-		return m_pPackage->QueryMethod(name, pKeepRawParams);
+		return m_pPackage->QueryMethod(name, pFlags);
 	}
 	FORCE_INLINE virtual MemberIndexInfo QueryMethod(std::string name)
 	{

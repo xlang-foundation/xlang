@@ -21,6 +21,7 @@ extern "C"
 #endif
 
 #include "XlangLoad.h"
+#include "PyEngHostImpl.h"
 
 extern PyMethodDef RootMethods[];
 
@@ -108,6 +109,8 @@ PyMODINIT_FUNC PyInit_xlang(void)
     PyObject* m = PyModule_Create(&XlangPackageTypeModule);
     std::string xlangSearchPath = paramCfg.appPath;
     X::PyBind::LoadXLangEngine(paramCfg, xlangSearchPath);
+
+    X::g_pXHost->SetPyEngHost(&GrusPyEngHost::I());
 
     // JITManager::I().SetThisModule(m);
     PyObject* gObj = PyDict_New();

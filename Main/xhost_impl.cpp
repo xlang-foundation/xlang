@@ -27,6 +27,7 @@
 #include "moduleobject.h"
 #include "parser.h"
 #include <algorithm> 
+#include "PyEngHost.h"
 
 namespace X 
 {
@@ -43,6 +44,11 @@ namespace X
 			delete g_pXHost;
 		}
 	}
+	void XHost_Impl::SetPyEngHost(void* pHost)
+	{
+		g_pPyHost = (PyEngHost*)pHost;
+	}
+
 	void XHost_Impl::AddSysCleanupFunc(CLEANUP f)
 	{
 		Manager::I().AddCleanupFunc(f);
@@ -754,6 +760,17 @@ return nullptr;
 		return false;
 	}
 
+	bool XHost_Impl::PyObjToValue(void* pyObj, X::Value& valObject)
+	{
+		if (g_pPyHost)
+		{
+			PyEng::Object obj(pyObj);
+			auto* pProxyObj = new Data::PyProxyObject(obj);
+			valObject = Value(pProxyObj);
+			return true;
+		}
+		return false;
+	}
 	void XHost_Impl::SetDebugMode(bool bDebug)
 	{
 		Hosting::I().SetDebugMode(bDebug);

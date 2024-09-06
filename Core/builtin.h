@@ -73,7 +73,7 @@ namespace X {
 		virtual void SetPackageWaitFunc(PackageWaitFunc func) override {}
 		virtual void SetAPISet(void* pApiSet) override {}
 		virtual int AddMember(PackageMemberType type, const char* name, const char* doc, bool keepRawParams = false) override;
-		virtual int QueryMethod(const char* name, bool* pKeepRawParams) override;
+		virtual int QueryMethod(const char* name, int* pFlags) override;
 		virtual void* GetEmbedObj() override;
 		virtual void SetEmbedObj(void* p) override {}
 		virtual bool Init(int varNum) override;

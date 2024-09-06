@@ -1886,7 +1886,7 @@ int Builtin::AddMember(PackageMemberType type, const char* name, const char* doc
 {
 	return 0;
 }
-int Builtin::QueryMethod(const char* name, bool* pKeepRawParams)
+int Builtin::QueryMethod(const char* name, int* pFlags)
 {
 	AutoLock autoLock(m_lock);
 	auto it = m_mapNameToIndex.find(name);

@@ -80,7 +80,7 @@ namespace X
 			}
 			bases.push_back(_function_op);
 		}
-		int Function::QueryMethod(const char* name, bool* pKeepRawParams)
+		int Function::QueryMethod(const char* name, int* pFlags)
 		{
 			return _function_op->QueryMethod(name);
 		}
