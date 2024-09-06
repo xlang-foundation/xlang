@@ -23,42 +23,46 @@ private:
 
 class XWait {
 public:
-    XWait(bool autoReset = false) : m_autoReset(autoReset), m_signaled(false) {}
+	XWait(bool autoReset = true) : m_autoReset(autoReset), m_signaled(false) {}
 
-    ~XWait() = default;
+	~XWait() = default;
 
-    bool Wait(int timeoutMS) {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        bool result;
-        if (timeoutMS < 0) {
-            m_condition.wait(lock, [this] { return m_signaled; });
-            result = true;
-        }
-        else {
-            result = m_condition.wait_for(lock, std::chrono::milliseconds(timeoutMS), [this] { return m_signaled; });
-        }
-        if (m_autoReset && result) {
-            m_signaled = false;
-        }
-        return result;
-    }
+	bool Wait(int timeoutMS) {
+		std::unique_lock<std::mutex> lock(m_mutex);
+		if (m_signaled)
+		{
+			if (m_autoReset)
+				m_signaled = false;
+			return true;
+		}
+		if (timeoutMS < 0)
+			m_condition.wait(lock, [this] { return m_signaled; });
+		else {
+			if (!m_condition.wait_for(lock, std::chrono::milliseconds(timeoutMS), [this] { return m_signaled; }))
+				return false;
+		}
+		if (m_autoReset) {
+			m_signaled = false;
+		}
+		return true;
+	}
 
-    void Release() {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_signaled = true;
-        m_condition.notify_one();
-    }
+	void Release() {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		m_signaled = true;
+		m_condition.notify_one();
+	}
 
-    void Reset() {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_signaled = false;
-    }
+	void Reset() {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		m_signaled = false;
+	}
 
 private:
-    bool m_autoReset;
-    bool m_signaled;
-    std::mutex m_mutex;
-    std::condition_variable m_condition;
+	bool m_autoReset;
+	bool m_signaled;
+	std::mutex m_mutex;
+	std::condition_variable m_condition;
 };
 
 #endif
