@@ -473,6 +473,8 @@ public:
 		return (t == ValueType::Object) && (x.obj != nullptr);
 	}
 	bool IsList() const;
+	bool IsDict() const;
+	bool IsString() const;
 	FORCE_INLINE bool IsTrue()
 	{
 		return !IsZero();
@@ -666,6 +668,7 @@ public:
 	Value getattr(const char* attrName) const;
 	void setattr(const char* attrName, X::Value& attrVal) const;
 	long long Size();
+	inline long long size() { return Size(); }
 };
 template<typename T>
 class V:
