@@ -24,7 +24,7 @@ namespace X
 
 		class RemotingProxy :
 			public X::XProxy,
-			public CallHandler
+			public CallHandler,
 			public GThread
 		{
 			std::string mRootObjectName;

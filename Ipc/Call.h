@@ -63,11 +63,11 @@ namespace X
 			virtual void BeginWriteReturn(SwapBufferStream& stream, bool callIsOk) override
 			{
 				mWBuffer->BeginWrite();
-				mWStream.SetSMSwapBuffer(mSMSwapBuffer1);
+				mWStream.SetSMSwapBuffer(mWBuffer);
 				PayloadFrameHead& head = mWBuffer->GetHead();
 				head.payloadType = PayloadType::Send;
 				head.size = 0; // update later
-				head.callType = PayloadType::Return;
+				head.callType = 0;//TODO: check this
 				head.callIndex = mCurrentCallIndex.load();
 				head.context = nullptr;
 			}

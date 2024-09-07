@@ -8,7 +8,8 @@
 
 namespace X
 {
-    namespace IPC {
+    namespace IPC 
+    {
 
     class SMSwapBuffer;
     class RemotingServer;
@@ -34,7 +35,7 @@ namespace X
     };
     class RemotingServer :
         public GThread,
-        public RemotingProc
+        public CallHandler
     {
         Locker m_lock;
     public:
