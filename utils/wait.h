@@ -1,6 +1,6 @@
 #pragma once
 
-#define USE_MYWAIT
+//#define USE_MYWAIT
 
 #if defined(USE_MYWAIT)
 typedef void* XWaitHandle;
