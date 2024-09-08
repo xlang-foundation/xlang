@@ -22,7 +22,9 @@ namespace X
 				if (!m_Connected) {
 					m_srv.stop();
 					std::cout << "no connection in 10 seconds, xlang exited" << std::endl;
+#if (WIN32)
 					system("pause");
+#endif
 					std::exit(0);
 				}
 			});
@@ -236,7 +238,9 @@ namespace X
 			[this](const httplib::Request& req, httplib::Response& res)
 			{
 				m_srv.stop();
+#if (WIN32)
 				system("pause");
+#endif
 				std::exit(0);
 			}
 		);

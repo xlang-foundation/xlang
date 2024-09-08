@@ -17,7 +17,7 @@ async function SetExePath() : Promise<string | undefined>
 		});
 		if (ret?.length > 0)
 			exePath = ret[0].fsPath;
-	} else if (process.platform === "linux") {
+	} else if (process.platform === "linux" || process.platform === "darwin") {
 		const ret = await vscode.window.showOpenDialog({
 			openLabel:'choose',
 			canSelectFiles: true,
