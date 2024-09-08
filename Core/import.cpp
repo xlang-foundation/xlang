@@ -173,6 +173,9 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	if (bHaveX)
 	{
 		std::string code;
+#if (WIN32)
+		NormalizePath(loadXModuleFileName);
+#endif
 		bOK = LoadStringFromFile(loadXModuleFileName, code);
 		if (bOK)
 		{

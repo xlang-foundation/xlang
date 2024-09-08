@@ -7,7 +7,6 @@
 #include "exp_exec.h"
 #include "port.h"
 #include "dbg.h"
-#include <algorithm>
 
 namespace X
 {
@@ -168,8 +167,9 @@ namespace X
 		parser.Compile(pTopModule,(char*)code, size);
 
 		strModuleName = pTopModule->GetModuleName();
-		std::transform(strModuleName.begin(), strModuleName.end(), strModuleName.begin(),
-			[](unsigned char c) { return std::tolower(c); });
+#if (WIN32)		
+		NormalizePath(strModuleName);
+#endif
 		// if source file has breakpoint data, set breakpoint for this new created module
 		std::vector<int> lines = G::I().GetBreakPoints(strModuleName);
 		bool bValid = G::I().IsBreakpointValid(strModuleName); // Whether the source file's breakpoints have been checked 

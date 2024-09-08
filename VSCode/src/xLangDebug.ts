@@ -300,7 +300,17 @@ export class XLangDebugSession extends LoggingDebugSession {
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
 		let port = await this.getValidPort();
 		let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
-		this._xlangProcess = cp.spawn(xlangBin, ['-event_loop', '-dbg', '-enable_python', `-port ${port}`], { shell: true, detached: true });
+		if (process.platform === 'win32') {
+			this._xlangProcess = cp.spawn(xlangBin, ['-event_loop', '-dbg', '-enable_python', `-port ${port}`], { shell: true, detached: true });
+		}
+		else if (process.platform === 'linux') {
+			let cmd = xlangBin + ` -event_loop -dbg -enable_python -port ${port}; exec bash`;
+			this._xlangProcess = cp.spawn('gnome-terminal', ['--', 'bash', '-c', cmd]);
+		}
+		else if (process.platform === 'darwin') {
+			let cmd = xlangBin + ` -event_loop -dbg -enable_python -port ${port}`;
+			this._xlangProcess = cp.spawn('osascript', ['-e', `tell application "Terminal" to do script "${cmd}"`]);
+		}
 		this._runtime.serverAddress = "localhost";
 		this._runtime.serverPort = port;
 		this._isLaunch = true;

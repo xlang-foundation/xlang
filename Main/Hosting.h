@@ -4,6 +4,12 @@
 #include <vector>
 #include "Locker.h"
 #include <unordered_map>
+#include <algorithm>
+
+#define NormalizePath(path) \
+	std::replace(path.begin(), path.end(), '\\', '/');\
+	std::transform(path.begin(), path.end(), path.begin(), [](unsigned char c) {	return std::tolower(c);	});
+
 namespace X
 {
 	namespace AST
