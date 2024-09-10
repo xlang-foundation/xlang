@@ -1,5 +1,4 @@
 #pragma once
-#include "PyFunc.h"
 #include "xlang.h"
 #include "xhost.h"
 
@@ -54,7 +53,9 @@ public:
             return CreateXlangObjectWrapper(value);
         }
         else {
-			return Py_None;
+            PyObject* pOb = Py_None;
+            Py_IncRef(pOb);
+			return pOb;
 		}
     }
 

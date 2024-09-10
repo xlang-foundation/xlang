@@ -23,7 +23,7 @@ namespace X
 			~Function();
 			virtual X::Value GetName() override
 			{
-				return m_func->GetNameString();
+				return m_func->GetFuncName();
 			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 			{

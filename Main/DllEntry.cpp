@@ -146,7 +146,7 @@ PyEngObjectPtr Xlang_CallFunc_Impl(
 }
 bool LoadPythonEngine()
 {
-	typedef void (*LOAD)(void** ppHost);
+	typedef void (*LOAD)(void* pHost,void** ppHost);
 
 	std::string loadDllName;
 	bool bHaveDll = false;
@@ -189,7 +189,7 @@ bool LoadPythonEngine()
 		LOAD load = (LOAD)GetProc(libHandle, "Load");
 		if (load)
 		{
-			load((void**)&g_pPyHost);
+			load((void*)X::g_pXHost,(void**)&g_pPyHost);
 		}
 		g_pXload->SetPythonLibHandler(libHandle);
 		if (g_pPyHost)

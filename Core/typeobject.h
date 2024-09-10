@@ -33,7 +33,21 @@ namespace X
 				}
 				m_realObj = val;
 			}
-			virtual const char* ToString(bool WithFormat = false) override
+			//help function for type object
+			bool IsType(std::string name) 
+			{ 
+				auto typeName = GetTypeNameString();
+				if (typeName == name)
+				{
+					return true;
+				}
+				else if (typeName.find("'" + name + "'") > 0)
+				{
+					return true;
+				}
+				return false; 
+			}
+			FORCE_INLINE std::string GetTypeNameString()
 			{
 				std::string strType;
 				switch (m_valType)
@@ -142,7 +156,12 @@ namespace X
 				default:
 					break;
 				}
-				return GetABIString(strType);
+				return strType;
+			}
+			virtual const char* ToString(bool WithFormat = false) override
+			{
+				auto strRet = GetTypeNameString();
+				return GetABIString(strRet);
 			}
 
 			X::Value GetMembers(X::XlangRuntime* rt);

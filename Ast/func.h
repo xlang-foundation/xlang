@@ -232,6 +232,10 @@ public:
 	{
 		return std::string(m_Name.s, m_Name.size);
 	}
+	virtual std::string GetFuncName()
+	{
+		return GetNameString();
+	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
@@ -351,6 +355,10 @@ public:
 		{
 			m_pContext->DecRef();
 		}
+	}
+	FORCE_INLINE virtual std::string GetFuncName() override
+	{
+		return m_funcName;
 	}
 	virtual std::string GetDoc() override
 	{

@@ -1695,7 +1695,25 @@ bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	}
 	return true;
 }
-bool U_CreateDict(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+bool U_CreateList(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	bool bOK = false;
+	if (params.size() > 0)
+	{
+		//TODO: add code to impl same list(...) as Python
+	}
+	else
+	{
+		auto* pList = new X::Data::List();
+		retValue = X::Value(pList);
+		bOK = true;
+	}
+	return bOK;
+}
+bool U_CreateDict(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -1799,6 +1817,59 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 #endif
 	return bOK;
 }
+bool U_IsInstance(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if(params.size() < 2)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	auto& obj = params[0];
+	X::Data::TypeObject typeObj(obj);
+	auto& varType = params[1];
+	auto IsFuncType = [](auto& typeObj,X::Value& varType,bool& isMyType)->bool {
+		if (varType.GetObj()->GetType() == X::ObjType::Function)
+		{
+			X::Func func(varType);
+			auto funcName = func->GetName().ToString();
+			isMyType = typeObj.IsType(funcName);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	};
+
+	if (varType.IsObject())
+	{
+		//we use function name in the Builtin as the type name for
+		//int,float,dict,list etc
+		bool isMyType = false;
+		if(IsFuncType(typeObj,varType,isMyType))
+		{
+			retValue = X::Value(isMyType);
+			return true;
+		}
+		else if(varType.GetObj()->GetType() == X::ObjType::List)
+		{
+			X::List list(varType);
+			for (auto l : *list)
+			{
+				if(IsFuncType(typeObj,l, isMyType))
+				{
+					retValue = X::Value(isMyType);
+					return true;
+				}
+			}
+		}
+	}
+	retValue = X::Value(false);
+	return false;
+}
 
 bool Builtin::RegisterInternals()
 {
@@ -1874,11 +1945,13 @@ bool Builtin::RegisterInternals()
 	Register("set", (X::U_FUNC)U_CreateSetObject, params);
 	Register("struct", (X::U_FUNC)U_CreateStructObject, params);
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
+	Register("list", (X::U_FUNC)U_CreateList, params, "l = list()|list(vars)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");
 #if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 #endif
+	Register("isinstance", (X::U_FUNC)U_IsInstance, params);
 	return true;
 }
 
