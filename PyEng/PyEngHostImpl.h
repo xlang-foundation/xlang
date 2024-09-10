@@ -1,6 +1,7 @@
 #pragma once
 #include "singleton.h"
 #include "PyEngHost.h"
+#include "xlang.h"
 
 class GrusPyEngHost :
 	public PyEngHost,
@@ -105,4 +106,8 @@ private:
 
 	virtual bool CallReleaseForTupleItems(PyEngObjectPtr tuple) override;
 	virtual bool Exec(const char* code, PyEngObjectPtr args) override;
+
+	// Inherited via PyEngHost
+	X::Value to_xvalue(PyEngObjectPtr pVar) override;
+	PyEngObjectPtr from_xvalue(const X::Value& val) override;
 };

@@ -371,7 +371,10 @@ public:
 			{
 				//TODO: why need to process function?
 				std::vector<Value> dummy;
-				MakeCommonBases(rt->M(), dummy);
+				if (rt)
+				{
+					MakeCommonBases(rt->M(), dummy);
+				}
 			}
 		}
 		m_data.push_back(v);

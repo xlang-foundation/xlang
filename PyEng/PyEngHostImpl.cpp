@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include "port.h"
+#include "PyObjectXLangConverter.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -732,4 +733,14 @@ bool GrusPyEngHost::Exec(const char* code, PyEngObjectPtr args)
 	Py_DECREF(sysArgv);
 
 	return (ret ==0);
+}
+
+X::Value GrusPyEngHost::to_xvalue(PyEngObjectPtr pVar)
+{
+	return PyObjectXLangConverter::ConvertToXValue((PyObject*)pVar);
+}
+
+PyEngObjectPtr GrusPyEngHost::from_xvalue(const X::Value& val)
+{
+	return PyObjectXLangConverter::ConvertToPyObject((X::Value&)val);
 }

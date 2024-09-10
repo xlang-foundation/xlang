@@ -88,7 +88,7 @@ namespace X
 			bases.push_back(_listScope.GetMyScope());
 			bases.push_back(m_pModule->GetMyScope());
 		}
-		int ModuleObject::QueryMethod(const char* name, bool* pKeepRawParams)
+		int ModuleObject::QueryMethod(const char* name, int* pFlags)
 		{
 			std::string strName(name);
 			int idx = _listScope.GetMyScope()->AddOrGet(strName,true);

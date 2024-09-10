@@ -14,7 +14,7 @@
 #include "Hosting.h"
 #include "event.h"
 #include "remote_object.h"
-#include "msgthread.h"
+#include "MsgService.h"
 #include "import.h"
 #include "RemoteObjectStub.h"
 #include "tensor.h"
@@ -27,6 +27,7 @@
 #include "moduleobject.h"
 #include "parser.h"
 #include <algorithm> 
+#include "PyEngHost.h"
 
 namespace X 
 {
@@ -43,6 +44,11 @@ namespace X
 			delete g_pXHost;
 		}
 	}
+	void XHost_Impl::SetPyEngHost(void* pHost)
+	{
+		g_pPyHost = (PyEngHost*)pHost;
+	}
+
 	void XHost_Impl::AddSysCleanupFunc(CLEANUP f)
 	{
 		Manager::I().AddCleanupFunc(f);
@@ -596,15 +602,15 @@ return nullptr;
 		bool bOK = true;
 #if not defined(BARE_METAL)
 		Manager::I().AddLrpcPort(port);
-		MsgThread::I().SetPort(port);
+		IPC::MsgService::I().SetPort(port);
 		if (blockMode)
 		{
-			MsgThread::I().run();
+			IPC::MsgService::I().run();
 			Manager::I().RemoveLrpcPort(port);
 		}
 		else
 		{
-			bOK = MsgThread::I().Start();
+			bOK = IPC::MsgService::I().Start();
 		}
 #endif
 		return bOK;
@@ -754,6 +760,17 @@ return nullptr;
 		return false;
 	}
 
+	bool XHost_Impl::PyObjToValue(void* pyObj, X::Value& valObject)
+	{
+		if (g_pPyHost)
+		{
+			PyEng::Object obj(pyObj);
+			auto* pProxyObj = new Data::PyProxyObject(obj);
+			valObject = Value(pProxyObj);
+			return true;
+		}
+		return false;
+	}
 	void XHost_Impl::SetDebugMode(bool bDebug)
 	{
 		Hosting::I().SetDebugMode(bDebug);

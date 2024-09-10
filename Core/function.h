@@ -23,7 +23,7 @@ namespace X
 			~Function();
 			virtual X::Value GetName() override
 			{
-				return m_func->GetNameString();
+				return m_func->GetFuncName();
 			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 			{
@@ -44,7 +44,7 @@ namespace X
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
-			virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override;
+			virtual int QueryMethod(const char* name, int* pFlags) override;
 			virtual bool GetIndexValue(int idx, Value& v) override;
 
 			std::string GetDoc()

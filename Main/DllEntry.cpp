@@ -33,6 +33,7 @@
 #include "tensor.h"
 #include "tensor_graph.h"
 #include "struct.h"
+#include "RemotingProxy.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -145,7 +146,7 @@ PyEngObjectPtr Xlang_CallFunc_Impl(
 }
 bool LoadPythonEngine()
 {
-	typedef void (*LOAD)(void** ppHost);
+	typedef void (*LOAD)(void* pHost,void** ppHost);
 
 	std::string loadDllName;
 	bool bHaveDll = false;
@@ -188,7 +189,7 @@ bool LoadPythonEngine()
 		LOAD load = (LOAD)GetProc(libHandle, "Load");
 		if (load)
 		{
-			load((void**)&g_pPyHost);
+			load((void*)X::g_pXHost,(void**)&g_pPyHost);
 		}
 		g_pXload->SetPythonLibHandler(libHandle);
 		if (g_pPyHost)
@@ -214,7 +215,7 @@ void XLangStaticLoad()
 	BuildOps();
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
-	XLangProxyManager::I().Register();
+	X::IPC::RemotingProxyManager::I().Register();
 
 }
 void XLangStaticRun(std::string code)
@@ -256,7 +257,7 @@ void XLangRun()
 	}
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
-	XLangProxyManager::I().Register();
+	X::IPC::RemotingProxyManager::I().Register();
 
 	std::vector<X::Value> passInParams;
 	if (g_pXload->GetConfig().passInParams)

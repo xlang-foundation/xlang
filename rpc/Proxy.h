@@ -61,7 +61,7 @@ namespace X
 		}
 		virtual ROBJ_ID QueryRootObject(std::string& name);
 		virtual X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
-			bool& KeepRawParams);
+			int& memberFlags);
 		virtual long long QueryMemberCount(X::ROBJ_ID id);
 		virtual bool FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
 			Port::vector<std::string>& IdList, int id_offset,

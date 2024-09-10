@@ -18,11 +18,15 @@ namespace X
 		AST::StackFrame* m_stackFrame = nullptr;
 		std::string m_objName;
 		ROBJ_MEMBER_ID m_memmberId = -1;
-		bool m_KeepRawParams = false;
+		int m_memberFlags = 0;
 
 		//for remote object's members cache
 		std::unordered_map <std::string, int> m_NameToIndex;
 
+		FORCE_INLINE virtual int GetMemberFlags() override
+		{
+			return m_memberFlags;
+		}
 		FORCE_INLINE int NameToIndex(std::string& name, bool bGetOnly)
 		{
 			auto it = m_NameToIndex.find(name);
@@ -179,9 +183,10 @@ namespace X
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
+			bool keepRawParams = IS_KEEP_RAW_PARAMS(m_memberFlags);
 			//if keep m_KeepRawParams is true, the last params
 			//as trailer
-			if (m_KeepRawParams && params.size() >0)
+			if (keepRawParams && params.size() >0)
 			{
 				ARGS params0(params.size() - 1);
 				for (int i = 0; i < (params.size() - 1);i++)
@@ -221,8 +226,8 @@ namespace X
 			//we need to check if this is a cache there, if not, go to remote to get it
 			if (idx == (int)X::AST::ScopeVarIndex::INVALID)
 			{
-				bool KeepRawParams = false;
-				auto memId = m_proxy->QueryMember(m_remote_Obj_id, strName, KeepRawParams);
+				int memberFlags = 0;
+				auto memId = m_proxy->QueryMember(m_remote_Obj_id, strName, memberFlags);
 				if (memId != -1)
 				{
 					auto objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId);
@@ -232,7 +237,7 @@ namespace X
 					r_obj->m_remote_Obj_id = objId;
 					r_obj->m_memmberId = memId;
 					r_obj->m_objName = name;
-					r_obj->m_KeepRawParams = KeepRawParams;
+					r_obj->m_memberFlags = memberFlags;
 					//r_obj->Object::IncRef();
 					Value valObj(dynamic_cast<XObj*>(r_obj));
 					m_stackFrame->Set(idx, valObj);

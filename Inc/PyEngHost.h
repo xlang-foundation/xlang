@@ -2,6 +2,7 @@
 #define _PyEngHost_H_
 
 #include "xport.h"
+#include "xlang.h"
 
 //all function,if return PyEngObjectPtr will hold a new reference
 typedef void* PyEngObjectPtr;
@@ -33,6 +34,8 @@ public:
 	virtual PyEngObjectPtr from_double(double val) = 0;
 	virtual const char* to_str(PyEngObjectPtr pVar) = 0;
 	virtual PyEngObjectPtr from_str(const char* val) = 0;
+	virtual X::Value to_xvalue(PyEngObjectPtr pVar) = 0;
+	virtual PyEngObjectPtr from_xvalue(const X::Value& val) = 0;
 
 	virtual long long GetCount(PyEngObjectPtr objs) = 0;
 	virtual PyEngObjectPtr Get(PyEngObjectPtr objs, int idx) = 0;

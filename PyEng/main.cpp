@@ -1,5 +1,7 @@
 #include "PyEngHostImpl.h"
 #include <string>
+#include "xlang.h"
+#include "xhost.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -81,9 +83,13 @@ int x_Py_tracefunc(PyObject* self,
 	}
 	return 0;
 }
-
-extern "C"  X_EXPORT void Load(void** ppHost)
+namespace X
 {
+	extern XHost* g_pXHost;//defined in xload.cpp which included for PyBind.cpp
+}
+extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
+{
+	X::g_pXHost = (X::XHost*)pXHost;
 	Py_Initialize();
 	g_pPyHost = &GrusPyEngHost::I();
 	*ppHost = (void*)g_pPyHost;
@@ -93,5 +99,6 @@ extern "C"  X_EXPORT void Load(void** ppHost)
 
 extern "C"  X_EXPORT void Unload()
 {
+	X::g_pXHost = nullptr;
 	Py_FinalizeEx();
 }

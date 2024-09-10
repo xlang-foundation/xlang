@@ -79,6 +79,8 @@ namespace X
 		virtual void* GetUIThreadRunContext() override;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) override;
 		virtual bool PyRun(const char* code, X::ARGS& args) override;
+		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) override;
+		virtual void SetPyEngHost(void* pHost) override;
 		virtual void SetDebugMode(bool bDebug) override;
 	};
 	X::XHost* CreatXHost();

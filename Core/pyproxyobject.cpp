@@ -107,7 +107,8 @@ namespace X
 		}
 		bool PyProxyObject::ToValue(X::Value& val)
 		{
-			return PyObjectToValue(m_obj, val);
+			val = g_pPyHost->to_xvalue(m_obj);
+			return true;
 		}
 		bool PyProxyObject::ToBin(X::Value& valBin)
 		{

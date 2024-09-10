@@ -14,6 +14,7 @@ include_directories("../Ast")
 include_directories("../Parse")
 include_directories("../Serialize")
 include_directories("../rpc")
+include_directories("../Ipc")
 include_directories("../Thread")
 include_directories("../Ext")
 include_directories("../Core")
@@ -34,6 +35,7 @@ FILE(GLOB Thread_SRC "../Thread/*.cpp")
 FILE(GLOB Ext_SRC "../Ext/*.cpp")
 FILE(GLOB Text_SRC "../Text/*.cpp")
 FILE(GLOB Rpc_SRC "../rpc/*.cpp")
+FILE(GLOB Ipc_SRC "../Ipc/*.cpp")
 FILE(GLOB Nn_SRC "../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../Jit/*.cpp")
 FILE(GLOB Main_SRC "../Main/AddScripts.cpp" "../Main/Hosting.cpp" "../Main/xhost_impl.cpp")
@@ -57,6 +59,7 @@ add_executable (${PROJECT_NAME}
 	${Ext_SRC}
 	${Text_SRC}
 	${Rpc_SRC}
+	${Ipc_SRC}
 	${Nn_SRC}
 	${Main_SRC}
 	${AppEntry_SRC}

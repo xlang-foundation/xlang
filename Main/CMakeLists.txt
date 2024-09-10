@@ -16,6 +16,7 @@ include_directories("../Ast")
 include_directories("../Parse")
 include_directories("../Serialize")
 include_directories("../rpc")
+include_directories("../ipc")
 include_directories("../Thread")
 include_directories("../Ext")
 include_directories("../Core")
@@ -36,6 +37,7 @@ FILE(GLOB Thread_SRC "../Thread/*.cpp")
 FILE(GLOB Ext_SRC "../Ext/*.cpp")
 FILE(GLOB Text_SRC "../Text/*.cpp")
 FILE(GLOB Rpc_SRC "../rpc/*.cpp")
+FILE(GLOB Ipc_SRC "../ipc/*.cpp")
 FILE(GLOB Nn_SRC "../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../Jit/*.cpp")
 FILE(GLOB Main_SRC "*.cpp")
@@ -51,6 +53,7 @@ add_library(${PROJECT_NAME} SHARED
 	${Thread_SRC}
 	${Ext_SRC}
 	${Text_SRC}
+	${Ipc_SRC}
 	${Rpc_SRC}
 	${Nn_SRC}
 	${Jit_SRC}

@@ -132,7 +132,7 @@ namespace X
 		return true;
 	}
 	X::ROBJ_MEMBER_ID XLangProxy::QueryMember(X::ROBJ_ID id, std::string& name,
-		bool& KeepRawParams)
+		int& memberFlags)
 	{
 		if (!CheckConnectReadyStatus())
 		{
@@ -149,7 +149,7 @@ namespace X
 		if (bOK)
 		{
 			stream2 >> mId;
-			stream2 >> KeepRawParams;
+			stream2 >> memberFlags;
 		}
 		FinishCall();
 		return mId;
@@ -233,9 +233,20 @@ namespace X
 		//Pack Parameters
 		for (auto& param : params)
 		{
-			if (param.IsObject() && param.GetObj()->GetType() == X::ObjType::Function)
-			{//for function as an event handler, we need to convert it to remote client object
-				//conver to remote client object
+			bool bNeedConvert = false;
+			if (param.IsObject())
+			{
+				// for function as an event handler, we need to convert it to remote client object
+				//converT to remote client object
+				auto* pObj = param.GetObj();
+				auto type = pObj->GetType();
+				if ( type== X::ObjType::Function || type == X::ObjType::PyProxyObject)
+				{
+					bNeedConvert = true;
+				}
+			}
+			if (bNeedConvert)
+			{
 				auto&& rcParam = ConvertXObjToRemoteClientObject(param.GetObj());
 				rcParam.ToBytes(&stream);
 			}
@@ -248,9 +259,22 @@ namespace X
 		for (auto& kw : kwParams)
 		{
 			stream << kw.key;
-			if (kw.val.IsObject() && kw.val.GetObj()->GetType() == X::ObjType::Function)
+			bool bNeedConvert = false;
+			if (kw.val.IsObject())
 			{
-				//conver to remote client object
+				// for function as an event handler, we need to convert 
+				// it to remote client object
+				//converT to remote client object
+				auto* pObj = kw.val.GetObj();
+				auto type = pObj->GetType();
+				if (type == X::ObjType::Function || type == X::ObjType::PyProxyObject)
+				{
+					bNeedConvert = true;
+				}
+			}
+			if (bNeedConvert)
+			{
+				//convert to remote client object
 				auto&& rcParam = ConvertXObjToRemoteClientObject(kw.val.GetObj());
 				rcParam.ToBytes(&stream);
 			}

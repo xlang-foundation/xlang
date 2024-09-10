@@ -1,22 +1,5 @@
 #pragma once
 
-//#define USE_MYWAIT
-
-#if defined(USE_MYWAIT)
-typedef void* XWaitHandle;
-class XWait
-{
-public:
-    XWait(bool autoReset = true);
-    ~XWait();
-    bool Wait(int timeoutMS);
-    void Reset();
-    void Release();
-private:
-    bool m_autoReset = true;
-    XWaitHandle m_waitHandle = nullptr;
-};
-#else
 #include <condition_variable>
 #include <mutex>
 #include <chrono>
@@ -46,11 +29,36 @@ public:
 		}
 		return true;
 	}
-
-	void Release() {
+	template <typename Predicate>
+	bool Wait(int timeoutMS, Predicate pred) {
+		std::unique_lock<std::mutex> lock(m_mutex);
+		if (m_signaled && pred())
+		{
+			if (m_autoReset)
+				m_signaled = false;
+			return true;
+		}
+		if (timeoutMS < 0)
+			m_condition.wait(lock, [this, &pred] { return m_signaled || pred(); });
+		else {
+			if (!m_condition.wait_for(lock, std::chrono::milliseconds(timeoutMS), 
+				[this, &pred] { return m_signaled || pred(); }))
+				return false;
+		}
+		if (m_autoReset && pred()) {
+			m_signaled = false;
+		}
+		return true;
+	}
+	void Release(bool bAll = false) {
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_signaled = true;
-		m_condition.notify_one();
+		if (bAll) {
+			m_condition.notify_all();
+		}
+		else {
+			m_condition.notify_one();
+		}
 	}
 
 	void Reset() {
@@ -64,5 +72,3 @@ private:
 	std::mutex m_mutex;
 	std::condition_variable m_condition;
 };
-
-#endif

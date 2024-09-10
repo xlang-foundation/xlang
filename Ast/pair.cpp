@@ -50,9 +50,30 @@ bool PairOp::ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValu
 			}
 		}
 	}
-	else
+	else if(R)
 	{
-		if (R && R->m_type != ObType::List)
+		if (R->m_type == ObType::List)
+		{
+			bOK = true;
+			X::List valList;
+			auto& list = (dynamic_cast<List*>(R))->GetList();
+			for (auto e : list)
+			{
+				Value v1;
+				ExecAction action;
+				if (ExpExec(e, rt, action, pContext, v1))
+				{
+					valList += v1;
+				}
+				else
+				{
+					bOK = false;
+					break;
+				}
+			}
+			v = Value(valList);
+		}
+		else
 		{
 			ExecAction action;
 			bOK = ExpExec(R,rt,action, pContext, v, lValue);

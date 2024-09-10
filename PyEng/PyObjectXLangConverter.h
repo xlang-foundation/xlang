@@ -1,8 +1,9 @@
 #pragma once
-#include "PyFunc.h"
-#include "xlang.h" 
+#include "xlang.h"
+#include "xhost.h"
 
 extern PyObject* CreateXlangObjectWrapper(X::Value& realObj);
+extern X::Value CheckXlangObjectAndConvert(PyObject* obj);
 
 class PyObjectXLangConverter {
 public:
@@ -23,7 +24,12 @@ public:
             return ConvertDictToXValue(obj);
         }
         else {
-            return X::Value();
+
+            X::Value valObj = CheckXlangObjectAndConvert(obj);
+            if (!valObj.IsValid()){
+                X::g_pXHost->PyObjToValue(obj, valObj);
+            }
+            return valObj;
         }
     }
 
@@ -47,7 +53,9 @@ public:
             return CreateXlangObjectWrapper(value);
         }
         else {
-			return Py_None;
+            PyObject* pOb = Py_None;
+            Py_IncRef(pOb);
+			return pOb;
 		}
     }
 
