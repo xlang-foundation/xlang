@@ -2,7 +2,8 @@
 #include "utility.h"
 #include "service_def.h"
 #include "SMSwapBuffer.h"
-
+#include "RemotingServerMgr.h"
+#include "IpcBase.h"
 #include "port.h"
 #include <iostream>
 
@@ -56,13 +57,17 @@ namespace X
 			if (processEnded)
 			{
 				std::cout << "Client Exited,m_clientPid=" << m_clientPid << std::endl;
-				RemotingManager::I().CloseStub(this);
+				RemotingManager::I().CloseServer(this);
 				std::cout << "Stub Closed" << std::endl;
 			}
 		}
 
 		RemotingServer::RemotingServer()
 		{
+			mMinReqId = 20000;//should not be inside client's range
+			mMaxReqId = 30000;
+			mNextRequestId = mMinReqId;
+
 			m_pStubWatch = new StubWatch();
 			m_pStubWatch->SetParent(this);
 			mWBuffer = new SMSwapBuffer();
@@ -77,12 +82,14 @@ namespace X
 		}
 		bool RemotingServer::Create(unsigned long long shmKey)
 		{
+			bool IsAdmin = Helper::CheckIfAdmin();
 			mKey = shmKey;
-			bool bOK = mWBuffer->HostCreate(shmKey, SM_BUF_SIZE);
+			bool bOK = mWBuffer->HostCreate(shmKey, SM_BUF_SIZE, IsAdmin);
 			if (bOK)
 			{
-				bOK = mRBuffer->HostCreate(shmKey + 1, SM_BUF_SIZE);
+				bOK = mRBuffer->HostCreate(shmKey + 1, SM_BUF_SIZE, IsAdmin);
 			}
+			StartReadThread();
 			return bOK;
 		}
 
@@ -122,56 +129,31 @@ namespace X
 
 			}
 		}
-
-		void RemotingServer::ReceiveCall()
-		{
-			SwapBufferStream stream;
-			stream.SetSMSwapBuffer(mWBuffer);
-			if (!mWBuffer->BeginRead() || !mRun)
-			{
-				return;
-			}
-			stream.Refresh();
-			PayloadFrameHead& head = mWBuffer->GetHead();
-			bool bOK = false;
-			if (head.callType == (unsigned int)RPC_CALL_TYPE::ShakeHands)
-			{
-				bOK = ShakeHandsCall(head.context, stream);
-			}
-			else
-			{
-				RemoteFuncInfo* pFuncInfo = RemotingManager::I().Get(head.callType);
-				if (pFuncInfo != nullptr && pFuncInfo->pHandler != nullptr)
-				{
-					bOK = pFuncInfo->pHandler->Call(head.context, head.callType, stream, this);
-				}
-				else
-				{//wrong call, also need to call lines below
-					NotifyBeforeCall(stream);
-					NotifyAfterCall(stream, false);
-					FinishCall(head.context, stream, false);
-				}
-			}
-
-		}
-
-		bool RemotingServer::ShakeHandsCall(void* pCallContext, SwapBufferStream& stream)
+		void RemotingServer::ShakeHandsCall(void* pCallContext, SwapBufferStream& stream)
 		{
 			unsigned long clientPid = 0;
 			stream >> clientPid;
 			std::cout << "RemotingServer::ShakeHandsCall,clientPid=" << clientPid << std::endl;
-			NotifyBeforeCall(stream);
+			EndReceiveCall(stream);
 			m_clientPid = clientPid;
 			if (clientPid != 0)
 			{
 				WatchClientProcess(clientPid);
 			}
-			NotifyAfterCall(stream, true);
-			unsigned long pid = GetPID();
-			stream << pid;
-			stream << m_sessionId;
-			FinishCall(pCallContext, stream, true);
-			return true;
+			//still running in current therad because following code 
+			// will return very soon
+			{
+				bool bOK = true;
+				auto& wStream = BeginWriteReturn(bOK);
+				wStream << bOK;
+				if (bOK)
+				{
+					unsigned long pid = GetPID();
+					wStream << pid;
+					wStream << m_sessionId;
+				}
+				EndWriteReturn(pCallContext,bOK);
+			}
 		}
 	}//namespace IPC
 }//namespace X

@@ -15,8 +15,8 @@ namespace X
 {
 	namespace IPC
 	{
-		class XLangProxyManager :
-			public Singleton<XLangProxyManager>
+		class RemotingProxyManager :
+			public Singleton<RemotingProxyManager>
 		{
 		public:
 			void Register();
@@ -35,8 +35,19 @@ namespace X
 			{
 				mRootObjectName = name;
 			}
+			virtual unsigned long long GetSessionId() override
+			{
+				return 0;
+			}
 			void SetUrl(std::string& url);
-
+			virtual int AddRef() override
+			{
+				return CallHandler::AddRef();
+			}
+			virtual int Release() override
+			{
+				return CallHandler::Release();
+			}
 			virtual ROBJ_ID QueryRootObject(std::string& name);
 			virtual X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
 				int& memberFlags);
@@ -89,6 +100,9 @@ namespace X
 					Cleanup();
 				}
 				return ret;
+			}
+			void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) override
+			{
 			}
 			int mTimeout = -1;
 			long m_port = 0;

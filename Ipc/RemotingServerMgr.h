@@ -20,7 +20,7 @@ namespace X
 			void CloseServer(void* pSrv);
 			bool IsServerExist(unsigned long long sessionId);
 		};
-        void RemotingManager::CreateServer(unsigned long long key)
+        inline void RemotingManager::CreateServer(unsigned long long key)
         {
             RemotingServer* pSrv = NULL;
             mSrvLock.Lock();
@@ -48,7 +48,7 @@ namespace X
                 pSrv->Start();
             }
         }
-        bool RemotingManager::IsServerExist(unsigned long long sessionId)
+        inline bool RemotingManager::IsServerExist(unsigned long long sessionId)
         {
             bool bExist = false;
             mSrvLock.Lock();
@@ -63,9 +63,9 @@ namespace X
             mSrvLock.Unlock();
             return bExist;
         }
-        void RemotingManager::CloseServer(void* pSrv)
+        inline void RemotingManager::CloseServer(void* pSrv)
         {
-            RemotingServer* pSrv = (RemotingServer*)pSrv;
+            RemotingServer* pRemotingSrv = (RemotingServer*)pSrv;
             if (pSrv == nullptr)
             {
                 return;
@@ -73,15 +73,15 @@ namespace X
             //check if this is only one reference to hold for this stub
             //because the reference in mSrvs
             int cnt = 0;
-            while ((cnt < 9999) && pSrv->GetRefCount() > 1)
+            while ((cnt < 9999) && pRemotingSrv->RefCount() > 1)
             {
                 US_SLEEP(33000);
                 cnt++;
             }
 
-            pSrv->Quit();
+            pRemotingSrv->Quit();
 
-            pSrv->Stop();
+            pRemotingSrv->Stop();
             bool bExist = false;
             mSrvLock.Lock();
             for (auto it = mSrvs.begin(); it != mSrvs.end(); it++)
@@ -96,7 +96,7 @@ namespace X
             mSrvLock.Unlock();
             if (bExist)
             {
-                pSrv->Release();
+                pRemotingSrv->Release();
             }
         }
 	}

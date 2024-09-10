@@ -33,6 +33,7 @@
 #include "tensor.h"
 #include "tensor_graph.h"
 #include "struct.h"
+#include "RemotingProxy.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -214,7 +215,7 @@ void XLangStaticLoad()
 	BuildOps();
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
-	XLangProxyManager::I().Register();
+	X::IPC::RemotingProxyManager::I().Register();
 
 }
 void XLangStaticRun(std::string code)
@@ -256,7 +257,7 @@ void XLangRun()
 	}
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
-	XLangProxyManager::I().Register();
+	X::IPC::RemotingProxyManager::I().Register();
 
 	std::vector<X::Value> passInParams;
 	if (g_pXload->GetConfig().passInParams)

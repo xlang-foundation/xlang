@@ -77,7 +77,7 @@ namespace X
         unsigned long long m_sessionId = 0;
         unsigned long m_clientPid = 0;
 
-        bool ShakeHandsCall(void* pCallContext,SwapBufferStream& stream);
+        void ShakeHandsCall(void* pCallContext,SwapBufferStream& stream) override;
     };
 
     }//namespace IPC

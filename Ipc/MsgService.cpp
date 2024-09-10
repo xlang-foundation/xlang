@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include "RemotingServerMgr.h"
+#include "RemotingStub.h"
 
 namespace X
 {
@@ -96,7 +97,7 @@ namespace X
 #endif
 		MsgService::MsgService()
 		{
-			RemoteObjectStub::I().Register();
+			RemotingStub::I().Register();
 		}
 		void MsgService::Stop()
 		{
@@ -109,6 +110,7 @@ namespace X
 
 		void MsgService::run()
 		{
+			MakeProcessLevelSemaphore();
 #if (WIN32)
 			std::string msgKey(PAS_MSG_KEY);
 			if (mPort != 0)
@@ -192,6 +194,54 @@ namespace X
 			if (mPort != 0)
 			{
 				Manager::I().RemoveLrpcPort(mPort);
+			}
+			Close();
+		}
+
+		bool MsgService::MakeProcessLevelSemaphore()
+		{
+			bool IsAdmin = Helper::CheckIfAdmin();
+#if (WIN32)
+			SECURITY_ATTRIBUTES sa;
+			SECURITY_DESCRIPTOR sd;
+
+			// Initialize the security descriptor for Global/Local admin usage
+			if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
+			{
+				return false;
+			}
+			if (!SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE))
+			{
+				return false;
+			}
+			sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+			sa.lpSecurityDescriptor = &sd;
+			sa.bInheritHandle = FALSE;
+#endif
+
+			auto pid = GetPID();
+			std::string semaphoreName =
+				IsAdmin ? "Global\\XlangServerSemaphore_" : "XlangServerSemaphore_";
+			semaphoreName += std::to_string(pid);
+			mSemaphore_For_Process = CREATE_SEMAPHORE(sa, semaphoreName.c_str());
+			if (mSemaphore_For_Process == nullptr)
+			{
+				std::cout << "Create semaphore " << semaphoreName << " failed" << std::endl;
+				return false;
+			}
+			else
+			{
+				std::cout << "Create semaphore " << semaphoreName << " OK" << std::endl;
+			}
+			return true;
+		}
+
+		void MsgService::Close()
+		{
+			if (mSemaphore_For_Process)
+			{
+				CLOSE_SEMAPHORE(mSemaphore_For_Process);
+				mSemaphore_For_Process = nullptr;
 			}
 		}
 

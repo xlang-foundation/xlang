@@ -4,10 +4,6 @@
 #include "service_def.h"
 #include "port.h"
 #include "utility.h"
-#if (WIN32)
-#include <Windows.h>
-#include <sddl.h>
-#endif
 #include <iostream>
 #include <string>
 
@@ -28,43 +24,14 @@ namespace X
 #define SETEVENT(evt)    sem_post(evt);
 #endif
 
-#if (WIN32)
-		bool CheckIfAdmin()
-		{
-			BOOL isAdmin = FALSE;
-			PSID adminGroup = NULL;
-
-			// Create a SID for the administrators group
-			SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
-			if (!AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup)) {
-				return false;
-			}
-
-			// Check if the current token contains the admin SID
-			if (!CheckTokenMembership(NULL, adminGroup, &isAdmin)) {
-				isAdmin = FALSE;
-			}
-
-			FreeSid(adminGroup);
-			return isAdmin;
-		}
-#else
-		//in linux, we don't need to add global as prefix for IPC objects
-		//so we just return false
-		bool CheckIfAdmin()
-		{
-			return false;
-		}
-#endif
 		class SMSwapBuffer
 		{
 		public:
 			SMSwapBuffer() : mClosed(false), mShmID(0), mWriteEvent(nullptr),
-				mReadEvent(nullptr), mShmPtr(0), m_BufferSize(0),
-				mSemaphore_For_Process(nullptr) {}
+				mReadEvent(nullptr), mShmPtr(0), m_BufferSize(0){}
 			~SMSwapBuffer() { Close(); }
 
-			bool HostCreate(unsigned long long key, int bufSize)
+			bool HostCreate(unsigned long long key, int bufSize,bool IsAdmin)
 			{
 #if (WIN32)
 				SECURITY_ATTRIBUTES sa;
@@ -84,27 +51,6 @@ namespace X
 				sa.bInheritHandle = FALSE;
 
 #endif
-				bool IsAdmin = CheckIfAdmin();
-				auto pid = GetPID();
-
-				// Create the semaphore for process-level synchronization
-				std::string semaphoreName =
-					IsAdmin ? "Global\\XlangServerSemaphore_" : "XlangServerSemaphore_";
-				semaphoreName += std::to_string(pid);
-
-#if (WIN32)
-				mSemaphore_For_Process = CreateSemaphore(&sa, 1, 1, semaphoreName.c_str());
-				if (!mSemaphore_For_Process)
-				{
-					std::cout << "CreateSemaphore failed with error: " << GetLastError() << std::endl;
-					return false;
-				}
-#elif __ANDROID__
-				// Add Android/Linux semaphore logic if necessary
-#else
-				mSemaphore_For_Process = sem_open(semaphoreName.c_str(), O_CREAT | O_EXCL, 0666, 1);
-#endif
-
 				// Create the write and read events with different names for server and client
 				const int Key_Len = 100;
 				char szWriteEvent[Key_Len], szReadEvent[Key_Len];
@@ -208,7 +154,7 @@ namespace X
 				return true;
 			}
 			bool ClientConnect(bool& usGlobal, long port, unsigned long long shKey,
-				int bufSize, int timeoutMS, bool needSendMsg)
+				int bufSize, int timeoutMS, bool needSendMsg = true)
 			{
 				if (needSendMsg)
 				{
@@ -228,16 +174,16 @@ namespace X
 				usGlobal = false;
 				const int Key_Len = 100;
 				char szKey_s[Key_Len];
-				SPRINTF(szKey_s, Key_Len, "Global\\Galaxy_SM_Notify_Server_%llu", shKey);
+				SPRINTF(szKey_s, Key_Len, "Global\\Galaxy_SM_Write_%llu", shKey);
 				char szKey_c[Key_Len];
-				SPRINTF(szKey_c, Key_Len, "Global\\Galaxy_SM_Notify_Client_%llu", shKey);
+				SPRINTF(szKey_c, Key_Len, "Global\\Galaxy_SM_Read_%llu", shKey);
 
 #if (WIN32)
 				//Non-Global
 				char szKey_s_l[Key_Len];
-				SPRINTF(szKey_s_l, Key_Len, "Galaxy_SM_Notify_Server_%llu", shKey);
+				SPRINTF(szKey_s_l, Key_Len, "Galaxy_SM_Write_%llu", shKey);
 				char szKey_c_l[Key_Len];
-				SPRINTF(szKey_c_l, Key_Len, "Galaxy_SM_Notify_Client_%llu", shKey);
+				SPRINTF(szKey_c_l, Key_Len, "Galaxy_SM_Read_%llu", shKey);
 
 				char mappingName[MAX_PATH];
 				sprintf_s(mappingName, "Global\\Galaxy_FileMappingObject_%llu", shKey);
@@ -460,16 +406,6 @@ namespace X
 #endif
 					mReadEvent = nullptr;
 				}
-				if (mSemaphore_For_Process)
-				{
-#if (WIN32)
-					CloseHandle(mSemaphore_For_Process);
-#else
-					sem_close(mSemaphore_For_Process);
-					sem_unlink("semaphoreName");
-#endif
-					mSemaphore_For_Process = nullptr;
-				}
 				if (mShmPtr)
 				{
 #if (WIN32)
@@ -491,7 +427,6 @@ namespace X
 					mShmID = 0;
 				}
 			}
-
 		private:
 			bool Wait(PasWaitHandle h, int timeoutMS)
 			{
@@ -538,7 +473,6 @@ private:
 #endif
 			EVENT_HANDLE mWriteEvent;  // Write event for synchronization
 			EVENT_HANDLE mReadEvent;   // Read event for synchronization
-			SEMAPHORE_HANDLE mSemaphore_For_Process;  // Semaphore for additional process-level synchronization
 			Locker mSharedMemLock;
 			char* mShmPtr;
 			int m_BufferSize;

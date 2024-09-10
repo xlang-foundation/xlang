@@ -35,5 +35,42 @@ namespace X
 			Locker mLockMapFuncs;
 			std::unordered_map<unsigned int, RemoteFuncInfo*> mMapFuncs;
 		};
+        inline void RemotingMethod::Register(unsigned int callID,
+            RemotingCallBase* pHandler,
+            std::string funcName,
+            std::vector<std::string> inputTypes,
+            std::string retType)
+        {
+            RemoteFuncInfo* pFuncInfo = nullptr;
+            mLockMapFuncs.Lock();
+            auto it = mMapFuncs.find(callID);
+            if (it != mMapFuncs.end())
+            {
+                pFuncInfo = it->second;
+            }
+            else
+            {
+                pFuncInfo = new RemoteFuncInfo();
+                mMapFuncs.emplace(std::make_pair(callID, pFuncInfo));
+            }
+            pFuncInfo->callID = callID;
+            pFuncInfo->pHandler = pHandler;
+            pFuncInfo->funcName = funcName;
+            pFuncInfo->inputTypes = inputTypes;
+            pFuncInfo->retType = retType;
+            mLockMapFuncs.Unlock();
+        }
+
+        inline void RemotingMethod::Unregister(unsigned int callID)
+        {
+            mLockMapFuncs.Lock();
+            auto it = mMapFuncs.find(callID);
+            if (it != mMapFuncs.end())
+            {
+                delete it->second;
+                mMapFuncs.erase(it);
+            }
+            mLockMapFuncs.Unlock();
+        }
 	}
 }

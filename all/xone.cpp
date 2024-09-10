@@ -34,7 +34,7 @@
 #include "tensor_graph.h"
 #include "manager.h"
 #include "struct.h"
-
+#include "RemotingProxy.h"
 //for OS Module
 #include "os/fs.h"
 #include "os/utils.h"
@@ -153,7 +153,7 @@ namespace X
 		X::BuildOps();
 		X::ScriptsManager::I().Load();
 		X::ScriptsManager::I().Run();
-		X::XLangProxyManager::I().Register();
+		X::IPC::RemotingProxyManager::I().Register();
 
 	}
 	static void XLangInternalInit()
@@ -251,7 +251,7 @@ namespace X
 		}
 		ScriptsManager::I().Load();
 		ScriptsManager::I().Run();
-		XLangProxyManager::I().Register();
+		X::IPC::RemotingProxyManager::I().Register();
 
 		std::vector<X::Value> passInParams;
 		if (config.passInParams)

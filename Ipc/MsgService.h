@@ -5,6 +5,7 @@
 #include "Locker.h"
 #include <string>
 #include "gthread.h"
+#include "port.h"
 
 namespace X 
 {
@@ -26,6 +27,10 @@ namespace X
                 mPort = port;
             }
         private:
+            // Semaphore for additional process-level synchronization
+            SEMAPHORE_HANDLE mSemaphore_For_Process= nullptr;
+            bool MakeProcessLevelSemaphore();
+            void Close();
             long mPort = 0;
             void RemoveMsgId();
             bool mRun = true;

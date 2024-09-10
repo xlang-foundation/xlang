@@ -3,20 +3,54 @@
 #include <vector>
 #include <functional>
 #include <string>
+#if (WIN32)
+#include <Windows.h>
+#include <sddl.h>
+#endif
 
 namespace X
 {
 	namespace IPC
 	{
+		class Helper
+		{
+		public:
+			inline static bool CheckIfAdmin()
+			{
+				BOOL isAdmin = false;
+#if (WIN32)
+				PSID adminGroup = NULL;
+
+				// Create a SID for the administrators group
+				SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
+				if (!AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup)) {
+					return false;
+				}
+
+				// Check if the current token contains the admin SID
+				if (!CheckTokenMembership(NULL, adminGroup, &isAdmin)) {
+					isAdmin = FALSE;
+				}
+
+				FreeSid(adminGroup);
+#else
+				//in linux, we don't need to add global as prefix for IPC objects
+				//so we just return false
+#endif
+				return isAdmin;
+			}
+		};
 		class RemotingProc
 		{
 		public:
 			virtual int AddRef() = 0;
 			virtual int Release() = 0;
+			virtual int RefCount() = 0;
 			virtual void EndReceiveCall(SwapBufferStream& stream) = 0;
-			virtual void BeginWriteReturn(SwapBufferStream& stream, bool callIsOk) = 0;
-			virtual void EndWriteReturn(void* pCallContext, SwapBufferStream& stream, bool callIsOk) = 0;
+			virtual SwapBufferStream& BeginWriteReturn(bool callIsOk) = 0;
+			virtual void EndWriteReturn(void* pCallContext,bool callIsOk) = 0;
 			virtual unsigned long long GetSessionId() = 0;
+			virtual void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) = 0;
 		};
 		class RemotingCallBase
 		{

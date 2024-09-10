@@ -14,7 +14,7 @@
 #include "Hosting.h"
 #include "event.h"
 #include "remote_object.h"
-#include "msgthread.h"
+#include "MsgService.h"
 #include "import.h"
 #include "RemoteObjectStub.h"
 #include "tensor.h"
@@ -602,15 +602,15 @@ return nullptr;
 		bool bOK = true;
 #if not defined(BARE_METAL)
 		Manager::I().AddLrpcPort(port);
-		MsgThread::I().SetPort(port);
+		IPC::MsgService::I().SetPort(port);
 		if (blockMode)
 		{
-			MsgThread::I().run();
+			IPC::MsgService::I().run();
 			Manager::I().RemoveLrpcPort(port);
 		}
 		else
 		{
-			bOK = MsgThread::I().Start();
+			bOK = IPC::MsgService::I().Start();
 		}
 #endif
 		return bOK;

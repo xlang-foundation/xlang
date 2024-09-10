@@ -5,8 +5,11 @@
 #include "xproxy.h"
 #include "xhost.h"
 #include "xlang.h"
-#include "utils.h"
+#include "utility.h"
 #include "IpcPool.h"
+#include "list.h"
+#include "bin.h"
+#include "remote_object.h"
 
 namespace X
 {
@@ -30,10 +33,7 @@ namespace X
 			public Singleton<RemotingStub>
 		{
 		public:
-			RemotingStub()
-			{
-			}
-			~RemotingStub()
+			RemotingStub() :threadPool(1)
 			{
 			}
 			void Register();
@@ -43,7 +43,7 @@ namespace X
 
 		private:
 			template<class F, class... Args>
-			auto AddTask(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
+			auto AddTask(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>;
 			IPC::ThreadPool threadPool;
 
 			X::XRuntime* m_rt = nullptr;
@@ -75,62 +75,69 @@ namespace X
 		};
 		//Implementations
 		template<class F, class... Args>
-		auto RemotingStub::AddTask(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>
+		auto RemotingStub::AddTask(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>
 		{
 			return threadPool.enqueue(std::forward<F>(f), std::forward<Args>(args)...);
 		}
 		void RemotingStub::Register()
 		{
-			RemotingManager::I().Register(
+			RemotingMethod::I().Register(
+				(unsigned int)RPC_CALL_TYPE::ShakeHands,
+				this,
+				std::string("ShakeHands"),
+				std::vector<std::string>{},
+				std::string("void")
+			);
+			RemotingMethod::I().Register(
 				(unsigned int)RPC_CALL_TYPE::CantorProxy_QueryRootObject,
 				this,
 				std::string("QueryRootObject"),
 				std::vector<std::string>{},
 				std::string("bool")
 			);
-			RemotingManager::I().Register(
+			RemotingMethod::I().Register(
 				(unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMember,
 				this,
 				std::string("QueryMember"),
 				std::vector<std::string>{},
 				std::string("bool")
 			);
-			RemotingManager::I().Register(
+			RemotingMethod::I().Register(
 				(unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount,
 				this,
 				std::string("QueryMemberCount"),
 				std::vector<std::string>{},
 				std::string("int")
 			);
-			RemotingManager::I().Register(
+			RemotingMethod::I().Register(
 				(unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack,
 				this,
 				std::string("FlatPack"),
 				std::vector<std::string>{},
 				std::string("int")
 			);
-			RemotingManager::I().Register(
+			RemotingMethod::I().Register(
 				(unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue,
 				this,
 				std::string("UpdateItemValue"),
 				std::vector<std::string>{},
 				std::string("int")
 			);
-			RemotingManager::I().Register(
+			RemotingMethod::I().Register(
 				(unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject,
 				this,
 				std::string("GetMemberObject"),
 				std::vector<std::string>{},
 				std::string("bool")
 			);
-			RemotingManager::I().Register(
+			RemotingMethod::I().Register(
 				(unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject,
 				this,
 				std::string("ReleaseObject"),
 				std::vector<std::string>{},
 				std::string("bool")
 			);
-			RemotingManager::I().Register(
+			RemotingMethod::I().Register(
 				(unsigned int)RPC_CALL_TYPE::CantorProxy_Call,
 				this,
 				std::string("Call"),
@@ -171,21 +178,16 @@ namespace X
 			stream >> objName;
 			pProc->EndReceiveCall(stream);
 
-			pProc->AddRef();
-			AddTask([this, objName, pProc, pCallContext]()
-				{
-					auto pXObj = QueryObjWithName(objName);
-					bool bOK = (pXObj != nullptr);
-					SwapBufferStream stream;
-					pProc->BeginWriteReturn(stream, bOK);
-					if (bOK)
-					{
-						X::ROBJ_ID objId = ConvertXObjToId(pXObj);
-						stream << objId;
-					}
-					pProc->EndWriteReturn(pCallContext, stream, bOK);
-					pProc->Release();
-				});
+			auto pXObj = QueryObjWithName((std::string&)objName);
+			bool bOK = (pXObj != nullptr);
+			auto& wstream = pProc->BeginWriteReturn(bOK);
+			if (bOK)
+			{
+				X::ROBJ_ID objId = ConvertXObjToId(pXObj);
+				wstream << objId;
+			}
+			pProc->EndWriteReturn(pCallContext, bOK);
+
 			return true;
 		}
 		bool RemotingStub::QueryMember(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -195,18 +197,13 @@ namespace X
 			stream >> objId;
 			stream >> name;
 			pProc->EndReceiveCall(stream);
-			AddTask([this, objId, name, pProc, pCallContext]()
-				{
-					auto pXObj = CovertIdToXObj(objId);
-					int flags = 0;
-					int idx = pXObj->QueryMethod(name.c_str(), &flags);
-					pProc->BeginWriteReturn(stream, true);
-					stream << idx;
-					stream << flags;
-					pProc->EndWriteReturn(pCallContext, stream, true);
-					pProc->Release();
-				});
-
+			auto pXObj = CovertIdToXObj(objId);
+			int flags = 0;
+			int idx = pXObj->QueryMethod(name.c_str(), &flags);
+			auto& wStream = pProc->BeginWriteReturn(true);
+			wStream << idx;
+			wStream << flags;
+			pProc->EndWriteReturn(pCallContext,true);
 			return true;
 		}
 		bool RemotingStub::QueryMemberCount(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -214,25 +211,20 @@ namespace X
 			X::ROBJ_ID objId;
 			stream >> objId;
 			pProc->EndReceiveCall(stream);
-			pProc->AddRef();
-			AddTask([this, objId, pProc, pCallContext]()
-				{
-					auto pXObj = CovertIdToXObj(objId);
-					long long size = 0;
-					bool bOK = false;
-					if (pXObj)
-					{
-						size = pXObj->Size();
-						bOK = true;
-					}
-					pProc->BeginWriteReturn(stream, bOK);
-					if (bOK)
-					{
-						stream << size;
-					}
-					pProc->EndWriteReturn(pCallContext, stream, bOK);
-					pProc->Release();
-				});
+			auto pXObj = CovertIdToXObj(objId);
+			long long size = 0;
+			bool bOK = false;
+			if (pXObj)
+			{
+				size = pXObj->Size();
+				bOK = true;
+			}
+			auto& wStream = pProc->BeginWriteReturn(bOK);
+			if (bOK)
+			{
+				wStream << size;
+			}
+			pProc->EndWriteReturn(pCallContext,bOK);
 			return true;
 		}
 		bool RemotingStub::FlatPack(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -257,46 +249,43 @@ namespace X
 			stream >> startIndex;
 			stream >> count;
 			pProc->EndReceiveCall(stream);
-			pProc->AddRef();
-			AddTask([this, parent_ObjId, objId, IdList,
-				id_offset, startIndex, count, pProc, pCallContext]()
+
+			//todo: for IdList, will be destroyed after this function, need to copy it
+			X::XObj* pParentObj = nullptr;
+			if (parent_ObjId.objId != nullptr)
+			{
+				pParentObj = CovertIdToXObj(parent_ObjId);
+			}
+			auto pXObj = CovertIdToXObj(objId);
+			X::Value valPackList;
+			bool bOK = (pXObj != nullptr);
+			if (bOK)
+			{
+				auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
+				if (pPackage != nullptr)
 				{
-					X::XObj* pParentObj = nullptr;
-					if (parent_ObjId.objId != nullptr)
+					auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt,
+						pParentObj, IdList, id_offset, startIndex, count);
+					valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+				}
+				else
+				{
+					auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
+					if (pPackageProxy)
 					{
-						pParentObj = CovertIdToXObj(parent_ObjId);
+						auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt,
+							pParentObj, IdList, id_offset, startIndex, count);
+						valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
 					}
-					auto pXObj = CovertIdToXObj(objId);
-					X::Value valPackList;
-					bool bOK = (pXObj != nullptr);
-					if (bOK)
-					{
-						auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
-						if (pPackage != nullptr)
-						{
-							auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt,
-								pParentObj, IdList, id_offset, startIndex, count);
-							valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
-						}
-						else
-						{
-							auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
-							if (pPackageProxy)
-							{
-								auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt,
-									pParentObj, IdList, id_offset, startIndex, count);
-								valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
-							}
-						}
-					}
-					pProc->BeginWriteReturn(stream, bOK);
-					if (bOK)
-					{
-						stream << valPackList;
-					}
-					pProc->EndWriteReturn(pCallContext, stream, bOK);
-					pProc->Release();
-				});
+				}
+			}
+			auto& wStream = pProc->BeginWriteReturn(bOK);
+			if (bOK)
+			{
+				wStream << valPackList;
+			}
+			pProc->EndWriteReturn(pCallContext,bOK);
+
 			return true;
 		}
 		bool RemotingStub::UpdateItemValue(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -321,44 +310,41 @@ namespace X
 			X::Value newVal;
 			stream >> newVal;
 			pProc->EndReceiveCall(stream);
-			pProc->AddRef();
-			AddTask([this, parent_ObjId, objId, IdList, id_offset,
-				itemName, newVal, pProc, pCallContext]()
+			//todo: for idlist, will be destroyed after this function, 
+			// need to copy it
+			X::XObj* pParentObj = nullptr;
+			if (parent_ObjId.objId != nullptr)
+			{
+				pParentObj = CovertIdToXObj(parent_ObjId);
+			}
+			auto pXObj = CovertIdToXObj(objId);
+			X::Value retVal;
+			bool bOK = (pXObj != nullptr);
+			if (bOK)
+			{
+				auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
+				if (pPackage != nullptr)
 				{
-					X::XObj* pParentObj = nullptr;
-					if (parent_ObjId.objId != nullptr)
+					retVal = pPackage->UpdateItemValue((XlangRuntime*)m_rt,
+						pParentObj, IdList, id_offset, itemName, (X::Value&)newVal);
+				}
+				else
+				{
+					auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
+					if (pPackageProxy)
 					{
-						pParentObj = CovertIdToXObj(parent_ObjId);
+						retVal = pPackageProxy->UpdateItemValue((XlangRuntime*)m_rt,
+							pParentObj, IdList, id_offset, itemName, (X::Value&)newVal);
 					}
-					auto pXObj = CovertIdToXObj(objId);
-					X::Value retVal;
-					bool bOK = (pXObj != nullptr);
-					if (bOK)
-					{
-						auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
-						if (pPackage != nullptr)
-						{
-							retVal = pPackage->UpdateItemValue((XlangRuntime*)m_rt,
-								pParentObj, IdList, id_offset, itemName, newVal);
-						}
-						else
-						{
-							auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
-							if (pPackageProxy)
-							{
-								retVal = pPackageProxy->UpdateItemValue((XlangRuntime*)m_rt,
-									pParentObj, IdList, id_offset, itemName, newVal);
-							}
-						}
-					}
-					pProc->BeginWriteReturn(stream, bOK);
-					if (bOK)
-					{
-						stream << retVal;
-					}
-					pProc->EndWriteReturn(pCallContext, stream, bOK);
-					pProc->Release();
-				});
+				}
+			}
+			auto& wStream = pProc->BeginWriteReturn(bOK);
+			if (bOK)
+			{
+				wStream << retVal;
+			}
+			pProc->EndWriteReturn(pCallContext,bOK);
+
 			return true;
 		}
 		bool RemotingStub::GetMemberObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -368,21 +354,16 @@ namespace X
 			stream >> objId;
 			stream >> memId;
 			pProc->EndReceiveCall(stream);
-			pProc->AddRef();
-			AddTask([this, objId, memId, pProc, pCallContext]()
-				{
-					auto pXObj = CovertIdToXObj(objId);
-					X::Value valObj;
-					bool bOK = pXObj->GetIndexValue(memId, valObj);
-					pProc->BeginWriteReturn(stream, bOK);
-					if (bOK)
-					{
-						X::ROBJ_ID sub_objId = ConvertXObjToId(valObj.GetObj());
-						stream << sub_objId;
-					}
-					pProc->EndWriteReturn(pCallContext, stream, bOK);
-					pProc->Release();
-				});
+			auto pXObj = CovertIdToXObj(objId);
+			X::Value valObj;
+			bool bOK = pXObj->GetIndexValue(memId, valObj);
+			auto& wStream = pProc->BeginWriteReturn(bOK);
+			if (bOK)
+			{
+				X::ROBJ_ID sub_objId = ConvertXObjToId(valObj.GetObj());
+				wStream << sub_objId;
+			}
+			pProc->EndWriteReturn(pCallContext,bOK);
 
 			return true;
 		}
@@ -391,23 +372,18 @@ namespace X
 			X::ROBJ_ID objId;
 			stream >> objId;
 			pProc->EndReceiveCall(stream);
-			pProc->AddRef();
-			AddTask([this, objId, pProc, pCallContext]()
+			auto pXObj = CovertIdToXObj(objId);
+			if (pXObj->GetType() == ObjType::Function)
+			{
+				Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
+				if (pObj->Ref() <= 2)
 				{
-					auto pXObj = CovertIdToXObj(objId);
-					if (pXObj->GetType() == ObjType::Function)
-					{
-						Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
-						if (pObj->Ref() <= 2)
-						{
-							int x = 1;
-						}
-					}
-					pXObj->DecRef();
-					pProc->BeginWriteReturn(stream, true);
-					pProc->EndWriteReturn(pCallContext, stream, true);
-					pProc->Release();
-				});
+					int x = 1;
+				}
+			}
+			pXObj->DecRef();
+			auto& wStream = pProc->BeginWriteReturn(true);
+			pProc->EndWriteReturn(pCallContext,true);
 			return true;
 		}
 
@@ -427,8 +403,10 @@ namespace X
 				v.FromBytes(&stream);
 				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteClientObject)
 				{
+#if __TODO__	
 					auto* pRemoteClientObj = dynamic_cast<X::RemoteClientObject*>(v.GetObj());
 					pRemoteClientObj->SetStub((XLangStub*)pProc);
+#endif
 				}
 				pCallInfo->params.push_back(v);
 			}
@@ -443,8 +421,10 @@ namespace X
 				v.FromBytes(&stream);
 				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteClientObject)
 				{
+#if __TODO__
 					auto* pRemoteClientObj = dynamic_cast<X::RemoteClientObject*>(v.GetObj());
 					pRemoteClientObj->SetStub((XLangStub*)pProc);
+#endif
 				}
 				pCallInfo->kwParams.Add(key.c_str(), v, true);
 			}
@@ -483,8 +463,7 @@ namespace X
 					bOK = pXObj->Call(m_rt, pParentObj, pCallInfo->params, pCallInfo->kwParams, valRet);
 				}
 				delete pCallInfo;
-				SwapBufferStream stream;
-				pProc->BeginWriteReturn(stream, bOK);
+				auto& wStream = pProc->BeginWriteReturn(bOK);
 				if (bOK)
 				{
 					X::ROBJ_ID retId = { 0,0 };
@@ -503,19 +482,18 @@ namespace X
 							retId = ConvertXObjToId(pRetObj);
 						}
 					}
-					stream << retId;
+					wStream << retId;
 					if (retId.objId == 0)
 					{//if not XPackage, return as value
-						valRet.ToBytes(&stream);
+						valRet.ToBytes(&wStream);
 					}
 				}
-				pProc->EndWriteReturn(pCallContext, stream, bOK);
+				pProc->EndWriteReturn(pCallContext,bOK);
 				pProc->Release();
 			});
 
 			return true;
 		}
-
 		bool RemotingStub::Call(void* pCallContext, unsigned int nCallType,
 			SwapBufferStream& stream, RemotingProc* pProc)
 		{
@@ -524,6 +502,9 @@ namespace X
 			RPC_CALL_TYPE callType = (RPC_CALL_TYPE)nCallType;
 			switch (callType)
 			{
+			case RPC_CALL_TYPE::ShakeHands:
+				pProc->ShakeHandsCall(pCallContext, stream);
+				break;
 			case RPC_CALL_TYPE::CantorProxy_QueryRootObject:
 				bOK = QueryRootObject(pCallContext, stream, pProc);
 				break;
