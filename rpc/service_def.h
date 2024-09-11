@@ -58,7 +58,7 @@ namespace X
         SubmitTask
     };
 
-    enum class PayloadType
+    enum class PayloadType:int
     {
         Send,//pass data to another side
         SendLast,//Last Payload
@@ -71,7 +71,11 @@ namespace X
         unsigned int blockSize;//this block size
         unsigned int callIndex;//CallIndex for ack
         unsigned int callType;
-        void* context;
+        union
+        {
+            long long callReturnCode;
+            void* context;
+        };
     };
 
 #define SHORT_WAIT_TIMEOUT 100000L

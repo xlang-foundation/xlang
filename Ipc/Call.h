@@ -4,12 +4,12 @@
 #include <vector>
 #include <mutex>
 #include <condition_variable>
-#include <thread>
 #include <atomic>
 #include <cassert>
 #include "RemotingMethod.h"
 #include "IpcBase.h"
 #include "wait.h"
+#include "gthread.h"
 
 namespace X
 {
@@ -20,8 +20,11 @@ namespace X
 			unsigned int reqId = 0;
 		};
 
-		class CallHandler: public RemotingProc
+		class CallHandler:
+			public GThread,
+			public RemotingProc
 		{
+			XWait mStartReadWait;
 			XWait mWriteWait;
 			XWait mCanReadWait;
 			XWait mFinishReadWait;
@@ -40,11 +43,14 @@ namespace X
 			unsigned int mMaxReqId = -1;
 			std::mutex mCallMutex;
 			std::atomic<bool> m_running{ true };
-			std::thread mReadThread;
 			std::atomic<unsigned int> mCurrentCallIndex{ 0 };
 
 			std::atomic<int> mRefCount{ 0 };
 		public:
+			void StartReadThread()
+			{
+				mStartReadWait.Release(true);
+			}
 			//override RemotingProc's virtual functions
 			inline virtual int AddRef() override
 			{
@@ -71,19 +77,20 @@ namespace X
 				mRBuffer->EndRead();
 				mFinishReadWait.Release(true);
 			}
-			virtual SwapBufferStream& BeginWriteReturn(bool callIsOk) override
+			virtual SwapBufferStream& BeginWriteReturn(long long retCode) override
 			{
 				mWBuffer->BeginWrite();
+				mWStream.ReInit();
 				mWStream.SetSMSwapBuffer(mWBuffer);
 				PayloadFrameHead& head = mWBuffer->GetHead();
 				head.payloadType = PayloadType::Send;
 				head.size = 0; // update later
 				head.callType = 0;//TODO: check this
 				head.callIndex = mCurrentCallIndex.load();
-				head.context = nullptr;
+				head.callReturnCode = retCode;
 				return mWStream;
 			}
-			virtual void EndWriteReturn(void* pCallContext,bool callIsOk) override
+			virtual void EndWriteReturn(void* pCallContext, long long retCode) override
 			{
 				//Write back the original call index/ReqId
 				Call_Context* pContext = (Call_Context*)pCallContext;
@@ -129,13 +136,13 @@ namespace X
 					head.size = 0; // update later
 					head.callType = callType;
 					head.callIndex = reqId;
-					head.context = &context;
+					head.callReturnCode = 0;
 				}
 
 				return mWStream;
 			}
 
-			SwapBufferStream& CommitCall(Call_Context& context)
+			SwapBufferStream& CommitCall(Call_Context& context,long long& returnCode)
 			{
 				PayloadFrameHead& head = mWBuffer->GetHead();
 				//Deliver the last block
@@ -164,7 +171,8 @@ namespace X
 				mRStream.ReInit();
 				mRStream.SetSMSwapBuffer(mRBuffer);
 				mRStream.Refresh();
-
+				PayloadFrameHead& head_back = mRBuffer->GetHead();
+				returnCode = head_back.callReturnCode;
 				return mRStream;
 			}
 
@@ -174,8 +182,10 @@ namespace X
 				mFinishReadWait.Release(true);
 			}
 
-			void ReadThread()
+			virtual void run() override
 			{
+				AddRef();
+				mStartReadWait.Wait(-1);
 				while (m_running)
 				{
 					if (!m_running) break;
@@ -195,6 +205,7 @@ namespace X
 						mFinishReadWait.Wait(-1);
 					}
 				}
+				Release();
 			}
 
 			void ReceiveCall()
@@ -215,11 +226,6 @@ namespace X
 					//wrong call, also need to call lines below
 				}
 			}
-		protected:
-			void StartReadThread()
-			{
-				mReadThread = std::thread(&CallHandler::ReadThread, this);
-			}
 		public:
 			CallHandler()
 			{
@@ -228,14 +234,11 @@ namespace X
 			~CallHandler()
 			{
 				StopRunning();
-				if (mReadThread.joinable())
-				{
-					mReadThread.join();
-				}
+				WaitToEnd();
 			}
-
 			void StopRunning()
 			{
+				mStartReadWait.Release(true);
 				{
 					std::unique_lock<std::mutex> lock(mCallMutex);
 					m_running = false;

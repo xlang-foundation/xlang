@@ -179,14 +179,14 @@ namespace X
 			pProc->EndReceiveCall(stream);
 
 			auto pXObj = QueryObjWithName((std::string&)objName);
-			bool bOK = (pXObj != nullptr);
-			auto& wstream = pProc->BeginWriteReturn(bOK);
-			if (bOK)
+			long long returnCode = (pXObj != nullptr)?1:0;
+			auto& wstream = pProc->BeginWriteReturn(returnCode);
+			if (returnCode>0)
 			{
 				X::ROBJ_ID objId = ConvertXObjToId(pXObj);
 				wstream << objId;
 			}
-			pProc->EndWriteReturn(pCallContext, bOK);
+			pProc->EndWriteReturn(pCallContext, returnCode);
 
 			return true;
 		}
@@ -200,7 +200,7 @@ namespace X
 			auto pXObj = CovertIdToXObj(objId);
 			int flags = 0;
 			int idx = pXObj->QueryMethod(name.c_str(), &flags);
-			auto& wStream = pProc->BeginWriteReturn(true);
+			auto& wStream = pProc->BeginWriteReturn(1);
 			wStream << idx;
 			wStream << flags;
 			pProc->EndWriteReturn(pCallContext,true);
@@ -219,12 +219,12 @@ namespace X
 				size = pXObj->Size();
 				bOK = true;
 			}
-			auto& wStream = pProc->BeginWriteReturn(bOK);
+			auto& wStream = pProc->BeginWriteReturn(bOK?1:0);
 			if (bOK)
 			{
 				wStream << size;
 			}
-			pProc->EndWriteReturn(pCallContext,bOK);
+			pProc->EndWriteReturn(pCallContext,bOK?1:0);
 			return true;
 		}
 		bool RemotingStub::FlatPack(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -266,7 +266,10 @@ namespace X
 				{
 					auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt,
 						pParentObj, IdList, id_offset, startIndex, count);
-					valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+					if (pPackList)
+					{
+						valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+					}
 				}
 				else
 				{
@@ -275,7 +278,10 @@ namespace X
 					{
 						auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt,
 							pParentObj, IdList, id_offset, startIndex, count);
-						valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+						if (pPackList)
+						{
+							valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+						}
 					}
 				}
 			}
@@ -441,8 +447,9 @@ namespace X
 			}
 			pProc->EndReceiveCall(stream);
 			pProc->AddRef();
-
-			AddTask([this, pCallInfo, pProc, pCallContext]()
+			//need to use copy of pCallInfo, because it will be destroyed after this function
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, pCallInfo, pProc, callContext]()
 			{
 				X::XObj* pParentObj = nullptr;
 				if (pCallInfo->parent_ObjId.objId != nullptr)
@@ -488,7 +495,7 @@ namespace X
 						valRet.ToBytes(&wStream);
 					}
 				}
-				pProc->EndWriteReturn(pCallContext,bOK);
+				pProc->EndWriteReturn((void*) &callContext, bOK);
 				pProc->Release();
 			});
 

@@ -20,11 +20,10 @@ namespace X
 			while (mRun)
 			{
 				WaitToHostExit();
-				mParent->NotifyFromWatch(true);
+				mParent->OnClientExit();
 				break;
 			}
 		}
-
 		void StubWatch::WaitToHostExit()
 		{
 #if (WIN32)
@@ -38,28 +37,17 @@ namespace X
 			int res = kill((pid_t)mPidToWatch, 0);
 			while (res == 0 || (res < 0 && errno == EPERM))
 			{
-				sleep(1);
+				sleep(10);
 				res = kill((pid_t)mPidToWatch, 0);
 			}
 #endif
 			mPidToWatch = 0;
 		}
-
-		void RemotingServer::WatchClientProcess(unsigned long pid)
+		void RemotingServer::OnClientExit()
 		{
-			std::cout << "WatchClientProcess,pid =" << pid << std::endl;
-			m_pStubWatch->SetPid(pid);
-			m_pStubWatch->Start();
-		}
-
-		void RemotingServer::NotifyFromWatch(bool processEnded)
-		{
-			if (processEnded)
-			{
-				std::cout << "Client Exited,m_clientPid=" << m_clientPid << std::endl;
-				RemotingManager::I().CloseServer(this);
-				std::cout << "Stub Closed" << std::endl;
-			}
+			std::cout << "IPC Client Exited,m_clientPid=" << m_clientPid << std::endl;
+			RemotingManager::I().CloseServer(this);
+			std::cout << "IPC Stub Closed" << std::endl;
 		}
 
 		RemotingServer::RemotingServer()
@@ -70,14 +58,17 @@ namespace X
 
 			m_pStubWatch = new StubWatch();
 			m_pStubWatch->SetParent(this);
+
 			mWBuffer = new SMSwapBuffer();
 			mRBuffer = new SMSwapBuffer();
 		}
 		RemotingServer::~RemotingServer()
 		{
+			Close();
 			std::cout << "~RemotingServer(),m_clientPid=" << m_clientPid << std::endl;
 			delete mWBuffer;
 			delete mRBuffer;
+
 			delete m_pStubWatch;
 		}
 		bool RemotingServer::Create(unsigned long long shmKey)
@@ -96,64 +87,46 @@ namespace X
 
 		void RemotingServer::Quit()
 		{
-			mRun = false;
-
+			StopRunning();
 			if (mWBuffer)
 			{
 				mWBuffer->ReleaseEvents();
-				int cnt = 0;
-				while ((cnt < 9999) && mInsideRecvCall1)
-				{
-					US_SLEEP(33000);
-					cnt++;
-				}
-				mWBuffer->Close();
 			}
 			if (mRBuffer)
 			{
 				mRBuffer->ReleaseEvents();
-				int cnt = 0;
-				while ((cnt < 9999) && mInsideRecvCall2)
-				{
-					US_SLEEP(33000);
-					cnt++;
-				}
-				mRBuffer->Close();
 			}
 		}
-
-		void RemotingServer::run()
+		void RemotingServer::Close()
 		{
-			while (mRun)
+			if (mWBuffer)
 			{
-
+				mWBuffer->Close();
+			}
+			if (mRBuffer)
+			{
+				mRBuffer->Close();
 			}
 		}
 		void RemotingServer::ShakeHandsCall(void* pCallContext, SwapBufferStream& stream)
 		{
 			unsigned long clientPid = 0;
 			stream >> clientPid;
-			std::cout << "RemotingServer::ShakeHandsCall,clientPid=" << clientPid << std::endl;
+			std::cout << "IPC,RemotingServer::ShakeHandsCall,clientPid=" << clientPid << std::endl;
 			EndReceiveCall(stream);
 			m_clientPid = clientPid;
-			if (clientPid != 0)
+			m_pStubWatch->SetPid(clientPid);
+			std::cout << "IPC,WatchClientProcess,pid =" << clientPid << std::endl;
+			m_pStubWatch->Start();
+			bool bOK = true;
+			auto& wStream = BeginWriteReturn(bOK);
+			if (bOK)
 			{
-				WatchClientProcess(clientPid);
+				unsigned long pid = GetPID();
+				wStream << pid;
+				wStream << m_sessionId;
 			}
-			//still running in current therad because following code 
-			// will return very soon
-			{
-				bool bOK = true;
-				auto& wStream = BeginWriteReturn(bOK);
-				wStream << bOK;
-				if (bOK)
-				{
-					unsigned long pid = GetPID();
-					wStream << pid;
-					wStream << m_sessionId;
-				}
-				EndWriteReturn(pCallContext,bOK);
-			}
+			EndWriteReturn(pCallContext, bOK);
 		}
 	}//namespace IPC
 }//namespace X

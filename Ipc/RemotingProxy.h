@@ -21,13 +21,26 @@ namespace X
 		public:
 			void Register();
 		};
-
-		class RemotingProxy :
-			public X::XProxy,
-			public CallHandler,
+		class RemotingProxy;
+		class ProxySessionThread :
 			public GThread
 		{
+		public:
+			void SetParent(RemotingProxy* p)
+			{
+				mParent = p;
+			}
+		protected:
+			virtual void run() override;
+		private:
+			RemotingProxy* mParent = nullptr;
+		};
+		class RemotingProxy :
+			public X::XProxy,
+			public CallHandler
+		{
 			std::string mRootObjectName;
+			ProxySessionThread mSessionThread;
 		public:
 			RemotingProxy();
 			~RemotingProxy();
@@ -38,6 +51,12 @@ namespace X
 			virtual unsigned long long GetSessionId() override
 			{
 				return 0;
+			}
+			void StartProxy()
+			{
+				mSessionThread.SetParent(this);
+				CallHandler::Start();
+				mSessionThread.Start();
 			}
 			void SetUrl(std::string& url);
 			virtual int AddRef() override
@@ -67,11 +86,10 @@ namespace X
 			{
 				mTimeout = timeout;
 			}
-			// GThread interface
+			void SessionRun();
+
 		protected:
 			bool mRun = true;
-			virtual void run() override;
-
 			void Cleanup();
 
 		private:
@@ -101,7 +119,7 @@ namespace X
 				}
 				return ret;
 			}
-			void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) override
+			virtual void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) override
 			{
 			}
 			int mTimeout = -1;
@@ -148,5 +166,9 @@ namespace X
 				return val;
 			}
 		};
+		FORCE_INLINE void ProxySessionThread::run()
+		{
+			mParent->SessionRun();
+		}
 	}//namespace IPC
 }//namespace X

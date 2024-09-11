@@ -70,6 +70,8 @@ namespace X
             {
                 return;
             }
+            pRemotingSrv->Quit();
+
             //check if this is only one reference to hold for this stub
             //because the reference in mSrvs
             int cnt = 0;
@@ -78,10 +80,6 @@ namespace X
                 US_SLEEP(33000);
                 cnt++;
             }
-
-            pRemotingSrv->Quit();
-
-            pRemotingSrv->Stop();
             bool bExist = false;
             mSrvLock.Lock();
             for (auto it = mSrvs.begin(); it != mSrvs.end(); it++)

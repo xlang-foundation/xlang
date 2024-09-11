@@ -24,7 +24,7 @@ namespace X
 				RemotingProxy* pProxy = new RemotingProxy();
 				std::string strUrl(url);
 				pProxy->SetUrl(strUrl);
-				pProxy->Start();
+				pProxy->StartProxy();
 				return dynamic_cast<XProxy*>(pProxy);
 				},
 				[](const char* url) {
@@ -44,6 +44,7 @@ namespace X
 		}
 		RemotingProxy::~RemotingProxy()
 		{
+			StopRunning();
 			delete m_pConnectWait;
 		}
 		ROBJ_ID RemotingProxy::QueryRootObject(std::string& name)
@@ -56,10 +57,9 @@ namespace X
 			Call_Context context;
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryRootObject, context);
 			stream << name;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
+			if (returnCode>0)
 			{
 				stream2 >> oId;
 			}
@@ -86,11 +86,10 @@ namespace X
 			stream << id_offset;
 			stream << itemName;
 			stream << val;
-			auto& stream2 = CommitCall(context);
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
 			X::Value retVal;
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
+			if (returnCode>0)
 			{
 				stream2 >> retVal;
 			}
@@ -117,10 +116,9 @@ namespace X
 			stream << id_offset;
 			stream << startIndex;
 			stream << count;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
+			if (returnCode > 0)
 			{
 				stream2 >> retList;
 			}
@@ -139,10 +137,9 @@ namespace X
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMember, context);
 			stream << id;
 			stream << name;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
+			if (returnCode > 0)
 			{
 				stream2 >> mId;
 				stream2 >> memberFlags;
@@ -159,11 +156,10 @@ namespace X
 			Call_Context context;
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount, context);
 			stream << id;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
 			long long cnt = -1;
-			if (bOK)
+			if (returnCode > 0)
 			{
 				stream2 >> cnt;
 			}
@@ -179,11 +175,10 @@ namespace X
 			Call_Context context;
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject, context);
 			stream << id;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
 			FinishCall();
-			return bOK;
+			return (returnCode > 0);
 		}
 		X::ROBJ_ID RemotingProxy::GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId)
 		{
@@ -196,10 +191,9 @@ namespace X
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject, context);
 			stream << objid;
 			stream << memId;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
+			if (returnCode > 0)
 			{
 				stream2 >> oId;
 			}
@@ -286,10 +280,9 @@ namespace X
 				stream << trailer;
 			}
 			//std::cout << "Before CommitCall" << std::endl;
-			auto& stream2 = CommitCall(callContext);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(callContext, returnCode);
+			if (returnCode > 0)
 			{
 				X::ROBJ_ID retId = { 0,0 };
 				stream2 >> retId;
@@ -309,7 +302,7 @@ namespace X
 			//std::cout << "After CommitCall and Before FinishCall" << std::endl;
 			FinishCall();
 			//std::cout << "After FinishCall" << std::endl;
-			return bOK;
+			return (returnCode > 0);
 		}
 
 		//use process as signal to host exit
@@ -355,7 +348,7 @@ namespace X
 #endif
 			mHostProcessId = 0;
 		}
-		void RemotingProxy::run()
+		void RemotingProxy::SessionRun()
 		{
 			AddRef();
 			ThreadAddRef();
@@ -458,12 +451,11 @@ namespace X
 			Call_Context context;
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::ShakeHands, context);
 			stream << pid_client;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
 			unsigned long pid_srv = 0;
 			unsigned long long sid = 0;
-			stream2 >> bOK;
-			if (bOK)
+			if (returnCode > 0)
 			{
 				stream2 >> pid_srv;
 				stream2 >> sid;
