@@ -128,5 +128,19 @@ namespace X
 			}
 			EndWriteReturn(pCallContext, bOK);
 		}
+		void RemotingServer::SetRootObjectName(const char* name)
+		{
+			//Don't need to implement in Server side
+			//we don't have chance to call import from client side
+		}
+		ROBJ_ID RemotingServer::QueryRootObject(std::string& name)
+		{
+			//Don't need to implement in Server side
+			//we don't have chance to call import from client side
+			return ROBJ_ID();
+		}
+		void RemotingServer::SetTimeout(int timeout)
+		{
+		}
 	}//namespace IPC
 }//namespace X

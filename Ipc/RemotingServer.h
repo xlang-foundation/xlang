@@ -64,6 +64,11 @@ namespace X
             unsigned long long m_sessionId = 0;
             unsigned long m_clientPid = 0;
             void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) override;
+
+            // Inherited via CallHandler
+            void SetRootObjectName(const char* name) override;
+            ROBJ_ID QueryRootObject(std::string& name) override;
+            void SetTimeout(int timeout) override;
         };
 
     } // namespace IPC

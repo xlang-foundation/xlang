@@ -15,7 +15,7 @@
 #include <iostream>
 
 #include "RemotingServerMgr.h"
-#include "RemotingStub.h"
+
 
 namespace X
 {
@@ -97,7 +97,6 @@ namespace X
 #endif
 		MsgService::MsgService()
 		{
-			RemotingStub::I().Register();
 		}
 		void MsgService::Stop()
 		{

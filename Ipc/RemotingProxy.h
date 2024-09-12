@@ -1,10 +1,10 @@
 #pragma once
 #include "singleton.h"
-#include "RemotingProxy.h"
 #include "SwapBufferStream.h"
 #include "Locker.h"
 #include "gthread.h"
 #include "remote_client_object.h"
+#include "remote_object.h"
 #include <vector>
 #include "port.h"
 #include "Call.h"
@@ -36,7 +36,6 @@ namespace X
 			RemotingProxy* mParent = nullptr;
 		};
 		class RemotingProxy :
-			public X::XProxy,
 			public CallHandler
 		{
 			std::string mRootObjectName;
@@ -154,16 +153,6 @@ namespace X
 					pObjRet = (X::XObj*)id.objId;
 				}
 				return pObjRet;
-			}
-
-			X::Value ConvertXObjToRemoteClientObject(X::XObj* obj)
-			{
-				obj->IncRef();
-				auto pid = GetPID();
-				X::ROBJ_ID robjId{ pid,obj };
-				RemoteClientObject* pRC = new RemoteClientObject(robjId);
-				X::Value val(pRC);
-				return val;
 			}
 		};
 		FORCE_INLINE void ProxySessionThread::run()

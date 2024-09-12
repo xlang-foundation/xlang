@@ -8,7 +8,7 @@
 #include <string>
 #include "ServerCallPool.h"
 #include "event.h"
-#include "remote_object.h"
+
 
 #if defined(__APPLE__)
 #include <signal.h>
@@ -74,27 +74,7 @@ namespace X
 			{
 				return X::Value();
 			}
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue, context);
-			stream << parentObjId;
-			stream << id;
-			stream << (int)IdList.size();
-			for (auto& s : IdList)
-			{
-				stream << s;
-			}
-			stream << id_offset;
-			stream << itemName;
-			stream << val;
-			long long returnCode = 0;
-			auto& stream2 = CommitCall(context, returnCode);
-			X::Value retVal;
-			if (returnCode>0)
-			{
-				stream2 >> retVal;
-			}
-			FinishCall();
-			return retVal;
+			return CallHandler::UpdateItemValue(parentObjId, id, IdList, id_offset, itemName, val);
 		}
 		bool RemotingProxy::FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
 			Port::vector<std::string>& IdList, int id_offset,
@@ -104,26 +84,8 @@ namespace X
 			{
 				return false;
 			}
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack, context);
-			stream << parentObjId;
-			stream << id;
-			stream << (int)IdList.size();
-			for (auto& s : IdList)
-			{
-				stream << s;
-			}
-			stream << id_offset;
-			stream << startIndex;
-			stream << count;
-			long long returnCode = 0;
-			auto& stream2 = CommitCall(context, returnCode);
-			if (returnCode > 0)
-			{
-				stream2 >> retList;
-			}
-			FinishCall();
-			return true;
+			return CallHandler::FlatPack(parentObjId, id, IdList, 
+				id_offset, startIndex, count, retList);
 		}
 		X::ROBJ_MEMBER_ID RemotingProxy::QueryMember(X::ROBJ_ID id, std::string& name,
 			int& memberFlags)
@@ -132,20 +94,7 @@ namespace X
 			{
 				return -1;
 			}
-			X::ROBJ_MEMBER_ID mId = -1;
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMember, context);
-			stream << id;
-			stream << name;
-			long long returnCode = 0;
-			auto& stream2 = CommitCall(context, returnCode);
-			if (returnCode > 0)
-			{
-				stream2 >> mId;
-				stream2 >> memberFlags;
-			}
-			FinishCall();
-			return mId;
+			return CallHandler::QueryMember(id, name, memberFlags);
 		}
 		long long RemotingProxy::QueryMemberCount(X::ROBJ_ID id)
 		{
@@ -153,18 +102,7 @@ namespace X
 			{
 				return -1;
 			}
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount, context);
-			stream << id;
-			long long returnCode = 0;
-			auto& stream2 = CommitCall(context, returnCode);
-			long long cnt = -1;
-			if (returnCode > 0)
-			{
-				stream2 >> cnt;
-			}
-			FinishCall();
-			return cnt;
+			return CallHandler::QueryMemberCount(id);
 		}
 		bool RemotingProxy::ReleaseObject(ROBJ_ID id)
 		{
@@ -172,13 +110,7 @@ namespace X
 			{
 				return false;
 			}
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject, context);
-			stream << id;
-			long long returnCode = 0;
-			auto& stream2 = CommitCall(context, returnCode);
-			FinishCall();
-			return (returnCode > 0);
+			return CallHandler::ReleaseObject(id);
 		}
 		X::ROBJ_ID RemotingProxy::GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId)
 		{
@@ -186,19 +118,7 @@ namespace X
 			{
 				return { 0,0 };
 			}
-			X::ROBJ_ID oId = { 0,0 };
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject, context);
-			stream << objid;
-			stream << memId;
-			long long returnCode = 0;
-			auto& stream2 = CommitCall(context, returnCode);
-			if (returnCode > 0)
-			{
-				stream2 >> oId;
-			}
-			FinishCall();
-			return oId;
+			return CallHandler::GetMemberObject(objid, memId);
 		}
 
 		bool RemotingProxy::Call(XRuntime* rt, XObj* pContext,
@@ -209,100 +129,7 @@ namespace X
 			{
 				return false;
 			}
-			X::ROBJ_ID oId = { 0,0 };
-			Call_Context callContext;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call, callContext);
-			stream.ScopeSpace().SetContext((XlangRuntime*)rt, pContext);
-
-			stream << parent_id;
-			stream << id;
-			stream << memId;
-
-			int argNum = (int)params.size();
-			stream << argNum;
-			//Pack Parameters
-			for (auto& param : params)
-			{
-				bool bNeedConvert = false;
-				if (param.IsObject())
-				{
-					// for function as an event handler, we need to convert it to remote client object
-					//converT to remote client object
-					auto* pObj = param.GetObj();
-					auto type = pObj->GetType();
-					if (type == X::ObjType::Function || type == X::ObjType::PyProxyObject)
-					{
-						bNeedConvert = true;
-					}
-				}
-				if (bNeedConvert)
-				{
-					auto&& rcParam = ConvertXObjToRemoteClientObject(param.GetObj());
-					rcParam.ToBytes(&stream);
-				}
-				else
-				{
-					param.ToBytes(&stream);
-				}
-			}
-			stream << (int)kwParams.size();
-			for (auto& kw : kwParams)
-			{
-				stream << kw.key;
-				bool bNeedConvert = false;
-				if (kw.val.IsObject())
-				{
-					// for function as an event handler, we need to convert 
-					// it to remote client object
-					//convert to remote client object
-					auto* pObj = kw.val.GetObj();
-					auto type = pObj->GetType();
-					if (type == X::ObjType::Function || type == X::ObjType::PyProxyObject)
-					{
-						bNeedConvert = true;
-					}
-				}
-				if (bNeedConvert)
-				{
-					//convert to remote client object
-					auto&& rcParam = ConvertXObjToRemoteClientObject(kw.val.GetObj());
-					rcParam.ToBytes(&stream);
-				}
-				else
-				{
-					kw.val.ToBytes(&stream);
-				}
-			}
-			//set flag to show if there is a trailer
-			stream << trailer.IsValid();
-			if (trailer.IsValid())
-			{
-				stream << trailer;
-			}
-			//std::cout << "Before CommitCall" << std::endl;
-			long long returnCode = 0;
-			auto& stream2 = CommitCall(callContext, returnCode);
-			if (returnCode > 0)
-			{
-				X::ROBJ_ID retId = { 0,0 };
-				stream2 >> retId;
-				if (retId.objId == 0)
-				{//value
-					retValue.FromBytes(&stream2);
-				}
-				else
-				{
-					X::XRemoteObject* pRetObj =
-						X::g_pXHost->CreateRemoteObject(this);
-					pRetObj->SetObjID((unsigned long)retId.pid, retId.objId);
-					retValue = (X::XObj*)pRetObj;
-					pRetObj->DecRef();
-				}
-			}
-			//std::cout << "After CommitCall and Before FinishCall" << std::endl;
-			FinishCall();
-			//std::cout << "After FinishCall" << std::endl;
-			return (returnCode > 0);
+			return CallHandler::Call(rt, pContext, parent_id, id, memId, params, kwParams, trailer, retValue);
 		}
 
 		//use process as signal to host exit

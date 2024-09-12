@@ -10,6 +10,7 @@
 #include "list.h"
 #include "bin.h"
 #include "remote_object.h"
+#include "RemotingMethod.h"
 
 namespace X
 {
@@ -407,12 +408,11 @@ namespace X
 			{
 				X::Value v;
 				v.FromBytes(&stream);
-				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteClientObject)
+				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteObject)
 				{
-#if __TODO__	
-					auto* pRemoteClientObj = dynamic_cast<X::RemoteClientObject*>(v.GetObj());
-					pRemoteClientObj->SetStub((XLangStub*)pProc);
-#endif
+					auto* pRemoteClientObj = dynamic_cast<X::RemoteObject*>(v.GetObj());
+					auto* pProxy = dynamic_cast<X::XProxy*>(pProc);
+					pRemoteClientObj->SetProxy(pProxy);
 				}
 				pCallInfo->params.push_back(v);
 			}
@@ -425,12 +425,11 @@ namespace X
 				stream >> key;
 				X::Value v;
 				v.FromBytes(&stream);
-				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteClientObject)
+				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteObject)
 				{
-#if __TODO__
-					auto* pRemoteClientObj = dynamic_cast<X::RemoteClientObject*>(v.GetObj());
-					pRemoteClientObj->SetStub((XLangStub*)pProc);
-#endif
+					auto* pRemoteClientObj = dynamic_cast<X::RemoteObject*>(v.GetObj());
+					auto* pProxy = dynamic_cast<X::XProxy*>(pProc);
+					pRemoteClientObj->SetProxy(pProxy);
 				}
 				pCallInfo->kwParams.Add(key.c_str(), v, true);
 			}

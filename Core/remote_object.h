@@ -86,6 +86,14 @@ namespace X
 		{
 			return m_objName;
 		}
+		void SetProxy(XProxy* p)
+		{
+			if (p != nullptr)
+			{
+				p->AddRef();
+			}
+			m_proxy = p;
+		}
 		void SetObjName(std::string& name)
 		{
 			m_objName = name;

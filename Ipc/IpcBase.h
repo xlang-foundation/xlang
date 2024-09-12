@@ -12,6 +12,10 @@ namespace X
 {
 	namespace IPC
 	{
+		struct Call_Context
+		{
+			unsigned int reqId = 0;
+		};
 		class Helper
 		{
 		public:
