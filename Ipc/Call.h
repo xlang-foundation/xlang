@@ -12,6 +12,7 @@
 #include "gthread.h"
 #include "XProxy.h"
 #include "remote_object.h"
+#include "CallCounter.h"
 
 namespace X
 {
@@ -28,6 +29,7 @@ namespace X
 			XWait mCanReadWait;
 			XWait mFinishReadWait;
 		protected:
+			CallCounter mCallCounter;
 			// uses for write data
 			SMSwapBuffer* mWBuffer = nullptr;
 			SwapBufferStream mWStream;
@@ -78,6 +80,8 @@ namespace X
 			}
 			virtual SwapBufferStream& BeginWriteReturn(long long retCode) override
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				mWBuffer->BeginWrite();
 				mWStream.ReInit();
 				mWStream.SetSMSwapBuffer(mWBuffer);
@@ -91,6 +95,8 @@ namespace X
 			}
 			virtual void EndWriteReturn(void* pCallContext, long long retCode) override
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				//Write back the original call index/ReqId
 				Call_Context* pContext = (Call_Context*)pCallContext;
 				PayloadFrameHead& head = mWBuffer->GetHead();
@@ -108,6 +114,8 @@ namespace X
 		protected:
 			SwapBufferStream& BeginCall(unsigned int callType, Call_Context& context)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				unsigned int reqId = 0;
 				{
 					std::unique_lock<std::mutex> lock(mCallMutex);
@@ -143,6 +151,8 @@ namespace X
 
 			SwapBufferStream& CommitCall(Call_Context& context,long long& returnCode)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				PayloadFrameHead& head = mWBuffer->GetHead();
 				//Deliver the last block
 				head.payloadType = PayloadType::SendLast;
@@ -177,19 +187,24 @@ namespace X
 
 			void FinishCall()
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				mRBuffer->EndRead();
 				mFinishReadWait.Release(true);
 			}
 
 			virtual void run() override
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				AddRef();
 				mStartReadWait.Wait(-1);
 				while (m_running)
 				{
-					if (!m_running) break;
-
-					mRBuffer->BeginRead();
+					if (!mRBuffer->BeginRead())
+					{
+						continue;
+					}
 					PayloadFrameHead& head = mRBuffer->GetHead();
 					//callIndex is in my side's range, should be my call's return
 					if (head.callIndex >= mMinReqId && head.callIndex <= mMaxReqId)
@@ -209,6 +224,8 @@ namespace X
 
 			void ReceiveCall()
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				SwapBufferStream stream;
 				stream.SetSMSwapBuffer(mRBuffer);
 				stream.Refresh();
@@ -235,6 +252,29 @@ namespace X
 				StopRunning();
 				WaitToEnd();
 			}
+			void Quit()
+			{
+				StopRunning();
+				if (mWBuffer)
+				{
+					mWBuffer->ReleaseEvents();
+				}
+				if (mRBuffer)
+				{
+					mRBuffer->ReleaseEvents();
+				}
+			}
+			void Close()
+			{
+				if (mWBuffer)
+				{
+					mWBuffer->Close();
+				}
+				if (mRBuffer)
+				{
+					mRBuffer->Close();
+				}
+			}
 			void StopRunning()
 			{
 				mStartReadWait.Release(true);
@@ -243,12 +283,19 @@ namespace X
 					m_running = false;
 				}
 			}
-
+			void ReStart()
+			{
+				m_running = true;
+				mStartReadWait.Reset();
+				Start();
+			}
 			//XProxy Virtual functions
 			X::Value UpdateItemValue(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
 				Port::vector<std::string>& IdList, int id_offset,
 				std::string itemName, X::Value& val)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				Call_Context context;
 				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue, context);
 				stream << parentObjId;
@@ -276,6 +323,8 @@ namespace X
 				Port::vector<std::string>& IdList, int id_offset,
 				long long startIndex, long long count, Value& retList)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				Call_Context context;
 				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack, context);
 				stream << parentObjId;
@@ -301,6 +350,8 @@ namespace X
 			X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
 				int& memberFlags)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				X::ROBJ_MEMBER_ID mId = -1;
 				Call_Context context;
 				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMember, context);
@@ -318,6 +369,8 @@ namespace X
 			}
 			long long QueryMemberCount(X::ROBJ_ID id)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				Call_Context context;
 				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount, context);
 				stream << id;
@@ -333,6 +386,8 @@ namespace X
 			}
 			bool ReleaseObject(ROBJ_ID id)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				Call_Context context;
 				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject, context);
 				stream << id;
@@ -343,6 +398,8 @@ namespace X
 			}
 			X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				X::ROBJ_ID oId = { 0,0 };
 				Call_Context context;
 				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject, context);
@@ -361,6 +418,8 @@ namespace X
 				X::ROBJ_ID parent_id, X::ROBJ_ID id, X::ROBJ_MEMBER_ID memId,
 				X::ARGS& params, X::KWARGS& kwParams, X::Value& trailer, X::Value& retValue)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				X::ROBJ_ID oId = { 0,0 };
 				Call_Context callContext;
 				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call, callContext);

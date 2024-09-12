@@ -94,38 +94,15 @@ namespace X
 		private:
 			bool mHostUseGlobal = false;
 
-
-			int m_ThreadRefCount = 0;//we have two threads there
-			Locker mLockRefCount;
-
-			virtual int ThreadAddRef()
-			{
-				int ret = 0;
-				mLockRefCount.Lock();
-				ret = ++m_ThreadRefCount;
-				mLockRefCount.Unlock();
-				return ret;
-			}
-			virtual int ThreadRelease()
-			{
-				int ret = 0;
-				mLockRefCount.Lock();
-				ret = --m_ThreadRefCount;
-				mLockRefCount.Unlock();
-				if (ret == 0)
-				{
-					Cleanup();
-				}
-				return ret;
-			}
 			virtual void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) override
 			{
+				//Don't need to implement this in Client side
 			}
 			int mTimeout = -1;
 			long m_port = 0;
 			unsigned long mHostProcessId = 0;
 			unsigned long long mSessionId = 0;
-			bool m_ExitOnHostExit = true;
+			bool m_ExitOnHostExit = false;
 			bool m_Exited = false;
 			void WaitToHostExit();
 			void WaitToHostExit_ByProcess();

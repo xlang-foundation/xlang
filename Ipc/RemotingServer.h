@@ -42,8 +42,6 @@ namespace X
                 m_sessionId = sid;
             }
             bool Create(unsigned long long shmKey);
-            void Quit();
-            void Close();
             unsigned long long GetKey()
             {
                 return mKey;

@@ -178,7 +178,6 @@ namespace X
 		void RemotingProxy::SessionRun()
 		{
 			AddRef();
-			ThreadAddRef();
 			while (mRun)
 			{
 				bool bOK = Connect();
@@ -193,6 +192,9 @@ namespace X
 				m_ConnectLock.Unlock();
 				m_pConnectWait->Release();
 				WaitToHostExit();
+				CallHandler::Quit();
+				CallHandler::Close();
+				mCallCounter.WaitForZero();
 
 				if (m_ExitOnHostExit)
 				{
@@ -213,9 +215,9 @@ namespace X
 				m_ConnectLock.Lock();
 				m_bConnected = false;
 				m_ConnectLock.Unlock();
+				//Restart again for Read Thread in Base class
+				CallHandler::ReStart();
 			}
-			//cal this one before Release(),to avoid this pointer deleted by Release()
-			ThreadRelease();
 			Release();
 		}
 		void RemotingProxy::Cleanup()

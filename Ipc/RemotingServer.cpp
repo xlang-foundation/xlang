@@ -84,30 +84,6 @@ namespace X
 			return bOK;
 		}
 
-
-		void RemotingServer::Quit()
-		{
-			StopRunning();
-			if (mWBuffer)
-			{
-				mWBuffer->ReleaseEvents();
-			}
-			if (mRBuffer)
-			{
-				mRBuffer->ReleaseEvents();
-			}
-		}
-		void RemotingServer::Close()
-		{
-			if (mWBuffer)
-			{
-				mWBuffer->Close();
-			}
-			if (mRBuffer)
-			{
-				mRBuffer->Close();
-			}
-		}
 		void RemotingServer::ShakeHandsCall(void* pCallContext, SwapBufferStream& stream)
 		{
 			unsigned long clientPid = 0;
