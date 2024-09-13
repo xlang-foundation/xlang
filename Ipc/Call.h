@@ -501,6 +501,12 @@ namespace X
 					{//value
 						retValue.FromBytes(&stream2);
 					}
+					else if (retId.pid == GetPID())
+					{
+						//need to use function to do convertion and check
+						auto pRetObj = (X::XObj*)retId.objId;
+						retValue = (X::XObj*)pRetObj;
+					}
 					else
 					{
 						X::XRemoteObject* pRetObj =

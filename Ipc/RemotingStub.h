@@ -59,9 +59,18 @@ namespace X
 			X::XObj* CovertIdToXObj(X::ROBJ_ID);
 			X::ROBJ_ID ConvertXObjToId(X::XObj* obj)
 			{
-				obj->IncRef();
-				auto pid = GetPID();
-				return X::ROBJ_ID{ pid,obj };
+				//TODO: for remote object, do we need to inc ref?
+				if (obj->GetType() == X::ObjType::RemoteObject)
+				{
+					auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(obj);
+					return pRemoteObj->GetObjId();
+				}
+				else
+				{
+					obj->IncRef();
+					auto pid = GetPID();
+					return X::ROBJ_ID{ pid,obj };
+				}
 			}
 			bool QueryRootObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
 			bool QueryMember(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);

@@ -144,7 +144,7 @@ namespace X
 						pFuncHandler->IncRef();
 						Add(pFuncHandler);
 					}
-					else if (pObjHandler->GetType() == ObjType::RemoteClientObject)
+					else if (pObjHandler->GetType() == ObjType::RemoteObject)
 					{
 						pObjHandler->IncRef();
 						EventHandler evtProxyHandler = [pObjHandler](XRuntime* rt, XObj* pContext,
