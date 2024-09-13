@@ -8,7 +8,7 @@
 #include <string>
 #include "ServerCallPool.h"
 #include "event.h"
-#include "remote_object.h"
+
 
 #if defined(__APPLE__)
 #include <signal.h>
@@ -24,7 +24,7 @@ namespace X
 				RemotingProxy* pProxy = new RemotingProxy();
 				std::string strUrl(url);
 				pProxy->SetUrl(strUrl);
-				pProxy->Start();
+				pProxy->StartProxy();
 				return dynamic_cast<XProxy*>(pProxy);
 				},
 				[](const char* url) {
@@ -44,6 +44,7 @@ namespace X
 		}
 		RemotingProxy::~RemotingProxy()
 		{
+			StopRunning();
 			delete m_pConnectWait;
 		}
 		ROBJ_ID RemotingProxy::QueryRootObject(std::string& name)
@@ -56,10 +57,9 @@ namespace X
 			Call_Context context;
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryRootObject, context);
 			stream << name;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
+			if (returnCode>0)
 			{
 				stream2 >> oId;
 			}
@@ -74,28 +74,7 @@ namespace X
 			{
 				return X::Value();
 			}
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue, context);
-			stream << parentObjId;
-			stream << id;
-			stream << (int)IdList.size();
-			for (auto& s : IdList)
-			{
-				stream << s;
-			}
-			stream << id_offset;
-			stream << itemName;
-			stream << val;
-			auto& stream2 = CommitCall(context);
-			X::Value retVal;
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
-			{
-				stream2 >> retVal;
-			}
-			FinishCall();
-			return retVal;
+			return CallHandler::UpdateItemValue(parentObjId, id, IdList, id_offset, itemName, val);
 		}
 		bool RemotingProxy::FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
 			Port::vector<std::string>& IdList, int id_offset,
@@ -105,27 +84,8 @@ namespace X
 			{
 				return false;
 			}
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack, context);
-			stream << parentObjId;
-			stream << id;
-			stream << (int)IdList.size();
-			for (auto& s : IdList)
-			{
-				stream << s;
-			}
-			stream << id_offset;
-			stream << startIndex;
-			stream << count;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
-			{
-				stream2 >> retList;
-			}
-			FinishCall();
-			return true;
+			return CallHandler::FlatPack(parentObjId, id, IdList, 
+				id_offset, startIndex, count, retList);
 		}
 		X::ROBJ_MEMBER_ID RemotingProxy::QueryMember(X::ROBJ_ID id, std::string& name,
 			int& memberFlags)
@@ -134,21 +94,7 @@ namespace X
 			{
 				return -1;
 			}
-			X::ROBJ_MEMBER_ID mId = -1;
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMember, context);
-			stream << id;
-			stream << name;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
-			{
-				stream2 >> mId;
-				stream2 >> memberFlags;
-			}
-			FinishCall();
-			return mId;
+			return CallHandler::QueryMember(id, name, memberFlags);
 		}
 		long long RemotingProxy::QueryMemberCount(X::ROBJ_ID id)
 		{
@@ -156,19 +102,7 @@ namespace X
 			{
 				return -1;
 			}
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount, context);
-			stream << id;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			long long cnt = -1;
-			if (bOK)
-			{
-				stream2 >> cnt;
-			}
-			FinishCall();
-			return cnt;
+			return CallHandler::QueryMemberCount(id);
 		}
 		bool RemotingProxy::ReleaseObject(ROBJ_ID id)
 		{
@@ -176,14 +110,7 @@ namespace X
 			{
 				return false;
 			}
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject, context);
-			stream << id;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			FinishCall();
-			return bOK;
+			return CallHandler::ReleaseObject(id);
 		}
 		X::ROBJ_ID RemotingProxy::GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId)
 		{
@@ -191,20 +118,7 @@ namespace X
 			{
 				return { 0,0 };
 			}
-			X::ROBJ_ID oId = { 0,0 };
-			Call_Context context;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject, context);
-			stream << objid;
-			stream << memId;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
-			{
-				stream2 >> oId;
-			}
-			FinishCall();
-			return oId;
+			return CallHandler::GetMemberObject(objid, memId);
 		}
 
 		bool RemotingProxy::Call(XRuntime* rt, XObj* pContext,
@@ -215,101 +129,7 @@ namespace X
 			{
 				return false;
 			}
-			X::ROBJ_ID oId = { 0,0 };
-			Call_Context callContext;
-			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call, callContext);
-			stream.ScopeSpace().SetContext((XlangRuntime*)rt, pContext);
-
-			stream << parent_id;
-			stream << id;
-			stream << memId;
-
-			int argNum = (int)params.size();
-			stream << argNum;
-			//Pack Parameters
-			for (auto& param : params)
-			{
-				bool bNeedConvert = false;
-				if (param.IsObject())
-				{
-					// for function as an event handler, we need to convert it to remote client object
-					//converT to remote client object
-					auto* pObj = param.GetObj();
-					auto type = pObj->GetType();
-					if (type == X::ObjType::Function || type == X::ObjType::PyProxyObject)
-					{
-						bNeedConvert = true;
-					}
-				}
-				if (bNeedConvert)
-				{
-					auto&& rcParam = ConvertXObjToRemoteClientObject(param.GetObj());
-					rcParam.ToBytes(&stream);
-				}
-				else
-				{
-					param.ToBytes(&stream);
-				}
-			}
-			stream << (int)kwParams.size();
-			for (auto& kw : kwParams)
-			{
-				stream << kw.key;
-				bool bNeedConvert = false;
-				if (kw.val.IsObject())
-				{
-					// for function as an event handler, we need to convert 
-					// it to remote client object
-					//convert to remote client object
-					auto* pObj = kw.val.GetObj();
-					auto type = pObj->GetType();
-					if (type == X::ObjType::Function || type == X::ObjType::PyProxyObject)
-					{
-						bNeedConvert = true;
-					}
-				}
-				if (bNeedConvert)
-				{
-					//convert to remote client object
-					auto&& rcParam = ConvertXObjToRemoteClientObject(kw.val.GetObj());
-					rcParam.ToBytes(&stream);
-				}
-				else
-				{
-					kw.val.ToBytes(&stream);
-				}
-			}
-			//set flag to show if there is a trailer
-			stream << trailer.IsValid();
-			if (trailer.IsValid())
-			{
-				stream << trailer;
-			}
-			//std::cout << "Before CommitCall" << std::endl;
-			auto& stream2 = CommitCall(callContext);
-			bool bOK = false;
-			stream2 >> bOK;
-			if (bOK)
-			{
-				X::ROBJ_ID retId = { 0,0 };
-				stream2 >> retId;
-				if (retId.objId == 0)
-				{//value
-					retValue.FromBytes(&stream2);
-				}
-				else
-				{
-					X::XRemoteObject* pRetObj =
-						X::g_pXHost->CreateRemoteObject(this);
-					pRetObj->SetObjID((unsigned long)retId.pid, retId.objId);
-					retValue = (X::XObj*)pRetObj;
-					pRetObj->DecRef();
-				}
-			}
-			//std::cout << "After CommitCall and Before FinishCall" << std::endl;
-			FinishCall();
-			//std::cout << "After FinishCall" << std::endl;
-			return bOK;
+			return CallHandler::Call(rt, pContext, parent_id, id, memId, params, kwParams, trailer, retValue);
 		}
 
 		//use process as signal to host exit
@@ -355,10 +175,9 @@ namespace X
 #endif
 			mHostProcessId = 0;
 		}
-		void RemotingProxy::run()
+		void RemotingProxy::SessionRun()
 		{
 			AddRef();
-			ThreadAddRef();
 			while (mRun)
 			{
 				bool bOK = Connect();
@@ -373,6 +192,9 @@ namespace X
 				m_ConnectLock.Unlock();
 				m_pConnectWait->Release();
 				WaitToHostExit();
+				CallHandler::Quit();
+				mCallCounter.WaitForZero();
+				CallHandler::Close();
 
 				if (m_ExitOnHostExit)
 				{
@@ -381,6 +203,7 @@ namespace X
 					m_Exited = true;
 					m_bConnected = false;
 					m_ConnectLock.Unlock();
+					Manager::I().RemoveProxy(LRPC_NAME, mRootObjectName, this);
 					break;
 				}
 				else
@@ -393,9 +216,9 @@ namespace X
 				m_ConnectLock.Lock();
 				m_bConnected = false;
 				m_ConnectLock.Unlock();
+				//Restart again for Read Thread in Base class
+				CallHandler::ReStart();
 			}
-			//cal this one before Release(),to avoid this pointer deleted by Release()
-			ThreadRelease();
 			Release();
 		}
 		void RemotingProxy::Cleanup()
@@ -458,12 +281,11 @@ namespace X
 			Call_Context context;
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::ShakeHands, context);
 			stream << pid_client;
-			auto& stream2 = CommitCall(context);
-			bool bOK = false;
+			long long returnCode = 0;
+			auto& stream2 = CommitCall(context, returnCode);
 			unsigned long pid_srv = 0;
 			unsigned long long sid = 0;
-			stream2 >> bOK;
-			if (bOK)
+			if (returnCode > 0)
 			{
 				stream2 >> pid_srv;
 				stream2 >> sid;

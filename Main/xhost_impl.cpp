@@ -28,12 +28,15 @@
 #include "parser.h"
 #include <algorithm> 
 #include "PyEngHost.h"
+#include "RemotingStub.h"
 
 namespace X 
 {
 	X::XHost* g_pXHost = nullptr;
 	X::XHost* CreatXHost()
 	{
+		IPC::RemotingStub::I().Register();
+
 		g_pXHost = new XHost_Impl();
 		return g_pXHost;
 	}

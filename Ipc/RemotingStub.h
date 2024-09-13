@@ -10,6 +10,7 @@
 #include "list.h"
 #include "bin.h"
 #include "remote_object.h"
+#include "RemotingMethod.h"
 
 namespace X
 {
@@ -58,9 +59,18 @@ namespace X
 			X::XObj* CovertIdToXObj(X::ROBJ_ID);
 			X::ROBJ_ID ConvertXObjToId(X::XObj* obj)
 			{
-				obj->IncRef();
-				auto pid = GetPID();
-				return X::ROBJ_ID{ pid,obj };
+				//TODO: for remote object, do we need to inc ref?
+				if (obj->GetType() == X::ObjType::RemoteObject)
+				{
+					auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(obj);
+					return pRemoteObj->GetObjId();
+				}
+				else
+				{
+					obj->IncRef();
+					auto pid = GetPID();
+					return X::ROBJ_ID{ pid,obj };
+				}
 			}
 			bool QueryRootObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
 			bool QueryMember(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc);
@@ -179,14 +189,14 @@ namespace X
 			pProc->EndReceiveCall(stream);
 
 			auto pXObj = QueryObjWithName((std::string&)objName);
-			bool bOK = (pXObj != nullptr);
-			auto& wstream = pProc->BeginWriteReturn(bOK);
-			if (bOK)
+			long long returnCode = (pXObj != nullptr)?1:0;
+			auto& wstream = pProc->BeginWriteReturn(returnCode);
+			if (returnCode>0)
 			{
 				X::ROBJ_ID objId = ConvertXObjToId(pXObj);
 				wstream << objId;
 			}
-			pProc->EndWriteReturn(pCallContext, bOK);
+			pProc->EndWriteReturn(pCallContext, returnCode);
 
 			return true;
 		}
@@ -200,7 +210,7 @@ namespace X
 			auto pXObj = CovertIdToXObj(objId);
 			int flags = 0;
 			int idx = pXObj->QueryMethod(name.c_str(), &flags);
-			auto& wStream = pProc->BeginWriteReturn(true);
+			auto& wStream = pProc->BeginWriteReturn(1);
 			wStream << idx;
 			wStream << flags;
 			pProc->EndWriteReturn(pCallContext,true);
@@ -219,12 +229,12 @@ namespace X
 				size = pXObj->Size();
 				bOK = true;
 			}
-			auto& wStream = pProc->BeginWriteReturn(bOK);
+			auto& wStream = pProc->BeginWriteReturn(bOK?1:0);
 			if (bOK)
 			{
 				wStream << size;
 			}
-			pProc->EndWriteReturn(pCallContext,bOK);
+			pProc->EndWriteReturn(pCallContext,bOK?1:0);
 			return true;
 		}
 		bool RemotingStub::FlatPack(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -266,7 +276,10 @@ namespace X
 				{
 					auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt,
 						pParentObj, IdList, id_offset, startIndex, count);
-					valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+					if (pPackList)
+					{
+						valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+					}
 				}
 				else
 				{
@@ -275,7 +288,10 @@ namespace X
 					{
 						auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt,
 							pParentObj, IdList, id_offset, startIndex, count);
-						valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+						if (pPackList)
+						{
+							valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+						}
 					}
 				}
 			}
@@ -401,12 +417,11 @@ namespace X
 			{
 				X::Value v;
 				v.FromBytes(&stream);
-				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteClientObject)
+				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteObject)
 				{
-#if __TODO__	
-					auto* pRemoteClientObj = dynamic_cast<X::RemoteClientObject*>(v.GetObj());
-					pRemoteClientObj->SetStub((XLangStub*)pProc);
-#endif
+					auto* pRemoteClientObj = dynamic_cast<X::RemoteObject*>(v.GetObj());
+					auto* pProxy = dynamic_cast<X::XProxy*>(pProc);
+					pRemoteClientObj->SetProxy(pProxy);
 				}
 				pCallInfo->params.push_back(v);
 			}
@@ -419,12 +434,11 @@ namespace X
 				stream >> key;
 				X::Value v;
 				v.FromBytes(&stream);
-				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteClientObject)
+				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteObject)
 				{
-#if __TODO__
-					auto* pRemoteClientObj = dynamic_cast<X::RemoteClientObject*>(v.GetObj());
-					pRemoteClientObj->SetStub((XLangStub*)pProc);
-#endif
+					auto* pRemoteClientObj = dynamic_cast<X::RemoteObject*>(v.GetObj());
+					auto* pProxy = dynamic_cast<X::XProxy*>(pProc);
+					pRemoteClientObj->SetProxy(pProxy);
 				}
 				pCallInfo->kwParams.Add(key.c_str(), v, true);
 			}
@@ -441,8 +455,9 @@ namespace X
 			}
 			pProc->EndReceiveCall(stream);
 			pProc->AddRef();
-
-			AddTask([this, pCallInfo, pProc, pCallContext]()
+			//need to use copy of pCallInfo, because it will be destroyed after this function
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, pCallInfo, pProc, callContext]()
 			{
 				X::XObj* pParentObj = nullptr;
 				if (pCallInfo->parent_ObjId.objId != nullptr)
@@ -466,7 +481,7 @@ namespace X
 				auto& wStream = pProc->BeginWriteReturn(bOK);
 				if (bOK)
 				{
-					X::ROBJ_ID retId = { 0,0 };
+					X::ROBJ_ID retId = { GetPID(),0};
 					if (valRet.IsObject())
 					{
 						auto tp = valRet.GetObj()->GetType();
@@ -488,8 +503,10 @@ namespace X
 						valRet.ToBytes(&wStream);
 					}
 				}
-				pProc->EndWriteReturn(pCallContext,bOK);
+				pProc->EndWriteReturn((void*) &callContext, bOK);
 				pProc->Release();
+
+				//std::cout << "RCall finished, reqId:" << callContext.reqId << std::endl;
 			});
 
 			return true;

@@ -4,28 +4,32 @@
 #include <vector>
 #include <mutex>
 #include <condition_variable>
-#include <thread>
 #include <atomic>
 #include <cassert>
 #include "RemotingMethod.h"
 #include "IpcBase.h"
 #include "wait.h"
+#include "gthread.h"
+#include "XProxy.h"
+#include "remote_object.h"
+#include "CallCounter.h"
 
 namespace X
 {
 	namespace IPC
 	{
-		struct Call_Context
-		{
-			unsigned int reqId = 0;
-		};
 
-		class CallHandler: public RemotingProc
+		class CallHandler:
+			public GThread,
+			public X::XProxy,
+			public RemotingProc
 		{
+			XWait mStartReadWait;
 			XWait mWriteWait;
 			XWait mCanReadWait;
 			XWait mFinishReadWait;
 		protected:
+			CallCounter mCallCounter;
 			// uses for write data
 			SMSwapBuffer* mWBuffer = nullptr;
 			SwapBufferStream mWStream;
@@ -40,11 +44,14 @@ namespace X
 			unsigned int mMaxReqId = -1;
 			std::mutex mCallMutex;
 			std::atomic<bool> m_running{ true };
-			std::thread mReadThread;
 			std::atomic<unsigned int> mCurrentCallIndex{ 0 };
 
 			std::atomic<int> mRefCount{ 0 };
 		public:
+			void StartReadThread()
+			{
+				mStartReadWait.Release(true);
+			}
 			//override RemotingProc's virtual functions
 			inline virtual int AddRef() override
 			{
@@ -71,20 +78,25 @@ namespace X
 				mRBuffer->EndRead();
 				mFinishReadWait.Release(true);
 			}
-			virtual SwapBufferStream& BeginWriteReturn(bool callIsOk) override
+			virtual SwapBufferStream& BeginWriteReturn(long long retCode) override
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				mWBuffer->BeginWrite();
+				mWStream.ReInit();
 				mWStream.SetSMSwapBuffer(mWBuffer);
 				PayloadFrameHead& head = mWBuffer->GetHead();
 				head.payloadType = PayloadType::Send;
 				head.size = 0; // update later
 				head.callType = 0;//TODO: check this
 				head.callIndex = mCurrentCallIndex.load();
-				head.context = nullptr;
+				head.callReturnCode = retCode;
 				return mWStream;
 			}
-			virtual void EndWriteReturn(void* pCallContext,bool callIsOk) override
+			virtual void EndWriteReturn(void* pCallContext, long long retCode) override
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				//Write back the original call index/ReqId
 				Call_Context* pContext = (Call_Context*)pCallContext;
 				PayloadFrameHead& head = mWBuffer->GetHead();
@@ -102,6 +114,8 @@ namespace X
 		protected:
 			SwapBufferStream& BeginCall(unsigned int callType, Call_Context& context)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				unsigned int reqId = 0;
 				{
 					std::unique_lock<std::mutex> lock(mCallMutex);
@@ -129,14 +143,16 @@ namespace X
 					head.size = 0; // update later
 					head.callType = callType;
 					head.callIndex = reqId;
-					head.context = &context;
+					head.callReturnCode = 0;
 				}
 
 				return mWStream;
 			}
 
-			SwapBufferStream& CommitCall(Call_Context& context)
+			SwapBufferStream& CommitCall(Call_Context& context,long long& returnCode)
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				PayloadFrameHead& head = mWBuffer->GetHead();
 				//Deliver the last block
 				head.payloadType = PayloadType::SendLast;
@@ -164,23 +180,31 @@ namespace X
 				mRStream.ReInit();
 				mRStream.SetSMSwapBuffer(mRBuffer);
 				mRStream.Refresh();
-
+				PayloadFrameHead& head_back = mRBuffer->GetHead();
+				returnCode = head_back.callReturnCode;
 				return mRStream;
 			}
 
 			void FinishCall()
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				mRBuffer->EndRead();
 				mFinishReadWait.Release(true);
 			}
 
-			void ReadThread()
+			virtual void run() override
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
+				AddRef();
+				mStartReadWait.Wait(-1);
 				while (m_running)
 				{
-					if (!m_running) break;
-
-					mRBuffer->BeginRead();
+					if (!mRBuffer->BeginRead())
+					{
+						continue;
+					}
 					PayloadFrameHead& head = mRBuffer->GetHead();
 					//callIndex is in my side's range, should be my call's return
 					if (head.callIndex >= mMinReqId && head.callIndex <= mMaxReqId)
@@ -195,10 +219,13 @@ namespace X
 						mFinishReadWait.Wait(-1);
 					}
 				}
+				Release();
 			}
 
 			void ReceiveCall()
 			{
+				AutoCallCounter autoCounter(mCallCounter);
+
 				SwapBufferStream stream;
 				stream.SetSMSwapBuffer(mRBuffer);
 				stream.Refresh();
@@ -215,11 +242,6 @@ namespace X
 					//wrong call, also need to call lines below
 				}
 			}
-		protected:
-			void StartReadThread()
-			{
-				mReadThread = std::thread(&CallHandler::ReadThread, this);
-			}
 		public:
 			CallHandler()
 			{
@@ -228,18 +250,287 @@ namespace X
 			~CallHandler()
 			{
 				StopRunning();
-				if (mReadThread.joinable())
+				WaitToEnd();
+			}
+			void Quit()
+			{
+				StopRunning();
+				if (mWBuffer)
 				{
-					mReadThread.join();
+					mWBuffer->ReleaseEvents();
+				}
+				if (mRBuffer)
+				{
+					mRBuffer->ReleaseEvents();
 				}
 			}
-
+			void Close()
+			{
+				if (mWBuffer)
+				{
+					mWBuffer->Close();
+				}
+				if (mRBuffer)
+				{
+					mRBuffer->Close();
+				}
+			}
 			void StopRunning()
 			{
+				mStartReadWait.Release(true);
 				{
 					std::unique_lock<std::mutex> lock(mCallMutex);
 					m_running = false;
 				}
+			}
+			void ReStart()
+			{
+				m_running = true;
+				mStartReadWait.Reset();
+				Start();
+			}
+			//XProxy Virtual functions
+			X::Value UpdateItemValue(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
+				Port::vector<std::string>& IdList, int id_offset,
+				std::string itemName, X::Value& val)
+			{
+				AutoCallCounter autoCounter(mCallCounter);
+
+				Call_Context context;
+				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_UpdateItemValue, context);
+				stream << parentObjId;
+				stream << id;
+				stream << (int)IdList.size();
+				for (auto& s : IdList)
+				{
+					stream << s;
+				}
+				stream << id_offset;
+				stream << itemName;
+				stream << val;
+				long long returnCode = 0;
+				auto& stream2 = CommitCall(context, returnCode);
+				X::Value retVal;
+				if (returnCode > 0)
+				{
+					stream2 >> retVal;
+				}
+				FinishCall();
+				return retVal;
+			}
+
+			bool FlatPack(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
+				Port::vector<std::string>& IdList, int id_offset,
+				long long startIndex, long long count, Value& retList)
+			{
+				AutoCallCounter autoCounter(mCallCounter);
+
+				Call_Context context;
+				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_FlatPack, context);
+				stream << parentObjId;
+				stream << id;
+				stream << (int)IdList.size();
+				for (auto& s : IdList)
+				{
+					stream << s;
+				}
+				stream << id_offset;
+				stream << startIndex;
+				stream << count;
+				long long returnCode = 0;
+				auto& stream2 = CommitCall(context, returnCode);
+				if (returnCode > 0)
+				{
+					stream2 >> retList;
+				}
+				FinishCall();
+				return true;
+			}
+
+			X::ROBJ_MEMBER_ID QueryMember(X::ROBJ_ID id, std::string& name,
+				int& memberFlags)
+			{
+				AutoCallCounter autoCounter(mCallCounter);
+
+				X::ROBJ_MEMBER_ID mId = -1;
+				Call_Context context;
+				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMember, context);
+				stream << id;
+				stream << name;
+				long long returnCode = 0;
+				auto& stream2 = CommitCall(context, returnCode);
+				if (returnCode > 0)
+				{
+					stream2 >> mId;
+					stream2 >> memberFlags;
+				}
+				FinishCall();
+				return mId;
+			}
+			long long QueryMemberCount(X::ROBJ_ID id)
+			{
+				AutoCallCounter autoCounter(mCallCounter);
+
+				Call_Context context;
+				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_QueryMemberCount, context);
+				stream << id;
+				long long returnCode = 0;
+				auto& stream2 = CommitCall(context, returnCode);
+				long long cnt = -1;
+				if (returnCode > 0)
+				{
+					stream2 >> cnt;
+				}
+				FinishCall();
+				return cnt;
+			}
+			bool ReleaseObject(ROBJ_ID id)
+			{
+				AutoCallCounter autoCounter(mCallCounter);
+
+				Call_Context context;
+				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_ReleaseObject, context);
+				stream << id;
+				long long returnCode = 0;
+				auto& stream2 = CommitCall(context, returnCode);
+				FinishCall();
+				return (returnCode > 0);
+			}
+			X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId)
+			{
+				AutoCallCounter autoCounter(mCallCounter);
+
+				X::ROBJ_ID oId = { 0,0 };
+				Call_Context context;
+				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject, context);
+				stream << objid;
+				stream << memId;
+				long long returnCode = 0;
+				auto& stream2 = CommitCall(context, returnCode);
+				if (returnCode > 0)
+				{
+					stream2 >> oId;
+				}
+				FinishCall();
+				return oId;
+			}
+			bool Call(XRuntime* rt, XObj* pContext,
+				X::ROBJ_ID parent_id, X::ROBJ_ID id, X::ROBJ_MEMBER_ID memId,
+				X::ARGS& params, X::KWARGS& kwParams, X::Value& trailer, X::Value& retValue)
+			{
+				AutoCallCounter autoCounter(mCallCounter);
+
+				X::ROBJ_ID oId = { 0,0 };
+				Call_Context callContext;
+				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_Call, callContext);
+				stream.ScopeSpace().SetContext((XlangRuntime*)rt, pContext);
+
+				stream << parent_id;
+				stream << id;
+				stream << memId;
+
+				int argNum = (int)params.size();
+				stream << argNum;
+				//Pack Parameters
+				for (auto& param : params)
+				{
+					bool bNeedConvert = false;
+					if (param.IsObject())
+					{
+						// for function as an event handler, we need to convert it to remote client object
+						//converT to remote client object
+						auto* pObj = param.GetObj();
+						auto type = pObj->GetType();
+						if (type == X::ObjType::Function || type == X::ObjType::PyProxyObject)
+						{
+							bNeedConvert = true;
+						}
+					}
+					if (bNeedConvert)
+					{
+						auto&& rcParam = ConvertXObjToRemoteClientObject(param.GetObj());
+						rcParam.ToBytes(&stream);
+					}
+					else
+					{
+						param.ToBytes(&stream);
+					}
+				}
+				stream << (int)kwParams.size();
+				for (auto& kw : kwParams)
+				{
+					stream << kw.key;
+					bool bNeedConvert = false;
+					if (kw.val.IsObject())
+					{
+						// for function as an event handler, we need to convert 
+						// it to remote client object
+						//convert to remote client object
+						auto* pObj = kw.val.GetObj();
+						auto type = pObj->GetType();
+						if (type == X::ObjType::Function || type == X::ObjType::PyProxyObject)
+						{
+							bNeedConvert = true;
+						}
+					}
+					if (bNeedConvert)
+					{
+						//convert to remote client object
+						auto&& rcParam = ConvertXObjToRemoteClientObject(kw.val.GetObj());
+						rcParam.ToBytes(&stream);
+					}
+					else
+					{
+						kw.val.ToBytes(&stream);
+					}
+				}
+				//set flag to show if there is a trailer
+				stream << trailer.IsValid();
+				if (trailer.IsValid())
+				{
+					stream << trailer;
+				}
+				//std::cout << "Before CommitCall" << std::endl;
+				long long returnCode = 0;
+				auto& stream2 = CommitCall(callContext, returnCode);
+				if (returnCode > 0)
+				{
+					X::ROBJ_ID retId = { 0,0 };
+					stream2 >> retId;
+					if (retId.objId == 0)
+					{//value
+						retValue.FromBytes(&stream2);
+					}
+					else if (retId.pid == GetPID())
+					{
+						//need to use function to do convertion and check
+						auto pRetObj = (X::XObj*)retId.objId;
+						retValue = (X::XObj*)pRetObj;
+					}
+					else
+					{
+						X::XRemoteObject* pRetObj =
+							X::g_pXHost->CreateRemoteObject(this);
+						pRetObj->SetObjID((unsigned long)retId.pid, retId.objId);
+						retValue = (X::XObj*)pRetObj;
+						pRetObj->DecRef();
+					}
+				}
+				//std::cout << "After CommitCall and Before FinishCall" << std::endl;
+				FinishCall();
+				//std::cout << "After FinishCall" << std::endl;
+				return (returnCode > 0);
+			}
+		protected:
+			X::Value ConvertXObjToRemoteClientObject(X::XObj* obj)
+			{
+				obj->IncRef();
+				auto pid = GetPID();
+				X::ROBJ_ID robjId{ pid,obj };
+				RemoteObject* pRC = new RemoteObject(nullptr);
+				pRC->SetObjID(pid, obj);
+				X::Value val(pRC);
+				return val;
 			}
 		};
 	}

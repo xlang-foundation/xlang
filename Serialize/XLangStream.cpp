@@ -292,7 +292,7 @@ namespace X
 			X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(v.GetObj());
 			//save pObj as Id and with a flag to indicate it's a object embeded here or just
 			//a reference to an object
-			unsigned long long id = (unsigned long long)pObj;
+			unsigned long long id = pObj->ID();
 			(*this) << id;
 			bool bRef = (m_scope_space->Query(id) != nullptr);
 			(*this) << bRef;

@@ -86,6 +86,14 @@ namespace X
 		{
 			return m_objName;
 		}
+		void SetProxy(XProxy* p)
+		{
+			if (p != nullptr)
+			{
+				p->AddRef();
+			}
+			m_proxy = p;
+		}
 		void SetObjName(std::string& name)
 		{
 			m_objName = name;
@@ -155,7 +163,14 @@ namespace X
 			stream >> m_remote_Obj_id;
 			return true;
 		}
-		bool SetValue(XlangRuntime* rt, XObj* pContext,X::Value& val)
+		virtual bool Add(const X::Value& r, X::Value& retVal) override
+		{
+			auto* rt = g_pXHost->GetCurrentRuntime();
+			bool bOK = SetValue((XlangRuntime*)rt, this, (X::Value&)r);
+			retVal = Value(this);
+			return bOK;
+		}
+		FORCE_INLINE bool SetValue(XlangRuntime* rt, XObj* pContext,X::Value& val)
 		{
 			X::Value retValue;
 			ARGS params(1);

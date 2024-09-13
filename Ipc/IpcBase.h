@@ -12,6 +12,10 @@ namespace X
 {
 	namespace IPC
 	{
+		struct Call_Context
+		{
+			unsigned int reqId = 0;
+		};
 		class Helper
 		{
 		public:
@@ -47,8 +51,8 @@ namespace X
 			virtual int Release() = 0;
 			virtual int RefCount() = 0;
 			virtual void EndReceiveCall(SwapBufferStream& stream) = 0;
-			virtual SwapBufferStream& BeginWriteReturn(bool callIsOk) = 0;
-			virtual void EndWriteReturn(void* pCallContext,bool callIsOk) = 0;
+			virtual SwapBufferStream& BeginWriteReturn(long long retCode) = 0;
+			virtual void EndWriteReturn(void* pCallContext, long long retCode) = 0;
 			virtual unsigned long long GetSessionId() = 0;
 			virtual void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) = 0;
 		};

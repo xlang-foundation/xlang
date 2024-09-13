@@ -33,12 +33,16 @@ XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 	for (Py_ssize_t i = 0; i < size; ++i) {
 		PyObject* pyRealFunc = PyTuple_GetItem(args, i);
 		pyFuncObj = PyObjectXLangConverter::ConvertToXValue(pyRealFunc);
-		pWrapFunc->args.resize(pWrapFunc->args.size() + 1);
+		pWrapFunc->args.resize((int)pWrapFunc->args.size() + 1);
 		pWrapFunc->args.push_back(pyFuncObj);
 		//only one need to support for python decorator
 		break;
 	}
-	X::Value retVal = pWrapFunc->realObj.ObjCall(pWrapFunc->args, pWrapFunc->kwArgs);
+	//open multi-threads to call the real function
+	X::Value retVal;
+	Py_BEGIN_ALLOW_THREADS
+	retVal = pWrapFunc->realObj.ObjCall(pWrapFunc->args, pWrapFunc->kwArgs);
+	Py_END_ALLOW_THREADS
 	PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
 	return retObj;
 }
@@ -90,7 +94,11 @@ static void XlangObject_dealloc(PyXlangObject* self) {
 
 static PyObject* XlangObject_getattr(PyXlangObject* self, PyObject* name) {
 	const char* attr_name = PyUnicode_AsUTF8(name);
-	X::Value newObj = self->realObj[attr_name];
+	//open multi-threads to call the real function
+	X::Value newObj;
+	Py_BEGIN_ALLOW_THREADS
+		newObj = self->realObj[attr_name];
+	Py_END_ALLOW_THREADS
 	if (newObj.IsInvalid())
 	{
 		Py_IncRef(Py_None);
@@ -144,7 +152,10 @@ static PyObject* XlangObject_call(PyObject* self, PyObject* args, PyObject* kwar
 		{
 			PyObjectXLangConverter::ConvertKwargs(kwargs, x_kwargs);
 		}
-		X::Value retVal = realObj.ObjCall(x_args, x_kwargs);
+		X::Value retVal;
+		Py_BEGIN_ALLOW_THREADS
+		retVal = realObj.ObjCall(x_args, x_kwargs);
+		Py_END_ALLOW_THREADS
 		PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
 		return retObj;
 	}
@@ -157,6 +168,61 @@ static PyMappingMethods XlangObject_as_mapping = {
 	(objobjargproc)XlangObject_setitem, /* mp_ass_subscript */
 };
 
+static PyObject* XlangObject_iadd(PyObject* self, PyObject* other) {
+	PyXlangObject* pXlangObject = (PyXlangObject*)self;
+	X::Value realObj = pXlangObject->realObj;
+	if (realObj.IsObject())
+	{
+		X::Value valOther = PyObjectXLangConverter::ConvertToXValue(other);
+		X::Value retVal;
+		Py_BEGIN_ALLOW_THREADS
+			retVal = realObj.AddObj(valOther);
+		Py_END_ALLOW_THREADS
+		//PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
+		pXlangObject->realObj = retVal;
+	}
+	// Return self to support in-place modification
+	Py_INCREF(self);
+	return self;
+}
+static PyNumberMethods XlangObject_as_number = {
+	0,               // nb_add
+	0,               // nb_subtract
+	0,               // nb_multiply
+	0,               // nb_remainder
+	0,               // nb_divmod
+	0,               // nb_power
+	0,               // nb_negative
+	0,               // nb_positive
+	0,               // nb_absolute
+	0,               // nb_bool
+	0,               // nb_invert
+	0,               // nb_lshift
+	0,               // nb_rshift
+	0,               // nb_and
+	0,               // nb_xor
+	0,               // nb_or
+	0,               // nb_int
+	0,               // nb_reserved
+	0,               // nb_float
+	(binaryfunc)XlangObject_iadd, // nb_inplace_add
+	0,               // nb_inplace_subtract
+	0,               // nb_inplace_multiply
+	0,               // nb_inplace_remainder
+	0,               // nb_inplace_power
+	0,               // nb_inplace_lshift
+	0,               // nb_inplace_rshift
+	0,               // nb_inplace_and
+	0,               // nb_inplace_xor
+	0,               // nb_inplace_or
+	0,               // nb_floor_divide
+	0,               // nb_true_divide
+	0,               // nb_inplace_floor_divide
+	0,               // nb_inplace_true_divide
+	0,               // nb_index
+};
+
+
 static PyTypeObject XlangObjectType = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"XlangObject",                      /* tp_name */
@@ -168,7 +234,7 @@ static PyTypeObject XlangObjectType = {
 	0,                                  /* tp_setattr */
 	0,                                  /* tp_as_async */
 	0,                                  /* tp_repr */
-	0,                                  /* tp_as_number */
+	&XlangObject_as_number,             /* tp_as_number */
 	0,                                  /* tp_as_sequence */
 	&XlangObject_as_mapping,            /* tp_as_mapping */
 	0,                                  /* tp_hash  */

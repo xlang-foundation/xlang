@@ -3,6 +3,7 @@
 
 #include "xport.h"
 #include "xlang.h"
+#include <functional>
 
 //all function,if return PyEngObjectPtr will hold a new reference
 typedef void* PyEngObjectPtr;
@@ -85,6 +86,10 @@ public:
 	virtual PyEngObjectPtr GetLocals() = 0;
 	virtual bool CallReleaseForTupleItems(PyEngObjectPtr tuple) = 0;
 	virtual bool Exec(const char* code, PyEngObjectPtr args) = 0;
+	virtual void InitPythonThreads() = 0;
+	virtual int GilLock() = 0;
+	virtual void GilUnlock(int state) = 0;
+	virtual void SubmitPythonTask(const std::function<void()>& task) = 0;
 };
 
 extern PyEngHost* g_pPyHost;

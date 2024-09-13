@@ -2,12 +2,14 @@
 #include "singleton.h"
 #include "PyEngHost.h"
 #include "xlang.h"
+#include "PythonThreadPool.h"
 
 class GrusPyEngHost :
 	public PyEngHost,
 	public Singleton<GrusPyEngHost>
 {
 	Xlang_CallFunc m_xlang_call_func = nullptr;
+	PythonThreadPool m_pyTaskPool;
 public:
 	GrusPyEngHost();
 	~GrusPyEngHost();
@@ -87,6 +89,10 @@ public:
 	virtual PyEngObjectPtr GetPyNone() override;
 	virtual PyEngObjectPtr GetGlobals() override;
 	virtual PyEngObjectPtr GetLocals() override;
+	virtual void InitPythonThreads() override;
+	virtual int GilLock() override;
+	virtual void GilUnlock(int state) override;
+	virtual void SubmitPythonTask(const std::function<void()>& task) override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 

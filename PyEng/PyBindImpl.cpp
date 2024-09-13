@@ -40,7 +40,10 @@ Xlang_import(PyObject* self, PyObject* args, PyObject* kwargs)
 
 	auto* rt = X::g_pXHost->GetCurrentRuntime();
 	X::Value obj;
-	bool bOK = X::g_pXHost->Import(rt, moduleName, from, thru, obj);
+	bool bOK = false;
+	Py_BEGIN_ALLOW_THREADS
+		bOK = X::g_pXHost->Import(rt, moduleName, from, thru, obj);
+	Py_END_ALLOW_THREADS
 	if (!bOK)
 	{
 		PyErr_SetString(PyExc_RuntimeError, "Import failed");

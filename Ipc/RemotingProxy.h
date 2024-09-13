@@ -1,10 +1,10 @@
 #pragma once
 #include "singleton.h"
-#include "RemotingProxy.h"
 #include "SwapBufferStream.h"
 #include "Locker.h"
 #include "gthread.h"
 #include "remote_client_object.h"
+#include "remote_object.h"
 #include <vector>
 #include "port.h"
 #include "Call.h"
@@ -21,13 +21,25 @@ namespace X
 		public:
 			void Register();
 		};
-
-		class RemotingProxy :
-			public X::XProxy,
-			public CallHandler,
+		class RemotingProxy;
+		class ProxySessionThread :
 			public GThread
 		{
+		public:
+			void SetParent(RemotingProxy* p)
+			{
+				mParent = p;
+			}
+		protected:
+			virtual void run() override;
+		private:
+			RemotingProxy* mParent = nullptr;
+		};
+		class RemotingProxy :
+			public CallHandler
+		{
 			std::string mRootObjectName;
+			ProxySessionThread mSessionThread;
 		public:
 			RemotingProxy();
 			~RemotingProxy();
@@ -38,6 +50,12 @@ namespace X
 			virtual unsigned long long GetSessionId() override
 			{
 				return 0;
+			}
+			void StartProxy()
+			{
+				mSessionThread.SetParent(this);
+				CallHandler::Start();
+				mSessionThread.Start();
 			}
 			void SetUrl(std::string& url);
 			virtual int AddRef() override
@@ -67,42 +85,18 @@ namespace X
 			{
 				mTimeout = timeout;
 			}
-			// GThread interface
+			void SessionRun();
+
 		protected:
 			bool mRun = true;
-			virtual void run() override;
-
 			void Cleanup();
 
 		private:
 			bool mHostUseGlobal = false;
 
-
-			int m_ThreadRefCount = 0;//we have two threads there
-			Locker mLockRefCount;
-
-			virtual int ThreadAddRef()
+			virtual void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) override
 			{
-				int ret = 0;
-				mLockRefCount.Lock();
-				ret = ++m_ThreadRefCount;
-				mLockRefCount.Unlock();
-				return ret;
-			}
-			virtual int ThreadRelease()
-			{
-				int ret = 0;
-				mLockRefCount.Lock();
-				ret = --m_ThreadRefCount;
-				mLockRefCount.Unlock();
-				if (ret == 0)
-				{
-					Cleanup();
-				}
-				return ret;
-			}
-			void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) override
-			{
+				//Don't need to implement this in Client side
 			}
 			int mTimeout = -1;
 			long m_port = 0;
@@ -137,16 +131,10 @@ namespace X
 				}
 				return pObjRet;
 			}
-
-			X::Value ConvertXObjToRemoteClientObject(X::XObj* obj)
-			{
-				obj->IncRef();
-				auto pid = GetPID();
-				X::ROBJ_ID robjId{ pid,obj };
-				RemoteClientObject* pRC = new RemoteClientObject(robjId);
-				X::Value val(pRC);
-				return val;
-			}
 		};
+		FORCE_INLINE void ProxySessionThread::run()
+		{
+			mParent->SessionRun();
+		}
 	}//namespace IPC
 }//namespace X
