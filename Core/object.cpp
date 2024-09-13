@@ -8,6 +8,9 @@ namespace X
 {
 	namespace Data
 	{
+		// Initialize the static atomic counter
+		std::atomic<unsigned long long> Object::s_idCounter{ 0 };
+
 		AttributeBag* Object::GetAttrBag()
 		{
 			AutoLock autoLock(m_lock);

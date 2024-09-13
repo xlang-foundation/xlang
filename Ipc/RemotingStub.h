@@ -481,7 +481,7 @@ namespace X
 				auto& wStream = pProc->BeginWriteReturn(bOK);
 				if (bOK)
 				{
-					X::ROBJ_ID retId = { 0,0 };
+					X::ROBJ_ID retId = { GetPID(),0};
 					if (valRet.IsObject())
 					{
 						auto tp = valRet.GetObj()->GetType();
@@ -505,6 +505,8 @@ namespace X
 				}
 				pProc->EndWriteReturn((void*) &callContext, bOK);
 				pProc->Release();
+
+				//std::cout << "RCall finished, reqId:" << callContext.reqId << std::endl;
 			});
 
 			return true;

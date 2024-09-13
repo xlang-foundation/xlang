@@ -28,14 +28,16 @@ namespace Data {
 		virtual public XObj,
 		virtual public ObjRef
 	{
+		static std::atomic<unsigned long long> s_idCounter;
 	protected:
 		ObjType m_t = ObjType::Base;
 		AttributeBag* m_aBag = nullptr;
 		AST::Scope* m_extraScope = nullptr;//ref to extra scope, don't delete it
+		unsigned long long m_id;
 		Locker m_lock;
 		Locker m_external_lock;
 	public:
-		Object():XObj(), ObjRef()
+		Object():XObj(), ObjRef(), m_id(++s_idCounter)
 		{
 			G::I().AddObj(this);
 		}
@@ -44,6 +46,7 @@ namespace Data {
 			DeleteAttrBag();
 			G::I().RemoveObj(this);
 		}
+		FORCE_INLINE unsigned long long ID() { return m_id; }
 		FORCE_INLINE virtual AST::Scope* GetMyScope()
 		{
 			return nullptr;
@@ -295,6 +298,7 @@ namespace Data {
 		virtual bool Set(long long idx, X::Value& val) { return false; }
 		virtual bool Set(Value valIdx, X::Value& val) { return false; }
 	};
+
 	class Expr
 		: public virtual Object
 	{//any valid AST tree with one root

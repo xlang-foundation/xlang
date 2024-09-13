@@ -193,8 +193,8 @@ namespace X
 				m_pConnectWait->Release();
 				WaitToHostExit();
 				CallHandler::Quit();
-				CallHandler::Close();
 				mCallCounter.WaitForZero();
+				CallHandler::Close();
 
 				if (m_ExitOnHostExit)
 				{
@@ -203,6 +203,7 @@ namespace X
 					m_Exited = true;
 					m_bConnected = false;
 					m_ConnectLock.Unlock();
+					Manager::I().RemoveProxy(LRPC_NAME, mRootObjectName, this);
 					break;
 				}
 				else
