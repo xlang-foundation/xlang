@@ -34,7 +34,7 @@ namespace X
 			public Singleton<RemotingStub>
 		{
 		public:
-			RemotingStub() :threadPool(1)
+			RemotingStub() :threadPool(5)
 			{
 			}
 			void Register();
@@ -190,7 +190,7 @@ namespace X
 
 			auto pXObj = QueryObjWithName((std::string&)objName);
 			long long returnCode = (pXObj != nullptr)?1:0;
-			auto& wstream = pProc->BeginWriteReturn(returnCode);
+			auto& wstream = pProc->BeginWriteReturn(pCallContext,returnCode);
 			if (returnCode>0)
 			{
 				X::ROBJ_ID objId = ConvertXObjToId(pXObj);
@@ -210,7 +210,7 @@ namespace X
 			auto pXObj = CovertIdToXObj(objId);
 			int flags = 0;
 			int idx = pXObj->QueryMethod(name.c_str(), &flags);
-			auto& wStream = pProc->BeginWriteReturn(1);
+			auto& wStream = pProc->BeginWriteReturn(pCallContext, 1);
 			wStream << idx;
 			wStream << flags;
 			pProc->EndWriteReturn(pCallContext,true);
@@ -229,7 +229,7 @@ namespace X
 				size = pXObj->Size();
 				bOK = true;
 			}
-			auto& wStream = pProc->BeginWriteReturn(bOK?1:0);
+			auto& wStream = pProc->BeginWriteReturn(pCallContext, bOK?1:0);
 			if (bOK)
 			{
 				wStream << size;
@@ -295,7 +295,7 @@ namespace X
 					}
 				}
 			}
-			auto& wStream = pProc->BeginWriteReturn(bOK);
+			auto& wStream = pProc->BeginWriteReturn(pCallContext, bOK);
 			if (bOK)
 			{
 				wStream << valPackList;
@@ -354,7 +354,7 @@ namespace X
 					}
 				}
 			}
-			auto& wStream = pProc->BeginWriteReturn(bOK);
+			auto& wStream = pProc->BeginWriteReturn(pCallContext, bOK);
 			if (bOK)
 			{
 				wStream << retVal;
@@ -373,7 +373,7 @@ namespace X
 			auto pXObj = CovertIdToXObj(objId);
 			X::Value valObj;
 			bool bOK = pXObj->GetIndexValue(memId, valObj);
-			auto& wStream = pProc->BeginWriteReturn(bOK);
+			auto& wStream = pProc->BeginWriteReturn(pCallContext, bOK);
 			if (bOK)
 			{
 				X::ROBJ_ID sub_objId = ConvertXObjToId(valObj.GetObj());
@@ -398,7 +398,7 @@ namespace X
 				}
 			}
 			pXObj->DecRef();
-			auto& wStream = pProc->BeginWriteReturn(true);
+			auto& wStream = pProc->BeginWriteReturn(pCallContext, true);
 			pProc->EndWriteReturn(pCallContext,true);
 			return true;
 		}
@@ -478,7 +478,7 @@ namespace X
 					bOK = pXObj->Call(m_rt, pParentObj, pCallInfo->params, pCallInfo->kwParams, valRet);
 				}
 				delete pCallInfo;
-				auto& wStream = pProc->BeginWriteReturn(bOK);
+				auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
 				if (bOK)
 				{
 					X::ROBJ_ID retId = { GetPID(),0};

@@ -78,6 +78,7 @@ namespace X
 		{
 			if (m_proxy)
 			{
+				m_proxy->RemoveOject(this);
 				m_proxy->Release();
 			}
 			delete m_stackFrame;
@@ -91,6 +92,7 @@ namespace X
 			if (p != nullptr)
 			{
 				p->AddRef();
+				p->AddObject(this);
 			}
 			m_proxy = p;
 		}

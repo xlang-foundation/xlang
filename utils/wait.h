@@ -29,20 +29,21 @@ public:
 		}
 		return true;
 	}
+
 	template <typename Predicate>
 	bool Wait(int timeoutMS, Predicate pred) {
 		std::unique_lock<std::mutex> lock(m_mutex);
-		if (m_signaled && pred())
-		{
-			if (m_autoReset)
+		bool predicateResult = pred();
+		if (predicateResult || (m_signaled && predicateResult)) {
+			if (m_autoReset && m_signaled)
 				m_signaled = false;
 			return true;
 		}
 		if (timeoutMS < 0)
-			m_condition.wait(lock, [this, &pred] { return m_signaled || pred(); });
+			m_condition.wait(lock, [this, &pred] { return m_signaled && pred(); });
 		else {
-			if (!m_condition.wait_for(lock, std::chrono::milliseconds(timeoutMS), 
-				[this, &pred] { return m_signaled || pred(); }))
+			if (!m_condition.wait_for(lock, std::chrono::milliseconds(timeoutMS),
+				[this, &pred] { return m_signaled && pred(); }))
 				return false;
 		}
 		if (m_autoReset && pred()) {
@@ -50,6 +51,7 @@ public:
 		}
 		return true;
 	}
+
 	void Release(bool bAll = false) {
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_signaled = true;
