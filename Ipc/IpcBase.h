@@ -51,7 +51,7 @@ namespace X
 			virtual int Release() = 0;
 			virtual int RefCount() = 0;
 			virtual void EndReceiveCall(SwapBufferStream& stream) = 0;
-			virtual SwapBufferStream& BeginWriteReturn(long long retCode) = 0;
+			virtual SwapBufferStream& BeginWriteReturn(void* pCallContext,long long retCode) = 0;
 			virtual void EndWriteReturn(void* pCallContext, long long retCode) = 0;
 			virtual unsigned long long GetSessionId() = 0;
 			virtual void ShakeHandsCall(void* pCallContext, SwapBufferStream& stream) = 0;

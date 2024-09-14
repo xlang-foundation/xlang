@@ -176,5 +176,9 @@ namespace X
 			X::Value val(pRC);
 			return val;
 		}
-	};
+
+		// Inherited via XProxy
+		void AddObject(XObj* obj) override;
+		void RemoveOject(XObj* obj) override;
+};
 }

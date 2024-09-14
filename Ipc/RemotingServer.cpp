@@ -95,7 +95,7 @@ namespace X
 			std::cout << "IPC,WatchClientProcess,pid =" << clientPid << std::endl;
 			m_pStubWatch->Start();
 			bool bOK = true;
-			auto& wStream = BeginWriteReturn(bOK);
+			auto& wStream = BeginWriteReturn(pCallContext,bOK);
 			if (bOK)
 			{
 				unsigned long pid = GetPID();

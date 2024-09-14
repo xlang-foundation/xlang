@@ -13,6 +13,7 @@
 #include "XProxy.h"
 #include "remote_object.h"
 #include "CallCounter.h"
+#include <iostream>
 
 namespace X
 {
@@ -44,9 +45,20 @@ namespace X
 			unsigned int mMaxReqId = -1;
 			std::mutex mCallMutex;
 			std::atomic<bool> m_running{ true };
-			std::atomic<unsigned int> mCurrentCallIndex{ 0 };
+			unsigned int mCurrentCallIndex =0;
 
 			std::atomic<int> mRefCount{ 0 };
+		protected:
+			std::vector<X::XObj*> mObjectList;
+			virtual void AddObject(XObj* obj) override
+			{
+				mObjectList.push_back(obj);
+			}
+			virtual void RemoveOject(XObj* obj) override
+			{
+				mObjectList.erase(std::remove(mObjectList.begin(), 
+					mObjectList.end(), obj), mObjectList.end());
+			}
 		public:
 			void StartReadThread()
 			{
@@ -78,19 +90,39 @@ namespace X
 				mRBuffer->EndRead();
 				mFinishReadWait.Release(true);
 			}
-			virtual SwapBufferStream& BeginWriteReturn(long long retCode) override
+			virtual SwapBufferStream& BeginWriteReturn(void* pCallContext,long long retCode) override
 			{
 				AutoCallCounter autoCounter(mCallCounter);
-
-				mWBuffer->BeginWrite();
-				mWStream.ReInit();
-				mWStream.SetSMSwapBuffer(mWBuffer);
-				PayloadFrameHead& head = mWBuffer->GetHead();
-				head.payloadType = PayloadType::Send;
-				head.size = 0; // update later
-				head.callType = 0;//TODO: check this
-				head.callIndex = mCurrentCallIndex.load();
-				head.callReturnCode = retCode;
+				//write my request then wait it in front of queue
+				//we use another side's call index as my request id
+				//because another side is not in my range
+				Call_Context* pContext = (Call_Context*)pCallContext;
+				unsigned int reqId = pContext->reqId;
+				{
+					std::unique_lock<std::mutex> lock(mCallMutex);
+					mRequestVector.push_back(reqId);
+				}
+				//Wait this Request Queue's front is my request
+				mWriteWait.Wait(-1, [this, reqId]() {
+					std::unique_lock<std::mutex> lock(mCallMutex);
+					return !m_running || mRequestVector.front() == reqId;
+					});
+				if (m_running)
+				{
+					//then safe to write
+					mWBuffer->BeginWrite();
+					mWStream.ReInit();
+					mWStream.SetSMSwapBuffer(mWBuffer);
+					PayloadFrameHead& head = mWBuffer->GetHead();
+					head.payloadType = PayloadType::Send;
+					head.size = 0; // update later
+					head.callType = 0;//TODO: check this
+					{
+						std::unique_lock<std::mutex> lock(mCallMutex);
+						head.callIndex = mCurrentCallIndex;
+					}
+					head.callReturnCode = retCode;
+				}
 				return mWStream;
 			}
 			virtual void EndWriteReturn(void* pCallContext, long long retCode) override
@@ -110,6 +142,15 @@ namespace X
 				head.blockSize = (unsigned int)mWStream.GetPos().offset;
 
 				mWBuffer->EndWrite();
+				unsigned int reqId = pContext->reqId;
+				//remove my request from queue
+				{
+					std::unique_lock<std::mutex> lock(mCallMutex);
+					assert(mRequestVector.front() == reqId);
+					mRequestVector.erase(mRequestVector.begin());
+				}
+				//Notify all waits to check if it is their turn
+				mWriteWait.Release(true);
 			}
 		protected:
 			SwapBufferStream& BeginCall(unsigned int callType, Call_Context& context)
@@ -171,10 +212,12 @@ namespace X
 				//Notify all waits to check if it is their turn
 				mWriteWait.Release(true);
 
-				//Wait for ready to read from another side's call return's write
+				unsigned int rec_CallIndex = 0;
+				unsigned int reqId = context.reqId;
 				mCanReadWait.Wait(-1, [&]() {
 					std::unique_lock<std::mutex> lock(mCallMutex);
-					return !m_running || mCurrentCallIndex == context.reqId;
+					rec_CallIndex = mCurrentCallIndex;
+					return (!m_running) || (rec_CallIndex == reqId);
 					});
 				//Then fetch Result
 				mRStream.ReInit();
@@ -182,6 +225,10 @@ namespace X
 				mRStream.Refresh();
 				PayloadFrameHead& head_back = mRBuffer->GetHead();
 				returnCode = head_back.callReturnCode;
+				if (returnCode == 0)
+				{
+					std::cout << "CommitCall,returnCode==0" << std::endl;
+				}
 				return mRStream;
 			}
 
@@ -209,15 +256,18 @@ namespace X
 					//callIndex is in my side's range, should be my call's return
 					if (head.callIndex >= mMinReqId && head.callIndex <= mMaxReqId)
 					{
-						mCurrentCallIndex.store(head.callIndex);
+						{
+							std::unique_lock<std::mutex> lock(mCallMutex);
+							mCurrentCallIndex = head.callIndex;
+						}
 						mCanReadWait.Release(true);
 					}
 					else//call from other side, callIndex is in another side's range
 					{
 						ReceiveCall();
-						//wait for read finishing before next read
-						mFinishReadWait.Wait(-1);
 					}
+					//wait for read finishing before next read
+					mFinishReadWait.Wait(-1);
 				}
 				Release();
 			}
@@ -490,7 +540,6 @@ namespace X
 				{
 					stream << trailer;
 				}
-				//std::cout << "Before CommitCall" << std::endl;
 				long long returnCode = 0;
 				auto& stream2 = CommitCall(callContext, returnCode);
 				if (returnCode > 0)
@@ -516,9 +565,7 @@ namespace X
 						pRetObj->DecRef();
 					}
 				}
-				//std::cout << "After CommitCall and Before FinishCall" << std::endl;
 				FinishCall();
-				//std::cout << "After FinishCall" << std::endl;
 				return (returnCode > 0);
 			}
 		protected:

@@ -16,6 +16,8 @@ namespace X
 	public:
 		virtual int AddRef() = 0;
 		virtual int Release() = 0;
+		virtual void AddObject(XObj* obj) = 0;
+		virtual void RemoveOject(XObj* obj) = 0;
 		virtual void SetRootObjectName(const char* name) = 0;
 		virtual ROBJ_ID QueryRootObject(std::string& name) = 0;
 		virtual ROBJ_MEMBER_ID QueryMember(ROBJ_ID id,std::string& name,

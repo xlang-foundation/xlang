@@ -636,4 +636,10 @@ namespace X
 		mHostProcessId = pid_srv;
 		mSessionId = sid;
 	}
+	void XLangProxy::AddObject(XObj* obj)
+	{
+	}
+	void XLangProxy::RemoveOject(XObj* obj)
+	{
+	}
 }
