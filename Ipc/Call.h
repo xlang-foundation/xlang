@@ -49,15 +49,37 @@ namespace X
 
 			std::atomic<int> mRefCount{ 0 };
 		protected:
-			std::vector<X::XObj*> mObjectList;
+			std::mutex mRemoteObjectMutex;
+			std::vector<X::XObj*> mRemoteObjects;
 			virtual void AddObject(XObj* obj) override
 			{
-				mObjectList.push_back(obj);
+				mRemoteObjectMutex.lock();
+				mRemoteObjects.push_back(obj);
+				mRemoteObjectMutex.unlock();
 			}
 			virtual void RemoveOject(XObj* obj) override
 			{
-				mObjectList.erase(std::remove(mObjectList.begin(), 
-					mObjectList.end(), obj), mObjectList.end());
+				mRemoteObjectMutex.lock();
+				mRemoteObjects.erase(std::remove(mRemoteObjects.begin(), 
+					mRemoteObjects.end(), obj), mRemoteObjects.end());
+				mRemoteObjectMutex.unlock();
+			}
+			//the another side if exits, 
+			//have to release these objects
+
+			void CleanRemoteObjects()
+			{
+				mRemoteObjectMutex.lock();
+				for (auto pObj : mRemoteObjects)
+				{
+					RemoteObject* pRC = dynamic_cast<RemoteObject*>(pObj);
+					if (pRC)
+					{
+						pRC->SetProxy(nullptr);//remove from proxy
+					}
+				}
+				mRemoteObjects.clear();
+				mRemoteObjectMutex.unlock();
 			}
 		public:
 			void StartReadThread()
@@ -305,6 +327,7 @@ namespace X
 			void Quit()
 			{
 				StopRunning();
+				CleanRemoteObjects();
 				if (mWBuffer)
 				{
 					mWBuffer->ReleaseEvents();
@@ -436,6 +459,10 @@ namespace X
 			}
 			bool ReleaseObject(ROBJ_ID id)
 			{
+				if(!m_running)
+				{
+					return false;
+				}
 				AutoCallCounter autoCounter(mCallCounter);
 
 				Call_Context context;

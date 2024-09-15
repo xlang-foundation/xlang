@@ -15,8 +15,10 @@ namespace X
 		{
 			IdList_new.push_back(id);
 		}
-		bool bOK = m_proxy->FlatPack(m_remote_Parent_Obj_id,
-			m_remote_Obj_id, IdList_new, id_offset,startIndex, count, valPack);
+		m_proxyLock.Lock();
+		bool bOK = m_proxy?m_proxy->FlatPack(m_remote_Parent_Obj_id,
+			m_remote_Obj_id, IdList_new, id_offset,startIndex, count, valPack):false;
+		m_proxyLock.Unlock();
 		if (bOK && valPack.IsObject())
 		{
 			pPackList = dynamic_cast<X::Data::List*>(valPack.GetObj());
@@ -37,7 +39,14 @@ namespace X
 		{
 			IdList_new.push_back(id);
 		}
-		return m_proxy->UpdateItemValue(m_remote_Parent_Obj_id,
-			m_remote_Obj_id, IdList_new, id_offset, itemName, val);
+		X::Value retValue;
+		m_proxyLock.Lock();
+		if (m_proxy)
+		{
+			retValue = m_proxy->UpdateItemValue(m_remote_Parent_Obj_id,
+				m_remote_Obj_id, IdList_new, id_offset, itemName, val);
+		}
+		m_proxyLock.Unlock();
+		return retValue;
 	}
 }

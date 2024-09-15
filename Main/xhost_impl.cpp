@@ -767,7 +767,8 @@ return nullptr;
 	{
 		if (g_pPyHost)
 		{
-			PyEng::Object obj(pyObj);
+			//need to add one ref during PyEng::Object's deconstuctor will release one
+			PyEng::Object obj(pyObj,true);
 			auto* pProxyObj = new Data::PyProxyObject(obj);
 			valObject = Value(pProxyObj);
 			return true;
