@@ -486,9 +486,14 @@ public:
 	{
 		m_p = g_pPyHost->NewTuple(0);
 	}
-	~Tuple() //make sure to call Object's deconstructor
+	~Tuple() 
 	{
-		g_pPyHost->CallReleaseForTupleItems(m_p);
+		//for tuple, the release will auto release its children
+		//'s refcount
+		g_pPyHost->Release(m_p);
+		//todo: check 
+		//make sure to call Object's deconstructor
+		//g_pPyHost->CallReleaseForTupleItems(m_p);
 	}
 	Tuple(long long size) :
 		Object()

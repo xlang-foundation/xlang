@@ -15,6 +15,7 @@
 #include "function.h"
 #include <functional>
 #include "stackframe.h"
+#include "remote_object.h"
 #include "object_scope.h"
 #include "wait.h"
 #if (WIN32)
@@ -27,8 +28,8 @@ namespace X
 	class XPackage;
 	struct HandlerInfo
 	{
-		EventHandler Handler;
-		X::Data::Function* FuncHandler = nullptr;
+		EventHandler Handler;//for native handler
+		X::Data::Object* ObjectHandler = nullptr;
 		int OwnerThreadId = -1;
 		long cookie = 0;
 	};
@@ -60,8 +61,6 @@ namespace X
 		ObjectEvent() :Data::Object(), XObj(), ObjRef(), XEvent()
 		{
 			m_t = ObjType::ObjectEvent;
-			//auto x0 = typeid(this).name();
-			//auto x = typeid(&ObjectEvent::wait).name();
 			m_APIs.AddFunc<1>("wait", &ObjectEvent::WaitOn);
 			m_APIs.Create();
 		}
@@ -74,9 +73,9 @@ namespace X
 			std::string retVal;
 			for (auto& handleInfo : m_handlers)
 			{
-				if (handleInfo.FuncHandler)
+				if (handleInfo.ObjectHandler)
 				{
-					auto str_abi = handleInfo.FuncHandler->ToString();
+					auto str_abi = handleInfo.ObjectHandler->ToString();
 					retVal += str_abi;
 					g_pXHost->ReleaseString(str_abi);
 					retVal += "\r\n";
@@ -128,33 +127,41 @@ namespace X
 			delete pWait;
 			return bOK;
 		}
+		void CleanupUnCallableHandlers()
+		{
+			//if a handler is remote object but its proxy is invalid, 
+			//here is the chance to remove from here to reduce memory usage
+			AutoLock autoLock(m_lock);
+			for (auto it = m_handlers.begin(); it != m_handlers.end();)
+			{
+				auto& handleInfo = *it;
+				if (handleInfo.ObjectHandler)
+				{
+					if (handleInfo.ObjectHandler->GetType() == X::ObjType::RemoteObject)
+					{
+						X::RemoteObject* pRemotObj = dynamic_cast<X::RemoteObject*>(handleInfo.ObjectHandler);
+						if (pRemotObj && !pRemotObj->IsValid())
+						{
+							handleInfo.ObjectHandler->DecRef();
+							it = m_handlers.erase(it);
+							continue;
+						}
+					}
+				}
+				it++;
+			}
+		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams, X::Value& retValue) override;
 		virtual ObjectEvent& operator +=(X::Value& r) override
 		{
+			CleanupUnCallableHandlers();
 			AutoLock autoLock(m_lock);
 			if (r.IsObject())
 			{
 				auto* pObjHandler = dynamic_cast<X::Data::Object*>(r.GetObj());
-				if (pObjHandler)
-				{
-					if (pObjHandler->GetType() == ObjType::Function)
-					{
-						auto pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
-						pFuncHandler->IncRef();
-						Add(pFuncHandler);
-					}
-					else if (pObjHandler->GetType() == ObjType::RemoteObject)
-					{
-						pObjHandler->IncRef();
-						EventHandler evtProxyHandler = [pObjHandler](XRuntime* rt, XObj* pContext,
-							ARGS& params, KWARGS& kwParams, Value& retValue)
-							{
-								pObjHandler->Call(rt, pContext, params, kwParams, retValue);
-							};
-						Add(evtProxyHandler);
-					}
-				}
+				pObjHandler->IncRef();
+				Add(pObjHandler);
 			}
 			return *this;
 		}
@@ -219,10 +226,10 @@ namespace X
 						Value retVal;
 						it.Handler(rt, pContext, params, kwargs, retVal);
 					}
-					else if (it.FuncHandler)
+					else if (it.ObjectHandler)
 					{
 						Value retVal;
-						it.FuncHandler->Call(rt, pContext, params, kwargs, retVal);
+						it.ObjectHandler->Call(rt, pContext, params, kwargs, retVal);
 					}
 					DecRef();
 				}
@@ -272,14 +279,14 @@ namespace X
 			}
 			return cookie;
 		}
-		FORCE_INLINE long Add(X::Data::Function* pFuncHandler)
+		FORCE_INLINE long Add(X::Data::Object* pObjHandler)
 		{
 			int cnt = 0;
 			int tid = (int)GetThreadID();
 			m_lockHandlers.Lock();
 			long cookie = ++m_lastCookie;
 			EventHandler dummy;
-			m_handlers.push_back(HandlerInfo{ dummy,pFuncHandler,tid,cookie });
+			m_handlers.push_back(HandlerInfo{ dummy,pObjHandler,tid,cookie });
 			cnt = (int)m_handlers.size();
 			m_lockHandlers.Unlock();
 			if (m_changeHandler)

@@ -12,7 +12,10 @@ namespace X
 		public virtual Data::Object,
 		public virtual AST::Expression
 	{
+		//we use m_proxy as a weak reference, so we need to lock it
+		Locker m_proxyLock;
 		XProxy* m_proxy = nullptr;
+
 		ROBJ_ID m_remote_Parent_Obj_id={0,0};
 		ROBJ_ID m_remote_Obj_id = { 0,0 };
 		AST::StackFrame* m_stackFrame = nullptr;
@@ -60,10 +63,6 @@ namespace X
 		RemoteObject(XProxy* p):
 			ObjRef(),XObj(),Object()
 		{
-			if (p != nullptr)
-			{
-				p->AddRef();
-			}
 			m_proxy = p;
 			m_t = ObjType::RemoteObject;
 			m_stackFrame = new AST::StackFrame();
@@ -76,11 +75,12 @@ namespace X
 		}
 		~RemoteObject()
 		{
+			m_proxyLock.Lock();
 			if (m_proxy)
 			{
 				m_proxy->RemoveOject(this);
-				m_proxy->Release();
 			}
+			m_proxyLock.Unlock();
 			delete m_stackFrame;
 		}
 		std::string& GetObjName()
@@ -91,17 +91,34 @@ namespace X
 		{
 			if (p != nullptr)
 			{
-				p->AddRef();
 				p->AddObject(this);
 			}
+			m_proxyLock.Lock();
 			m_proxy = p;
+			m_proxyLock.Unlock();
+		}
+		FORCE_INLINE bool IsValid()
+		{
+			bool bValid = false;
+			m_proxyLock.Lock();
+			if (m_proxy)
+			{
+				bValid = true;
+			}
+			m_proxyLock.Unlock();
+			return bValid;
 		}
 		void SetObjName(std::string& name)
 		{
 			m_objName = name;
 			if (m_remote_Obj_id.objId == nullptr)
 			{
-				m_remote_Obj_id = m_proxy->QueryRootObject(name);
+				m_proxyLock.Lock();
+				if (m_proxy != nullptr)
+				{
+					m_remote_Obj_id = m_proxy->QueryRootObject(name);
+				}
+				m_proxyLock.Unlock();
 			}
 		}
 		FORCE_INLINE ROBJ_ID GetObjId()
@@ -112,11 +129,12 @@ namespace X
 		{
 			Lock();
 			int ref = Ref();
+			m_proxyLock.Lock();
 			if ((m_proxy!=nullptr) && (ref == 1))
 			{
-				//std::cout << "RemoteObject::DecRef() " << m_remote_Obj_id.objId << std::endl;
 				m_proxy->ReleaseObject(m_remote_Obj_id);
 			}
+			m_proxyLock.Unlock();
 			Unlock();
 
 			return Data::Object::DecRef();
@@ -181,14 +199,20 @@ namespace X
 			X::Value varSetValue(true);
 			kwParams.Add("SetValue", varSetValue);
 			X::Value dummyTrailer;
-			return m_proxy->Call(rt, pContext,
+			m_proxyLock.Lock();
+			bool bOK = m_proxy?m_proxy->Call(rt, pContext,
 				m_remote_Parent_Obj_id,
 				m_remote_Obj_id, m_memmberId,
-				params, kwParams, dummyTrailer, retValue);
+				params, kwParams, dummyTrailer, retValue):false;
+			m_proxyLock.Unlock();
+			return bOK;
 		}
 		virtual long long Size() override
 		{
-			return m_proxy->QueryMemberCount(m_remote_Obj_id);
+			m_proxyLock.Lock();
+			auto retSize = m_proxy?m_proxy->QueryMemberCount(m_remote_Obj_id):0;
+			m_proxyLock.Unlock();
+			return retSize;
 		}
 		virtual X::Data::List* FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
@@ -203,6 +227,7 @@ namespace X
 			bool keepRawParams = IS_KEEP_RAW_PARAMS(m_memberFlags);
 			//if keep m_KeepRawParams is true, the last params
 			//as trailer
+			bool bOK = false;
 			if (keepRawParams && params.size() >0)
 			{
 				ARGS params0(params.size() - 1);
@@ -211,19 +236,24 @@ namespace X
 					params0.push_back(params[i]);
 				}
 				KWARGS kwParams0;
-				return m_proxy->Call(rt, pContext,
+				m_proxyLock.Lock();
+				bOK = m_proxy?m_proxy->Call(rt, pContext,
 					m_remote_Parent_Obj_id,
 					m_remote_Obj_id, m_memmberId,
-					params0, kwParams0, params[params.size() - 1], retValue);
+					params0, kwParams0, params[params.size() - 1], retValue):false;
+				m_proxyLock.Unlock();
 			}
 			else
 			{
 				X::Value dummyTrailer;
-				return m_proxy->Call(rt, pContext,
+				m_proxyLock.Lock();
+				bOK = m_proxy?m_proxy->Call(rt, pContext,
 					m_remote_Parent_Obj_id,
 					m_remote_Obj_id, m_memmberId,
-					params, kwParams, dummyTrailer, retValue);
+					params, kwParams, dummyTrailer, retValue):false;
+				m_proxyLock.Unlock();
 			}
+			return bOK;
 		}
 		virtual bool CallEx(XRuntime* rt, XObj* pContext,
 			ARGS& params,
@@ -231,10 +261,13 @@ namespace X
 			X::Value& trailer,
 			X::Value& retValue)
 		{
-			return m_proxy->Call(rt, pContext,
+			m_proxyLock.Lock();
+			bool bOK = m_proxy?m_proxy->Call(rt, pContext,
 				m_remote_Parent_Obj_id,
 				m_remote_Obj_id, m_memmberId,
-				params, kwParams, trailer,retValue);
+				params, kwParams, trailer,retValue):false;
+			m_proxyLock.Unlock();
+			return bOK;
 		}
 		FORCE_INLINE virtual int AddOrGet(const char* name, bool bGetOnly) override final
 		{
@@ -244,12 +277,23 @@ namespace X
 			if (idx == (int)X::AST::ScopeVarIndex::INVALID)
 			{
 				int memberFlags = 0;
-				auto memId = m_proxy->QueryMember(m_remote_Obj_id, strName, memberFlags);
+				m_proxyLock.Lock();
+				auto memId = m_proxy?m_proxy->QueryMember(m_remote_Obj_id, 
+					strName, memberFlags):0;
+				m_proxyLock.Unlock();
 				if (memId != -1)
 				{
-					auto objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId);
 					idx = NameToIndex(strName, false);
+
+					ROBJ_ID objId;
+					m_proxyLock.Lock();
+					if (m_proxy)
+					{
+						objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId);
+					}
 					auto* r_obj = new RemoteObject(m_proxy);
+					m_proxyLock.Unlock();
+
 					r_obj->m_remote_Parent_Obj_id = m_remote_Obj_id;
 					r_obj->m_remote_Obj_id = objId;
 					r_obj->m_memmberId = memId;
