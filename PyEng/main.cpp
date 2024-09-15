@@ -93,6 +93,7 @@ extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
 	Py_Initialize();
 	g_pPyHost = &GrusPyEngHost::I();
 	*ppHost = (void*)g_pPyHost;
+	//todo: add lines below back for Python debug?
 	//auto ts = PyThreadState_GET();
 	//PyEval_SetTrace(x_Py_tracefunc, nullptr);
 }

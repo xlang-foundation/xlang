@@ -344,6 +344,18 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, int argNum, PyEngObjectPt
 
 	return (PyEngObjectPtr)pRetOb;
 }
+void EnablePdbInThread() {
+	PyObject* pdb_module = PyImport_ImportModule("pdb");
+	if (pdb_module) {
+		PyObject* trace_func = PyObject_GetAttrString(pdb_module, "trace_dispatch");
+		if (trace_func) {
+			PyEval_SetTrace((Py_tracefunc)PyObject_CallFunctionObjArgs, trace_func);
+			Py_DECREF(trace_func);
+		}
+		Py_DECREF(pdb_module);
+	}
+}
+
 PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEngObjectPtr kwargs)
 {
 	MGil gil;
@@ -354,6 +366,9 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEn
 		Py_IncRef(pRetOb);
 		return pRetOb;
 	}
+	// Trigger pdb.set_trace() to enter Python's interactive debugger
+	//PyRun_SimpleString("import pdb; pdb.set_trace()");
+	//EnablePdbInThread();
 	pRetOb = PyObject_Call(pCallOb,(PyObject*)args, (PyObject*)kwargs);
 	return (PyEngObjectPtr)pRetOb;
 }
