@@ -187,17 +187,21 @@ namespace X
 			std::string objName;
 			stream >> objName;
 			pProc->EndReceiveCall(stream);
-
-			auto pXObj = QueryObjWithName((std::string&)objName);
-			long long returnCode = (pXObj != nullptr)?1:0;
-			auto& wstream = pProc->BeginWriteReturn(pCallContext,returnCode);
-			if (returnCode>0)
-			{
-				X::ROBJ_ID objId = ConvertXObjToId(pXObj);
-				wstream << objId;
-			}
-			pProc->EndWriteReturn(pCallContext, returnCode);
-
+			pProc->AddRef();
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, objName, callContext, pProc]()
+				{
+					auto pXObj = QueryObjWithName((std::string&)objName);
+					long long returnCode = (pXObj != nullptr) ? 1 : 0;
+					auto& wstream = pProc->BeginWriteReturn((void*)&callContext, returnCode);
+					if (returnCode > 0)
+					{
+						X::ROBJ_ID objId = ConvertXObjToId(pXObj);
+						wstream << objId;
+					}
+					pProc->EndWriteReturn((void*)&callContext, returnCode);
+					pProc->Release();
+				});
 			return true;
 		}
 		bool RemotingStub::QueryMember(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -207,13 +211,19 @@ namespace X
 			stream >> objId;
 			stream >> name;
 			pProc->EndReceiveCall(stream);
-			auto pXObj = CovertIdToXObj(objId);
-			int flags = 0;
-			int idx = pXObj->QueryMethod(name.c_str(), &flags);
-			auto& wStream = pProc->BeginWriteReturn(pCallContext, 1);
-			wStream << idx;
-			wStream << flags;
-			pProc->EndWriteReturn(pCallContext,true);
+			pProc->AddRef();
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, objId, name, callContext, pProc]()
+				{
+					auto pXObj = CovertIdToXObj(objId);
+					int flags = 0;
+					int idx = pXObj->QueryMethod(name.c_str(), &flags);
+					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, 1);
+					wStream << idx;
+					wStream << flags;
+					pProc->EndWriteReturn((void*)&callContext, true);
+					pProc->Release();
+				});
 			return true;
 		}
 		bool RemotingStub::QueryMemberCount(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -221,20 +231,26 @@ namespace X
 			X::ROBJ_ID objId;
 			stream >> objId;
 			pProc->EndReceiveCall(stream);
-			auto pXObj = CovertIdToXObj(objId);
-			long long size = 0;
-			bool bOK = false;
-			if (pXObj)
-			{
-				size = pXObj->Size();
-				bOK = true;
-			}
-			auto& wStream = pProc->BeginWriteReturn(pCallContext, bOK?1:0);
-			if (bOK)
-			{
-				wStream << size;
-			}
-			pProc->EndWriteReturn(pCallContext,bOK?1:0);
+			pProc->AddRef();
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, objId, callContext, pProc]()
+				{
+					auto pXObj = CovertIdToXObj(objId);
+					long long size = 0;
+					bool bOK = false;
+					if (pXObj)
+					{
+						size = pXObj->Size();
+						bOK = true;
+					}
+					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK ? 1 : 0);
+					if (bOK)
+					{
+						wStream << size;
+					}
+					pProc->EndWriteReturn((void*)&callContext, bOK ? 1 : 0);
+					pProc->Release();
+				});
 			return true;
 		}
 		bool RemotingStub::FlatPack(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -259,48 +275,53 @@ namespace X
 			stream >> startIndex;
 			stream >> count;
 			pProc->EndReceiveCall(stream);
-
-			//todo: for IdList, will be destroyed after this function, need to copy it
-			X::XObj* pParentObj = nullptr;
-			if (parent_ObjId.objId != nullptr)
-			{
-				pParentObj = CovertIdToXObj(parent_ObjId);
-			}
-			auto pXObj = CovertIdToXObj(objId);
-			X::Value valPackList;
-			bool bOK = (pXObj != nullptr);
-			if (bOK)
-			{
-				auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
-				if (pPackage != nullptr)
+			pProc->AddRef();
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, parent_ObjId, objId, IdList, id_offset, startIndex, count, callContext, pProc]()
 				{
-					auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt,
-						pParentObj, IdList, id_offset, startIndex, count);
-					if (pPackList)
+					//todo: for IdList, will be destroyed after this function, need to copy it
+					X::XObj* pParentObj = nullptr;
+					if (parent_ObjId.objId != nullptr)
 					{
-						valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+						pParentObj = CovertIdToXObj(parent_ObjId);
 					}
-				}
-				else
-				{
-					auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
-					if (pPackageProxy)
+					auto pXObj = CovertIdToXObj(objId);
+					X::Value valPackList;
+					bool bOK = (pXObj != nullptr);
+					if (bOK)
 					{
-						auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt,
-							pParentObj, IdList, id_offset, startIndex, count);
-						if (pPackList)
+						auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
+						if (pPackage != nullptr)
 						{
-							valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+							auto* pPackList = pPackage->FlatPack((XlangRuntime*)m_rt,
+								pParentObj, (std::vector<std::string>&)IdList, id_offset, startIndex, count);
+							if (pPackList)
+							{
+								valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+							}
+						}
+						else
+						{
+							auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
+							if (pPackageProxy)
+							{
+								auto* pPackList = pPackageProxy->FlatPack((XlangRuntime*)m_rt,
+									pParentObj, (std::vector<std::string>&)IdList, id_offset, startIndex, count);
+								if (pPackList)
+								{
+									valPackList = X::Value(dynamic_cast<XObj*>(pPackList), false);
+								}
+							}
 						}
 					}
-				}
-			}
-			auto& wStream = pProc->BeginWriteReturn(pCallContext, bOK);
-			if (bOK)
-			{
-				wStream << valPackList;
-			}
-			pProc->EndWriteReturn(pCallContext,bOK);
+					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
+					if (bOK)
+					{
+						wStream << valPackList;
+					}
+					pProc->EndWriteReturn((void*)&callContext, bOK);
+					pProc->Release();
+				});
 
 			return true;
 		}
@@ -326,40 +347,46 @@ namespace X
 			X::Value newVal;
 			stream >> newVal;
 			pProc->EndReceiveCall(stream);
-			//todo: for idlist, will be destroyed after this function, 
-			// need to copy it
-			X::XObj* pParentObj = nullptr;
-			if (parent_ObjId.objId != nullptr)
-			{
-				pParentObj = CovertIdToXObj(parent_ObjId);
-			}
-			auto pXObj = CovertIdToXObj(objId);
-			X::Value retVal;
-			bool bOK = (pXObj != nullptr);
-			if (bOK)
-			{
-				auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
-				if (pPackage != nullptr)
+			pProc->AddRef();
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, parent_ObjId, objId, IdList, id_offset, itemName, newVal, callContext, pProc]()
 				{
-					retVal = pPackage->UpdateItemValue((XlangRuntime*)m_rt,
-						pParentObj, IdList, id_offset, itemName, (X::Value&)newVal);
-				}
-				else
-				{
-					auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
-					if (pPackageProxy)
+					//todo: for idlist, will be destroyed after this function, 
+					// need to copy it
+					X::XObj* pParentObj = nullptr;
+					if (parent_ObjId.objId != nullptr)
 					{
-						retVal = pPackageProxy->UpdateItemValue((XlangRuntime*)m_rt,
-							pParentObj, IdList, id_offset, itemName, (X::Value&)newVal);
+						pParentObj = CovertIdToXObj(parent_ObjId);
 					}
-				}
-			}
-			auto& wStream = pProc->BeginWriteReturn(pCallContext, bOK);
-			if (bOK)
-			{
-				wStream << retVal;
-			}
-			pProc->EndWriteReturn(pCallContext,bOK);
+					auto pXObj = CovertIdToXObj(objId);
+					X::Value retVal;
+					bool bOK = (pXObj != nullptr);
+					if (bOK)
+					{
+						auto pPackage = dynamic_cast<X::AST::Package*>(pXObj);
+						if (pPackage != nullptr)
+						{
+							retVal = pPackage->UpdateItemValue((XlangRuntime*)m_rt,
+								pParentObj, (std::vector<std::string>&)IdList, id_offset, itemName, (X::Value&)newVal);
+						}
+						else
+						{
+							auto* pPackageProxy = dynamic_cast<X::AST::PackageProxy*>(pXObj);
+							if (pPackageProxy)
+							{
+								retVal = pPackageProxy->UpdateItemValue((XlangRuntime*)m_rt,
+									pParentObj, (std::vector<std::string>&)IdList, id_offset, itemName, (X::Value&)newVal);
+							}
+						}
+					}
+					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
+					if (bOK)
+					{
+						wStream << retVal;
+					}
+					pProc->EndWriteReturn((void*)&callContext, bOK);
+					pProc->Release();
+				});
 
 			return true;
 		}
@@ -370,17 +397,22 @@ namespace X
 			stream >> objId;
 			stream >> memId;
 			pProc->EndReceiveCall(stream);
-			auto pXObj = CovertIdToXObj(objId);
-			X::Value valObj;
-			bool bOK = pXObj->GetIndexValue(memId, valObj);
-			auto& wStream = pProc->BeginWriteReturn(pCallContext, bOK);
-			if (bOK)
-			{
-				X::ROBJ_ID sub_objId = ConvertXObjToId(valObj.GetObj());
-				wStream << sub_objId;
-			}
-			pProc->EndWriteReturn(pCallContext,bOK);
-
+			pProc->AddRef();
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, objId, memId, callContext, pProc]()
+				{
+					auto pXObj = CovertIdToXObj(objId);
+					X::Value valObj;
+					bool bOK = pXObj->GetIndexValue(memId, valObj);
+					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
+					if (bOK)
+					{
+						X::ROBJ_ID sub_objId = ConvertXObjToId(valObj.GetObj());
+						wStream << sub_objId;
+					}
+					pProc->EndWriteReturn((void*)&callContext, bOK);
+					pProc->Release();
+				});
 			return true;
 		}
 		bool RemotingStub::ReleaseObject(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
@@ -388,18 +420,24 @@ namespace X
 			X::ROBJ_ID objId;
 			stream >> objId;
 			pProc->EndReceiveCall(stream);
-			auto pXObj = CovertIdToXObj(objId);
-			if (pXObj->GetType() == ObjType::Function)
+			pProc->AddRef();
+			Call_Context callContext = *(Call_Context*)pCallContext;
+			AddTask([this, objId, callContext, pProc]()
 			{
-				Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
-				if (pObj->Ref() <= 2)
+				auto pXObj = CovertIdToXObj(objId);
+				if (pXObj->GetType() == ObjType::Function)
 				{
-					int x = 1;
+					Data::Object* pObj = dynamic_cast<Data::Object*>(pXObj);
+					if (pObj->Ref() <= 2)
+					{
+						int x = 1;
+					}
 				}
-			}
-			pXObj->DecRef();
-			auto& wStream = pProc->BeginWriteReturn(pCallContext, true);
-			pProc->EndWriteReturn(pCallContext,true);
+				pXObj->DecRef();
+				auto& wStream = pProc->BeginWriteReturn((void*)&callContext, true);
+				pProc->EndWriteReturn((void*)&callContext, true);
+				pProc->Release();
+			});
 			return true;
 		}
 
@@ -458,56 +496,56 @@ namespace X
 			//need to use copy of pCallInfo, because it will be destroyed after this function
 			Call_Context callContext = *(Call_Context*)pCallContext;
 			AddTask([this, pCallInfo, pProc, callContext]()
-			{
-				X::XObj* pParentObj = nullptr;
-				if (pCallInfo->parent_ObjId.objId != nullptr)
 				{
-					pParentObj = CovertIdToXObj(pCallInfo->parent_ObjId);
-				}
-				auto pXObj = CovertIdToXObj(pCallInfo->objId);
-				X::Value valRet;
-
-				bool bOK = false;
-				if (pCallInfo->haveTrailer)
-				{
-					bOK = pXObj->CallEx(m_rt, pParentObj,
-						pCallInfo->params, pCallInfo->kwParams, pCallInfo->trailer, valRet);
-				}
-				else
-				{
-					bOK = pXObj->Call(m_rt, pParentObj, pCallInfo->params, pCallInfo->kwParams, valRet);
-				}
-				delete pCallInfo;
-				auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
-				if (bOK)
-				{
-					X::ROBJ_ID retId = { GetPID(),0};
-					if (valRet.IsObject())
+					X::XObj* pParentObj = nullptr;
+					if (pCallInfo->parent_ObjId.objId != nullptr)
 					{
-						auto tp = valRet.GetObj()->GetType();
-						//for str and Bin object, directly put into stream
-						if (tp != ObjType::Str && tp != ObjType::Binary && tp != ObjType::List)
-						{
-							auto pRetObj = valRet.GetObj();
-							retId = ConvertXObjToId(pRetObj);
-						}
-						else if (tp == ObjType::List && valRet.Size() > LIST_PASS_PROCESS_SIZE)
-						{
-							auto pRetObj = valRet.GetObj();
-							retId = ConvertXObjToId(pRetObj);
-						}
+						pParentObj = CovertIdToXObj(pCallInfo->parent_ObjId);
 					}
-					wStream << retId;
-					if (retId.objId == 0)
-					{//if not XPackage, return as value
-						valRet.ToBytes(&wStream);
-					}
-				}
-				pProc->EndWriteReturn((void*) &callContext, bOK);
-				pProc->Release();
+					auto pXObj = CovertIdToXObj(pCallInfo->objId);
+					X::Value valRet;
 
-				//std::cout << "RCall finished, reqId:" << callContext.reqId << std::endl;
-			});
+					bool bOK = false;
+					if (pCallInfo->haveTrailer)
+					{
+						bOK = pXObj->CallEx(m_rt, pParentObj,
+							pCallInfo->params, pCallInfo->kwParams, pCallInfo->trailer, valRet);
+					}
+					else
+					{
+						bOK = pXObj->Call(m_rt, pParentObj, pCallInfo->params, pCallInfo->kwParams, valRet);
+					}
+					delete pCallInfo;
+					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
+					if (bOK)
+					{
+						X::ROBJ_ID retId = { GetPID(),0 };
+						if (valRet.IsObject())
+						{
+							auto tp = valRet.GetObj()->GetType();
+							//for str and Bin object, directly put into stream
+							if (tp != ObjType::Str && tp != ObjType::Binary && tp != ObjType::List)
+							{
+								auto pRetObj = valRet.GetObj();
+								retId = ConvertXObjToId(pRetObj);
+							}
+							else if (tp == ObjType::List && valRet.Size() > LIST_PASS_PROCESS_SIZE)
+							{
+								auto pRetObj = valRet.GetObj();
+								retId = ConvertXObjToId(pRetObj);
+							}
+						}
+						wStream << retId;
+						if (retId.objId == 0)
+						{//if not XPackage, return as value
+							valRet.ToBytes(&wStream);
+						}
+					}
+					pProc->EndWriteReturn((void*)&callContext, bOK);
+					pProc->Release();
+
+					//std::cout << "RCall finished, reqId:" << callContext.reqId << std::endl;
+				});
 
 			return true;
 		}
