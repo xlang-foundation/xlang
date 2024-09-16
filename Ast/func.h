@@ -422,12 +422,17 @@ public:
 		{
 			pPassInContext = pContext;
 		}
+		X::Value trailer;
+		if ((!m_func)&& params.size() > 0)
+		{
+			trailer = params[params.size() - 1];
+		}
 		return m_func ? m_func(rt, pPassInContext, pContext,
 			params, kwParams, retValue) : 
 			(
 				m_func_ex ? m_func_ex(rt, m_pContext,
 					pContext == nullptr ? m_pContext : pContext, params,
-					kwParams, params[0], retValue) : false
+					kwParams, trailer,retValue) : false
 			);
 	}
 };
