@@ -1,0 +1,172 @@
+connections:
+  - fromAgentName: AgentA
+    fromPinName: output1
+    toAgentName: AgentB
+    toPinName: input1
+  - fromAgentName: AgentB
+    fromPinName: output1
+    toAgentName: AgentC
+    toPinName: input1
+  - fromAgentName: other.AgentX
+    fromPinName: output1
+    toAgentName: AgentA
+    toPinName: input2
+  - fromAgentName: planner.AgentY
+    fromPinName: input1
+    toAgentName: AgentB
+    toPinName: input2
+name: SuperAgent007
+imports:
+  - file: other_agents.yml
+    alias: other
+  - file: planning.yml
+    alias: planner
+type: object
+agents:
+  - name: AgentA
+    parameters:
+      param1: value1
+      param2: value2
+    description: This is Agent A, responsible for processing input data and producing output.
+    source:
+      xlang: agent_a.x
+      python: agent_a.py
+      shared_lib: libagent_a.so
+    inputs:
+      - name: input1
+        formats:
+          - format1
+          - format2
+      - name: input2
+        formats:
+          - format3
+    outputs:
+      - name: output1
+        formats:
+          - format1
+      - name: output2
+        formats:
+          - format2
+    group: Group1
+  - name: AgentB
+    parameters:
+      param1: value1
+      param2: value2
+    description: This is Agent B, which receives data from Agent A and processes it further.
+    source:
+      xlang: agent_b.x
+      python: agent_b.py
+      shared_lib: libagent_b.so
+    inputs:
+      - name: input1
+        formats:
+          - format1
+      - name: input2
+        formats:
+          - format2
+    outputs:
+      - name: output1
+        formats:
+          - format3
+    group: Group2
+  - name: AgentC
+    parameters:
+      param1: value1
+      param2: value2
+    description: This is Agent C, the final agent in the processing chain.
+    source:
+      xlang: agent_c.x
+      python: agent_c.py
+      shared_lib: libagent_c.so
+    inputs:
+      - name: input1
+        formats:
+          - format3
+    outputs:
+      - name: output1
+        formats:
+          - format4
+    group: Group1
+version: 1
+Description: This is a super agent that processes data in a complex way.
+inputs:
+  - name: input1
+    connecto: AgentA.input1
+  - name: AgentA.input2
+properties:
+  imports:
+    type: array
+    items:
+      type: object
+      properties:
+        file:
+          type: string
+        alias:
+          type: string
+  agents:
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+        description:
+          type: string
+        source:
+          type: object
+          properties:
+            xlang:
+              type: string
+            python:
+              type: string
+            shared_lib:
+              type: string
+        inputs:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              formats:
+                type: array
+                items:
+                  type: string
+        outputs:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              formats:
+                type: array
+                items:
+                  type: string
+        group:
+          type: string
+  connections:
+    type: array
+    items:
+      type: object
+      properties:
+        fromAgentName:
+          type: string
+        fromPinName:
+          type: string
+        toAgentName:
+          type: string
+        toPinName:
+          type: string
+required:
+  - agents
+  - connections
+new_key:
+  - 1
+  - 3
+  - 4
+  - 5

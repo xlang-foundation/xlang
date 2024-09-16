@@ -1879,7 +1879,7 @@ bool Builtin::RegisterInternals()
 #if not defined(BARE_METAL)
 	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
 	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
-	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml");
+	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml0");
 	X::RegisterPackage<X::HtmlWrapper>(m_libName.c_str(), "html");
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
