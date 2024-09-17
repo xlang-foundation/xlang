@@ -33,6 +33,7 @@
 namespace X 
 {
 	X::XHost* g_pXHost = nullptr;
+	extern XLoad* g_pXload;
 	X::XHost* CreatXHost()
 	{
 		IPC::RemotingStub::I().Register();
@@ -778,5 +779,30 @@ return nullptr;
 	void XHost_Impl::SetDebugMode(bool bDebug)
 	{
 		Hosting::I().SetDebugMode(bDebug);
+	}
+	extern bool LoadPythonEngine();
+	void XHost_Impl::EnalbePython(bool bEnable, bool bEnablePythonDebug)
+	{
+		if (bEnable)
+		{
+			if (g_pXload && !g_pXload->GetConfig().enablePython)
+			{
+				LoadPythonEngine();
+				g_pXload->GetConfig().enablePython = true;
+			}
+		}
+	}
+	extern bool LoadDevopsEngine(int port);
+	void XHost_Impl::EnableDebug(bool bEnable, int port)
+	{
+		if (bEnable)
+		{
+			if (g_pXload && !g_pXload->GetConfig().dbg)
+			{
+				LoadDevopsEngine(port);
+				g_pXload->GetConfig().dbg = true;
+				g_pXload->GetConfig().dbgPort = port;
+			}
+		}
 	}
 }

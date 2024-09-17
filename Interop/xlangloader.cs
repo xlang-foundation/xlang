@@ -12,6 +12,7 @@ public enum BridgeCallType : int
 }
 public enum PackageMemberType : int
 {
+    None,
     Func,
     FuncEx,
     Prop,
@@ -19,6 +20,7 @@ public enum PackageMemberType : int
     ObjectEvent,
     Class,
     ClassInstance,
+    Module
 }
 public enum ValueType : int
 {
@@ -421,8 +423,12 @@ public class XLangEng
         hModule = LoadLibrary(DllPath);
         if (hModule == IntPtr.Zero)
         {
+            //GetLastError
+            int errorCode = Marshal.GetLastWin32Error();
+            Console.WriteLine($"Failed to load library:{DllPath}. Error code: {errorCode}");
             return false;
         }
+        Console.WriteLine("Loaded xlang_interop.dll");
 
         load = Marshal.GetDelegateForFunctionPointer<LoadDelegate>(GetProcAddress(hModule, "Load"));
         unload = Marshal.GetDelegateForFunctionPointer<UnloadDelegate>(GetProcAddress(hModule, "Unload"));

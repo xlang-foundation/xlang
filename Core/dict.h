@@ -151,6 +151,12 @@ namespace X
 				//Always true to say this call is OK
 				return true;
 			}
+			inline virtual bool Get(XRuntime* rt, XObj* pContext, 
+				X::Port::vector<X::Value>& IdxAry, X::Value& val) override
+			{
+				//only take firs one from IdxAry
+				return IdxAry.size()>0?Get(IdxAry[0], val):false;
+			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 			{
 				Object::ToBytes(rt,pContext,stream);

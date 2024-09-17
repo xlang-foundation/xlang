@@ -9,7 +9,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<3> _dictScope;
+		static Obj_Func_Scope<6> _dictScope;
 		void Dict::Init()
 		{
 			_dictScope.Init();
@@ -49,6 +49,55 @@ namespace X
 						return true;
 					};
 				_dictScope.AddFunc("set", "set(key,val)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						if (params.size() == 0)
+						{
+							return true;
+						}
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						return pObj->Get(params[0], retValue);
+					};
+				_dictScope.AddFunc("get", "val = get(key)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						X::List list;
+						for (auto& it : pObj->mMap)
+						{
+							list += it.first;
+						}
+						retValue = list;
+						return true;
+					};
+				_dictScope.AddFunc("keys", "key_list = dict.keys()", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						X::List list;
+						for (auto& it : pObj->mMap)
+						{
+							list += it.second;
+						}
+						retValue = list;
+						return true;
+					};
+				_dictScope.AddFunc("values", "value_list = dict.values()", f);
 			}
 			_dictScope.Close();
 		}

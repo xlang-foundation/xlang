@@ -82,6 +82,8 @@ namespace X
 		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) override;
 		virtual void SetPyEngHost(void* pHost) override;
 		virtual void SetDebugMode(bool bDebug) override;
+		virtual void EnalbePython(bool bEnable, bool bEnablePythonDebug) override;
+		virtual void EnableDebug(bool bEnable, int port=3142) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

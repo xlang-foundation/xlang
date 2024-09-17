@@ -50,6 +50,7 @@ FILE(GLOB Api_SRC "Api/*.cpp")
 FILE(GLOB AppEntry_SRC "X.cpp" "cli.cpp")
 
 
+
 add_executable (${PROJECT_NAME}
 	${Api_SRC}
 	${AppEntry_SRC}
@@ -73,4 +74,6 @@ add_subdirectory("Interop")
 add_subdirectory("algorithm")
 if(NOT (BARE_METAL))
 add_subdirectory("BareLink")
+add_subdirectory("Yaml")
 endif()
+

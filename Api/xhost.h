@@ -130,6 +130,8 @@ namespace X
 		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) = 0;
 		virtual void SetPyEngHost(void* pHost) = 0;
 		virtual void SetDebugMode(bool bDebug) = 0;
+		virtual void EnalbePython(bool bEnable,bool bEnablePythonDebug) = 0;
+		virtual void EnableDebug(bool bEnable, int port=3142) = 0;
 	};
 	extern XHost* g_pXHost;
 }
