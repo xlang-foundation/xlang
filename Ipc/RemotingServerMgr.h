@@ -1,5 +1,5 @@
 #pragma once
-#include "Singleton.h"
+#include "singleton.h"
 #include "Locker.h"
 #include <vector>
 #include "RemotingServer.h"

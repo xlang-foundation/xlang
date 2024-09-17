@@ -96,7 +96,7 @@ PyMODINIT_FUNC PyInit_xlang(void)
     paramCfg.appPath = strPath;
 #else
     Dl_info dl_info;
-    dladdr((void*)PyInit_Xlang, &dl_info);
+    dladdr((void*)PyInit_xlang, &dl_info);
     std::string strPath = dl_info.dli_fname;
     auto pos = strPath.rfind("/");
     if (pos != std::string::npos)

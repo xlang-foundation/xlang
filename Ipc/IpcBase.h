@@ -21,7 +21,7 @@ namespace X
 		public:
 			inline static bool CheckIfAdmin()
 			{
-				BOOL isAdmin = false;
+				bool isAdmin = false;
 #if (WIN32)
 				PSID adminGroup = NULL;
 

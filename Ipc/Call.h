@@ -10,7 +10,7 @@
 #include "IpcBase.h"
 #include "wait.h"
 #include "gthread.h"
-#include "XProxy.h"
+#include "xproxy.h"
 #include "remote_object.h"
 #include "CallCounter.h"
 #include <iostream>
