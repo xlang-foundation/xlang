@@ -21,8 +21,8 @@ namespace X
 		public:
 			inline static bool CheckIfAdmin()
 			{
-				bool isAdmin = false;
 #if (WIN32)
+				BOOL isAdmin = FALSE;
 				PSID adminGroup = NULL;
 
 				// Create a SID for the administrators group
@@ -37,11 +37,13 @@ namespace X
 				}
 
 				FreeSid(adminGroup);
+				return (isAdmin == TRUE);
+
 #else
 				//in linux, we don't need to add global as prefix for IPC objects
 				//so we just return false
+				return false;
 #endif
-				return isAdmin;
 			}
 		};
 		class RemotingProc
