@@ -143,7 +143,7 @@ public:
 			{
 				std::vector<AST::Scope*> callables;
 				exp->CalcCallables(rtForDebugThread, pContext, callables);
-				if (callables.size() > 0 && callables[0]->GetExp() && callables[0]->GetExp()->m_type == AST::ObType::Func)// can trace into
+				if (!(exp->m_type == AST::ObType::Func || exp->m_type == AST::ObType::Class) && callables.size() > 0 && callables[0]->GetExp() && callables[0]->GetExp()->m_type == AST::ObType::Func)// can trace into
 				{
 					m_rt->SetDbgType(dbg::StepOut, dbg::Step); // set DbgType to StepOut to skip trace in this exp
 					m_rt->m_pFirstStepOutExp = callables[0]->GetExp();
