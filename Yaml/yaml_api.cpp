@@ -209,7 +209,11 @@ namespace X
 	{
 		std::string fileNameAbs = ToAbsFilePath(rt, fileName);
 		std::string yamlStr;
-		ReadFileToString(fileNameAbs, yamlStr);
+		bool bOK = ReadFileToString(fileNameAbs, yamlStr);
+		if (!bOK) {
+			std::string msg = "No file:" + fileNameAbs;
+			return X::Error(-100, msg.c_str());
+		}
 		YAML::Node rootNode = YAML::Load(yamlStr);
 		X::Value varNode = TranslateYamlToXValue(rootNode);
 		return varNode;

@@ -35,6 +35,7 @@
 #include "manager.h"
 #include "struct.h"
 #include "RemotingProxy.h"
+#include "error_obj.h"
 //for OS Module
 #include "os/fs.h"
 #include "os/utils.h"
@@ -170,6 +171,7 @@ namespace X
 		X::Data::DeferredObject::Init();
 		X::Data::TypeObject::Init();
 		X::Data::XlangStruct::Init();
+		X::Data::Error::Init();
 	}
 	void UnloadDevopsEngine()
 	{
@@ -369,6 +371,7 @@ namespace X
 		X::Data::TypeObject::cleanup();
 		X::AST::MetaScope().I().Cleanup();
 		X::Data::XlangStruct::cleanup();
+		X::Data::Error::cleanup();
 		Hosting::I().Cleanup();
 		G::I().Check();
 		DestoryXHost();

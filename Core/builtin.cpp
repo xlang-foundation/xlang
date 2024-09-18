@@ -50,6 +50,7 @@
 #include "glob.h"
 #include "dbg.h"
 #include "range.h"
+#include "error_obj.h"
 
 namespace X
 {
@@ -1516,7 +1517,66 @@ bool U_CreateBaseObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(pBaseObj);
 	return true;
 }
-
+bool U_CreateErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	int code;
+	std::string msg;
+	if (params.size() == 1)
+	{
+		code = (int)params[0];
+	}
+	else if (params.size() >= 2)
+	{
+		code = (int)params[0];
+		msg = params[1].ToString();
+	}
+	X::Data::Error* pObj = new X::Data::Error(code, msg);
+	retValue = X::Value(pObj);
+	return true;
+}
+bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (pContext == nullptr)
+	{
+		if (params.size() == 1)
+		{
+			auto& v = params[0];
+			if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::Error)
+			{
+				retValue = X::Value(true);
+			}
+			else
+			{
+				retValue = X::Value(false);
+			}
+		}
+		else
+		{
+			retValue = X::Value(false);
+		}
+		return true;
+	}
+	else
+	{
+		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
+		if (pObj->GetType() == X::ObjType::Error)
+		{
+			retValue = X::Value(true);
+		}
+		else
+		{
+			retValue = X::Value(false);
+		}
+		return true;
+	}
+	return true;
+}
 bool U_CreateComplexObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1940,6 +2000,8 @@ bool Builtin::RegisterInternals()
 	Register("type", (X::U_FUNC)U_GetType, params);
 	Register("len", (X::U_FUNC)U_GetLength, params);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
+	Register("error", (X::U_FUNC)U_CreateErrorObject, params);
+	Register("is_error", (X::U_FUNC)U_IsErrorObject, params, "is_error", true);
 	Register("event_loop", (X::U_FUNC)U_Event_Loop, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
 	Register("set", (X::U_FUNC)U_CreateSetObject, params);

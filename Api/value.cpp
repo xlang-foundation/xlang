@@ -227,6 +227,12 @@ namespace X
 	}
 	template<>
 	template<>
+	void V<XError>::Create(int code,const char* info)
+	{
+		SetObj(g_pXHost->CreateError(code, info));
+	}
+	template<>
+	template<>
 	void V<XStruct>::Create(char* data, int size, bool asRef)
 	{
 		SetObj(g_pXHost->CreateStruct(data, size, asRef));

@@ -41,7 +41,8 @@ namespace X
 		DeferredObject,
 		RemoteObject,
 		RemoteClientObject,
-		PyProxyObject
+		PyProxyObject,
+		Error,
 	};
 
 	enum class MemberFlag
@@ -322,6 +323,13 @@ namespace X
 	public:
 		Internal_Reserve(XStr)
 		virtual char* Buffer() = 0;
+	};
+	class XError :
+		virtual public XObj
+	{
+	public:
+		virtual const char* GetInfo() = 0;
+		virtual int GetCode() = 0;
 	};
 	class XIterator :
 		virtual public XObj
@@ -615,6 +623,7 @@ namespace X
 		int m_code = 0;
 	};
 	using Str = V<XStr>;
+	using Error = V<XError>;
 	using Struct = V<XStruct>;
 	using Dict = V<XDict>;
 	using List = V<XList>;

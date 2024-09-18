@@ -26,6 +26,7 @@ namespace X
 	class XProxy;
 	class XCustomScope;
 	class XRuntime;
+	class XError;
 	typedef XPackage* (*PackageCreator)(X::Value context);
 	typedef long long (*PackageGetContentSizeFunc)(void* pContextObj);
 	typedef bool (*PackageToBytesFunc)(void* pContextObj, X::XLStream* pStream);
@@ -70,6 +71,7 @@ namespace X
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;
+		virtual XError* CreateError(int code, const char* info) = 0;
 		virtual XDict* CreateDict() = 0;
 		virtual XList* CreateList() = 0;
 		virtual XTensor* CreateTensor() = 0;

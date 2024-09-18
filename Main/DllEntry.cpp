@@ -34,6 +34,7 @@
 #include "tensor_graph.h"
 #include "struct.h"
 #include "RemotingProxy.h"
+#include "error_obj.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -241,6 +242,7 @@ static void XLangInternalInit()
 	X::Data::DeferredObject::Init();
 	X::Data::TypeObject::Init();
 	X::Data::XlangStruct::Init();
+	X::Data::Error::Init();
 }
 void XLangRun()
 {
@@ -375,6 +377,7 @@ void XLangStaticUnload()
 	X::Data::TypeObject::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 	X::Data::XlangStruct::cleanup();
+	X::Data::Error::cleanup();
 	Hosting::I().Cleanup();
 	G::I().Check();
 	DestoryXHost();
@@ -393,6 +396,7 @@ void XLangUnload()
 	X::Data::DeferredObject::cleanup();
 	X::Data::TypeObject::cleanup();
 	X::Data::XlangStruct::cleanup();
+	X::Data::Error::cleanup();
 
 	if (g_pXload->GetConfig().enablePython)
 	{
