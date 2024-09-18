@@ -217,6 +217,16 @@ namespace X
 			SetXLangLibHandler(libHandle);
 			return 0;
 		}
+		else
+		{
+#if (WIN32)
+			auto err = GetLastError();
+			fprintf(stderr, "LoadLibrary failed: %d\n", err);
+#else
+			auto err = dlerror();
+			fprintf(stderr, "dlopen failed: %s\n", err);
+#endif
+		}
 		return -1;
 	}
 	void XLoad::EventLoop()

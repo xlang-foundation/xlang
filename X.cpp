@@ -199,7 +199,7 @@ void Workaround_WSLThread_Problem()
 int main(int argc, char* argv[])
 {
 	//::MessageBox(NULL, "In Dbg", "XLang", MB_OK);
-	//Workaround_WSLThread_Problem();
+	Workaround_WSLThread_Problem();
 	std::vector<std::string> params(argv, argv+argc);
 	ParamConfig paramConfig;
 

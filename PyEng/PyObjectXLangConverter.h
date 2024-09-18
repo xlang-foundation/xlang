@@ -128,7 +128,8 @@ public:
             }
             const char* keyStr = PyUnicode_AsUTF8(key);
 			gil.Unlock();
-            x_kwArgs.Add(keyStr, ConvertToXValue(value));
+			X::Value toVal = ConvertToXValue(value);
+            x_kwArgs.Add(keyStr, toVal);
 			gil.Lock();
         }
         return true;
@@ -186,7 +187,8 @@ private:
         PyObject* pyList = PyList_New(list.size());
         for (size_t i = 0; i < (size_t)list.size(); ++i) {
 			gil.Unlock();
-            PyObject* item = ConvertToPyObject(list[i]);
+			X::Value val = list[i];
+            PyObject* item = ConvertToPyObject(val);
 			gil.Lock();
             PyList_SetItem(pyList, i, item);
         }

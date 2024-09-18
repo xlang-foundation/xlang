@@ -13,6 +13,7 @@ namespace X
 		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) override;
 		virtual XRuntime* GetCurrentRuntime() override;
 		virtual XStr* CreateStr(const char* data, int size) override;
+		virtual XError* CreateError(int code, const char* info) override;
 		virtual bool RegisterPackage(const char* name,PackageCreator creator,void* pContext) override;
 		virtual bool RegisterPackage(const char* name,Value& objPackage) override;
 		virtual Value QueryMember(XRuntime* rt, XObj* pObj, const char* name) override;

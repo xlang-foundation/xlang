@@ -7,6 +7,19 @@
 #include <iostream>
 #include <string>
 
+#if (WIN32)
+#include <Windows.h>
+#else
+#include <semaphore.h>
+#include <sys/shm.h>
+#include <sys/time.h>
+
+#define INFINITE   -1
+#endif
+
+#if defined(__APPLE__)
+int sem_timedwait(sem_t* sem, const struct timespec* abs_timeout);
+#endif
 namespace X
 {
 	namespace IPC 

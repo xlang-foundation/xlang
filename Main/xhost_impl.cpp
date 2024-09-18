@@ -29,6 +29,7 @@
 #include <algorithm> 
 #include "PyEngHost.h"
 #include "RemotingStub.h"
+#include "error_obj.h"
 
 namespace X 
 {
@@ -84,6 +85,13 @@ namespace X
 		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
 		pStrObj->IncRef();
 		return dynamic_cast<XStr*>(pStrObj);
+	}
+	XError* XHost_Impl::CreateError(int code, const char* info)
+	{
+		std::string strInfo(info);
+		Data::Error* pErroObj = new Data::Error(code, strInfo);
+		pErroObj->IncRef();
+		return dynamic_cast<XError*>(pErroObj);
 	}
 	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator, void* pContext)
 	{
