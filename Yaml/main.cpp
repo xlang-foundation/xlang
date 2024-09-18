@@ -65,7 +65,7 @@ extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 
 	X::g_pXHost = (X::XHost*)pHost;
 	
-	X::RegisterPackage<X::YamlWrapper>(strLibName.c_str(), "yaml");
+	X::RegisterPackage<X::Yaml_Wrapper>(strLibName.c_str(), "yaml");
 }
 extern "C"  X_EXPORT void Unload()
 {

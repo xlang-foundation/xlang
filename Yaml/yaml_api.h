@@ -6,20 +6,20 @@
 
 namespace X 
 {
-	class YamlWrapper
+	class Yaml_Wrapper
 	{
 	public:
-		BEGIN_PACKAGE(YamlWrapper)
-			APISET().AddFunc<1>("loads", &YamlWrapper::LoadFromString);
-			APISET().AddRTFunc<1>("load", &YamlWrapper::LoadFromFile);
-			APISET().AddFunc<1>("saves", &YamlWrapper::SaveToYamlString);
-			APISET().AddRTFunc<2>("save", &YamlWrapper::SaveToYamlFile);
+		BEGIN_PACKAGE(Yaml_Wrapper)
+			APISET().AddFunc<1>("loads", &Yaml_Wrapper::LoadFromString);
+			APISET().AddRTFunc<1>("load", &Yaml_Wrapper::LoadFromFile);
+			APISET().AddFunc<1>("saves", &Yaml_Wrapper::SaveToYamlString);
+			APISET().AddRTFunc<2>("save", &Yaml_Wrapper::SaveToYamlFile);
 		END_PACKAGE
 	public:
-		YamlWrapper()
+		Yaml_Wrapper()
 		{
 		}
-		~YamlWrapper()
+		~Yaml_Wrapper()
 		{
 
 		}

@@ -174,7 +174,7 @@ namespace X
 	}
 
 	// Function to save X::Value to a YAML string
-	std::string YamlWrapper::SaveToYamlString(const X::Value& value)
+	std::string Yaml_Wrapper::SaveToYamlString(const X::Value& value)
 	{
 		YAML::Emitter out;
 		YAML::Node rootNode = ConvertXValueToYamlNode(value);
@@ -183,7 +183,7 @@ namespace X
 	}
 
 	// Function to save X::Value to a YAML file
-	bool YamlWrapper::SaveToYamlFile(X::XRuntime* rt, X::XObj* pContext, 
+	bool Yaml_Wrapper::SaveToYamlFile(X::XRuntime* rt, X::XObj* pContext, 
 		X::Value& value,std::string fileName)
 	{
 		std::string fileNameAbs = ToAbsFilePath(rt, fileName);
@@ -198,13 +198,13 @@ namespace X
 	}
 
 
-	X::Value YamlWrapper::LoadFromString(std::string yamlStr)
+	X::Value Yaml_Wrapper::LoadFromString(std::string yamlStr)
 	{
 		YAML::Node rootNode = YAML::Load(yamlStr);
 		X::Value varNode = TranslateYamlToXValue(rootNode);
 		return varNode;
 	}
-	X::Value  YamlWrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,
+	X::Value  Yaml_Wrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,
 		std::string fileName)
 	{
 		std::string fileNameAbs = ToAbsFilePath(rt, fileName);
