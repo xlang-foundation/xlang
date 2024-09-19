@@ -112,7 +112,9 @@ namespace X
 #else
 				mShmID = shmget(key, bufSize, IPC_CREAT | 0666);
 				mShmPtr = (char*)shmat(mShmID, 0, 0);
-				mWriteEvent = sem_open(szWriteEvent, O_CREAT | O_EXCL, 0666, 0);
+				//by sem_open with value-1, Initially be signaled for the first write
+				mWriteEvent = sem_open(szWriteEvent, O_CREAT | O_EXCL, 0666, 1);
+				//for read, only when write op finished, then signal it, so set value to 0
 				mReadEvent = sem_open(szReadEvent, O_CREAT | O_EXCL, 0666, 0);
 #endif
 
@@ -184,19 +186,22 @@ namespace X
 						loopNo++;
 					}
 				}
-				usGlobal = false;
-				const int Key_Len = 100;
-				char szKey_s[Key_Len];
-				SPRINTF(szKey_s, Key_Len, "Global\\Galaxy_SM_Write_%llu", shKey);
-				char szKey_c[Key_Len];
-				SPRINTF(szKey_c, Key_Len, "Global\\Galaxy_SM_Read_%llu", shKey);
 
 #if (WIN32)
-				//Non-Global
-				char szKey_s_l[Key_Len];
-				SPRINTF(szKey_s_l, Key_Len, "Galaxy_SM_Write_%llu", shKey);
-				char szKey_c_l[Key_Len];
-				SPRINTF(szKey_c_l, Key_Len, "Galaxy_SM_Read_%llu", shKey);
+				//for windows, we like to try Global first to check
+				//if server side runs as admin mode
+				//so we need to two set of keys
+				const int Key_Len = 100;
+				//Global keys
+				char szKey_w[Key_Len];
+				SPRINTF(szKey_w, Key_Len,"Global\\Galaxy_SM_Write_%llu",shKey);
+				char szKey_r[Key_Len];
+				SPRINTF(szKey_r, Key_Len,"Global\\Galaxy_SM_Read_%llu",shKey);
+				//Non-Global keys
+				char szKey_w_l[Key_Len];
+				SPRINTF(szKey_w_l, Key_Len, "Galaxy_SM_Write_%llu", shKey);
+				char szKey_r_l[Key_Len];
+				SPRINTF(szKey_r_l, Key_Len, "Galaxy_SM_Read_%llu", shKey);
 
 				char mappingName[MAX_PATH];
 				sprintf_s(mappingName, "Global\\Galaxy_FileMappingObject_%llu", shKey);
@@ -207,12 +212,14 @@ namespace X
 				const int loopNum = 1000;
 				int loopNo = 0;
 				bool bSrvReady = false;
+				//set to false to try global first
+				usGlobal = false;
 				while (mWriteEvent == nullptr && loopNo < loopNum)
 				{
-					mWriteEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, szKey_s);
+					mWriteEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, szKey_w);
 					if (mWriteEvent == nullptr)
 					{
-						mWriteEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, szKey_s_l);
+						mWriteEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, szKey_w_l);
 					}
 					else
 					{
@@ -257,7 +264,7 @@ namespace X
 				while (mReadEvent == nullptr && loopNo < loopNum)
 				{
 					mReadEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE,
-						usGlobal ? szKey_c : szKey_c_l);
+						usGlobal ? szKey_r : szKey_r_l);
 					if (mReadEvent != nullptr)
 					{
 						bSrvReady = true;
@@ -273,6 +280,13 @@ namespace X
 #elif __ANDROID__
 
 #else
+				const int Key_Len = 100;
+				char szKey_w[Key_Len];
+				SPRINTF(szKey_w, Key_Len,"Galaxy_SM_Write_%llu", shKey);
+				char szKey_r[Key_Len];
+				SPRINTF(szKey_r, Key_Len,"Galaxy_SM_Read_%llu", shKey);
+
+				printf("ClientConnect:shmget for read buffer\n");
 				const int loopNum = 1000;
 				int loopNo = 0;
 				bool bSrvReady = false;
@@ -302,11 +316,12 @@ namespace X
 					printf("shmget:failed\n");
 					return false;
 				}
+				printf("shmget:OK, then sem_open for write buffer\n");
 				loopNo = 0;
 				bSrvReady = false;
 				while (mWriteEvent == nullptr && loopNo < loopNum)
 				{
-					mWriteEvent = sem_open(szKey_s, O_EXCL, permission, 0);
+					mWriteEvent = sem_open(szKey_w, O_EXCL, permission, 0);
 					if (mWriteEvent != nullptr)
 					{
 						bSrvReady = true;
@@ -320,7 +335,7 @@ namespace X
 				bSrvReady = false;
 				while (mReadEvent == nullptr && loopNo < loopNum)
 				{
-					mReadEvent = sem_open(szKey_c, O_EXCL, permission, 0);
+					mReadEvent = sem_open(szKey_r, O_EXCL, permission, 0);
 					if (mReadEvent != nullptr)
 					{
 						bSrvReady = true;
@@ -336,12 +351,12 @@ namespace X
 					return false;
 				}
 #endif
-				if (mShmPtr == NULL)
+				if (mShmPtr == nullptr)
 				{
-					std::cout << "ClientConnect:failed" << std::endl;
+					printf("ClientConnect:failed\n");
 					return false;
 				}
-				//std::cout  << "ClientConnect:OK" << std::endl;
+				printf("ClientConnect:OK\n");
 				mClosed = false;
 				m_BufferSize = bufSize;
 				return true;

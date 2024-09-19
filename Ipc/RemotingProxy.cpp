@@ -139,9 +139,8 @@ namespace X
 		{
 			//for wait to host exit
 			SEMAPHORE_HANDLE semaphore = nullptr;
-
-			auto ret = 1;
-			while (ret != 0)
+			int retCode = 0;
+			while (retCode >=0)
 			{
 				std::string semaphoreName =
 					mHostUseGlobal ? "Global\\XlangServerSemaphore_" : "XlangServerSemaphore_";
@@ -152,7 +151,8 @@ namespace X
 					std::cout << "Host semaphore" << semaphoreName << "is gone,host exited" << std::endl;
 					break;
 				}
-				ret = WAIT_FOR_SEMAPHORE(semaphore, 30);
+
+				retCode = WAIT_FOR_SEMAPHORE(semaphore, 60);
 				CLOSE_SEMAPHORE(semaphore);
 			}
 		}
@@ -180,6 +180,7 @@ namespace X
 			AddRef();
 			while (mRun)
 			{
+				//std::cout << "Client:Try to connect" << std::endl;
 				bool bOK = Connect();
 				if (!bOK)
 				{
@@ -187,15 +188,17 @@ namespace X
 					MS_SLEEP(200);
 					continue;
 				}
+				//std::cout << "Client:Connected" << std::endl;
 				m_ConnectLock.Lock();
 				m_bConnected = true;
 				m_ConnectLock.Unlock();
 				m_pConnectWait->Release();
+				//std::cout << "Client:Wait for host exit" << std::endl;
 				WaitToHostExit();
+				//std::cout << "Client:Host exited" << std::endl;
 				CallHandler::Quit();
 				mCallCounter.WaitForZero();
 				CallHandler::Close();
-
 				if (m_ExitOnHostExit)
 				{
 					m_ConnectLock.Lock();
@@ -203,6 +206,7 @@ namespace X
 					m_Exited = true;
 					m_bConnected = false;
 					m_ConnectLock.Unlock();
+					//std::cout << "Client Session Closing" << std::endl;
 					Manager::I().RemoveProxy(LRPC_NAME, mRootObjectName, this);
 					break;
 				}
@@ -219,6 +223,7 @@ namespace X
 				//Restart again for Read Thread in Base class
 				CallHandler::ReStart();
 			}
+			//std::cout << "Client Session Exit" << std::endl;
 			Release();
 		}
 		void RemotingProxy::Cleanup()
@@ -277,6 +282,7 @@ namespace X
 		}
 		void RemotingProxy::ShapeHandsToServer()
 		{
+			//std::cout << "begin ShakeHands" << std::endl;
 			unsigned long pid_client = GetPID();
 			Call_Context context;
 			auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::ShakeHands, context);
@@ -293,6 +299,7 @@ namespace X
 			FinishCall();
 			mHostProcessId = pid_srv;
 			mSessionId = sid;
+			//std::cout << "end ShakeHands" << std::endl;
 		}
 	}//namespace IPC
 }//namespace X

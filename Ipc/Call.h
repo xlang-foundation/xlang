@@ -22,7 +22,7 @@ namespace X
 
 		class CallHandler:
 			public GThread,
-			public X::XProxy,
+			public virtual X::XProxy,
 			public RemotingProc
 		{
 			XWait mStartReadWait;
@@ -307,7 +307,9 @@ namespace X
 				RemoteFuncInfo* pFuncInfo = RemotingMethod::I().Get(head.callType);
 				if (pFuncInfo != nullptr && pFuncInfo->pHandler != nullptr)
 				{
+					//std::cout << "ReceiveCall,callType=" << head.callType << std::endl;
 					bool bOK = pFuncInfo->pHandler->Call(&context, head.callType, stream, this);
+					//std::cout << "ReceiveCall,callType=" << head.callType << ",bOK=" << bOK << std::endl;
 				}
 				else
 				{
@@ -327,7 +329,9 @@ namespace X
 			void Quit()
 			{
 				StopRunning();
-				CleanRemoteObjects();
+				//call signal evnets first, then 
+				//call CleanRemoteObjects which may use same lock in other funcion call inside
+				//remoteObject
 				if (mWBuffer)
 				{
 					mWBuffer->ReleaseEvents();
@@ -336,6 +340,7 @@ namespace X
 				{
 					mRBuffer->ReleaseEvents();
 				}
+				CleanRemoteObjects();
 			}
 			void Close()
 			{
@@ -350,6 +355,9 @@ namespace X
 			}
 			void StopRunning()
 			{
+				mCanReadWait.Release(true);
+				mWriteWait.Release(true);
+				mFinishReadWait.Release(true);
 				mStartReadWait.Release(true);
 				{
 					std::unique_lock<std::mutex> lock(mCallMutex);
