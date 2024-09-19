@@ -80,6 +80,7 @@ namespace X
                 US_SLEEP(33000);
                 cnt++;
             }
+
             bool bExist = false;
             mSrvLock.Lock();
             for (auto it = mSrvs.begin(); it != mSrvs.end(); it++)

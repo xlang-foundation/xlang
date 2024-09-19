@@ -34,7 +34,7 @@ namespace X
 			public Singleton<RemotingStub>
 		{
 		public:
-			RemotingStub() :threadPool(5)
+			RemotingStub() :threadPool(15)
 			{
 			}
 			void Register();

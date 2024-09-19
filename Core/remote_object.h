@@ -278,8 +278,11 @@ namespace X
 			{
 				int memberFlags = 0;
 				m_proxyLock.Lock();
-				auto memId = m_proxy?m_proxy->QueryMember(m_remote_Obj_id, 
-					strName, memberFlags):0;
+				X::ROBJ_MEMBER_ID memId = 0;
+				if (m_proxy != nullptr)
+				{
+					memId = m_proxy->QueryMember(m_remote_Obj_id,strName, memberFlags);
+				}
 				m_proxyLock.Unlock();
 				if (memId != -1)
 				{
