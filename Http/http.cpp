@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include <tuple>
+#include <regex>
 
 namespace fs = std::filesystem;
 
@@ -545,9 +546,54 @@ namespace X
 		}
 		return dict;
 	}
-	HttpClient::HttpClient(std::string scheme_host_port)
+	void HttpClient::set_enable_server_certificate_verification(bool b)
 	{
-		m_pClient = new httplib::Client(scheme_host_port);
+		auto* client = static_cast<httplib::SSLClient*>(m_pClient);
+		//auto* ctx = client->ssl_context();
+		//SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+		client->enable_server_certificate_verification(b);
+	}
+	HttpClient::HttpClient(std::string url)
+	{
+		// Regular expression to parse the URL
+		std::regex url_regex(R"(^(http|https)://([^/:]+)(:\d+)?(/.*)?$)");
+		std::smatch url_match_result;
+
+		if (std::regex_match(url, url_match_result, url_regex)) 
+		{
+			// Extract protocol, host, port, and path
+			std::string protocol = url_match_result[1];
+			std::string host = url_match_result[2];
+			std::string port_str = url_match_result[3];
+			std::string path = url_match_result[4];
+
+			if (path.empty()) {
+				path = "/";
+			}
+
+			int port = 0;
+			if (!port_str.empty()) {
+				port = std::stoi(port_str);
+			}
+			else {
+				port = (protocol == "https") ? 443 : 80;
+			}
+
+			if (protocol == "http") {
+				m_isHttps = false;
+				m_pClient = new httplib::Client(host.c_str(), port);
+			}
+			else if (protocol == "https") {
+				m_isHttps = true;
+				m_pClient = new httplib::SSLClient(host.c_str(), port);
+			}
+			else {
+				throw std::runtime_error("Unsupported protocol: " + protocol);
+			}
+		}
+		else {
+			throw std::runtime_error("Invalid URL format: " + url);
+		}
 	}
 	HttpClient::~HttpClient()
 	{
@@ -564,6 +610,10 @@ namespace X
 		//if has content length,allocate one time
 		//if not, allocated  when data receiving
 		httplib::Headers headers;
+		//use X::Dict m_headers to fill in headers
+		m_headers->Enum([&](X::Value& key, X::Value& value) {
+			headers.emplace(key.ToString(), value.ToString());
+			});
 		auto res = ((httplib::Client*)m_pClient)->Get(
 			path, headers,
 			[&](const httplib::Response& response) {
@@ -602,7 +652,7 @@ namespace X
 					X::Str val(kv.second.c_str(), (int)kv.second.size());
 					dict->Set(key, val);
 				}
-				m_headers = dict;
+				m_response_headers = dict;
 				return true;
 				// return 'false' if you want to cancel the request.
 			},
@@ -659,7 +709,22 @@ namespace X
 	{
 		if (m_pClient) 
 		{
-			auto res = ((httplib::Client*)m_pClient)->Post(path, body, content_type);
+			httplib::Headers headers;
+			//use X::Dict m_headers to fill in headers
+			m_headers->Enum([&](X::Value& key, X::Value& value) {
+				headers.emplace(key.ToString(), value.ToString());
+				});
+			auto callPost = [&]() {
+				if (m_isHttps)
+				{
+					return ((httplib::SSLClient*)m_pClient)->Post(path, headers, body, content_type);
+				}
+				else
+				{
+					return ((httplib::Client*)m_pClient)->Post(path, headers, body, content_type);
+				}
+			};
+			httplib::Result res = callPost();
 			if (res) 
 			{
 				m_status = res->status;
@@ -672,7 +737,7 @@ namespace X
 					X::Str val(kv.second.c_str(), (int)kv.second.size());
 					dict->Set(key, val);
 				}
-				m_headers = dict;
+				m_response_headers = dict;
 				return true;
 			}
 		}
