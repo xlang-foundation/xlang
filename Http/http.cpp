@@ -561,7 +561,7 @@ namespace X
 	HttpClient::HttpClient(std::string url)
 	{
 		// Regular expression to parse the URL
-		std::regex url_regex(R"(^(http|https)://([^/:]+)(:\d+)?(/.*)?$)");
+		std::regex url_regex(R"(^(http|https)://([^/:]+)(?::(\d+))?(/.*)?$)");
 		std::smatch url_match_result;
 
 		if (std::regex_match(url, url_match_result, url_regex)) 

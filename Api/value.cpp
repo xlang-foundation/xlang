@@ -90,6 +90,10 @@ namespace X
 	}
 	Value Value::operator- (const Value& right)
 	{
+		if (t == ValueType::Invalid || right.t == ValueType::Invalid)
+		{
+			return Value();
+		}
 		Value ret;
 		bool done = false;
 		if (t == ValueType::Object)
