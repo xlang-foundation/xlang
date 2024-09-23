@@ -160,13 +160,24 @@ namespace X
 	class HttpClient
 	{
 		void* m_pClient = nullptr;
+		bool m_isHttps = false;
 		int m_status = 0;
 		X::Value m_body;
-		X::Value m_headers;
+		X::Dict m_headers;
+		X::Value m_response_headers;
+		std::string m_path;
+		void set_enable_server_certificate_verification(bool b);
 	public:
 		BEGIN_PACKAGE(HttpClient)
 			APISET().AddFunc<1>("get", &HttpClient::Get);
 			APISET().AddFunc<3>("post", &HttpClient::Post);
+			APISET().AddFunc<1>("setHeaders", &HttpClient::SetHeaders);
+			APISET().AddProp0("headers", &HttpClient::m_headers);
+			APISET().AddPropL("enable_server_certificate_verification", 
+				[](auto* pThis, X::Value v) {
+					pThis->set_enable_server_certificate_verification((bool)v);
+				},[](auto* pThis) {return false; });
+
 			APISET().AddPropL("status",[](auto* pThis, X::Value v) {},
 				[](auto* pThis){return pThis->GetStatus(); });
 			APISET().AddPropL("response_headers", [](auto* pThis, X::Value v) {},
@@ -174,13 +185,17 @@ namespace X
 			APISET().AddPropL("body", [](auto* pThis, X::Value v) {},
 				[](auto* pThis) {return pThis->GetBody(); });
 		END_PACKAGE
-		HttpClient(std::string scheme_host_port);
+		HttpClient(std::string url);
 		~HttpClient();
 		bool Get(std::string path);
 		bool Post(std::string path, std::string content_type, std::string body);
 		X::Value GetStatus();
 		X::Value GetBody();
-		X::Value GetResponseHeaders() { return m_headers; }
+		X::Value GetResponseHeaders() { return m_response_headers; }
+		void SetHeaders(X::Value& headers)
+		{
+			m_headers = headers;
+		}
 	};
 	class Http:
 		public Singleton<Http>

@@ -18,7 +18,15 @@ include_directories("../Api")
 include_directories("../Inc")
 if (WIN32)
 	include_directories("depends/windows/include")
-	link_directories("depends/windows/lib")
+	link_directories("depends/windows/lib/x64")
+
+    # Extract libcrypto_static.zip
+    set(LIBCRYPTO_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/depends/windows/lib/x64/libcrypto_static.zip")
+    set(LIBCRYPTO_LIB "${CMAKE_BINARY_DIR}/lib/libcrypto_static.lib")
+    file(ARCHIVE_EXTRACT INPUT ${LIBCRYPTO_ZIP} DESTINATION ${CMAKE_BINARY_DIR}/lib)
+
+    # Add the extracted library to the link path
+    link_directories(${CMAKE_BINARY_DIR}/lib)
 endif()
 
 FILE(GLOB API_SRC "../Api/value.cpp")
@@ -27,8 +35,7 @@ FILE(GLOB Main_SRC "*.cpp")
 add_library(${PROJECT_NAME} 
 	SHARED
 	${API_SRC}
-	${Main_SRC}
- "cypher.cpp" "cypher_help.h")
+	${Main_SRC})
 
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static)

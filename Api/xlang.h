@@ -344,6 +344,10 @@ namespace X
 		Internal_Reserve(XList)
 		virtual Value Get(long long idx) = 0;
 		virtual void AddItem(X::Value& v) = 0;
+		FORCE_INLINE void append(X::Value& v)
+		{
+			AddItem(v);
+		}
 	};
 	class XDict :
 		virtual public XObj
@@ -357,6 +361,12 @@ namespace X
 		{
 			X::Value k(key);
 			Set(k,val);
+		}
+		virtual Value& operator[](X::Value& key) = 0;
+		FORCE_INLINE Value& operator[](const char* key)
+		{
+			X::Value k(key);
+			return operator[](k);
 		}
 	};
 	class XSet :

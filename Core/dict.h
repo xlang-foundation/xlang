@@ -51,6 +51,10 @@ namespace X
 				auto it = mMap.find(val);
 				return it != mMap.end();
 			}
+			virtual Value& operator[](X::Value& key) override
+			{
+				return mMap[key];
+			}
 			virtual void Set(X::Value& key, X::Value& val) override
 			{
 				auto it = mMap.find(key);

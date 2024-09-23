@@ -144,10 +144,10 @@ namespace X
 			switch (t)
 			{
 			case ValueType::Int64:
-				x.l -= ToInt64(v);
+				x.l -= ValueToInt64(v);
 				break;
 			case ValueType::Double:
-				x.d -= ToDouble(v);
+				x.d -= ValueToDouble(v);
 				break;
 			case ValueType::Str:
 				x.str = v.x.str;

@@ -256,6 +256,7 @@ std::string StringifyString(const std::string& str) {
         else if (chr == '\t') {
             str_out += "\\t";
         }
+#if 0 // this part can't handle multi-byte UTF-8 sequences
         else if (chr < ' ' || chr > 126) {
             str_out += "\\u";
             for (int i = 0; i < 4; i++) {
@@ -267,6 +268,7 @@ std::string StringifyString(const std::string& str) {
                 chr <<= 4;
             }
         }
+#endif
         else {
             str_out += chr;
         }
