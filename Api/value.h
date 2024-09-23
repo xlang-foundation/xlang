@@ -674,7 +674,7 @@ public:
 	}
 	FORCE_INLINE long long ToLongLong()
 	{
-		return long long(*this);
+		return (long long)(*this);
 	}
 	FORCE_INLINE bool ToBool()
 	{
