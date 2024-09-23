@@ -27,6 +27,7 @@ namespace X
 			httplib::Response& res)
 		{
 			bool bHandled = false;
+
 			HttpRequest* pHttpReq = new HttpRequest((void*)&req);
 			X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq));
 
@@ -98,7 +99,7 @@ namespace X
 			return bHandled;
 		};
 
-		auto pre_handler = [this, ProcessRequestUrl](
+		auto routing_handler_ = [this, ProcessRequestUrl](
 			const httplib::Request& req,
 			httplib::Response& res)
 		{
@@ -122,7 +123,7 @@ namespace X
 			{
 				printf("server has an error...\n");
 			}
-			pSrv->set_pre_routing_handler(pre_handler);
+			pSrv->set_routing_handler(routing_handler_);
 			m_pSrv = (void*)pSrv;
 		}
 		else
@@ -132,7 +133,7 @@ namespace X
 			{
 				printf("server has an error...\n");
 			}
-			pSrv->set_pre_routing_handler(pre_handler);
+			pSrv->set_routing_handler(routing_handler_);
 			m_pSrv = (void*)pSrv;
 		}
 	}
@@ -504,7 +505,7 @@ namespace X
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
 		std::string strVal = pReq->body;
-		return X::Value((char*)strVal.c_str(), (int)strVal.size());
+		return strVal;
 	}
 	X::Value  HttpRequest::GetPath()
 	{
@@ -548,6 +549,10 @@ namespace X
 	}
 	void HttpClient::set_enable_server_certificate_verification(bool b)
 	{
+		if (!m_isHttps)
+		{
+			return;
+		}
 		auto* client = static_cast<httplib::SSLClient*>(m_pClient);
 		//auto* ctx = client->ssl_context();
 		//SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
@@ -567,8 +572,8 @@ namespace X
 			std::string port_str = url_match_result[3];
 			std::string path = url_match_result[4];
 
-			if (path.empty()) {
-				path = "/";
+			if (!path.empty()) {
+				m_path = path;
 			}
 
 			int port = 0;
@@ -597,7 +602,14 @@ namespace X
 	}
 	HttpClient::~HttpClient()
 	{
-		delete (httplib::Client*)m_pClient;
+		if (m_isHttps)
+		{
+			delete (httplib::SSLClient*)m_pClient;
+		}
+		else
+		{
+			delete (httplib::Client*)m_pClient;
+		}
 	}
 
 	bool HttpClient::Get(std::string path)
@@ -614,75 +626,84 @@ namespace X
 		m_headers->Enum([&](X::Value& key, X::Value& value) {
 			headers.emplace(key.ToString(), value.ToString());
 			});
-		auto res = ((httplib::Client*)m_pClient)->Get(
-			path, headers,
-			[&](const httplib::Response& response) {
-				auto it0 = response.headers.find("Content-Type");
-				if (it0 != response.headers.end())
+		auto response_handler = [&](const httplib::Response& response) {
+			auto it0 = response.headers.find("Content-Type");
+			if (it0 != response.headers.end())
+			{
+				if ((it0->second.find("text/") != it0->second.npos) ||
+					(it0->second.find("application/x-javascript") != it0->second.npos) ||
+					(it0->second.find("application/x-csh") != it0->second.npos) ||
+					(it0->second.find("application/x-sh") != it0->second.npos) ||
+					(it0->second.find("application/json") != it0->second.npos) ||
+					(it0->second.find("application/xml") != it0->second.npos) ||
+					(it0->second.find("application/xhtml+xml") != it0->second.npos) ||
+					(it0->second.find("application/x-httpd-php") != it0->second.npos))
 				{
-					if ((it0->second.find("text/") != it0->second.npos) ||
-						(it0->second.find("application/x-javascript") != it0->second.npos) ||
-						(it0->second.find("application/x-csh") != it0->second.npos) ||
-						(it0->second.find("application/x-sh") != it0->second.npos) ||
-						(it0->second.find("application/json") != it0->second.npos) ||
-						(it0->second.find("application/xml") != it0->second.npos) ||
-						(it0->second.find("application/xhtml+xml") != it0->second.npos) ||
-						(it0->second.find("application/x-httpd-php") != it0->second.npos))
-					{
-						isText = true;
-					}
+					isText = true;
 				}
-				int len = 0;
-				auto it = response.headers.find("Content-Length");
-				if (it != response.headers.end())
+			}
+			int len = 0;
+			auto it = response.headers.find("Content-Length");
+			if (it != response.headers.end())
+			{
+				len = std::stoi(it->second);
+			}
+			if (len > 0)
+			{
+				pBuf = new char[len];
+				pDataHead = pBuf;
+				buf_size = len;
+			}
+			X::Dict dict;
+			//dump response headers
+			for (auto& kv : response.headers)
+			{
+				X::Str key(kv.first.c_str(), (int)kv.first.size());
+				X::Str val(kv.second.c_str(), (int)kv.second.size());
+				dict->Set(key, val);
+			}
+			m_response_headers = dict;
+			return true;
+			// return 'false' if you want to cancel the request.
+		};
+		auto content_receiver = [&](const char* data, size_t data_length) {
+			if (data_length)
+			{
+				if (pBuf == nullptr)
 				{
-					len = std::stoi(it->second);
-				}
-				if (len > 0)
-				{
-					pBuf = new char[len];
+					pBuf = new char[data_length];
 					pDataHead = pBuf;
-					buf_size = len;
+					buf_size = data_length;
 				}
-				X::Dict dict;
-				//dump response headers
-				for (auto& kv : response.headers)
+				else if ((data_cur_size + data_length) > buf_size)
 				{
-					X::Str key(kv.first.c_str(), (int)kv.first.size());
-					X::Str val(kv.second.c_str(), (int)kv.second.size());
-					dict->Set(key, val);
-				}
-				m_response_headers = dict;
-				return true;
-				// return 'false' if you want to cancel the request.
-			},
-			[&](const char* data, size_t data_length) {
-				if (data_length)
-				{
-					if (pBuf == nullptr)
-					{
-						pBuf = new char[data_length];
-						pDataHead = pBuf;
-						buf_size = data_length;
-					}
-					else if((data_cur_size + data_length)> buf_size)
-					{
-						pBuf = new char[data_cur_size + data_length];
-						buf_size = data_cur_size + data_length;
-						memcpy(pBuf, pDataHead, data_cur_size);
-						delete pDataHead;
-						pDataHead = pBuf;
-						data_cur_size += data_length;
-						pBuf += data_length;
-					}
-					memcpy(pBuf, data, data_length);
-					pBuf += data_length;
+					pBuf = new char[data_cur_size + data_length];
+					buf_size = data_cur_size + data_length;
+					memcpy(pBuf, pDataHead, data_cur_size);
+					delete pDataHead;
+					pDataHead = pBuf;
 					data_cur_size += data_length;
+					pBuf += data_length;
 				}
-				return true; 
-				// return 'false' if you want to cancel the request.
-			});
-
+				memcpy(pBuf, data, data_length);
+				pBuf += data_length;
+				data_cur_size += data_length;
+			}
+			return true;
+			// return 'false' if you want to cancel the request.
+		};
+		std::string full_path = m_path + path;
+		auto call = [&]() {
+			if (m_isHttps) {
+				return ((httplib::SSLClient*)m_pClient)->Get(full_path, headers, 
+					response_handler, content_receiver);
+			}
+			else {
+				return ((httplib::Client*)m_pClient)->Get(full_path, headers, 
+					response_handler, content_receiver);
+			}
+		};
+		auto res = call();
 		if (!res)
 		{
 			return false;
@@ -709,6 +730,7 @@ namespace X
 	{
 		if (m_pClient) 
 		{
+			std::string full_path = m_path + path;
 			httplib::Headers headers;
 			//use X::Dict m_headers to fill in headers
 			m_headers->Enum([&](X::Value& key, X::Value& value) {
@@ -717,11 +739,11 @@ namespace X
 			auto callPost = [&]() {
 				if (m_isHttps)
 				{
-					return ((httplib::SSLClient*)m_pClient)->Post(path, headers, body, content_type);
+					return ((httplib::SSLClient*)m_pClient)->Post(full_path, headers, body, content_type);
 				}
 				else
 				{
-					return ((httplib::Client*)m_pClient)->Post(path, headers, body, content_type);
+					return ((httplib::Client*)m_pClient)->Post(full_path, headers, body, content_type);
 				}
 			};
 			httplib::Result res = callPost();

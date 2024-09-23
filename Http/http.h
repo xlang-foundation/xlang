@@ -165,11 +165,13 @@ namespace X
 		X::Value m_body;
 		X::Dict m_headers;
 		X::Value m_response_headers;
+		std::string m_path;
 		void set_enable_server_certificate_verification(bool b);
 	public:
 		BEGIN_PACKAGE(HttpClient)
 			APISET().AddFunc<1>("get", &HttpClient::Get);
 			APISET().AddFunc<3>("post", &HttpClient::Post);
+			APISET().AddFunc<1>("setHeaders", &HttpClient::SetHeaders);
 			APISET().AddProp0("headers", &HttpClient::m_headers);
 			APISET().AddPropL("enable_server_certificate_verification", 
 				[](auto* pThis, X::Value v) {
@@ -190,6 +192,10 @@ namespace X
 		X::Value GetStatus();
 		X::Value GetBody();
 		X::Value GetResponseHeaders() { return m_response_headers; }
+		void SetHeaders(X::Value& headers)
+		{
+			m_headers = headers;
+		}
 	};
 	class Http:
 		public Singleton<Http>

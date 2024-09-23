@@ -965,6 +965,7 @@ public:
 
   Server &set_exception_handler(ExceptionHandler handler);
   Server &set_pre_routing_handler(HandlerWithResponse handler);
+  Server &set_routing_handler(HandlerWithResponse handler);//Added by Shawn for Xlang
   Server &set_post_routing_handler(Handler handler);
 
   Server &set_expect_100_continue_handler(Expect100ContinueHandler handler);
@@ -1108,6 +1109,7 @@ private:
   HandlerWithResponse error_handler_;
   ExceptionHandler exception_handler_;
   HandlerWithResponse pre_routing_handler_;
+  HandlerWithResponse routing_handler_;//Added by Shawn for Xlang's http server
   Handler post_routing_handler_;
   Expect100ContinueHandler expect_100_continue_handler_;
 
@@ -6165,6 +6167,10 @@ inline Server &Server::set_pre_routing_handler(HandlerWithResponse handler) {
   pre_routing_handler_ = std::move(handler);
   return *this;
 }
+inline Server& Server::set_routing_handler(HandlerWithResponse handler) {
+    routing_handler_ = std::move(handler);
+    return *this;
+}
 
 inline Server &Server::set_post_routing_handler(Handler handler) {
   post_routing_handler_ = std::move(handler);
@@ -6821,7 +6827,11 @@ inline bool Server::routing(Request &req, Response &res, Stream &strm) {
     // Read content into `req.body`
     if (!read_content(strm, req, res)) { return false; }
   }
-
+  //Added by Shawn for Xlang Http Server
+  if (routing_handler_ &&
+      routing_handler_(req, res) == HandlerResponse::Handled) {
+      return true;
+  }
   // Regular handler
   if (req.method == "GET" || req.method == "HEAD") {
     return dispatch_request(req, res, get_handlers_);
