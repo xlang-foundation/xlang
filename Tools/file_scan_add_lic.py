@@ -8,22 +8,22 @@ current_year = datetime.now().year
 # Define the license claim template with placeholders for different comment styles
 license_claim_template = {
     'block': f"""/*
- * Copyright (C) {current_year} The XLang™ Foundation
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+Copyright (C) {current_year} The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 """,
     'hash': f"""#
-# Copyright (C) {current_year} The XLang™ Foundation
+# Copyright (C) {current_year} The XLang Foundation
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -35,20 +35,21 @@ license_claim_template = {
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# <END>
 """,
     'xml': f"""<!--
-  Copyright (C) {current_year} The XLang™ Foundation
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+Copyright (C) {current_year} The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 -->
 """
 }
@@ -64,13 +65,8 @@ extensions_with_comment_styles = {
     '.yaml': 'hash', '.yml': 'hash',
     '.json': 'hash',  # JSON files typically use '//' but we're using '#' for consistency
     '.xml': 'xml', '.html': 'xml', '.htm': 'xml',
-    '.cmake': 'hash',  # CMake files
+    '.cmake': 'hash',  # CMake files treated as regular hash-style files now
     '.cs': 'block'  # C# files
-}
-
-# Add specific filenames like CMakeLists.txt
-specific_files = {
-    'CMakeLists.txt': 'hash'
 }
 
 # Define files and directories to be excluded
@@ -97,34 +93,44 @@ def is_excluded(path, exclude_list):
 
 def remove_existing_license(content, comment_style):
     """Remove existing license block if found at the top of the file."""
-    license_regex_patterns = {
-        'block': r"/\*.*?The XLang™ Foundation.*?\*/",
-        'hash': r"#.*?The XLang™ Foundation.*?#",
-        'xml': r"<!--.*?The XLang™ Foundation.*?-->",
+    # Define the patterns for removing the license based on the comment style
+    license_patterns = {
+        'block': re.compile(
+            r"/\*.*?Copyright \(C\) \d{4} The XLang Foundation.*?\*/", re.DOTALL
+        ),
+        'hash': re.compile(
+            r"^#.*?Copyright \(C\) \d{4} The XLang Foundation.*?<END>", re.MULTILINE | re.DOTALL
+        ),
+        'xml': re.compile(
+            r"<!--.*?Copyright \(C\) \d{4} The XLang Foundation.*?-->", re.DOTALL
+        ),
     }
-    
-    pattern = license_regex_patterns.get(comment_style)
+
+    pattern = license_patterns.get(comment_style)
     if pattern:
-        content = re.sub(pattern, '', content, flags=re.DOTALL).strip()
+        content = re.sub(pattern, '', content).lstrip()
     return content
 
 def add_license_to_file(filepath, comment_style):
     """Add license claim to the top of the file based on its comment style."""
     license_claim = license_claim_template[comment_style]
     
-    with open(filepath, 'r+', encoding='utf-8') as file:
+    with open(filepath, 'r+', encoding='utf-8-sig', newline='') as file:
         content = file.read()
-        
-        # Remove existing license block if present
+
+        # Remove existing license block if present in the top lines
         content = remove_existing_license(content, comment_style)
         
-        # Add the new license block
+        # Standardize line endings to CRLF (Windows style)
+        content = content.replace('\r\n', '\n').replace('\n', '\r\n')
+        
+        # Add the new license block with consistent line endings
         file.seek(0, 0)
-        file.write(license_claim + '\n' + content)
-        print(f"License added to {filepath}")
+        file.write(license_claim.replace('\n', '\r\n') + '\r\n' + content)
+        print(f"License updated in {filepath}")
 
 def scan_and_add_license(directory):
-    """Recursively scan the directory and add license claim to matching files."""
+    """Recursively scan the directory and add or update the license claim in matching files."""
     for root, dirs, files in os.walk(directory):
         # Normalize root path to ensure compatibility
         norm_root = os.path.normpath(root)
@@ -141,8 +147,6 @@ def scan_and_add_license(directory):
             # Determine the comment style based on the file extension or specific file name
             ext = os.path.splitext(file)[1]
             comment_style = extensions_with_comment_styles.get(ext, None)
-            if not comment_style:
-                comment_style = specific_files.get(file, None)
             
             if comment_style:
                 add_license_to_file(filepath, comment_style)
