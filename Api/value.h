@@ -20,9 +20,9 @@ enum class ValueType
 	Value,
 };
 
-#define ToDouble(v) \
+#define ValueToDouble(v) \
 	((v.t == ValueType::Int64) ? (double)v.x.l:((v.t == ValueType::Double)?v.x.d:0.0))
-#define ToInt64(v) \
+#define ValueToInt64(v) \
 	((v.t == ValueType::Int64) ? v.x.l:((v.t == ValueType::Double)?(long long)v.x.d:0))
 #define ToStr(p,size) \
 	std::string((char*)p,(size_t)size)
@@ -39,10 +39,10 @@ switch (t)\
 case ValueType::None:\
 	break; \
 case ValueType::Int64:\
-	x.l op ToInt64(r); \
+	x.l op ValueToInt64(r); \
 	break; \
 case ValueType::Double:\
-	x.d op ToDouble(r); \
+	x.d op ValueToDouble(r); \
 	break; \
 case ValueType::Str:\
 	ChangeToStrObject(); \
@@ -65,10 +65,10 @@ void Value::operator op (const Value & r)\
 	case ValueType::None:\
 		break;\
 	case ValueType::Int64:\
-		x.l op ToInt64(r);\
+		x.l op ValueToInt64(r);\
 		break;\
 	case ValueType::Double:\
-		x.d op ToDouble(r);\
+		x.d op ValueToDouble(r);\
 		break;\
 	case ValueType::Str:\
 		ChangeToStrObject();\
@@ -97,10 +97,10 @@ bool operator op (const Value& r) const\
 		bRet = (r.t op ValueType::None);\
 		break;\
 	case ValueType::Int64:\
-		bRet = (x.l op ToInt64(r));\
+		bRet = (x.l op ValueToInt64(r));\
 		break;\
 	case ValueType::Double:\
-		bRet = (x.d op ToDouble(r));\
+		bRet = (x.d op ValueToDouble(r));\
 		break;\
 	case ValueType::Object:\
 		bRet = (obj_cmp((Value*)&r) op 0);\
@@ -302,6 +302,10 @@ public:
 		AssignObject(p, AddRef);
 	}
 	Value(std::string& s);
+	Value(const std::string& s)
+	{
+		SetString((std::string&)s);
+	}
 	Value(std::string&& s);
 
 	int obj_cmp(Value* r) const;
@@ -309,6 +313,14 @@ public:
 	{
 		t = ValueType::Object;
 		x.obj = p;
+	}
+	FORCE_INLINE bool contains(const char* key)
+	{
+		return QueryMember(key).IsValid();
+	}
+	FORCE_INLINE bool contains(const std::string& key)
+	{
+		return QueryMember(key.c_str()).IsValid();
 	}
 	bool Clone();
 	bool ChangeToStrObject();
@@ -339,10 +351,10 @@ public:
 		switch (t)
 		{
 		case ValueType::Int64:
-			x.l = ToInt64(v);
+			x.l = ValueToInt64(v);
 			break;
 		case ValueType::Double:
-			x.d = ToDouble(v);
+			x.d = ValueToDouble(v);
 			break;
 		case ValueType::Str:
 			x.str = v.x.str;
@@ -528,10 +540,10 @@ public:
 		switch (t)
 		{
 		case ValueType::Int64:
-			x.l = ToInt64(v);
+			x.l = ValueToInt64(v);
 			break;
 		case ValueType::Double:
-			x.d = ToDouble(v);
+			x.d = ValueToDouble(v);
 			break;
 		case ValueType::Str:
 			x.str = v.x.str;
@@ -583,12 +595,12 @@ public:
 				}
 				else
 				{
-					x.l += ToInt64(v);
+					x.l += ValueToInt64(v);
 				}
 			}
 			break;
 			case ValueType::Double:
-				x.d += ToDouble(v);
+				x.d += ValueToDouble(v);
 				break;
 			case ValueType::Str:
 				x.str = v.x.str;
@@ -652,6 +664,23 @@ public:
 	{
 		return QueryMember(key);
 	}
+	FORCE_INLINE double ToDouble()
+	{
+		return double(*this);
+	}
+	FORCE_INLINE int ToInt()
+	{
+		return int(*this);
+	}
+	FORCE_INLINE long long ToLongLong()
+	{
+		return (long long)(*this);
+	}
+	FORCE_INLINE bool ToBool()
+	{
+		return bool(*this);
+	}
+
 	//ARITH_OP(-= );
 	ARITH_OP(*= );
 	ARITH_OP(/= );

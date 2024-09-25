@@ -90,6 +90,10 @@ namespace X
 	}
 	Value Value::operator- (const Value& right)
 	{
+		if (t == ValueType::Invalid || right.t == ValueType::Invalid)
+		{
+			return Value();
+		}
 		Value ret;
 		bool done = false;
 		if (t == ValueType::Object)
@@ -144,10 +148,10 @@ namespace X
 			switch (t)
 			{
 			case ValueType::Int64:
-				x.l -= ToInt64(v);
+				x.l -= ValueToInt64(v);
 				break;
 			case ValueType::Double:
-				x.d -= ToDouble(v);
+				x.d -= ValueToDouble(v);
 				break;
 			case ValueType::Str:
 				x.str = v.x.str;

@@ -1,7 +1,7 @@
 import html
 from xlang_http import http
 client = http.Client("https://www.oxfordlearnersdictionaries.com")
-client.get("/us/definition/english/transcend?q=transcending")
+client.post("/us/definition/english/transcend?q=transcending")
 s = client.body
 x = html.loads(s)
 

@@ -111,6 +111,22 @@ public:
 		{
 			m_unsolved_decors.push_back(dynamic_cast<AST::Decorator*>(newLine));
 		}
+		else if (newLine->m_type == AST::ObType::Param)
+		{
+			//for case: def func(): or class also
+			AST::Param* pParam = dynamic_cast<AST::Param*>(newLine);
+			auto* pNameOfParam = pParam->GetName();
+			if (pNameOfParam && (pNameOfParam->m_type == AST::ObType::Class ||
+				pNameOfParam->m_type == AST::ObType::Func))
+			{
+				AST::Func* pFunc = dynamic_cast<AST::Func*>(pNameOfParam);
+				for (auto* d : m_unsolved_decors)
+				{
+					pFunc->AddDecor(d);
+				}
+				m_unsolved_decors.clear();
+			}
+		}
 		else if(newLine->m_type == AST::ObType::Class ||
 			newLine->m_type == AST::ObType::Func)
 		{
