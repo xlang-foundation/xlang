@@ -40,7 +40,7 @@ FILE(GLOB Nn_SRC "../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../Jit/*.cpp")
 FILE(GLOB Main_SRC "../Main/AddScripts.cpp" "../Main/Hosting.cpp" "../Main/xhost_impl.cpp")
 
-FILE(GLOB AppEntry_SRC "../cli.cpp","./*.cpp")
+FILE(GLOB AppEntry_SRC "../cli.cpp" "./*.cpp")
 FILE(GLOB XOne_SRC "./*.cpp")
 
 #Add xlang os module into this standalone app
