@@ -162,9 +162,26 @@ namespace X {
 			}
 		};
 
+		bool bom_checked = false;
+
 		while (m_tokens.size() == 0)
 		{
 			char c = GetChar();
+
+			if (!bom_checked) 
+			{
+				bom_checked = true;
+				if (c == static_cast<char>(0xEF)) 
+				{
+					char c2 = GetChar();
+					char c3 = GetChar();
+					if (c2 == static_cast<char>(0xBB) && c3 == static_cast<char>(0xBF)) {
+						// BOM detected, skip these characters and move to the next character
+						c = GetChar();
+					}
+				}
+			}
+
 			if (c == 0)
 			{
 				if (InFeedOp)
