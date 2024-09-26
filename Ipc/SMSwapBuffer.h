@@ -371,7 +371,7 @@ namespace X
 					printf("ClientConnect:failed\n");
 					return false;
 				}
-				printf("ClientConnect:OK\n");
+				//printf("ClientConnect:OK\n");
 				mClosed = false;
 				m_BufferSize = bufSize;
 				return true;

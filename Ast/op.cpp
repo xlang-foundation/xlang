@@ -266,6 +266,13 @@ bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands, int LeftTok
 		return false;
 	}
 #endif
+	if (operandR == nullptr)
+	{
+		//for example: if somethong:
+		//just use operandL
+		operands.push(operandL);
+		return true;
+	}
 	auto param = new AST::Param(operandL, operandR);
 	if (operandL)
 	{
