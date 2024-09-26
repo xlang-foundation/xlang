@@ -128,6 +128,7 @@ namespace X
 		};
 		if (asHttps)
 		{
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 			httplib::SSLServer* pSrv = new httplib::SSLServer(
 				m_cert_path =="" ? nullptr:m_cert_path.c_str(),
 				m_private_key_path =="" ? nullptr:m_private_key_path.c_str(),
@@ -140,6 +141,7 @@ namespace X
 			}
 			pSrv->set_routing_handler(routing_handler_);
 			m_pSrv = (void*)pSrv;
+#endif
 		}
 		else
 		{
@@ -568,10 +570,12 @@ namespace X
 		{
 			return;
 		}
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 		auto* client = static_cast<httplib::SSLClient*>(m_pClient);
 		//auto* ctx = client->ssl_context();
 		//SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
 		client->enable_server_certificate_verification(b);
+#endif
 	}
 	HttpClient::HttpClient(std::string url)
 	{
@@ -603,10 +607,12 @@ namespace X
 				m_isHttps = false;
 				m_pClient = new httplib::Client(host.c_str(), port);
 			}
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 			else if (protocol == "https") {
 				m_isHttps = true;
 				m_pClient = new httplib::SSLClient(host.c_str(), port);
 			}
+#endif
 			else {
 				throw std::runtime_error("Unsupported protocol: " + protocol);
 			}
@@ -619,7 +625,9 @@ namespace X
 	{
 		if (m_isHttps)
 		{
+#if CPPHTTPLIB_OPENSSL_SUPPORT
 			delete (httplib::SSLClient*)m_pClient;
+#endif
 		}
 		else
 		{
@@ -710,8 +718,10 @@ namespace X
 		std::string full_path = m_path + path;
 		auto call = [&]() {
 			if (m_isHttps) {
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 				return ((httplib::SSLClient*)m_pClient)->Get(full_path, headers, 
 					response_handler, content_receiver);
+#endif
 			}
 			else {
 				return ((httplib::Client*)m_pClient)->Get(full_path, headers, 
@@ -754,7 +764,9 @@ namespace X
 			auto callPost = [&]() {
 				if (m_isHttps)
 				{
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 					return ((httplib::SSLClient*)m_pClient)->Post(full_path, headers, body, content_type);
+#endif
 				}
 				else
 				{
