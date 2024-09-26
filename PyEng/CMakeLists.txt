@@ -82,6 +82,7 @@ else()
     configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.bat" "${CMAKE_BINARY_DIR}/bin/install_py_xlang.bat")
 
     else()
+    configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.sh" "${CMAKE_BINARY_DIR}/bin/install_py_xlang.sh")
     target_link_libraries(${PROJECT_NAME} PUBLIC 
         "${Python3_LIBRARIES}"
 	    )
