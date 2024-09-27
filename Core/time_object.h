@@ -86,16 +86,28 @@ namespace X
             retValue = CreateXlangStructFromTM(gm_tm, milliseconds);
             return true;
         }
-
+        //work with two ways, 
+        //1) if pContext is a XlangStruct, then we assume it is time struct
+        //2) if passing two parameters: fmt,XlangStruct
         bool StrfTime(X::XRuntime* rt, X::XObj* pContext, X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue) {
-            if (params.size() < 2) {
+            if (params.size() < 1) {
                 retValue = X::Value("");
-                return false;
+                return true;
             }
 
-            X::Value structValue = params[0];
-            std::string format = params[1].ToString();
-            bool includeMilliseconds = (params.size() > 2) ? static_cast<bool>(params[2]) : false;
+            X::Value structValue;
+            bool includeMilliseconds;
+            std::string format = params[0].ToString();
+            if (params.size() >= 2)
+            {
+                structValue = params[1];
+                includeMilliseconds = (params.size() >= 3) ? static_cast<bool>(params[2]) : false;
+            }
+            else
+            {
+                structValue = pContext;
+                includeMilliseconds = (params.size() > 2) ? static_cast<bool>(params[1]) : false;
+            }
 
             X::Data::XlangStruct* xStruct = dynamic_cast<X::Data::XlangStruct*>(structValue.GetObj());
             if (xStruct == nullptr) {

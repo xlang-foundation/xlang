@@ -144,12 +144,17 @@ namespace X
 		{
 			Lock();
 			int ref = Ref();
-			m_proxyLock.Lock();
-			if ((m_proxy!=nullptr) && (ref == 1))
+			//TODO: check here why has this case
+			//if not my object, send to remote side
+			if (m_remote_Obj_id.pid != GetPID())
 			{
-				m_proxy->ReleaseObject(m_remote_Obj_id);
+				m_proxyLock.Lock();
+				if ((m_proxy != nullptr) && (ref == 1))
+				{
+					m_proxy->ReleaseObject(m_remote_Obj_id);
+				}
+				m_proxyLock.Unlock();
 			}
-			m_proxyLock.Unlock();
 			Unlock();
 
 			return Data::Object::DecRef();
