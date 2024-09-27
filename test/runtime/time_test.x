@@ -29,6 +29,10 @@ print("GMT time as struct_time:", var3.tm_year, "-", var3.tm_mon, "-", var3.tm_m
 # 4. Format the local time into a readable string
 var4 = time.strftime("%Y-%m-%d %H:%M:%S", var2)
 print("Formatted local time:", var4)
+# include milliseconds
+var4_1 = time.strftime("%Y-%m-%d %H:%M:%S", var2,True)
+print("Formatted local time(+ms):", var4_1)
+
 
 # 5. Parse a formatted time string back into a struct_time
 time_string = "2024-08-24 15:32:36"

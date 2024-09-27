@@ -95,19 +95,18 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		{
 			auto* pActionOperator = dynamic_cast<ActionOperator*>(i);
 			OP_ID opId = pActionOperator->GetId();
-			if (opId == OP_ID::Break)
+			switch (opId)
 			{
+			case OP_ID::Break:
 				action.type = ExecActionType::Break;
 				break;
-			}
-			else if (opId == OP_ID::Continue)
-			{
+			case OP_ID::Continue:
 				action.type = ExecActionType::Continue;
 				break;
-			}
-			else if (opId == OP_ID::Pass)
-			{
-				continue;//just run next line
+			case OP_ID::Pass:
+				continue;//just run next line					
+			default:
+				break;
 			}
 		}
 		Value v0;

@@ -43,6 +43,43 @@ limitations under the License.
 #include <iostream>
 #include <string>
 
+//for windows if no openssl support, using dummy functions
+
+#ifndef CPPHTTPLIB_OPENSSL_SUPPORT
+
+// Dummy implementation of CertCloseStore
+BOOL WINAPI CertCloseStore(HCERTSTORE hCertStore, DWORD dwFlags) {
+	// Dummy implementation, just return TRUE
+	return TRUE;
+}
+
+// Dummy implementation of CertFindCertificateInStore
+PCCERT_CONTEXT WINAPI CertFindCertificateInStore(
+	HCERTSTORE hCertStore,
+	DWORD dwCertEncodingType,
+	DWORD dwFindFlags,
+	DWORD dwFindType,
+	const void* pvFindPara,
+	PCCERT_CONTEXT pPrevCertContext
+) {
+	// Dummy implementation, just return nullptr
+	return nullptr;
+}
+
+// Dummy implementation of CertFreeCertificateContext
+BOOL WINAPI CertFreeCertificateContext(PCCERT_CONTEXT pCertContext) {
+	// Dummy implementation, just return TRUE
+	return TRUE;
+}
+
+// Dummy implementation of CertOpenSystemStoreW
+HCERTSTORE WINAPI CertOpenSystemStoreW(HCRYPTPROV_LEGACY hProv, LPCWSTR szSubsystemProtocol) {
+	// Dummy implementation, just return nullptr
+	return nullptr;
+}
+
+#endif
+
 bool ChmodWin(const std::string& filename) {
 	// Get the SID of the current user
 	HANDLE hToken = NULL;

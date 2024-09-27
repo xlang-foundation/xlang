@@ -13,10 +13,15 @@ echo Site-Packages Directory: %SITE_PACKAGES%
 REM Define destination directory
 set "DEST_DIR=%SITE_PACKAGES%\xlang"
 
-REM Create destination directory if it doesn't exist
-if not exist "%DEST_DIR%" (
-    mkdir "%DEST_DIR%"
+REM Check if the destination directory exists, and remove it if it does
+if exist "%DEST_DIR%" (
+    echo Removing existing directory: %DEST_DIR%
+    rmdir /s /q "%DEST_DIR%"
 )
+
+REM Create destination directory
+echo Creating directory: %DEST_DIR%
+mkdir "%DEST_DIR%"
 
 REM Copy .dll and .pdb files
 copy "%SOURCE_DIR%\pyeng.dll" "%DEST_DIR%"
@@ -31,5 +36,3 @@ REM Copy pyeng.pdb and rename to xlang.pdb
 copy "%SOURCE_DIR%\pyeng.pdb" "%SITE_PACKAGES%\xlang.pdb"
 
 endlocal
-
-
