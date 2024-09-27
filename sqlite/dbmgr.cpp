@@ -200,7 +200,7 @@ namespace X
 			}
 			bool bOK = false;
 			std::string strSql = input.ToString();
-			std::cout << "Sql:" << input.ToString() << std::endl;
+			//std::cout << "Sql:" << input.ToString() << std::endl;
 			trim(strSql);
 			if (strSql.find_last_of(";") != std::string::npos)
 			{

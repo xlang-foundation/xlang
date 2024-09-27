@@ -171,7 +171,7 @@ public:
 		{
 			//TODO: just hack here, need to find why
 			SetVarCount(idx+1);
-			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
+			//std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		m_Values[idx] = v;
 #if XLANG_ENG_DBG
@@ -193,7 +193,7 @@ public:
 		if (m_bShared) m_lock.Lock();
 		if (idx < 0 && idx >= m_varCnt)
 		{
-			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
+			//std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		X::Value& v0 = m_Values[idx];
 		v = v0;

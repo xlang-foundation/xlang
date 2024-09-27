@@ -153,7 +153,7 @@ namespace X {
 		SPRINTF(strBuf, online_len, "[{\"%s\":%d}]", strType, tid);
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
-		std::cout << strType << " threadId: " << tid << std::endl;
+		//std::cout << strType << " threadId: " << tid << std::endl;
 		std::string evtName("devops.dbg");
 		ARGS params(0);
 		X::EventSystem::I().Fire(nullptr, nullptr, evtName, params, kwParams);
