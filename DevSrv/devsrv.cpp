@@ -148,7 +148,7 @@ namespace X
 				//std::cout << "BackData:" << retData << std::endl;
 			}
 		);
-		m_srv.Get("/devops/runcodeline",
+		m_srv.Post("/devops/runcodeline",
 			[this, &printWait, &bCodelineRunning](const httplib::Request& req,httplib::Response& res)
 			{
 				auto& req_params = req.params;
@@ -163,10 +163,10 @@ namespace X
 					if (X::g_pXHost)
 					{
 						X::Value retVal;
-						bCodelineRunning = true;
+						bCodelineRunning.store(true);
 						printWait.Release();
 						X::g_pXHost->RunCodeLine(code.c_str(), (int)code.size(), retVal, iExeNum);
-						bCodelineRunning = false;
+						bCodelineRunning.store(false);
 						printWait.Release();
 						if (retVal.IsObject() && retVal.GetObj()->GetType() == ObjType::Str)
 						{
@@ -217,7 +217,7 @@ namespace X
 					"text/plain",
 					[&](size_t offset, httplib::DataSink& sink) {
 						printLock.Lock();
-						if (printDataList.size() == 0 && bCodelineRunning) // wait print data
+						if (printDataList.size() == 0 && bCodelineRunning.load()) // wait print data
 						{
 							printLock.Unlock();
 							printWait.Wait(-1);
@@ -231,7 +231,7 @@ namespace X
 							printLock.Unlock();
 							sink.write(printStr.c_str(), printStr.size());
 						}
-						else if (!bCodelineRunning)// run end and no print data
+						else if (!bCodelineRunning.load())// run end and no print data
 						{
 							printLock.Unlock();
 							sink.done();
