@@ -322,7 +322,8 @@ namespace X
         pas_mesg_buffer message;
         // msgget creates a message queue
         // and returns identifier
-        message.mesg_type = (unsigned long long)PAS_MSG_TYPE::CreateSharedMem;
+        message.mesg_type = (long)PAS_MSG_TYPE::CreateSharedMem;
+		message.reserved = 0;
         message.shmKey = shKey;
 
 #if (WIN32)

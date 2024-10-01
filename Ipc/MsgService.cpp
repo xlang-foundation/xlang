@@ -157,7 +157,7 @@ namespace X
 				{
 					for (auto m : msgs)
 					{
-						if (m.mesg_type == (unsigned long long)PAS_MSG_TYPE::CreateSharedMem)
+						if (m.mesg_type == (long)PAS_MSG_TYPE::CreateSharedMem)
 						{
 							std::cout << "MsgService,Get Message to Create Stub with key:"
 								<< m.shmKey << std::endl;
@@ -190,7 +190,7 @@ namespace X
 				if (size > 0)
 				{
 					if (message.mesg_type ==
-						(unsigned long long)PAS_MSG_TYPE::CreateSharedMem)
+						(long)PAS_MSG_TYPE::CreateSharedMem)
 					{
 						std::cout << "MsgService,Get Message to Create Stub with key:"
 							<< message.shmKey << std::endl;
