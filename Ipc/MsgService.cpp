@@ -197,9 +197,20 @@ namespace X
 						RemotingManager::I().CreateServer(message.shmKey);
 					}
 				}
-				else
-				{
-					usleep(1000);//means connection will delay one ms
+				else if (size == 0) {
+					// msgrcv received 0 size, possibly meaning no message or error
+					std::cout << "Received 0 bytes, sleeping..." << std::endl;
+					usleep(1000);  // Sleep for 1 millisecond
+				}
+				else {
+					// Check for error conditions
+					if (errno == EINTR) {
+						std::cerr << "msgrcv interrupted, retrying..." << std::endl;
+					}
+					else {
+						perror("msgrcv failed");
+						mRun = false;  // Break the loop on a serious error
+					}
 				}
 			}
 			RemoveMsgId();
