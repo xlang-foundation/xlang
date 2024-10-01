@@ -186,6 +186,8 @@ namespace X
 			{
 				// msgrcv to receive message
 				//block call, canceled by RemoveMsgId
+				//Use sizeof(message) - sizeof(long) in msgrcv to 
+				// exclude the mesg_type from the size calculation
 				auto size = msgrcv(msgid, &message, sizeof(message) - sizeof(long), 0, 0);
 				if (size > 0)
 				{
