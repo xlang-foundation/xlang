@@ -126,6 +126,10 @@ namespace X
 				// Add Android/Linux implementation if necessary
 #else
 				mShmID = shmget(key, bufSize, IPC_CREAT | 0666);
+				if (mShmID == -1)
+				{
+					std::cout << "shmget failed with key:" << key << ",errno:" << errno << std::endl;
+				}
 				mShmPtr = (char*)shmat(mShmID, 0, 0);
 				//by sem_open with value-1, Initially be signaled for the first write
 				mWriteEvent = sem_open(szWriteEvent, O_CREAT | O_EXCL, 0666, 1);
