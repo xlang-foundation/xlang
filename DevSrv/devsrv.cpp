@@ -57,7 +57,7 @@ namespace X
 		std::vector<std::string> printDataList;
 		Locker printLock;
 		XWait printWait;
-		std::atomic_bool bCodelineRunning = true;
+		std::atomic_bool bFragmentCodeRunning = true;
 
 		long dbg_handler_cookie = X::OnEvent("devops.dbg", 
 			[this, &notis, &notiLock,&notiWait](
@@ -148,7 +148,7 @@ namespace X
 			}
 		);
 		m_srv.Post("/devops/runfragmentcode",
-			[this, &printWait, &bCodelineRunning](const httplib::Request& req,httplib::Response& res)
+			[this, &printWait, &bFragmentCodeRunning](const httplib::Request& req,httplib::Response& res)
 			{
 				if (m_JupyterModule.IsInvalid())
 				{
@@ -166,10 +166,10 @@ namespace X
 					if (X::g_pXHost)
 					{
 						X::Value retVal;
-						bCodelineRunning.store(true);
+						bFragmentCodeRunning.store(true);
 						printWait.Release();
 						X::g_pXHost->RunFragmentInModule(m_JupyterModule, code.c_str(), (int)code.size(), retVal, iExeNum);
-						bCodelineRunning.store(false);
+						bFragmentCodeRunning.store(false);
 						printWait.Release();
 						if (retVal.IsObject() && retVal.GetObj()->GetType() == ObjType::Str)
 						{
@@ -215,12 +215,12 @@ namespace X
 			}
 		);
 		m_srv.Get("/devops/getprint",
-			[this, &printDataList, &printLock, &printWait, &bCodelineRunning](const httplib::Request& req, httplib::Response& res){
+			[this, &printDataList, &printLock, &printWait, &bFragmentCodeRunning](const httplib::Request& req, httplib::Response& res){
 				res.set_content_provider(
 					"text/plain",
 					[&](size_t offset, httplib::DataSink& sink) {
 						printLock.Lock();
-						if (printDataList.size() == 0 && bCodelineRunning.load()) // wait print data
+						if (printDataList.size() == 0 && bFragmentCodeRunning.load()) // wait print data
 						{
 							printLock.Unlock();
 							printWait.Wait(-1);
@@ -234,7 +234,7 @@ namespace X
 							printLock.Unlock();
 							sink.write(printStr.c_str(), printStr.size());
 						}
-						else if (!bCodelineRunning.load())// run end and no print data
+						else if (!bFragmentCodeRunning.load())// run end and no print data
 						{
 							printLock.Unlock();
 							sink.done();
