@@ -70,7 +70,7 @@ namespace X
 			{
 				return mMap[key];
 			}
-			virtual void Set(X::Value& key, X::Value& val) override
+			virtual void Set(const X::Value& key, const X::Value& val) override
 			{
 				auto it = mMap.find(key);
 				if (it != mMap.end())
