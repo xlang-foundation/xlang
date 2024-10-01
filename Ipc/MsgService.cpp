@@ -186,7 +186,7 @@ namespace X
 			{
 				// msgrcv to receive message
 				//block call, canceled by RemoveMsgId
-				auto size = msgrcv(msgid, &message, sizeof(message), 0, 0);
+				auto size = msgrcv(msgid, &message, sizeof(message) - sizeof(long), 0, 0);
 				if (size > 0)
 				{
 					if (message.mesg_type ==

@@ -183,7 +183,7 @@ namespace X
 				printf("msgsnd with Key:0x%x\n", msgkey);
 				int msgid = msgget(msgkey, 0666);
 				//msgsnd to send message
-				msgsnd(msgid, &message, sizeof(message), 0);
+				msgsnd(msgid, &message, sizeof(message) - sizeof(long), 0);
 #endif
 				return true;
 			}
