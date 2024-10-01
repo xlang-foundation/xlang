@@ -166,6 +166,22 @@ namespace X {
 				return true;
 			}
 		}
+		bool SMSwapBuffer::SendMsg(long port, unsigned long long shKey)
+		{
+			pas_mesg_buffer message;
+			// msgget creates a message queue
+			// and returns identifier
+			message.mesg_type = (long)PAS_MSG_TYPE::CreateSharedMem;
+			message.shmKey = shKey;
+
+			// ftok to generate unique key
+			key_t msgkey = port;
+			printf("msgsnd with Key:0x%x\n", msgkey);
+			int msgid = msgget(msgkey, 0666);
+			//msgsnd to send message
+			msgsnd(msgid, &message, sizeof(message) - sizeof(long), 0);
+			return true;
+		}
 	}
 }
 #endif

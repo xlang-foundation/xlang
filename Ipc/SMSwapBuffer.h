@@ -60,53 +60,7 @@ namespace X
 			~SMSwapBuffer() { Close(); }
 
 			bool HostCreate(unsigned long long key, int bufSize, bool IsAdmin);
-			bool SendMsg(long port, unsigned long long shKey)
-			{
-				pas_mesg_buffer message;
-				// msgget creates a message queue
-				// and returns identifier
-				message.mesg_type = (long)PAS_MSG_TYPE::CreateSharedMem;
-				message.shmKey = shKey;
-
-#if (WIN32)
-				std::string msgKey(PAS_MSG_KEY);
-				if (port != 0)
-				{
-					msgKey += tostring(port);
-				}
-				HANDLE hFileMailSlot = CreateFile(msgKey.c_str(),
-					GENERIC_WRITE,
-					FILE_SHARE_READ,
-					(LPSECURITY_ATTRIBUTES)NULL,
-					OPEN_EXISTING,
-					FILE_ATTRIBUTE_NORMAL,
-					(HANDLE)NULL);
-				if (hFileMailSlot == INVALID_HANDLE_VALUE)
-				{
-					return false;
-				}
-				DWORD cbWritten;
-				BOOL fResult = WriteFile(hFileMailSlot,
-					&message,
-					sizeof(message),
-					&cbWritten,
-					(LPOVERLAPPED)NULL);
-				if (fResult)
-				{
-				}
-				CloseHandle(hFileMailSlot);
-#elif __ANDROID__
-
-#else
-				// ftok to generate unique key
-				key_t msgkey = port;
-				printf("msgsnd with Key:0x%x\n", msgkey);
-				int msgid = msgget(msgkey, 0666);
-				//msgsnd to send message
-				msgsnd(msgid, &message, sizeof(message) - sizeof(long), 0);
-#endif
-				return true;
-			}
+			bool SendMsg(long port, unsigned long long shKey);
 			bool ClientConnect(bool& usGlobal, long port, unsigned long long shKey,
 				int bufSize, int timeoutMS, bool needSendMsg = true);
 

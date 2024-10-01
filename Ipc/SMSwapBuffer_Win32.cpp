@@ -202,6 +202,42 @@ namespace X {
 			m_BufferSize = bufSize;
 			return true;
 		}
+		bool SMSwapBuffer::SendMsg(long port, unsigned long long shKey)
+		{
+			pas_mesg_buffer message;
+			// msgget creates a message queue
+			// and returns identifier
+			message.mesg_type = (long)PAS_MSG_TYPE::CreateSharedMem;
+			message.shmKey = shKey;
+
+			std::string msgKey(PAS_MSG_KEY);
+			if (port != 0)
+			{
+				msgKey += tostring(port);
+			}
+			HANDLE hFileMailSlot = CreateFile(msgKey.c_str(),
+				GENERIC_WRITE,
+				FILE_SHARE_READ,
+				(LPSECURITY_ATTRIBUTES)NULL,
+				OPEN_EXISTING,
+				FILE_ATTRIBUTE_NORMAL,
+				(HANDLE)NULL);
+			if (hFileMailSlot == INVALID_HANDLE_VALUE)
+			{
+				return false;
+			}
+			DWORD cbWritten;
+			BOOL fResult = WriteFile(hFileMailSlot,
+				&message,
+				sizeof(message),
+				&cbWritten,
+				(LPOVERLAPPED)NULL);
+			if (fResult)
+			{
+			}
+			CloseHandle(hFileMailSlot);
+			return true;
+		}
 	}  // namespace IPC
 }  // namespace X
 
