@@ -145,30 +145,6 @@ namespace X
 			return CallHandler::Call(rt, pContext, parent_id, id, memId, params, kwParams, trailer, retValue);
 		}
 
-		//use process as signal to host exit
-		//this way will not work for case host is in Admin or service mode
-		//so we need to use semaphore, in fact, in windows, we use event
-		void RemotingProxy::WaitToHostExit()
-		{
-			//for wait to host exit
-			SEMAPHORE_HANDLE semaphore = nullptr;
-			int retCode = 0;
-			while (retCode >=0)
-			{
-				std::string semaphoreName =
-					mHostUseGlobal ? "Global\\XlangServerSemaphore_" : "XlangServerSemaphore_";
-				semaphoreName += std::to_string(mHostProcessId);
-				semaphore = OPEN_SEMAPHORE(semaphoreName.c_str());
-				if (semaphore == nullptr)
-				{
-					std::cout << "Host semaphore" << semaphoreName << "is gone,host exited" << std::endl;
-					break;
-				}
-
-				retCode = WAIT_FOR_SEMAPHORE(semaphore, 60);
-				CLOSE_SEMAPHORE(semaphore);
-			}
-		}
 		void RemotingProxy::WaitToHostExit_ByProcess()
 		{
 #if (WIN32)
@@ -187,6 +163,31 @@ namespace X
 			}
 #endif
 			mHostProcessId = 0;
+		}
+
+		//use process as signal to host exit
+		//this way will not work for case host is in Admin or service mode
+		//so we need to use semaphore, in fact, in windows, we use event
+		void RemotingProxy::WaitToHostExit()
+		{
+			//for wait to host exit
+			SEMAPHORE_HANDLE semaphore = nullptr;
+			int retCode = 0;
+			while (retCode >= 0)
+			{
+				std::string semaphoreName =
+					mHostUseGlobal ? "Global\\XlangServerSemaphore_" : "XlangServerSemaphore_";
+				semaphoreName += std::to_string(mHostProcessId);
+				semaphore = OPEN_SEMAPHORE(semaphoreName.c_str());
+				if (semaphore == nullptr)
+				{
+					std::cout << "Host semaphore" << semaphoreName << "is gone,host exited" << std::endl;
+					break;
+				}
+
+				retCode = WAIT_FOR_SEMAPHORE(semaphore, 60);
+				CLOSE_SEMAPHORE(semaphore);
+			}
 		}
 		void RemotingProxy::SessionRun()
 		{

@@ -87,36 +87,101 @@ namespace X {
             char szKey_r[Key_Len];
             SPRINTF(szKey_r, Key_Len, "/Galaxy_SM_Read_%llu", shKey);
 
+            printf("ClientConnect:shm_open for read buffer\n");
+            const int loopNum = 1000;
+            int loopNo = 0;
+            bool bSrvReady = false;
+            int permission = 0666;
             char shmName[Key_Len];
             SPRINTF(shmName, Key_Len, "/Global_Galaxy_Shm_%llu", shKey);
 
-            // Try to open the shared memory object
-            mShmID = shm_open(shmName, O_RDWR, 0666);
-            if (mShmID == -1) {
-                perror("shm_open failed");
+            // Loop to attempt connecting to shared memory
+            while (loopNo < loopNum)
+            {
+                // Try to open the shared memory object
+                mShmID = shm_open(shmName, O_RDWR, permission);
+                if (mShmID != -1)
+                {
+                    // Map the shared memory object into the process's address space
+                    mShmPtr = (char*)mmap(NULL, bufSize, PROT_READ | PROT_WRITE, MAP_SHARED, mShmID, 0);
+                    if (mShmPtr != MAP_FAILED)
+                    {
+                        bSrvReady = true;
+                        break;
+                    }
+                    else
+                    {
+                        perror("mmap failed, retrying");
+                        shm_unlink(shmName);  // Just in case
+                    }
+                }
+                MS_SLEEP(100);
+                loopNo++;
+                printf("shm_open:%llu, Loop:%d\n", shKey, loopNo);
+            }
+            if (!bSrvReady)
+            {
+                printf("shm_open:failed\n");
                 return false;
             }
 
-            // Map the shared memory object into the process's address space
-            mShmPtr = (char*)mmap(NULL, bufSize, PROT_READ | PROT_WRITE, MAP_SHARED, mShmID, 0);
-            if (mShmPtr == MAP_FAILED) {
-                perror("mmap failed");
+            printf("shm_open:OK, then sem_open for write buffer\n");
+            loopNo = 0;
+            bSrvReady = false;
+
+            // Loop to attempt connecting to the write semaphore
+            while (mWriteEvent == nullptr && loopNo < loopNum)
+            {
+                mWriteEvent = sem_open(szKey_w, 0);
+                if (mWriteEvent != SEM_FAILED)
+                {
+                    bSrvReady = true;
+                    break;
+                }
+                MS_SLEEP(100);
+                loopNo++;
+                printf("sem_open (write):%llu, Loop:%d\n", shKey, loopNo);
+            }
+            if (!bSrvReady)
+            {
+                printf("sem_open (write):failed\n");
                 return false;
             }
 
-            printf("shm_open: OK, then sem_open for write buffer\n");
-            mWriteEvent = sem_open(szKey_w, 0);
-            mReadEvent = sem_open(szKey_r, 0);
+            loopNo = 0;
+            bSrvReady = false;
 
-            if (mWriteEvent == SEM_FAILED || mReadEvent == SEM_FAILED) {
-                perror("sem_open failed");
+            // Loop to attempt connecting to the read semaphore
+            while (mReadEvent == nullptr && loopNo < loopNum)
+            {
+                mReadEvent = sem_open(szKey_r, 0);
+                if (mReadEvent != SEM_FAILED)
+                {
+                    bSrvReady = true;
+                    break;
+                }
+                MS_SLEEP(100);
+                loopNo++;
+                printf("sem_open (read):%llu, Loop:%d\n", shKey, loopNo);
+            }
+            if (!bSrvReady)
+            {
+                printf("sem_open (read):failed\n");
                 return false;
             }
 
+            if (mShmPtr == nullptr)
+            {
+                printf("ClientConnect:failed\n");
+                return false;
+            }
+
+            // Connection successful, shared memory and semaphores are ready to use
             mClosed = false;
             m_BufferSize = bufSize;
             return true;
         }
+
 
         bool SMSwapBuffer::Wait(PasWaitHandle h, int timeoutMS)
         {
