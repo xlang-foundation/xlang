@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "httplib.h"
 #include "gthread.h"
+#include "xlang.h"
 
 namespace X
 {
@@ -36,5 +37,6 @@ namespace X
 		std::condition_variable m_cvConnect;
 		std::mutex m_mtxConnect;
 		bool m_Connected = false;
+		X::Value m_JupyterModule;
 	};
 }
