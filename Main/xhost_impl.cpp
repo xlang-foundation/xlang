@@ -557,9 +557,19 @@ return nullptr;
 		}
 		return X::Hosting::I().RunAsBackend(strModuleName, strCode, passinParams);
 	}
-	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal, int exeNum /*= -1*/)
+	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal)
 	{
-		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal, exeNum);
+		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal);
+	}
+
+	bool XHost_Impl::RunFragmentInModule(X::Value moduleObj, const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
+	{
+		return X::Hosting::I().RunFragmentInModule(dynamic_cast<X::AST::ModuleObject*>(moduleObj.GetObj()), code, size, retVal, exeNum);
+	}
+
+	X::Value XHost_Impl::NewModule()
+	{
+		return X::Hosting::I().NewModule();
 	}
 	const char* XHost_Impl::GetInteractiveCode()
 	{

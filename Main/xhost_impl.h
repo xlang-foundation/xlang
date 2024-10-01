@@ -73,8 +73,10 @@ namespace X
 			return RunModule(objModule,args, retVal, keepModuleWithRuntime);
 		}
 		virtual bool RunModule(X::Value objModule, X::ARGS& args, X::Value& retVal, bool keepModuleWithRuntime) override;
+		virtual X::Value NewModule() override;
 		virtual unsigned long long RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
-		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal, int exeNum = -1) override;
+		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal) override;
+		virtual bool RunFragmentInModule(X::Value moduleObj, const char* code, int size, X::Value& retVal, int exeNum = -1) override;
 		virtual const char* GetInteractiveCode() override;
 		virtual long OnEvent(const char* evtName, EventHandler handler) override;
 		virtual void OffEvent(const char* evtName, long Cookie) override;

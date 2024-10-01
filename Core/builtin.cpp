@@ -160,7 +160,7 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,	nullptr, params_p, kwargs_p, retValue);
 			}
 		}
-		int iExeNum = X::Hosting::I().GetInteractiveExeNum();
+		int iExeNum = X::Hosting::I().GetExeNum();
 		if (iExeNum != -1) //
 		{
 			X::KWARGS kw;

@@ -37,7 +37,7 @@ namespace X
 		//use to run code line for interactive mode
 		AST::Module* m_pInteractiveModule = nullptr;
 		XlangRuntime* m_pInteractiveRuntime = nullptr;
-		int m_pInteractiveExeNum = -1;
+		int m_ExeNum = -1;
 
 		std::vector<AST::Module*> m_Modules;
 		std::unordered_map<unsigned long long, AST::Module*> m_ModuleMap;
@@ -119,11 +119,10 @@ namespace X
 		X::Value NewModule();
 		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,X::Value& retVal);
 		bool InitRun(AST::Module* pTopModule,X::Value& retVal);
-		bool RunFragmentInModule(AST::ModuleObject* pModuleObj,
-			const char* code, int size, X::Value& retVal);
-		bool RunCodeLine(const char* code, int size, X::Value& retVal, int exeNum = -1);
+		bool RunFragmentInModule(AST::ModuleObject* pModuleObj,	const char* code, int size, X::Value& retVal, int exeNum = -1);
+		bool RunCodeLine(const char* code, int size, X::Value& retVal);
 		bool GetInteractiveCode(std::string& code);
-		int GetInteractiveExeNum(){return m_pInteractiveExeNum;};
+		int GetExeNum(){return m_ExeNum;};
 		bool Unload(AST::Module* pTopModule);
 		bool Run(AST::Module* pTopModule,X::Value& retVal,
 			std::vector<X::Value>& passInParams,

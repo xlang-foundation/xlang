@@ -14,7 +14,6 @@ limitations under the License.
 */
 
 #include "devsrv.h"
-#include "xlang.h"
 #include "Locker.h"
 #include "wait.h"
 #include <iostream>
@@ -148,9 +147,13 @@ namespace X
 				//std::cout << "BackData:" << retData << std::endl;
 			}
 		);
-		m_srv.Post("/devops/runcodeline",
+		m_srv.Post("/devops/runfragmentcode",
 			[this, &printWait, &bCodelineRunning](const httplib::Request& req,httplib::Response& res)
 			{
+				if (m_JupyterModule.IsInvalid())
+				{
+					m_JupyterModule = X::g_pXHost->NewModule();
+				}
 				auto& req_params = req.params;
 				auto itNum = req_params.find("exe_num");
 				auto itCode = req_params.find("code");
@@ -165,7 +168,7 @@ namespace X
 						X::Value retVal;
 						bCodelineRunning.store(true);
 						printWait.Release();
-						X::g_pXHost->RunCodeLine(code.c_str(), (int)code.size(), retVal, iExeNum);
+						X::g_pXHost->RunFragmentInModule(m_JupyterModule, code.c_str(), (int)code.size(), retVal, iExeNum);
 						bCodelineRunning.store(false);
 						printWait.Release();
 						if (retVal.IsObject() && retVal.GetObj()->GetType() == ObjType::Str)

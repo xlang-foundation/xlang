@@ -309,7 +309,7 @@ namespace X
 	}
 	bool Hosting::RunFragmentInModule(
 		AST::ModuleObject* pModuleObj,
-		const char* code, int size, X::Value& retVal)
+		const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
 	{
 		AST::Module* pModule = pModuleObj->M();
 		long long lineCntBeforeAdd = pModule->GetBodySize();
@@ -324,21 +324,22 @@ namespace X
 			//todo:syntax error
 			return false;
 		}
+		m_ExeNum = exeNum;
 		auto* rt = pModule->GetRT();
 		if (rt)
 		{
 			rt->AdjustStack(pModule->GetMyScope()->GetVarNum());
 		}
 		bOK = pModule->RunFromLine(rt, pModuleObj, lineCntBeforeAdd,retVal);
+		m_ExeNum = -1;
 		return bOK;
 	}
 	/*
 		keep a module to run lines from interactive mode
 		such as commmand line input
 	*/
-	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
+	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal)
 	{
-		m_pInteractiveExeNum = exeNum;
 		if (m_pInteractiveModule == nullptr)
 		{
 			auto* pTopModule = new AST::Module();
@@ -367,7 +368,6 @@ namespace X
 		}
 		m_pInteractiveRuntime->AdjustStack(m_pInteractiveModule->GetMyScope()->GetVarNum());
 		bOK = m_pInteractiveModule->RunLast(m_pInteractiveRuntime, nullptr, retVal);
-		m_pInteractiveExeNum = -1;
 		return bOK;
 	}
 	bool Hosting::GetInteractiveCode(std::string& code)
