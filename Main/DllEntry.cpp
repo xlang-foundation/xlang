@@ -29,7 +29,6 @@ limitations under the License.
 #include "xload.h"
 #include "Hosting.h"
 #include "EventLoopInThread.h"
-#include "Proxy.h"
 #include "str.h"
 #include "list.h"
 #include "dict.h"

@@ -44,7 +44,6 @@ limitations under the License.
 #include "metascope.h"
 #include "attribute.h"
 #include "devops.h"
-#include "msgthread.h"
 #include "runtime.h"
 #include "pyproxyobject.h"
 #include "moduleobject.h"
@@ -66,6 +65,7 @@ limitations under the License.
 #include "dbg.h"
 #include "range.h"
 #include "error_obj.h"
+#include "MsgService.h"
 
 namespace X
 {
@@ -1390,15 +1390,15 @@ bool U_LRpc_Listen(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	if (port != 0)
 	{
-		MsgThread::I().SetPort(port);
+		IPC::MsgService::I().SetPort(port);
 	}
 	if (params.size() > 1 && params[1].IsTrue())
 	{//block mode
-		MsgThread::I().run();
+		IPC::MsgService::I().run();
 	}
 	else
 	{
-		X::MsgThread::I().Start();
+		IPC::MsgService::I().Start();
 	}
 #endif
 	return true;

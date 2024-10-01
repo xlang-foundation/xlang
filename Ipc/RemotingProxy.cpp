@@ -14,14 +14,12 @@ limitations under the License.
 */
 
 #include "RemotingProxy.h"
-#include "sm_buffer.h"
 #include "wait.h"
 #include "utility.h"
 #include <iostream>
 #include "port.h"
 #include "manager.h"
 #include <string>
-#include "ServerCallPool.h"
 #include "event.h"
 
 

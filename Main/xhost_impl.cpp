@@ -31,7 +31,6 @@ limitations under the License.
 #include "remote_object.h"
 #include "MsgService.h"
 #include "import.h"
-#include "RemoteObjectStub.h"
 #include "tensor.h"
 #include "tensorop.h"
 #include "tensor_graph.h"
@@ -751,7 +750,7 @@ return nullptr;
 		X::Value& nativeObj)
 	{
 #if not defined(BARE_METAL)
-		return RemoteObjectStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
+		return IPC::RemotingStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
 #else
 		return false;
 #endif
