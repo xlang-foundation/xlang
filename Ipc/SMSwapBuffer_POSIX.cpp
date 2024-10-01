@@ -31,7 +31,7 @@ namespace X {
             SPRINTF(szReadEvent, Key_Len, IsAdmin ? "/Global_Galaxy_SM_Read_%llu" : "/Galaxy_SM_Read_%llu", key);
 
             char shmName[Key_Len];
-            SPRINTF(shmName, Key_Len, "/Global_Galaxy_Shm_%llu", key);
+            SPRINTF(shmName, Key_Len, "/shm_%llu", key);
 
             // Create or open the shared memory object
             mShmID = shm_open(shmName, O_CREAT | O_RDWR, 0666);
@@ -93,7 +93,7 @@ namespace X {
             bool bSrvReady = false;
             int permission = 0666;
             char shmName[Key_Len];
-            SPRINTF(shmName, Key_Len, "/Global_Galaxy_Shm_%llu", shKey);
+            SPRINTF(shmName, Key_Len, "/shm_%llu", shKey);
 
             // Loop to attempt connecting to shared memory
             while (loopNo < loopNum)
