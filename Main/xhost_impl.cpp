@@ -44,6 +44,7 @@ limitations under the License.
 #include "PyEngHost.h"
 #include "RemotingStub.h"
 #include "error_obj.h"
+#include <filesystem>
 
 namespace X 
 {
@@ -502,11 +503,10 @@ return nullptr;
 	bool XHost_Impl::LoadModule(const char* moduleName, 
 		const char* code, int codeSize, X::Value& objModule)
 	{
-		std::string path(moduleName);
-		std::replace(path.begin(), path.end(), '\\', '/');
-		std::transform(path.begin(), path.end(), path.begin(),[](unsigned char c) { return std::tolower(c); });
+		std::filesystem::path pathModuleName(moduleName);
+		std::string normalizedPath = pathModuleName.generic_string();
 		unsigned long long moduleKey = 0;
-		AST::Module* pModule = X::Hosting::I().Load(path.c_str(), code, codeSize, moduleKey);
+		AST::Module* pModule = X::Hosting::I().Load(normalizedPath.c_str(), code, codeSize, moduleKey);
 		if (pModule == nullptr)
 		{
 			return false;

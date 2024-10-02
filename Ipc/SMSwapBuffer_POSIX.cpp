@@ -27,11 +27,11 @@ namespace X {
             // Create the write and read events with different names for server and client
             const int Key_Len = 100;
             char szWriteEvent[Key_Len], szReadEvent[Key_Len];
-            SPRINTF(szWriteEvent, Key_Len, IsAdmin ? "/Global_Galaxy_SM_Write_%llu" : "/Galaxy_SM_Write_%llu", key);
-            SPRINTF(szReadEvent, Key_Len, IsAdmin ? "/Global_Galaxy_SM_Read_%llu" : "/Galaxy_SM_Read_%llu", key);
+            SPRINTF(szWriteEvent, Key_Len, "smw_%llu", key);
+            SPRINTF(szReadEvent, Key_Len, "smr_%llu", key);
 
             char shmName[Key_Len];
-            SPRINTF(shmName, Key_Len, "/shm_%llu", key);
+            SPRINTF(shmName, Key_Len, "shm_%llu", key);
 
             // Create or open the shared memory object
             mShmID = shm_open(shmName, O_CREAT | O_RDWR, 0666);
@@ -83,9 +83,9 @@ namespace X {
 
             const int Key_Len = 100;
             char szKey_w[Key_Len];
-            SPRINTF(szKey_w, Key_Len, "/Galaxy_SM_Write_%llu", shKey);
+            SPRINTF(szKey_w, Key_Len, "smw_%llu", shKey);
             char szKey_r[Key_Len];
-            SPRINTF(szKey_r, Key_Len, "/Galaxy_SM_Read_%llu", shKey);
+            SPRINTF(szKey_r, Key_Len, "smr_%llu", shKey);
 
             printf("ClientConnect:shm_open for read buffer\n");
             const int loopNum = 1000;
@@ -93,7 +93,7 @@ namespace X {
             bool bSrvReady = false;
             int permission = 0666;
             char shmName[Key_Len];
-            SPRINTF(shmName, Key_Len, "/shm_%llu", shKey);
+            SPRINTF(shmName, Key_Len, "shm_%llu", shKey);
 
             // Loop to attempt connecting to shared memory
             while (loopNo < loopNum)
