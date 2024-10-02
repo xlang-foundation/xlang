@@ -153,7 +153,11 @@ namespace X
                 retValue = X::Value();
                 return false;
             }
-
+            if (!params[0].IsObject() || !params[1].IsObject())
+            {
+                retValue = X::Value();
+                return false;
+            }
             X::Data::XlangStruct* startStruct = dynamic_cast<X::Data::XlangStruct*>(params[0].GetObj());
             X::Data::XlangStruct* endStruct = dynamic_cast<X::Data::XlangStruct*>(params[1].GetObj());
 
@@ -183,7 +187,11 @@ namespace X
                 retValue = X::Value();
                 return false;
             }
-
+            if (!params[0].IsObject())
+            {
+                retValue = X::Value();
+                return false;
+            }
             X::Data::XlangStruct* startStruct = dynamic_cast<X::Data::XlangStruct*>(params[0].GetObj());
 
             int startMilliseconds = 0;
@@ -217,9 +225,14 @@ namespace X
                 retValue = X::Value();
                 return false;
             }
-
+            if (!params[0].IsObject())
+            {
+                retValue = X::Value();
+                return false;
+            }
             // Get the time structure and seconds to add
             X::Data::XlangStruct* timeStruct = dynamic_cast<X::Data::XlangStruct*>(params[0].GetObj());
+
             double secondsToAdd = static_cast<double>(params[1]);
 
             int milliseconds = 0;

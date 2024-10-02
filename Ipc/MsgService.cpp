@@ -157,7 +157,7 @@ namespace X
 				{
 					for (auto m : msgs)
 					{
-						if (m.mesg_type == (unsigned long long)PAS_MSG_TYPE::CreateSharedMem)
+						if (m.mesg_type == (long)PAS_MSG_TYPE::CreateSharedMem)
 						{
 							std::cout << "MsgService,Get Message to Create Stub with key:"
 								<< m.shmKey << std::endl;
@@ -186,20 +186,33 @@ namespace X
 			{
 				// msgrcv to receive message
 				//block call, canceled by RemoveMsgId
-				auto size = msgrcv(msgid, &message, sizeof(message), 0, 0);
+				//Use sizeof(message) - sizeof(long) in msgrcv to 
+				// exclude the mesg_type from the size calculation
+				auto size = msgrcv(msgid, &message, sizeof(message) - sizeof(long), 0, 0);
 				if (size > 0)
 				{
 					if (message.mesg_type ==
-						(unsigned long long)PAS_MSG_TYPE::CreateSharedMem)
+						(long)PAS_MSG_TYPE::CreateSharedMem)
 					{
 						std::cout << "MsgService,Get Message to Create Stub with key:"
 							<< message.shmKey << std::endl;
 						RemotingManager::I().CreateServer(message.shmKey);
 					}
 				}
-				else
-				{
-					usleep(1000);//means connection will delay one ms
+				else if (size == 0) {
+					// msgrcv received 0 size, possibly meaning no message or error
+					std::cout << "Received 0 bytes, sleeping..." << std::endl;
+					usleep(1000);  // Sleep for 1 millisecond
+				}
+				else {
+					// Check for error conditions
+					if (errno == EINTR) {
+						std::cerr << "msgrcv interrupted, retrying..." << std::endl;
+					}
+					else {
+						perror("msgrcv failed");
+						mRun = false;  // Break the loop on a serious error
+					}
 				}
 			}
 			RemoveMsgId();

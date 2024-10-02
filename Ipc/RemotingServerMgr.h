@@ -18,6 +18,7 @@ limitations under the License.
 #include "Locker.h"
 #include <vector>
 #include "RemotingServer.h"
+#include "port.h"
 
 namespace X
 {

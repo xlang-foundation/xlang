@@ -25,9 +25,14 @@ namespace X
         CreateSharedMem = 1,
     };
     // structure for message queue
+    //System V message queues expect the mesg_type field to be of type long. 
+    // This is the first part of the message that msgrcv looks at to determine
+    // the type of message being sent or received.
+	//so we make the first 4 bytes as mesg_type
     struct pas_mesg_buffer
     {
-        unsigned long long mesg_type;
+        long mesg_type;
+		long reserved;
         unsigned long long shmKey;
     };
 #if (WIN32)
@@ -36,7 +41,7 @@ namespace X
 #define PAS_MSG_KEY 0x12344
 #endif
 
-#define SM_BUF_SIZE 1024*1024*10
+#define SM_BUF_SIZE 1024*1024*16
 
 #define ROOT_OBJECT_ID 1
 
