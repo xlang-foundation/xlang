@@ -26,7 +26,7 @@ public:
     static X::Value ConvertToXValue(PyObject* obj) {
         MGil gil;
         if (PyLong_Check(obj)) {
-            return X::Value(PyLong_AsLong(obj));
+            return X::Value(PyLong_AsLongLong(obj));
         }
         else if (PyFloat_Check(obj)) {
             return X::Value(PyFloat_AsDouble(obj));
@@ -55,7 +55,7 @@ public:
     static PyObject* ConvertToPyObject(X::Value& value) {
         if (value.IsLong()) {
             MGil gil;
-            return PyLong_FromLong((long)value);
+            return PyLong_FromLongLong((long long)value);
         }
         else if (value.IsDouble()) {
             MGil gil;

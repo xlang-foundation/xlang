@@ -97,11 +97,11 @@ namespace X
 		}
 		int Function::QueryMethod(const char* name, int* pFlags)
 		{
-			return _function_op->QueryMethod(name);
+			return _function_op?_function_op->QueryMethod(name):-1;
 		}
 		bool Function::GetIndexValue(int idx, Value& v)
 		{
-			return _function_op->Get(nullptr, nullptr, idx, v);
+			return _function_op?_function_op->Get(nullptr, nullptr, idx, v):false;
 		}
 		Function::Function(AST::Func* p, bool bOwnIt):Object()
 		{
