@@ -9362,7 +9362,7 @@ inline bool SSLClient::initialize_ssl(Socket &socket, Error &error) {
               return false;
             }
 
-            auto server_cert = SSL_get_peer_certificate(ssl2);
+            auto server_cert = SSL_get1_peer_certificate(ssl2);
             auto se = detail::scope_exit([&] { X509_free(server_cert); });
 
             if (server_cert == nullptr) {
