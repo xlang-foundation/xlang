@@ -27,6 +27,7 @@ limitations under the License.
 #include "xlang.h"
 #include "XLangStream.h"
 #include "Locker.h"
+#include <atomic>
 
 namespace X {
 	namespace AST { class Scope; }
