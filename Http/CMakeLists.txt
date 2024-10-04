@@ -69,8 +69,6 @@ else()
         include_directories(${OPENSSL_ROOT_DIR}/include)
         link_directories(${OPENSSL_ROOT_DIR}/lib)
 
-        # Link to the SSL libraries
-        target_link_libraries(${PROJECT_NAME} ssl crypto)
     endif()
 endif()
 
