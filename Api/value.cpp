@@ -213,6 +213,24 @@ namespace X
 		SetObj(g_pXHost->CreateRuntime());
 	}
 	template<>
+	template<>
+	void V<XModule>::Create(char* xModuleFile)
+	{
+		g_pXHost->Import(g_pXHost->GetCurrentRuntime(), xModuleFile, nullptr, nullptr, *this);
+	}
+	template<>
+	template<>
+	void V<XModule>::Create(char* xModuleFile, char* from)
+	{
+		g_pXHost->Import(g_pXHost->GetCurrentRuntime(), xModuleFile, from, nullptr, *this);
+	}
+	template<>
+	template<>
+	void V<XModule>::Create(char* xModuleFile, char* from,char* thru)
+	{
+		g_pXHost->Import(g_pXHost->GetCurrentRuntime(), xModuleFile, from, thru, *this);
+	}
+	template<>
 	void V<XDict>::Create()
 	{
 		SetObj(g_pXHost->CreateDict());

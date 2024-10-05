@@ -55,7 +55,6 @@ namespace X
 		Table,
 		DeferredObject,
 		RemoteObject,
-		RemoteClientObject,
 		PyProxyObject,
 		Error,
 	};
@@ -370,7 +369,7 @@ namespace X
 	public:
 		using Dict_Enum = X::Port::Function<void(X::Value& key, X::Value& val)>;
 		Internal_Reserve(XDict)
-		virtual void Set(X::Value& key, X::Value& val) = 0;
+		virtual void Set(const X::Value& key, const X::Value& val) = 0;
 		virtual void Enum(Dict_Enum proc) = 0;
 		FORCE_INLINE void Set(const char* key, X::Value val)
 		{
@@ -661,6 +660,7 @@ namespace X
 	using Func = V<XFunc>;
 	using XlangClass = V<XLangClass>;
 	using Runtime = V<XRuntime>;
+	using Module = V<XModule>;
 }
 
 #endif

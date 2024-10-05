@@ -23,6 +23,7 @@ limitations under the License.
 #include "remote_object.h"
 #include "deferred_object.h"
 #include "op.h"
+#include <filesystem>
 
 namespace X
 {
@@ -188,9 +189,9 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	if (bHaveX)
 	{
 		std::string code;
-#if (WIN32)
-		NormalizePath(loadXModuleFileName);
-#endif
+		std::filesystem::path pathModuleName(loadXModuleFileName);
+		loadXModuleFileName = pathModuleName.generic_string();
+
 		bOK = LoadStringFromFile(loadXModuleFileName, code);
 		if (bOK)
 		{

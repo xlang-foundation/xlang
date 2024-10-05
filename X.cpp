@@ -23,6 +23,7 @@ limitations under the License.
 #include "xload.h"
 #include "cli.h"
 
+
 #if (WIN32)
 #include <Windows.h>
 #include <cstdlib>
@@ -236,6 +237,7 @@ int main(int argc, char* argv[])
 	if (retCode == 0)
 	{
 		retCode = g_xLoad.Run();
+
 		if (paramConfig.cli)
 		{
 			X::CLI cli;

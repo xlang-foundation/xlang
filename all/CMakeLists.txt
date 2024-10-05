@@ -71,6 +71,6 @@ if (WIN32)
 elseif(APPLE)
 target_link_libraries(${PROJECT_NAME} pthread dl)
 else()
-target_link_libraries(${PROJECT_NAME} pthread dl uuid)
+target_link_libraries(${PROJECT_NAME} pthread dl uuid rt)
 endif()
 

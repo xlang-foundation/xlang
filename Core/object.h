@@ -27,6 +27,7 @@ limitations under the License.
 #include "xlang.h"
 #include "XLangStream.h"
 #include "Locker.h"
+#include <atomic>
 
 namespace X {
 	namespace AST { class Scope; }
@@ -238,8 +239,6 @@ namespace Data {
 				return "Table";
 			case X::ObjType::RemoteObject:
 				return "RemoteObject";
-			case X::ObjType::RemoteClientObject:
-				return "RemoteClientObject";
 			case X::ObjType::PyProxyObject:
 				return "PyObject";
 			case X::ObjType::DeferredObject:

@@ -20,11 +20,50 @@ limitations under the License.
 #include <iostream>
 #include "port.h"
 #include <regex>
+#include <filesystem>
+#include <string>
+
+namespace fs = std::filesystem;
 
 namespace X
 {
+
 	namespace Database
 	{
+		std::string norm_db_path(X::XRuntime* rt, std::string dbPath, std::string curModulePath)
+		{
+			if (dbPath.rfind(".db") == std::string::npos)
+			{
+				dbPath += ".db";
+			}
+			fs::path dbFilePath = dbPath;
+			if (!dbFilePath.is_absolute())
+			{
+				fs::path curPath;
+				if (curModulePath.empty())
+				{
+					// Check the .x module path first
+					X::Value valXModulePath = rt->GetXModuleFileName();
+					if (valXModulePath.IsValid())
+					{
+						curPath = fs::path(valXModulePath.ToString()).parent_path();
+					}
+					else
+					{
+						curPath = Manager::I().GetCurrentPath();
+					}
+				}
+				else
+				{
+					curPath = curModulePath;
+				}
+
+				dbFilePath = curPath / dbFilePath;
+			}
+			dbFilePath = dbFilePath.lexically_normal();
+			return dbFilePath.string();
+		}
+
 		std::string getDirectoryFromPath(const std::string& path)
 		{
 			size_t pos = path.find_last_of("/\\");
@@ -36,30 +75,12 @@ namespace X
 		SqliteDB::SqliteDB()
 		{
 		}
+
+
 		SqliteDB::SqliteDB(std::string dbPath)
 		{
-			if (dbPath.rfind(".db") == std::string::npos)
-			{
-				dbPath = dbPath + ".db";
-			}
-			if (!IsAbsPath(dbPath))
-			{
-				auto* rt = g_pXHost->GetCurrentRuntime();
-				std::string curPath;
-				//check this .x module path first
-				X::Value valXModulePath = rt->GetXModuleFileName();
-				if (valXModulePath.IsValid())
-				{
-					curPath = valXModulePath.ToString();
-					curPath = getDirectoryFromPath(curPath);
-				}
-				else
-				{
-					curPath = Manager::I().GetCurrentPath();
-				}
-
-				dbPath = curPath + Path_Sep_S + dbPath;
-			}
+			auto* rt = g_pXHost->GetCurrentRuntime();
+			std::string finalDbPath = norm_db_path(rt, dbPath, "");
 			Open(dbPath);
 		}
 		SqliteDB::~SqliteDB()
@@ -210,64 +231,42 @@ namespace X
 			if (pos != std::string::npos)
 			{
 				std::string path = strSql.substr(pos + 3);
-				if (IsAbsPath(path))
+				fs::path curPath = path;
+
+				if (curPath.is_absolute())
 				{
-					m_curPath = path;
+					m_curPath = curPath.string();
 				}
-				else if(!m_curPath.empty())
+				else if (!m_curPath.empty())
 				{
-					m_curPath += Path_Sep_S + path;
+					fs::path combinedPath = fs::path(m_curPath) / curPath;
+					m_curPath = combinedPath.lexically_normal().string();
 				}
 				else
 				{
-					std::string modulePath;
-					//check this .x module path first
+					fs::path modulePath;
+
+					// Check this .x module path first
 					X::Value valXModulePath = rt->GetXModuleFileName();
 					if (valXModulePath.IsValid())
 					{
-						modulePath = valXModulePath.ToString();
-						modulePath = getDirectoryFromPath(modulePath);
+						modulePath = fs::path(valXModulePath.ToString()).parent_path();
 					}
 					else
 					{
 						modulePath = Manager::I().GetCurrentPath();
 					}
 
-					m_curPath = modulePath + Path_Sep_S + path;
+					fs::path combinedPath = modulePath / curPath;
+					m_curPath = combinedPath.lexically_normal().string();
 				}
 				return X::Value(true);
 			}
 			pos = strSql.find("USE ");
 			if (pos != std::string::npos)
 			{
-				std::string dbPath = strSql.substr(pos+4);
-				if (dbPath.rfind(".db") == std::string::npos)
-				{
-					dbPath = dbPath + ".db";
-				}
-				if (!IsAbsPath(dbPath))
-				{
-					if (m_curPath.empty())
-					{
-						std::string curPath;
-						//check this .x module path first
-						X::Value valXModulePath = rt->GetXModuleFileName();
-						if (valXModulePath.IsValid())
-						{
-							curPath = valXModulePath.ToString();
-							curPath = getDirectoryFromPath(curPath);
-						}
-						else
-						{
-							curPath = Manager::I().GetCurrentPath();
-						}
-						dbPath = curPath + Path_Sep_S + dbPath;
-					}
-					else
-					{
-						dbPath = m_curPath + Path_Sep_S + dbPath;
-					}
-				}
+				std::string dbPath = strSql.substr(pos + 4);
+				dbPath = norm_db_path(rt,dbPath,m_curPath);
 				m_db.Open(dbPath);
 				if (m_db.db())
 				{

@@ -26,7 +26,7 @@ limitations under the License.
 #include "struct.h"
 #include "deferred_object.h"
 #include "funclist.h"
-#include "remote_client_object.h"
+
 
 namespace X 
 {
@@ -474,10 +474,6 @@ namespace X
 #if not defined(BARE_METAL)
 				case X::ObjType::RemoteObject:
 					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
-					pObjToRestore->IncRef();
-					break;
-				case X::ObjType::RemoteClientObject:
-					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteClientObject(nullptr));
 					pObjToRestore->IncRef();
 					break;
 #endif

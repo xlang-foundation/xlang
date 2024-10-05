@@ -18,7 +18,6 @@ limitations under the License.
 #include "SwapBufferStream.h"
 #include "Locker.h"
 #include "gthread.h"
-#include "remote_client_object.h"
 #include "remote_object.h"
 #include <vector>
 #include "port.h"
