@@ -660,6 +660,7 @@ namespace X
 	using Func = V<XFunc>;
 	using XlangClass = V<XLangClass>;
 	using Runtime = V<XRuntime>;
+	using Module = V<XModule>;
 }
 
 #endif
