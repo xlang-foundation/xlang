@@ -250,6 +250,7 @@ namespace X
 				std::lock_guard<std::mutex> lock(m_mtxConnect);
 				m_Connected = true;
 				m_cvConnect.notify_one();
+				std::cout << "client connected" << std::endl;
 			}
 		);
 		m_srv.Get("/devops/terminate",

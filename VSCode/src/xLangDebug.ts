@@ -325,6 +325,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			let cmd = xlangBin + ` -event_loop -dbg -enable_python -port ${port}`;
 			this._xlangProcess = cp.spawn('osascript', ['-e', `tell application "Terminal" to do script "${cmd}"`]);
 		}
+
 		this._runtime.serverAddress = "localhost";
 		this._runtime.serverPort = port;
 		this._isLaunch = true;
@@ -338,7 +339,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		await this._xlangStarted.wait();
 		if (!this._xlangStarted.notifyValue)
 		{
-			await vscode.window.showErrorMessage(`can not connect to a xlang dbg server at ${this._runtime.serverAddress}:${this._runtime.serverPort} debugging stopped`, { modal: true }, "ok");
+			await vscode.window.showErrorMessage(`can not connect to a xlang dbg server at ${this._runtime.serverAddress}:${this._runtime.serverPort} debugging stopped`, { modal: true }, "OK");
 			this.sendResponse(response);
 			this.sendEvent(new TerminatedEvent());
 			return;
@@ -348,7 +349,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
-		await this._runtime.loadSource(args.program);
+		let retVal = await this._runtime.loadSource(args.program);
+		if (retVal < 0)
+		{
+			this.sendResponse(response);
+			//this.sendEvent(new TerminatedEvent());
+			vscode.window.showInformationMessage(`file "${this._runtime.runFile}" is running`, { modal: true }, "OK");
+			return;
+		}
 		this.sendEvent(new InitializedEvent());
 		// wait configuration has finished (and configurationDoneRequest has been called)
 		await this._configurationDone.wait();

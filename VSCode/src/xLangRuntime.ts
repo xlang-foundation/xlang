@@ -22,6 +22,20 @@ import * as vscode from 'vscode';
 import * as os from 'os';
 import * as fs from 'fs';
 
+function getTimestamp(): string {
+	let date: Date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+
+    return `[${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}] `;
+}
+
 export interface IRuntimeBreakpoint {
 	id: number;
 	line: number;
@@ -105,6 +119,11 @@ export function timeout(ms: number) {
 
 export class XLangRuntime extends EventEmitter {
 
+	private _runFile: string = '';
+	public get runFile(){
+		return this._runFile;
+	}
+	private _outputChannel : vscode.OutputChannel;
 	private _sourceFile: string = '';
 	private _moduleKey: number = 0;
 	private _sessionRunning: boolean = false;
@@ -179,7 +198,17 @@ export class XLangRuntime extends EventEmitter {
 
 	constructor() {
 		super();
+		this._outputChannel = vscode.window.createOutputChannel("XLang Output");
+    	this._outputChannel.show(true);
+    	this.addOutput("XLang extension active");
 	}
+
+	public addOutput(val : string)
+	{
+		this._outputChannel.show(true)
+		this._outputChannel.appendLine(`${getTimestamp()}${val}`);
+	}
+
 	private nextVarRef = 1;
 	private varRefMap = new Map<number,[]>();
 	public createScopeRef(varType, frameId,val,id) {
@@ -211,21 +240,44 @@ export class XLangRuntime extends EventEmitter {
 		// 	this.setDebug(true);
 		// 	return key;
         // }
+		let bIsX = srcFile.endsWith(".x");
 		let srcFile_x = srcFile.replaceAll('\\', '/');
 		let code;
-		if (this.isLocalServer())
+		if (bIsX)
 		{
-			code = "m = load('" + srcFile_x + "','" + this.runMode + "')\nreturn m";
+			if (this.isLocalServer())
+			{
+				code = "m = load('" + srcFile_x + "','" + this.runMode + "')\nreturn m";
+			}
+			else
+			{
+				const content = fs.readFileSync(file); // only the fist file
+				code = "m = load('" + srcFile_x + "','" + this.runMode + "','" + content + "')\nreturn m";
+			}
 		}
 		else
 		{
-			const content = fs.readFileSync(file); // only the fist file
-			code = "m = load('" + srcFile_x + "','" + this.runMode + "','" + content + "')\nreturn m";
+			this.addOutput(`run file: "${srcFile_x}"`);
+			this._runFile = srcFile_x;
+			code = "import xdb\nreturn xdb.run_file(\"" + srcFile_x + "\")";
 		}
 		let promise = new Promise((resolve, reject) => {
 			this.Call(code, resolve);
 		});
-		let retVal= await promise as number;
+		let retVal;
+		if (bIsX)
+		{
+			retVal = await promise as number;
+		}
+		else
+		{
+			retVal = await promise as string;
+			if (retVal.length > 0 && (retVal.startsWith("http:") || retVal.startsWith("https:")))
+			{
+				this.addOutput(`output url: "${retVal}"`);
+			}
+			return -1; // return -1 for run file
+		}
 		//this.sourceModuleKeyMap.set(srcFile, retVal);
 		this._sourceFile = srcFile;
 		this._moduleKey = retVal; // 0 for a previous loaded module
@@ -268,8 +320,19 @@ export class XLangRuntime extends EventEmitter {
 		req.end();
 	}
 
-	public terminateXlang()
+	private reqTerminate;
+	public async terminateXlang()
 	{
+		if (this._runFile.length > 0)
+		{
+			let code = "import xdb\nreturn xdb.stop_file(\"" + this._runFile + "\")";
+			let promise = new Promise((resolve, reject) => {
+				this.Call(code, resolve);
+			});
+			this._runFile = "";
+			await promise as number;;
+		}
+
 		const https = require('http');
 		const options = {
 			hostname: this._srvaddress,
@@ -278,7 +341,8 @@ export class XLangRuntime extends EventEmitter {
 			method: 'GET'
 		};
 
-		https.request(options).end();
+		this.reqTerminate = https.request(options);
+		this.reqTerminate.end();
 	}
 
 	private reqNotify;

@@ -1,7 +1,7 @@
-﻿{
+{
   "name": "xlang",
   "displayName": "xlang",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "publisher": "cantorai",
   "description": "XLang's debugger and more",
   "author": {
@@ -65,7 +65,9 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:xlang",
+    "onLanguage:yml",
     "onDebugResolve:xlang",
+    "onDebugResolve:yml",
     "onDebugDynamicConfigurations:xlang",
     "onCommand:extension.xlang.getProgramName",
     "onCommand:extension.xlang.runEditorContents",
@@ -173,7 +175,8 @@
       {
         "type": "xlang",
         "languages": [
-          "xlang","yml"
+          "xlang",
+          "yml"
         ],
         "label": "xlang Debug",
         "program1": "./out/debugAdapter.js",
