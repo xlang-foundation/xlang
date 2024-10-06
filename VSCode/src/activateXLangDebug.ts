@@ -212,7 +212,7 @@ class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 		// if launch.json is missing or empty
 		if (!config.type && !config.request && !config.name) {
 			const editor = vscode.window.activeTextEditor;
-			if (editor && editor.document.languageId === 'xlang') {
+			if (editor && (editor.document.languageId === 'xlang' || editor.document.languageId === 'yml')) {
 				const items = ['launch', 'attach'];
 				const options: vscode.QuickPickOptions = {
 					title: 'Select a mode to run debug',

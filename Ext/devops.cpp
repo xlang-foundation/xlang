@@ -26,19 +26,30 @@ limitations under the License.
 #include "event.h"
 #include "utility.h"
 #include "dbg.h"
+#include <filesystem>
 
 namespace X
 {
+	extern XLoad* g_pXload;
 	namespace DevOps
 	{
 #define	dbg_evt_name "devops.dbg"
 #define dbg_scope_special_type "Scope.Special"
+
+		bool DebugService::s_bRegPlugins = true;
+		std::unordered_map<std::string, X::Value> DebugService::m_mapPluginModule;
+
 		DebugService::DebugService()
 		{
 			X::ObjectEvent* pEvt = X::EventSystem::I().Register(dbg_evt_name);
 			if (pEvt)
 			{
 				pEvt->IncRef();
+			}
+			if (s_bRegPlugins)
+			{
+				s_bRegPlugins = false;
+				registerPlugins();
 			}
 		}
 
@@ -491,6 +502,7 @@ namespace X
 
 			return X::Value(list);
 		}
+		
 		bool DebugService::Command(X::XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
@@ -678,6 +690,106 @@ namespace X
 				//retValue = X::Value(true);
 			}
 			return true;
+		}
+		
+		void DebugService::registerPlugins()
+		{
+			std::filesystem::path pluginPath = std::string(g_pXload->GetConfig().appPath) + Path_Sep_S + "DevSrv_Plugins";
+			try 
+			{
+				for (const auto& entry : std::filesystem::directory_iterator(pluginPath)) 
+				{
+					if (entry.is_regular_file() && entry.path().extension() == ".x") 
+					{
+						//std::cout << "Found .x file: " << entry.path() << std::endl;
+						//std::string path = entry.path().string();
+						std::string fileName = entry.path().stem().string();
+						std::string filePath = entry.path().string();
+						X::Module m((char*)fileName.c_str(), (char*)filePath.c_str());
+						X::Value regInfo = m["Register"]();
+						if (regInfo.IsList())
+						{
+							XList* pList = dynamic_cast<XList*>(regInfo.GetObj());
+							for (int i = 0; i < pList->Size(); ++i)
+							{
+								if (pList->Get(i).IsDict())
+								{
+									XDict* pDict = dynamic_cast<XDict*>(pList->Get(i).GetObj());
+									pDict->Enum([](X::Value& key, X::Value& val) {
+										m_mapPluginModule[key.ToString()] = val;
+									});
+									//m_mapPluginModule[pList->Get(0).ToString()] = pList->Get(1);
+								}
+							}
+						}
+					}
+				}
+			}
+			catch (const std::filesystem::filesystem_error& e) 
+			{
+				std::cerr << "Error accessing directory: " << e.what() << std::endl;
+			}
+		}
+
+		bool DebugService::RunFile(X::XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
+		{
+			if (params.size() == 0)
+			{
+				retValue = X::Value(false);
+				return true;
+			}
+			std::string filePath = params[0].ToString();
+			retValue = execFile(true, filePath, rt);
+			return true;
+		}
+
+		bool DebugService::StopFile(X::XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
+		{
+			if (params.size() == 0)
+			{
+				retValue = X::Value(false);
+				return true;
+			}
+			std::string filePath = params[0].ToString();
+			retValue = execFile(false, filePath, rt);
+			return true;
+		}
+
+		X::Value DebugService::execFile(bool bRun, const std::string& filePath, X::XRuntime* rt)
+		{
+			size_t dotPos = filePath.rfind('.');
+			if (dotPos != std::string::npos)
+			{
+				std::string ext = filePath.substr(dotPos);
+				if (m_mapPluginModule.contains(ext))
+				{
+					X::Value funcs = m_mapPluginModule[ext];
+					if (funcs.IsDict())
+					{
+						XDict* funcsDic = dynamic_cast<XDict*>(funcs.GetObj());
+						X::Value func = bRun ? (*funcsDic)["run"] : (*funcsDic)["stop"];
+						if (func.IsValid() && func.IsObject())
+						{
+							func.GetObj()->SetRT(rt);
+							return func(filePath);
+						}
+						else
+						{
+							if (bRun)
+								return "wrong handler for run";
+							else
+								return "wrong handler for stop";
+						}
+					}
+					else
+						return "wrong handler in plugin ";
+				}
+				else
+					return "no plugin for this file type";
+			}
+			return "wrong file name";
 		}
 	}
 }

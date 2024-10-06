@@ -26,9 +26,11 @@ limitations under the License.
 
 #if (WIN32)
 #include <Windows.h>
+#include <cstdlib>
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
 #else
+#include <sys/prctl.h>
 #include <string.h> //for memcpy
 #define Path_Sep_S "/"
 #define Path_Sep '/'
@@ -48,7 +50,12 @@ void signal_callback_handler(int signum)
 	X::AppEventCode code = g_xLoad.HandleAppEvent(signum);
 	if (code == X::AppEventCode::Exit)
 	{
-		exit(signum);
+#if (WIN32)
+		_set_abort_behavior(0, _WRITE_ABORT_MSG); // disable error messagebox 
+#else
+		prctl(PR_SET_DUMPABLE, 0); // disable core dump
+#endif
+		abort();
 	}
 	signal(SIGINT, signal_callback_handler);
 }

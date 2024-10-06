@@ -59,6 +59,8 @@ namespace X
 				APISET().AddFunc<0>("get_threads", &DebugService::GetThreads);
 				APISET().AddRTFunc<2>("set_breakpoints", &DebugService::SetBreakpoints);
 				APISET().AddVarFunc("command", &DebugService::Command);
+				APISET().AddVarFunc("run_file", &DebugService::RunFile);
+				APISET().AddVarFunc("stop_file", &DebugService::StopFile);
 				APISET().AddFunc<1>("set_debug", &DebugService::SetDebug);
 			END_PACKAGE
 			DebugService();
@@ -69,7 +71,21 @@ namespace X
 				ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue);
+			bool RunFile(X::XRuntime* rt, X::XObj* pContext,
+				ARGS& params,
+				KWARGS& kwParams,
+				X::Value& retValue);
+			bool StopFile(X::XRuntime* rt, X::XObj* pContext,
+				ARGS& params,
+				KWARGS& kwParams,
+				X::Value& retValue);
 			void SetDebug(int iVal);
+		private:
+			static bool s_bRegPlugins;
+			static std::unordered_map<std::string, X::Value> m_mapPluginModule;
+			static void registerPlugins();
+
+			X::Value execFile(bool bRun, const std::string& filePath, X::XRuntime* rt);
 		};
 	}
 }
