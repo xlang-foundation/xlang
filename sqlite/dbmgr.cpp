@@ -312,6 +312,7 @@ namespace X
 			}
 			else
 			{
+				sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
 				mdb = db;
 			}
 			return true;
