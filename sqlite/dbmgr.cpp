@@ -194,13 +194,7 @@ namespace X
 				}
 			}
 			int colNum = dbsmt.getcolnum();
-			std::cout << "Col:" << colNum << std::endl;
-			for (int i = 0; i < colNum; i++)
-			{
-				auto name = dbsmt.getColName(i);
-				std::cout << name << '\t';
-			}
-			std::cout << std::endl;
+
 			DBState state;
 			while ((state = dbsmt.step()) == DBState::Row)
 			{
@@ -208,11 +202,11 @@ namespace X
 				{
 					std::string v0;
 					dbsmt.getValue(i, v0);
-					std::cout << v0 << '\t';
+					//std::cout << v0 << '\t';
 				}
-				std::cout << std::endl;
+				//std::cout << std::endl;
 			}
-			std::cout <<"Run SQL:"<< strSql<< ",State:" << (int)state << std::endl;
+			//std::cout <<"Run SQL:"<< strSql<< ",State:" << (int)state << std::endl;
 			return true;
 		}
 		bool Manager::WritePad(X::XRuntime* rt, XObj* pContext,

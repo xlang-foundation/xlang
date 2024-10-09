@@ -106,7 +106,11 @@ namespace X
 				{
 					auto* pObj = dynamic_cast<Object*>(pContext);
 					auto* pStrObj = dynamic_cast<Str*>(pObj);
-					size_t  size = pStrObj->GetSize();
+					size_t  size = 0;
+					if (pStrObj)
+					{
+						size = pStrObj->GetSize();
+					}
 					retValue = X::Value((long long)size);
 					return true;
 				};
@@ -125,6 +129,11 @@ namespace X
 					}
 					auto* pObj = dynamic_cast<Object*>(pContext);
 					auto* pStrObj = dynamic_cast<Str*>(pObj);
+					if (pStrObj == nullptr)
+					{
+						retValue = X::Value();
+						return false;
+					}
 					std::vector<std::string> li;
 					pStrObj->Split(delim, li);
 					auto* pList = new List(li);
