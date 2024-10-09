@@ -178,7 +178,14 @@ namespace X
 		}
 		//prepare top module for this code
 		AST::Module* pTopModule = new AST::Module();
-		std::string strModuleName(moduleName);
+
+		std::filesystem::path modulePath(moduleName);
+		// Check if the moduleName is not an absolute path, and resolve it
+		if (!modulePath.is_absolute())
+		{
+			modulePath = std::filesystem::absolute(modulePath);
+		}
+		std::string strModuleName = modulePath.string();
 		pTopModule->SetModuleName(strModuleName);
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);

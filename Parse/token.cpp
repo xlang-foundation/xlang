@@ -254,7 +254,7 @@ namespace X {
 					}
 					meetSlash = false;
 				}
-				else if (c != '\n' && c != ' ' && c != '\t')
+				else if (c != '\n' && c != ' ' && c != '\t' && c != '\r')
 				{
 					meetSlash = false;
 				}

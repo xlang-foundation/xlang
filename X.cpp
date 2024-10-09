@@ -225,7 +225,6 @@ int main(int argc, char* argv[])
 	//Workaround_WSLThread_Problem();
 	std::vector<std::string> params(argv, argv+argc);
 	ParamConfig paramConfig;
-
 	ParseCommandLine(params, paramConfig);
 	if (paramConfig.print_usage)
 	{
