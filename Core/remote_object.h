@@ -79,6 +79,10 @@ namespace X
 			ObjRef(),XObj(),Object()
 		{
 			m_proxy = p;
+			if (p != nullptr)
+			{
+				p->AddObject(this);
+			}
 			m_t = ObjType::RemoteObject;
 			m_stackFrame = new AST::StackFrame();
 
