@@ -135,7 +135,7 @@ namespace X
 		{
 			if (!Open())
 			{
-				return X::Value(false);
+				return X::Value();
 			}
 			if(m_stmt->step() == DBState::Row)
 			{
