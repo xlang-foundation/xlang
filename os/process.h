@@ -96,13 +96,142 @@ namespace X {
 
     };
 
+    class Environ {
+        public:
+            BEGIN_PACKAGE(Environ)
+                APISET().AddFunc<1>("get", &Environ::Get);         // Retrieve an environment variable
+            APISET().AddFunc<2>("set", &Environ::Set);         // Set an environment variable
+            APISET().AddFunc<1>("remove", &Environ::Remove);   // Remove an environment variable
+            APISET().AddFunc<0>("keys", &Environ::Keys);       // List all environment variable keys
+            APISET().AddFunc<0>("values", &Environ::Values);   // List all environment variable values
+            APISET().AddFunc<0>("items", &Environ::Items);     // Get all key-value pairs as list of tuples
+            END_PACKAGE
+
+        private:
+            X::Dict m_environ;  // Store environment variables as X::Dict
+
+        public:
+            // Constructor to initialize environ with system environment variables
+            Environ() {
+#ifdef _WIN32
+                // On Windows, use GetEnvironmentStrings to get all environment variables
+                LPCH envBlock = GetEnvironmentStrings();
+                if (envBlock == nullptr) {
+                    throw std::runtime_error("Failed to get environment strings");
+                }
+
+                // Iterate through the environment block
+                for (LPCH env = envBlock; *env != '\0'; env += strlen(env) + 1) {
+                    std::string entry = env;
+                    size_t pos = entry.find('=');
+                    if (pos != std::string::npos) {
+                        std::string key = entry.substr(0, pos);
+                        std::string value = entry.substr(pos + 1);
+                        m_environ->Set(key, value);  // Store into X::Dict
+                    }
+                }
+
+                FreeEnvironmentStrings(envBlock);  // Free the environment block
+#else
+                // Unix-based systems
+                for (char** current = environ; *current; ++current) {
+                    std::string entry = *current;
+                    size_t pos = entry.find('=');
+                    if (pos != std::string::npos) {
+                        std::string key = entry.substr(0, pos);
+                        std::string value = entry.substr(pos + 1);
+                        m_environ->Set(key, value);  // Store into X::Dict
+                    }
+                }
+#endif
+            }
+
+            // Retrieve an environment variable (like os.environ.get())
+            X::Value Get(X::Value key) {
+                std::string keyStr = key.ToString();
+                X::Value val = m_environ.Query(keyStr);
+                return val;
+            }
+
+            // Set an environment variable (like os.environ[key] = value)
+            void Set(X::Value key, X::Value value) {
+                std::string keyStr = key.ToString();
+                std::string valueStr = value.ToString();
+                m_environ->Set(keyStr, valueStr);
+#ifdef _WIN32
+                // For Windows, use SetEnvironmentVariableA to set the environment variable
+                SetEnvironmentVariableA(keyStr.c_str(), valueStr.c_str());
+#else
+                // For Unix-based systems, use setenv
+                setenv(keyStr.c_str(), valueStr.c_str(), 1);  // The '1' indicates overwrite
+#endif
+            }
+
+            // Remove an environment variable (like del os.environ[key])
+            void Remove(X::Value key) {
+                std::string keyStr = key.ToString();
+                m_environ["remove"](keyStr);
+#ifdef _WIN32
+                // For Windows, use SetEnvironmentVariable with NULL
+                SetEnvironmentVariable(keyStr.c_str(), NULL);
+#else
+                // For Unix-based systems, use unsetenv
+                unsetenv(keyStr.c_str());
+#endif
+            }
+
+            // List all keys (like os.environ.keys())
+            X::List Keys() {
+                X::List keyList;
+                m_environ->Enum([&keyList](X::Value& key, X::Value&) {
+                    keyList +=key;
+                    });
+                return keyList;
+            }
+
+            // List all values (like os.environ.values())
+            X::List Values() {
+                X::List valueList;
+                m_environ->Enum([&valueList](X::Value&, X::Value& value) {
+                    valueList->AddItem(value);
+                    });
+                return valueList;
+            }
+
+            // Get all key-value pairs (like os.environ.items())
+            X::List Items() {
+                X::List itemList;
+                m_environ->Enum([&itemList](X::Value& key, X::Value& value) {
+                    X::List tuple;
+                    tuple->AddItem(key);
+                    tuple->AddItem(value);
+                    itemList->AddItem(tuple);
+                    });
+                return itemList;
+            }
+
+        };
 
     class OSService :
         public Singleton<OSService>
     {
+    private:
+		X::Value m_environ;
         BEGIN_PACKAGE(OSService)
             APISET().AddClass<0, Process>("Process");
             APISET().AddClass<0, Process>("Service");
+            APISET().AddClass<0, Environ>("Environ");
+
+            APISET().AddPropL("environ",
+                [](auto* pThis, X::Value v) { },
+                [](auto* pThis) { 
+                    if (!pThis->m_environ)
+                    {
+                        X::XPackageValue<X::Environ> env;
+                        pThis->m_environ = env;
+                    }
+                    return pThis->m_environ;
+                });
         END_PACKAGE
     };
 } // namespace X

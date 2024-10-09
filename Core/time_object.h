@@ -24,6 +24,7 @@ limitations under the License.
 
 namespace X
 {
+#define TM_SIZE (9*sizeof(int)) //we just use first 9 int fields
     class TimeObject {
         BEGIN_PACKAGE(TimeObject)
             APISET().AddFunc<0>("time", &TimeObject::GetTime);
@@ -62,11 +63,10 @@ namespace X
 #ifdef _WIN32
             localtime_s(&local_tm, &time);
 #else
-            local_tm = *std::localtime(&time);
+            localtime_r(&time, &local_tm);
 #endif
             // Handle milliseconds separately
             int milliseconds = static_cast<int>((secs - static_cast<std::time_t>(secs)) * 1000);
-
             retValue = CreateXlangStructFromTM(local_tm, milliseconds);
             return true;
         }
@@ -346,8 +346,8 @@ namespace X
             xStruct->Build(); // Finalize the structure layout
 
             char* data = xStruct->Data();
-            std::memcpy(data, &tm, sizeof(std::tm)); // Copy the tm structure into the XlangStruct's data
-            std::memcpy(data + sizeof(std::tm), &milliseconds, sizeof(int)); // Copy the milliseconds
+            std::memcpy(data, &tm, TM_SIZE); // Copy the tm structure into the XlangStruct's data
+            std::memcpy(data + TM_SIZE, &milliseconds, sizeof(int)); // Copy the milliseconds
 
             return X::Value(xStruct);
         }
@@ -355,7 +355,7 @@ namespace X
         std::tm ConvertXlangStructToTM(X::Data::XlangStruct* xStruct, int& milliseconds) {
             std::tm tm = {};
             char* data = xStruct->Data();
-            std::memcpy(&tm, data, sizeof(std::tm)); // Copy the data back into a tm structure
+            std::memcpy(&tm, data, TM_SIZE); // Copy the data back into a tm structure
 
             X::Value millisecondsValue;
             xStruct->GetFieldValue(9, millisecondsValue);

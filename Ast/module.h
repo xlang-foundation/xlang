@@ -79,7 +79,7 @@ class Module :
 	std::vector<X::Value> m_args;
 	//for debug
 	//Locker m_addCommandLock;
-	
+	Locker m_lockDbgScopes;
 	std::vector<Scope*> m_dbgScopes;
 	
 	Locker m_lockBreakpoints;
@@ -287,6 +287,7 @@ public:
 			return true;
 		}
 		bool bIn = false;
+		m_lockDbgScopes.Lock();
 		if (m_dbgScopes.size() > 0)
 		{
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
@@ -294,49 +295,59 @@ public:
 			{
 				bIn = true;
 			}
-		}	
+		}
+		m_lockDbgScopes.Unlock();
 		return bIn;
 	}
 	FORCE_INLINE Scope* LastScope()
 	{
-		return m_dbgScopes.size() > 0 ? 
+		m_lockDbgScopes.Lock();
+		Scope* retScope =  m_dbgScopes.size() > 0 ? 
 			m_dbgScopes[m_dbgScopes.size() - 1] : nullptr;
+		m_lockDbgScopes.Unlock();
+		return retScope;
 	}
 	FORCE_INLINE ScopeWaitingStatus HaveWaitForScope()
 	{
-		return m_dbgScopes.size() > 0?
+		m_lockDbgScopes.Lock();
+		ScopeWaitingStatus s =  m_dbgScopes.size() > 0?
 			m_dbgScopes[m_dbgScopes.size() - 1]->IsWaitForCall():
 			ScopeWaitingStatus::NoWaiting;
+		m_lockDbgScopes.Unlock();
+		return s;
 	}
 	FORCE_INLINE void ReplaceLastDbgScope(Scope* s)
 	{
+		m_lockDbgScopes.Lock();
 		if (m_dbgScopes.size() > 0)
 		{
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
 			m_dbgScopes[m_dbgScopes.size() - 1] = s;
 		}
+		m_lockDbgScopes.Unlock();
 	}
 	FORCE_INLINE void AddDbgScope(Scope* s)
 	{
+		m_lockDbgScopes.Lock();
 		m_dbgScopes.push_back(s);
+		m_lockDbgScopes.Unlock();
 	}
 	FORCE_INLINE void RemoveDbgScope(Scope* s)
 	{
-		auto rit = m_dbgScopes.rbegin();
-		while (rit != m_dbgScopes.rend())
+		m_lockDbgScopes.Lock();
+		for (auto rit = m_dbgScopes.rbegin(); rit != m_dbgScopes.rend(); ++rit)
 		{
 			Scope* s0 = (*rit);
 			if (s0->isEqual(s))
 			{
-				m_dbgScopes.erase((++rit).base());
+				// Convert reverse iterator to a normal iterator and erase
+				m_dbgScopes.erase(std::next(rit).base());
 				break;
 			}
-			else
-			{
-				++rit;
-			}
 		}
+		m_lockDbgScopes.Unlock();
 	}
+
 };
 }
 }

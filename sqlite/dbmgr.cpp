@@ -135,7 +135,7 @@ namespace X
 		{
 			if (!Open())
 			{
-				return X::Value(false);
+				return X::Value();
 			}
 			if(m_stmt->step() == DBState::Row)
 			{
@@ -172,9 +172,12 @@ namespace X
 			return bHaveVar;
 		}
 		bool Manager::RunSQLStatement(X::XRuntime* rt, X::XObj* pContext,
-			std::string& strSql,X::Value& BindingDataList)
+			std::string& strSql,X::Value& BindingDataList,int pad_index)
 		{
-			DBStatement dbsmt(&m_db, strSql.c_str());
+			X::Value valDb = GetThreadDB(pad_index);
+			X::XPackageValue<SqliteDB> packDb(valDb);
+			SqliteDB* pDb = packDb.GetRealObj();
+			DBStatement dbsmt(pDb, strSql.c_str());
 			if (dbsmt.SC() != (int)DBState::Ok)
 			{
 				std::cout << "Error code:" << dbsmt.SC() << std::endl;
@@ -191,32 +194,43 @@ namespace X
 				}
 			}
 			int colNum = dbsmt.getcolnum();
-			std::cout << "Col:" << colNum << std::endl;
-			for (int i = 0; i < colNum; i++)
-			{
-				auto name = dbsmt.getColName(i);
-				std::cout << name << '\t';
-			}
-			std::cout << std::endl;
-			while (dbsmt.step() == DBState::Row)
+
+			DBState state;
+			while ((state = dbsmt.step()) == DBState::Row)
 			{
 				for (int i = 0; i < colNum; i++)
 				{
 					std::string v0;
 					dbsmt.getValue(i, v0);
-					std::cout << v0 << '\t';
+					//std::cout << v0 << '\t';
 				}
-				std::cout << std::endl;
+				//std::cout << std::endl;
 			}
+			//std::cout <<"Run SQL:"<< strSql<< ",State:" << (int)state << std::endl;
 			return true;
 		}
-		X::Value Manager::WritePad(X::XRuntime* rt, X::XObj* pContext,
-			X::Value& input, X::Value& BindingDataList)
+		bool Manager::WritePad(X::XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
+			X::Value input;
+			X::Value BindingDataList;
+			if (params.size() > 0)
+			{
+				input = params[0];
+			}
+			if (params.size() > 1)
+			{
+				BindingDataList = params[1];
+			}
+			int pad_index = -1;
+			auto it = kwParams.find("pad_index");
+			if (it)
+			{
+				pad_index = it->val.ToInt();
+			}
 			if (input.IsInvalid())
 			{
-				//this WritePad poped
-				m_db.Close();
+				PopThreadDbStack(pad_index);
 				return X::Value(true);
 			}
 			bool bOK = false;
@@ -267,11 +281,8 @@ namespace X
 			{
 				std::string dbPath = strSql.substr(pos + 4);
 				dbPath = norm_db_path(rt,dbPath,m_curPath);
-				m_db.Open(dbPath);
-				if (m_db.db())
-				{
-					bOK = true;
-				}
+				X::Value valDb = UseDatabase(rt, pContext, dbPath);
+				PushThreadDbStack(pad_index,valDb);
 			}
 			else
 			{
@@ -283,16 +294,21 @@ namespace X
 				bool bHaveAssign = LiteParseStatement(strSql, varName, outSql);
 				if (bHaveAssign)
 				{
-					Cursor* pCursor = new Cursor(outSql);
-					pCursor->SetDb(&m_db);
+					X::XPackageValue<Cursor> packCursor;
+					Cursor* pCursor = packCursor.GetRealObj();
+					X::Value valDb = GetThreadDB(pad_index);
+					X::XPackageValue<SqliteDB> packDb(valDb);
+					SqliteDB* pDb = packDb.GetRealObj();
+					pCursor->SetDb(pDb);
+					pCursor->SetSql(outSql);
 					pCursor->SetBindings(BindingDataList);
-					X::Value val = X::Value(pCursor->APISET().GetProxy(pCursor),false);
-					rt->AddVar(varName.c_str(), val);
-					m_cursors.push_back(pCursor);
+					X::Value valCursor(packCursor);
+					rt->AddVar(varName.c_str(), valCursor);
+					//valCursor will be deleted when no refcount
 				}
 				else
 				{
-					bOK = RunSQLStatement(rt, pContext, strSql, BindingDataList);
+					bOK = RunSQLStatement(rt, pContext, strSql, BindingDataList, pad_index);
 				}
 			}
 			return X::Value(bOK);
@@ -312,6 +328,7 @@ namespace X
 			}
 			else
 			{
+				//sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
 				mdb = db;
 			}
 			return true;

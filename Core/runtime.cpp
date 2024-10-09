@@ -108,6 +108,8 @@ namespace X
 				params.push_back(fmtString);
 			}
 			KWARGS kwargs;
+			X::Value varPadIndex(i);
+			kwargs.Add("pad_index", varPadIndex);
 			Value retVal;
 			bool bOK = pad.writePadFunc.GetObj()->Call(
 				this, pad.obj.GetObj(), params, kwargs, retVal);
@@ -175,7 +177,8 @@ namespace X
 		{
 			return;
 		}
-		auto last = m_WritePads[size - 1];
+		int padIndex = size - 1;
+		auto last = m_WritePads[padIndex];
 		ARGS params(2);
 		params.push_back(X::Value());//Invalid value means cleanup this pad
 		if (last.UsingDataBinding)
@@ -184,6 +187,8 @@ namespace X
 		}
 		params.Close();
 		KWARGS kwargs;
+		X::Value varPadIndex(padIndex);
+		kwargs.Add("pad_index", varPadIndex);
 		Value retVal;
 		last.writePadFunc.GetObj()->Call(
 			this, last.obj.GetObj(), params, kwargs, retVal);
