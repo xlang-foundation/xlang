@@ -483,11 +483,18 @@ return nullptr;
 		stream.SetProvider(pStream);
 		return stream.CopyTo(buffer, size);
 	}
-	bool XHost_Impl::RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal)
+	bool XHost_Impl::RunCode(const char* moduleName, const char* code, 
+		int codeSize,X::Value& retVal)
 	{
 		std::vector<X::Value> passInParams;
 		return X::Hosting::I().Run(moduleName, code,
 			codeSize, passInParams,retVal);
+	}
+	bool XHost_Impl::RunCodeInNonDebug(const char* moduleName, const char* code, 
+		int codeSize, X::Value& retVal)
+	{
+		std::vector<X::Value> passInParams;
+		return X::Hosting::I().Run(moduleName, code,codeSize, passInParams, retVal,true);
 	}
 	bool XHost_Impl::RunCodeWithParam(const char* moduleName, 
 		const char* code, int codeSize, X::ARGS& args, X::Value& retVal)

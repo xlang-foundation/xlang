@@ -128,7 +128,7 @@ namespace X
 					if (X::g_pXHost)
 					{
 						X::Value retVal;
-						X::g_pXHost->RunCode("devops_run.x", code.c_str(),(int)code.size(), retVal);
+						X::g_pXHost->RunCodeInNonDebug("devops_run.x", code.c_str(),(int)code.size(), retVal);
 						if (retVal.IsObject() && retVal.GetObj()->GetType() == ObjType::Str)
 						{
 							retData = retVal.ToString();

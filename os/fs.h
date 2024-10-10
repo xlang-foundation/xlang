@@ -195,23 +195,23 @@ namespace X
 			std::string modulePath = GetModulePath();
 			std::filesystem::path rootPath = modulePath;
 			std::filesystem::path fullPath;
+
 			// Check if the path is already absolute
 			if (std::filesystem::path(strPath).is_absolute())
 			{
-				fullPath = std::filesystem::canonical(strPath);
+				fullPath = std::filesystem::absolute(strPath);
 			}
 			else {
-				// Combine the paths and normalize
-				try {
-					fullPath = std::filesystem::absolute(rootPath / strPath);
-					fullPath = std::filesystem::canonical(fullPath);
-				}
-				catch (const std::filesystem::filesystem_error& e) {
-					return "";
-				}
+				// Combine the paths and make absolute
+				fullPath = std::filesystem::absolute(rootPath / strPath);
 			}
+
+			// Normalize the path by resolving '..' and '.'
+			fullPath = fullPath.lexically_normal();
+
 			return fullPath.string();
 		}
+
 		std::string ReadAllTexts(std::string fileName)
 		{
 			auto fullPath = ConvertReletivePathToFullPath(fileName);
