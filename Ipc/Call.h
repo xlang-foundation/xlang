@@ -496,7 +496,8 @@ namespace X
 				FinishCall();
 				return (returnCode > 0);
 			}
-			X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId)
+			X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId,
+						X::Value& retValue)
 			{
 				AutoCallCounter autoCounter(mCallCounter);
 
@@ -509,7 +510,16 @@ namespace X
 				auto& stream2 = CommitCall(context, returnCode);
 				if (returnCode > 0)
 				{
-					stream2 >> oId;
+					bool returnWithValue;
+					stream2 >> returnWithValue;
+					if (returnWithValue)
+					{
+						stream2 >> retValue;
+					}
+					else
+					{
+						stream2 >> oId;
+					}
 				}
 				FinishCall();
 				return oId;

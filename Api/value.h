@@ -652,7 +652,7 @@ public:
 	{
 		if (!IsObject())
 		{
-			return Value();
+			return *this;
 		}
 		Port::vector<X::Value> params(0);
 		return ObjCall(params);

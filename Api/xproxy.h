@@ -44,7 +44,8 @@ namespace X
 		virtual X::Value UpdateItemValue(X::ROBJ_ID parentObjId, X::ROBJ_ID id,
 			Port::vector<std::string>& IdList, int id_offset,
 			std::string itemName, X::Value& val) = 0;
-		virtual ROBJ_ID GetMemberObject(ROBJ_ID id, ROBJ_MEMBER_ID memId) = 0;
+		virtual ROBJ_ID GetMemberObject(ROBJ_ID id, 
+				ROBJ_MEMBER_ID memId,X::Value& retValue) = 0;
 		virtual bool ReleaseObject(ROBJ_ID id) = 0;
 		virtual bool Call(XRuntime* rt, XObj* pContext,
 			ROBJ_ID parent_id, ROBJ_ID id, ROBJ_MEMBER_ID memId,

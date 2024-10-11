@@ -26,6 +26,7 @@ limitations under the License.
 #include "bin.h"
 #include "remote_object.h"
 #include "RemotingMethod.h"
+#include "prop.h"
 
 namespace X
 {
@@ -418,12 +419,35 @@ namespace X
 				{
 					auto pXObj = CovertIdToXObj(objId);
 					X::Value valObj;
+					bool returnWithValue = false;//not object for prop case
 					bool bOK = pXObj->GetIndexValue(memId, valObj);
+					if (valObj.IsObject() && valObj.GetObj()->GetType() == X::ObjType::Prop)
+					{
+						//need to fetch the value for non-object or string object
+						auto* pProp = dynamic_cast<X::Data::PropObject*>(valObj.GetObj());
+						if (pProp)
+						{
+							pProp->GetPropValue((XlangRuntime*)m_rt, pXObj, valObj);
+							if (!valObj.IsObject() || 
+								(valObj.IsObject() && valObj.GetObj()->GetType() == X::ObjType::Str))
+							{
+								returnWithValue = true;
+							}
+						}
+					}
 					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
 					if (bOK)
 					{
-						X::ROBJ_ID sub_objId = ConvertXObjToId(valObj.GetObj());
-						wStream << sub_objId;
+						wStream << returnWithValue;
+						if (returnWithValue)
+						{
+							wStream << valObj;
+						}
+						else
+						{
+							X::ROBJ_ID sub_objId = ConvertXObjToId(valObj.GetObj());
+							wStream << sub_objId;
+						}
 					}
 					pProc->EndWriteReturn((void*)&callContext, bOK);
 					pProc->Release();
