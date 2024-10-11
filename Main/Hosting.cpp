@@ -266,13 +266,15 @@ namespace X
 	}
 	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
 		std::vector<X::Value>& passInParams,
-		bool stopOnEntry, bool keepModuleWithRuntime)
+		bool stopOnEntry, bool keepModuleWithRuntime, bool noDebug)
 	{
 		pTopModule->SetArgs(passInParams);
 		std::string name("main");
-		if (pTopModule->GetModuleName() != "devops_run.x")
-			std::string dname = pTopModule->GetModuleName();
 		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(),nullptr);
+		if (noDebug)
+		{
+			pRuntime->SetNoDbg(true);
+		}
 		AST::Module* pOldModule = pRuntime->M(); 
 		pTopModule->SetRT(pRuntime);
 		pRuntime->SetM(pTopModule);
@@ -389,7 +391,8 @@ namespace X
 	bool Hosting::Run(const char* moduleName,
 		const char* code, int size, 
 		std::vector<X::Value>& passInParams,
-		X::Value& retVal)
+		X::Value& retVal,
+		bool noDebug)
 	{
 		unsigned long long moduleKey = 0;
 		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
@@ -397,7 +400,7 @@ namespace X
 		{
 			return false;
 		}
-		bool bOK =  Run(pTopModule,retVal, passInParams);
+		bool bOK =  Run(pTopModule,retVal, passInParams,false,false,true);
 		Unload(pTopModule);
 		return bOK;
 	}

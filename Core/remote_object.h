@@ -312,23 +312,30 @@ namespace X
 				{
 					idx = NameToIndex(strName, false);
 
+					Value memberValue;
 					ROBJ_ID objId;
 					m_proxyLock.Lock();
 					if (m_proxy)
 					{
-						objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId);
+						objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId, memberValue);
 					}
 					auto* r_obj = new RemoteObject(m_proxy);
 					m_proxyLock.Unlock();
-
-					r_obj->m_remote_Parent_Obj_id = m_remote_Obj_id;
-					r_obj->m_remote_Obj_id = objId;
-					r_obj->m_memmberId = memId;
-					r_obj->m_objName = name;
-					r_obj->m_memberFlags = memberFlags;
-					//r_obj->Object::IncRef();
-					Value valObj(dynamic_cast<XObj*>(r_obj));
-					m_stackFrame->Set(idx, valObj);
+					if (memberValue.IsValid())
+					{
+						m_stackFrame->Set(idx, memberValue);
+					}
+					else
+					{
+						r_obj->m_remote_Parent_Obj_id = m_remote_Obj_id;
+						r_obj->m_remote_Obj_id = objId;
+						r_obj->m_memmberId = memId;
+						r_obj->m_objName = name;
+						r_obj->m_memberFlags = memberFlags;
+						//r_obj->Object::IncRef();
+						Value valObj(dynamic_cast<XObj*>(r_obj));
+						m_stackFrame->Set(idx, valObj);
+					}
 				}
 			}
 			return idx;

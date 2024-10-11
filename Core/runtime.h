@@ -149,6 +149,10 @@ public:
 	{
 		m_noThreadBinding = b;
 	}
+	void SetNoDbg(bool b)
+	{
+		m_bNoDbg = b;
+	}
 	~XlangRuntime();
 	bool m_bNoDbg = false; // do not trace
 	bool m_bStoped = false; // stopped on breakpoint or step

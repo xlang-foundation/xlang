@@ -122,11 +122,13 @@ namespace X
 		bool Unload(AST::Module* pTopModule);
 		bool Run(AST::Module* pTopModule,X::Value& retVal,
 			std::vector<X::Value>& passInParams,
-			bool stopOnEntry = false,bool keepModuleWithRuntime = false);
+			bool stopOnEntry = false,
+			bool keepModuleWithRuntime = false,
+			bool noDebug = false);
 		bool Run(const char* moduleName,
 			const char* code, int size,
 			std::vector<X::Value>& passInParams,
-			X::Value& retVal);
+			X::Value& retVal,bool noDebug = false);
 		bool SimpleRun(const char* moduleName,
 			const char* code, int size,
 			X::Value& retVal);

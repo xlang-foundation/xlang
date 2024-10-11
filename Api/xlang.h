@@ -625,6 +625,15 @@ namespace X
 				return Value();
 			}
 		}
+		operator const T& () const
+		{
+			return *m_obj; // Return the internal object as const reference
+		}
+
+		operator T& ()
+		{
+			return *m_obj; // Return the internal object as non-const reference
+		}
 		T& operator *() const
 		{
 			return *m_obj;
