@@ -317,6 +317,7 @@ namespace X
 		virtual X::Value GetXModuleFileName() = 0;
 		virtual int GetTopStackCurrentLine() = 0;
 		virtual bool AddVar(const char* name, X::Value& val) = 0;
+		virtual X::Value GetModuleObject() = 0;
 	};
 	class XModule :
 		virtual public XObj

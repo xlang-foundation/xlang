@@ -219,6 +219,34 @@ namespace X
 
 		return true;
 	}
+	X::Value XlangRuntime::GetModuleObject()
+	{
+		AST::Module* pCurModule = nullptr;
+		//trust stack's current module
+		if (m_stackBottom)
+		{
+			auto* pExp = m_stackBottom->GetCurExp();
+			if (pExp)
+			{
+				auto* pModule = pExp->FindModule();
+				if (pModule)
+				{
+					pCurModule = pModule;
+				}
+			}
+		}
+		if (!pCurModule && m_pModule)
+		{
+			pCurModule = m_pModule;
+		}
+		if (pCurModule == nullptr)
+		{
+			return X::Value();
+		}
+		AST::ModuleObject* pMoudleObject = new AST::ModuleObject(pCurModule);
+
+		return X::Value(pMoudleObject);
+	}
 	X::Value XlangRuntime::GetXModuleFileName()
 	{
 		std::string moduleFileName;
