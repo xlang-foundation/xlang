@@ -119,7 +119,11 @@ static PyObject* XlangObject_getattr(PyXlangObject* self, PyObject* name) {
 		Py_IncRef(Py_None);
 		return Py_None;
 	}
-	if (newObj.GetObj()->GetType() == X::ObjType::RemoteObject)
+	if (!newObj.IsObject())
+	{
+		return PyObjectXLangConverter::ConvertToPyObject(newObj);
+	}
+	if (newObj.IsObject() && newObj.GetObj()->GetType() == X::ObjType::RemoteObject)
 	{
 		X::XObj* pXObj = newObj.GetObj();
 		X::XRemoteObject* pRemoteObj = dynamic_cast<X::XRemoteObject*>(pXObj);
