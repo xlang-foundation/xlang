@@ -43,7 +43,7 @@ if [ "$OS_TYPE" == "Darwin" ]; then
 elif [ "$OS_TYPE" == "Linux" ]; then
     # Copy .so and .pdb files
     cp "$SOURCE_DIR/libpyeng.so" "$DEST_DIR"
-    cp "$SOURCE_DIR/libxlang_*.so" "$DEST_DIR"
+    cp "$SOURCE_DIR/lib*.so" "$DEST_DIR"
 
     # Copy pyeng.so and rename to xlang.so
     cp "$SOURCE_DIR/libpyeng.so" "$SITE_PACKAGES/xlang.so"
