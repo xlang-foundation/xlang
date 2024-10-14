@@ -367,7 +367,7 @@ bool If::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue
 		Value v0;
 		ExecAction actionR;
 		bool bOK = ExpExec(R,rt, actionR,pContext,v0);
-		if (bOK && v0 == Value(true))
+		if (bOK && v0.IsTrue())
 		{
 			bCanRun = true;
 		}

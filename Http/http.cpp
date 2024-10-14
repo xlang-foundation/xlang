@@ -518,11 +518,98 @@ namespace X
 		auto* pReq = (httplib::Request*)m_pRequest; 
 		return X::Value(pReq->method);
 	}
+
+	// Function to determine if the MIME type is binary or textual
+	inline bool isBinaryContentType(const std::string& content_type) 
+	{
+		// Set of known textual MIME types (extend as needed)
+		static const std::unordered_set<std::string> textMimeTypes = {
+			"text/plain", "text/html", "text/css", "text/javascript",
+			"application/json", "application/xml", "application/x-www-form-urlencoded"
+		};
+
+		// If content type starts with "text/", it's likely textual
+		if (content_type.find("text/") == 0) {
+			return false; // Not binary, it's text
+		}
+
+		// If content type is in the predefined textual set, it's text
+		if (textMimeTypes.find(content_type) != textMimeTypes.end()) {
+			return false; // Not binary, it's text
+		}
+
+		// For other known cases, check if it's binary (can extend the list)
+		if (content_type.find("image/") == 0 || // Image files
+			content_type.find("audio/") == 0 || // Audio files
+			content_type.find("video/") == 0 || // Video files
+			content_type == "application/octet-stream") { // Generic binary stream
+			return true; // It's binary
+		}
+
+		// Default fallback for unknown content types
+		return true; // Assume it's binary if unknown
+	}
+	inline std::optional<std::string> getContentType(auto& headers) 
+	{
+		auto it = headers.find("Content-Type");
+		if (it != headers.end()) 
+		{
+			return it->second; // Return the content type value
+		}
+		return std::nullopt; // No content-type found
+	}
 	X::Value  HttpRequest::GetBody()
 	{
+		X::Value retVal;
 		auto* pReq = (httplib::Request*)m_pRequest;
-		std::string strVal = pReq->body;
-		return strVal;
+		if (pReq->body.empty())
+		{
+			X::List listBody;
+			//check files for MultipartFormDataMap files;
+			for (const auto& pair : pReq->files)
+			{
+				X::Dict dataMap;
+				const std::string& key = pair.first;
+				auto& value = pair.second;
+				dataMap->Set("name", value.name);
+				bool isBin = isBinaryContentType(value.content_type);
+				if (isBin)
+				{
+					X::Bin binContent((char*)nullptr, value.content.size(), true);
+					memcpy(binContent->Data(), value.content.data(), value.content.size());
+					dataMap->Set("content", binContent);
+				}
+				else
+				{
+					dataMap->Set("content", value.content);
+				}
+				dataMap->Set("filename", value.filename);
+				dataMap->Set("content_type", value.content_type);
+				listBody += dataMap;
+			}
+			retVal = listBody;
+
+		}
+		else
+		{
+			bool isBin = true;
+			std::string& strVal = pReq->body;
+			if (auto content_type = getContentType(pReq->headers))
+			{
+				isBin = isBinaryContentType(*content_type);
+			}
+			if (isBin)
+			{
+				X::Bin binContent((char*)nullptr, strVal.size(), true);
+				memcpy(binContent->Data(), strVal.data(), strVal.size());
+				retVal = binContent;
+			}
+			else
+			{
+				retVal = strVal;
+			}
+		}
+		return retVal;
 	}
 	X::Value  HttpRequest::GetPath()
 	{

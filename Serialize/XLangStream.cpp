@@ -489,6 +489,18 @@ namespace X
 					if (needToCallFromBytesFunc)
 					{
 						pObjToRestore->FromBytes(*this);
+						//check remore object if belongs to this process
+						if (objT == X::ObjType::RemoteObject)
+						{
+							auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObjToRestore);
+							auto rid = pRemoteObj->GetObjId();
+							if (rid.pid == GetPID())
+							{
+								X::XObj* pLocalObj = (X::XObj*)rid.objId;
+								pObjToRestore = dynamic_cast<X::Data::Object*>(pLocalObj);
+								pRemoteObj->DecRef();
+							}
+						}
 					}
 					v = X::Value(dynamic_cast<XObj*>(pObjToRestore), false);
 				}

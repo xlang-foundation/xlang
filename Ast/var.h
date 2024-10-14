@@ -50,6 +50,7 @@ public:
 		Name = n;
 		m_type = ObType::Var;
 	}
+	
 	void MergeWithPreviousToken(Var* pPreviousVar)
 	{
 		//pPreviousVar must be the previous tokoen
@@ -80,6 +81,10 @@ public:
 	void ScopeLayout(std::vector<Scope*>& candidates);
 	virtual void ScopeLayout() override;
 	String& GetName() { return Name; }
+	FORCE_INLINE bool HasScope()
+	{
+		return (Index != -1) && (m_scope != nullptr);
+	}
 	std::string GetNameString() { return std::string(Name.s, Name.size); }
 	FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override final
 	{
