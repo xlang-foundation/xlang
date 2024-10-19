@@ -31,6 +31,7 @@ namespace X
 			bool m_GotVal = false;
 			X::Value m_Val;//hold return value
 		public:
+			static void Init();
 			static void cleanup();
 			Future() :
 				Object()

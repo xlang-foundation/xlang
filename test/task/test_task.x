@@ -20,12 +20,13 @@ def test_fn(x,y):
 	print("test_fn,x:${x},y:${y}","，tid:",threadid())
 	return x+y
 print("start dispatch task...")
-test_fn.taskrun(pool,10,20)
+f = test_fn.taskrun(pool,10,20)
 test_fn.taskrun(pool,20,40)
 test_fn.taskrun(pool,30,80)
 test_fn.taskrun(pool,50,100)
 for i in range(10):
 	test_fn.taskrun(pool,100+i*10,100)
+f_ret = f.get(10000)
 print("end task dispatch,input somethong to end:")
 x = input()
 print("end")

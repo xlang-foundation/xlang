@@ -245,6 +245,7 @@ static void XLangInternalInit()
 {
 	X::Data::Str::Init();
 	X::AST::ModuleObject::Init();
+	X::Data::Future::Init();
 	X::Data::List::Init();
 	X::Data::Binary::Init();
 	X::Data::Dict::Init();
