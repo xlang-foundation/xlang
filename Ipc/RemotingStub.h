@@ -410,18 +410,25 @@ namespace X
 		{
 			X::ROBJ_ID objId;
 			X::ROBJ_MEMBER_ID memId;
+			bool bGetOnly = false;
 			stream >> objId;
 			stream >> memId;
+			stream >> bGetOnly;
 			pProc->EndReceiveCall(stream);
 			pProc->AddRef();
 			Call_Context callContext = *(Call_Context*)pCallContext;
-			AddTask([this, objId, memId, callContext, pProc]()
+			AddTask([this, objId, memId, bGetOnly,callContext, pProc]()
 				{
 					auto pXObj = CovertIdToXObj(objId);
 					X::Value valObj;
 					bool returnWithValue = false;//not object for prop case
 					bool bOK = pXObj->GetIndexValue(memId, valObj);
-					if (valObj.IsObject() && valObj.GetObj()->GetType() == X::ObjType::Prop)
+					//if bGetOnly is true, means this is a right value,not left value( can set)
+					//so we directly get the value of prop
+					//but if it is a false, means it is left side value( l-value)
+					//directly return PropObject
+					if (bGetOnly && valObj.IsObject() 
+						&& valObj.GetObj()->GetType() == X::ObjType::Prop)
 					{
 						//need to fetch the value for non-object or string object
 						auto* pProp = dynamic_cast<X::Data::PropObject*>(valObj.GetObj());

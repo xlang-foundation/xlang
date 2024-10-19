@@ -498,6 +498,8 @@ namespace X
 							{
 								X::XObj* pLocalObj = (X::XObj*)rid.objId;
 								pObjToRestore = dynamic_cast<X::Data::Object*>(pLocalObj);
+								//need to keep one refcount for return value v
+								pObjToRestore->IncRef();
 								pRemoteObj->DecRef();
 							}
 						}
