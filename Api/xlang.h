@@ -56,6 +56,7 @@ namespace X
 		DeferredObject,
 		RemoteObject,
 		PyProxyObject,
+		InternalAssign,
 		Error,
 	};
 
