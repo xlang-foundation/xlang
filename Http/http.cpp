@@ -22,6 +22,7 @@ limitations under the License.
 #include <map>
 #include <tuple>
 #include <regex>
+#include <optional>
 
 namespace fs = std::filesystem;
 
