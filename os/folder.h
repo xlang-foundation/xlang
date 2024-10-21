@@ -51,47 +51,19 @@ namespace X {
         END_PACKAGE
 
     public:
-        Folder(const std::string& path) {
-            folderPath = path;
-#if (WIN32)
-            // Normalize the input path
-            std::replace(folderPath.begin(), folderPath.end(), '/', '\\');
-            // Remove trailing separator if present
-            if (!folderPath.empty() && folderPath.back() == '\\') {
-                folderPath.pop_back();
-            }
-#else
-            // Remove trailing separator if present
-            if (!folderPath.empty() && folderPath.back() == '/') {
-                folderPath.pop_back();
-            }
-#endif
-
+        Folder(const std::string& path) 
+        {
+            std::filesystem::path fsPath = std::filesystem::path(path);
+            // Remove trailing separators
+            fsPath = fsPath.lexically_normal();
+            folderPath = fsPath.make_preferred().string();
         }
 
-
-        std::string BuildPath(const std::string& subPath) {
-            std::string fullPath = folderPath;
-
-            // Normalize the input subPath
-            std::string normalizedSubPath = subPath;
-#if (WIN32)
-            std::replace(normalizedSubPath.begin(), normalizedSubPath.end(), '/', '\\');
-#endif
-
-            // Ensure the folder path ends with the correct separator
-#if (WIN32)
-            if (fullPath.back() != '\\') {
-                fullPath += '\\';
-            }
-#else
-            if (fullPath.back() != '/') {
-                fullPath += '/';
-            }
-#endif
-
-            fullPath += normalizedSubPath;
-            return fullPath;
+        std::string BuildPath(const std::string& subPath) 
+        {
+            std::filesystem::path fullPath = folderPath;
+            fullPath /= std::filesystem::path(subPath);
+            return fullPath.make_preferred().string();
         }
 
         X::List List() {
