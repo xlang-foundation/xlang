@@ -171,6 +171,7 @@ public:
 	int PushWritePad(X::Value valObj, std::string alias);
 	void PopWritePad();
 	virtual bool CreateEmptyModule() override;
+	virtual X::Value GetModuleObject() override;
 	FORCE_INLINE void SetName(std::string& name) { m_name = name; }
 	FORCE_INLINE std::string& GetName() { return m_name; }
 	FORCE_INLINE long long GetThreadId() { return m_threadId; }

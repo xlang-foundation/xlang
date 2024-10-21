@@ -25,6 +25,7 @@ limitations under the License.
 #include "remote_object.h"
 #include "iterator.h"
 #include "struct.h"
+#include "internal_assign.h"
 
 namespace X
 {
@@ -69,12 +70,20 @@ namespace AST
 		auto ty = pObj->GetType();
 		switch (ty)
 		{
+		case X::ObjType::InternalAssign:
+		{
+			auto* pAssign = dynamic_cast<Data::InternalAssign*>(pObj);
+			bOK = pAssign->SetValue(v_r);
+			v = Value(bOK);
+		}
+		break;
 		case X::ObjType::FuncCalls:
 		{
 			auto* pCalls = dynamic_cast<Data::FuncCalls*>(pObj);
 			bOK = pCalls->SetValue(v_r);
 			v = Value(bOK);
 		}
+		break;
 		case X::ObjType::Prop:
 		{
 			auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
@@ -106,6 +115,7 @@ namespace AST
 				v = Value(bOK);
 			}
 		}
+		break;
 		default:
 			bOK = false;
 			break;

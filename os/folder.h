@@ -20,6 +20,15 @@ limitations under the License.
 #include "xpackage.h"
 #include "xlang.h"
 
+#include <locale>
+#include <codecvt> 
+
+// Function to convert wstring (wide string) to UTF-8 string
+inline std::string WStringToUTF8(const std::wstring& wstr) {
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.to_bytes(wstr);
+}
+
 namespace X {
 
     class Folder {
@@ -87,11 +96,24 @@ namespace X {
 
         X::List List() {
             X::List resultList;
-            for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
-                resultList += entry.path().filename().string();
+            try {
+                for (const auto& entry : std::filesystem::directory_iterator(
+                    std::filesystem::u8path(folderPath))) {
+#if (WIN32)
+                    // Convert wide string (wstring) to UTF-8 string on Windows
+                    resultList += WStringToUTF8(entry.path().filename().wstring());
+#else
+                    resultList += entry.path().filename().string();
+#endif
+                }
+            }
+            catch (const std::filesystem::filesystem_error& e) {
+                // Handle the exception, log it, or take other appropriate actions
+                std::cerr << "Error while accessing folder: " << e.what() << std::endl;
             }
             return resultList;
         }
+
         X::List Scan() {
             X::List resultList;
             for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {

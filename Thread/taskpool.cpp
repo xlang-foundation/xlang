@@ -129,7 +129,10 @@ namespace X
 				m_threads.push_back(pIdelThread);
 				pIdelThread->Start();
 			}
-			pIdelThread->ReleaseWait();
+			if (pIdelThread)
+			{
+				pIdelThread->ReleaseWait();
+			}
 			m_lock.Unlock();
 			return true;
 		}

@@ -174,7 +174,7 @@ namespace X
 		bool Manager::RunSQLStatement(X::XRuntime* rt, X::XObj* pContext,
 			std::string& strSql,X::Value& BindingDataList,int pad_index)
 		{
-			X::Value valDb = GetThreadDB(pad_index);
+			X::Value valDb = GetThreadDB(rt,pad_index);
 			X::XPackageValue<SqliteDB> packDb(valDb);
 			SqliteDB* pDb = packDb.GetRealObj();
 			DBStatement dbsmt(pDb, strSql.c_str());
@@ -296,7 +296,7 @@ namespace X
 				{
 					X::XPackageValue<Cursor> packCursor;
 					Cursor* pCursor = packCursor.GetRealObj();
-					X::Value valDb = GetThreadDB(pad_index);
+					X::Value valDb = GetThreadDB(rt,pad_index);
 					X::XPackageValue<SqliteDB> packDb(valDb);
 					SqliteDB* pDb = packDb.GetRealObj();
 					pCursor->SetDb(pDb);

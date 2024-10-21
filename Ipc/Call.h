@@ -497,7 +497,7 @@ namespace X
 				return (returnCode > 0);
 			}
 			X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId,
-						X::Value& retValue)
+						bool bGetOnly,X::Value& retValue)
 			{
 				AutoCallCounter autoCounter(mCallCounter);
 
@@ -506,6 +506,7 @@ namespace X
 				auto& stream = BeginCall((unsigned int)RPC_CALL_TYPE::CantorProxy_GetMemberObject, context);
 				stream << objid;
 				stream << memId;
+				stream << bGetOnly;
 				long long returnCode = 0;
 				auto& stream2 = CommitCall(context, returnCode);
 				if (returnCode > 0)

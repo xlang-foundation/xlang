@@ -471,23 +471,12 @@ bool U_Sleep(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 {
 	bool bOK = true;
 	long long t = 0;
-	if (pContext == nullptr)
+	if (params.size() > 0)
 	{
-		if (params.size() > 0)
-		{
-			t = params[0].GetLongLong();
-		}
-		else
-		{
-			auto it = kwParams.find("time");
-			if (it)
-			{
-				t = it->val.GetLongLong();
-			}
-		}
+		t = params[0].GetLongLong();
 	}
 	else
-	{//must put into kwargs with time=t
+	{
 		auto it = kwParams.find("time");
 		if (it)
 		{
@@ -495,19 +484,7 @@ bool U_Sleep(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		}
 	}
 	MS_SLEEP((int)t);
-	if (pContext)
-	{//with a function, means after sleep, call this function
-		X::Data::Function* pFuncObj = dynamic_cast<X::Data::Function*>(pContext);
-		if (pFuncObj)
-		{
-			X::AST::Func* pFunc = pFuncObj->GetFunc();
-			bOK = pFunc->Call(rt, nullptr, params, kwParams, retValue);
-		}
-	}
-	else
-	{
-		retValue = X::Value(bOK);
-	}
+
 	return bOK;
 }
 bool U_Time(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,

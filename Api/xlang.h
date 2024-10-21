@@ -56,6 +56,7 @@ namespace X
 		DeferredObject,
 		RemoteObject,
 		PyProxyObject,
+		InternalAssign,
 		Error,
 	};
 
@@ -175,6 +176,7 @@ namespace X
 		virtual int QueryMethod(const char* name, int* pFlags = nullptr) { return -1; };
 		virtual bool GetIndexValue(int idx, Value& v) { return false; };
 		virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry, X::Value& val) { return false; }
+		virtual bool Set(Value valIdx, X::Value& val) { return false; }
 		virtual int IncRef() { return 0; }
 		virtual int DecRef() { return 0; }
 		virtual ObjType GetType() { return ObjType::Base; }
@@ -317,6 +319,7 @@ namespace X
 		virtual X::Value GetXModuleFileName() = 0;
 		virtual int GetTopStackCurrentLine() = 0;
 		virtual bool AddVar(const char* name, X::Value& val) = 0;
+		virtual X::Value GetModuleObject() = 0;
 	};
 	class XModule :
 		virtual public XObj

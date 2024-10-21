@@ -17,48 +17,27 @@ limitations under the License.
 #include "scope.h"
 #include "function.h"
 #include "glob.h"
+#include "obj_func_scope.h"
 
 namespace X
 {
 	namespace Data
 	{
-		class FutureScope :
-			virtual public AST::Scope
-		{
-			AST::StackFrame* m_stackFrame = nullptr;
-		public:
-			FutureScope() :
-				Scope()
-			{
-				Init();
-			}
-			void clean()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-					m_stackFrame = nullptr;
-				}
-			}
-			~FutureScope()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
-			}
-			void Init()
-			{
-				m_stackFrame = new AST::StackFrame();
-				m_stackFrame->SetVarCount(2);
+		static Obj_Func_Scope<2> _futureScope;
 
-				std::string strName;
-				{
-					strName = "get";
-					auto f = [](X::XRuntime* rt, XObj* pThis,XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
+		void Future::GetBaseScopes(std::vector<AST::Scope*>& bases)
+		{
+			Object::GetBaseScopes(bases);
+			bases.push_back(_futureScope.GetMyScope());
+		}
+		void Future::Init()
+		{
+			_futureScope.Init();
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
 					{
 						bool bOK = false;
 						if (params.size() > 0)
@@ -72,21 +51,13 @@ namespace X
 						}
 						return bOK;
 					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"get(timeout)",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-				{
-					strName = "then";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
+				_futureScope.AddFunc("get", "get(timeout)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
 					{
 						if (params.size() > 0)
 						{
@@ -97,54 +68,12 @@ namespace X
 						retValue = X::Value(pContext);
 						return true;
 					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"then(callable)",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
+				_futureScope.AddFunc("then", "then(proc)", f);
 			}
-#if __TODO_SCOPE__
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override
-			{
-				return nullptr;
-			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
-			{
-				m_stackFrame->Set(idx, v);
-				return true;
-			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
-			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
-			}
-#endif
-		};
-		static FutureScope* _FutureScope = nullptr;
-
-		void Future::GetBaseScopes(std::vector<AST::Scope*>& bases)
-		{
-			if (_FutureScope == nullptr)
-			{
-				_FutureScope = new FutureScope();
-			}
-			Object::GetBaseScopes(bases);
-			bases.push_back(_FutureScope);
 		}
 		void Future::cleanup()
 		{
-			if (_FutureScope)
-			{
-				_FutureScope->clean();
-				delete _FutureScope;
-				_FutureScope = nullptr;
-			}
+			_futureScope.Clean();
 		}
 		void Future::SetVal(X::Value& v)
 		{
