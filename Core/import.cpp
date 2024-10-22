@@ -44,59 +44,72 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	std::string& loadingModuleName)
 {
 	std::string loadDllName;
-	bool bHaveDll = false;
-	//search xlang.app folder first
-	std::vector<std::string> candiateFiles;
-	bool bRet = file_search(g_pXload->GetConfig().appPath,
-		LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
-	if (bRet && candiateFiles.size() > 0)
+	std::string loadingModuleFullName; 
+
+	//not with path, just add lib at linux and append ext name also
+	//we need to deal with the passing loadingModuleName already has lib as prefix
+	//maybe two cases: 1) user call import add lib as prefix for example: libXXXX
+	//2) like some remote call with passing the lib also has lib as prefix
+	//so we check here if it already has it, we do a search and if not find add lib to do again
+	//this only used for Linux, not windows
+	loadingModuleFullName = LibPrefix + loadingModuleName + ShareLibExt;
+#if !(WIN32)
+	std::string loadingModuleFullName2 = loadingModuleName + ShareLibExt;
+#endif
+	//Collect all candidate paths
+	std::vector<std::string> candidate_paths;
+	if (g_pXload->GetConfig().appPath)
 	{
-		loadDllName = candiateFiles[0];
-		bHaveDll = true;
+		candidate_paths.push_back(g_pXload->GetConfig().appPath);
 	}
-	//search xlang.engine folder first
-	if (!bHaveDll)
+	if (g_pXload->GetConfig().xlangEnginePath)
 	{
-		bRet = file_search(g_pXload->GetConfig().xlangEnginePath,
-			LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
-		if (bRet && candiateFiles.size() > 0)
-		{
-			loadDllName = candiateFiles[0];
-			bHaveDll = true;
-		}
+		candidate_paths.push_back(g_pXload->GetConfig().xlangEnginePath);
 	}
-	//check dll search path
-	if (!bHaveDll && g_pXload->GetConfig().dllSearchPath)
+	if (g_pXload->GetConfig().dllSearchPath)
 	{
 		std::string dllSearchPath(g_pXload->GetConfig().dllSearchPath);
 		std::vector<std::string> paths = split(dllSearchPath, '\n');
-		for (auto& p : paths)
+		for (auto& s : paths)
 		{
-			bRet = file_search(p, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
-			if (bRet && candiateFiles.size() > 0)
-			{
-				loadDllName = candiateFiles[0];
-				bHaveDll = true;
-				break;
-			}
+			candidate_paths.push_back(s);
 		}
 	}
-	if (!bHaveDll && !curModulePath.empty())
+	if (!curModulePath.empty())
 	{
-		bRet = file_search(curModulePath, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
-		if (bRet && candiateFiles.size() > 0)
-		{
-			loadDllName = candiateFiles[0];
-			bHaveDll = true;
-		}
+		candidate_paths.push_back(curModulePath);
 	}
-	if (!bHaveDll)
+	//Moudle's search path
+	if(rt && rt->M())
 	{
 		std::vector<std::string> searchPaths;
 		rt->M()->GetSearchPaths(searchPaths);
 		for (auto& pa : searchPaths)
 		{
-			bRet = file_search(pa, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
+			candidate_paths.push_back(pa);
+		}
+	}
+	//now do search
+	bool bHaveDll = false;
+	for (auto& pa : candidate_paths)
+	{
+		std::vector<std::string> candiateFiles;
+		bool bRet = file_search(pa,loadingModuleFullName, candiateFiles);
+		if (bRet && candiateFiles.size() > 0)
+		{
+			loadDllName = candiateFiles[0];
+			bHaveDll = true;
+			break;
+		}
+	}
+#if !(WIN32)
+	//search for name without add prefix 'lib'
+	if (!bHaveDll)
+	{
+		for (auto& pa : candidate_paths)
+		{
+			std::vector<std::string> candiateFiles;
+			bool bRet = file_search(pa, loadingModuleFullName2, candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
 				loadDllName = candiateFiles[0];
@@ -105,6 +118,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 			}
 		}
 	}
+#endif
 	bool bOK = false;
 	if (bHaveDll)
 	{
