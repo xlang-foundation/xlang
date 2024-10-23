@@ -66,6 +66,7 @@ limitations under the License.
 #include "range.h"
 #include "error_obj.h"
 #include "MsgService.h"
+#include "../Jit/md5.h"
 
 namespace X
 {
@@ -251,7 +252,7 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
 			moduleFile.close();
 		}
-		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
+		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey, md5(code));
 		retValue = X::Value(moduleKey);
 	}
 	else
@@ -276,7 +277,7 @@ bool U_LoadS(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	std::string code = params[0].ToString();
 	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey);
+	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey, md5(code));
 	retValue = X::Value(moduleKey);
 	return true;
 }

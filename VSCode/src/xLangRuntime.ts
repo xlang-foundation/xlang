@@ -51,6 +51,7 @@ interface IRuntimeStackFrame {
 	id: number;
 	name: string;
 	file: string;
+	md5: string;
 	line: number;
 	column?: number;
 	instruction?: number;
@@ -234,32 +235,25 @@ export class XLangRuntime extends EventEmitter {
 		this.reqNotify?.abort();
 	}
 	public async loadSource(file: string): Promise<number> {
-		let srcFile = this.normalizePathAndCasing(file);
-		// let key = this.sourceModuleKeyMap.get(srcFile);
-		// if (key !== undefined) {
-		// 	this.setDebug(true);
-		// 	return key;
-        // }
-		let bIsX = srcFile.endsWith(".x");
-		let srcFile_x = srcFile.replaceAll('\\', '/');
+		let bIsX = file.endsWith(".x") || file.endsWith(".X");
 		let code;
 		if (bIsX)
 		{
 			if (this.isLocalServer())
 			{
-				code = "m = load('" + srcFile_x + "','" + this.runMode + "')\nreturn m";
+				code = "m = load('" + file + "','" + this.runMode + "')\nreturn m";
 			}
 			else
 			{
-				const content = fs.readFileSync(file); // only the fist file
-				code = "m = load('" + srcFile_x + "','" + this.runMode + "','" + content + "')\nreturn m";
+				const content = fs.readFileSync(file, 'utf-8'); // only the fist file
+				code = "m = load('" + file + "','" + this.runMode + "','" + content.replace(/\r\n/g, '\n') + "')\nreturn m";
 			}
 		}
 		else
 		{
-			this.addOutput(`run file: "${srcFile_x}"`);
-			this._runFile = srcFile_x;
-			code = "import xdb\nreturn xdb.run_file(\"" + srcFile_x + "\")";
+			this.addOutput(`run file: "${file}"`);
+			this._runFile = file;
+			code = "import xdb\nreturn xdb.run_file(\"" + file + "\")";
 		}
 		let promise = new Promise((resolve, reject) => {
 			this.Call(code, resolve);
@@ -279,7 +273,7 @@ export class XLangRuntime extends EventEmitter {
 			return -1; // return -1 for run file
 		}
 		//this.sourceModuleKeyMap.set(srcFile, retVal);
-		this._sourceFile = srcFile;
+		this._sourceFile = file;
 		this._moduleKey = retVal; // 0 for a previous loaded module
 		return retVal;
 	}
@@ -497,10 +491,10 @@ export class XLangRuntime extends EventEmitter {
 			cb();
         });
 	}
-	public async setBreakPoints(path: string, lines: number[], cb: Function) {
+	public async setBreakPoints(path: string, md5: string, lines: number[], cb: Function) {
 		////let mKey = await this.loadSource(this.normalizePathAndCasing(path));
 		let path_x = path.replaceAll('\\', '/');
-		let code = "import xdb\nreturn xdb.set_breakpoints(\"" + path_x + "\",[" + lines.join() + "])";
+		let code = "import xdb\nreturn xdb.set_breakpoints(\"" + path_x + "\",\"" + md5 + "\",[" + lines.join() + "])";
 		this.Call(code, (retData) => {
 			var retLines = JSON.parse(retData);
 			cb(retLines);
@@ -601,6 +595,7 @@ export class XLangRuntime extends EventEmitter {
 					id: frm["id"],
 					name: name,
 					file: frm["file"],//this._sourceFile,
+					md5: frm["md5"],
 					line: frm["line"] - 1,
 					column: frm["column"]
 				};
@@ -802,9 +797,8 @@ export class XLangRuntime extends EventEmitter {
 
 	public normalizePathAndCasing(path: string) {
 		if (process.platform === 'win32') {
-			return path.replace(/\//g, '\\').toLowerCase();
-		} else {
-			return path.replace(/\\/g, '/');
+			path = path.charAt(0).toLowerCase() + path.slice(1);
 		}
+		return path.replace(/\\/g, '/');
 	}
 }

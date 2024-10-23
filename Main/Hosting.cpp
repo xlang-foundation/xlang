@@ -22,6 +22,7 @@ limitations under the License.
 #include "exp_exec.h"
 #include "port.h"
 #include "dbg.h"
+#include "../Jit/md5.h"
 #include <filesystem>
 
 
@@ -169,7 +170,7 @@ namespace X
 		return X::Value(pModuleObj);
 	}
 	AST::Module* Hosting::Load(const char* moduleName,
-		const char* code, int size, unsigned long long& moduleKey)
+		const char* code, int size, unsigned long long& moduleKey, const std::string& md5)
 	{
 		Parser parser;
 		if (!parser.Init())
@@ -178,7 +179,7 @@ namespace X
 		}
 		//prepare top module for this code
 		AST::Module* pTopModule = new AST::Module();
-
+		pTopModule->SetMd5(md5);
 		std::filesystem::path modulePath(moduleName);
 		// Check if the moduleName is not an absolute path, and resolve it
 		if (!modulePath.is_absolute())
@@ -395,7 +396,7 @@ namespace X
 		bool noDebug)
 	{
 		unsigned long long moduleKey = 0;
-		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
+		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey, md5(code));
 		if (pTopModule == nullptr)
 		{
 			return false;
@@ -412,7 +413,7 @@ namespace X
 		X::Value& retVal)
 	{
 		unsigned long long moduleKey = 0;
-		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
+		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey, md5(code));
 		if (pTopModule == nullptr)
 		{
 			return false;

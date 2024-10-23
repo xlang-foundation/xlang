@@ -403,6 +403,8 @@ namespace X
 					dict->Set("name", X::Value(pStrName));
 					Data::Str* pStrFileName = new Data::Str(moduleFileName);
 					dict->Set("file", X::Value(pStrFileName));
+					Data::Str* pStrMd5 = new Data::Str(Dbg::GetExpModule(pExp)->GetMd5());
+					dict->Set("md5", X::Value(pStrMd5));
 					dict->Set("line", X::Value(line));
 					dict->Set("column", X::Value(column));
 					X::Value valDict(dict);
@@ -451,7 +453,7 @@ namespace X
 		}
 
 		// Breakpoints should work in both currently running and later created modules
-		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext, Value& varPath, Value& varLines)
+		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext, Value& varPath, Value& varMd5, Value& varLines)
 		{
 			if (!varLines.IsObject()
 				|| varLines.GetObj()->GetType() != X::ObjType::List)
@@ -460,6 +462,7 @@ namespace X
 			}
 
 			std::string path = varPath.ToString();
+			std::string md5 = varMd5.ToString();
 			auto* pLineList = dynamic_cast<X::Data::List*>(varLines.GetObj());
 			auto lines = pLineList->Map<int>(
 				[](X::Value& elm, unsigned long long idx) {
@@ -467,7 +470,9 @@ namespace X
 			);
 
 			G::I().SetBreakPoints(path, lines); // record 
+			G::I().SetBreakPointsMd5(varMd5, lines); // record 
 			std::vector<AST::Module*> modules = Hosting::I().QueryModulesByPath(path);
+			std::vector<AST::Module*> modulesMd5 = Hosting::I().QueryModulesByMd5(varMd5);
 			X::List list;
 			if (modules.size() > 0)
 			{
@@ -489,6 +494,7 @@ namespace X
 						}
 					}
 					G::I().AddBreakpointValid(path); // record this source file's breakpoints has been checked
+					G::I().AddBreakpointValidMd5(path); // record this source file's breakpoints has been checked
 				}
 			}
 			else

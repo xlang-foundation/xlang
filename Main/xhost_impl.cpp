@@ -44,6 +44,7 @@ limitations under the License.
 #include "PyEngHost.h"
 #include "RemotingStub.h"
 #include "error_obj.h"
+#include "../Jit/md5.h"
 #include <filesystem>
 
 namespace X 
@@ -513,7 +514,7 @@ return nullptr;
 		std::filesystem::path pathModuleName(moduleName);
 		std::string normalizedPath = pathModuleName.generic_string();
 		unsigned long long moduleKey = 0;
-		AST::Module* pModule = X::Hosting::I().Load(normalizedPath.c_str(), code, codeSize, moduleKey);
+		AST::Module* pModule = X::Hosting::I().Load(normalizedPath.c_str(), code, codeSize, moduleKey, md5(code));
 		if (pModule == nullptr)
 		{
 			return false;

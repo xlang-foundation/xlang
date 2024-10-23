@@ -31,6 +31,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as net from 'net';
 import * as cp from 'child_process';
+import * as fs from 'fs';
+import * as crypto from 'crypto';
 
 const ipPortRegex = /^((localhost)|((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)):([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/i
 const ipRegex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})$/;
@@ -57,6 +59,18 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 interface IAttachRequestArguments extends ILaunchRequestArguments { }
 
+interface SrcRelPath {
+	relPath: string;
+	md5: string;
+}
+
+function calSrcMD5(filePath: string): string {
+    let content = fs.readFileSync(filePath, 'utf-8');
+	content = content.replace(/\r\n/g, '\n');
+    const hash = crypto.createHash('md5');
+    hash.update(content);
+    return hash.digest('hex');
+}
 
 export class XLangDebugSession extends LoggingDebugSession {
 
@@ -86,6 +100,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 	private _mapFrameIdThreadId : Map<Number, Number> = new Map();
 
 	private _srcList : string[] = [];
+
+	private _srcEntryPath : string;
+	private _srcMd5 = new Map<string, string>();
+	private _md5Src = new Map<string, string>();
 
 	private _xlangProcess;
 
@@ -342,7 +360,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
-		let retVal = await this._runtime.loadSource(args.program);
+		this._srcEntryPath = this._runtime.normalizePathAndCasing(args.program);
+		let retVal = await this._runtime.loadSource(this._srcEntryPath);
 		if (retVal < 0)
 		{
 			this.sendResponse(response);
@@ -379,13 +398,26 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const path = this._runtime.normalizePathAndCasing(args.source.path as string);
 		//const clientLines = args.lines || [];
 		const clientLines = args.breakpoints?.map(col => {return col.line;}) || [];
+
+		let md5 = "";
+		if (!this._srcMd5.has(path))
+		{
+			md5 = calSrcMD5(path);
+			this._srcMd5.set(path, md5);
+			this._md5Src.set(md5, path);
+		}
+		else
+		{
+			md5 = this._srcMd5.get(path) || "";
+		}
+
 		let srcIdx = this._srcList.indexOf(path);
 		if ( srcIdx < 0){
 			this._srcList.push(path);
 			srcIdx = this._srcList.length - 1;
 		}
 		
-		this._runtime.setBreakPoints(path, clientLines, (lines) => {
+		this._runtime.setBreakPoints(path, md5, clientLines, (lines) => {
 			let actualBreakpoints: Breakpoint[] = [];
 			for(let i = 0; i < lines.length; i += 2)
 			{
@@ -513,7 +545,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			response.body = {
 				stackFrames: stk.frames.map((f, ix) => {
 					this._mapFrameIdThreadId.set(f.id, threadId);
-					const sf: DebugProtocol.StackFrame = new StackFrame(f.id, f.name, this.createSource(f.file), this.convertDebuggerLineToClient(f.line));
+					const sf: DebugProtocol.StackFrame = new StackFrame(f.id, f.name, this.createSourceMd5(f.md5), this.convertDebuggerLineToClient(f.line));
 					if (typeof f.column === 'number') {
 						sf.column = this.convertDebuggerColumnToClient(f.column);
 					}
@@ -1128,6 +1160,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 		return new Source(basename(filePath), this.convertDebuggerPathToClient(filePath), undefined, undefined, 'xLang-adapter-data');
 	}
 
+	private createSourceMd5(md5: string): Source {
+		let path = "";
+		if (this._md5Src.has(md5))
+			path = this._md5Src.get(md5) || "";
+		return new Source(basename(path), this.convertDebuggerPathToClient(path), undefined, undefined, 'xLang-adapter-data');
+	}
+
 	private async getValidPort() : Promise<number>
 	{
 		let port : number = 35000;
@@ -1158,4 +1197,3 @@ export class XLangDebugSession extends LoggingDebugSession {
         });
 	}
 }
-
