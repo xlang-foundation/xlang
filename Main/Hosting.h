@@ -72,7 +72,7 @@ namespace X
 			m_lock.Unlock();
 		}
 
-		void SendBreakpointState(const std::string& path, int line, int actualLine);
+		void SendBreakpointState(const std::string& md5, int line, int actualLine);
 	public:
 		void Cleanup()
 		{

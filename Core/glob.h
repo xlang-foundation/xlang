@@ -121,24 +121,24 @@ namespace X {
 			return fromRt;
 		}
 
-		FORCE_INLINE void SetBreakPoints(const std::string& path, std::vector<int> breakPoints)
-		{
-			((Locker*)m_lockBreakpointsMap)->Lock();
-			m_srcPathBreakpointsMap[path] = breakPoints;
-			((Locker*)m_lockBreakpointsMap)->Unlock();
-		}
+		// FORCE_INLINE void SetBreakPoints(const std::string& path, std::vector<int> breakPoints)
+		// {
+		// 	((Locker*)m_lockBreakpointsMap)->Lock();
+		// 	m_srcPathBreakpointsMap[path] = breakPoints;
+		// 	((Locker*)m_lockBreakpointsMap)->Unlock();
+		// }
 
-		FORCE_INLINE std::vector<int> GetBreakPoints(const std::string& path)
-		{
-			std::vector<int> points;
-			((Locker*)m_lockBreakpointsMap)->Lock();
-			auto it = m_srcPathBreakpointsMap.find(path);
-			if (it != m_srcPathBreakpointsMap.end())
-				points = it->second;
-			((Locker*)m_lockBreakpointsMap)->Unlock();
+		// FORCE_INLINE std::vector<int> GetBreakPoints(const std::string& path)
+		// {
+		// 	std::vector<int> points;
+		// 	((Locker*)m_lockBreakpointsMap)->Lock();
+		// 	auto it = m_srcPathBreakpointsMap.find(path);
+		// 	if (it != m_srcPathBreakpointsMap.end())
+		// 		points = it->second;
+		// 	((Locker*)m_lockBreakpointsMap)->Unlock();
 
-			return points;
-		}
+		// 	return points;
+		// }
 
 		FORCE_INLINE void SetBreakPointsMd5(const std::string& strMd5, std::vector<int> breakPoints)
 		{
@@ -158,22 +158,22 @@ namespace X {
 			return points;
 		}
 
-		FORCE_INLINE bool IsBreakpointValid(const std::string& path)
-		{
-			bool ret;
-			((Locker*)m_lockBreakpointsMap)->Lock();
-			ret = std::find(m_srcPathBreakpointsValid.begin(), m_srcPathBreakpointsValid.end(),path) != m_srcPathBreakpointsValid.end();
-			((Locker*)m_lockBreakpointsMap)->Unlock();
-			return ret;
-		}
+		// FORCE_INLINE bool IsBreakpointValid(const std::string& path)
+		// {
+		// 	bool ret;
+		// 	((Locker*)m_lockBreakpointsMap)->Lock();
+		// 	ret = std::find(m_srcPathBreakpointsValid.begin(), m_srcPathBreakpointsValid.end(),path) != m_srcPathBreakpointsValid.end();
+		// 	((Locker*)m_lockBreakpointsMap)->Unlock();
+		// 	return ret;
+		// }
 
-		FORCE_INLINE void AddBreakpointValid(const std::string& path)
-		{
-			((Locker*)m_lockBreakpointsMap)->Lock();
-			if(std::find(m_srcPathBreakpointsValid.begin(), m_srcPathBreakpointsValid.end(), path) == m_srcPathBreakpointsValid.end())
-				m_srcPathBreakpointsValid.push_back(path);
-			((Locker*)m_lockBreakpointsMap)->Unlock();
-		}
+		// FORCE_INLINE void AddBreakpointValid(const std::string& path)
+		// {
+		// 	((Locker*)m_lockBreakpointsMap)->Lock();
+		// 	if(std::find(m_srcPathBreakpointsValid.begin(), m_srcPathBreakpointsValid.end(), path) == m_srcPathBreakpointsValid.end())
+		// 		m_srcPathBreakpointsValid.push_back(path);
+		// 	((Locker*)m_lockBreakpointsMap)->Unlock();
+		// }
 
 		FORCE_INLINE bool IsBreakpointValidMd5(const std::string& strMd5)
 		{

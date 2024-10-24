@@ -196,8 +196,8 @@ namespace X
 		strModuleName = pathModuleName.generic_string();
 
 		// if source file has breakpoint data, set breakpoint for this new created module
-		std::vector<int> lines = G::I().GetBreakPoints(strModuleName);
-		bool bValid = G::I().IsBreakpointValid(strModuleName); // Whether the source file's breakpoints have been checked 
+		std::vector<int> lines = G::I().GetBreakPointsMd5(md5);
+		bool bValid = G::I().IsBreakpointValidMd5(md5); // Whether the source file's breakpoints have been checked 
 		for (const auto& l : lines)
 		{
 			int al = pTopModule->SetBreakpoint(l, (int)GetThreadID());
@@ -205,13 +205,13 @@ namespace X
 			if (!bValid) // if source file has not been checked, return breakpoint's state to debugger
 			{
 				if (al >= 0)
-					SendBreakpointState(strModuleName, l, al);
+					SendBreakpointState(md5, l, al);
 				else
-					SendBreakpointState(strModuleName, l, -1); // failed state
+					SendBreakpointState(md5, l, -1); // failed state
 			}
 		}
 		if (!bValid)
-			G::I().AddBreakpointValid(strModuleName); // add source file path to the checked list
+			G::I().AddBreakpointValidMd5(md5);
 
 
 		moduleKey = AddModule(pTopModule);
@@ -468,14 +468,14 @@ namespace X
 		return bOK;
 	}
 
-	void Hosting::SendBreakpointState(const std::string& path, int line, int actualLine)
+	void Hosting::SendBreakpointState(const std::string& md5, int line, int actualLine)
 	{
 		KWARGS kwParams;
 		X::Value valAction("notify");
 		kwParams.Add("action", valAction);
 		const int online_len = 1000;
 		char strBuf[online_len];
-		SPRINTF(strBuf, online_len, "[{\"BreakpointPath\":\"%s\", \"line\":%d, \"actualLine\":%d}]", path.c_str(), line, actualLine);
+		SPRINTF(strBuf, online_len, "[{\"BreakpointMd5\":\"%s\", \"line\":%d, \"actualLine\":%d}]", md5.c_str(), line, actualLine);
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
 		std::string evtName("devops.dbg");

@@ -469,14 +469,13 @@ namespace X
 					return elm; }
 			);
 
-			G::I().SetBreakPoints(path, lines); // record 
 			G::I().SetBreakPointsMd5(varMd5, lines); // record 
 			std::vector<AST::Module*> modules = Hosting::I().QueryModulesByPath(path);
 			std::vector<AST::Module*> modulesMd5 = Hosting::I().QueryModulesByMd5(varMd5);
 			X::List list;
-			if (modules.size() > 0)
+			if (modulesMd5.size() > 0)
 			{
-				for (auto m : modules)
+				for (auto m : modulesMd5)
 				{
 					m->ClearBreakpoints();
 					for (auto l : lines)
@@ -493,7 +492,6 @@ namespace X
 							list += -1;// failed state
 						}
 					}
-					G::I().AddBreakpointValid(path); // record this source file's breakpoints has been checked
 					G::I().AddBreakpointValidMd5(path); // record this source file's breakpoints has been checked
 				}
 			}
