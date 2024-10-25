@@ -99,11 +99,11 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private _mapFrameIdThreadId : Map<Number, Number> = new Map();
 
-	private _srcList : string[] = [];
+	private _srcMd5List : string[] = [];
 
 	private _srcEntryPath : string;
-	private _srcMd5 = new Map<string, string>();
-	private _md5Src = new Map<string, string>();
+	private _mapSrcMd5 = new Map<string, string>();
+	private _mapMd5Src = new Map<string, string>();
 
 	private _xlangProcess;
 
@@ -178,12 +178,11 @@ export class XLangDebugSession extends LoggingDebugSession {
 		this._runtime.on('end', () => {
 			this.sendEvent(new TerminatedEvent());
 		});
-		this._runtime.on('breakpointState', (path, line, actualLine) => {
-			path = path.replaceAll('/', '\\');
+		this._runtime.on('breakpointState', (md5, line, actualLine) => {
 			if (actualLine === -1){ // failed
-				this.sendEvent(new BreakpointEvent('changed', {verified: false, id: this.getBreakpointId(path, line, 0)}));
+				this.sendEvent(new BreakpointEvent('changed', {verified: false, id: this.getBreakpointIdMd5(md5, line, 0)}));
 			}else{
-				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: this.getBreakpointId(path, line, 0), line: actualLine}));
+				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: this.getBreakpointIdMd5(md5, line, 0), line: actualLine}));
 			}
 		});
 		this._runtime.on('xlangStarted', (started) => {
@@ -191,10 +190,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this._xlangStarted.notify();
 		});
 	}
-	// use src path index， origin line and column to make a unique id 
-	private getBreakpointId(path :string, line : number, column: number) : number
+	// use src md5 index， origin line and column to make a unique id 
+	private getBreakpointIdMd5(md5 :string, line : number, column: number) : number
 	{
-		let srcIdx = this._srcList.indexOf(path);
+		let srcIdx = this._srcMd5List.indexOf(md5);
 		return srcIdx * 10000000 + line * 1000 + column;
 	}
 
@@ -355,9 +354,6 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this.sendEvent(new TerminatedEvent());
 			return;
 		}
-		
-		//todo: if attach mode, enable xlang debug state
-
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
 		this._srcEntryPath = this._runtime.normalizePathAndCasing(args.program);
@@ -400,21 +396,22 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const clientLines = args.breakpoints?.map(col => {return col.line;}) || [];
 
 		let md5 = "";
-		if (!this._srcMd5.has(path))
+		if (!this._mapSrcMd5.has(path))
 		{
 			md5 = calSrcMD5(path);
-			this._srcMd5.set(path, md5);
-			this._md5Src.set(md5, path);
+			console.log(path, "  ", md5);
+			this._mapSrcMd5.set(path, md5);
+			this._mapMd5Src.set(md5, path);
 		}
 		else
 		{
-			md5 = this._srcMd5.get(path) || "";
+			md5 = this._mapSrcMd5.get(path) || "";
 		}
 
-		let srcIdx = this._srcList.indexOf(path);
+		let srcIdx = this._srcMd5List.indexOf(md5);
 		if ( srcIdx < 0){
-			this._srcList.push(path);
-			srcIdx = this._srcList.length - 1;
+			this._srcMd5List.push(md5);
+			srcIdx = this._srcMd5List.length - 1;
 		}
 		
 		this._runtime.setBreakPoints(path, md5, clientLines, (lines) => {
@@ -424,7 +421,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				let bp: Breakpoint;
 				let l = lines[i]; // origin line
 				let al = lines[i + 1]; // actual line
-				let id = this.getBreakpointId(path, l, 0); // breakpoint id
+				let id = this.getBreakpointIdMd5(md5, l, 0); // breakpoint id
 				if (al === -2){ //'pending'
 					bp = new Breakpoint(false, l);
 					bp.setId(id);
@@ -1162,8 +1159,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private createSourceMd5(md5: string): Source {
 		let path = "";
-		if (this._md5Src.has(md5))
-			path = this._md5Src.get(md5) || "";
+		if (this._mapMd5Src.has(md5))
+			path = this._mapMd5Src.get(md5) || "";
 		return new Source(basename(path), this.convertDebuggerPathToClient(path), undefined, undefined, 'xLang-adapter-data');
 	}
 

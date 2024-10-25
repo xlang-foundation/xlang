@@ -470,7 +470,6 @@ namespace X
 			);
 
 			G::I().SetBreakPointsMd5(varMd5, lines); // record 
-			std::vector<AST::Module*> modules = Hosting::I().QueryModulesByPath(path);
 			std::vector<AST::Module*> modulesMd5 = Hosting::I().QueryModulesByMd5(varMd5);
 			X::List list;
 			if (modulesMd5.size() > 0)

@@ -116,7 +116,10 @@ namespace X
 			while (mapIt != m_ModuleMap.end())
 			{
 				if (mapIt->second->GetMd5() == strMd5)
+				{
 					modules.push_back(mapIt->second);
+					break;
+				}
 				++mapIt;
 			}
 			m_lock.Unlock();
