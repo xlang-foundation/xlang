@@ -16,7 +16,7 @@ limitations under the License.
 #pragma once
 
 #include "object.h"
-
+#include "Locker.h"
 namespace X
 {
 	class Task;
@@ -30,6 +30,7 @@ namespace X
 			std::vector<X::Value> m_thenProcs;//when reach the future, call this object
 			bool m_GotVal = false;
 			X::Value m_Val;//hold return value
+			Locker m_lock;
 		public:
 			static void Init();
 			static void cleanup();
@@ -43,10 +44,19 @@ namespace X
 			{
 				m_pTask = task;
 			}
+			long long getRunTime();
+			long long getTotalTime();
+			void Cancel();
 			void RemoveTask()
 			{
 				//when task finished, call this function
+				AutoLock l(m_lock);
 				m_pTask = nullptr;
+			}
+			bool IsCancelled()
+			{
+				AutoLock l(m_lock);
+				return (m_pTask == nullptr);
 			}
 			void SetVal(X::Value& v);
 

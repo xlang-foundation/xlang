@@ -16,6 +16,7 @@ limitations under the License.
 #include "future.h"
 #include "scope.h"
 #include "function.h"
+#include "task.h"
 #include "glob.h"
 #include "obj_func_scope.h"
 
@@ -23,7 +24,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<2> _futureScope;
+		static Obj_Func_Scope<6> _futureScope;
 
 		void Future::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
@@ -70,10 +71,88 @@ namespace X
 					};
 				_futureScope.AddFunc("then", "then(proc)", f);
 			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Future* pObj = dynamic_cast<Future*>(pContext);
+						pObj->Cancel();
+						retValue = X::Value(true);
+						return true;
+					};
+				_futureScope.AddFunc("cancel", "cancel()", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Future* pObj = dynamic_cast<Future*>(pContext);
+						retValue = pObj->IsCancelled();
+						return true;
+					};
+				_futureScope.AddFunc("isCancelled", "isCancelled()", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Future* pObj = dynamic_cast<Future*>(pContext);
+						retValue = pObj->getRunTime();
+						return true;
+					};
+				_futureScope.AddFunc("getRunTime", "getRunTime()", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Future* pObj = dynamic_cast<Future*>(pContext);
+						retValue = pObj->getTotalTime();
+						return true;
+					};
+				_futureScope.AddFunc("getTotalTime", "getTotalTime()", f);
+			}
 		}
 		void Future::cleanup()
 		{
 			_futureScope.Clean();
+		}
+		long long Future::getRunTime()
+		{
+			AutoLock l(m_lock);
+			if (m_pTask)
+			{
+				return m_pTask->GetEndRunTime() - m_pTask->GetStartRunTime();
+			}
+			return 0;
+		}
+		long long Future::getTotalTime()
+		{
+			AutoLock l(m_lock);
+			if (m_pTask)
+			{
+				return m_pTask->GetEndRunTime() - m_pTask->GetEnqueueTime();
+			}
+			return 0;
+		}
+		void Future::Cancel()
+		{
+			m_pTask->Cancel();
+			Lock();
+			for (auto* w : m_waits)
+			{
+				w->Release();
+			}
+			m_waits.clear();
+			Unlock();
 		}
 		void Future::SetVal(X::Value& v)
 		{
