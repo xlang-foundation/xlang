@@ -14,6 +14,15 @@
 # <END>
 
 #Creating and calling a Function
+
+def func_in_dict(info):
+  print("func_in_dict", info)
+
+bb = [1,3,4]
+d = {"test":func_in_dict,"XYZ":bb}
+x = d.XYZ[1]
+d.test("OK")
+
 def my_function():
   print("Hello from a function")
 
