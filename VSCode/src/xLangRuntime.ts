@@ -51,6 +51,7 @@ interface IRuntimeStackFrame {
 	id: number;
 	name: string;
 	file: string;
+	md5: string;
 	line: number;
 	column?: number;
 	instruction?: number;
@@ -132,8 +133,6 @@ export class XLangRuntime extends EventEmitter {
 	public get sourceFile() {
 		return this._sourceFile;
 	}
-
-	private sourceModuleKeyMap = new Map<string, number>();
 
 	private instructions: Word[] = [];
 	private starts: number[] = [];
@@ -227,60 +226,54 @@ export class XLangRuntime extends EventEmitter {
 		else{
 			this.setDebug(false);
 		}
-		this.sourceModuleKeyMap.clear();
 		this._sourceFile = '';
 		this._moduleKey = 0;
 		this._sessionRunning = false;
 		this.reqNotify?.abort();
 	}
 	public async loadSource(file: string): Promise<number> {
-		let srcFile = this.normalizePathAndCasing(file);
-		// let key = this.sourceModuleKeyMap.get(srcFile);
-		// if (key !== undefined) {
-		// 	this.setDebug(true);
-		// 	return key;
-        // }
-		let bIsX = srcFile.endsWith(".x");
-		let srcFile_x = srcFile.replaceAll('\\', '/');
+		let bIsX = file.endsWith(".x") || file.endsWith(".X");
 		let code;
 		if (bIsX)
 		{
 			if (this.isLocalServer())
 			{
-				code = "m = load('" + srcFile_x + "','" + this.runMode + "')\nreturn m";
+				code = "m = load('" + file + "','" + this.runMode + "')\nreturn m";
 			}
 			else
 			{
-				const content = fs.readFileSync(file); // only the fist file
-				code = "m = load('" + srcFile_x + "','" + this.runMode + "','" + content + "')\nreturn m";
+				const content = fs.readFileSync(file, 'utf-8'); // only the fist file
+				file = await vscode.window.showInputBox({value: file, prompt: "input remote path of current file to debug", placeHolder: file});
+				code = "m = load('" + file + "','" + this.runMode + "','" + content.replace(/\r\n/g, '\n') + "')\nreturn m";
 			}
 		}
 		else
 		{
-			this.addOutput(`run file: "${srcFile_x}"`);
-			this._runFile = srcFile_x;
-			code = "import xdb\nreturn xdb.run_file(\"" + srcFile_x + "\")";
+			if (!this.isLocalServer())
+				file = await vscode.window.showInputBox({value: file, prompt: "input remote path of current file to run", placeHolder: file});
+			this.addOutput(`run file: "${file}"`);
+			this._runFile = file;
+			code = "import xdb\nreturn xdb.run_file(\"" + file + "\")";
 		}
-		let promise = new Promise((resolve, reject) => {
+		let loadRet = new Promise((resolve, reject) => {
 			this.Call(code, resolve);
 		});
 		let retVal;
 		if (bIsX)
 		{
-			retVal = await promise as number;
+			retVal = await loadRet as number;
 		}
 		else
 		{
-			retVal = await promise as string;
+			retVal = await loadRet as string;
 			if (retVal.length > 0 && (retVal.startsWith("http:") || retVal.startsWith("https:")))
 			{
 				this.addOutput(`output url: "${retVal}"`);
 			}
 			return -1; // return -1 for run file
 		}
-		//this.sourceModuleKeyMap.set(srcFile, retVal);
-		this._sourceFile = srcFile;
-		this._moduleKey = retVal; // 0 for a previous loaded module
+		this._sourceFile = file;
+		this._moduleKey = retVal; // if 0, module is previous loaded, do not run it again
 		return retVal;
 	}
 	private tryTimes = 1;
@@ -383,8 +376,8 @@ export class XLangRuntime extends EventEmitter {
 								else if(kv.hasOwnProperty("ThreadExited")){
 									this.sendEvent('threadExited', kv["ThreadExited"]);
 							}
-								else if(kv.hasOwnProperty("BreakpointPath")){
-									this.sendEvent('breakpointState', kv["BreakpointPath"], kv["line"], kv["actualLine"]);
+								else if(kv.hasOwnProperty("BreakpointMd5")){
+									this.sendEvent('breakpointState', kv["BreakpointMd5"], kv["line"], kv["actualLine"]);
 								}
 						}
 					}
@@ -427,28 +420,13 @@ export class XLangRuntime extends EventEmitter {
 	public async start(stopOnEntry: boolean, debug: boolean): Promise<void> {
 		this._sessionRunning = true;
 		this.fetchNotify();
-		////this._sourceFile = this.normalizePathAndCasing(program);
-		////this._moduleKey = await this.loadSource(this._sourceFile);
-		if (this._moduleKey!=0) {
+		if (this._moduleKey!=0) // new created module, run it
+		{
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
 				+ ", onFinish = 'fire(\"devops.dbg\",action=\"end\",tid=${tid})'"
 				+ ",stopOnEntry=True)\nreturn True";
 			this.Call(code, (ret) => {
 				console.log(ret);
-				// if (debug) {
-				// 	//this.verifyBreakpoints(this._sourceFile);
-				// 	////this.GetStartLine((startLine) => {
-				// 		if (stopOnEntry) {
-				// 			//this.currentLine = startLine - 1;
-				// 			this.sendEvent('stopOnEntry', Number(ret));
-				// 		} else {
-				// 			// we just start to run until we hit a breakpoint, an exception, or the end of the program
-				// 			this.continue(false,()=>{ });
-				// 		}
-				// 	////});
-				// } else {
-				// 	this.continue(false, () => { });
-				// }
 			});
 		}
 	}
@@ -497,10 +475,10 @@ export class XLangRuntime extends EventEmitter {
 			cb();
         });
 	}
-	public async setBreakPoints(path: string, lines: number[], cb: Function) {
+	public async setBreakPoints(path: string, md5: string, lines: number[], cb: Function) {
 		////let mKey = await this.loadSource(this.normalizePathAndCasing(path));
 		let path_x = path.replaceAll('\\', '/');
-		let code = "import xdb\nreturn xdb.set_breakpoints(\"" + path_x + "\",[" + lines.join() + "])";
+		let code = "import xdb\nreturn xdb.set_breakpoints(\"" + path_x + "\",\"" + md5 + "\",[" + lines.join() + "])";
 		this.Call(code, (retData) => {
 			var retLines = JSON.parse(retData);
 			cb(retLines);
@@ -601,6 +579,7 @@ export class XLangRuntime extends EventEmitter {
 					id: frm["id"],
 					name: name,
 					file: frm["file"],//this._sourceFile,
+					md5: frm["md5"],
 					line: frm["line"] - 1,
 					column: frm["column"]
 				};
@@ -802,9 +781,8 @@ export class XLangRuntime extends EventEmitter {
 
 	public normalizePathAndCasing(path: string) {
 		if (process.platform === 'win32') {
-			return path.replace(/\//g, '\\').toLowerCase();
-		} else {
-			return path.replace(/\\/g, '/');
+			path = path.charAt(0).toLowerCase() + path.slice(1);
 		}
+		return path.replace(/\\/g, '/');
 	}
 }

@@ -57,7 +57,7 @@ namespace X
 			BEGIN_PACKAGE(DebugService)
 				APISET().AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);
 				APISET().AddFunc<0>("get_threads", &DebugService::GetThreads);
-				APISET().AddRTFunc<2>("set_breakpoints", &DebugService::SetBreakpoints);
+				APISET().AddRTFunc<3>("set_breakpoints", &DebugService::SetBreakpoints);
 				APISET().AddVarFunc("command", &DebugService::Command);
 				APISET().AddVarFunc("run_file", &DebugService::RunFile);
 				APISET().AddVarFunc("stop_file", &DebugService::StopFile);
@@ -66,7 +66,7 @@ namespace X
 			DebugService();
 			int GetModuleStartLine(unsigned long long moduleKey);
 			X::Value GetThreads();
-			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext, Value& varPath, Value& varLines);
+			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext, Value& varPath, Value& varMd5, Value& varLines);
 			bool Command(X::XRuntime* rt, X::XObj* pContext,
 				ARGS& params,
 				KWARGS& kwParams,

@@ -22,6 +22,7 @@ limitations under the License.
 #include "exp_exec.h"
 #include "port.h"
 #include "dbg.h"
+#include "../Jit/md5.h"
 #include <filesystem>
 
 
@@ -169,7 +170,7 @@ namespace X
 		return X::Value(pModuleObj);
 	}
 	AST::Module* Hosting::Load(const char* moduleName,
-		const char* code, int size, unsigned long long& moduleKey)
+		const char* code, int size, unsigned long long& moduleKey, const std::string& md5)
 	{
 		Parser parser;
 		if (!parser.Init())
@@ -178,7 +179,7 @@ namespace X
 		}
 		//prepare top module for this code
 		AST::Module* pTopModule = new AST::Module();
-
+		pTopModule->SetMd5(md5);
 		std::filesystem::path modulePath(moduleName);
 		// Check if the moduleName is not an absolute path, and resolve it
 		if (!modulePath.is_absolute())
@@ -195,8 +196,8 @@ namespace X
 		strModuleName = pathModuleName.generic_string();
 
 		// if source file has breakpoint data, set breakpoint for this new created module
-		std::vector<int> lines = G::I().GetBreakPoints(strModuleName);
-		bool bValid = G::I().IsBreakpointValid(strModuleName); // Whether the source file's breakpoints have been checked 
+		std::vector<int> lines = G::I().GetBreakPointsMd5(md5);
+		bool bValid = G::I().IsBreakpointValidMd5(md5); // Whether the source file's breakpoints have been checked 
 		for (const auto& l : lines)
 		{
 			int al = pTopModule->SetBreakpoint(l, (int)GetThreadID());
@@ -204,13 +205,13 @@ namespace X
 			if (!bValid) // if source file has not been checked, return breakpoint's state to debugger
 			{
 				if (al >= 0)
-					SendBreakpointState(strModuleName, l, al);
+					SendBreakpointState(md5, l, al);
 				else
-					SendBreakpointState(strModuleName, l, -1); // failed state
+					SendBreakpointState(md5, l, -1); // failed state
 			}
 		}
 		if (!bValid)
-			G::I().AddBreakpointValid(strModuleName); // add source file path to the checked list
+			G::I().AddBreakpointValidMd5(md5);
 
 
 		moduleKey = AddModule(pTopModule);
@@ -395,7 +396,7 @@ namespace X
 		bool noDebug)
 	{
 		unsigned long long moduleKey = 0;
-		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
+		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey, md5(code));
 		if (pTopModule == nullptr)
 		{
 			return false;
@@ -412,7 +413,7 @@ namespace X
 		X::Value& retVal)
 	{
 		unsigned long long moduleKey = 0;
-		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
+		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey, md5(code));
 		if (pTopModule == nullptr)
 		{
 			return false;
@@ -467,14 +468,14 @@ namespace X
 		return bOK;
 	}
 
-	void Hosting::SendBreakpointState(const std::string& path, int line, int actualLine)
+	void Hosting::SendBreakpointState(const std::string& md5, int line, int actualLine)
 	{
 		KWARGS kwParams;
 		X::Value valAction("notify");
 		kwParams.Add("action", valAction);
 		const int online_len = 1000;
 		char strBuf[online_len];
-		SPRINTF(strBuf, online_len, "[{\"BreakpointPath\":\"%s\", \"line\":%d, \"actualLine\":%d}]", path.c_str(), line, actualLine);
+		SPRINTF(strBuf, online_len, "[{\"BreakpointMd5\":\"%s\", \"line\":%d, \"actualLine\":%d}]", md5.c_str(), line, actualLine);
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
 		std::string evtName("devops.dbg");

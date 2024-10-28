@@ -66,6 +66,7 @@ limitations under the License.
 #include "range.h"
 #include "error_obj.h"
 #include "MsgService.h"
+#include "../Jit/md5.h"
 
 namespace X
 {
@@ -225,25 +226,34 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		return true;
 	}
 	std::string code;
+	std::string codeMd5;
 	std::string runMode;
 	bool loadFromFile = true;
-	if (params.size() == 3) // launch or attach with source code
+	if (params.size() == 3) // attach with source code (remote server)
 	{
 		runMode = params[1].ToString();
 		code = params[2].ToString();
+		codeMd5 = md5(code);
 		loadFromFile = false;
 	}
-	else if (params.size() == 2) // launch or attach without source code
+	else if (params.size() == 2) // launch or attach without source code (local server)
 	{
 		runMode = params[1].ToString();
 	}
+	std::vector<X::AST::Module*> findModules;
+	if (!runMode.empty())
+	{
+		X::G::I().SetTrace(X::Dbg::xTraceFunc);// enable debug
+		if (!codeMd5.empty())
+			findModules = X::Hosting::I().QueryModulesByMd5(codeMd5);
+		else
+			findModules = X::Hosting::I().QueryModulesByPath(fileName);
+	}
+	else
+		findModules = X::Hosting::I().QueryModulesByPath(fileName);
 
-	if (!runMode.empty()) // enable debug
-		X::G::I().SetTrace(X::Dbg::xTraceFunc);
-
-	std::vector<X::AST::Module*> modules = X::Hosting::I().QueryModulesByPath(fileName);
 	unsigned long long moduleKey = 0;
-	if (/*runMode.empty() || */modules.size() == 0)
+	if (findModules.size() == 0)
 	{
 		if (loadFromFile)
 		{
@@ -251,15 +261,15 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
 			moduleFile.close();
 		}
-		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
+		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey, md5(code));
 		retValue = X::Value(moduleKey);
 	}
 	else
 	{
 		if (!runMode.empty())
-			retValue = X::Value(0); // for vscode debug extension
+			retValue = X::Value(0); // to vscode, module is loaded previously
 		else
-			retValue = X::Value((unsigned long long)modules[0]);
+			retValue = X::Value((unsigned long long)findModules[0]);
 	}
 	
 	return true;
@@ -276,7 +286,7 @@ bool U_LoadS(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	std::string code = params[0].ToString();
 	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey);
+	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey, md5(code));
 	retValue = X::Value(moduleKey);
 	return true;
 }

@@ -67,6 +67,7 @@ class Module :
 	Locker m_lockSearchPath;
 	std::vector<std::string> m_searchPaths;
 	std::string m_moduleName;
+	std::string m_md5;
 	std::string m_path;
 	// for var name and value with str
 	// we keep string pointer not copy from the source code memory
@@ -272,7 +273,8 @@ public:
 	{
 		return m_moduleName;
 	}
-	
+	std::string GetMd5() { return m_md5; }
+	void SetMd5(const std::string& val) { m_md5 = val; }
 	FORCE_INLINE char* SetCode(char* code, int size)
 	{
 		std::string strCode(code, size);

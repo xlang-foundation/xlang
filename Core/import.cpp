@@ -23,6 +23,7 @@ limitations under the License.
 #include "remote_object.h"
 #include "deferred_object.h"
 #include "op.h"
+#include "../Jit/md5.h"
 #include <filesystem>
 
 namespace X
@@ -211,7 +212,7 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 		{
 			unsigned long long moduleKey = 0;
 			auto* pSubModule = Hosting::I().Load(loadXModuleFileName.c_str(),
-				code.c_str(), (int)code.size(), moduleKey);
+				code.c_str(), (int)code.size(), moduleKey, md5(code));
 			if (pSubModule)
 			{
 				X::Value v0;

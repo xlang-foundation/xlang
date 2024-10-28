@@ -20,6 +20,7 @@ limitations under the License.
 #include "func.h"
 #include "module.h"
 #include "import.h"
+#include "../Jit/md5.h"
 
 namespace X
 {
@@ -31,7 +32,7 @@ namespace X
         X::Value AstWrapper::LoadFromStringImpl(std::string& moduleName, std::string& xcode)
         {
             unsigned long long moduleKey = 0;
-            auto* pModule = Hosting::I().Load(moduleName.c_str(), xcode.c_str(), (int)xcode.size(), moduleKey);
+            auto* pModule = Hosting::I().Load(moduleName.c_str(), xcode.c_str(), (int)xcode.size(), moduleKey, md5(xcode));
             if (pModule == nullptr)
             {
                 return X::Value();
