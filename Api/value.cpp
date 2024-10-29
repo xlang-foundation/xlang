@@ -139,10 +139,10 @@ namespace X
 
 	void Value::operator -= (const Value& v)
 	{
-		//if (IsObject())
-		//{
-		//	ReleaseObject(x.obj);
-		//}
+		if (t == ValueType::Invalid || v.t == ValueType::Invalid)
+		{
+			return;
+		}
 		flags = v.flags;
 		if (t == ValueType::Object)
 		{

@@ -29,7 +29,6 @@ limitations under the License.
 #include "value.h"
 #include "xhost.h"
 
-
 namespace X
 {
     namespace WebCore
@@ -261,23 +260,39 @@ namespace X
 
         void WebSocketSrvThread::run()
         {
-            asio::io_context io_context;
-            tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), mPort));
-            while (mRun)
+            try 
             {
-                tcp::socket socket(io_context);
-                acceptor.accept(socket);
+                asio::io_context io_context;
+                tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), mPort));
+                while (mRun)
+                {
+                    tcp::socket socket(io_context);
+                    acceptor.accept(socket);
 
-                auto* pSesison = new WebSocketSessionImpl(this, &socket);
-                m_lockSessions.Lock();
-                m_Sessions.push_back(pSesison);
-                m_lockSessions.Unlock();
-                pSesison->Start();
-                X::ARGS args(1);
-                args.push_back(pSesison->GetSession());
-                X::KWARGS kwargs;
-                mServer->Fire(0, args, kwargs);
+                    auto* pSesison = new WebSocketSessionImpl(this, &socket);
+                    m_lockSessions.Lock();
+                    m_Sessions.push_back(pSesison);
+                    m_lockSessions.Unlock();
+                    pSesison->Start();
+                    X::ARGS args(1);
+                    args.push_back(pSesison->GetSession());
+                    X::KWARGS kwargs;
+                    mServer->Fire(0, args, kwargs);
+                }
             }
+            catch (const boost::system::system_error& e)
+            {
+                std::cerr << "Boost system error: " << e.what() << std::endl;
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "Standard exception: " << e.what() << std::endl;
+            }
+            catch (...)
+            {
+                std::cerr << "Unknown exception occurred." << std::endl;
+            }
+			//Clean up
             m_lockSessions.Lock();
             for (auto* pSession : m_Sessions)
             {

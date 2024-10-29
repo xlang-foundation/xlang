@@ -37,6 +37,7 @@ extern "C"
 #define X_EXPORT __declspec(dllexport) 
 #else
 #define X_EXPORT
+#include <dlfcn.h>
 #endif
 #include <iostream>
 
@@ -102,9 +103,31 @@ namespace X
 {
 	extern XHost* g_pXHost;//defined in xload.cpp which included for PyBind.cpp
 }
+#if !(WIN32)
+static void* __py_handle__ = nullptr;
+static void PreloadPythonToSolveGlobaleExportTable()
+{
+	Dl_info dl_info;
+	if (dladdr((void*)Py_Initialize, &dl_info)) 
+	{
+		const char* libpython_path = dl_info.dli_fname;
+		__py_handle__ = dlopen(libpython_path, RTLD_NOW | RTLD_GLOBAL);
+	}
+}
+static void UnloadPython()
+{
+	if (__py_handle__)
+	{
+		dlclose(__py_handle__);
+	}
+}
+#endif
 extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
 {
 	X::g_pXHost = (X::XHost*)pXHost;
+#if !(WIN32)
+	PreloadPythonToSolveGlobaleExportTable();
+#endif
 	Py_Initialize();
 	g_pPyHost = &GrusPyEngHost::I();
 	*ppHost = (void*)g_pPyHost;
@@ -117,4 +140,7 @@ extern "C"  X_EXPORT void Unload()
 {
 	X::g_pXHost = nullptr;
 	Py_FinalizeEx();
+#if !(WIN32)
+	UnloadPython();
+#endif
 }

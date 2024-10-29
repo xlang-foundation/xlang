@@ -183,6 +183,7 @@ namespace X
 		virtual const char* GetTypeString() { return ""; }
 		virtual long long Size() { return 0; }
 		virtual size_t Hash() { return 0; }
+		virtual unsigned long long GetID() { return 0; }
 		virtual const char* ToString(bool WithFormat = false) 
 		{
 			return nullptr;
