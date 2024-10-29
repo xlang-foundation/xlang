@@ -780,9 +780,6 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	public normalizePathAndCasing(path: string) {
-		if (process.platform === 'win32') {
-			path = path.charAt(0).toLowerCase() + path.slice(1);
-		}
 		return path.replace(/\\/g, '/');
 	}
 }
