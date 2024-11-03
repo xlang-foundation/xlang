@@ -62,6 +62,10 @@ namespace Data {
 			DeleteAttrBag();
 			G::I().RemoveObj(this);
 		}
+		virtual unsigned long long GetID() override
+		{
+			return m_id;
+		}
 		FORCE_INLINE unsigned long long ID() { return m_id; }
 		FORCE_INLINE virtual AST::Scope* GetMyScope()
 		{

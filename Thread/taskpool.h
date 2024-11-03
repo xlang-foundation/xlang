@@ -69,6 +69,7 @@ namespace X
 				KWARGS& kwParams,
 				X::Value& retValue) override;
 			void CancelAll();
+			bool CancelTask(Task* pTask);
 			Task* GetTaskToRun();
 			bool RunTaskInUIThread(Task* pTask);
 			bool RunTask(Task* pTask);

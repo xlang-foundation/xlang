@@ -446,6 +446,8 @@ public:
 	}
 	FORCE_INLINE virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{
+		//add myself whihc is instance of Package Scope
+		bases.push_back(m_pMyScope);
 		bases.push_back(m_pPackage->GetMyScope());
 	}
 	virtual bool Init(int varNum) override

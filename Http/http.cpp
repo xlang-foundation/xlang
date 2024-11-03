@@ -576,7 +576,9 @@ namespace X
 				bool isBin = isBinaryContentType(value.content_type);
 				if (isBin)
 				{
-					X::Bin binContent((char*)nullptr, value.content.size(), true);
+					X::Bin binContent((char*)nullptr, 
+						(unsigned long long)value.content.size(), 
+						static_cast<bool>(true));
 					memcpy(binContent->Data(), value.content.data(), value.content.size());
 					dataMap->Set("content", binContent);
 				}
@@ -601,7 +603,9 @@ namespace X
 			}
 			if (isBin)
 			{
-				X::Bin binContent((char*)nullptr, strVal.size(), true);
+				X::Bin binContent((char*)nullptr, 
+					(unsigned long long)strVal.size(),
+					static_cast<bool>(true));
 				memcpy(binContent->Data(), strVal.data(), strVal.size());
 				retVal = binContent;
 			}
