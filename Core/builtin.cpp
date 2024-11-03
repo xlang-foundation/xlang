@@ -232,13 +232,9 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	if (params.size() == 3) // attach with source code (remote server)
 	{
 		runMode = params[1].ToString();
-		code = params[2].ToString();
-		codeMd5 = md5(code);
+		codeMd5 = params[2].ToString();
+		code = X::g_pXHost->GetAttr(X::Value(), codeMd5.c_str()).ToString();
 		loadFromFile = false;
-	}
-	else if (params.size() == 2) // launch or attach without source code (local server)
-	{
-		runMode = params[1].ToString();
 	}
 	std::vector<X::AST::Module*> findModules;
 	if (!runMode.empty())

@@ -119,7 +119,7 @@ namespace X {
 		{
 			X::XlangRuntime* pRuntime = new X::XlangRuntime();
 			if (name.find("devops_run.x") != std::string::npos || name.find("Cleanup.x") != std::string::npos)
-				pRuntime->m_bNoDbg = true;
+				pRuntime->m_bNoDbg = true; // if the runtime is to run devops_run.x or Cleanup.x, mark this runtime does not need be trace
 
 			pRuntime->SetName(name);
 			if (rt)

@@ -154,7 +154,7 @@ public:
 		m_bNoDbg = b;
 	}
 	~XlangRuntime();
-	bool m_bNoDbg = false; // do not trace
+	bool m_bNoDbg = false; // do not trace this runtime if module is devops_run.x or Cleanup.x
 	bool m_bStoped = false; // stopped on breakpoint or step
 	AST::Expression* m_pFirstStepOutExp = nullptr;
 	FORCE_INLINE void SetDbgType(dbg d, dbg lastRequest)
