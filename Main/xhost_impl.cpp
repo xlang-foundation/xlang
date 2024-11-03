@@ -620,6 +620,14 @@ return nullptr;
 				}
 			}
 		}
+		else
+		{
+			auto it = m_KV.find(attrName);
+			if (it != m_KV.end())
+				return it->second;
+			else
+				return X::Value();
+		}
 		return retVal;
 	}
 	void XHost_Impl::SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal)
@@ -635,6 +643,10 @@ return nullptr;
 					pBag->Set(attrName,attrVal);
 				}
 			}
+		}
+		else
+		{
+			m_KV[attrName] = attrVal;
 		}
 	}
 	AppEventCode XHost_Impl::HandleAppEvent(int signum)
@@ -844,5 +856,9 @@ return nullptr;
 				g_pXload->GetConfig().dbgPort = port;
 			}
 		}
+	}
+	bool XHost_Impl::IsModuleLoadedMd5(const char* md5)
+	{
+		return X::Hosting::I().QueryModulesByMd5(md5).size() > 0;
 	}
 }

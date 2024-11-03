@@ -64,12 +64,16 @@ interface SrcRelPath {
 	md5: string;
 }
 
-function calSrcMD5(filePath: string): string {
+function calMD5(str: string): string {
+    const hash = crypto.createHash('md5');
+    hash.update(str);
+    return hash.digest('hex');
+}
+
+function calFileMD5(filePath: string): string {
     let content = fs.readFileSync(filePath, 'utf-8');
 	content = content.replace(/\r\n/g, '\n');
-    const hash = crypto.createHash('md5');
-    hash.update(content);
-    return hash.digest('hex');
+    return calMD5(content);
 }
 
 export class XLangDebugSession extends LoggingDebugSession {
@@ -345,7 +349,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private async startDebug(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments)
 	{
-		this._runtime.checkStarted();
+		this._srcEntryPath = this._runtime.normalizePathAndCasing(args.program);
+		let md5 = calFileMD5(this._srcEntryPath);
+		this._runtime.checkStarted(this._srcEntryPath, md5);
 		await this._xlangStarted.wait();
 		if (!this._xlangStarted.notifyValue)
 		{
@@ -356,9 +362,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 		}
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
-		this._srcEntryPath = this._runtime.normalizePathAndCasing(args.program);
+		this._mapSrcMd5.set(this._srcEntryPath, md5);
+		this._mapMd5Src.set(md5, this._srcEntryPath);
 		let retVal = await this._runtime.loadSource(this._srcEntryPath);
-		if (retVal < 0)
+		if (retVal == -1) // is run file
 		{
 			this.sendResponse(response);
 			//this.sendEvent(new TerminatedEvent());
@@ -398,7 +405,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		let md5 = "";
 		if (!this._mapSrcMd5.has(path))
 		{
-			md5 = calSrcMD5(path);
+			md5 = calFileMD5(path);
 			console.log(path, "  ", md5);
 			this._mapSrcMd5.set(path, md5);
 			this._mapMd5Src.set(md5, path);

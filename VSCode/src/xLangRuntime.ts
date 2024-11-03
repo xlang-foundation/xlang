@@ -21,6 +21,7 @@ import { EventEmitter } from 'events';
 import * as vscode from 'vscode';
 import * as os from 'os';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 
 function getTimestamp(): string {
 	let date: Date = new Date();
@@ -124,6 +125,7 @@ export class XLangRuntime extends EventEmitter {
 	public get runFile(){
 		return this._runFile;
 	}
+	private _needSrvPath : boolean = false;
 	private _outputChannel : vscode.OutputChannel;
 	private _sourceFile: string = '';
 	private _moduleKey: number = 0;
@@ -234,29 +236,34 @@ export class XLangRuntime extends EventEmitter {
 	public async loadSource(file: string): Promise<number> {
 		let bIsX = file.endsWith(".x") || file.endsWith(".X");
 		let code;
+		let content;
+		let srcArg = {};
 		if (bIsX)
 		{
-			if (this.isLocalServer())
+			content = fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n');
+			const hash = crypto.createHash('md5');
+			hash.update(content);
+			let md5 = hash.digest('hex');
+			srcArg['src'] = content;
+			srcArg['md5'] = md5;
+			if (this._needSrvPath)
 			{
-				code = "m = load('" + file + "','" + this.runMode + "')\nreturn m";
+				file = await vscode.window.showInputBox({value: file, prompt: "platform not match or file not exists, input remote path of current file to debug", placeHolder: file});
 			}
-			else
-			{
-				const content = fs.readFileSync(file, 'utf-8'); // only the fist file
-				file = await vscode.window.showInputBox({value: file, prompt: "input remote path of current file to debug", placeHolder: file});
-				code = "m = load('" + file + "','" + this.runMode + "','" + content.replace(/\r\n/g, '\n') + "')\nreturn m";
-			}
+			code = "m = load('" + file + "','" + this.runMode + "','" + md5 + "')\nreturn m";
 		}
 		else
 		{
-			if (!this.isLocalServer())
-				file = await vscode.window.showInputBox({value: file, prompt: "input remote path of current file to run", placeHolder: file});
+			if (this._needSrvPath)
+			{
+				file = await vscode.window.showInputBox({value: file, prompt: "platform not match or file not exists, input remote path of current file to run", placeHolder: file});
+			}
 			this.addOutput(`run file: "${file}"`);
 			this._runFile = file;
 			code = "import xdb\nreturn xdb.run_file(\"" + file + "\")";
 		}
 		let loadRet = new Promise((resolve, reject) => {
-			this.Call(code, resolve);
+			this.Call(code, srcArg, resolve);
 		});
 		let retVal;
 		if (bIsX)
@@ -278,18 +285,28 @@ export class XLangRuntime extends EventEmitter {
 	}
 	private tryTimes = 1;
 	private tryCount = 5;
-	public async checkStarted()
+	public async checkStarted(path : string, md5 : string)
 	{
 		vscode.window.showInformationMessage(`try connecting to a xlang dbg server at ${this.serverAddress}:${this.serverPort}, try ${this.tryTimes}`);
 		const https = require('http');
+		const querystring = require('querystring');
+		const parameters = {
+			'path': path,
+			'md5': md5,
+			'platform': process.platform === "win32" ? "windows" : "not_windows"
+		};
+		const requestargs = querystring.stringify(parameters);
 		const options = {
 			hostname: this._srvaddress,
 			port: this._srvPort,
-			path: '/devops/checkStarted',
+			path: '/devops/checkStarted?' + requestargs,
 			method: 'GET',
 			timeout: 2000
 		};
 		const req = https.request(options, res => {
+			res.on('data', d => {
+				this._needSrvPath = d.toString() === "need_path"
+			});
 			this.sendEvent('xlangStarted', true);
 			vscode.window.showInformationMessage(`connecting to a xlang dbg server at ${this.serverAddress}:${this.serverPort} successed`);
 			this.tryTimes = 1;
@@ -300,7 +317,7 @@ export class XLangRuntime extends EventEmitter {
 			{
 				var thisObj = this;
 				setTimeout(function() {
-					thisObj.checkStarted();
+					thisObj.checkStarted(path, md5);
 				}, 2000);
 				++this.tryTimes;
 			}
@@ -320,7 +337,7 @@ export class XLangRuntime extends EventEmitter {
 		{
 			let code = "import xdb\nreturn xdb.stop_file(\"" + this._runFile + "\")";
 			let promise = new Promise((resolve, reject) => {
-				this.Call(code, resolve);
+				this.Call(code, undefined, resolve);
 			});
 			this._runFile = "";
 			await promise as number;;
@@ -425,61 +442,85 @@ export class XLangRuntime extends EventEmitter {
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
 				+ ", onFinish = 'fire(\"devops.dbg\",action=\"end\",tid=${tid})'"
 				+ ",stopOnEntry=True)\nreturn True";
-			this.Call(code, (ret) => {
+			this.Call(code, undefined, (ret) => {
 				console.log(ret);
 			});
 		}
 	}
-	private Call(code,cb?)
+	private Call(code, srcArg, cb?)
 	{
 		const https = require('http');
-		const querystring = require('querystring');
-		const parameters = {
-			'code': code
-		};
-		const requestargs = querystring.stringify(parameters);
+		let bufCode = Buffer.from(code);
+		let totalLength = 4 + bufCode.length;
+		let bufSrc;
+		let bufMd5;
+		if (srcArg !== undefined) {
+			bufSrc = Buffer.from(srcArg.src);
+			totalLength += 4 + bufSrc.length;
+			bufMd5 = Buffer.from(srcArg.md5);
+			totalLength += 4 + bufMd5.length;
+		}
+		let buffer = Buffer.alloc(totalLength);
+		let offset = 0;
+		buffer.writeUInt32BE(bufCode.length, 0);
+		offset += 4
+		bufCode.copy(buffer, offset);
+		if (srcArg !== undefined)
+		{
+			offset += bufCode.length;
+			buffer.writeUInt32BE(bufSrc.length, offset);
+			offset += 4
+			bufSrc.copy(buffer, offset);
+			offset += bufSrc.length;
+			buffer.writeUInt32BE(bufMd5.length, offset);
+			offset += 4
+			bufMd5.copy(buffer, offset);
+		}
+
 		const options = {
-		hostname: this._srvaddress,
-		port: this._srvPort,
-		path: '/devops/run?'+requestargs,
-		method: 'GET'
+			hostname: this._srvaddress,
+			port: this._srvPort,
+			path: '/devops/run',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/octet-stream',
+				'Content-Length': totalLength
+			}
 		};
 		const req = https.request(options, res => {
-		console.log(`statusCode: ${res.statusCode}`);
-		var allData = "";
-		res.on('end', () => {
-			cb?.(allData);			
-		  });
-		res.on('data', d => {
-			var strData = new TextDecoder().decode(d);
-			allData +=strData;
-		});
+			console.log(`statusCode: ${res.statusCode}`);
+			let allData = "";
+			res.on('end', () => {
+				cb?.(allData);
+			});
+			res.on('data', d => {
+				let strData = new TextDecoder().decode(d);
+				allData +=strData;
+			});
 		});
 	
 		req.on('error', error => {
-		console.error(error);
+			console.error(error);
 		});
-	
+		req.write(buffer);
 		req.end();
-	
 	}
 
 	public continue(reverse: boolean, threadId: number, cb) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='Continue')";
-		this.Call(code, (retData) => cb());
+		this.Call(code, undefined, (retData) => cb());
 	}
 	public step(instruction: boolean, reverse: boolean, threadId: number, cb:Function) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='Step')";
-		this.Call(code, (retData) => {
+		this.Call(code, undefined, (retData) => {
 			//this.sendEvent('stopOnStep');
 			cb();
         });
 	}
 	public async setBreakPoints(path: string, md5: string, lines: number[], cb: Function) {
-		////let mKey = await this.loadSource(this.normalizePathAndCasing(path));
 		let path_x = path.replaceAll('\\', '/');
 		let code = "import xdb\nreturn xdb.set_breakpoints(\"" + path_x + "\",\"" + md5 + "\",[" + lines.join() + "])";
-		this.Call(code, (retData) => {
+		this.Call(code, undefined, (retData) => {
 			var retLines = JSON.parse(retData);
 			cb(retLines);
 		});
@@ -489,7 +530,7 @@ export class XLangRuntime extends EventEmitter {
 	 */
 	public stepIn(threadId:number, targetId: number | undefined, cb: Function) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='StepIn')";
-		this.Call(code, (retData) => {
+		this.Call(code, undefined, (retData) => {
 			//this.sendEvent('stopOnStep');
 			cb();
 		});
@@ -500,7 +541,7 @@ export class XLangRuntime extends EventEmitter {
 	 */
 	public stepOut(threadId:number, cb: Function) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='StepOut')";
-		this.Call(code, (retData) => {
+		this.Call(code, undefined, (retData) => {
 			//this.sendEvent('stopOnStep');
 			cb();
 		});
@@ -536,7 +577,7 @@ export class XLangRuntime extends EventEmitter {
 	public getThreads(cb: Function)
 	{
 		let code = "import xdb\nreturn xdb.get_threads()";
-		this.Call(code, (retVal) => {
+		this.Call(code, undefined, (retVal) => {
 			var retObj = null;
 			try {
 				retObj = JSON.parse(retVal);
@@ -556,7 +597,7 @@ export class XLangRuntime extends EventEmitter {
 
 	public stack(threadId: number,startFrame: number, endFrame: number, cb: Function) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='Stack')";
-		this.Call(code, (retVal) => {
+		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
 			var retObj = null;
 			try {
@@ -629,7 +670,7 @@ export class XLangRuntime extends EventEmitter {
 
 	public getGlobalVariables(threadId, cb){
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() +",cmd='Globals')";
-		this.Call(code, (retVal) => {
+		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
 			var retObj = JSON.parse(retVal);
 			console.log(retObj);
@@ -647,7 +688,7 @@ export class XLangRuntime extends EventEmitter {
 	public getLocalVariables(threadId, frameId,cb){
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() +
 			",frameId=" + frameId.toString()+",cmd='Locals')";
-		this.Call(code, (retVal) => {
+		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
 			var retObj = null;
 			try {
@@ -683,7 +724,7 @@ export class XLangRuntime extends EventEmitter {
 			+ ",'" + varName+"'"
 			+ "," + newVal.toString()+ "]"
 			+ ")";
-		this.Call(code, (retVal) => {
+		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
 			try {
 				var retObj = JSON.parse(retVal);
@@ -713,7 +754,7 @@ export class XLangRuntime extends EventEmitter {
 			+ "," + start.toString()
 			+ "," + count.toString()+ "]"
 			+ ")";
-		this.Call(code, (retVal) => {
+		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
 			try {
 				var retObj = JSON.parse(retVal);
@@ -767,7 +808,7 @@ export class XLangRuntime extends EventEmitter {
 	}
 	private async GetStartLine(cb){
 		let code = "import xdb\nreturn xdb.get_startline("+this._moduleKey.toString()+")";
-		this.Call(code, (retVal) => {
+		this.Call(code, undefined, (retVal) => {
 			let lineNum = parseInt(retVal);
 			cb(lineNum);
         });
