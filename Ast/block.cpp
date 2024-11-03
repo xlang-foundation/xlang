@@ -147,8 +147,11 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 	}
 	if (useMyScope)
 	{
-		// change DbgType from StepOut to Step, if this block is the root function to step over or step out this block only(not step over a function or step over a function but interrupted by a breakpoint )
-		if (rt->GetDbgType() == X::dbg::StepOut && (this == rt->m_pFirstStepOutExp || !rt->m_pFirstStepOutExp)) // 
+		// change DbgType from StepOut to Step, if this block is the root function 
+		// to step over or step out this block only(not step over a function or step 
+		// over a function but interrupted by a breakpoint )
+		if (rt->GetDbgType() == X::dbg::StepOut 
+			&& (this == rt->m_pFirstStepOutExp || !rt->m_pFirstStepOutExp))
 		{
 			rt->SetDbgType(dbg::Step, X::dbg::StepOut);
 			rt->m_pFirstStepOutExp = nullptr;

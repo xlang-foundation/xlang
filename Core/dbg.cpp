@@ -16,6 +16,7 @@ limitations under the License.
 #include "dbg.h"
 #include "utility.h"
 #include "op.h"
+#include "dotop.h"
 
 namespace X
 {
@@ -157,6 +158,38 @@ namespace X
 			delete frameProxy;
 		}
 		return 0;
+	}
+
+	bool Dbg::CalcCallables(AST::Expression* curExp, 
+		std::vector<AST::Expression*>& callables)
+	{
+		if (curExp == nullptr)
+		{
+			return false;
+		}
+		switch (curExp->m_type)
+		{
+			case AST::ObType::Pair:
+			{
+				AST::PairOp* pPair = dynamic_cast<AST::PairOp*>(curExp);
+				if (pPair)
+				{
+					callables.push_back(pPair);
+					return true;
+				}
+			}
+			break;
+			default:
+			{
+				AST::BinaryOp* pBinOp = dynamic_cast<AST::BinaryOp*>(curExp);
+				if (pBinOp)
+				{
+					return CalcCallables(pBinOp->GetL(), callables)
+						|| CalcCallables(pBinOp->GetR(), callables);
+				}
+			}
+		}
+		return false;
 	}
 
 }

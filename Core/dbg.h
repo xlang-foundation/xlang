@@ -110,6 +110,9 @@ public:
 			std::cout << ">>";
 		}
 	}
+
+	bool CalcCallables(AST::Expression* curExp, std::vector<AST::Expression*>& callables);
+
 	void WaitForCommnd(TraceEvent evt,XlangRuntime* rt, 
 		AST::Scope* pThisBlock,
 		AST::Expression* exp, XObj* pContext)
@@ -156,26 +159,32 @@ public:
 				break;
 			case dbg::Step:
 			{
-				std::vector<AST::Scope*> callables;
-				exp->CalcCallables(rtForDebugThread, pContext, callables);
-				if (!(exp->m_type == AST::ObType::Func || exp->m_type == AST::ObType::Class) && callables.size() > 0 && callables[0]->GetExp() && callables[0]->GetExp()->m_type == AST::ObType::Func)// can trace into
+				std::vector<AST::Expression*> callables;
+				bool bHave = CalcCallables(exp,callables);
+				if (bHave)// can trace into
 				{
 					m_rt->SetDbgType(dbg::StepOut, dbg::Step); // set DbgType to StepOut to skip trace in this exp
-					m_rt->m_pFirstStepOutExp = callables[0]->GetExp();
+					m_rt->m_pFirstStepOutExp = callables[0];
 				}
 				else
+				{
 					m_rt->SetDbgType(dbg::Step, dbg::Step);// can not trace into
+				}
 				mLoop = false;
 				break;
 			}
 			case dbg::StepIn:
 			{
-				std::vector<AST::Scope*> callables;
-				exp->CalcCallables(rtForDebugThread, pContext, callables);
-				if (callables.size() > 0 && callables[0]->GetExp()->m_type == AST::ObType::Func)
+				std::vector<AST::Expression*> callables;
+				bool bHave = CalcCallables(exp, callables);
+				if (bHave)
+				{
 					m_rt->SetDbgType(dbg::StepIn, dbg::StepIn);// can trace into
+				}
 				else
+				{
 					m_rt->SetDbgType(dbg::Step, dbg::StepIn);// can not trace into
+				}
 				mLoop = false;
 				break;
 			}

@@ -63,6 +63,36 @@ namespace AST
 			m_preceding_token = preceding_token;
 			m_type = ObType::Pair;
 		}
+		virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
+			std::vector<Scope*>& callables) override
+		{
+			bool bHave = false;
+			if (L)
+			{
+				bHave = L->CalcCallables(rt, pContext, callables);
+				Value val_l;
+				ExecAction action;
+				bool bOK = ExpExec(this, rt, action, pContext, val_l);
+				if (bOK)
+				{
+					//check if it is Func or class
+					if (val_l.IsObject())
+					{
+						auto* pObj = val_l.GetObj();
+						if (pObj->GetType() == X::ObjType::Function ||
+							pObj->GetType() == X::ObjType::XClassObject)
+						{
+							bHave = true;
+						}
+					}
+				}
+			}
+			if (R)
+			{
+				bHave |= R->CalcCallables(rt, pContext, callables);
+			}
+			return bHave;
+		}
 		FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
 		{
 			if (L)

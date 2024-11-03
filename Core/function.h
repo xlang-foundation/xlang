@@ -56,7 +56,9 @@ namespace X
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*>& callables) override
 			{
-				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
+				//return m_func?m_func->CalcCallables(rt,pContext,callables):false;
+				//it is funciton object, like func as parameter, but not function call
+				return false;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 			virtual int QueryMethod(const char* name, int* pFlags) override;
