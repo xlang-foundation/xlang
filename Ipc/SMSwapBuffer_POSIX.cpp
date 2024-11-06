@@ -15,9 +15,24 @@ limitations under the License.
 
 #if !(WIN32)
 #include "SMSwapBuffer.h"
-#include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <iostream>
+#include <dirent.h>
+#include <string>
+#include <cstring>
+#include <sys/types.h>
+#include <unistd.h>
+#include <semaphore.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <cstdio>
+#include <cstdlib>
+#include <errno.h>
+#include <sstream>
+#include <limits.h>
+#include <vector>
+#include <sys/stat.h>
 
 namespace X {
     namespace IPC {
@@ -27,11 +42,16 @@ namespace X {
             // Create the write and read events with different names for server and client
             const int Key_Len = 100;
             char szWriteEvent[Key_Len], szReadEvent[Key_Len];
-            SPRINTF(szWriteEvent, Key_Len, "smw_%llu", key);
-            SPRINTF(szReadEvent, Key_Len, "smr_%llu", key);
+            SPRINTF(szWriteEvent, Key_Len, "xlang.smw_%llu", key);
+            SPRINTF(szReadEvent, Key_Len, "xlang.smr_%llu", key);
 
             char shmName[Key_Len];
-            SPRINTF(shmName, Key_Len, "shm_%llu", key);
+            SPRINTF(shmName, Key_Len, "xlang.shm_%llu", key);
+
+            // Store the names
+            mWriteEventName = szWriteEvent;
+            mReadEventName = szReadEvent;
+            mShmName = shmName;
 
             // Create or open the shared memory object
             mShmID = shm_open(shmName, O_CREAT | O_RDWR, 0666);
@@ -83,9 +103,9 @@ namespace X {
 
             const int Key_Len = 100;
             char szKey_w[Key_Len];
-            SPRINTF(szKey_w, Key_Len, "smw_%llu", shKey);
+            SPRINTF(szKey_w, Key_Len, "xlang.smw_%llu", shKey);
             char szKey_r[Key_Len];
-            SPRINTF(szKey_r, Key_Len, "smr_%llu", shKey);
+            SPRINTF(szKey_r, Key_Len, "xlang.smr_%llu", shKey);
 
             printf("ClientConnect:shm_open for read buffer\n");
             const int loopNum = 1000;
@@ -93,7 +113,12 @@ namespace X {
             bool bSrvReady = false;
             int permission = 0666;
             char shmName[Key_Len];
-            SPRINTF(shmName, Key_Len, "shm_%llu", shKey);
+            SPRINTF(shmName, Key_Len, "xlang.shm_%llu", shKey);
+
+            // Store the names
+            mWriteEventName = szKey_w;
+            mReadEventName = szKey_r;
+            mShmName = shmName;
 
             // Loop to attempt connecting to shared memory
             while (loopNo < loopNum)
@@ -229,6 +254,184 @@ namespace X {
             msgsnd(msgid, &message, sizeof(message) - sizeof(long), 0);
             return true;
         }
+    //Help Functions to cleanup
+
+// Function to check if any process has the file open
+        bool IsFileInUse(const std::string& filepath)
+        {
+            // Get the device and inode of the target file
+            struct stat fileStat;
+            if (stat(filepath.c_str(), &fileStat) != 0)
+            {
+                perror(("stat failed for " + filepath).c_str());
+                return false; // Can't access the file, assume not in use
+            }
+
+            // Iterate over all processes in /proc
+            DIR* procDir = opendir("/proc");
+            if (!procDir)
+            {
+                perror("opendir /proc failed");
+                return false; // Conservatively assume the file is not in use
+            }
+
+            struct dirent* procEntry;
+            while ((procEntry = readdir(procDir)) != nullptr)
+            {
+                // Skip entries that are not process directories
+                pid_t pid = atoi(procEntry->d_name);
+                if (pid <= 0)
+                {
+                    continue;
+                }
+
+                // Construct the path to the fd directory
+                std::stringstream fdDirPath;
+                fdDirPath << "/proc/" << pid << "/fd";
+
+                DIR* fdDir = opendir(fdDirPath.str().c_str());
+                if (!fdDir)
+                {
+                    // Cannot open fd directory; may not have permissions
+                    continue;
+                }
+
+                struct dirent* fdEntry;
+                while ((fdEntry = readdir(fdDir)) != nullptr)
+                {
+                    // Skip "." and ".."
+                    if (strcmp(fdEntry->d_name, ".") == 0 || strcmp(fdEntry->d_name, "..") == 0)
+                    {
+                        continue;
+                    }
+
+                    // Construct the path to the symlink
+                    std::stringstream fdPath;
+                    fdPath << fdDirPath.str() << "/" << fdEntry->d_name;
+
+                    // Get file info of the symlink target
+                    struct stat fdStat;
+                    if (stat(fdPath.str().c_str(), &fdStat) != 0)
+                    {
+                        continue;
+                    }
+
+                    // Compare device and inode numbers
+                    if (fileStat.st_dev == fdStat.st_dev && fileStat.st_ino == fdStat.st_ino)
+                    {
+                        closedir(fdDir);
+                        closedir(procDir);
+                        return true; // File is in use
+                    }
+                }
+                closedir(fdDir);
+            }
+            closedir(procDir);
+            return false; // File is not in use
+        }
+
+        void CleanupXlangResources()
+        {
+            // Define prefixes for shared memory and semaphores
+            const std::string shmPrefix = "xlang.shm_";
+            const std::string semPrefixes[] = {
+                "sem.XlangServerSemaphore_",
+                "sem.xlang.smw_",
+                "sem.xlang.smr_"
+            };
+
+            const char* dirpath = "/dev/shm";
+
+            // Open the /dev/shm directory
+            DIR* dir = opendir(dirpath);
+            if (!dir)
+            {
+                perror("opendir failed");
+                return;
+            }
+
+            struct dirent* entry;
+            // Iterate over directory entries
+            while ((entry = readdir(dir)) != nullptr)
+            {
+                std::string filename(entry->d_name);
+
+                // Skip "." and ".." entries
+                if (filename == "." || filename == "..")
+                {
+                    continue;
+                }
+
+                std::string fullPath = std::string(dirpath) + "/" + filename;
+
+                // Check for shared memory objects
+                if (filename.find(shmPrefix) == 0)
+                {
+                    // This is a shared memory object we might want to unlink
+                    std::string shmName = "/" + filename; // Prepend "/"
+
+                    // Check if the file is in use
+                    if (IsFileInUse(fullPath))
+                    {
+                        std::cout << "Shared memory in use, skipping: " << shmName << std::endl;
+                        continue;
+                    }
+
+                    // Attempt to unlink it
+                    if (shm_unlink(shmName.c_str()) == 0)
+                    {
+                        std::cout << "Unlinked shared memory: " << shmName << std::endl;
+                    }
+                    else
+                    {
+                        // Ignore errors if the file doesn't exist
+                        if (errno != ENOENT)
+                        {
+                            perror(("shm_unlink failed for " + shmName).c_str());
+                        }
+                    }
+                }
+                else if (filename.find("sem.") == 0)
+                {
+                    // Check for semaphores
+                    for (const auto& semPrefix : semPrefixes)
+                    {
+                        if (filename.find(semPrefix) == 0)
+                        {
+                            // Remove "sem." prefix to get the name passed to sem_unlink
+                            std::string semName = "/" + filename.substr(4); // Remove "sem." prefix and prepend "/"
+
+                            // Check if the file is in use
+                            if (IsFileInUse(fullPath))
+                            {
+                                std::cout << "Semaphore in use, skipping: " << semName << std::endl;
+                                break; // Skip to next file
+                            }
+
+                            // Attempt to unlink it
+                            if (sem_unlink(semName.c_str()) == 0)
+                            {
+                                std::cout << "Unlinked semaphore: " << semName << std::endl;
+                            }
+                            else
+                            {
+                                // Ignore errors if the file doesn't exist
+                                if (errno != ENOENT)
+                                {
+                                    perror(("sem_unlink failed for " + semName).c_str());
+                                }
+                            }
+
+                            break; // No need to check other prefixes
+                        }
+                    }
+                }
+            }
+
+            // Close the directory
+            closedir(dir);
+        }
+
 
     } // namespace IPC
 } // namespace X
