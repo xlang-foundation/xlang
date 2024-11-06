@@ -28,6 +28,7 @@ limitations under the License.
 #include <semaphore.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <sys/mman.h>
 
 #define INFINITE   -1
 #endif
@@ -114,49 +115,73 @@ namespace X
 				SETEVENT(mWriteEvent);
 				SETEVENT(mReadEvent);
 			}
-
 			void Close()
 			{
+				if (mClosed)
+				{
+					// Prevent multiple closures
+					return;
+				}
 				mClosed = true;
+
+				// Close and unlink the write semaphore
 				if (mWriteEvent)
 				{
 #if (WIN32)
 					CloseHandle(mWriteEvent);
 #else
-					sem_destroy(mWriteEvent);
+					sem_close(mWriteEvent);
+					if (!mWriteEventName.empty())
+					{
+						sem_unlink(mWriteEventName.c_str());
+					}
 #endif
 					mWriteEvent = nullptr;
 				}
+
+				// Close and unlink the read semaphore
 				if (mReadEvent)
 				{
 #if (WIN32)
 					CloseHandle(mReadEvent);
 #else
-					sem_destroy(mReadEvent);
+					sem_close(mReadEvent);
+					if (!mReadEventName.empty())
+					{
+						sem_unlink(mReadEventName.c_str());
+					}
 #endif
 					mReadEvent = nullptr;
 				}
+
+				// Unmap and close the shared memory
 				if (mShmPtr)
 				{
 #if (WIN32)
 					UnmapViewOfFile(mShmPtr);
 #elif __ANDROID__
-
+					// Add Android-specific code if necessary
 #else
-					shmdt(mShmPtr);
+					munmap(mShmPtr, m_BufferSize);
 #endif
 					mShmPtr = nullptr;
 				}
+
 				if (mShmID)
 				{
 #if (WIN32)
 					CloseHandle(mShmID);
 #else
-					shmctl(mShmID, IPC_RMID, 0);
+					close(mShmID);
+					if (!mShmName.empty())
+					{
+						shm_unlink(mShmName.c_str());
+					}
 #endif
 					mShmID = 0;
 				}
 			}
+
 		private:
 			bool Wait(PasWaitHandle h, int timeoutMS);
 		private:
@@ -171,6 +196,12 @@ namespace X
 			Locker mSharedMemLock;
 			char* mShmPtr;
 			int m_BufferSize;
+			//for linux, we need to call sem_unlink to remove them
+#if !(WIN32)
+			std::string mShmName;
+			std::string mWriteEventName;
+			std::string mReadEventName;
+#endif
 		};
 
 	}  // namespace IPC

@@ -36,6 +36,9 @@ namespace X
 {
 	namespace IPC
 	{
+#if !(WIN32)
+		void CleanupXlangResources();
+#endif
 #if (WIN32)
 		BOOL ReadSlot(HANDLE hSlot, std::vector<pas_mesg_buffer>& msgs)
 		{
@@ -124,6 +127,9 @@ namespace X
 
 		void MsgService::run()
 		{
+#if !(WIN32)
+			CleanupXlangResources();
+#endif
 			MakeProcessLevelSemaphore();
 #if (WIN32)
 			std::string msgKey(PAS_MSG_KEY);
