@@ -28,6 +28,10 @@ limitations under the License.
 
 #include "service.h"
 
+#ifdef __APPLE__
+extern char** environ;  // Explicitly declare environ on macOS
+#endif
+
 namespace X {
 
     class Process {
