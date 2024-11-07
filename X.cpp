@@ -29,6 +29,12 @@ limitations under the License.
 #include <cstdlib>
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
+#elif defined(__APPLE__)
+#include <sys/types.h>
+#include <sys/ptrace.h>
+#include <signal.h>
+#define Path_Sep_S "/"
+#define Path_Sep '/'
 #else
 #include <sys/prctl.h>
 #include <string.h> //for memcpy
@@ -51,7 +57,9 @@ void signal_callback_handler(int signum)
 	if (code == X::AppEventCode::Exit)
 	{
 #if (WIN32)
-		_set_abort_behavior(0, _WRITE_ABORT_MSG); // disable error messagebox 
+		_set_abort_behavior(0, _WRITE_ABORT_MSG); // disable error messagebox
+#elif defined(__APPLE__)
+		ptrace(PT_DENY_ATTACH, 0, 0, 0);
 #else
 		prctl(PR_SET_DUMPABLE, 0); // disable core dump
 #endif
