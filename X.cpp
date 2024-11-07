@@ -29,7 +29,7 @@ limitations under the License.
 #include <cstdlib>
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
-#elif defined(__APPLE__)
+#elif defined(APPLE)
 #include <sys/types.h>
 #include <sys/ptrace.h>
 #include <signal.h>
