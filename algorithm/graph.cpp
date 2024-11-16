@@ -72,6 +72,26 @@ namespace X
 			}
 #endif
 		}
+		void XGraph::Clear()
+		{
+			// Cast the void* to a Boost Graph type
+			Graph& g = *(Graph*)mGraph;
+
+			// Iterate through all vertices and clear them
+			std::vector<Vertex> vertices_to_remove;
+			for (auto vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+			{
+				vertices_to_remove.push_back(*vp.first);
+			}
+
+			// Remove all edges and vertices from the graph
+			for (Vertex v : vertices_to_remove)
+			{
+				clear_vertex(v, g); // Remove all edges from vertex v
+				remove_vertex(v, g); // Remove the vertex itself
+			}
+		}
+
 		bool XGraph::AddEdge(int id1, int id2, double weight)
 		{
 			Graph& g = *(Graph*)mGraph;
