@@ -73,6 +73,7 @@ namespace X
 		}
 
 		void SendBreakpointState(const std::string& md5, int line, int actualLine);
+		void SendModuleLoaded(const std::string& md5, const std::string& path);
 	public:
 		void Cleanup()
 		{
