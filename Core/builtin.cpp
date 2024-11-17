@@ -1540,27 +1540,19 @@ bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	if (pContext == nullptr)
+	if (params.size() == 1)
 	{
-		if (params.size() == 1)
+		auto& v = params[0];
+		if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::Error)
 		{
-			auto& v = params[0];
-			if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::Error)
-			{
-				retValue = X::Value(true);
-			}
-			else
-			{
-				retValue = X::Value(false);
-			}
+			retValue = X::Value(true);
 		}
 		else
 		{
 			retValue = X::Value(false);
 		}
-		return true;
 	}
-	else
+	else if (pContext)
 	{
 		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
 		if (pObj->GetType() == X::ObjType::Error)
@@ -1571,7 +1563,6 @@ bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 		{
 			retValue = X::Value(false);
 		}
-		return true;
 	}
 	return true;
 }
