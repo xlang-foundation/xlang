@@ -109,8 +109,10 @@ namespace X {
 					driveLetter++;
 					driveMask >>= 1;
 				}
-#endif
 				return resultList;
+#else
+				folderPath = "/";
+#endif
 			}
 
 			// Scan the specified folderPath
