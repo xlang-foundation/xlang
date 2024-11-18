@@ -179,7 +179,6 @@ namespace X
 		}
 		//prepare top module for this code
 		AST::Module* pTopModule = new AST::Module();
-		pTopModule->SetMd5(md5);
 		std::filesystem::path modulePath(moduleName);
 		// Check if the moduleName is not an absolute path, and resolve it
 		if (!modulePath.is_absolute())
@@ -188,15 +187,17 @@ namespace X
 		}
 		std::string strModuleName = modulePath.string();
 		pTopModule->SetModuleName(strModuleName);
+		pTopModule->SetMd5(md5);
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);
 
 		strModuleName = pTopModule->GetModuleName();
 		std::filesystem::path pathModuleName(strModuleName);
 		strModuleName = pathModuleName.generic_string();
-
 		// if source file has breakpoint data, set breakpoint for this new created module
 		std::vector<int> lines = G::I().GetBreakPointsMd5(md5);
+		if (lines.size() > 0)
+			SendModuleLoaded(md5, strModuleName);
 		bool bValid = G::I().IsBreakpointValidMd5(md5); // Whether the source file's breakpoints have been checked 
 		for (const auto& l : lines)
 		{
@@ -476,6 +477,21 @@ namespace X
 		const int online_len = 1000;
 		char strBuf[online_len];
 		SPRINTF(strBuf, online_len, "[{\"BreakpointMd5\":\"%s\", \"line\":%d, \"actualLine\":%d}]", md5.c_str(), line, actualLine);
+		X::Value valParam(strBuf);
+		kwParams.Add("param", valParam);
+		std::string evtName("devops.dbg");
+		ARGS params(0);
+		X::EventSystem::I().Fire(nullptr, nullptr, evtName, params, kwParams);
+	}
+
+	void Hosting::SendModuleLoaded(const std::string& md5, const std::string& path)
+	{
+		KWARGS kwParams;
+		X::Value valAction("notify");
+		kwParams.Add("action", valAction);
+		const int online_len = 1000;
+		char strBuf[online_len];
+		SPRINTF(strBuf, online_len, "[{\"ModuleLoaded\":\"%s\", \"md5\":\"%s\"}]", path.c_str(), md5.c_str());
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
 		std::string evtName("devops.dbg");

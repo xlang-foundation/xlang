@@ -189,6 +189,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: this.getBreakpointIdMd5(md5, line, 0), line: actualLine}));
 			}
 		});
+		this._runtime.on('moduleLoaded', (path, md5) => {
+			this._runtime.addOutput(`module(has breakpoints) loaded: "${md5}"   "${path}"`);
+		});
 		this._runtime.on('xlangStarted', (started) => {
 			this._xlangStarted.notifyValue = started;
 			this._xlangStarted.notify();
@@ -349,6 +352,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private async startDebug(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments)
 	{
+		this._mapSrcMd5.clear();
+		this._mapMd5Src.clear();
 		this._srcEntryPath = this._runtime.normalizePathAndCasing(args.program);
 		let md5 = calFileMD5(this._srcEntryPath);
 		this._runtime.checkStarted(this._srcEntryPath, md5);
@@ -364,6 +369,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
 		this._mapSrcMd5.set(this._srcEntryPath, md5);
 		this._mapMd5Src.set(md5, this._srcEntryPath);
+		this._runtime.addOutput(`load source file: "${md5}"   "${this._srcEntryPath}"`);
 		let retVal = await this._runtime.loadSource(this._srcEntryPath);
 		if (retVal == -1) // is run file
 		{
@@ -401,7 +407,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const path = this._runtime.normalizePathAndCasing(args.source.path as string);
 		//const clientLines = args.lines || [];
 		const clientLines = args.breakpoints?.map(col => {return col.line;}) || [];
-
+		let bNew = false
 		let md5 = "";
 		if (!this._mapSrcMd5.has(path))
 		{
@@ -409,6 +415,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			console.log(path, "  ", md5);
 			this._mapSrcMd5.set(path, md5);
 			this._mapMd5Src.set(md5, path);
+			bNew = true;//this._runtime.addOutput(`breakpoint source file: "${md5}"   "${path}"`);
 		}
 		else
 		{
@@ -423,6 +430,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		
 		this._runtime.setBreakPoints(path, md5, clientLines, (lines) => {
 			let actualBreakpoints: Breakpoint[] = [];
+			let bModuleLoaded : boolean = true;
 			for(let i = 0; i < lines.length; i += 2)
 			{
 				let bp: Breakpoint;
@@ -430,6 +438,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				let al = lines[i + 1]; // actual line
 				let id = this.getBreakpointIdMd5(md5, l, 0); // breakpoint id
 				if (al === -2){ //'pending'
+					bModuleLoaded = false;
 					bp = new Breakpoint(false, l);
 					bp.setId(id);
 				}
@@ -442,6 +451,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 					bp.setId(id);
 				}
 				actualBreakpoints.push(bp);
+			}
+			if (bNew)
+			{
+				if (bModuleLoaded === false)
+					this._runtime.addOutput(`breakpoint source file: "${md5}"   "${path}" not loaded`);
+				else
+					this._runtime.addOutput(`breakpoint source file: "${md5}"   "${path}" loaded`);
 			}
 			response.body = {
 				breakpoints: actualBreakpoints
@@ -1168,6 +1184,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 		let path = "";
 		if (this._mapMd5Src.has(md5))
 			path = this._mapMd5Src.get(md5) || "";
+		if (path === "")
+			this._runtime.addOutput(`no source file with md5: "${md5}"`);
 		return new Source(basename(path), this.convertDebuggerPathToClient(path), undefined, undefined, 'xLang-adapter-data');
 	}
 

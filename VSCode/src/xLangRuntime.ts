@@ -392,9 +392,12 @@ export class XLangRuntime extends EventEmitter {
 								}
 								else if(kv.hasOwnProperty("ThreadExited")){
 									this.sendEvent('threadExited', kv["ThreadExited"]);
-							}
+								}
 								else if(kv.hasOwnProperty("BreakpointMd5")){
 									this.sendEvent('breakpointState', kv["BreakpointMd5"], kv["line"], kv["actualLine"]);
+								}
+								else if(kv.hasOwnProperty("ModuleLoaded")){
+									this.sendEvent('moduleLoaded', kv["ModuleLoaded"], kv["md5"]);
 								}
 						}
 					}
@@ -439,12 +442,17 @@ export class XLangRuntime extends EventEmitter {
 		this.fetchNotify();
 		if (this._moduleKey!=0) // new created module, run it
 		{
+			this.addOutput(`entry file is new, run it: "${this._sourceFile}"`);	
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
 				+ ", onFinish = 'fire(\"devops.dbg\",action=\"end\",tid=${tid})'"
 				+ ",stopOnEntry=True)\nreturn True";
 			this.Call(code, undefined, (ret) => {
 				console.log(ret);
 			});
+		}
+		else
+		{
+			this.addOutput(`entry file is loaded previsously: "${this._sourceFile}"`);	
 		}
 	}
 	private Call(code, srcArg, cb?)

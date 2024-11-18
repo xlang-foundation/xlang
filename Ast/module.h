@@ -274,7 +274,10 @@ public:
 		return m_moduleName;
 	}
 	std::string GetMd5() { return m_md5; }
-	void SetMd5(const std::string& val) { m_md5 = val; }
+	void SetMd5(const std::string& val) {
+		m_md5 = val; 
+		//std::cout << "new module: " << m_md5 << "  " << m_moduleName << std::endl;
+	}
 	FORCE_INLINE char* SetCode(char* code, int size)
 	{
 		std::string strCode(code, size);
