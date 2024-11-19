@@ -25,6 +25,7 @@ limitations under the License.
 #include "op.h"
 #include "../Jit/md5.h"
 #include <filesystem>
+#include "extension_loader.h"
 
 namespace X
 {
@@ -123,19 +124,7 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	bool bOK = false;
 	if (bHaveDll)
 	{
-		typedef void (*LOAD)(void* pHost, X::Value module);
-		void* libHandle = LOADLIB(loadDllName.c_str());
-		if (libHandle)
-		{
-			LOAD load = (LOAD)GetProc(libHandle, "Load");
-			if (load)
-			{
-				ModuleObject* pModuleObj = new ModuleObject(rt->M());
-				Value curModule = Value(pModuleObj);
-				load((void*)g_pXHost, curModule);
-			}
-			bOK = true;
-		}
+		bOK = ExtensionLoader::I().Load(rt,loadDllName);
 	}
 	return bOK;
 }
