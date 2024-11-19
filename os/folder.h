@@ -96,6 +96,9 @@ namespace X {
 				// Enumerate all available drives on Windows
 				char driveLetter = 'A';
 				DWORD driveMask = GetLogicalDrives();
+				if (driveMask == 0) {
+					return resultList;
+				}
 				while (driveMask) {
 					if (driveMask & 1) {
 						std::string drivePath = std::string(1, driveLetter) + ":/";
@@ -116,30 +119,62 @@ namespace X {
 			}
 
 			// Scan the specified folderPath
-			for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
-				X::Dict fileInfo;
+			try {
+				for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
+					try {
+						X::Dict fileInfo;
+
+						// Handle exceptions from entry.path().filename()
+						try {
 #if (WIN32)
-				fileInfo->Set("Name", WStringToUTF8(entry.path().filename().wstring()));
+							fileInfo->Set("Name", WStringToUTF8(entry.path().filename().wstring()));
 #else
-				fileInfo->Set("Name", entry.path().filename().string());
+							fileInfo->Set("Name", entry.path().filename().string());
 #endif
-				fileInfo->Set("IsDirectory", entry.is_directory() ? "true" : "false");
+						}
+						catch (const std::filesystem::filesystem_error&) {
+							// Skip this entry if filename causes an exception
+							continue;
+						}
 
-				if (!entry.is_directory()) {
-					fileInfo->Set("Size", std::to_string(std::filesystem::file_size(entry.path())));
+						fileInfo->Set("IsDirectory", entry.is_directory() ? "true" : "false");
+
+						if (!entry.is_directory()) {
+							try {
+								fileInfo->Set("Size", std::to_string(std::filesystem::file_size(entry.path())));
+							}
+							catch (const std::filesystem::filesystem_error&) {
+								// Skip setting Size if it causes an exception
+							}
+						}
+
+						try {
+							auto ftime = std::filesystem::last_write_time(entry.path());
+							auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+								ftime - std::filesystem::file_time_type::clock::now()
+								+ std::chrono::system_clock::now());
+							std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
+							fileInfo->Set("LastModified", std::asctime(std::localtime(&cftime)));
+						}
+						catch (const std::filesystem::filesystem_error&) {
+							// Skip setting LastModified if it causes an exception
+						}
+
+						resultList += fileInfo;
+					}
+					catch (const std::filesystem::filesystem_error&) {
+						// Skip this entry entirely if it causes an exception
+						continue;
+					}
 				}
-
-				auto ftime = std::filesystem::last_write_time(entry.path());
-				auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-					ftime - std::filesystem::file_time_type::clock::now()
-					+ std::chrono::system_clock::now());
-				std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
-				fileInfo->Set("LastModified", std::asctime(std::localtime(&cftime)));
-
-				resultList += fileInfo;
 			}
+			catch (const std::filesystem::filesystem_error&) {
+				// Skip the entire directory if it causes an exception
+			}
+
 			return resultList;
 		}
+
 
 		bool CopyFolder(const std::string& targetPath) {
 			try {
@@ -240,6 +275,6 @@ namespace X {
 
 	private:
 		std::string folderPath;
-		};
+	};
 
-	} // namespace X
+} // namespace X
