@@ -236,7 +236,7 @@ public:
 			return true;
 
 		AST::Module* expModule = GetExpModule(exp);
-		if (!expModule && !G::I().GetTrace())
+		if (!expModule || !G::I().GetTrace())
 		{
 			return false;
 		}
