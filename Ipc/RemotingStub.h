@@ -569,13 +569,22 @@ namespace X
 						if (valRet.IsObject())
 						{
 							auto tp = valRet.GetObj()->GetType();
-							//for str and Bin object, directly put into stream
-							if (tp != ObjType::Str && tp != ObjType::Binary && tp != ObjType::List)
+							if (tp == ObjType::List && valRet.Size() > LIST_PASS_PROCESS_SIZE)
 							{
 								auto pRetObj = valRet.GetObj();
 								retId = ConvertXObjToId(pRetObj);
-							}
-							else if (tp == ObjType::List && valRet.Size() > LIST_PASS_PROCESS_SIZE)
+							}//for str ,dict,etc., directly put into stream
+							else if (tp != ObjType::Str
+								&& tp != ObjType::Dict
+								&& tp != ObjType::Binary 
+								&& tp != ObjType::Set
+								&& tp != ObjType::Complex
+								&& tp != ObjType::Struct
+								&& tp != ObjType::Error
+								&& tp != ObjType::Range
+								&& tp != ObjType::Tensor
+								&& tp != ObjType::Table
+								&& tp != ObjType::List)
 							{
 								auto pRetObj = valRet.GetObj();
 								retId = ConvertXObjToId(pRetObj);
