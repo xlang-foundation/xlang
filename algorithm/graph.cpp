@@ -124,6 +124,10 @@ namespace X
 				.distance_map(boost::make_iterator_property_map(distances.begin(), 
 					boost::get(boost::vertex_index, g))));
 
+			// no path to end node
+			if (distances[end] == std::numeric_limits<int>::max())
+				return ArrayToValue(std::vector<long long>());
+
 			// Reconstruct the shortest path from start to goal
 			std::vector<Vertex> path;
 			for (Vertex v = end; v != start; v = predecessors[v]) 
