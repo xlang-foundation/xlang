@@ -77,7 +77,10 @@ namespace X
 							return true;
 						}
 						Dict* pObj = dynamic_cast<Dict*>(pContext);
-						return pObj->Get(params[0], retValue);
+						pObj->Get(params[0], retValue);
+						//we don't need to care if find it or not
+						//always make it success, so xlang run statement is OK
+						return true;
 					};
 				_dictScope.AddFunc("get", "val = get(key)", f);
 			}
