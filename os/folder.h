@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#pragma once
+
 #include <iostream>
 #include <string>
 #include <filesystem>
@@ -26,10 +28,7 @@ limitations under the License.
 #include <codecvt> 
 
 // Function to convert wstring (wide string) to UTF-8 string
-inline std::string WStringToUTF8(const std::wstring& wstr) {
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	return converter.to_bytes(wstr);
-}
+std::string WStringToUTF8(const std::wstring& wstr);
 
 namespace X {
 
@@ -53,19 +52,14 @@ namespace X {
 		END_PACKAGE
 
 	public:
-		Folder(const std::string& path)
-		{
-			std::filesystem::path fsPath = std::filesystem::path(path);
-			// Remove trailing separators
-			fsPath = fsPath.lexically_normal();
-			folderPath = fsPath.make_preferred().string();
-		}
+		Folder(const std::string& path);
 
 		std::string BuildPath(const std::string& subPath)
 		{
 			std::filesystem::path fullPath = folderPath;
 			fullPath /= std::filesystem::path(subPath);
-			return fullPath.make_preferred().string();
+			std::filesystem::path fsPath = fullPath.lexically_normal();
+			return fsPath.make_preferred().string();
 		}
 
 		X::List List() {
