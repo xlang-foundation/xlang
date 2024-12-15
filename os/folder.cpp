@@ -28,8 +28,8 @@ namespace X
 
     Folder::Folder(const std::string& path)
     {
-        std::string strPath = FileSystem::I().ConvertReletivePathToFullPath(path);
-        std::filesystem::path fsPath = std::filesystem::path(strPath);
+        //std::string strPath = FileSystem::I().ConvertReletivePathToFullPath(path);
+        std::filesystem::path fsPath = std::filesystem::path(path);
         // Remove trailing separators
         fsPath = fsPath.lexically_normal();
         folderPath = fsPath.make_preferred().string();

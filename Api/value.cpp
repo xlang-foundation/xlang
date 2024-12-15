@@ -696,8 +696,11 @@ namespace X
 			if (pObj)
 			{
 				const char* retStrType = pObj->GetTypeString();
-				strType = std::string(retStrType);
-				g_pXHost->ReleaseString(retStrType);
+				if (retStrType)
+				{
+					strType = std::string(retStrType);
+					g_pXHost->ReleaseString(retStrType);
+				}
 			}
 			else
 			{

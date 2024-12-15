@@ -28,7 +28,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<9> _strScope;
+		static Obj_Func_Scope<10> _strScope;
 		void Str::Init()
 		{
 			_strScope.Init();
@@ -227,6 +227,39 @@ namespace X
 					return true;
 				};
 				_strScope.AddFunc("regex_replace", "new_str = regex_replace(regex_expr,target_chars)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) 
+					{
+						// Ensure there are two parameters: the string to match and the regex pattern
+						if (params.size() < 1) {
+							retValue = false; // Indicate failure
+							return true;
+						}
+
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrObj = dynamic_cast<Str*>(pObj);
+						std::string target = pStrObj->ToString();
+						std::string pattern = params[0].ToString();
+
+						try {
+							// Create a regex object and check for a match
+							const std::regex r(pattern);
+							bool match = std::regex_match(target, r);
+
+							// Return the match result
+							retValue = match;
+							return true;
+						}
+						catch (const std::regex_error) {
+							// Handle regex syntax errors
+							retValue = false; // Indicate failure
+							return true;
+						}
+					};
+				// Add the `regex_match` function to the string scope
+				_strScope.AddFunc("regex_match", "bool = string_var.regex_match(regex_expr)", f);
 			}
 			_strScope.Close();
 		}
