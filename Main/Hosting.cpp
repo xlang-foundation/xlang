@@ -308,13 +308,19 @@ namespace X
 		{
 			retVal = v;
 		}
+		pRuntime->PopFrame(); //move from line 314, we think this module's run finished, 
+		//need to popup its frame,if not, will leave a dirty stack here 
 		if (!keepModuleWithRuntime)
 		{
-			pRuntime->PopFrame();
+			//pRuntime->PopFrame();
 			if (pOldModule)
+			{
 				pRuntime->SetM(pOldModule);
+			}
 			else
-			delete pRuntime;
+			{
+				delete pRuntime;
+			}
 		}
 
 		return bOK;

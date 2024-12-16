@@ -372,7 +372,10 @@ return nullptr;
 	}
 	void XHost_Impl::ReleaseString(const char* str)
 	{
-		delete str;
+		if (str)
+		{
+			delete str;
+		}
 	}
 	XBin* XHost_Impl::CreateBin(char* data, size_t size, bool bOwnData)
 	{
