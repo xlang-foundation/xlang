@@ -390,7 +390,7 @@ namespace X
 	Value Value::ObjCall(Port::vector<X::Value>& params, Port::StringMap<X::Value>& kwParams)
 	{
 		auto* pObj = GetObj();
-		if (pObj == nullptr || pObj->RT() == nullptr)
+		if (pObj == nullptr)
 		{
 			return Value();
 		}
