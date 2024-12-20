@@ -104,17 +104,7 @@ namespace X
 			}
 			return true;
 		}
-		X::Value get_size()
-		{
-			struct stat stat_buf;
-			int rc = stat(m_fileName.c_str(), &stat_buf);
-			size_t size = -1;
-			if (rc == 0)
-			{
-				size = stat_buf.st_size;
-			}
-			return X::Value((long long)size);
-		}
+		X::Value get_size();
 	};
 
 	class FileSystem:
