@@ -90,6 +90,7 @@ namespace X
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
 			APISET().AddVarFuncEx("route", &HttpServer::Route);
+			APISET().AddFunc<1>("getMimeType", &HttpServer::GetMimeType);
 			END_PACKAGE
 	public:
 
@@ -119,6 +120,7 @@ namespace X
 			Init(m_bAsHttps);
 		}
 		~HttpServer();
+		X::Value GetMimeType(std::string extName);
 		void Init(bool asHttps);
 		bool Listen(std::string srvName, int port);
 		bool Stop();

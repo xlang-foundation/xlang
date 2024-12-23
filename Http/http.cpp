@@ -28,6 +28,8 @@ namespace fs = std::filesystem;
 
 namespace X
 {
+	std::tuple<std::string, bool> getMimeTypeAndBinaryFlag(const std::string& extension);
+
 	X::Value Http::WritePad(X::Value& input)
 	{
 		std::string strInput = input.ToString();
@@ -163,6 +165,14 @@ namespace X
 			pFuncObj->DecRef();
 		}
 		m_handlers.clear();
+	}
+	X::Value HttpServer::GetMimeType(std::string extName)
+	{
+		auto [mimeType, isBinary] = getMimeTypeAndBinaryFlag(extName);
+		X::List list;
+		list += mimeType;
+		list += isBinary;
+		return list;
 	}
 	bool HttpServer::Listen(std::string srvName,int port)
 	{
