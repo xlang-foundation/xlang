@@ -39,6 +39,7 @@ namespace X {
             APISET().AddFunc<0>("ParentPath", &Folder::ParentPath);
             APISET().AddFunc<1>("RelativePath", &Folder::RelativePath);
             APISET().AddFunc<1>("IsAbsolutePath", &Folder::IsAbsolutePath);
+            APISET().AddFunc<0>("Exists", &Folder::Exists);
         END_PACKAGE
 
         explicit Folder(const std::string& path);
@@ -56,7 +57,7 @@ namespace X {
         std::string ParentPath() const;
         std::string RelativePath(const std::string& basePath) const;
         bool IsAbsolutePath(const std::string& path) const;
-
+        bool Exists();
     private:
         std::string folderPath;
     };
