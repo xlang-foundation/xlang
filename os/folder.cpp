@@ -24,7 +24,18 @@ limitations under the License.
 namespace X {
 
     // Constructor
-    Folder::Folder(const std::string& path) : folderPath(path) {}
+    Folder::Folder(const std::string& path){
+#if (WIN32)
+		folderPath = path;//if empty in windows, when scan will enum all drives
+#else
+        if (path.empty()) {
+            folderPath = "/";//in other os, empty treat as root folder
+        }
+		else {
+			folderPath = path;
+		}
+#endif
+    }
 
     // Helper function: UTF-8 to UTF-16
     std::wstring UTF8ToWString(const std::string& utf8) {
@@ -256,5 +267,14 @@ namespace X {
         return !path.empty() && path[0] == '/';
 #endif
     }
-
+    // Exists: Check if the folder path exists
+    bool Folder::Exists() {
+        try {
+            return std::filesystem::exists(std::filesystem::u8path(folderPath));
+        }
+        catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Error checking existence: " << e.what() << std::endl;
+            return false;
+        }
+    }
 } // namespace X
