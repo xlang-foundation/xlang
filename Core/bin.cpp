@@ -69,7 +69,6 @@ namespace X
                             }
 #else
                             // For non-Windows platforms, conversion may require iconv or equivalent
-                            rt->Print("UTF-16 encoding is not supported on this platform.");
                             retValue = X::Value();
                             return false;
 #endif
