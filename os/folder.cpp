@@ -26,24 +26,26 @@ namespace X {
     // Constructor
     Folder::Folder(const std::string& path) {
 #if (WIN32)
-        folderPath = path; // If empty in Windows, when scanned, it will enumerate all drives.
+        folderPath = path; // If empty in Windows, enumerate all drives.
 #elif (__APPLE__)
         if (path.empty()) {
+            // Retrieve the user's home directory using getpwuid.
             const char* home = std::getenv("HOME");
-            folderPath = (home != nullptr) ? home : "/"; // Use HOME, fallback to root if unavailable.
+            folderPath = home; // Set to the user's home directory.
         }
         else {
             folderPath = path;
         }
 #else
         if (path.empty()) {
-            folderPath = "/"; // In other OS, empty is treated as root folder.
+            folderPath = "/"; // On other systems, treat empty as the root directory.
         }
         else {
             folderPath = path;
         }
 #endif
     }
+
 
     // Helper function: UTF-8 to UTF-16
     std::wstring UTF8ToWString(const std::string& utf8) {
@@ -112,9 +114,10 @@ namespace X {
             if (driveMask == 0) return resultList;
             while (driveMask) {
                 if (driveMask & 1) {
-                    std::string drivePath = std::string(1, driveLetter) + ":/";
+                    std::string drivePath = std::string(1, driveLetter) + ":";
                     X::Dict driveInfo;
                     driveInfo->Set("Name", drivePath);
+                    driveInfo->Set("Path", drivePath+"/");
                     driveInfo->Set("IsDirectory", "true");
                     driveInfo->Set("Size", "N/A");
                     driveInfo->Set("LastModified", "N/A");
@@ -129,14 +132,27 @@ namespace X {
         try {
             for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::u8path(folderPath))) {
                 X::Dict fileInfo;
+
+                // Get the file name as a UTF-8 string
                 auto u8str = entry.path().filename().u8string();
                 fileInfo->Set("Name", std::string(u8str.begin(), u8str.end()));
+
+                // Set the full path as a UTF-8 string
+                auto fullPathStr = entry.path().u8string();
+                fileInfo->Set("Path", std::string(fullPathStr.begin(), fullPathStr.end()));
+
+                // Check if it's a directory
                 fileInfo->Set("IsDirectory", entry.is_directory() ? "true" : "false");
+
+                // If it's a file, set its size
                 if (!entry.is_directory()) {
                     fileInfo->Set("Size", std::to_string(std::filesystem::file_size(entry.path())));
                 }
+
+                // Add the fileInfo to the result list
                 resultList += fileInfo;
             }
+
         }
         catch (const std::filesystem::filesystem_error& e) {
             std::cerr << "Error scanning folder: " << e.what() << std::endl;
