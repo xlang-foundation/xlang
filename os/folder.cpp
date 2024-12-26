@@ -24,16 +24,24 @@ limitations under the License.
 namespace X {
 
     // Constructor
-    Folder::Folder(const std::string& path){
+    Folder::Folder(const std::string& path) {
 #if (WIN32)
-		folderPath = path;//if empty in windows, when scan will enum all drives
+        folderPath = path; // If empty in Windows, when scanned, it will enumerate all drives.
+#elif (__APPLE__)
+        if (path.empty()) {
+            const char* home = std::getenv("HOME");
+            folderPath = (home != nullptr) ? home : "/"; // Use HOME, fallback to root if unavailable.
+        }
+        else {
+            folderPath = path;
+        }
 #else
         if (path.empty()) {
-            folderPath = "/";//in other os, empty treat as root folder
+            folderPath = "/"; // In other OS, empty is treated as root folder.
         }
-		else {
-			folderPath = path;
-		}
+        else {
+            folderPath = path;
+        }
 #endif
     }
 
