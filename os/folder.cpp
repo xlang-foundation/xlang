@@ -31,7 +31,6 @@ namespace X {
         if (path.empty()) {
             // Retrieve the user's home directory using getpwuid.
             const char* home = std::getenv("HOME");
-			std::cout << "Home directory: " << home << std::endl;
             folderPath = home; // Set to the user's home directory.
         }
         else {
