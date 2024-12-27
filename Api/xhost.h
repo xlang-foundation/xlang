@@ -153,6 +153,7 @@ namespace X
 		virtual void SetDebugMode(bool bDebug) = 0;
 		virtual void EnalbePython(bool bEnable,bool bEnablePythonDebug) = 0;
 		virtual void EnableDebug(bool bEnable, int port=3142) = 0;
+		virtual void* GetLogger() = 0;
 	};
 	extern XHost* g_pXHost;
 }

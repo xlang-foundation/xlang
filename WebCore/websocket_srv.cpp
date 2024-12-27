@@ -28,6 +28,7 @@ limitations under the License.
 #include <vector>
 #include "value.h"
 #include "xhost.h"
+#include "xlog.h"
 
 namespace X
 {
@@ -98,7 +99,7 @@ namespace X
                 WebSocketSessionImpl* pThis = this;
                 m_lockThreadCount.Lock();
                 m_threadCount--;
-                CanRemove == (m_threadCount == 0);
+                CanRemove = (m_threadCount == 0);
                 m_lockThreadCount.Unlock();
                 if (CanRemove)
                 {
@@ -181,6 +182,7 @@ namespace X
                 catch (const std::exception& e)
                 {
                     std::cout << "Error:" << e.what() << std::endl;
+
                 }
                 PrepareStop();
                 TryToRemoveSession();
@@ -226,7 +228,7 @@ namespace X
                 }
                 catch (const std::exception& e)
                 {
-                    //LOG << "Error:" << e.what() << LINE_END;
+                    LOG <<LOG_RED<< "Error:" << e.what() <<LOG_RESET<< LINE_END;
                 }
                 PrepareStop();
                 TryToRemoveSession();
@@ -282,15 +284,15 @@ namespace X
             }
             catch (const boost::system::system_error& e)
             {
-                std::cerr << "Boost system error: " << e.what() << std::endl;
+                LOG << LOG_BLINK <<LOG_RED <<"Port:"<< mPort << ",Boost system error: " << e.what() << LOG_RESET << LINE_END;
             }
             catch (const std::exception& e)
             {
-                std::cerr << "Standard exception: " << e.what() << std::endl;
+                LOG << LOG_BLINK << LOG_RED << "Port:" << mPort << ",Standard exception: " << e.what() << LOG_RESET << LINE_END;
             }
             catch (...)
             {
-                std::cerr << "Unknown exception occurred." << std::endl;
+                LOG << LOG_BLINK << LOG_RED << "Port:" << mPort <<",Unknown exception occurred." << LOG_RESET << LINE_END;
             }
 			//Clean up
             m_lockSessions.Lock();

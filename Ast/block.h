@@ -16,6 +16,8 @@ limitations under the License.
 #pragma once
 #include "exp.h"
 #include "op.h"
+#include "xlog.h"
+
 
 namespace X
 {
@@ -257,10 +259,9 @@ namespace X
 					}
 					if (!bOk)
 					{
-						auto pid = GetPID();
-						std::cout << "Error Occurs in line:" << line << ",pid:" << pid << std::endl;
+						LOG <<LOG_RED<< "Error Occurs in "<<rt->GetName()<< ",line:" << line <<LOG_RESET<< LINE_END;
 						auto code = i->GetCode();
-						std::cout << "*** " << code << std::endl;
+						LOG << LOG_RED << "*** " << code <<LOG_RESET<<LINE_END;
 					}
 					if (v0.IsValid() && (idx == lastIdx))
 					{
