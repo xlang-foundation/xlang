@@ -284,15 +284,15 @@ namespace X
             }
             catch (const boost::system::system_error& e)
             {
-                LOG <<LOG_RED << "Boost system error: " << e.what() << LOG_RESET <<LINE_END;
+                LOG << LOG_BLINK <<LOG_RED <<"Port:"<< mPort << ",Boost system error: " << e.what() << LOG_RESET << LINE_END;
             }
             catch (const std::exception& e)
             {
-                LOG << LOG_RED << "Standard exception: " << e.what() << LOG_RESET << LINE_END;
+                LOG << LOG_BLINK << LOG_RED << "Port:" << mPort << ",Standard exception: " << e.what() << LOG_RESET << LINE_END;
             }
             catch (...)
             {
-                LOG << LOG_RED << "Unknown exception occurred." << LOG_RESET << LINE_END;
+                LOG << LOG_BLINK << LOG_RED << "Port:" << mPort <<",Unknown exception occurred." << LOG_RESET << LINE_END;
             }
 			//Clean up
             m_lockSessions.Lock();

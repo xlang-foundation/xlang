@@ -16,11 +16,7 @@ X::Log::~Log()
 X::Log& X::Log::SetCurInfo(const char* fileName,
 	const int line, const int level)
 {
-	if (m_lock == nullptr || m_unlock == nullptr || m_realLogger == nullptr)
-	{
-		return *this;
-	}
-	int dumpLevel = m_lock();
+	int dumpLevel = m_lock?m_lock():m_dumpLevel;
 	m_level = level;
 	if (m_level <= dumpLevel)
 	{
@@ -37,7 +33,14 @@ X::Log& X::Log::SetCurInfo(const char* fileName,
 		const int buf_Len = 1000;
 		char szFilter[buf_Len];
 		SPRINTF(szFilter, buf_Len, "[%d-%d-%llu,%s:%d] ", pid, tid, ts, strFileName.c_str(), line);
-		m_realLogger(m_level,szFilter);
+		if (m_realLogger)
+		{
+			m_realLogger(m_level, szFilter);
+		}
+		else
+		{
+			std::cout << szFilter;
+		}
 	}
 	return *this;
 }

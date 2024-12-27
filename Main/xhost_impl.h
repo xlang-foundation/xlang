@@ -106,7 +106,6 @@ namespace X
 		virtual void SetDebugMode(bool bDebug) override;
 		virtual void EnalbePython(bool bEnable, bool bEnablePythonDebug) override;
 		virtual void EnableDebug(bool bEnable, int port=3142) override;
-		virtual void GetLogFuncs(void** lock, void** unlock, void** logWrite) override;
 		virtual void* GetLogger() override;
 	};
 	X::XHost* CreatXHost();

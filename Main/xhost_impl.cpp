@@ -861,10 +861,6 @@ return nullptr;
 			}
 		}
 	}
-	void XHost_Impl::GetLogFuncs(void** lock, void** unlock, void** logWrite)
-	{
-		X::log.GetLogFuncs(lock, unlock, logWrite);
-	}
 	void* XHost_Impl::GetLogger()
 	{
 		return (void*)&X::log;

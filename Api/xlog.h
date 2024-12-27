@@ -38,7 +38,8 @@ namespace X
 #define LINE_END ((XlangLog*)X::g_pXHost->GetLogger())->LineEnd()
 #define LOG_END ((XlangLog*)X::g_pXHost->GetLogger())->End()
 
-	// ANSI color codes for console
+// ANSI color codes for console
+#define LOG_BLINK "\033[5m" //Blinking Text
 #define LOG_RED "\033[31m"   // Red color
 #define LOG_GREEN "\033[32m" // Green color
 #define LOG_YELLOW "\033[33m" // Yellow color

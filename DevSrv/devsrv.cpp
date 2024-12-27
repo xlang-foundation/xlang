@@ -21,6 +21,7 @@ limitations under the License.
 #include <thread>
 #include <chrono>
 #include <filesystem>
+#include "xlog.h"
 
 namespace X
 {
@@ -288,7 +289,7 @@ namespace X
 							res.set_content("need_path", "text/html");
 					}
 				}
-				std::cout << "client connected" << std::endl;
+				LOG << LOG_GREEN << "xlang debug client connected" << LOG_RESET << LINE_END;
 			}
 		);
 		m_srv.Get("/devops/terminate",
@@ -303,15 +304,15 @@ namespace X
 		);
 		if (!m_srv.is_valid())
 		{
-			printf("Devops server has an error...\n");
+			LOG << LOG_RED << "Devops server has an error..." << LOG_RESET << LINE_END;
 		}
-		std::cout << "DevServer set debug mode: true" << std::endl;
+		LOG << LOG_GREEN << "DevServer set debug mode: true" << LOG_RESET << LINE_END;
 		X::g_pXHost->SetDebugMode(true);
-		std::cout << "DevServer listens on port:" << m_port << std::endl;
+		LOG << LOG_GREEN << "DevServer listens on port:" << m_port << LOG_RESET << LINE_END;
 		if (!m_srv.listen("::", m_port))
 		{
-			std::cout << "listen failed" << std::endl;
-			std::cout << "DevServer set debug mode: false" << std::endl;
+			LOG << LOG_RED << "listen failed" << LOG_RESET << LINE_END;
+			LOG <<LOG_RED << "DevServer set debug mode: false" << LOG_RESET <<LINE_END;
 			X::g_pXHost->SetDebugMode(false);
 		}
 		//exit
