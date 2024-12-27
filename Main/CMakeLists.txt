@@ -23,6 +23,7 @@ include_directories("../Text")
 include_directories("../Scripts")
 include_directories("../Tensor")
 include_directories("../Jit")
+include_directories("../log")
 include_directories(".")
 
 FILE(GLOB Api_SRC "../Api/value.cpp")
@@ -38,7 +39,7 @@ FILE(GLOB Text_SRC "../Text/*.cpp")
 FILE(GLOB Ipc_SRC "../Ipc/*.cpp")
 FILE(GLOB Nn_SRC "../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../Jit/*.cpp")
-FILE(GLOB Main_SRC "*.cpp")
+FILE(GLOB Main_SRC "*.cpp" "../log/log.cpp")
 
 add_library(${PROJECT_NAME} SHARED 
 	${Api_SRC}

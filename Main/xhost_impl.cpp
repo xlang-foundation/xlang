@@ -46,6 +46,7 @@ limitations under the License.
 #include "error_obj.h"
 #include "../Jit/md5.h"
 #include <filesystem>
+#include "log.h"
 
 namespace X 
 {
@@ -859,6 +860,14 @@ return nullptr;
 				g_pXload->GetConfig().dbgPort = port;
 			}
 		}
+	}
+	void XHost_Impl::GetLogFuncs(void** lock, void** unlock, void** logWrite)
+	{
+		X::log.GetLogFuncs(lock, unlock, logWrite);
+	}
+	void* XHost_Impl::GetLogger()
+	{
+		return (void*)&X::log;
 	}
 	bool XHost_Impl::IsModuleLoadedMd5(const char* md5)
 	{

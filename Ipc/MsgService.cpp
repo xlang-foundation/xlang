@@ -30,6 +30,7 @@ limitations under the License.
 #include <iostream>
 
 #include "RemotingServerMgr.h"
+#include "log.h"
 
 
 namespace X
@@ -259,12 +260,12 @@ namespace X
 			mSemaphore_For_Process = CREATE_SEMAPHORE(sa, semaphoreName.c_str());
 			if (mSemaphore_For_Process == nullptr)
 			{
-				std::cout << "Create semaphore " << semaphoreName << " failed" << std::endl;
+				LOG <<LOG_RED<< "Create semaphore " << semaphoreName << " failed" <<LOG_RESET<< LINE_END;
 				return false;
 			}
 			else
 			{
-				std::cout << "Create semaphore " << semaphoreName << " OK" << std::endl;
+				LOG << LOG_GREEN << "Create semaphore " << semaphoreName << " OK" << LOG_RESET<< LINE_END;
 			}
 			return true;
 		}

@@ -87,6 +87,7 @@ namespace X
 		AppEventCode HandleAppEvent(int signum);
 		FORCE_INLINE Config& GetConfig() { return *m_pConfig; }
 		int Load(Config* pCfg);
+		void SetLogFuncs(void* lock, void* unlock, void* logWrite);
 		void Unload();
 		int Run();
 		void EventLoop();

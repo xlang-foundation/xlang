@@ -22,6 +22,7 @@ include_directories("../Text")
 include_directories("../Scripts")
 include_directories("../Tensor")
 include_directories("../Executor")
+include_directories("../log")
 include_directories("../Jit")
 
 
@@ -38,7 +39,7 @@ FILE(GLOB Rpc_SRC "../rpc/*.cpp")
 FILE(GLOB Ipc_SRC "../Ipc/*.cpp")
 FILE(GLOB Nn_SRC "../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../Jit/*.cpp")
-FILE(GLOB Main_SRC "../Main/AddScripts.cpp" "../Main/Hosting.cpp" "../Main/xhost_impl.cpp")
+FILE(GLOB Main_SRC "../Main/AddScripts.cpp" "../Main/Hosting.cpp" "../Main/xhost_impl.cpp" "../log/log.cpp")
 
 FILE(GLOB AppEntry_SRC "../cli.cpp" "./*.cpp")
 FILE(GLOB XOne_SRC "./*.cpp")
