@@ -17,6 +17,10 @@ limitations under the License.
 #include "Hosting.h"
 #include "utility.h"
 #include "port.h"
+#include <string>
+#include <sstream>
+#include <fstream>
+
 
 //TODO: for security, disable any function call inside json string or file
 
@@ -51,4 +55,145 @@ namespace X
 			(int)jsonStr.size(), passInParams,retValue);
 		return retValue;
 	}
+
+    bool JsonWrapper::SaveToString(X::XRuntime* rt, X::XObj* pContext,
+        X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+    {
+		if (params.size() < 1)
+		{
+			return "";
+		}
+        X::Value value;
+        bool prettyPrint = false;
+		if (params.size() > 1) {
+			prettyPrint = params[1].ToBool();
+		}
+        else {
+			auto it = kwParams.find("pretty");
+            if (it){
+                prettyPrint = (bool)it->val;
+            }
+        }
+		value = params[0];
+        retValue = ConvertXValueToJsonString(value, prettyPrint,0);
+		return true;
+    }
+
+    bool JsonWrapper::SaveToFile(X::XRuntime* rt, 
+        X::XObj* pContext, X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+    {
+        if (params.size() < 2)
+        {
+			retValue = false;
+			return false;
+        }
+        bool prettyPrint = false;
+        if (params.size() > 2) 
+        {
+            prettyPrint = params[3].ToBool();
+        }
+        else 
+        {
+            auto it = kwParams.find("pretty");
+            if (it) 
+            {
+                prettyPrint = (bool)it->val;
+            }
+        }
+		X::Value value = params[0];
+		std::string jsonStr = ConvertXValueToJsonString(value, prettyPrint, 0);
+		std::string fileName = params[1].ToString();
+        if (!IsAbsPath(fileName))
+        {
+			X::XlangRuntime* pRt = (X::XlangRuntime*)rt;
+			std::string curPath = pRt->M()->GetModulePath();
+			fileName = curPath + Path_Sep_S + fileName;
+        }
+        //write to file
+        try 
+        {
+            std::ofstream file(fileName);
+            if (file.is_open())
+            {
+                file << jsonStr;
+                file.close();
+            }
+		}
+		catch (const std::exception& e) 
+        {
+			retValue = false;
+			return false;
+		}
+		retValue = true;
+        return true;
+    }
+
+    inline std::string GetIndentation(int indentLevel) {
+        return std::string(indentLevel * 4, ' '); // 4 spaces per indentation level
+    }
+    std::string JsonWrapper::ConvertXValueToJsonString(X::Value value, 
+        bool prettyPrint, int indentLevel) {
+        std::string jsonStr;
+
+        if (value.IsLong()) {
+            jsonStr = std::to_string((long)value);
+        }
+        else if (value.IsDouble()) {
+            jsonStr = std::to_string((double)value);
+        }
+        else if (value.IsBool()) {
+            jsonStr = value ? "true" : "false";
+        }
+        else if (value.IsString()) {
+            jsonStr = "\"" + value.ToString() + "\""; // Add quotes for JSON strings
+        }
+        else if (value.IsList()) {
+            jsonStr = "[";
+            if (prettyPrint) jsonStr += "\r\n";
+            X::List list(value);
+            bool first = true;
+            for (const auto& item : *list) {
+                if (!first) {
+                    jsonStr += ",";
+                    if (prettyPrint) jsonStr += "\r\n";
+                }
+                if (prettyPrint) jsonStr += GetIndentation(indentLevel + 1);
+                jsonStr += ConvertXValueToJsonString(item, prettyPrint, indentLevel + 1);
+                first = false;
+            }
+            if (prettyPrint) {
+                jsonStr += "\r\n" + GetIndentation(indentLevel);
+            }
+            jsonStr += "]";
+        }
+        else if (value.IsDict()) {
+            jsonStr = "{";
+            if (prettyPrint) jsonStr += "\r\n";
+            X::Dict dict(value);
+            bool first = true;
+            dict->Enum([&jsonStr, &first, prettyPrint, indentLevel,this](
+                X::Value& varKey, X::Value& val) {
+                if (!first) {
+                    jsonStr += ",";
+                    if (prettyPrint) jsonStr += "\r\n";
+                }
+                if (prettyPrint) jsonStr += GetIndentation(indentLevel + 1);
+                jsonStr += "\"" + varKey.ToString() + "\": " 
+                    + ConvertXValueToJsonString(val, prettyPrint, indentLevel + 1);
+                first = false;
+                });
+            if (prettyPrint) {
+                jsonStr += "\r\n" + GetIndentation(indentLevel);
+            }
+            jsonStr += "}";
+        }
+        else {
+            // Handle unsupported types or null values
+            jsonStr = "null";
+        }
+
+        return jsonStr;
+    }
+
+
 }

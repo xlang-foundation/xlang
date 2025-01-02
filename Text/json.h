@@ -26,17 +26,21 @@ namespace X
 		BEGIN_PACKAGE(JsonWrapper)
 			APISET().AddFunc<1>("loads", &JsonWrapper::LoadFromString);
 			APISET().AddRTFunc<1>("load", &JsonWrapper::LoadFromFile);
-			APISET().AddFunc<1>("saves", &JsonWrapper::SaveToString);
+			APISET().AddVarFunc("saves", &JsonWrapper::SaveToString);
+			APISET().AddVarFunc("save", &JsonWrapper::SaveToFile);
 			END_PACKAGE
 	public:
 		JsonWrapper()
 		{
 		}
-		std::string SaveToString(X::Value v)
-		{
-			return v.ToString(true);
-		}
+		bool SaveToString(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+		bool SaveToFile(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
 		X::Value LoadFromString(std::string jsonStr);
 		X::Value  LoadFromFile(X::XRuntime* rt, X::XObj* pContext,std::string fileName);
+	private:
+		std::string ConvertXValueToJsonString(X::Value value,
+			bool prettyPrint, int indentLevel);
 	};
 }
