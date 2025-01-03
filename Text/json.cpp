@@ -90,7 +90,7 @@ namespace X
         bool prettyPrint = false;
         if (params.size() > 2) 
         {
-            prettyPrint = params[3].ToBool();
+            prettyPrint = params[2].ToBool();
         }
         else 
         {
