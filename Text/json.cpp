@@ -26,14 +26,47 @@ limitations under the License.
 
 namespace X
 {
-	X::Value JsonWrapper::LoadFromString(std::string jsonStr)
-	{
-		X::Value retValue;
-		std::vector<X::Value> passInParams;
-		X::Hosting::I().SimpleRun("inline_code", jsonStr.c_str(),
-			(int)jsonStr.size(),retValue);
-		return retValue;
-	}
+    X::Value JsonWrapper::LoadFromString(X::XRuntime* rt, X::XObj* pContext,
+        X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+    {
+        if (params.size() < 1)
+        {
+            return X::Value();
+        }
+
+        std::string jsonStr = params[0].ToString();
+
+        bool needNormalize = false;
+        auto it = kwParams.find("normalize");
+        if (it)
+        {
+            needNormalize = (bool)it->val;
+        }
+
+        if (needNormalize)
+        {
+            // Strip surrounding double quotes
+            if (!jsonStr.empty() && jsonStr.front() == '"' && jsonStr.back() == '"')
+            {
+                jsonStr = jsonStr.substr(1, jsonStr.size() - 2);
+            }
+
+            // Replace "\n" with '\n'
+            size_t pos = 0;
+            while ((pos = jsonStr.find("\\n", pos)) != std::string::npos)
+            {
+                jsonStr.replace(pos, 2, "\n");
+                pos += 1; // Move past the replaced '\n'
+            }
+        }
+
+        std::vector<X::Value> passInParams;
+        X::Hosting::I().SimpleRun("inline_code", jsonStr.c_str(),
+            (int)jsonStr.size(), retValue);
+
+        return retValue;
+    }
+
 	X::Value  JsonWrapper::LoadFromFile(X::XRuntime* rt, X::XObj* pContext,
 		std::string fileName)
 	{
