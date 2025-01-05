@@ -145,9 +145,13 @@ public:
 	{
 		m_threadId = GetThreadID();
 	}
-	void SetNoThreadBinding(bool b)
+	FORCE_INLINE void SetNoThreadBinding(bool b)
 	{
 		m_noThreadBinding = b;
+	}
+	FORCE_INLINE bool IfNoThreadBinding()
+	{
+		return m_noThreadBinding;
 	}
 	void SetNoDbg(bool b)
 	{

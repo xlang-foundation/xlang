@@ -122,7 +122,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 			break;
 		}
 		//std::cout << "after run line:" << line << std::endl;
-		if (!bOk)
+		if (!bOk && !rt->IfNoThreadBinding()) //check if json parse case, no need to dump errors
 		{//TODO: error process here
 			LOG << LOG_RED << "Error Occurs in " << rt->GetName() << ",line:" << line << LOG_RESET << LINE_END;
 			auto code = i->GetCode();
