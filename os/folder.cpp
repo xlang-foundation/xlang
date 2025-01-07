@@ -117,7 +117,7 @@ namespace X {
                     std::string drivePath = std::string(1, driveLetter) + ":";
                     X::Dict driveInfo;
                     driveInfo->Set("Name", drivePath);
-                    driveInfo->Set("Path", drivePath+"/");
+                    driveInfo->Set("Path", drivePath+"\\");
                     driveInfo->Set("IsDirectory", "true");
                     driveInfo->Set("Size", "N/A");
                     driveInfo->Set("LastModified", "N/A");
