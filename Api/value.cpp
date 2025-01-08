@@ -759,6 +759,11 @@ namespace X
 		return (t == ValueType::Object)
 			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Dict);
 	}
+	bool Value::IsBin() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Binary);
+	}
 	bool Value::IsString() const
 	{ 
 		if (t == ValueType::Str)
