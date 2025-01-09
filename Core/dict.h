@@ -163,7 +163,6 @@ namespace X
 			bool Get(X::Value& key, X::Value& val,
 				X::LValue* lValue = nullptr)
 			{
-				bool bOK = false;
 				auto it = mMap.find(key);
 				if (it != mMap.end())
 				{
@@ -172,9 +171,8 @@ namespace X
 					{
 						*lValue = &it->second;
 					}
-					bOK = true;
 				}
-				return bOK;
+				return true;//always true to make caller OK
 			}
 			bool GetLValueToAssign(X::Value& key, X::Value& value);
 			inline virtual bool Get(XRuntime* rt, XObj* pContext, 

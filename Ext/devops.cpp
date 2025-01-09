@@ -88,8 +88,13 @@ namespace X
 			auto valType = val.GetValueType();
 			Data::Str* pStrType = new Data::Str(valType);
 			dict->Set("Type", X::Value(pStrType));
-			if (!val.IsObject() || (val.IsObject() &&
-				dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
+			if (!val.IsObject())
+			{
+				dict->Set("Value", val);
+			}
+			else if ((val.IsObject() && dynamic_cast<Data::Object*>(val.GetObj()) != nullptr 
+				//for Builtin (is not an object) check
+				&& dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
 			{
 				dict->Set("Value", val);
 			}
@@ -337,6 +342,10 @@ namespace X
 				return true;
 			}
 			Data::Object* pObjRoot = dynamic_cast<Data::Object*>((XObj*)ullRootId);
+			if (pObjRoot == nullptr)
+			{
+				return false;
+			}
 			XObj* pContextObj = nullptr;
 			if (rootIdPair.size() >= 2)
 			{

@@ -28,7 +28,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<9> _strScope;
+		static Obj_Func_Scope<11> _strScope;
 		void Str::Init()
 		{
 			_strScope.Init();
@@ -51,6 +51,68 @@ namespace X
 					return true;
 				};
 				_strScope.AddFunc("find", "pos = find(search_string)", f);
+			}
+			{
+				auto replaceFunc = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) {
+						// Extract the target object
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrObj = dynamic_cast<Str*>(pObj);
+
+						// Ensure there are enough arguments
+						if (params.size() < 2) {
+							return false; // Insufficient arguments
+						}
+
+						// Extract arguments
+						const std::string& original = pStrObj->ToString();
+						const std::string& searchString = params[0].ToString();
+						const std::string& replaceString = params[1].ToString();
+						size_t replaceCount = std::string::npos; // Default: replace all occurrences
+
+						// If a third parameter is provided, it specifies the maximum replacements
+						if (params.size() > 2) {
+							replaceCount = params[2].GetLongLong();
+						}
+
+						if (searchString.empty()) {
+							retValue = X::Value(original); // No replacement if the search string is empty
+							return true;
+						}
+
+						std::string result;
+						size_t startPos = 0;
+						size_t pos;
+						size_t count = 0;
+
+						while ((pos = original.find(searchString, startPos)) != std::string::npos) {
+							// Append everything before the match
+							result.append(original, startPos, pos - startPos);
+
+							// Append the replacement string
+							result.append(replaceString);
+
+							// Update start position
+							startPos = pos + searchString.length();
+
+							// Increment the replacement counter
+							count++;
+							if (count == replaceCount) {
+								break; // Stop if we've reached the max replacements
+							}
+						}
+
+						// Append any remaining part of the original string
+						result.append(original, startPos, std::string::npos);
+
+						// Set the result value
+						retValue = X::Value(result);
+						return true;
+					};
+
+				// Register the function in the scope
+				_strScope.AddFunc("replace", "result = replace(search_string, replace_string, max_replacements=ALL)", replaceFunc);
+
 			}
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
@@ -227,6 +289,39 @@ namespace X
 					return true;
 				};
 				_strScope.AddFunc("regex_replace", "new_str = regex_replace(regex_expr,target_chars)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) 
+					{
+						// Ensure there are two parameters: the string to match and the regex pattern
+						if (params.size() < 1) {
+							retValue = false; // Indicate failure
+							return true;
+						}
+
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrObj = dynamic_cast<Str*>(pObj);
+						std::string target = pStrObj->ToString();
+						std::string pattern = params[0].ToString();
+
+						try {
+							// Create a regex object and check for a match
+							const std::regex r(pattern);
+							bool match = std::regex_match(target, r);
+
+							// Return the match result
+							retValue = match;
+							return true;
+						}
+						catch (const std::regex_error) {
+							// Handle regex syntax errors
+							retValue = false; // Indicate failure
+							return true;
+						}
+					};
+				// Add the `regex_match` function to the string scope
+				_strScope.AddFunc("regex_match", "bool = string_var.regex_match(regex_expr)", f);
 			}
 			_strScope.Close();
 		}

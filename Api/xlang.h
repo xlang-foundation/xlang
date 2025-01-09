@@ -180,7 +180,7 @@ namespace X
 		virtual int IncRef() { return 0; }
 		virtual int DecRef() { return 0; }
 		virtual ObjType GetType() { return ObjType::Base; }
-		virtual const char* GetTypeString() { return ""; }
+		virtual const char* GetTypeString() { return nullptr; }
 		virtual long long Size() { return 0; }
 		virtual size_t Hash() { return 0; }
 		virtual unsigned long long GetID() { return 0; }

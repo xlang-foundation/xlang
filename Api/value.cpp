@@ -390,7 +390,7 @@ namespace X
 	Value Value::ObjCall(Port::vector<X::Value>& params, Port::StringMap<X::Value>& kwParams)
 	{
 		auto* pObj = GetObj();
-		if (pObj == nullptr || pObj->RT() == nullptr)
+		if (pObj == nullptr)
 		{
 			return Value();
 		}
@@ -696,8 +696,11 @@ namespace X
 			if (pObj)
 			{
 				const char* retStrType = pObj->GetTypeString();
-				strType = std::string(retStrType);
-				g_pXHost->ReleaseString(retStrType);
+				if (retStrType)
+				{
+					strType = std::string(retStrType);
+					g_pXHost->ReleaseString(retStrType);
+				}
 			}
 			else
 			{
@@ -755,6 +758,11 @@ namespace X
 	{
 		return (t == ValueType::Object)
 			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Dict);
+	}
+	bool Value::IsBin() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Binary);
 	}
 	bool Value::IsString() const
 	{ 

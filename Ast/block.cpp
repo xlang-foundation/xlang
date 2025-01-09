@@ -22,6 +22,7 @@ limitations under the License.
 #include "utility.h"
 #include "InlineCall.h"
 #include "iterator.h"
+#include "log.h"
 
 extern bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
@@ -121,12 +122,11 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 			break;
 		}
 		//std::cout << "after run line:" << line << std::endl;
-		if (!bOk)
+		if (!bOk && !rt->IfNoThreadBinding()) //check if json parse case, no need to dump errors
 		{//TODO: error process here
-			auto pid = GetPID();
-			std::cout << "Error Occurs in line:" << line << ",pid:" << pid << std::endl;
+			LOG << LOG_RED << "Error Occurs in " << rt->GetName() << ",line:" << line << LOG_RESET << LINE_END;
 			auto code = i->GetCode();
-			std::cout <<"*** " << code << std::endl;
+			LOG << LOG_RED << "*** " << code << LOG_RESET << LINE_END;
 			//break;
 		}
 		if (v0.IsValid() && (i == last))

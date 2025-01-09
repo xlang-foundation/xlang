@@ -1,4 +1,5 @@
-﻿/*
+﻿#include "xload.h"
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -243,6 +244,19 @@ namespace X
 #endif
 		}
 		return -1;
+	}
+	void XLoad::SetLogFuncs(void* lock, void* unlock, void* logWrite)
+	{
+		if (xlangLibHandler == nullptr)
+		{
+			return;
+		}
+		typedef void (*SetLogFuncs)(void* lock, void* unlock, void* logWrite);
+		SetLogFuncs func = (SetLogFuncs)GetProc(xlangLibHandler, "SetLogFuncs");
+		if (func)
+		{
+			func(lock,unlock,logWrite);
+		}
 	}
 	void XLoad::EventLoop()
 	{

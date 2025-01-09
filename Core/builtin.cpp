@@ -626,7 +626,18 @@ bool U_ObjectUnlock(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	return true;
 }
 namespace X {
-void Builtin::Cleanup()
+
+	static Builtin* g_pBuiltin = nullptr;
+	Builtin& Builtin::I()
+	{
+		if (g_pBuiltin == nullptr)
+		{
+			g_pBuiltin = new Builtin();
+		}
+		return *g_pBuiltin;
+	}
+
+	void Builtin::Cleanup()
 {
 	m_lock.Lock();
 	for (auto it : m_Funcs)

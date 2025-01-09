@@ -20,6 +20,7 @@ limitations under the License.
 #include <vector>
 #include "Locker.h"
 #include "singleton.h"
+#include "object.h"
 
 namespace X {
 	namespace Data
@@ -32,14 +33,21 @@ namespace X {
 		Data::Function* funcObj = nullptr;
 	};
 	class Builtin :
-		public XPackage,
-		public Singleton<Builtin>
+		virtual public XPackage,
+		virtual public Data::Object
+		//public Singleton<Builtin>
 	{
 		std::string m_libName;
 		Locker m_lock;
 		std::unordered_map<std::string,int> m_mapNameToIndex;
 		std::vector<BuiltinFuncInfo> m_Funcs;
 	public:
+		Builtin()
+		{
+			m_t = X::ObjType::Package;
+		}
+		static Builtin& I();
+
 		std::vector<BuiltinFuncInfo>& All()
 		{
 			m_lock.Lock();
@@ -48,6 +56,11 @@ namespace X {
 		void ReturnMap()
 		{
 			m_lock.Unlock();
+		}
+		virtual const char* GetTypeString() override
+		{
+			std::string typeName = "Package";
+			return GetABIString(typeName);
 		}
 		virtual int GetPackageName(char* buffer, int bufferSize) override
 		{

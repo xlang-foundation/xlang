@@ -13,268 +13,52 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include <iostream>
+#pragma once
+
 #include <string>
 #include <filesystem>
-#include <vector>
 #include "xpackage.h"
 #include "xlang.h"
-#if (WIN32)
-#include <windows.h>
-#endif
-#include <locale>
-#include <codecvt> 
-
-// Function to convert wstring (wide string) to UTF-8 string
-inline std::string WStringToUTF8(const std::wstring& wstr) {
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	return converter.to_bytes(wstr);
-}
 
 namespace X {
 
-	class Folder {
-	public:
-		BEGIN_PACKAGE(Folder)
-			APISET().AddPropWithType<std::string>("Path", &Folder::folderPath);
-		APISET().AddFunc<1>("BuildPath", &Folder::BuildPath);
-		APISET().AddFunc<0>("Scan", &Folder::Scan);
-		APISET().AddFunc<0>("List", &Folder::List);
-		APISET().AddFunc<1>("CopyFolder", &Folder::CopyFolder);
-		APISET().AddFunc<2>("CopyFile", &Folder::CopyFile);
-		APISET().AddFunc<1>("CreateFolder", &Folder::CreateFolder);
-		APISET().AddFunc<2>("RemoveFolder", &Folder::RemoveFolder);
-		APISET().AddFunc<2>("Rename", &Folder::Rename);
-		APISET().AddFunc<1>("DeleteFile", &Folder::DeleteFile);
-		APISET().AddFunc<1>("MoveFolder", &Folder::MoveFolder);
-		APISET().AddFunc<0>("ParentPath", &Folder::ParentPath);
-		APISET().AddFunc<1>("RelativePath", &Folder::RelativePath);
-		APISET().AddFunc<1>("IsAbsolutePath", &Folder::IsAbsolutePath);
-		END_PACKAGE
+    class Folder {
+    public:
+        BEGIN_PACKAGE(Folder)
+            APISET().AddPropWithType<std::string>("Path", &Folder::folderPath);
+            APISET().AddFunc<1>("BuildPath", &Folder::BuildPath);
+            APISET().AddFunc<0>("Scan", &Folder::Scan);
+            APISET().AddFunc<0>("List", &Folder::List);
+            APISET().AddFunc<1>("CopyFolder", &Folder::CopyFolder);
+            APISET().AddFunc<2>("CopyFile", &Folder::CopyFileImpl);
+            APISET().AddFunc<1>("CreateFolder", &Folder::CreateFolder);
+            APISET().AddFunc<2>("RemoveFolder", &Folder::RemoveFolder);
+            APISET().AddFunc<2>("Rename", &Folder::Rename);
+            APISET().AddFunc<1>("DeleteFile", &Folder::DeleteFileImpl);
+            APISET().AddFunc<1>("MoveFolder", &Folder::MoveFolder);
+            APISET().AddFunc<0>("ParentPath", &Folder::ParentPath);
+            APISET().AddFunc<1>("RelativePath", &Folder::RelativePath);
+            APISET().AddFunc<1>("IsAbsolutePath", &Folder::IsAbsolutePath);
+            APISET().AddFunc<0>("Exists", &Folder::Exists);
+        END_PACKAGE
 
-	public:
-		Folder(const std::string& path)
-		{
-			std::filesystem::path fsPath = std::filesystem::path(path);
-			// Remove trailing separators
-			fsPath = fsPath.lexically_normal();
-			folderPath = fsPath.make_preferred().string();
-		}
+        explicit Folder(const std::string& path);
 
-		std::string BuildPath(const std::string& subPath)
-		{
-			std::filesystem::path fullPath = folderPath;
-			fullPath /= std::filesystem::path(subPath);
-			return fullPath.make_preferred().string();
-		}
-
-		X::List List() {
-			X::List resultList;
-			try {
-				for (const auto& entry : std::filesystem::directory_iterator(
-					std::filesystem::u8path(folderPath))) {
-#if (WIN32)
-					// Convert wide string (wstring) to UTF-8 string on Windows
-					resultList += WStringToUTF8(entry.path().filename().wstring());
-#else
-					resultList += entry.path().filename().string();
-#endif
-				}
-			}
-			catch (const std::filesystem::filesystem_error& e) {
-				// Handle the exception, log it, or take other appropriate actions
-				std::cerr << "Error while accessing folder: " << e.what() << std::endl;
-			}
-			return resultList;
-		}
-
-		X::List Scan() {
-			X::List resultList;
-
-			if (folderPath.empty()) {
-#if (WIN32)
-				// Enumerate all available drives on Windows
-				char driveLetter = 'A';
-				DWORD driveMask = GetLogicalDrives();
-				if (driveMask == 0) {
-					return resultList;
-				}
-				while (driveMask) {
-					if (driveMask & 1) {
-						std::string drivePath = std::string(1, driveLetter) + ":/";
-						X::Dict driveInfo;
-						driveInfo->Set("Name", drivePath);
-						driveInfo->Set("IsDirectory", "true");
-						driveInfo->Set("Size", "N/A");
-						driveInfo->Set("LastModified", "N/A");
-						resultList += driveInfo;
-					}
-					driveLetter++;
-					driveMask >>= 1;
-				}
-				return resultList;
-#else
-				folderPath = "/";
-#endif
-			}
-
-			// Scan the specified folderPath
-			try {
-				for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
-					try {
-						X::Dict fileInfo;
-
-						// Handle exceptions from entry.path().filename()
-						try {
-#if (WIN32)
-							fileInfo->Set("Name", WStringToUTF8(entry.path().filename().wstring()));
-#else
-							fileInfo->Set("Name", entry.path().filename().string());
-#endif
-						}
-						catch (const std::filesystem::filesystem_error&) {
-							// Skip this entry if filename causes an exception
-							continue;
-						}
-
-						fileInfo->Set("IsDirectory", entry.is_directory() ? "true" : "false");
-
-						if (!entry.is_directory()) {
-							try {
-								fileInfo->Set("Size", std::to_string(std::filesystem::file_size(entry.path())));
-							}
-							catch (const std::filesystem::filesystem_error&) {
-								// Skip setting Size if it causes an exception
-							}
-						}
-
-						try {
-							auto ftime = std::filesystem::last_write_time(entry.path());
-							auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-								ftime - std::filesystem::file_time_type::clock::now()
-								+ std::chrono::system_clock::now());
-							std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
-							fileInfo->Set("LastModified", std::asctime(std::localtime(&cftime)));
-						}
-						catch (const std::filesystem::filesystem_error&) {
-							// Skip setting LastModified if it causes an exception
-						}
-
-						resultList += fileInfo;
-					}
-					catch (const std::filesystem::filesystem_error&) {
-						// Skip this entry entirely if it causes an exception
-						continue;
-					}
-				}
-			}
-			catch (const std::filesystem::filesystem_error&) {
-				// Skip the entire directory if it causes an exception
-			}
-
-			return resultList;
-		}
-
-
-		bool CopyFolder(const std::string& targetPath) {
-			try {
-				std::filesystem::copy(folderPath, targetPath, std::filesystem::copy_options::recursive);
-				return true;
-			}
-			catch (std::filesystem::filesystem_error& e) {
-				std::cerr << "Error: " << e.what() << std::endl;
-				return false;
-			}
-		}
-
-		bool CopyFile(const std::string& filePath, const std::string& targetPath) {
-			try {
-				std::filesystem::copy(filePath, targetPath);
-				return true;
-			}
-			catch (std::filesystem::filesystem_error& e) {
-				std::cerr << "Error: " << e.what() << std::endl;
-				return false;
-			}
-		}
-
-		bool CreateFolder(const std::string& path) {
-			try {
-				std::filesystem::create_directories(path);
-				return true;
-			}
-			catch (std::filesystem::filesystem_error& e) {
-				std::cerr << "Error: " << e.what() << std::endl;
-				return false;
-			}
-		}
-
-		bool RemoveFolder(const std::string& path, bool recursive = false) {
-			try {
-				if (recursive) {
-					std::filesystem::remove_all(path);
-				}
-				else {
-					std::filesystem::remove(path);
-				}
-				return true;
-			}
-			catch (std::filesystem::filesystem_error& e) {
-				std::cerr << "Error: " << e.what() << std::endl;
-				return false;
-			}
-		}
-
-		bool Rename(const std::string& srcPath, const std::string& targetPath) {
-			try {
-				std::filesystem::rename(srcPath, targetPath);
-				return true;
-			}
-			catch (std::filesystem::filesystem_error& e) {
-				std::cerr << "Error: " << e.what() << std::endl;
-				return false;
-			}
-		}
-
-		bool DeleteFile(const std::string& filePath) {
-			try {
-				std::filesystem::remove(filePath);
-				return true;
-			}
-			catch (std::filesystem::filesystem_error& e) {
-				std::cerr << "Error: " << e.what() << std::endl;
-				return false;
-			}
-		}
-		bool MoveFolder(const std::string& targetPath) {
-			try {
-				std::filesystem::rename(folderPath, targetPath);
-				folderPath = targetPath; // Update the folderPath to the new location
-				return true;
-			}
-			catch (std::filesystem::filesystem_error& e) {
-				std::cerr << "Error: " << e.what() << std::endl;
-				return false;
-			}
-		}
-
-		std::string ParentPath() const {
-			return std::filesystem::path(folderPath).parent_path().string();
-		}
-
-		std::string RelativePath(const std::string& basePath) const {
-			return std::filesystem::relative(folderPath, basePath).string();
-		}
-		bool IsAbsolutePath(const std::string& path) const {
-#if (WIN32)
-			return path.size() > 2 && path[1] == ':' && (path[2] == '\\' || path[2] == '/');
-#else
-			return !path.empty() && path[0] == '/';
-#endif
-		}
-
-	private:
-		std::string folderPath;
-	};
-
+        std::string BuildPath(const std::string& subPath);
+        X::List List();
+        X::List Scan();
+        bool CopyFolder(const std::string& targetPath);
+        bool CopyFileImpl(const std::string& filePath, const std::string& targetPath);
+        bool CreateFolder(const std::string& path);
+        bool RemoveFolder(const std::string& path, bool recursive = false);
+        bool Rename(const std::string& srcPath, const std::string& targetPath);
+        bool DeleteFileImpl(const std::string& filePath);
+        bool MoveFolder(const std::string& targetPath);
+        std::string ParentPath() const;
+        std::string RelativePath(const std::string& basePath) const;
+        bool IsAbsolutePath(const std::string& path) const;
+        bool Exists();
+    private:
+        std::string folderPath;
+    };
 } // namespace X
