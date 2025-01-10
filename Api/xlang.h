@@ -472,13 +472,13 @@ namespace X
 		virtual bool SetPropValue(XRuntime* rt0, XObj* pContext, Value& v) = 0;
 		virtual bool GetPropValue(XRuntime* rt0, XObj* pContext, Value& v) = 0;
 	public:
-		Value Get()
+		FORCE_INLINE Value Get()
 		{
 			Value v0;
 			GetPropValue(m_rt,m_parent, v0);
 			return v0;
 		}
-		bool Set(Value& v)
+		FORCE_INLINE bool Set(Value& v)
 		{
 			return SetPropValue(m_rt,m_parent, v);
 		}
