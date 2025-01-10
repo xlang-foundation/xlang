@@ -35,19 +35,6 @@ namespace X
 				m_setter = setter;
 				m_getter = getter;
 			}
-
-			virtual bool SupportAssign() override { return true; }
-			virtual void Assign(const X::Value& val) override
-			{
-				if (m_setter)
-				{
-					ARGS param(1);
-					param.push_back(val);
-					KWARGS kwParam;
-					Value retVal;
-					m_setter->Call(m_rt, m_parent, param, kwParam, retVal);
-				}
-			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
 				long long startIndex, long long count) override;
