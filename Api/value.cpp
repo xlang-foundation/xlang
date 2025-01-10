@@ -792,4 +792,21 @@ namespace X
 	{
 		g_pXHost->SetAttr(*this, attrName, attrVal);
 	}
+	bool Value::SetPropValue(const char* propName, X::Value value)
+	{
+		X::Value propObj = QueryMember(propName);
+		if (propObj.IsObject())
+		{
+			XObj* pObj = propObj.GetObj();
+			if (pObj->GetType() == X::ObjType::Prop)
+			{
+				XProp* pProp = dynamic_cast<XProp*>(pObj);
+				if (pProp)
+				{
+					return pProp->Set(value);
+				}
+			}
+		}
+		return false;
+	}
 }
