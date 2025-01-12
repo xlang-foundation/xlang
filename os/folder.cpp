@@ -155,7 +155,7 @@ namespace X {
 
         }
         catch (const std::filesystem::filesystem_error& e) {
-            std::cerr << "Error scanning folder: " << e.what() << std::endl;
+            //std::cerr << "Error scanning folder: " << e.what() << std::endl;
         }
 
         return resultList;
