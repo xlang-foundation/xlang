@@ -37,7 +37,7 @@ namespace X
 			GUID gid;
 			CoCreateGuid(&gid);
 			char szGuid[128];
-			sprintf_s(szGuid, "%08X%04X%04X%X%X%X%X%X%X%X%X",
+			sprintf_s(szGuid, "%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X",
 				gid.Data1, gid.Data2, gid.Data3,
 				gid.Data4[0], gid.Data4[1], gid.Data4[2], gid.Data4[3],
 				gid.Data4[4], gid.Data4[5], gid.Data4[6], gid.Data4[7]);
