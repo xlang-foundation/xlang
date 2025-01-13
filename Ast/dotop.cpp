@@ -212,7 +212,7 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 				if (pContext->GetType() == ObjType::Dict)
 				{
 					ProcessDict(pExpr, pContext, v);
-					return true;
+					return;
 				}
 			}
 			Value v0;
