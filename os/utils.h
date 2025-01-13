@@ -37,23 +37,22 @@ namespace X
 			GUID gid;
 			CoCreateGuid(&gid);
 			char szGuid[128];
-			sprintf_s(szGuid, "%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X",
+			sprintf_s(szGuid, 128, "%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X",
 				gid.Data1, gid.Data2, gid.Data3,
 				gid.Data4[0], gid.Data4[1], gid.Data4[2], gid.Data4[3],
 				gid.Data4[4], gid.Data4[5], gid.Data4[6], gid.Data4[7]);
 			strGuid = szGuid;
 #else
 			uuid_t uuid;
-#if defined(__linux__)
-			uuid_generate_time_safe(uuid);
-#else
-			uuid_generate_time(uuid);
-#endif
+			// Generate a random-based UUID (Version 4)
+			uuid_generate_random(uuid);
+
 			char szGuid[128];
 			uuid_unparse(uuid, szGuid);
 
 			strGuid = szGuid;
 #endif
+			return strGuid;
 			return X::Value(strGuid);
 		}
 	};
