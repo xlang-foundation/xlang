@@ -220,6 +220,7 @@ public:
 	FORCE_INLINE Value(ValueType t0)
 	{
 		t = t0;
+		x.l = 0;
 	}
 	FORCE_INLINE Value(bool b)
 	{//use 1 as true and 0 as false, set flag to -1
