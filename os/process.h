@@ -223,7 +223,7 @@ namespace X {
 		X::Value m_environ;
         BEGIN_PACKAGE(OSService)
             APISET().AddClass<0, Process>("Process");
-            APISET().AddClass<0, Process>("Service");
+            APISET().AddClass<1, Service>("Service");
             APISET().AddClass<0, Environ>("Environ");
 
             APISET().AddPropL("environ",
