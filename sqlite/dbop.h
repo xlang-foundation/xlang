@@ -41,6 +41,8 @@ namespace X
 				APISET().AddFunc<1>("get", &DBStatement::GetValue);
 				APISET().AddFunc<0>("reset", &DBStatement::reset);
 				APISET().AddFunc<0>("close", &DBStatement::Close);
+				APISET().AddFunc<0>("colnum", &DBStatement::getcolnum);
+				APISET().AddFunc<1>("colname", &DBStatement::getColName);
 			END_PACKAGE
 		public:
 			DBStatement();
