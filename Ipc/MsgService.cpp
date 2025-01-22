@@ -147,6 +147,7 @@ namespace X
 			sa.lpSecurityDescriptor = &sd;
 			sa.bInheritHandle = FALSE;
 			HANDLE hSlot = INVALID_HANDLE_VALUE;
+			bool bErr = false;
 			while (hSlot == INVALID_HANDLE_VALUE && mRun)
 			{
 				hSlot = CreateMailslot(
@@ -155,7 +156,19 @@ namespace X
 					MAILSLOT_WAIT_FOREVER,
 					&sa);
 				if (hSlot == INVALID_HANDLE_VALUE)
+				{
+					if (bErr == false)
+					{
+						LOG7 << LOG_RED << "IPC CreateMailslot error, key: " << msgKey << "   code: " << ::GetLastError() << LOG_RESET << LINE_END;
+						bErr = true;
+					}
 					Sleep(100);
+				}
+				else
+				{
+					if (bErr)
+						LOG7 << LOG_GREEN << "IPC CreateMailslot success, key: " << msgKey << LOG_RESET << LINE_END;
+				}
 			}
 			while (mRun)
 			{
