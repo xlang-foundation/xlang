@@ -28,7 +28,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<11> _strScope;
+		static Obj_Func_Scope<13> _strScope;
 		void Str::Init()
 		{
 			_strScope.Init();
@@ -323,6 +323,101 @@ namespace X
 				// Add the `regex_match` function to the string scope
 				_strScope.AddFunc("regex_match", "bool = string_var.regex_match(regex_expr)", f);
 			}
+			{
+				auto stripFunc = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) {
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrObj = dynamic_cast<Str*>(pObj);
+
+						if (pStrObj == nullptr) {
+							retValue = X::Value();
+							return false; // Invalid object context
+						}
+
+						// Original string
+						std::string original = pStrObj->ToString();
+
+						// Characters to strip
+						std::string chars = " \t\n\r"; // Default: whitespace characters
+						if (params.size() > 0) {
+							chars = params[0].ToString();
+						}
+
+						// Perform strip operation
+						size_t start = original.find_first_not_of(chars);
+						size_t end = original.find_last_not_of(chars);
+
+						std::string result = (start == std::string::npos || end == std::string::npos)
+							? ""  // If no valid characters remain
+							: original.substr(start, end - start + 1);
+
+						// Set the result value
+						auto* pNewStr = new Str(result);
+						retValue = X::Value(pNewStr);
+						return true;
+					};
+
+				// Register the strip function in the scope
+				_strScope.AddFunc("strip", "new_str = var_str.strip([chars_to_remove])", stripFunc);
+			}
+			{
+				auto joinFunc = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) {
+						// Ensure we have at least one parameter (the list of strings to join)
+						if (params.size() < 1) {
+							retValue = X::Value(); // Insufficient arguments
+							return false;
+						}
+
+						// Extract the separator string from pContext
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrSeparator = dynamic_cast<Str*>(pObj);
+						if (!pStrSeparator) {
+							retValue = X::Value(); // Invalid context for separator
+							return false;
+						}
+						std::string separator = pStrSeparator->ToString();
+
+						// Get the list of strings
+						auto* pObjList = dynamic_cast<Object*>(params[0].GetObj());
+						auto* pListObj = dynamic_cast<List*>(pObjList);
+						if (!pListObj) {
+							retValue = X::Value(); // Parameter must be a list
+							return false;
+						}
+
+						// Perform the join operation
+						std::string result;
+						size_t listSize = pListObj->Size();
+						for (size_t i = 0; i < listSize; ++i) {
+							// Get the current element as a string
+							X::Value elementValue = pListObj->Get(i);
+							auto* pElementObj = dynamic_cast<Object*>(elementValue.GetObj());
+							auto* pStrElement = dynamic_cast<Str*>(pElementObj);
+							if (!pStrElement) {
+								retValue = X::Value(); // All elements must be strings
+								return false;
+							}
+
+							// Append the string to the result
+							result += pStrElement->ToString();
+
+							// Add the separator if it's not the last element
+							if (i < listSize - 1) {
+								result += separator;
+							}
+						}
+
+						// Create a new Str object for the result
+						auto* pNewStr = new Str(result);
+						retValue = X::Value(pNewStr);
+						return true;
+					};
+
+				// Register the join function in the scope
+				_strScope.AddFunc("join", "new_str = join(list_of_strings)", joinFunc);
+			}
+
 			_strScope.Close();
 		}
 		void Str::cleanup()
