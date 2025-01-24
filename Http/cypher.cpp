@@ -363,7 +363,7 @@ std::vector<unsigned char> encrypt_with_private_key(int paddingMode,const std::s
 
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		throw std::runtime_error("Encryption failed.");
+		throw std::runtime_error("Encrypt with private key failed.");
 	}
 
 	encrypted.resize(encrypted_length);
@@ -387,7 +387,7 @@ std::vector<unsigned char> encrypt_with_public_key(int paddingMode, const std::s
 	);
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
+		throw std::runtime_error("Encrypt with public key failed.");
 	}
 	encrypted.resize(encrypted_length);
 	return encrypted;
@@ -410,7 +410,7 @@ std::string decrypt_with_public_key(int paddingMode, std::vector<unsigned char>&
 	);
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
+		throw std::runtime_error("Decrypt with public key failed.");
 	}
 	decrypted.resize(decrypted_length);
 	return decrypted;
@@ -433,7 +433,7 @@ std::string decrypt_with_private_key(int paddingMode, std::vector<unsigned char>
 	);
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
+		throw std::runtime_error("Decrypt with private key failed.");
 	}
 	decrypted.resize(decrypted_length);
 	return decrypted;
@@ -594,13 +594,21 @@ bool X::Cypher::EncryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
 		retValue = X::Value(false);
 		return true;
 	}
-	auto encrypted = encrypt_with_private_key(m_rsa_padding_mode,msg, rsa);
-	RSA_free(rsa);
-	size_t size = encrypted.size();
-	char* pBuf = new char[size];
-	memcpy(pBuf, encrypted.data(), encrypted.size());
-	X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
-	retValue = valEncrypted;
+	try
+	{
+		auto encrypted = encrypt_with_private_key(m_rsa_padding_mode,msg, rsa);
+		RSA_free(rsa);
+		size_t size = encrypted.size();
+		char* pBuf = new char[size];
+		memcpy(pBuf, encrypted.data(), encrypted.size());
+		X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
+		retValue = valEncrypted;
+	}
+	catch (...)
+	{
+		std::cout << "EncryptWithPrivateKey failed." << std::endl;
+		retValue = X::Value(false);
+	}
 	return true;
 }
 
@@ -623,12 +631,20 @@ bool X::Cypher::DecryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
 	X::Bin binEnc(encrypted);
 	auto pData = binEnc->Data();
 	std::vector<unsigned char> ary_encrypted(pData, pData + binEnc.Size());
-	std::string msg = decrypt_with_private_key(m_rsa_padding_mode,ary_encrypted, rsa);
-	RSA_free(rsa);
-	char* pBuf = new char[msg.size()];
-	memcpy(pBuf, msg.data(), msg.size());
-	X::Bin bin(pBuf, (int)msg.size(),true);
-	retValue = bin;
+	try
+	{
+		std::string msg = decrypt_with_private_key(m_rsa_padding_mode, ary_encrypted, rsa);
+		RSA_free(rsa);
+		char* pBuf = new char[msg.size()];
+		memcpy(pBuf, msg.data(), msg.size());
+		X::Bin bin(pBuf, (int)msg.size(), true);
+		retValue = bin;
+	}
+	catch (...)
+	{
+		std::cout << "DecryptWithPrivateKey failed." << std::endl;
+		retValue = X::Value(false);
+	}
 	return true;
 }
 
@@ -665,13 +681,22 @@ bool X::Cypher::EncryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
 		std::cerr << "Failed to create RSA from public key." << std::endl;
 		return "";
 	}
-	auto encrypted = encrypt_with_public_key(m_rsa_padding_mode,msg, rsa);
-	RSA_free(rsa);
-	size_t size = encrypted.size();
-	char* pBuf = new char[size];
-	memcpy(pBuf, encrypted.data(), encrypted.size());
-	X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
-	retValue = valEncrypted;
+	
+	try
+	{
+		auto encrypted = encrypt_with_public_key(m_rsa_padding_mode, msg, rsa);
+		RSA_free(rsa);
+		size_t size = encrypted.size();
+		char* pBuf = new char[size];
+		memcpy(pBuf, encrypted.data(), encrypted.size());
+		X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
+		retValue = valEncrypted;
+	}
+	catch (...)
+	{
+		std::cout << "EncryptWithPublicKey failed." << std::endl;
+		retValue = X::Value(false);
+	}
 	return true;
 }
 
@@ -695,11 +720,19 @@ bool X::Cypher::DecryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
 	X::Bin binEnc(encrypted);
 	auto pData = binEnc->Data();
 	std::vector<unsigned char> ary_encrypted(pData, pData + binEnc.Size());
-	std::string msg = decrypt_with_public_key(m_rsa_padding_mode,ary_encrypted, rsa);
-	RSA_free(rsa);
-	char* pBuf = new char[msg.size()];
-	memcpy(pBuf, msg.data(), msg.size());
-	X::Bin bin(pBuf, (int)msg.size(),true);
-	retValue = bin;
+	try
+	{
+		std::string msg = decrypt_with_public_key(m_rsa_padding_mode, ary_encrypted, rsa);
+		RSA_free(rsa);
+		char* pBuf = new char[msg.size()];
+		memcpy(pBuf, msg.data(), msg.size());
+		X::Bin bin(pBuf, (int)msg.size(), true);
+		retValue = bin;
+	}
+	catch (...)
+	{
+		std::cout << "DecryptWithPublicKey failed." << std::endl;
+		retValue = X::Value(false);
+	}
 	return true;
 }
