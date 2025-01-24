@@ -363,7 +363,7 @@ std::vector<unsigned char> encrypt_with_private_key(int paddingMode,const std::s
 
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		throw std::runtime_error("Encryption failed.");
+		throw std::runtime_error("Encrypt with private key failed.");
 	}
 
 	encrypted.resize(encrypted_length);
@@ -387,7 +387,7 @@ std::vector<unsigned char> encrypt_with_public_key(int paddingMode, const std::s
 	);
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		throw std::runtime_error("Encryption failed.");
+		throw std::runtime_error("Encrypt with public key failed.");
 	}
 	encrypted.resize(encrypted_length);
 	return encrypted;
@@ -410,7 +410,7 @@ std::string decrypt_with_public_key(int paddingMode, std::vector<unsigned char>&
 	);
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		throw std::runtime_error("Encryption failed.");
+		throw std::runtime_error("Decrypt with public key failed.");
 	}
 	decrypted.resize(decrypted_length);
 	return decrypted;
@@ -433,7 +433,7 @@ std::string decrypt_with_private_key(int paddingMode, std::vector<unsigned char>
 	);
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		throw std::runtime_error("Encryption failed.");
+		throw std::runtime_error("Decrypt with private key failed.");
 	}
 	decrypted.resize(decrypted_length);
 	return decrypted;
@@ -606,6 +606,7 @@ bool X::Cypher::EncryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
 	}
 	catch (...)
 	{
+		std::cout << "EncryptWithPrivateKey failed." << std::endl;
 		retValue = X::Value(false);
 	}
 	return true;
@@ -641,6 +642,7 @@ bool X::Cypher::DecryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
 	}
 	catch (...)
 	{
+		std::cout << "DecryptWithPrivateKey failed." << std::endl;
 		retValue = X::Value(false);
 	}
 	return true;
@@ -692,6 +694,7 @@ bool X::Cypher::EncryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
 	}
 	catch (...)
 	{
+		std::cout << "EncryptWithPublicKey failed." << std::endl;
 		retValue = X::Value(false);
 	}
 	return true;
@@ -728,6 +731,7 @@ bool X::Cypher::DecryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
 	}
 	catch (...)
 	{
+		std::cout << "DecryptWithPublicKey failed." << std::endl;
 		retValue = X::Value(false);
 	}
 	return true;

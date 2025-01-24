@@ -37,7 +37,7 @@ std::vector<unsigned char> long_msg_encrypt_with_private_key(int paddingMode,
             reinterpret_cast<const unsigned char*>(message.data() + i),
             buffer.data(),
             rsa,
-            RSA_PKCS1_PADDING
+            paddingMode
         );
 
         if (encrypted_length == -1) {
@@ -65,7 +65,7 @@ std::string long_msg_decrypt_with_public_key(int paddingMode,
             encrypted.data() + i,
             buffer.data(),
             rsa,
-            RSA_PKCS1_PADDING
+            paddingMode
         );
 
         if (decrypted_length == -1) {
@@ -95,7 +95,7 @@ std::vector<unsigned char> long_msg_encrypt_with_public_key(int paddingMode,
             reinterpret_cast<const unsigned char*>(message.data() + i),
             buffer.data(),
             rsa,
-            RSA_PKCS1_OAEP_PADDING
+            paddingMode
         );
 
         if (encrypted_length == -1) {
@@ -123,7 +123,7 @@ std::string long_msg_decrypt_with_private_key(int paddingMode,
             encrypted.data() + i,
             buffer.data(),
             rsa,
-            RSA_PKCS1_OAEP_PADDING
+            paddingMode
         );
 
         if (decrypted_length == -1) {
