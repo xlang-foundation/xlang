@@ -296,9 +296,6 @@ namespace X
 			[this](const httplib::Request& req, httplib::Response& res)
 			{
 				m_srv.stop();
-#if (WIN32)
-				system("pause");
-#endif
 				std::exit(0);
 			}
 		);
