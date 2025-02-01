@@ -72,22 +72,26 @@ namespace X
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
 		public:
-			long long GetItemSize()
+			virtual long long GetItemSize() override
 			{
 				long long size = 1;
 				switch (m_dataType)
 				{
 				case X::TensorDataType::BOOL:
 				case X::TensorDataType::BYTE:
+				case X::TensorDataType::QINT8:
+				case X::TensorDataType::QUINT8:
 				case X::TensorDataType::UBYTE:
 					size = 1;
 					break;
 				case X::TensorDataType::SHORT:
 				case X::TensorDataType::USHORT:
+				case X::TensorDataType::BFLOAT16:
 				case X::TensorDataType::HALFFLOAT:
 					size = 2;
 					break;
 				case X::TensorDataType::INT:
+				case X::TensorDataType::QINT32:
 				case X::TensorDataType::UINT:
 					size = 4;
 					break;
@@ -620,7 +624,68 @@ namespace X
 
 				return GetABIString(strOut);
 			}
-			
+			virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+			{
+				AutoLock autoLock(m_lock);
+				Object::ToBytes(rt, pContext, stream);
+
+				// Serialize tensor metadata
+				stream << m_name;
+				stream << static_cast<int>(m_dataType);
+				size_t dimCount = m_dims.size();
+				stream << dimCount;
+				for (const auto& dim : m_dims)
+				{
+					stream << dim.offset << dim.size << dim.stride << dim.dimProd;
+				}
+
+				// Serialize tensor data
+				size_t dataSize = GetDataSize();
+				stream << dataSize;
+				if (m_data && dataSize > 0)
+				{
+					stream.append(m_data, dataSize);
+				}
+
+				return true;
+			}
+
+			virtual bool FromBytes(X::XLangStream& stream) override
+			{
+				AutoLock autoLock(m_lock);
+				Object::FromBytes(stream);
+
+				// Deserialize tensor metadata
+				stream >> m_name;
+				int dtype;
+				stream >> dtype;
+				m_dataType = static_cast<TensorDataType>(dtype);
+
+				size_t dimCount;
+				stream >> dimCount;
+				m_dims.resize(dimCount);
+				for (size_t i = 0; i < dimCount; i++)
+				{
+					stream >> m_dims[i].offset >> m_dims[i].size >> m_dims[i].stride >> m_dims[i].dimProd;
+				}
+
+				// Deserialize tensor data
+				size_t dataSize;
+				stream >> dataSize;
+				if (dataSize > 0)
+				{
+					if (m_data)
+					{
+						delete[] m_data;
+					}
+					m_data = new char[dataSize];
+					m_dataSize = dataSize;
+					stream.CopyTo(m_data, dataSize);
+				}
+
+				return true;
+			}
+
 		};
 	}
 }
