@@ -22,33 +22,109 @@ limitations under the License.
 #include "tensor_expression.h"
 #include "utility.h"
 #include "obj_func_scope.h"
+#include <unordered_map>
+#include <string>
+
 
 namespace X
 {
 	namespace Data
 	{
-		#define CONST_NUM 14
+		#define CONST_NUM 18
 		static Obj_Func_Scope<3+ CONST_NUM> _tensorScope;
 		void Tensor::Init()
 		{
 			_tensorScope.Init();
 			//add datatype
-			const char* dataTypeList[14] = {
+
+			static const char* dataTypeList[CONST_NUM] = {
 				"bool",
-				"int8","uint8",
-				"int16","uint16",
-				"half",
-				"int","uint",
-				"int64","uint64",
-				"float",
-				"double",
-				"cfloat",
-				"cdouble"
+				"int8", "uint8",
+				"int16", "uint16",
+				"int32", "uint32",
+				"int64", "uint64",
+				"bfloat16", "halffloat",
+				"float32", "float64",
+				"complex64", "complex128",
+				"qint8", "quint8", "qint32"
 			};
-			for (int i = 0; i < CONST_NUM; i++)
+			// Map TensorDataType → std::string
+			static std::unordered_map<TensorDataType, std::string> TensorDataTypeMap = {
+				{TensorDataType::BOOL, "bool"},
+
+				{TensorDataType::BYTE, "int8"},
+				{TensorDataType::UBYTE, "uint8"},
+
+				{TensorDataType::SHORT, "int16"},
+				{TensorDataType::USHORT, "uint16"},
+
+				{TensorDataType::INT, "int32"},
+				{TensorDataType::UINT, "uint32"},
+
+				{TensorDataType::LONGLONG, "int64"},
+				{TensorDataType::INT64, "int64"},
+
+				{TensorDataType::ULONGLONG, "uint64"},
+				{TensorDataType::UINT64, "uint64"},
+
+				{TensorDataType::BFLOAT16, "bfloat16"},
+
+				{TensorDataType::HALFFLOAT, "halffloat"},
+				{TensorDataType::FLOAT16, "halffloat"},
+
+				{TensorDataType::FLOAT, "float32"},
+				{TensorDataType::FLOAT32, "float32"},
+
+				{TensorDataType::DOUBLE, "float64"},
+				{TensorDataType::FLOAT64, "float64"},
+
+				{TensorDataType::CFLOAT, "complex64"},
+				{TensorDataType::COMPLEX64, "complex64"},
+
+				{TensorDataType::CDOUBLE, "complex128"},
+				{TensorDataType::COMPLEX128, "complex128"},
+
+				{TensorDataType::QINT8, "qint8"},
+				{TensorDataType::QUINT8, "quint8"},
+				{TensorDataType::QINT32, "qint32"}
+			};
+
+			// Map std::string → TensorDataType
+			static std::unordered_map<std::string, TensorDataType> StringToTensorDataTypeMap = {
+				{"bool", TensorDataType::BOOL},
+
+				{"int8", TensorDataType::BYTE},
+				{"uint8", TensorDataType::UBYTE},
+
+				{"int16", TensorDataType::SHORT},
+				{"uint16", TensorDataType::USHORT},
+
+				{"int32", TensorDataType::INT},
+				{"uint32", TensorDataType::UINT},
+
+				{"int64", TensorDataType::LONGLONG},
+				{"uint64", TensorDataType::ULONGLONG},
+
+				{"bfloat16", TensorDataType::BFLOAT16},
+
+				{"halffloat", TensorDataType::HALFFLOAT},
+				{"float16", TensorDataType::HALFFLOAT},
+
+				{"float32", TensorDataType::FLOAT},
+				{"float64", TensorDataType::DOUBLE},
+
+				{"complex64", TensorDataType::CFLOAT},
+				{"complex128", TensorDataType::CDOUBLE},
+
+				{"qint8", TensorDataType::QINT8},
+				{"quint8", TensorDataType::QUINT8},
+				{"qint32", TensorDataType::QINT32}
+			};
+
+			for (auto& it : StringToTensorDataTypeMap)
 			{
-				X::Value val(i);
-				_tensorScope.AddConst(dataTypeList[i],val);
+				X::Value val((int)it.second);
+				_tensorScope.AddConst(it.first.c_str(), val);
 			}
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
@@ -605,7 +681,7 @@ namespace X
 				List* pList = dynamic_cast<List*>(initData.GetObj());
 				DeepCopyDataFromList(pList, indices, 0);
 			}
-			else
+			else if (initData.IsValid())
 			{//treat as scala,and set all items to this value
 				auto it_proc = [this, initData](std::vector<long long>& indices)
 				{
