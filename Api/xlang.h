@@ -404,25 +404,56 @@ namespace X
 		virtual char* Data() = 0;
 	};
 
-	enum class TensorDataType
+	enum class TensorDataType 
 	{
 		BOOL = 0,
-		BYTE, UBYTE,//8 bits
-		SHORT, USHORT,//16bits
-		HALFFLOAT,//16 bits
-		INT, UINT,//32 bits
-		LONGLONG, ULONGLONG,//64 bits
-		FLOAT, //32 bits
-		DOUBLE,//64 bits
-		CFLOAT, //32bits+32bits
-		CDOUBLE//64 bits+64bits
+
+		BYTE = 1,
+		UBYTE = 2,
+
+		SHORT = 3,
+		USHORT = 4,
+
+		INT = 5,
+		INT32 = INT,
+		UINT = 6,
+		UINT32 = UINT,
+
+		LONGLONG = 7,
+		INT64 = LONGLONG,
+
+		ULONGLONG = 8,
+		UINT64 = ULONGLONG,
+
+		BFLOAT16 = 9,
+
+		HALFFLOAT = 10,
+		FLOAT16 = HALFFLOAT,
+
+		FLOAT = 11,
+		FLOAT32 = FLOAT,
+
+		DOUBLE = 12,
+		FLOAT64 = DOUBLE,
+
+		CFLOAT = 13,
+		COMPLEX64 = CFLOAT,
+
+		CDOUBLE = 14,
+		COMPLEX128 = CDOUBLE,
+
+		QINT8 = 15,
+		QUINT8 = 16,
+		QINT32 = 17
 	};
+
 	class XTensor :
 		virtual public XObj
 	{
 	public:
 		Internal_Reserve(XTensor)
 		virtual long long GetDataSize() = 0;
+		virtual long long GetItemSize() = 0;
 		virtual char* GetData() = 0;
 		virtual int GetDimCount() = 0;
 		virtual long long GetDimSize(int dimIdx) = 0;

@@ -25,23 +25,29 @@ namespace X {
 
     // Constructor
     Folder::Folder(const std::string& path) {
+        std::string norm_path = path;
+        if (!norm_path.empty()) {
+            std::filesystem::path fs_p(norm_path);
+            fs_p.make_preferred();
+            norm_path = fs_p.string();
+        }
 #if (WIN32)
-        folderPath = path; // If empty in Windows, enumerate all drives.
+        folderPath = norm_path; // If empty in Windows, enumerate all drives.
 #elif (__APPLE__)
-        if (path.empty()) {
+        if (norm_path.empty()) {
             // Retrieve the user's home directory using getpwuid.
             const char* home = std::getenv("HOME");
             folderPath = home; // Set to the user's home directory.
         }
         else {
-            folderPath = path;
+            folderPath = norm_path;
         }
 #else
-        if (path.empty()) {
+        if (norm_path.empty()) {
             folderPath = "/"; // On other systems, treat empty as the root directory.
         }
         else {
-            folderPath = path;
+            folderPath = norm_path;
         }
 #endif
     }
