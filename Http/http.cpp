@@ -23,6 +23,8 @@ limitations under the License.
 #include <tuple>
 #include <regex>
 #include <optional>
+#include <sstream>
+#include <iomanip>
 
 namespace fs = std::filesystem;
 
@@ -296,7 +298,8 @@ namespace X
 	// Function to read the entire contents of a binary file
 	std::vector<char> BinReadAll(const std::string& filePath) 
 	{
-		std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+		std::filesystem::path fsPath = std::filesystem::u8path(filePath);
+		std::ifstream file(fsPath, std::ios::binary | std::ios::ate);
 		if (!file) 
 		{
 			throw std::runtime_error("Could not open file for reading: " + filePath);
@@ -315,7 +318,8 @@ namespace X
 	// Function to read the entire contents of a text file
 	std::string TextReadAll(const std::string& filePath) 
 	{
-		std::ifstream file(filePath);
+		std::filesystem::path fsPath = std::filesystem::u8path(filePath);
+		std::ifstream file(fsPath);
 		if (!file) 
 		{
 			throw std::runtime_error("Could not open file for reading: " + filePath);
@@ -354,27 +358,33 @@ namespace X
 				return false;
 			}
 		};
+
 		if (path == "/")
 		{
 			path = m_staticIndexFile;
 		}
-		else if (path.starts_with("/")) //Stip the leading slash
+		else if (path.starts_with("/")) //Strip the leading slash
 		{
 			path = path.substr(1);
 		}
+		std::filesystem::path fsPath = std::filesystem::u8path(path);
 		//Try root first
 		for (auto& root : m_staticFileRoots) {
-			fs::path fullPath = fs::path(root) / path;
+			fs::path fullPath = fs::path(root) / fsPath;
 			// Check if this exists
 			if (fs::exists(fullPath)) {
-				return setResponseContent(fullPath.string());
+				std::u8string u8Str = fullPath.u8string();
+				std::string filePath(reinterpret_cast<const char*>(u8Str.data()), u8Str.size());
+				return setResponseContent(filePath);
 			}
 		}
 		//then Moudle Path
 		std::string& root = X::Http::I().GetHttpModulePath(); 
 		fs::path fullPath = fs::path(root) / path;
 		if (fs::exists(fullPath)) {
-			return setResponseContent(fullPath.string());
+			std::u8string u8Str = fullPath.u8string();
+			std::string filePath(reinterpret_cast<const char*>(u8Str.data()), u8Str.size());
+			return setResponseContent(filePath);
 		}
 
 		return false;
