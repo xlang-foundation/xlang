@@ -42,7 +42,7 @@ namespace X
 
 		APISET().AddPropWithType<int>("rsa_padding_mode", &Cypher::m_rsa_padding_mode);
 
-		APISET().AddFunc<3>("generate_key_pair", &Cypher::GenerateKeyPair);
+		APISET().AddFunc<2>("generate_key_pair", &Cypher::GenerateKeyPair);
 		APISET().AddFunc<1>("remove_private_key", &Cypher::RemovePrivateKey);
 		APISET().AddVarFunc("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
 		APISET().AddVarFunc("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
@@ -54,7 +54,7 @@ namespace X
 		Cypher();
 		~Cypher();
 		//return public key
-		std::string GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder);
+		std::string GenerateKeyPair(int key_size, std::string keyName);
 		bool RemovePrivateKey(std::string keyName);
 		bool EncryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
