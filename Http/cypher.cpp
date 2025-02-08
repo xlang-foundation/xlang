@@ -539,7 +539,7 @@ X::Cypher::~Cypher()
 	ERR_free_strings();
 }
 
-std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder)
+std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName)
 {
 	// Generate RSA key pair
 	RSA* rsa = generate_key_pair(key_size);
