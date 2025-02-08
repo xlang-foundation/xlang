@@ -27,9 +27,10 @@ namespace X {
     Folder::Folder(const std::string& path) {
         std::string norm_path = path;
         if (!norm_path.empty()) {
-            std::filesystem::path fs_p(norm_path);
+            std::filesystem::path fs_p = std::filesystem::u8path(norm_path);
             fs_p.make_preferred();
-            norm_path = fs_p.string();
+			auto u8str = fs_p.lexically_normal().u8string();
+            norm_path = std::string(u8str.begin(), u8str.end());
         }
 #if (WIN32)
         folderPath = norm_path; // If empty in Windows, enumerate all drives.
