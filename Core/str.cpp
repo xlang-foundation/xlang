@@ -28,7 +28,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<9> _strScope;
+		static Obj_Func_Scope<13> _strScope;
 		void Str::Init()
 		{
 			_strScope.Init();
@@ -51,6 +51,68 @@ namespace X
 					return true;
 				};
 				_strScope.AddFunc("find", "pos = find(search_string)", f);
+			}
+			{
+				auto replaceFunc = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) {
+						// Extract the target object
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrObj = dynamic_cast<Str*>(pObj);
+
+						// Ensure there are enough arguments
+						if (params.size() < 2) {
+							return false; // Insufficient arguments
+						}
+
+						// Extract arguments
+						const std::string& original = pStrObj->ToString();
+						const std::string& searchString = params[0].ToString();
+						const std::string& replaceString = params[1].ToString();
+						size_t replaceCount = std::string::npos; // Default: replace all occurrences
+
+						// If a third parameter is provided, it specifies the maximum replacements
+						if (params.size() > 2) {
+							replaceCount = params[2].GetLongLong();
+						}
+
+						if (searchString.empty()) {
+							retValue = X::Value(original); // No replacement if the search string is empty
+							return true;
+						}
+
+						std::string result;
+						size_t startPos = 0;
+						size_t pos;
+						size_t count = 0;
+
+						while ((pos = original.find(searchString, startPos)) != std::string::npos) {
+							// Append everything before the match
+							result.append(original, startPos, pos - startPos);
+
+							// Append the replacement string
+							result.append(replaceString);
+
+							// Update start position
+							startPos = pos + searchString.length();
+
+							// Increment the replacement counter
+							count++;
+							if (count == replaceCount) {
+								break; // Stop if we've reached the max replacements
+							}
+						}
+
+						// Append any remaining part of the original string
+						result.append(original, startPos, std::string::npos);
+
+						// Set the result value
+						retValue = X::Value(result);
+						return true;
+					};
+
+				// Register the function in the scope
+				_strScope.AddFunc("replace", "result = replace(search_string, replace_string, max_replacements=ALL)", replaceFunc);
+
 			}
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
@@ -228,6 +290,134 @@ namespace X
 				};
 				_strScope.AddFunc("regex_replace", "new_str = regex_replace(regex_expr,target_chars)", f);
 			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) 
+					{
+						// Ensure there are two parameters: the string to match and the regex pattern
+						if (params.size() < 1) {
+							retValue = false; // Indicate failure
+							return true;
+						}
+
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrObj = dynamic_cast<Str*>(pObj);
+						std::string target = pStrObj->ToString();
+						std::string pattern = params[0].ToString();
+
+						try {
+							// Create a regex object and check for a match
+							const std::regex r(pattern);
+							bool match = std::regex_match(target, r);
+
+							// Return the match result
+							retValue = match;
+							return true;
+						}
+						catch (const std::regex_error) {
+							// Handle regex syntax errors
+							retValue = false; // Indicate failure
+							return true;
+						}
+					};
+				// Add the `regex_match` function to the string scope
+				_strScope.AddFunc("regex_match", "bool = string_var.regex_match(regex_expr)", f);
+			}
+			{
+				auto stripFunc = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) {
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrObj = dynamic_cast<Str*>(pObj);
+
+						if (pStrObj == nullptr) {
+							retValue = X::Value();
+							return false; // Invalid object context
+						}
+
+						// Original string
+						std::string original = pStrObj->ToString();
+
+						// Characters to strip
+						std::string chars = " \t\n\r"; // Default: whitespace characters
+						if (params.size() > 0) {
+							chars = params[0].ToString();
+						}
+
+						// Perform strip operation
+						size_t start = original.find_first_not_of(chars);
+						size_t end = original.find_last_not_of(chars);
+
+						std::string result = (start == std::string::npos || end == std::string::npos)
+							? ""  // If no valid characters remain
+							: original.substr(start, end - start + 1);
+
+						// Set the result value
+						auto* pNewStr = new Str(result);
+						retValue = X::Value(pNewStr);
+						return true;
+					};
+
+				// Register the strip function in the scope
+				_strScope.AddFunc("strip", "new_str = var_str.strip([chars_to_remove])", stripFunc);
+			}
+			{
+				auto joinFunc = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params, KWARGS& kwParams, X::Value& retValue) {
+						// Ensure we have at least one parameter (the list of strings to join)
+						if (params.size() < 1) {
+							retValue = X::Value(); // Insufficient arguments
+							return false;
+						}
+
+						// Extract the separator string from pContext
+						auto* pObj = dynamic_cast<Object*>(pContext);
+						auto* pStrSeparator = dynamic_cast<Str*>(pObj);
+						if (!pStrSeparator) {
+							retValue = X::Value(); // Invalid context for separator
+							return false;
+						}
+						std::string separator = pStrSeparator->ToString();
+
+						// Get the list of strings
+						auto* pObjList = dynamic_cast<Object*>(params[0].GetObj());
+						auto* pListObj = dynamic_cast<List*>(pObjList);
+						if (!pListObj) {
+							retValue = X::Value(); // Parameter must be a list
+							return false;
+						}
+
+						// Perform the join operation
+						std::string result;
+						size_t listSize = pListObj->Size();
+						for (size_t i = 0; i < listSize; ++i) {
+							// Get the current element as a string
+							X::Value elementValue = pListObj->Get(i);
+							auto* pElementObj = dynamic_cast<Object*>(elementValue.GetObj());
+							auto* pStrElement = dynamic_cast<Str*>(pElementObj);
+							if (!pStrElement) {
+								retValue = X::Value(); // All elements must be strings
+								return false;
+							}
+
+							// Append the string to the result
+							result += pStrElement->ToString();
+
+							// Add the separator if it's not the last element
+							if (i < listSize - 1) {
+								result += separator;
+							}
+						}
+
+						// Create a new Str object for the result
+						auto* pNewStr = new Str(result);
+						retValue = X::Value(pNewStr);
+						return true;
+					};
+
+				// Register the join function in the scope
+				_strScope.AddFunc("join", "new_str = join(list_of_strings)", joinFunc);
+			}
+
 			_strScope.Close();
 		}
 		void Str::cleanup()

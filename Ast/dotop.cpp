@@ -23,6 +23,7 @@ limitations under the License.
 #include "funclist.h"
 #include "moduleobject.h"
 #include "metascope.h"
+#include "dict.h"
 
 namespace X
 {
@@ -97,6 +98,8 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 	{
 		RunScopeLayoutWithScopes(R, scopes);
 	}
+	//after RunScopeLayoutWithScopes, var can't process ScopeLayout again
+	//if do will get scope is not belong to this pLeftObj0
 
 	Data::FuncCalls* pCallList = nil;
 	Data::List* pValueList = nil;
@@ -136,6 +139,16 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 			pValueList->Add(lVal);
 		}
 	};
+	auto ProcessDict = [&](Expression* pExpr,XObj* pContext, Value& v)
+	{
+		if (pExpr->m_type == ObType::Var)
+		{
+			Var* var = dynamic_cast<Var*>(pExpr);
+			std::string name = var->GetNameString();
+			auto* pDict = dynamic_cast<X::Data::Dict*>(pContext);
+			v  = pDict->Member(rt,name.c_str());
+		}
+	};
 	auto RunCallPerObj = [&](
 		Expression* pExpr,
 		XObj* pContext)
@@ -155,8 +168,18 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 						Var* var = static_cast<Var*>(it);
 						Value v0;
 						LValue lVal = nil;
-						ExecAction action;
-						var->Exec(rt, action, pContext, v0, &lVal);
+						if (!var->HasScope())
+						{
+							if (pContext->GetType() == ObjType::Dict)
+							{
+								ProcessDict(pExpr, pContext, v0);
+							}
+						}
+						else
+						{
+							ExecAction action;
+							var->Exec(rt, action, pContext, v0, &lVal);
+						}
 						AddFunc(v0, lVal,pContext);
 					}
 				}
@@ -166,14 +189,32 @@ bool DotOp::DotProcess(XlangRuntime* rt, XObj* pContext,
 				Var* var = static_cast<Var*>(pair_r);
 				Value v0;
 				LValue lVal = nil;
-				ExecAction action;
-				var->Exec(rt, action, pContext, v0, &lVal);
+				if (!var->HasScope())
+				{
+					if (pContext->GetType() == ObjType::Dict)
+					{
+						ProcessDict(pExpr, pContext, v0);
+					}
+				}
+				else
+				{
+					ExecAction action;
+					var->Exec(rt, action, pContext, v0, &lVal);
+				}
 				AddFunc(v0, lVal,pContext);
 			}
 		}
 		else if (pExpr->m_type == ObType::Var)
 		{
 			Var* var = dynamic_cast<Var*>(pExpr);
+			if (!var->HasScope())
+			{
+				if (pContext->GetType() == ObjType::Dict)
+				{
+					ProcessDict(pExpr, pContext, v);
+					return;
+				}
+			}
 			Value v0;
 			LValue lValue = nil;
 			ExecAction action;

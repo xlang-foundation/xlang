@@ -48,6 +48,7 @@ limitations under the License.
 #include "struct.h"
 #include "RemotingProxy.h"
 #include "error_obj.h"
+#include "log.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -245,6 +246,7 @@ static void XLangInternalInit()
 {
 	X::Data::Str::Init();
 	X::AST::ModuleObject::Init();
+	X::Data::Future::Init();
 	X::Data::List::Init();
 	X::Data::Binary::Init();
 	X::Data::Dict::Init();
@@ -455,6 +457,10 @@ void test()
 #define X_EXPORT
 #endif
 
+extern "C"  X_EXPORT void SetLogFuncs(void* lock,void* unlock, void* logWrite)
+{
+	InitLog((X::LOGLOCK)lock, (X::LOGUNLOCK)unlock, (X::LOGWRITE)logWrite);
+}
 extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 {
 	std::string strFullPath;

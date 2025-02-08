@@ -70,6 +70,19 @@ namespace X
 			{
 				return mMap[key];
 			}
+			virtual bool Set(Value valIdx, X::Value& val) override
+			{
+				auto it = mMap.find(valIdx);
+				if (it != mMap.end())
+				{
+					it->second = val;
+				}
+				else
+				{
+					mMap.emplace(std::make_pair(valIdx, val));
+				}
+				return true;
+			}
 			virtual void Set(const X::Value& key, const X::Value& val) override
 			{
 				auto it = mMap.find(key);
@@ -147,7 +160,6 @@ namespace X
 				}
 				return bOK;
 			}
-			void HookLValue(X::Value& key,X::LValue* lValue);
 			bool Get(X::Value& key, X::Value& val,
 				X::LValue* lValue = nullptr)
 			{
@@ -160,16 +172,9 @@ namespace X
 						*lValue = &it->second;
 					}
 				}
-				else
-				{
-					if (lValue)
-					{
-						HookLValue(key, lValue);
-					}
-				}
-				//Always true to say this call is OK
-				return true;
+				return true;//always true to make caller OK
 			}
+			bool GetLValueToAssign(X::Value& key, X::Value& value);
 			inline virtual bool Get(XRuntime* rt, XObj* pContext, 
 				X::Port::vector<X::Value>& IdxAry, X::Value& val) override
 			{

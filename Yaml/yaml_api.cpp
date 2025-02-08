@@ -16,6 +16,8 @@ limitations under the License.
 #include "yaml_api.h"
 #include "port.h"
 #include <fstream>
+#include <filesystem>
+#include <string>
 
 #include <yaml-cpp/yaml.h>
 
@@ -42,30 +44,26 @@ namespace X
 #endif
 		return bIsAbs;
 	}
-
-	std::string ToAbsFilePath(X::XRuntime* rt,std::string& fileName)
+	std::string ToAbsFilePath(X::XRuntime* rt, std::string& fileName)
 	{
-		if (!IsAbsPath(fileName))
+		namespace fs = std::filesystem;
+
+		// Check if the path is already absolute
+		if (!fs::path(fileName).is_absolute())
 		{
-			std::string curPath = rt->GetXModuleFileName();
-			//Strip the file name
-			auto pos = curPath.rfind('\\');
-			if (pos != std::string::npos)
-			{
-				curPath = curPath.substr(0, pos);
-			}
-			else
-			{
-				pos = curPath.rfind('/');
-				if (pos != std::string::npos)
-				{
-					curPath = curPath.substr(0, pos);
-				}
-			}
-			fileName = curPath + Path_Sep_S + fileName;
+			// Get the current module's directory path
+			std::string xFileName = rt->GetXModuleFileName();
+			fs::path curPath = xFileName;
+			curPath = curPath.parent_path(); // Get the parent directory
+
+			// Combine the current path with the provided file name
+			fileName = (curPath / fileName).string();
 		}
-		return fileName;
+
+		// Normalize the path to use the correct separators for the current platform
+		return fs::absolute(fileName).string();
 	}
+
 	bool ReadFileToString(const std::string& fileName,std::string& content) 
 	{
 		std::ifstream file(fileName);

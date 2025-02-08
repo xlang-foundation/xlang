@@ -91,7 +91,7 @@ namespace X
 				Port::vector<std::string>& IdList, int id_offset,
 				std::string itemName, X::Value& val);
 			virtual X::ROBJ_ID GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId,
-				X::Value& retValue);
+				bool bGetOnly,X::Value& retValue);
 			virtual bool ReleaseObject(ROBJ_ID id) override;
 			virtual bool Call(XRuntime* rt, XObj* pContext,
 				X::ROBJ_ID parent_id, X::ROBJ_ID id, X::ROBJ_MEMBER_ID memId,

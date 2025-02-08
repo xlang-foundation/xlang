@@ -22,11 +22,16 @@ limitations under the License.
 #include <map>
 #include <tuple>
 #include <regex>
+#include <optional>
+#include <sstream>
+#include <iomanip>
 
 namespace fs = std::filesystem;
 
 namespace X
 {
+	std::tuple<std::string, bool> getMimeTypeAndBinaryFlag(const std::string& extension);
+
 	X::Value Http::WritePad(X::Value& input)
 	{
 		std::string strInput = input.ToString();
@@ -163,6 +168,14 @@ namespace X
 		}
 		m_handlers.clear();
 	}
+	X::Value HttpServer::GetMimeType(std::string extName)
+	{
+		auto [mimeType, isBinary] = getMimeTypeAndBinaryFlag(extName);
+		X::List list;
+		list += mimeType;
+		list += isBinary;
+		return list;
+	}
 	bool HttpServer::Listen(std::string srvName,int port)
 	{
 		httplib::Server* pSrv = (httplib::Server*)m_pSrv;
@@ -285,7 +298,8 @@ namespace X
 	// Function to read the entire contents of a binary file
 	std::vector<char> BinReadAll(const std::string& filePath) 
 	{
-		std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+		std::filesystem::path fsPath = std::filesystem::u8path(filePath);
+		std::ifstream file(fsPath, std::ios::binary | std::ios::ate);
 		if (!file) 
 		{
 			throw std::runtime_error("Could not open file for reading: " + filePath);
@@ -304,7 +318,8 @@ namespace X
 	// Function to read the entire contents of a text file
 	std::string TextReadAll(const std::string& filePath) 
 	{
-		std::ifstream file(filePath);
+		std::filesystem::path fsPath = std::filesystem::u8path(filePath);
+		std::ifstream file(fsPath);
 		if (!file) 
 		{
 			throw std::runtime_error("Could not open file for reading: " + filePath);
@@ -343,27 +358,33 @@ namespace X
 				return false;
 			}
 		};
+
 		if (path == "/")
 		{
 			path = m_staticIndexFile;
 		}
-		else if (path.starts_with("/")) //Stip the leading slash
+		else if (path.starts_with("/")) //Strip the leading slash
 		{
 			path = path.substr(1);
 		}
+		std::filesystem::path fsPath = std::filesystem::u8path(path);
 		//Try root first
 		for (auto& root : m_staticFileRoots) {
-			fs::path fullPath = fs::path(root) / path;
+			fs::path fullPath = fs::path(root) / fsPath;
 			// Check if this exists
 			if (fs::exists(fullPath)) {
-				return setResponseContent(fullPath.string());
+				std::u8string u8Str = fullPath.u8string();
+				std::string filePath(reinterpret_cast<const char*>(u8Str.data()), u8Str.size());
+				return setResponseContent(filePath);
 			}
 		}
 		//then Moudle Path
 		std::string& root = X::Http::I().GetHttpModulePath(); 
 		fs::path fullPath = fs::path(root) / path;
 		if (fs::exists(fullPath)) {
-			return setResponseContent(fullPath.string());
+			std::u8string u8Str = fullPath.u8string();
+			std::string filePath(reinterpret_cast<const char*>(u8Str.data()), u8Str.size());
+			return setResponseContent(filePath);
 		}
 
 		return false;
@@ -518,11 +539,102 @@ namespace X
 		auto* pReq = (httplib::Request*)m_pRequest; 
 		return X::Value(pReq->method);
 	}
+
+	// Function to determine if the MIME type is binary or textual
+	inline bool isBinaryContentType(const std::string& content_type) 
+	{
+		// Set of known textual MIME types (extend as needed)
+		static const std::unordered_set<std::string> textMimeTypes = {
+			"text/plain", "text/html", "text/css", "text/javascript",
+			"application/json", "application/xml", "application/x-www-form-urlencoded"
+		};
+
+		// If content type starts with "text/", it's likely textual
+		if (content_type.find("text/") == 0) {
+			return false; // Not binary, it's text
+		}
+
+		// If content type is in the predefined textual set, it's text
+		if (textMimeTypes.find(content_type) != textMimeTypes.end()) {
+			return false; // Not binary, it's text
+		}
+
+		// For other known cases, check if it's binary (can extend the list)
+		if (content_type.find("image/") == 0 || // Image files
+			content_type.find("audio/") == 0 || // Audio files
+			content_type.find("video/") == 0 || // Video files
+			content_type == "application/octet-stream") { // Generic binary stream
+			return true; // It's binary
+		}
+
+		// Default fallback for unknown content types
+		return true; // Assume it's binary if unknown
+	}
+	inline std::optional<std::string> getContentType(auto& headers) 
+	{
+		auto it = headers.find("Content-Type");
+		if (it != headers.end()) 
+		{
+			return it->second; // Return the content type value
+		}
+		return std::nullopt; // No content-type found
+	}
 	X::Value  HttpRequest::GetBody()
 	{
+		X::Value retVal;
 		auto* pReq = (httplib::Request*)m_pRequest;
-		std::string strVal = pReq->body;
-		return strVal;
+		if (pReq->body.empty())
+		{
+			X::List listBody;
+			//check files for MultipartFormDataMap files;
+			for (const auto& pair : pReq->files)
+			{
+				X::Dict dataMap;
+				const std::string& key = pair.first;
+				auto& value = pair.second;
+				dataMap->Set("name", value.name);
+				bool isBin = isBinaryContentType(value.content_type);
+				if (isBin)
+				{
+					X::Bin binContent((char*)nullptr, 
+						(unsigned long long)value.content.size(), 
+						static_cast<bool>(true));
+					memcpy(binContent->Data(), value.content.data(), value.content.size());
+					dataMap->Set("content", binContent);
+				}
+				else
+				{
+					dataMap->Set("content", value.content);
+				}
+				dataMap->Set("filename", value.filename);
+				dataMap->Set("content_type", value.content_type);
+				listBody += dataMap;
+			}
+			retVal = listBody;
+
+		}
+		else
+		{
+			bool isBin = true;
+			std::string& strVal = pReq->body;
+			if (auto content_type = getContentType(pReq->headers))
+			{
+				isBin = isBinaryContentType(*content_type);
+			}
+			if (isBin)
+			{
+				X::Bin binContent((char*)nullptr, 
+					(unsigned long long)strVal.size(),
+					static_cast<bool>(true));
+				memcpy(binContent->Data(), strVal.data(), strVal.size());
+				retVal = binContent;
+			}
+			else
+			{
+				retVal = strVal;
+			}
+		}
+		return retVal;
 	}
 	X::Value  HttpRequest::GetPath()
 	{

@@ -107,13 +107,11 @@ namespace X
 			public Singleton<Manager>
 		{
 			std::mutex m_mutexOpenDbs;
-			std::unordered_map<std::string, X::Value> m_openDbs;
 			std::mutex m_mutexThreadDbStack;
 			//threadId->dbStack( item include padIndex+db)
 			std::unordered_map<unsigned long, std::vector<std::pair<int,X::Value>>> m_threadDbStack;
 			X::Value m_curModule;
 			std::string m_curPath;
-			X::Value m_defaultDb;
 
 			BEGIN_PACKAGE(Manager)
 				APISET().AddConst("OK", SQLITE_OK);
@@ -144,8 +142,9 @@ namespace X
 				std::lock_guard<std::mutex> lock(m_mutexThreadDbStack);
 				m_threadDbStack[threadId].push_back(std::pair(padIndex,db));
 			}
-			X::Value GetThreadDB(int padIndex)
+			X::Value GetThreadDB(X::XRuntime* rt,int padIndex)
 			{
+				X::Value moduleObj = rt->GetModuleObject();
 				//check last of stack per this thread
 				auto threadId = GetThreadID();
 				std::lock_guard<std::mutex> lock(m_mutexThreadDbStack);
@@ -162,7 +161,16 @@ namespace X
 						}
 					}
 				}
-				return m_defaultDb;
+				X::Value tdb;
+				m_mutexOpenDbs.lock();
+				X::Value varDbs = moduleObj["getcache"]("sqllite-dbs");
+				if (varDbs.IsValid())
+				{
+					X::Dict dictDbs(varDbs);
+					tdb = dictDbs["default"];
+				}
+				m_mutexOpenDbs.unlock();
+				return tdb;
 			}
 			void PopThreadDbStack(int padIndex)
 			{
@@ -199,14 +207,20 @@ namespace X
 			}
 			X::Value UseDatabase(X::XRuntime* rt, X::XObj* pContext,std::string dbPath)
 			{
+				X::Value moduleObj = rt->GetModuleObject();
 				dbPath = norm_db_path(rt, dbPath, m_curPath);
 				m_mutexOpenDbs.lock();
-				auto it = m_openDbs.find(dbPath);
-				if (it != m_openDbs.end())
+				X::Value varDbs = moduleObj["getcache"]("sqllite-dbs");
+				if (varDbs.IsInvalid())
 				{
-					X::Value valDb = it->second;
+					varDbs = X::Dict();
+					moduleObj["addcache"]("sqllite-dbs", varDbs);
+				}
+				X::Value varDb = varDbs[dbPath.c_str()];
+				if (varDb.IsValid())
+				{
 					m_mutexOpenDbs.unlock();
-					return valDb;
+					return varDb;
 				}
 				m_mutexOpenDbs.unlock();
 
@@ -215,8 +229,9 @@ namespace X
 				pDb->Open(dbPath);
 				X::Value valDb(packDb);
 				std::lock_guard<std::mutex> lock(m_mutexOpenDbs);
-				m_openDbs[dbPath] = valDb;
-				m_defaultDb = valDb;
+				X::Dict dictDbs(varDbs);
+				dictDbs->Set(dbPath,valDb);
+				dictDbs->Set("default", valDb);
 				return valDb;
 			}
 			X::Value& GetModule() { return m_curModule; }

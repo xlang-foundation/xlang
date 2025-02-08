@@ -30,12 +30,16 @@ limitations under the License.
 #include <iostream>
 
 #include "RemotingServerMgr.h"
+#include "log.h"
 
 
 namespace X
 {
 	namespace IPC
 	{
+#if !(WIN32)
+		void CleanupXlangResources();
+#endif
 #if (WIN32)
 		BOOL ReadSlot(HANDLE hSlot, std::vector<pas_mesg_buffer>& msgs)
 		{
@@ -124,6 +128,9 @@ namespace X
 
 		void MsgService::run()
 		{
+#if !(WIN32)
+			CleanupXlangResources();
+#endif
 			MakeProcessLevelSemaphore();
 #if (WIN32)
 			std::string msgKey(PAS_MSG_KEY);
@@ -140,6 +147,7 @@ namespace X
 			sa.lpSecurityDescriptor = &sd;
 			sa.bInheritHandle = FALSE;
 			HANDLE hSlot = INVALID_HANDLE_VALUE;
+			bool bErr = false;
 			while (hSlot == INVALID_HANDLE_VALUE && mRun)
 			{
 				hSlot = CreateMailslot(
@@ -148,7 +156,19 @@ namespace X
 					MAILSLOT_WAIT_FOREVER,
 					&sa);
 				if (hSlot == INVALID_HANDLE_VALUE)
+				{
+					if (bErr == false)
+					{
+						LOG7 << LOG_RED << "IPC CreateMailslot error, key: " << msgKey << "   code: " << ::GetLastError() << LOG_RESET << LINE_END;
+						bErr = true;
+					}
 					Sleep(100);
+				}
+				else
+				{
+					if (bErr)
+						LOG7 << LOG_GREEN << "IPC CreateMailslot success, key: " << msgKey << LOG_RESET << LINE_END;
+				}
 			}
 			while (mRun)
 			{
@@ -253,12 +273,12 @@ namespace X
 			mSemaphore_For_Process = CREATE_SEMAPHORE(sa, semaphoreName.c_str());
 			if (mSemaphore_For_Process == nullptr)
 			{
-				std::cout << "Create semaphore " << semaphoreName << " failed" << std::endl;
+				LOG <<LOG_RED<< "Create semaphore " << semaphoreName << " failed" <<LOG_RESET<< LINE_END;
 				return false;
 			}
 			else
 			{
-				std::cout << "Create semaphore " << semaphoreName << " OK" << std::endl;
+				LOG << LOG_GREEN << "Create semaphore " << semaphoreName << " OK" << LOG_RESET<< LINE_END;
 			}
 			return true;
 		}

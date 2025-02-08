@@ -66,6 +66,7 @@ limitations under the License.
 #include "range.h"
 #include "error_obj.h"
 #include "MsgService.h"
+#include "../Jit/md5.h"
 
 namespace X
 {
@@ -225,25 +226,30 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		return true;
 	}
 	std::string code;
+	std::string codeMd5;
 	std::string runMode;
 	bool loadFromFile = true;
-	if (params.size() == 3) // launch or attach with source code
+	if (params.size() == 3) // attach with source code (remote server)
 	{
 		runMode = params[1].ToString();
-		code = params[2].ToString();
+		codeMd5 = params[2].ToString();
+		code = X::g_pXHost->GetAttr(X::Value(), codeMd5.c_str()).ToString();
 		loadFromFile = false;
 	}
-	else if (params.size() == 2) // launch or attach without source code
+	std::vector<X::AST::Module*> findModules;
+	if (!runMode.empty())
 	{
-		runMode = params[1].ToString();
+		X::G::I().SetTrace(X::Dbg::xTraceFunc);// enable debug
+		if (!codeMd5.empty())
+			findModules = X::Hosting::I().QueryModulesByMd5(codeMd5);
+		else
+			findModules = X::Hosting::I().QueryModulesByPath(fileName);
 	}
+	else
+		findModules = X::Hosting::I().QueryModulesByPath(fileName);
 
-	if (!runMode.empty()) // enable debug
-		X::G::I().SetTrace(X::Dbg::xTraceFunc);
-
-	std::vector<X::AST::Module*> modules = X::Hosting::I().QueryModulesByPath(fileName);
 	unsigned long long moduleKey = 0;
-	if (/*runMode.empty() || */modules.size() == 0)
+	if (findModules.size() == 0)
 	{
 		if (loadFromFile)
 		{
@@ -251,15 +257,15 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
 			moduleFile.close();
 		}
-		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
+		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey, md5(code));
 		retValue = X::Value(moduleKey);
 	}
 	else
 	{
 		if (!runMode.empty())
-			retValue = X::Value(0); // for vscode debug extension
+			retValue = X::Value(0); // to vscode, module is loaded previously
 		else
-			retValue = X::Value((unsigned long long)modules[0]);
+			retValue = X::Value((unsigned long long)findModules[0]);
 	}
 	
 	return true;
@@ -276,7 +282,7 @@ bool U_LoadS(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	std::string code = params[0].ToString();
 	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey);
+	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey, md5(code));
 	retValue = X::Value(moduleKey);
 	return true;
 }
@@ -471,23 +477,12 @@ bool U_Sleep(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 {
 	bool bOK = true;
 	long long t = 0;
-	if (pContext == nullptr)
+	if (params.size() > 0)
 	{
-		if (params.size() > 0)
-		{
-			t = params[0].GetLongLong();
-		}
-		else
-		{
-			auto it = kwParams.find("time");
-			if (it)
-			{
-				t = it->val.GetLongLong();
-			}
-		}
+		t = params[0].GetLongLong();
 	}
 	else
-	{//must put into kwargs with time=t
+	{
 		auto it = kwParams.find("time");
 		if (it)
 		{
@@ -495,19 +490,7 @@ bool U_Sleep(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		}
 	}
 	MS_SLEEP((int)t);
-	if (pContext)
-	{//with a function, means after sleep, call this function
-		X::Data::Function* pFuncObj = dynamic_cast<X::Data::Function*>(pContext);
-		if (pFuncObj)
-		{
-			X::AST::Func* pFunc = pFuncObj->GetFunc();
-			bOK = pFunc->Call(rt, nullptr, params, kwParams, retValue);
-		}
-	}
-	else
-	{
-		retValue = X::Value(bOK);
-	}
+
 	return bOK;
 }
 bool U_Time(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
@@ -643,7 +626,18 @@ bool U_ObjectUnlock(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	return true;
 }
 namespace X {
-void Builtin::Cleanup()
+
+	static Builtin* g_pBuiltin = nullptr;
+	Builtin& Builtin::I()
+	{
+		if (g_pBuiltin == nullptr)
+		{
+			g_pBuiltin = new Builtin();
+		}
+		return *g_pBuiltin;
+	}
+
+	void Builtin::Cleanup()
 {
 	m_lock.Lock();
 	for (auto it : m_Funcs)
@@ -1557,27 +1551,19 @@ bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	if (pContext == nullptr)
+	if (params.size() == 1)
 	{
-		if (params.size() == 1)
+		auto& v = params[0];
+		if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::Error)
 		{
-			auto& v = params[0];
-			if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::Error)
-			{
-				retValue = X::Value(true);
-			}
-			else
-			{
-				retValue = X::Value(false);
-			}
+			retValue = X::Value(true);
 		}
 		else
 		{
 			retValue = X::Value(false);
 		}
-		return true;
 	}
-	else
+	else if (pContext)
 	{
 		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
 		if (pObj->GetType() == X::ObjType::Error)
@@ -1588,7 +1574,6 @@ bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 		{
 			retValue = X::Value(false);
 		}
-		return true;
 	}
 	return true;
 }

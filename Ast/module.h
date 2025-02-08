@@ -57,6 +57,9 @@ class Module :
 
 	//if this module has Jit Blocks, will have this member
 	X::Jit::JitLib* m_pJitLib = nullptr;
+	//used for store something in Module level
+	Locker m_moduleCacheLock;
+	std::unordered_map<std::string, X::Value> m_moduleCache;
 
 	StackFrame* m_stackFrame = nullptr;
 	XlangRuntime* m_pRuntime=nullptr;//for top module, we need it
@@ -64,6 +67,7 @@ class Module :
 	Locker m_lockSearchPath;
 	std::vector<std::string> m_searchPaths;
 	std::string m_moduleName;
+	std::string m_md5;
 	std::string m_path;
 	// for var name and value with str
 	// we keep string pointer not copy from the source code memory
@@ -104,6 +108,35 @@ public:
 	FORCE_INLINE void SetJitLib(X::Jit::JitLib* pLib)
 	{
 		m_pJitLib = pLib;
+	}
+	FORCE_INLINE void AddModuleCache(std::string& name, X::Value& val)
+	{
+		m_moduleCacheLock.Lock();
+		m_moduleCache[name] = val;
+		m_moduleCacheLock.Unlock();
+	}
+	FORCE_INLINE X::Value GetModuleCache(std::string& name)
+	{
+		m_moduleCacheLock.Lock();
+		auto it = m_moduleCache.find(name);
+		if (it != m_moduleCache.end())
+		{
+			X::Value v = it->second;
+			m_moduleCacheLock.Unlock();
+			return v;
+		}
+		m_moduleCacheLock.Unlock();
+		return X::Value();
+	}
+	FORCE_INLINE void RemoveModuleCache(std::string& name)
+	{
+		m_moduleCacheLock.Lock();
+		auto it = m_moduleCache.find(name);
+		if (it != m_moduleCache.end())
+		{
+			m_moduleCache.erase(it);
+		}
+		m_moduleCacheLock.Unlock();
 	}
 	void ChangeMyScopeTo(Scope* pNewMyScope)
 	{
@@ -240,7 +273,11 @@ public:
 	{
 		return m_moduleName;
 	}
-	
+	std::string GetMd5() { return m_md5; }
+	void SetMd5(const std::string& val) {
+		m_md5 = val; 
+		//std::cout << "new module: " << m_md5 << "  " << m_moduleName << std::endl;
+	}
 	FORCE_INLINE char* SetCode(char* code, int size)
 	{
 		std::string strCode(code, size);

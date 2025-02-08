@@ -15,6 +15,7 @@ limitations under the License.
 
 #pragma once
 #include "xhost.h"
+#include <unordered_map>
 
 namespace X
 {
@@ -23,6 +24,7 @@ namespace X
 	{
 		UI_THREAD_RUN_HANDLER m_uiThreadRunHandler = nullptr;
 		void* m_uiThreadRunContext = nullptr;
+		std::unordered_map<std::string, X::Value> m_KV;
 	public:
 		virtual void AddSysCleanupFunc(CLEANUP f) override;
 		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) override;
@@ -74,6 +76,7 @@ namespace X
 			return RunModule(objModule,args, retVal, keepModuleWithRuntime);
 		}
 		virtual bool RunModule(X::Value objModule, X::ARGS& args, X::Value& retVal, bool keepModuleWithRuntime) override;
+		virtual bool IsModuleLoadedMd5(const char* md5) override;
 		virtual X::Value NewModule() override;
 		virtual unsigned long long RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
 		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal) override;
@@ -103,6 +106,7 @@ namespace X
 		virtual void SetDebugMode(bool bDebug) override;
 		virtual void EnalbePython(bool bEnable, bool bEnablePythonDebug) override;
 		virtual void EnableDebug(bool bEnable, int port=3142) override;
+		virtual void* GetLogger() override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

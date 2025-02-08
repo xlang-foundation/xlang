@@ -27,7 +27,7 @@ namespace X
 		}
 		DBStatement::DBStatement(SqliteDB* pdb,std::string sql)
 		{
-			statecode = sqlite3_prepare(
+			statecode = sqlite3_prepare_v2(
 				pdb->db(),
 				sql.c_str(),
 				-1,

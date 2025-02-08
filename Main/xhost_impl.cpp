@@ -44,7 +44,9 @@ limitations under the License.
 #include "PyEngHost.h"
 #include "RemotingStub.h"
 #include "error_obj.h"
+#include "../Jit/md5.h"
 #include <filesystem>
+#include "log.h"
 
 namespace X 
 {
@@ -371,7 +373,10 @@ return nullptr;
 	}
 	void XHost_Impl::ReleaseString(const char* str)
 	{
-		delete str;
+		if (str)
+		{
+			delete str;
+		}
 	}
 	XBin* XHost_Impl::CreateBin(char* data, size_t size, bool bOwnData)
 	{
@@ -513,7 +518,7 @@ return nullptr;
 		std::filesystem::path pathModuleName(moduleName);
 		std::string normalizedPath = pathModuleName.generic_string();
 		unsigned long long moduleKey = 0;
-		AST::Module* pModule = X::Hosting::I().Load(normalizedPath.c_str(), code, codeSize, moduleKey);
+		AST::Module* pModule = X::Hosting::I().Load(normalizedPath.c_str(), code, codeSize, moduleKey, md5(code));
 		if (pModule == nullptr)
 		{
 			return false;
@@ -619,6 +624,14 @@ return nullptr;
 				}
 			}
 		}
+		else
+		{
+			auto it = m_KV.find(attrName);
+			if (it != m_KV.end())
+				return it->second;
+			else
+				return X::Value();
+		}
 		return retVal;
 	}
 	void XHost_Impl::SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal)
@@ -634,6 +647,10 @@ return nullptr;
 					pBag->Set(attrName,attrVal);
 				}
 			}
+		}
+		else
+		{
+			m_KV[attrName] = attrVal;
 		}
 	}
 	AppEventCode XHost_Impl::HandleAppEvent(int signum)
@@ -843,5 +860,13 @@ return nullptr;
 				g_pXload->GetConfig().dbgPort = port;
 			}
 		}
+	}
+	void* XHost_Impl::GetLogger()
+	{
+		return (void*)&X::log;
+	}
+	bool XHost_Impl::IsModuleLoadedMd5(const char* md5)
+	{
+		return X::Hosting::I().QueryModulesByMd5(md5).size() > 0;
 	}
 }

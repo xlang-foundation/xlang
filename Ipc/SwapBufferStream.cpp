@@ -65,7 +65,7 @@ namespace X
 			head.payloadType = PayloadType::Send;
 
 			m_pSwapBuffer->EndWrite();//Notify another side
-			bool bOK = m_pSwapBuffer->BeginRead(SHORT_WAIT_TIMEOUT);//wait for ack back
+			bool bOK = m_pSwapBuffer->BeginRead(/*SHORT_WAIT_TIMEOUT*/);//wait for ack back
 			if (!bOK)
 			{
 				throw XLangStreamException(-100);
@@ -87,7 +87,7 @@ namespace X
 			m_pSwapBuffer->BeginWrite();
 			head.payloadType = PayloadType::Ack;
 			m_pSwapBuffer->EndWrite();
-			bool bOK = m_pSwapBuffer->BeginRead(SHORT_WAIT_TIMEOUT);//wait for ack back
+			bool bOK = m_pSwapBuffer->BeginRead(/*SHORT_WAIT_TIMEOUT*/);//wait for ack back
 			if (!bOK)
 			{
 				//throw GrusStreamException(-100);

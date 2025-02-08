@@ -126,13 +126,13 @@ namespace X
 			return CallHandler::ReleaseObject(id);
 		}
 		X::ROBJ_ID RemotingProxy::GetMemberObject(X::ROBJ_ID objid, X::ROBJ_MEMBER_ID memId,
-			X::Value& retValue)
+			bool bGetOnly,X::Value& retValue)
 		{
 			if (!CheckConnectReadyStatus())
 			{
 				return { 0,0 };
 			}
-			return CallHandler::GetMemberObject(objid, memId, retValue);
+			return CallHandler::GetMemberObject(objid, memId, bGetOnly,retValue);
 		}
 
 		bool RemotingProxy::Call(XRuntime* rt, XObj* pContext,

@@ -145,16 +145,20 @@ public:
 	{
 		m_threadId = GetThreadID();
 	}
-	void SetNoThreadBinding(bool b)
+	FORCE_INLINE void SetNoThreadBinding(bool b)
 	{
 		m_noThreadBinding = b;
+	}
+	FORCE_INLINE bool IfNoThreadBinding()
+	{
+		return m_noThreadBinding;
 	}
 	void SetNoDbg(bool b)
 	{
 		m_bNoDbg = b;
 	}
 	~XlangRuntime();
-	bool m_bNoDbg = false; // do not trace
+	bool m_bNoDbg = false; // do not trace this runtime if module is devops_run.x or Cleanup.x
 	bool m_bStoped = false; // stopped on breakpoint or step
 	AST::Expression* m_pFirstStepOutExp = nullptr;
 	FORCE_INLINE void SetDbgType(dbg d, dbg lastRequest)
@@ -171,6 +175,7 @@ public:
 	int PushWritePad(X::Value valObj, std::string alias);
 	void PopWritePad();
 	virtual bool CreateEmptyModule() override;
+	virtual X::Value GetModuleObject() override;
 	FORCE_INLINE void SetName(std::string& name) { m_name = name; }
 	FORCE_INLINE std::string& GetName() { return m_name; }
 	FORCE_INLINE long long GetThreadId() { return m_threadId; }

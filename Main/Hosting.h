@@ -72,7 +72,8 @@ namespace X
 			m_lock.Unlock();
 		}
 
-		void SendBreakpointState(const std::string& path, int line, int actualLine);
+		void SendBreakpointState(const std::string& md5, int line, int actualLine);
+		void SendModuleLoaded(const std::string& md5, const std::string& path);
 	public:
 		void Cleanup()
 		{
@@ -108,9 +109,26 @@ namespace X
 			m_lock.Unlock();
 			return modules;
 		}
+		std::vector<AST::Module*> QueryModulesByMd5(const std::string& strMd5)
+		{
+			std::vector<AST::Module*> modules;
+			m_lock.Lock();
+			auto mapIt = m_ModuleMap.begin();
+			while (mapIt != m_ModuleMap.end())
+			{
+				if (mapIt->second->GetMd5() == strMd5)
+				{
+					modules.push_back(mapIt->second);
+					break;
+				}
+				++mapIt;
+			}
+			m_lock.Unlock();
+			return modules;
+		}
 		AppEventCode HandleAppEvent(int signum);
 		AST::Module* Load(const char* moduleName,
-			const char* code, int size,unsigned long long& moduleKey);
+			const char* code, int size,unsigned long long& moduleKey, const std::string& md5);
 		AST::Module* LoadWithScope(AST::Scope* pScope,const char* code, int size);
 		X::Value NewModule();
 		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,X::Value& retVal);

@@ -19,7 +19,7 @@ limitations under the License.
 #include "exp.h"
 #include "runtime.h"
 #include "xlang.h"
-
+#include "utility.h"
 namespace X
 {
 	class XlangRuntime;
@@ -33,12 +33,16 @@ namespace X
 		ARGS m_params;
 		KWARGS m_kwParams;
 		X::Value m_retValue;
-
+		long long m_enqueueTime;
+		long long m_startRunTime;
+		long long m_endRunTime;
 	public:
-		Task() :m_params(0)
+		Task() :m_params(0),m_startRunTime(0), m_endRunTime(0)
 		{
-
+			m_enqueueTime = getCurMicroTimeStamp();
 		}
+		void Cancel();
+		void Cancelled();
 		void SetTaskPool(X::Value& pool)
 		{
 			m_taskPool = pool;
@@ -46,6 +50,30 @@ namespace X
 		void SetFuture(X::Value& f)
 		{
 			m_future = f;
+		}
+		inline void SetEnqueueTime(long long t)
+		{
+			m_enqueueTime = t;
+		}
+		inline void SetStartRunTime(long long t)
+		{
+			m_startRunTime = t;
+		}
+		inline void SetEndRunTime(long long t)
+		{
+			m_endRunTime = t;
+		}
+		inline long long GetEnqueueTime()
+		{
+			return m_enqueueTime;
+		}
+		inline long long GetStartRunTime()
+		{
+			return m_startRunTime;
+		}
+		inline long long GetEndRunTime()
+		{
+			return m_endRunTime;
 		}
 		void run();
 		bool Call(X::Value& valFunc,

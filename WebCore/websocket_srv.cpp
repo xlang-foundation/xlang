@@ -28,7 +28,7 @@ limitations under the License.
 #include <vector>
 #include "value.h"
 #include "xhost.h"
-
+#include "xlog.h"
 
 namespace X
 {
@@ -99,7 +99,7 @@ namespace X
                 WebSocketSessionImpl* pThis = this;
                 m_lockThreadCount.Lock();
                 m_threadCount--;
-                CanRemove == (m_threadCount == 0);
+                CanRemove = (m_threadCount == 0);
                 m_lockThreadCount.Unlock();
                 if (CanRemove)
                 {
@@ -182,6 +182,7 @@ namespace X
                 catch (const std::exception& e)
                 {
                     std::cout << "Error:" << e.what() << std::endl;
+
                 }
                 PrepareStop();
                 TryToRemoveSession();
@@ -227,7 +228,7 @@ namespace X
                 }
                 catch (const std::exception& e)
                 {
-                    //LOG << "Error:" << e.what() << LINE_END;
+                    LOG <<LOG_RED<< "Error:" << e.what() <<LOG_RESET<< LINE_END;
                 }
                 PrepareStop();
                 TryToRemoveSession();
@@ -261,23 +262,39 @@ namespace X
 
         void WebSocketSrvThread::run()
         {
-            asio::io_context io_context;
-            tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), mPort));
-            while (mRun)
+            try 
             {
-                tcp::socket socket(io_context);
-                acceptor.accept(socket);
+                asio::io_context io_context;
+                tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), mPort));
+                while (mRun)
+                {
+                    tcp::socket socket(io_context);
+                    acceptor.accept(socket);
 
-                auto* pSesison = new WebSocketSessionImpl(this, &socket);
-                m_lockSessions.Lock();
-                m_Sessions.push_back(pSesison);
-                m_lockSessions.Unlock();
-                pSesison->Start();
-                X::ARGS args(1);
-                args.push_back(pSesison->GetSession());
-                X::KWARGS kwargs;
-                mServer->Fire(0, args, kwargs);
+                    auto* pSesison = new WebSocketSessionImpl(this, &socket);
+                    m_lockSessions.Lock();
+                    m_Sessions.push_back(pSesison);
+                    m_lockSessions.Unlock();
+                    pSesison->Start();
+                    X::ARGS args(1);
+                    args.push_back(pSesison->GetSession());
+                    X::KWARGS kwargs;
+                    mServer->Fire(0, args, kwargs);
+                }
             }
+            catch (const boost::system::system_error& e)
+            {
+                LOG << LOG_BLINK <<LOG_RED <<"Port:"<< mPort << ",Boost system error: " << e.what() << LOG_RESET << LINE_END;
+            }
+            catch (const std::exception& e)
+            {
+                LOG << LOG_BLINK << LOG_RED << "Port:" << mPort << ",Standard exception: " << e.what() << LOG_RESET << LINE_END;
+            }
+            catch (...)
+            {
+                LOG << LOG_BLINK << LOG_RED << "Port:" << mPort <<",Unknown exception occurred." << LOG_RESET << LINE_END;
+            }
+			//Clean up
             m_lockSessions.Lock();
             for (auto* pSession : m_Sessions)
             {

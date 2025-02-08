@@ -195,6 +195,18 @@ namespace X {
 				return pRetObj;
 
 			}
+			virtual bool Set(Value valIdx, X::Value& val) override
+			{
+				bool bOK = false;
+				std::string name = valIdx.ToString();
+				int idx = m_obj->AddOrGet(name, false);
+				if (idx >= 0)
+				{
+					m_variableFrame->Set(idx, val);
+					bOK = true;
+				}
+				return bOK;
+			}
 			FORCE_INLINE AST::StackFrame* GetStack()
 			{
 				return m_variableFrame;

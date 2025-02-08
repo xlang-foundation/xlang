@@ -28,6 +28,10 @@ limitations under the License.
 
 #include "service.h"
 
+#ifdef __APPLE__
+extern char** environ;  // Explicitly declare environ on macOS
+#endif
+
 namespace X {
 
     class Process {
@@ -219,7 +223,7 @@ namespace X {
 		X::Value m_environ;
         BEGIN_PACKAGE(OSService)
             APISET().AddClass<0, Process>("Process");
-            APISET().AddClass<0, Process>("Service");
+            APISET().AddClass<1, Service>("Service");
             APISET().AddClass<0, Environ>("Environ");
 
             APISET().AddPropL("environ",

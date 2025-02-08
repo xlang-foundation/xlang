@@ -15,6 +15,8 @@ limitations under the License.
 
 #include "taskpool.h"
 #include "task.h"
+#include "utility.h"
+
 namespace X
 {
 
@@ -45,7 +47,6 @@ namespace X
 		}
 		TaskPool::~TaskPool()
 		{
-			std::cout << "TaskPool::~TaskPool()";
 			CancelAll();
 		}
 
@@ -57,6 +58,7 @@ namespace X
 			//and can be deleted
 			for (auto* pTsk : m_tasks)
 			{
+				pTsk->Cancelled();
 				delete pTsk;
 			}
 			m_tasks.clear();
@@ -67,6 +69,26 @@ namespace X
 			}
 			m_threads.clear();
 			m_lock.Unlock();
+		}
+		bool TaskPool::CancelTask(Task* pTask)
+		{
+			m_lock.Lock();
+			for (auto it = m_tasks.begin(); it != m_tasks.end();)
+			{
+				if (*it == pTask)
+				{
+					m_tasks.erase(it);
+					m_lock.Unlock();
+					pTask->Cancelled();
+					delete pTask;
+					return true;
+				}
+				else
+				{
+					++it;
+				}
+			}
+			return false;
 		}
 		Task* TaskPool::GetTaskToRun()
 		{
@@ -129,7 +151,10 @@ namespace X
 				m_threads.push_back(pIdelThread);
 				pIdelThread->Start();
 			}
-			pIdelThread->ReleaseWait();
+			if (pIdelThread)
+			{
+				pIdelThread->ReleaseWait();
+			}
 			m_lock.Unlock();
 			return true;
 		}

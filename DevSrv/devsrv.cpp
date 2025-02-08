@@ -20,6 +20,8 @@ limitations under the License.
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <filesystem>
+#include "xlog.h"
 
 namespace X
 {
@@ -115,33 +117,41 @@ namespace X
 				printWait.Release();
 				//std::cout << "DevServer got event:" << notifyInfo<<std::endl;
 			});
-		m_srv.Get("/devops/run",
+		m_srv.Post("/devops/run",
 			[this](const httplib::Request& req,httplib::Response& res)
 			{
-				auto& req_params = req.params;
-				auto it = req_params.find("code");
-				std::string retData;
-				if (it != req_params.end())
+				std::string retData("error");
+				if (req.body.size() > 4 && X::g_pXHost)
 				{
-					std::string code = it->second;
-					//std::cout << "code:\n" << code << std::endl;
-					if (X::g_pXHost)
+					std::string code, src, md5;
+					const char* data = req.body.data();
+					uint32_t codeLen = ntohl(*reinterpret_cast<const uint32_t*>(data));
+					data += 4;
+					code = std::string(data, codeLen);
+					if (req.body.size() > codeLen + 4)
 					{
-						X::Value retVal;
-						X::g_pXHost->RunCodeInNonDebug("devops_run.x", code.c_str(),(int)code.size(), retVal);
-						if (retVal.IsObject() && retVal.GetObj()->GetType() == ObjType::Str)
-						{
-							retData = retVal.ToString();
-						}
-						else
-						{
-							retData = retVal.ToString(true);
-						}
+						data += codeLen;
+						uint32_t srcLen = ntohl(*reinterpret_cast<const uint32_t*>(data));
+						data += 4;
+						src = std::string(data, srcLen);
+						data += srcLen;
+						uint32_t md5Len = ntohl(*reinterpret_cast<const uint32_t*>(data));
+						data += 4;
+						md5 = std::string(data, md5Len);
+						X::Value v(src);
+						X::g_pXHost->SetAttr(X::Value(), md5.c_str(), v);
 					}
-				}
-				else
-				{
-					retData = "error";
+					//std::cout << "code:\n" << code << std::endl;
+					X::Value retVal;
+					X::g_pXHost->RunCodeInNonDebug("devops_run.x", code.c_str(), (int)code.size(), retVal);
+					if (retVal.IsObject() && retVal.GetObj()->GetType() == ObjType::Str)
+					{
+						retData = retVal.ToString();
+					}
+					else
+					{
+						retData = retVal.ToString(true);
+					}
 				}
 				res.set_content(retData, "text/html");
 				//std::cout << "BackData:" << retData << std::endl;
@@ -250,30 +260,56 @@ namespace X
 				std::lock_guard<std::mutex> lock(m_mtxConnect);
 				m_Connected = true;
 				m_cvConnect.notify_one();
-				std::cout << "client connected" << std::endl;
+
+				// check if debug need input a path
+				auto& req_params = req.params;
+				auto itPath = req_params.find("path");
+				auto itPlatform = req_params.find("platform");
+				auto itMd5 = req_params.find("md5");
+
+				if (itPath != req_params.end() && itPlatform != req_params.end())
+				{
+					std::string path = itPath->second;
+					std::string platform = itPlatform->second;
+					std::string md5 = itMd5->second;
+					if (X::g_pXHost->IsModuleLoadedMd5(md5.c_str()))
+						res.set_content("not_need_path", "text/html");
+#if defined(_WIN32) 
+					else if (platform == "not_windows") // platfor not match
+						res.set_content("need_path", "text/html");
+#else 
+					else if (platform == "windows") // platfor not match
+						res.set_content("need_path", "text/html"); 
+#endif
+					else
+					{
+						if (std::filesystem::exists(path))
+							res.set_content("not_need_path", "text/html");
+						else // file to debug not exist
+							res.set_content("need_path", "text/html");
+					}
+				}
+				LOG << LOG_GREEN << "xlang debug client connected" << LOG_RESET << LINE_END;
 			}
 		);
 		m_srv.Get("/devops/terminate",
 			[this](const httplib::Request& req, httplib::Response& res)
 			{
 				m_srv.stop();
-#if (WIN32)
-				system("pause");
-#endif
 				std::exit(0);
 			}
 		);
 		if (!m_srv.is_valid())
 		{
-			printf("Devops server has an error...\n");
+			LOG << LOG_RED << "Devops server has an error..." << LOG_RESET << LINE_END;
 		}
-		std::cout << "DevServer set debug mode: true" << std::endl;
+		LOG << LOG_GREEN << "DevServer set debug mode: true" << LOG_RESET << LINE_END;
 		X::g_pXHost->SetDebugMode(true);
-		std::cout << "DevServer listens on port:" << m_port << std::endl;
+		LOG << LOG_GREEN << "DevServer listens on port:" << m_port << LOG_RESET << LINE_END;
 		if (!m_srv.listen("::", m_port))
 		{
-			std::cout << "listen failed" << std::endl;
-			std::cout << "DevServer set debug mode: false" << std::endl;
+			LOG << LOG_RED << "listen failed" << LOG_RESET << LINE_END;
+			LOG <<LOG_RED << "DevServer set debug mode: false" << LOG_RESET <<LINE_END;
 			X::g_pXHost->SetDebugMode(false);
 		}
 		//exit

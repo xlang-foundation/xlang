@@ -19,6 +19,7 @@ limitations under the License.
 #include "function.h"
 #include "obj_func_scope.h"
 #include "op.h"
+#include "internal_assign.h"
 
 namespace X
 {
@@ -76,7 +77,10 @@ namespace X
 							return true;
 						}
 						Dict* pObj = dynamic_cast<Dict*>(pContext);
-						return pObj->Get(params[0], retValue);
+						pObj->Get(params[0], retValue);
+						//we don't need to care if find it or not
+						//always make it success, so xlang run statement is OK
+						return true;
 					};
 				_dictScope.AddFunc("get", "val = get(key)", f);
 			}
@@ -124,6 +128,12 @@ namespace X
 		{
 			m_t = ObjType::Dict;
 			m_bases.push_back(_dictScope.GetMyScope());
+		}
+		bool Dict::GetLValueToAssign(X::Value& key, X::Value& value)
+		{
+			InternalAssign* pAssign = new InternalAssign(this, key);
+			value = X::Value(pAssign);
+			return true;
 		}
 		List* Dict::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
@@ -227,34 +237,6 @@ namespace X
 			X::Value itemKey(itemName);
 			Set(itemKey, val);
 			return val;
-		}
-		class DictValue :
-			public Value
-		{
-			Dict* m_dict = nullptr;
-			Value m_key;
-		public:
-			DictValue(Dict* d, Value& k)
-			{
-				d->IncRef();
-				SetObj(d);
-				m_key = k;
-				m_dict = d;
-			}
-			FORCE_INLINE void operator += (const Value& v)
-			{
-				m_dict->AddKeyValue(m_key, v);
-			}
-			FORCE_INLINE void operator = (const Value& v)
-			{
-				m_dict->SetKV(m_key, v);
-			}
-		};
-		void Dict::HookLValue(X::Value& key,X::LValue* lValue)
-		{
-			auto* pDictVal = new DictValue(this, key);
-			*lValue = pDictVal;
-			lValue->SetReleaseFlag(true);
 		}
 	}
 }

@@ -42,23 +42,27 @@ namespace X
 
 		APISET().AddPropWithType<int>("rsa_padding_mode", &Cypher::m_rsa_padding_mode);
 
-		APISET().AddFunc<3>("generate_key_pair", &Cypher::GenerateKeyPair);
+		APISET().AddFunc<2>("generate_key_pair", &Cypher::GenerateKeyPair);
 		APISET().AddFunc<1>("remove_private_key", &Cypher::RemovePrivateKey);
-		APISET().AddFunc<2>("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
-		APISET().AddFunc<2>("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
-		APISET().AddFunc<2>("encrypt_with_public_key", &Cypher::EncryptWithPublicKey);
-		APISET().AddFunc<2>("decrypt_with_public_key", &Cypher::DecryptWithPublicKey);
+		APISET().AddVarFunc("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
+		APISET().AddVarFunc("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
+		APISET().AddVarFunc("encrypt_with_public_key", &Cypher::EncryptWithPublicKey);
+		APISET().AddVarFunc("decrypt_with_public_key", &Cypher::DecryptWithPublicKey);
 		END_PACKAGE
 
 	public:
 		Cypher();
 		~Cypher();
 		//return public key
-		std::string GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder);
+		std::string GenerateKeyPair(int key_size, std::string keyName);
 		bool RemovePrivateKey(std::string keyName);
-		X::Value EncryptWithPrivateKey(std::string msg, std::string keyName);
-		std::string DecryptWithPrivateKey(X::Value& encrypted, std::string keyName);
-		X::Value EncryptWithPublicKey(std::string msg, std::string perm_key);
-		std::string DecryptWithPublicKey(X::Value& encrypted, std::string perm_key);
+		bool EncryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+		bool DecryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+		bool EncryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+		bool DecryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
 	};
 }

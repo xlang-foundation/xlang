@@ -220,6 +220,7 @@ public:
 	FORCE_INLINE Value(ValueType t0)
 	{
 		t = t0;
+		x.l = 0;
 	}
 	FORCE_INLINE Value(bool b)
 	{//use 1 as true and 0 as false, set flag to -1
@@ -501,6 +502,7 @@ public:
 	}
 	bool IsList() const;
 	bool IsDict() const;
+	bool IsBin() const;
 	bool IsString() const;
 	FORCE_INLINE bool IsTrue()
 	{
@@ -657,6 +659,7 @@ public:
 		Port::vector<X::Value> params(0);
 		return ObjCall(params);
 	}
+	bool SetPropValue(const char* propName, X::Value value);
 	Value GetItemValue(long long idx);
 	Value GetObjectValue(Port::vector<X::Value>& IdxAry);
 	template<typename... VarList>

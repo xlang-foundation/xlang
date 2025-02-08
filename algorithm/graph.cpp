@@ -24,7 +24,7 @@ limitations under the License.
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
 #include <unordered_map>
 
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS,
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
 	boost::no_property, boost::property<boost::edge_weight_t, int>> Graph;
 typedef boost::graph_traits<Graph>::edge_descriptor Edge;
 typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
@@ -72,6 +72,11 @@ namespace X
 			}
 #endif
 		}
+		void XGraph::Clear()
+		{
+			((Graph*)mGraph)->clear();
+		}
+
 		bool XGraph::AddEdge(int id1, int id2, double weight)
 		{
 			Graph& g = *(Graph*)mGraph;
@@ -118,6 +123,10 @@ namespace X
 					boost::get(boost::vertex_index, g)))
 				.distance_map(boost::make_iterator_property_map(distances.begin(), 
 					boost::get(boost::vertex_index, g))));
+
+			// no path to end node
+			if (distances[end] == std::numeric_limits<int>::max())
+				return ArrayToValue(std::vector<long long>());
 
 			// Reconstruct the shortest path from start to goal
 			std::vector<Vertex> path;

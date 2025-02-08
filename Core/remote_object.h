@@ -317,7 +317,7 @@ namespace X
 					m_proxyLock.Lock();
 					if (m_proxy)
 					{
-						objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId, memberValue);
+						objId = m_proxy->GetMemberObject(m_remote_Obj_id, memId, bGetOnly,memberValue);
 					}
 					auto* r_obj = new RemoteObject(m_proxy);
 					m_proxyLock.Unlock();

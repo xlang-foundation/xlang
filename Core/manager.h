@@ -45,9 +45,11 @@ namespace X
 			XProxyFilter filter = nullptr;
 			std::unordered_map<std::string, XProxy*> Instances;
 		};
+		Locker m_lockMapPackage;
 		std::unordered_map<std::string, PackageInfo> m_mapPackage;
 		Locker m_proxyMapLock;
 		std::unordered_map<std::string, XProxyInfo> m_mapXProxy;
+		Locker m_lockCleanups;
 		std::vector<CLEANUP> m_cleanups;
 		//if in xlang code, for example use line below
 		//import some_module thru 'lrpc:1000'
@@ -99,17 +101,26 @@ namespace X
 		}
 		void Cleanup()
 		{
+			m_lockMapPackage.Lock();
 			m_mapPackage.clear();
+			m_lockMapPackage.Unlock();
+			m_proxyMapLock.Lock();
 			m_mapXProxy.clear();
+			m_proxyMapLock.Unlock();
+
+			m_lockCleanups.Lock();
 			for (auto f : m_cleanups)
 			{
 				f();
 			}
 			m_cleanups.clear();
+			m_lockCleanups.Unlock();
 		}
 		void AddCleanupFunc(CLEANUP f)
 		{
+			m_lockCleanups.Lock();
 			m_cleanups.push_back(f);
+			m_lockCleanups.Unlock();
 		}
 		bool RegisterProxy(const char* name, XProxyCreator creator,XProxyFilter filter = nullptr)
 		{
@@ -193,16 +204,22 @@ namespace X
 		}
 		bool Register(const char* name,PackageCreator creator,void* pContextForCreator = nullptr)
 		{
+			m_lockMapPackage.Lock();
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,Value(pContextForCreator)}));
+			m_lockMapPackage.Unlock();
 			return true;
 		}
 		bool Register(const char* name,Value& objPackage)
 		{
+			m_lockMapPackage.Lock();
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,objPackage }));
+			m_lockMapPackage.Unlock();
 			return true;
 		}
 		bool UnloadPackage(std::string packName)
 		{
+			AutoLock lk(m_lockMapPackage);
+
 			auto it = m_mapPackage.find(packName);
 			if (it != m_mapPackage.end())
 			{
@@ -213,6 +230,8 @@ namespace X
 		}
 		bool QueryPackage(std::string& name,Value& valPack)
 		{
+			AutoLock lk(m_lockMapPackage);
+
 			bool bHave = false;
 			auto it = m_mapPackage.find(name);
 			if (it != m_mapPackage.end())
@@ -226,6 +245,8 @@ namespace X
 		bool QueryAndCreatePackage(XlangRuntime* rt,std::string& name,
 			Value& valPack)
 		{
+			AutoLock lk(m_lockMapPackage);
+
 			bool bCreated = false;
 			auto it = m_mapPackage.find(name);
 			if (it != m_mapPackage.end())
@@ -246,6 +267,8 @@ namespace X
 		}
 		bool HasPackage(std::string& name)
 		{
+			AutoLock lk(m_lockMapPackage);
+
 			auto it = m_mapPackage.find(name);
 			return (it != m_mapPackage.end());
 		}
