@@ -325,7 +325,16 @@ public:
 					//continue;
 					//v0.GetObj()->IncRef();
 				}
-				if (v0.IsObject() && v0.GetObj()->GetType() == ObjType::ObjectEvent)
+				//we change to clone all objects
+				// to make like following code work
+				/*
+					auto db1 = sqlite["Database"](dbName1);
+					auto db2 = sqlite["Database"](dbName2);
+					auto s1_call = db1["statement"];
+					auto s2_call = db2["statement"];
+					to make s1_call and s2_call are diffrent objects
+				*/
+				//if (v0.IsObject() && v0.GetObj()->GetType() == ObjType::ObjectEvent)
 				{
 					v0.Clone();
 				}

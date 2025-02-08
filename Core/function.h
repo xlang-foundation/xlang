@@ -36,6 +36,14 @@ namespace X
 			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
+			virtual XObj* Clone() override
+			{
+				Function* pNewFunc = new Function();
+				pNewFunc->m_ownFunc = false;//we borrow the reference
+				pNewFunc->m_func = m_func;
+				pNewFunc->IncRef();
+				return dynamic_cast<XObj*>(pNewFunc);
+			}
 			virtual X::Value GetName() override
 			{
 				return m_func->GetFuncName();
