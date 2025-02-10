@@ -225,7 +225,7 @@ namespace X {
             APISET().AddClass<0, Process>("Process");
             APISET().AddClass<1, Service>("Service");
             APISET().AddClass<0, Environ>("Environ");
-
+            APISET().AddFunc<0>("GetCurrentProcessId", &OSService::GetCurrentProcessId);
             APISET().AddPropL("environ",
                 [](auto* pThis, X::Value v) { },
                 [](auto* pThis) { 
@@ -237,5 +237,17 @@ namespace X {
                     return pThis->m_environ;
                 });
         END_PACKAGE
+    public:
+        unsigned long GetCurrentProcessId()
+        {
+#if defined(WIN32)
+            return ::GetCurrentProcessId();
+#elif defined(BARE_METAL)
+            // Bare-metal implementation not possible, return 0
+            return 0;
+#else
+            return getpid();
+#endif
+        }
     };
 } // namespace X
