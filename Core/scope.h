@@ -258,7 +258,18 @@ public:
 			return rt->Set(this, pContext, idx, v);
 		}
 	}
-
+	FORCE_INLINE bool SimpleSet(int idx, X::Value& v)
+	{
+		if (m_varFrame)
+		{
+			m_varFrame->Set(idx, v);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 	FORCE_INLINE void Get(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v, LValue* lValue = nullptr)
 	{
 		//TODO: check performance here
