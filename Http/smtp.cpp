@@ -21,81 +21,81 @@ std::string base64_encode(const std::string& input) {
 	BIO_get_mem_ptr(bio, &bptr);
 
 	if (bptr == nullptr || bptr->data == nullptr) {
-	    BIO_free_all(bio);
-	    throw std::runtime_error("Failed to encode base64.");
+		BIO_free_all(bio);
+		throw std::runtime_error("Failed to encode base64.");
 	}
 
 	std::string encoded(bptr->data, bptr->length - 1); // Avoid last null byte
 	BIO_free_all(bio);
-    return encoded;
+	return encoded;
 }
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
-    std::string* response = (std::string*)userp;
-    size_t total_size = size * nmemb;
-    response->append((char*)contents, total_size);
-    return total_size;
+	std::string* response = (std::string*)userp;
+	size_t total_size = size * nmemb;
+	response->append((char*)contents, total_size);
+	return total_size;
 }
 
 // Function to get an access token from Microsoft Azure
 std::string X::Smtp::GetAccessToken()
 {
-    CURL* curl = curl_easy_init();
-    if (!curl) 
+	CURL* curl = curl_easy_init();
+	if (!curl)
 		throw "Access token failed to initialize";
 
-    std::string url = "https://login.microsoftonline.com/" + mTenantId + "/oauth2/v2.0/token";
-    std::string post_fields = "client_id=" + mClientId + "&client_secret=" + mClientSecret + "&grant_type=client_credentials&scope=" + mSmtpScope;
+	std::string url = "https://login.microsoftonline.com/" + mTenantId + "/oauth2/v2.0/token";
+	std::string post_fields = "client_id=" + mClientId + "&client_secret=" + mClientSecret + "&grant_type=client_credentials&scope=" + mSmtpScope;
 
-    std::string response_data;
+	std::string response_data;
 
-    // SSL Certificate
-    curl_easy_setopt(curl, CURLOPT_CAINFO, mCertPath.c_str());
+	// SSL Certificate
+	curl_easy_setopt(curl, CURLOPT_CAINFO, mCertPath.c_str());
 
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_fields.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_fields.c_str());
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
 
-    CURLcode res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        curl_easy_cleanup(curl);
-        return std::string("Access token request failed: " + std::string(curl_easy_strerror(res)));
-    }
-    curl_easy_cleanup(curl);
+	CURLcode res = curl_easy_perform(curl);
+	if (res != CURLE_OK) {
+		curl_easy_cleanup(curl);
+		return std::string("Access token request failed: " + std::string(curl_easy_strerror(res)));
+	}
+	curl_easy_cleanup(curl);
 
-    //std::cout << "Response Data: " << response_data << std::endl;
+	//std::cout << "Response Data: " << response_data << std::endl;
 
-    if (response_data.empty())
-    {
-        return "Access token response data is empty.";
-    }
+	if (response_data.empty())
+	{
+		return "Access token response data is empty.";
+	}
 
-    size_t start = response_data.find("\"access_token\":\"") + 16;
-    size_t end = response_data.find("\"", start);
-    if (start == std::string::npos || end == std::string::npos || end <= start) {
-        return "Access token failed to parse access token.";
-    }
+	size_t start = response_data.find("\"access_token\":\"") + 16;
+	size_t end = response_data.find("\"", start);
+	if (start == std::string::npos || end == std::string::npos || end <= start) {
+		return "Access token failed to parse access token.";
+	}
 
-    return response_data.substr(start, end - start);
+	return response_data.substr(start, end - start);
 }
 
 size_t read_callback(void* ptr, size_t size, size_t nmemb, void* userp) {
-    std::string* data = static_cast<std::string*>(userp);
-    size_t buffer_size = size * nmemb;
+	std::string* data = static_cast<std::string*>(userp);
+	size_t buffer_size = size * nmemb;
 
-    std::cout << "read_callback invoked with buffer_size: " << buffer_size
-        << ", remaining data length: " << data->length() << std::endl;
+	std::cout << "read_callback invoked with buffer_size: " << buffer_size
+		<< ", remaining data length: " << data->length() << std::endl;
 
-    if (data->empty()) {
-        return 0;
-    }
+	if (data->empty()) {
+		return 0;
+	}
 
-    size_t send_length = (data->length() < buffer_size) ? data->length() : buffer_size;
-    memcpy(ptr, data->c_str(), send_length);
-    data->erase(0, send_length);
+	size_t send_length = (data->length() < buffer_size) ? data->length() : buffer_size;
+	memcpy(ptr, data->c_str(), send_length);
+	data->erase(0, send_length);
 
-    return send_length;
+	return send_length;
 }
 
 struct EmailData {
@@ -132,7 +132,9 @@ struct EmailData {
 // Function to send email using the access token
 std::string X::Smtp::Send(std::string from, std::string to, std::string subject, std::string content)
 {
+	std::cout << "1---------------------------------------------" << std::endl;
 	std::string access_token = GetAccessToken();
+	std::cout << "2---------------------------------------------" << std::endl;
 	if (access_token.starts_with("Access token")) // get_access_token failed
 		return access_token;
 	// Create email content
@@ -146,17 +148,19 @@ std::string X::Smtp::Send(std::string from, std::string to, std::string subject,
 	std::ostringstream auth_string;
 	auth_string << "user=" << emailData.from << "\x01auth=Bearer " << access_token << "\x01\x01";
 	std::string auth_string_encoded;
-
+	std::cout << "3---------------------------------------------" << std::endl;
 	// Connect to SMTP server
 	CURL* curl = curl_easy_init();
-	if (!curl) 
+	if (!curl)
 		return "Failed to initialize Smtp";
-
+	std::cout << "4---------------------------------------------" << std::endl;
 	char* base64_auth = curl_easy_escape(curl, auth_string.str().c_str(), 0);
+	std::cout << "5---------------------------------------------" << std::endl;
 	if (!base64_auth) {
 		curl_easy_cleanup(curl);
 		return "Failed to base64 encode the auth string.";
 	}
+	std::cout << "6---------------------------------------------" << std::endl;
 	auth_string_encoded = base64_auth;
 	curl_free(base64_auth);
 
@@ -185,19 +189,20 @@ std::string X::Smtp::Send(std::string from, std::string to, std::string subject,
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
+	std::cout << "7---------------------------------------------" << std::endl;
 	CURLcode res = curl_easy_perform(curl);
-
+	std::cout << "8---------------------------------------------" << std::endl;
 	if (res != CURLE_OK) {
 		curl_slist_free_all(recipients);
 		curl_easy_cleanup(curl);
 		return std::string("SMTP request failed: ") + std::string(curl_easy_strerror(res));
 	}
-
+	std::cout << "9---------------------------------------------" << std::endl;
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
 
 	curl_slist_free_all(recipients);
 	curl_easy_cleanup(curl);
+	std::cout << "10---------------------------------------------" << std::endl;
 	return "Email sent successfully!";
 }
