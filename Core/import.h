@@ -346,6 +346,7 @@ struct ImportInfo
 	std::string name;
 	std::string alias;
 	std::string fileName;
+	Expression* params = nullptr;
 	bool Deferred = false;
 };
 class Import :
@@ -363,6 +364,7 @@ class Import :
 		std::string& curModulePath, std::string& loadingModuleName);
 	bool FindAndLoadXModule(XlangRuntime* rt,
 		std::string& curModulePath, std::string& loadingModuleName,
+		X::ARGS& args, X::KWARGS& kwargs,
 		Module** ppSubModule);
 	bool LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 		XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange);
@@ -519,7 +521,8 @@ public:
 			if (expr->m_type == ObType::Var 
 				||expr->m_type == ObType::List
 				|| expr->m_type == ObType::As
-				|| expr->m_type == ObType::Deferred)
+				|| expr->m_type == ObType::Deferred
+				|| expr->m_type == ObType::Pair)
 			{
 				m_imports = expr;
 				operands.pop();
