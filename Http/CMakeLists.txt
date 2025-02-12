@@ -87,7 +87,8 @@ add_library(${PROJECT_NAME}
 
 # Link libraries based on the platform
 if (WIN32)
-    target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static)
+    add_definitions(-DCURL_STATICLIB)
+    target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static libcurl_static zlib_static)
 elseif(APPLE)
     target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 else()
