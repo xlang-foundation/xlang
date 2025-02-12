@@ -105,6 +105,14 @@ public:
 		m_pMyScope->SetVarFrame(m_stackFrame);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
 	}
+	FORCE_INLINE void AddModuleVariable(std::string& name,X::Value& value)
+	{
+		int idx = m_pMyScope->AddOrGet(name, false);
+		if (idx >= 0)
+		{
+			m_pMyScope->SimpleSet(idx, value);
+		}
+	}
 	FORCE_INLINE void SetJitLib(X::Jit::JitLib* pLib)
 	{
 		m_pJitLib = pLib;
