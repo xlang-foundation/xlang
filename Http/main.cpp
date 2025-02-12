@@ -85,7 +85,7 @@ extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 	X::Http::I().SetModule(curModule);
 	X::RegisterPackage<X::Http>(strFullPath.c_str(),"http",&X::Http::I());
 	X::RegisterPackage<X::Cypher>(strFullPath.c_str(), "cypher");
-	X::RegisterPackage<X::EmailSender>(strFullPath.c_str(), "email_sender");
+	X::RegisterPackage<X::Smtp>(strFullPath.c_str(), "smtp");
 }
 extern "C"  X_EXPORT void Unload()
 {

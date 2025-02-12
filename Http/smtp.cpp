@@ -38,7 +38,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
 }
 
 // Function to get an access token from Microsoft Azure
-std::string X::EmailSender::GetAccessToken()
+std::string X::Smtp::GetAccessToken()
 {
     CURL* curl = curl_easy_init();
     if (!curl) 
@@ -130,7 +130,7 @@ struct EmailData {
 };
 
 // Function to send email using the access token
-std::string X::EmailSender::SendEmail(std::string from, std::string to, std::string subject, std::string content)
+std::string X::Smtp::Send(std::string from, std::string to, std::string subject, std::string content)
 {
 	std::string access_token = GetAccessToken();
 	if (access_token.starts_with("Access token")) // get_access_token failed
@@ -150,7 +150,7 @@ std::string X::EmailSender::SendEmail(std::string from, std::string to, std::str
 	// Connect to SMTP server
 	CURL* curl = curl_easy_init();
 	if (!curl) 
-		return "Failed to initialize EmailSender";
+		return "Failed to initialize Smtp";
 
 	char* base64_auth = curl_easy_escape(curl, auth_string.str().c_str(), 0);
 	if (!base64_auth) {

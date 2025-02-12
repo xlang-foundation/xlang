@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace X
 {
-	class EmailSender
+	class Smtp
 	{
 		std::string mCertPath;
 		std::string mClientId;
@@ -30,17 +30,17 @@ namespace X
 		int mSmtpPort = 25;
 		std::string GetAccessToken();
 	public:
-		BEGIN_PACKAGE(EmailSender)
-			APISET().AddFunc<4>("send_email", &EmailSender::SendEmail);
-			APISET().AddPropWithType<std::string>("cert_path", &EmailSender::mCertPath);
-			APISET().AddPropWithType<std::string>("client_id", &EmailSender::mClientId);
-			APISET().AddPropWithType<std::string>("client_secret", &EmailSender::mClientSecret);
-			APISET().AddPropWithType<std::string>("tenant_id", &EmailSender::mTenantId);
-			APISET().AddPropWithType<std::string>("smtp_scope", &EmailSender::mSmtpScope);
-			APISET().AddPropWithType<std::string>("smtp_server", &EmailSender::mSmtpServer);
-			APISET().AddPropWithType<int>("smtp_port", &EmailSender::mSmtpPort);
+		BEGIN_PACKAGE(Smtp)
+			APISET().AddFunc<4>("send", &Smtp::Send);
+			APISET().AddPropWithType<std::string>("cert_path", &Smtp::mCertPath);
+			APISET().AddPropWithType<std::string>("client_id", &Smtp::mClientId);
+			APISET().AddPropWithType<std::string>("client_secret", &Smtp::mClientSecret);
+			APISET().AddPropWithType<std::string>("tenant_id", &Smtp::mTenantId);
+			APISET().AddPropWithType<std::string>("smtp_scope", &Smtp::mSmtpScope);
+			APISET().AddPropWithType<std::string>("smtp_server", &Smtp::mSmtpServer);
+			APISET().AddPropWithType<int>("smtp_port", &Smtp::mSmtpPort);
 		END_PACKAGE
-	std::string SendEmail(std::string from, std::string to, std::string subject, std::string content );
+	std::string Send(std::string from, std::string to, std::string subject, std::string content );
 	};
 
 }
