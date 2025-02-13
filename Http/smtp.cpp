@@ -132,9 +132,7 @@ struct EmailData {
 // Function to send email using the access token
 std::string X::Smtp::Send(std::string from, std::string to, std::string subject, std::string content)
 {
-	std::cout << "1---------------------------------------------" << std::endl;
 	std::string access_token = GetAccessToken();
-	std::cout << "2---------------------------------------------" << std::endl;
 	if (access_token.starts_with("Access token")) // get_access_token failed
 		return access_token;
 	// Create email content
@@ -148,19 +146,15 @@ std::string X::Smtp::Send(std::string from, std::string to, std::string subject,
 	std::ostringstream auth_string;
 	auth_string << "user=" << emailData.from << "\x01auth=Bearer " << access_token << "\x01\x01";
 	std::string auth_string_encoded;
-	std::cout << "3---------------------------------------------" << std::endl;
 	// Connect to SMTP server
 	CURL* curl = curl_easy_init();
 	if (!curl)
 		return "Failed to initialize Smtp";
-	std::cout << "4---------------------------------------------" << std::endl;
 	char* base64_auth = curl_easy_escape(curl, auth_string.str().c_str(), 0);
-	std::cout << "5---------------------------------------------" << std::endl;
 	if (!base64_auth) {
 		curl_easy_cleanup(curl);
 		return "Failed to base64 encode the auth string.";
 	}
-	std::cout << "6---------------------------------------------" << std::endl;
 	auth_string_encoded = base64_auth;
 	curl_free(base64_auth);
 
@@ -179,30 +173,23 @@ std::string X::Smtp::Send(std::string from, std::string to, std::string subject,
 	struct curl_slist* recipients = emailData.getMailRcpt();
 	curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
 
-	//for big data()
-	//curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
-	//curl_easy_setopt(curl, CURLOPT_READDATA, &email_content);
-	//for small data
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, email_content.c_str());
+	curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+	curl_easy_setopt(curl, CURLOPT_READDATA, &email_content);
 	curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-	std::cout << "7---------------------------------------------" << std::endl;
 	CURLcode res = curl_easy_perform(curl);
-	std::cout << "8---------------------------------------------" << std::endl;
 	if (res != CURLE_OK) {
 		curl_slist_free_all(recipients);
 		curl_easy_cleanup(curl);
 		return std::string("SMTP request failed: ") + std::string(curl_easy_strerror(res));
 	}
-	std::cout << "9---------------------------------------------" << std::endl;
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
 
 	curl_slist_free_all(recipients);
 	curl_easy_cleanup(curl);
-	std::cout << "10---------------------------------------------" << std::endl;
 	return "Email sent successfully!";
 }
