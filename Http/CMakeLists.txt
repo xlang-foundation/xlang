@@ -2,7 +2,7 @@
 # project specific logic here.
 #
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 
 project("xlang_http")
 
@@ -15,6 +15,11 @@ if (APPLE)
     link_directories(${OPENSSL_LIB_DIR})
     link_libraries(${OPENSSL_LIBRARIES})
 
+    find_package(CURL REQUIRED)
+    if(NOT CURL_FOUND)
+        message(FATAL_ERROR "CURL not found")
+    endif()
+    message(STATUS "CURL found: ${CURL_VERSION_STRING}")
 # Windows-specific configuration
 elseif (WIN32)
     include_directories("depends/windows/include")
@@ -70,6 +75,12 @@ else()
         link_directories(${OPENSSL_ROOT_DIR}/lib)
 
     endif()
+
+    find_package(CURL REQUIRED)
+    if(NOT CURL_FOUND)
+        message(FATAL_ERROR "CURL not found")
+    endif()
+    message(STATUS "CURL found: ${CURL_VERSION_STRING}")
 endif()
 
 # General project configuration
@@ -87,9 +98,10 @@ add_library(${PROJECT_NAME}
 
 # Link libraries based on the platform
 if (WIN32)
-    target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static)
+    add_definitions(-DCURL_STATICLIB)
+    target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static libcurl_static zlib_static)
 elseif(APPLE)
-    target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES} CURL::libcurl)
 else()
-    target_link_libraries(${PROJECT_NAME} ssl crypto)
+    target_link_libraries(${PROJECT_NAME} ssl crypto CURL::libcurl)
 endif()

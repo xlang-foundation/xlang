@@ -17,6 +17,8 @@ limitations under the License.
 #include "xhost.h"
 #include "xpackage.h"
 #include "cypher.h"
+#include "smtp.h"
+#include "curl/curl.h"
 
 #if (WIN32)
 #include <windows.h>
@@ -72,6 +74,7 @@ namespace X
 }
 extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 {
+	curl_global_init(CURL_GLOBAL_DEFAULT);
 	std::string strFullPath;
 	std::string strFolderPath;
 	std::string strLibName;
@@ -82,8 +85,10 @@ extern "C"  X_EXPORT void Load(void* pHost,X::Value curModule)
 	X::Http::I().SetModule(curModule);
 	X::RegisterPackage<X::Http>(strFullPath.c_str(),"http",&X::Http::I());
 	X::RegisterPackage<X::Cypher>(strFullPath.c_str(), "cypher");
+	X::RegisterPackage<X::Smtp>(strFullPath.c_str(), "smtp");
 }
 extern "C"  X_EXPORT void Unload()
 {
+	curl_global_cleanup();
 	X::g_pXHost = nullptr;
 }
