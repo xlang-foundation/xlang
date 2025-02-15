@@ -77,7 +77,12 @@ namespace X
 							return true;
 						}
 						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						retValue.Clear();
 						pObj->Get(params[0], retValue);
+						if (retValue.IsInvalid() && params.size()>1)
+						{
+							retValue = params[1];
+						}
 						//we don't need to care if find it or not
 						//always make it success, so xlang run statement is OK
 						return true;
