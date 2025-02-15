@@ -74,6 +74,14 @@ else()
         include_directories(${OPENSSL_ROOT_DIR}/include)
         link_directories(${OPENSSL_ROOT_DIR}/lib)
 
+         # Use find_package for CURL and include its include directories
+        find_package(CURL REQUIRED)
+        if(NOT CURL_FOUND)
+            message(FATAL_ERROR "CURL not found")
+        endif()
+        message(STATUS "CURL found: ${CURL_VERSION_STRING}")
+        include_directories(${CURL_INCLUDE_DIRS})
+
     endif()
 
     find_package(CURL REQUIRED)
