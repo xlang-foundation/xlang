@@ -346,13 +346,26 @@ void send_to_server(const std::string& data) {
 
 // Function to encrypt a message using a private key
 
-std::vector<unsigned char> encrypt_with_private_key(int paddingMode,const std::string& message, RSA* rsa) {
-	auto rsa_size = RSA_size(rsa);
-	if (rsa_size < message.size())
-	{
-		return long_msg_encrypt_with_private_key(paddingMode,message, rsa);
+std::vector<unsigned char> encrypt_with_private_key(int paddingMode, const std::string& message, RSA* rsa) {
+	// Determine the maximum message size allowed for this RSA key and padding.
+	size_t maxMessageSize = get_max_message_size(paddingMode, rsa);
+
+	// Special handling for no padding: plaintext must exactly match RSA size.
+	if (paddingMode == RSA_NO_PADDING) {
+		if (message.size() != maxMessageSize) {
+			throw std::runtime_error("Message length must equal RSA key size when using no padding");
+		}
 	}
+	// For other padding modes, if the message is too large, use the alternative method.
+	else if (message.size() > maxMessageSize) {
+		return long_msg_encrypt_with_private_key(paddingMode, message, rsa);
+	}
+
+	// Prepare the encrypted buffer.
+	int rsa_size = RSA_size(rsa);
 	std::vector<unsigned char> encrypted(rsa_size);
+
+	// Attempt to encrypt using the private key.
 	int encrypted_length = RSA_private_encrypt(
 		message.size(),
 		reinterpret_cast<const unsigned char*>(message.data()),
@@ -366,75 +379,111 @@ std::vector<unsigned char> encrypt_with_private_key(int paddingMode,const std::s
 		throw std::runtime_error("Encrypt with private key failed.");
 	}
 
+	// Resize the vector to the actual encrypted length.
 	encrypted.resize(encrypted_length);
 	return encrypted;
 }
 
 // Function to encrypt a message using a public key
 std::vector<unsigned char> encrypt_with_public_key(int paddingMode, const std::string& message, RSA* rsa) {
-	auto rsa_size = RSA_size(rsa);
-	if (rsa_size < message.size())
-	{
-		return long_msg_encrypt_with_public_key(paddingMode,message, rsa);
+	// Determine the maximum message size allowed for this RSA key and padding mode.
+	size_t maxMessageSize = get_max_message_size(paddingMode, rsa);
+
+	// For no padding, the message must exactly match the RSA key size.
+	if (paddingMode == RSA_NO_PADDING) {
+		if (message.size() != maxMessageSize) {
+			throw std::runtime_error("Message length must equal RSA key size when using no padding");
+		}
 	}
+	// For other padding modes, if the message is too long, delegate to the long message handler.
+	else if (message.size() > maxMessageSize) {
+		return long_msg_encrypt_with_public_key(paddingMode, message, rsa);
+	}
+
+	int rsa_size = RSA_size(rsa);
 	std::vector<unsigned char> encrypted(rsa_size);
+
 	int encrypted_length = RSA_public_encrypt(
 		message.size(),
 		reinterpret_cast<const unsigned char*>(message.data()),
-		reinterpret_cast<unsigned char*>(encrypted.data()),
+		encrypted.data(),
 		rsa,
 		paddingMode
 	);
+
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
 		throw std::runtime_error("Encrypt with public key failed.");
 	}
+
 	encrypted.resize(encrypted_length);
 	return encrypted;
 }
 
 // Function to decrypt a message using a public key
 std::string decrypt_with_public_key(int paddingMode, std::vector<unsigned char>& encrypted, RSA* rsa) {
-	auto rsa_size = RSA_size(rsa);
-	if (rsa_size < encrypted.size())
-	{
-		return long_msg_decrypt_with_public_key(paddingMode,encrypted, rsa);
+	int rsa_size = RSA_size(rsa);
+
+	// If the encrypted data spans more than one RSA block, use the long message handler.
+	if (rsa_size < static_cast<int>(encrypted.size())) {
+		return long_msg_decrypt_with_public_key(paddingMode, encrypted, rsa);
 	}
+
+	// Allocate a buffer of size RSA_size.
 	std::string decrypted(rsa_size, '\0');
 	int decrypted_length = RSA_public_decrypt(
 		encrypted.size(),
 		reinterpret_cast<const unsigned char*>(encrypted.data()),
-		reinterpret_cast<unsigned char*>(decrypted.data()),
+		reinterpret_cast<unsigned char*>(&decrypted[0]),
 		rsa,
 		paddingMode
 	);
+
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
 		throw std::runtime_error("Decrypt with public key failed.");
 	}
+
+	// Optionally verify the decrypted length against the maximum allowed plaintext size.
+	size_t maxMessageSize = get_max_message_size(paddingMode, rsa);
+	if (paddingMode != RSA_NO_PADDING && static_cast<size_t>(decrypted_length) > maxMessageSize) {
+		throw std::runtime_error("Decrypted message exceeds maximum allowed size.");
+	}
+
 	decrypted.resize(decrypted_length);
 	return decrypted;
 }
 
 // Function to decrypt a message using a private key
 std::string decrypt_with_private_key(int paddingMode, std::vector<unsigned char>& encrypted, RSA* rsa) {
-	auto rsa_size = RSA_size(rsa);
-	if (rsa_size < encrypted.size())
-	{
+	int rsa_size = RSA_size(rsa);
+
+	// If the encrypted data spans more than one RSA block, delegate to the long message handler.
+	if (static_cast<size_t>(rsa_size) < encrypted.size()) {
 		return long_msg_decrypt_with_private_key(paddingMode, encrypted, rsa);
 	}
+
+	// Allocate a buffer for the decrypted data.
 	std::string decrypted(rsa_size, '\0');
 	int decrypted_length = RSA_private_decrypt(
 		encrypted.size(),
 		reinterpret_cast<const unsigned char*>(encrypted.data()),
-		reinterpret_cast<unsigned char*>(decrypted.data()),
+		reinterpret_cast<unsigned char*>(&decrypted[0]),
 		rsa,
 		paddingMode
 	);
+
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
 		throw std::runtime_error("Decrypt with private key failed.");
 	}
+
+	// Verify that the decrypted length does not exceed the maximum allowed plaintext size.
+	size_t maxMessageSize = get_max_message_size(paddingMode, rsa);
+	if (paddingMode != RSA_NO_PADDING && static_cast<size_t>(decrypted_length) > maxMessageSize) {
+		throw std::runtime_error("Decrypted message exceeds maximum allowed size.");
+	}
+
 	decrypted.resize(decrypted_length);
 	return decrypted;
 }
