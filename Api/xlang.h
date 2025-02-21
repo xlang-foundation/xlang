@@ -374,6 +374,7 @@ namespace X
 		using Dict_Enum = X::Port::Function<void(X::Value& key, X::Value& val)>;
 		Internal_Reserve(XDict)
 		virtual void Set(const X::Value& key, const X::Value& val) = 0;
+		virtual X::Value Get(const X::Value& key) = 0;
 		virtual void Enum(Dict_Enum proc) = 0;
 		FORCE_INLINE void Set(const char* key, X::Value val)
 		{

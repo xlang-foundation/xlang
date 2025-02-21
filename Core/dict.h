@@ -53,6 +53,10 @@ namespace X
 			{
 				return mMap.size();
 			}
+			virtual X::Value Get(const X::Value& key) override
+			{
+				return mMap[key];
+			}
 			virtual Value Member(XRuntime* rt, const char* name) override
 			{
 				X::Value val;
