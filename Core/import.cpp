@@ -544,7 +544,6 @@ void X::AST::Import::ScopeLayout()
 			}
 			m_importInfos.push_back(importInfo);
 		}
-		std::cout << "PairOp" << std::endl;
 	};
 	if (m_imports)
 	{//{var|AsOp}*
