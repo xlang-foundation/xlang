@@ -186,6 +186,7 @@ namespace X
 			modulePath = std::filesystem::absolute(modulePath);
 		}
 		std::string strModuleName = modulePath.string();
+		parser.SetModuleName(strModuleName);
 		pTopModule->SetModuleName(strModuleName);
 		pTopModule->SetMd5(md5);
 		pTopModule->ScopeLayout();
@@ -285,6 +286,70 @@ namespace X
 		if (stopOnEntry || (!pRuntime->m_bNoDbg && G::I().GetTrace()))
 		{
 			pTopModule->SetDebug(true,pRuntime);
+			if (stopOnEntry && !pOldModule)
+				pRuntime->SetDbgType(X::dbg::Step, dbg::None);
+			else
+				pRuntime->SetDbgType(X::dbg::Continue, dbg::Continue);
+		}
+
+		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
+		pModuleFrame->SetLine(pTopModule->GetStartLine());
+		pTopModule->AddBuiltins(pRuntime);
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
+		X::Value v;
+		X::AST::ExecAction action;
+		//bool bOK = X::Exp::ExpExec(pTopModule,pRuntime,action,nullptr, v);
+		bool bOK = ExpExec(pTopModule, pRuntime, action, nullptr, v);
+		X::Value v1 = pModuleFrame->GetReturnValue();
+		if (v1.IsValid())
+		{
+			retVal = v1;
+		}
+		else
+		{
+			retVal = v;
+		}
+		pRuntime->PopFrame(); //move from line 314, we think this module's run finished, 
+		//need to popup its frame,if not, will leave a dirty stack here 
+		if (!keepModuleWithRuntime)
+		{
+			//pRuntime->PopFrame();
+			if (pOldModule)
+			{
+				pRuntime->SetM(pOldModule);
+			}
+			else
+			{
+				delete pRuntime;
+			}
+		}
+
+		return bOK;
+	}
+	bool Hosting::RunWithKWArgs(AST::Module* pTopModule, X::Value& retVal,
+		std::vector<X::Value>& passInParams, X::KWARGS& kwargs,
+		bool stopOnEntry, bool keepModuleWithRuntime, bool noDebug)
+	{
+		pTopModule->SetArgs(passInParams);
+		for (auto& it : kwargs)
+		{
+			std::string name(it.key);
+			pTopModule->AddModuleVariable(name, it.val);
+		}
+		std::string name("main");
+		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(), nullptr);
+		if (noDebug)
+		{
+			pRuntime->SetNoDbg(true);
+		}
+		AST::Module* pOldModule = pRuntime->M();
+		pTopModule->SetRT(pRuntime);
+		pRuntime->SetM(pTopModule);
+		G::I().BindRuntimeToThread(pRuntime);
+
+		if (stopOnEntry || (!pRuntime->m_bNoDbg && G::I().GetTrace()))
+		{
+			pTopModule->SetDebug(true, pRuntime);
 			if (stopOnEntry && !pOldModule)
 				pRuntime->SetDbgType(X::dbg::Step, dbg::None);
 			else

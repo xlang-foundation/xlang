@@ -21,6 +21,7 @@ limitations under the License.
 #include <iostream>
 #include <regex>
 #include "singleton.h"
+#include "curl_module.h"
 
 namespace X
 {
@@ -232,6 +233,7 @@ namespace X
 			APISET().AddClass<0, HttpResponse>("Response");
 			APISET().AddClass<0, HttpRequest>("Request");
 			APISET().AddClass<1, HttpClient>("Client");
+			APISET().AddClass<0, Curl>("Curl");
 		END_PACKAGE
 		X::Value WritePad(X::Value& input);
 		std::string& GetModulePath()

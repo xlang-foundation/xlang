@@ -25,10 +25,26 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<6> _dictScope;
+		static Obj_Func_Scope<7> _dictScope;
 		void Dict::Init()
 		{
 			_dictScope.Init();
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						if (params.size() == 0)
+						{
+							return false;
+						}
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						retValue = X::Value(pObj->Compare(params[0]));
+						return true;
+					};
+				_dictScope.AddFunc("compare", "compare(another-Dict)", f);
+			}
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 					X::ARGS& params,
@@ -77,7 +93,12 @@ namespace X
 							return true;
 						}
 						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						retValue.Clear();
 						pObj->Get(params[0], retValue);
+						if (retValue.IsInvalid() && params.size()>1)
+						{
+							retValue = params[1];
+						}
 						//we don't need to care if find it or not
 						//always make it success, so xlang run statement is OK
 						return true;

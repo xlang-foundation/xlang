@@ -18,6 +18,7 @@ limitations under the License.
 #include "xhost.h"
 #include "xpackage.h"
 #include "xlang.h"
+#include "Locker.h"
 
 namespace X
 {
@@ -25,6 +26,7 @@ namespace X
 	{
 		class WebSocketSession
 		{
+			Locker m_lockImpl;
 			void* m_pImpl = nullptr;
 		public:
 			BEGIN_PACKAGE(WebSocketSession)
@@ -34,7 +36,9 @@ namespace X
 			~WebSocketSession();
 			FORCE_INLINE void SetImpl(void* pImpl)
 			{
+				m_lockImpl.Lock();
 				m_pImpl = pImpl;
+				m_lockImpl.Unlock();
 			}
 			bool Write(X::Value& value);
 		};

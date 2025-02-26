@@ -2,7 +2,7 @@
 # project specific logic here.
 #
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 
 project("xlang_http")
 
@@ -15,19 +15,37 @@ if (APPLE)
     link_directories(${OPENSSL_LIB_DIR})
     link_libraries(${OPENSSL_LIBRARIES})
 
+    find_package(CURL REQUIRED)
+    if(NOT CURL_FOUND)
+        message(FATAL_ERROR "CURL not found")
+    endif()
+    message(STATUS "CURL found: ${CURL_VERSION_STRING}")
 # Windows-specific configuration
 elseif (WIN32)
     include_directories("depends/windows/include")
-    link_directories("depends/windows/lib/x64")
+    
+    set(build_target "")
+    if(CMAKE_GENERATOR_PLATFORM)
+        string(TOLOWER ${CMAKE_GENERATOR_PLATFORM} lower_case_platform)
+        if(lower_case_platform STREQUAL "arm64" OR lower_case_platform STREQUAL "arm64")
+            set(build_target "arm64")
+        endif()
+    else()
+        string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} lower_case_processor)
+        if(lower_case_processor STREQUAL "aarch64" OR lower_case_processor STREQUAL "arm64")
+            set(build_target "arm64")
+        endif()
+    endif()
 
-    # Extract libcrypto_static.zip
-    set(LIBCRYPTO_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/depends/windows/lib/x64/libcrypto_static.zip")
-    set(LIBCRYPTO_LIB "${CMAKE_BINARY_DIR}/lib/libcrypto_static.lib")
-    file(ARCHIVE_EXTRACT INPUT ${LIBCRYPTO_ZIP} DESTINATION ${CMAKE_BINARY_DIR}/lib)
-
-    # Add the extracted library to the link path
-    link_directories(${CMAKE_BINARY_DIR}/lib)
-
+    if(build_target STREQUAL "arm64")
+        link_directories("${CMAKE_CURRENT_SOURCE_DIR}/depends/windows/lib/arm64")
+        set(LIBCRYPTO_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/depends/windows/lib/arm64/libcrypto_static.zip")
+        file(ARCHIVE_EXTRACT INPUT ${LIBCRYPTO_ZIP} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/depends/windows/lib/arm64)
+	else()
+		link_directories("${CMAKE_CURRENT_SOURCE_DIR}/depends/windows/lib/x64")
+        set(LIBCRYPTO_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/depends/windows/lib/x64/libcrypto_static.zip")
+        file(ARCHIVE_EXTRACT INPUT ${LIBCRYPTO_ZIP} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/depends/windows/lib/x64)
+    endif()
 
 # Non-Windows and Non-Apple configuration for OpenSSL (Linux, etc.)
 else()
@@ -69,7 +87,21 @@ else()
         include_directories(${OPENSSL_ROOT_DIR}/include)
         link_directories(${OPENSSL_ROOT_DIR}/lib)
 
+         # Use find_package for CURL and include its include directories
+        find_package(CURL REQUIRED)
+        if(NOT CURL_FOUND)
+            message(FATAL_ERROR "CURL not found")
+        endif()
+        message(STATUS "CURL found: ${CURL_VERSION_STRING}")
+        include_directories(${CURL_INCLUDE_DIRS})
+
     endif()
+
+    find_package(CURL REQUIRED)
+    if(NOT CURL_FOUND)
+        message(FATAL_ERROR "CURL not found")
+    endif()
+    message(STATUS "CURL found: ${CURL_VERSION_STRING}")
 endif()
 
 # General project configuration
@@ -87,9 +119,10 @@ add_library(${PROJECT_NAME}
 
 # Link libraries based on the platform
 if (WIN32)
-    target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static)
+    add_definitions(-DCURL_STATICLIB)
+    target_link_libraries(${PROJECT_NAME} libcrypto_static libssl_static libcurl_static zlib_static)
 elseif(APPLE)
-    target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES} CURL::libcurl)
 else()
-    target_link_libraries(${PROJECT_NAME} ssl crypto)
+    target_link_libraries(${PROJECT_NAME} ssl crypto CURL::libcurl)
 endif()

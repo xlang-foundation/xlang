@@ -120,6 +120,10 @@ namespace X
             }
             ~WebSocketSessionImpl()
 			{
+                if (mRealSession)
+                {
+					mRealSession->SetImpl(nullptr);
+                }
 				delete m_QueueWait;
 				m_QueueWait = nullptr;
                 delete m_wsSocket;
@@ -345,7 +349,10 @@ namespace X
         }
         bool WebSocketSession::Write(X::Value& value)
         {
-            return ((WebSocketSessionImpl*)m_pImpl)->Write(value);
+			m_lockImpl.Lock();
+            bool bOK =  ((WebSocketSessionImpl*)m_pImpl)->Write(value);
+			m_lockImpl.Unlock();
+            return bOK;
         }
 }
 }

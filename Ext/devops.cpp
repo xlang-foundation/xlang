@@ -739,7 +739,7 @@ namespace X
 			}
 			catch (const std::filesystem::filesystem_error& e) 
 			{
-				std::cerr << "Error accessing directory: " << e.what() << std::endl;
+				//std::cerr << "Error accessing directory: " << e.what() << std::endl;
 			}
 		}
 

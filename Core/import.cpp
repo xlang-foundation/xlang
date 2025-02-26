@@ -140,6 +140,7 @@ bool endsWithDotX(const std::string& str)
 bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	std::string& curModulePath,
 	std::string& loadingModuleName,
+	X::ARGS& args, X::KWARGS& kwargs,
 	Module** ppSubModule)
 {
 	std::string loadXModuleFileName;
@@ -206,7 +207,11 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 			{
 				X::Value v0;
 				std::vector<X::Value> passInParams;
-				bOK = Hosting::I().Run(pSubModule, v0, passInParams);
+				for (auto& arg : args)
+				{
+					passInParams.push_back(arg);
+				}
+				bOK = Hosting::I().RunWithKWArgs(pSubModule, v0, passInParams,kwargs);
 			}
 			*ppSubModule = pSubModule;
 		}
@@ -357,10 +362,18 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 			}
 		}
 	}
+	ARGS params(0);
+	KWARGS kwParams;
+
+	if (im.params)
+	{
+		GetParamList(rt, im.params, params, kwParams);
+	}
+
 	//Check if it is X module
 	std::string curPath = rt->M()->GetModulePath();
 	Module* pSubModule = nullptr;
-	bool bOK = FindAndLoadXModule(rt, curPath, im.name, &pSubModule);
+	bool bOK = FindAndLoadXModule(rt, curPath, im.name, params, kwParams,&pSubModule);
 	if (bOK && pSubModule != nullptr)
 	{
 		ModuleObject* pModuleObj = new ModuleObject(pSubModule);
@@ -514,6 +527,24 @@ void X::AST::Import::ScopeLayout()
 			}
 		}
 	};
+	auto proc_Pair = [&](Expression* expr)
+	{
+		PairOp* pPair = dynamic_cast<PairOp*>(expr);
+		if (pPair->GetL())
+		{
+			auto name = (dynamic_cast<Var*>(pPair->GetL()))->GetNameString();
+			ImportInfo importInfo;
+			importInfo.name = name;
+			auto params = pPair->GetR();
+			if (params)
+			{
+				params->SetParent(m_parent);
+				params->ScopeLayout();
+				importInfo.params = params;
+			}
+			m_importInfos.push_back(importInfo);
+		}
+	};
 	if (m_imports)
 	{//{var|AsOp}*
 		switch (m_imports->m_type)
@@ -529,6 +560,9 @@ void X::AST::Import::ScopeLayout()
 			break;
 		case ObType::Deferred:
 			proc_Deferred(m_imports);
+			break;
+		case ObType::Pair:
+			proc_Pair(m_imports);
 			break;
 		default:
 			break;

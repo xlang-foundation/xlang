@@ -143,6 +143,11 @@ namespace X
 			bool stopOnEntry = false,
 			bool keepModuleWithRuntime = false,
 			bool noDebug = false);
+		bool RunWithKWArgs(AST::Module* pTopModule, X::Value& retVal,
+			std::vector<X::Value>& passInParams, X::KWARGS& kwargs,
+			bool stopOnEntry = false, 
+			bool keepModuleWithRuntime = false, 
+			bool noDebug = false);
 		bool Run(const char* moduleName,
 			const char* code, int size,
 			std::vector<X::Value>& passInParams,
