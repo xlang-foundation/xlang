@@ -44,7 +44,7 @@ class Parser
 	std::stack<BlockState*> m_stackBlocks;
 	BlockState* m_curBlkState = nil;
 	std::vector<short> m_preceding_token_indexstack;
-
+	std::string m_strModuleName;//for debug
 	//status for JitBlock
 	//if this flag is true, means the next line will be a JitBlock
 	//then inside LineOpFeedIntoBlock, will check the input line is JitBlock or not
@@ -122,6 +122,10 @@ private:
 		return pExpJitBlock;
 	}
 public:
+	FORCE_INLINE void SetModuleName(std::string strName)
+	{
+		m_strModuleName = strName;
+	}
 	void SetSkipLineFeedFlags(bool b)
 	{
 		if (m_curBlkState)
