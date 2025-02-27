@@ -64,9 +64,10 @@ namespace X
 			}
 			if (m_IsBinary)
 			{
-				char* data = new char[size];
+				X::XBin* pBin = g_pXHost->CreateBin(nullptr, size, true);
+				char* data = pBin->Data();
 				m_stream.read(data, size);
-				return X::Value(g_pXHost->CreateBin(data, size,true),false);
+				return X::Value(pBin,false);
 			}
 			else
 			{
