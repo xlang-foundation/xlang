@@ -225,7 +225,7 @@ namespace X
 				return m_dims[dimIdx].size;
 			}
 			
-			virtual void SetShape(Port::vector<int> shapes) override
+			virtual void SetShape(Port::vector<int>& shapes) override
 			{
 				m_dims.clear();
 				for (auto i : shapes)
