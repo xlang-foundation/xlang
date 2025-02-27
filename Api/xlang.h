@@ -497,6 +497,7 @@ namespace X
 	public:
 		Internal_Reserve(XBin)
 		virtual char* Data() = 0;
+		virtual char* BorrowDta() = 0;//then XBin not own this data
 	};
 	class XProp :
 		virtual public XObj

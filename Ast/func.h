@@ -291,6 +291,11 @@ public:
 			//not be used anymore, so delete it
 			delete pair;
 		}
+		else if (r->m_type == AST::ObType::Var)
+		{
+			//for case no () after the name like class and func
+			SetName(r);
+		}
 		//only accept once
 		NeedParam = false;
 
