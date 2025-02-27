@@ -294,6 +294,30 @@ namespace X
 	}
 	template<>
 	template<>
+	void V<XBin>::Create(int size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin((char*)nullptr, size, bOwnData));
+	}
+	template<>
+	template<>
+	void V<XBin>::Create(unsigned int size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin((char*)nullptr, size, bOwnData));
+	}
+	template<>
+	template<>
+	void V<XBin>::Create(unsigned long long size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin((char*)nullptr, size, bOwnData));
+	}
+	template<>
+	template<>
+	void V<XBin>::Create(long long size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin((char*)nullptr, size, bOwnData));
+	}
+	template<>
+	template<>
 	void V<XBin>::Create(char* s, unsigned long long size, bool bOwnData)
 	{
 		SetObj(g_pXHost->CreateBin(s, size, bOwnData));

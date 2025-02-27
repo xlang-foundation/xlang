@@ -749,18 +749,18 @@ namespace X
 
 	bool HttpClient::Get(std::string path)
 	{
-		char* pDataHead = nullptr;
-		char* pBuf = nullptr;
-		int buf_size = 0;
-		int data_cur_size = 0;
 		bool isText = false;
-		//if has content length,allocate one time
-		//if not, allocated  when data receiving
+		int expectedContentLength = 0;
+		X::XBin* pBin = nullptr;
+		char* pCurrentPos = nullptr;
+		size_t totalReceivedSize = 0;
+
 		httplib::Headers headers;
 		//use X::Dict m_headers to fill in headers
 		m_headers->Enum([&](X::Value& key, X::Value& value) {
 			headers.emplace(key.ToString(), value.ToString());
 			});
+
 		auto response_handler = [&](const httplib::Response& response) {
 			auto it0 = response.headers.find("Content-Type");
 			if (it0 != response.headers.end())
@@ -777,18 +777,18 @@ namespace X
 					isText = true;
 				}
 			}
-			int len = 0;
+
 			auto it = response.headers.find("Content-Length");
 			if (it != response.headers.end())
 			{
-				len = std::stoi(it->second);
+				expectedContentLength = std::stoi(it->second);
+				// If we know the size, pre-allocate the XBin regardless of content type
+				if (expectedContentLength > 0) {
+					pBin = X::g_pXHost->CreateBin(nullptr, expectedContentLength, true);
+					pCurrentPos = pBin->Data();
+				}
 			}
-			if (len > 0)
-			{
-				pBuf = new char[len];
-				pDataHead = pBuf;
-				buf_size = len;
-			}
+
 			X::Dict dict;
 			//dump response headers
 			for (auto& kv : response.headers)
@@ -799,70 +799,88 @@ namespace X
 			}
 			m_response_headers = dict;
 			return true;
-			// return 'false' if you want to cancel the request.
-		};
+			};
+
 		auto content_receiver = [&](const char* data, size_t data_length) {
 			if (data_length)
 			{
-				if (pBuf == nullptr)
-				{
-					pBuf = new char[data_length];
-					pDataHead = pBuf;
-					buf_size = data_length;
+				// For both text and binary data, handle the same way
+				if (pBin == nullptr) {
+					// First chunk or didn't know content length
+					pBin = X::g_pXHost->CreateBin(nullptr, data_length, true);
+					pCurrentPos = pBin->Data();
 				}
-				else if ((data_cur_size + data_length) > buf_size)
-				{
-					pBuf = new char[data_cur_size + data_length];
-					buf_size = data_cur_size + data_length;
-					memcpy(pBuf, pDataHead, data_cur_size);
-					delete pDataHead;
-					pDataHead = pBuf;
-					data_cur_size += data_length;
-					pBuf += data_length;
+				else if (totalReceivedSize + data_length > pBin->Size()) {
+					// Need to resize
+					size_t newSize = totalReceivedSize + data_length;
+					X::XBin* pNewBin = X::g_pXHost->CreateBin(nullptr, newSize, true);
+					char* pNewData = pNewBin->Data();
+
+					// Copy existing data
+					memcpy(pNewData, pBin->Data(), totalReceivedSize);
+					// Release the old bin
+					pBin->DecRef();
+
+					// Update pointers
+					pBin = pNewBin;
+					pCurrentPos = pNewData + totalReceivedSize;
 				}
-				memcpy(pBuf, data, data_length);
-				pBuf += data_length;
-				data_cur_size += data_length;
+
+				// Copy new data directly to the XBin buffer
+				memcpy(pCurrentPos, data, data_length);
+				pCurrentPos += data_length;
+				totalReceivedSize += data_length;
 			}
 			return true;
-			// return 'false' if you want to cancel the request.
-		};
+			};
+
 		std::string full_path = m_path + path;
 		auto call = [&]() {
 			if (m_isHttps) {
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
-				return ((httplib::SSLClient*)m_pClient)->Get(full_path, headers, 
+				return ((httplib::SSLClient*)m_pClient)->Get(full_path, headers,
 					response_handler, content_receiver);
 #endif
 			}
 			else {
-				return ((httplib::Client*)m_pClient)->Get(full_path, headers, 
+				return ((httplib::Client*)m_pClient)->Get(full_path, headers,
 					response_handler, content_receiver);
 			}
-		};
+			};
+
 		auto res = call();
 		if (!res)
 		{
+			// Clean up if request failed
+			if (pBin != nullptr) {
+				pBin->DecRef();
+			}
 			return false;
 		}
+
 		m_status = res->status;
 
-		if (data_cur_size >0)
+		// Process the collected data
+		if (pBin != nullptr && totalReceivedSize > 0)
 		{
 			if (isText)
 			{
-				auto* pStr = X::g_pXHost->CreateStr(pDataHead, data_cur_size);
-				delete pDataHead;
+				// For text, create string directly from the XBin data
+				auto* pStr = X::g_pXHost->CreateStr(pBin->BorrowDta(), totalReceivedSize);
 				m_body = X::Value(pStr, false);
+				// Release the XBin as we no longer need it
+				pBin->DecRef();
 			}
 			else
 			{
-				auto* pBinBuf = X::g_pXHost->CreateBin(pDataHead, data_cur_size, true);
-				m_body = X::Value(pBinBuf, false);
+				// For binary, we already have the data in the XBin
+				m_body = X::Value(pBin, false);
 			}
 		}
+
 		return true;
 	}
+
 	bool HttpClient::Post(std::string path, std::string content_type, std::string body)
 	{
 		if (m_pClient) 

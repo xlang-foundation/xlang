@@ -648,9 +648,10 @@ bool X::Cypher::EncryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
 		auto encrypted = encrypt_with_private_key(m_rsa_padding_mode,msg, rsa);
 		RSA_free(rsa);
 		size_t size = encrypted.size();
-		char* pBuf = new char[size];
+		X::XBin* pBin = X::g_pXHost->CreateBin(nullptr, size, true);
+		char* pBuf = pBin->Data();
 		memcpy(pBuf, encrypted.data(), encrypted.size());
-		X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
+		X::Value valEncrypted(pBin, false);
 		retValue = valEncrypted;
 	}
 	catch (...)
@@ -684,9 +685,8 @@ bool X::Cypher::DecryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
 	{
 		std::string msg = decrypt_with_private_key(m_rsa_padding_mode, ary_encrypted, rsa);
 		RSA_free(rsa);
-		char* pBuf = new char[msg.size()];
-		memcpy(pBuf, msg.data(), msg.size());
-		X::Bin bin(pBuf, (int)msg.size(), true);
+		X::Bin bin((int)msg.size(), true);
+		memcpy(bin->Data(), msg.data(), msg.size());
 		retValue = bin;
 	}
 	catch (...)
@@ -736,9 +736,10 @@ bool X::Cypher::EncryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
 		auto encrypted = encrypt_with_public_key(m_rsa_padding_mode, msg, rsa);
 		RSA_free(rsa);
 		size_t size = encrypted.size();
-		char* pBuf = new char[size];
+		X::XBin* pBin = X::g_pXHost->CreateBin(nullptr, size, true);
+		char* pBuf = pBin->Data();
 		memcpy(pBuf, encrypted.data(), encrypted.size());
-		X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
+		X::Value valEncrypted(pBin, false);
 		retValue = valEncrypted;
 	}
 	catch (...)
@@ -773,9 +774,8 @@ bool X::Cypher::DecryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
 	{
 		std::string msg = decrypt_with_public_key(m_rsa_padding_mode, ary_encrypted, rsa);
 		RSA_free(rsa);
-		char* pBuf = new char[msg.size()];
-		memcpy(pBuf, msg.data(), msg.size());
-		X::Bin bin(pBuf, (int)msg.size(), true);
+		X::Bin bin((int)msg.size(), true);
+		memcpy(bin->Data(), msg.data(), msg.size());
 		retValue = bin;
 	}
 	catch (...)

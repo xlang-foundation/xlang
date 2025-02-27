@@ -32,12 +32,15 @@ namespace X
 		{
 		protected:
 			char* m_data = nullptr;
-			bool m_OwnData = true;
+			bool m_OwnData = true;//if true, this object will delete m_data in destructor
 			size_t m_size;
 		public:
 			static void Init();
 			static void cleanup();
 
+			//if bOwnData is true,means the data passed in
+			// will be keep in this object, and will be deleted in destructor
+			//but this data must alloced in same heap
 			Binary(char* data, size_t size,bool bOwnData):
 				XBin(0)
 			{//new copy
@@ -167,7 +170,14 @@ namespace X
 				retStr += "'";
 				return GetABIString(retStr);
 			}
-			virtual char* Data() override { return m_data; }
+			FORCE_INLINE virtual char* Data() override { return m_data; }
+			virtual char* BorrowDta() override 
+			{ 
+				char* p = m_data;
+				m_OwnData = false;
+				m_data = nullptr;
+				return p;
+			}
 			FORCE_INLINE virtual long long  Size()  override { return m_size; }
 			~Binary()
 			{
