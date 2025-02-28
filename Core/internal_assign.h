@@ -32,7 +32,8 @@ namespace X
 			}
 			bool SetValue(X::Value& val)
 			{
-				return m_parent->Set(m_context, val);
+				X::XObj* pObj = dynamic_cast<X::XObj*>(m_parent);
+				return pObj->Set(m_context, val);
 			}
 		};
 	}

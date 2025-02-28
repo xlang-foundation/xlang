@@ -400,6 +400,17 @@ public:
 	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val) override;
+	FORCE_INLINE virtual bool Set(X::Value context, X::Value& val) override
+	{
+		if (context.IsLong())
+		{
+			return Set((long long)context, val);
+		}
+		else
+		{
+			return false;
+		}
+	}
 	FORCE_INLINE virtual bool Set(long long index, X::Value& v) override
 	{
 		AutoLock autoLock(m_lock);
