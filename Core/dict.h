@@ -53,6 +53,10 @@ namespace X
 			{
 				return mMap.size();
 			}
+			virtual X::Value Get(const X::Value& key) override
+			{
+				return mMap[key];
+			}
 			virtual Value Member(XRuntime* rt, const char* name) override
 			{
 				X::Value val;
@@ -149,6 +153,39 @@ namespace X
 				}
 				return bOK;
 			}
+			virtual bool Compare(X::Value& dict) override
+			{
+				// Verify that 'dict' is a valid Dict object.
+				if (!dict.IsObject())
+					return false;
+				Object* pObj = dynamic_cast<Object*>(dict.GetObj());
+				if (!pObj || pObj->GetType() != ObjType::Dict)
+					return false;
+				Dict* pOtherDict = dynamic_cast<Dict*>(pObj);
+				if (!pOtherDict)
+					return false;
+
+				// Ensure both dictionaries have the same number of keys.
+				// This check guarantees that if the passed dictionary has extra keys, the sizes will differ and we return false.
+				if (mMap.size() != pOtherDict->mMap.size())
+					return false;
+
+				// Compare each key-value pair.
+				for (const auto& pair : mMap)
+				{
+					// Look for the same key in the other dictionary.
+					auto it = pOtherDict->mMap.find(pair.first);
+					if (it == pOtherDict->mMap.end())
+						return false; // Key not found in the passed dict.
+					X::Value val = pair.second;
+					// Compare the values using their string representations.
+					// This may be replaced with a more robust comparison if needed.
+					if (val.ToString() != it->second.ToString())
+						return false;
+				}
+				return true;
+			}
+
 			bool Remove(X::Value& key)
 			{
 				bool bOK = false;

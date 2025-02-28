@@ -30,6 +30,7 @@ limitations under the License.
 
 #ifdef __APPLE__
 extern char** environ;  // Explicitly declare environ on macOS
+#include <unistd.h>
 #endif
 
 namespace X {

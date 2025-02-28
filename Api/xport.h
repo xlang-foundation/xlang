@@ -47,7 +47,7 @@ namespace X
 		class Function<R(Args...)>
 		{
 			typedef R(*invoke_fn_t)(char*, Args&&...);
-			typedef void (*construct_fn_t)(char*, char*);
+			typedef char* (*construct_fn_t)(int, char*);
 			typedef void (*destroy_fn_t)(char*);
 
 			template <typename Functor>
@@ -56,14 +56,18 @@ namespace X
 				return (*fn)(std::forward<Args>(args)...);
 			}
 			template <typename Functor>
-			static void construct_fn(Functor* construct_dst, Functor* construct_src)
+			static char* construct_fn(int allocSize,Functor* construct_src)
 			{
+				char* pFuncMem = new char[allocSize];
+				Functor* construct_dst = (Functor*)pFuncMem;
 				new (construct_dst) Functor(*construct_src);
+				return pFuncMem;
 			}
 			template <typename Functor>
 			static void destroy_fn(Functor* f)
 			{
 				f->~Functor();
+				delete[]((char*)f);
 			}
 			invoke_fn_t invoke_f;
 			construct_fn_t construct_f;
@@ -88,10 +92,9 @@ namespace X
 				: invoke_f(reinterpret_cast<invoke_fn_t>(invoke_fn<Functor>))
 				, construct_f(reinterpret_cast<construct_fn_t>(construct_fn<Functor>))
 				, destroy_f(reinterpret_cast<destroy_fn_t>(destroy_fn<Functor>))
-				, data_ptr(new char[sizeof(Functor)])
 				, data_size(sizeof(Functor))
 			{
-				this->construct_f(this->data_ptr, reinterpret_cast<char*>(&f));
+				data_ptr = this->construct_f(this->data_size, reinterpret_cast<char*>(&f));
 			}
 			Function(Function const& rhs)
 				: invoke_f(rhs.invoke_f)
@@ -103,8 +106,7 @@ namespace X
 				copy_from = (Function*)&rhs;
 				if (this->invoke_f)
 				{
-					this->data_ptr = new char[this->data_size];
-					this->construct_f(this->data_ptr, rhs.data_ptr);
+					this->data_ptr = this->construct_f(this->data_size, rhs.data_ptr);
 				}
 			}
 			FORCE_INLINE operator bool() const
@@ -121,8 +123,7 @@ namespace X
 				data_size = v.data_size;
 				if (this->invoke_f)
 				{
-					this->data_ptr = new char[this->data_size];
-					this->construct_f(this->data_ptr, v.data_ptr);
+					this->data_ptr = this->construct_f(this->data_size, v.data_ptr);
 				}
 			}
 			~Function()
@@ -130,7 +131,6 @@ namespace X
 				if (data_ptr != nullptr)
 				{
 					this->destroy_f(this->data_ptr);
-					delete data_ptr;
 					data_ptr = nullptr;
 				}
 			}

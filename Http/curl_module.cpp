@@ -24,7 +24,7 @@ namespace X {
         {
             // Set the write callback to capture response data.
             curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, Curl::WriteCallback);
-            curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, m_response);
+            curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, m_response.c_str());
             // Set an error buffer.
             curl_easy_setopt(m_curl, CURLOPT_ERRORBUFFER, m_errorBuffer);
         }
