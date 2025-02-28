@@ -333,6 +333,8 @@ export class XLangRuntime extends EventEmitter {
 	private reqTerminate;
 	public async terminateXlang()
 	{
+		
+		this.addOutput("terminate xlang server");
 		if (this._runFile.length > 0)
 		{
 			let code = "import xdb\nreturn xdb.stop_file(\"" + this._runFile + "\")";
@@ -442,7 +444,7 @@ export class XLangRuntime extends EventEmitter {
 		this.fetchNotify();
 		if (this._moduleKey!=0) // new created module, run it
 		{
-			this.addOutput(`entry file is new, run it: "${this._sourceFile}"`);	
+			this.addOutput(`entry source file is new loaded, run it: "${this._sourceFile}"`);	
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
 				+ ", onFinish = 'fire(\"devops.dbg\",action=\"end\",tid=${tid})'"
 				+ ",stopOnEntry=True)\nreturn True";
@@ -452,7 +454,7 @@ export class XLangRuntime extends EventEmitter {
 		}
 		else
 		{
-			this.addOutput(`entry file is loaded previsously: "${this._sourceFile}"`);	
+			this.addOutput(`entry source file has loaded previously: "${this._sourceFile}"`);	
 		}
 	}
 	private Call(code, srcArg, cb?)
@@ -578,6 +580,10 @@ export class XLangRuntime extends EventEmitter {
 	
 	private setDebug(bDebug : boolean)
 	{
+		if (bDebug)
+			this.addOutput("enable xlang server debug");
+		else
+			this.addOutput("disable xlang server debug");
 		let code = "import xdb\nreturn xdb.set_debug(" + (bDebug ? '1' : '0') +")";
 		this.Call(code);
 	}
