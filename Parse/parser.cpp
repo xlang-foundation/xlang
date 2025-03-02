@@ -113,7 +113,7 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 			if (line->GetEndLine() > line->GetStartLine())
 			{
 				LOG << LOG_RED << "Module: " << m_strModuleName << ":" << line->GetStartLine()
-					<< "," << line->GetEndLine()
+					<< ":" << line->GetEndLine()
 					<< ",Error: line indent not match"
 					<< LOG_RESET << LINE_END;
 			}
