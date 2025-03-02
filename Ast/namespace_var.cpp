@@ -71,6 +71,23 @@ namespace X
 				//Obj()->Set(index, valRight);
 			}
 		}
+		// Helper function to recursively get the leftmost Var name
+		std::string NamespaceVar::GetLeftmostVarName(Expression* obj)
+		{
+			if (!obj)
+				return "";
+
+			if (obj->m_type == ObType::Var)
+			{
+				return dynamic_cast<Var*>(obj)->GetNameString();
+			}
+			else if (obj->m_type == ObType::Dot)
+			{
+				return GetLeftmostVarName(dynamic_cast<DotOp*>(obj)->GetL());
+			}
+
+			return ""; // Handle other types if needed
+		}
 		void NamespaceVar::ScopeLayout()
 		{
 			Scope* pMyScope = GetScope();
@@ -84,8 +101,7 @@ namespace X
 				}
 				else if (R->m_type == ObType::Dot)
 				{
-					auto* dotOp = dynamic_cast<DotOp*>(R);
-					strName = dynamic_cast<Var*>(dotOp->GetL())->GetNameString();
+					strName = GetLeftmostVarName(dynamic_cast<DotOp*>(R)->GetL());
 				}
 			}
 
