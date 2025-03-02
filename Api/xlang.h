@@ -446,7 +446,8 @@ namespace X
 
 		QINT8 = 15,
 		QUINT8 = 16,
-		QINT32 = 17
+		QINT32 = 17,
+		FLOAT8 = 18
 	};
 
 	class XTensor :
