@@ -1546,6 +1546,25 @@ bool U_CreateErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	retValue = X::Value(pObj);
 	return true;
 }
+
+bool U_Hash(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		retValue = params[0].Hash();
+		return true;
+	}
+	else if (pContext)
+	{
+		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
+		retValue = pObj->Hash();
+		return true;
+	}
+}
+
 bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -2014,6 +2033,7 @@ bool Builtin::RegisterInternals()
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 #endif
 	Register("isinstance", (X::U_FUNC)U_IsInstance, params);
+	Register("hash", (X::U_FUNC)U_Hash, params, "hash(obj) or obj.hash()", true);
 	return true;
 }
 

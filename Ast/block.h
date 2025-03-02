@@ -259,7 +259,7 @@ namespace X
 					}
 					if (!bOk)
 					{
-						LOG <<LOG_RED<< "Error Occurs in "<<rt->GetName()<< ",line:" << line <<LOG_RESET<< LINE_END;
+						LOG <<LOG_RED<< "Error Occurs in Module: "<<rt->GetName()<< ":" << line <<LOG_RESET<< LINE_END;
 						auto code = i->GetCode();
 						LOG << LOG_RED << "*** " << code <<LOG_RESET<<LINE_END;
 					}
