@@ -112,15 +112,15 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		{
 			if (line->GetEndLine() > line->GetStartLine())
 			{
-				LOG << LOG_RED << "Module:" << m_strModuleName << ",ln:" << line->GetStartLine()
-					<< "-" << line->GetEndLine()
-					<< "Error: line indent not match"
+				LOG << LOG_RED << "Module: " << m_strModuleName << ":" << line->GetStartLine()
+					<< "," << line->GetEndLine()
+					<< ",Error: line indent not match"
 					<< LOG_RESET << LINE_END;
 			}
 			else
 			{
-				LOG << LOG_RED << "Module:" << m_strModuleName << ",ln:" << line->GetStartLine()
-					<< ", Compile Error: line indent not match"
+				LOG << LOG_RED << "Module: " << m_strModuleName << ":" << line->GetStartLine()
+					<< ",Compile Error: line indent not match"
 					<< LOG_RESET << LINE_END;
 			}
 			return false;
@@ -171,8 +171,8 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		}
 		else
 		{
-			LOG << LOG_RED << "Module:" << m_strModuleName << ",ln:" << line->GetStartLine()
-				<< ", Compile Error: no block to add line"
+			LOG << LOG_RED << "Module: " << m_strModuleName << ":" << line->GetStartLine()
+				<< ",Compile Error: no block to add line"
 				<< LOG_RESET << LINE_END;
 			return false;
 		}
@@ -487,7 +487,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		leadingSpaceCnt = one.leadingSpaceCnt;
 		if (m_curBlkState == nullptr)
 		{
-			LOG << LOG_RED <<"Module:"<<m_strModuleName <<",ln:" << (startLine+1) 
+			LOG << LOG_RED <<"Module: "<<m_strModuleName <<":" << (startLine+1) 
 				<< ",Token(s):" << std::string(s.s, s.size) <<",block match error"
 				<< LOG_RESET << LINE_END;
 			break;
