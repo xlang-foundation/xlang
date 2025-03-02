@@ -7,7 +7,7 @@ project (${PROJECT_NAME})
 
 find_package (Python3 COMPONENTS Interpreter Development NumPy)
 
-string(REPLACE "numpy/core/include" "" Python3_SITELIB ${Python3_NumPy_INCLUDE_DIRS})
+string(REPLACE "numpy/core/include" "" Python3_SITELIB "${Python3_NumPy_INCLUDE_DIRS}")
 
 message(STATUS
     "Python: version=${Python3_VERSION} interpreter=${Python3_EXECUTABLE}")
