@@ -419,6 +419,7 @@ bool LoadStringFromFile(std::string& fileName, std::string& content) {
     std::ifstream file(fileName);
     std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     file.close();
+	ReplaceAll(data, "\r\n", "\n");
     content = data;
     return true;
 #endif
