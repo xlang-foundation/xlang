@@ -59,3 +59,7 @@ bool GetCurLibInfo(void* EntryFuncName,std::string& strFullPath, std::string& st
 const char* GetABIString(std::string& str);//return a string with ABI safety, this pointer will be released by g_pHost func
 long long getCurMicroTimeStamp();
 void _mkdir(const char* dir);
+#ifdef _WIN32
+std::string systemCpToUtf8(const std::string& input);
+std::string utf8ToSystemCp(const std::string& utf8Str);
+#endif

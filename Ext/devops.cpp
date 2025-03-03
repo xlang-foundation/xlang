@@ -410,6 +410,9 @@ namespace X
 					}
 					Data::Str* pStrName = new Data::Str(name);
 					dict->Set("name", X::Value(pStrName));
+					#ifdef _WIN32
+					moduleFileName = systemCpToUtf8(moduleFileName);
+					#endif
 					Data::Str* pStrFileName = new Data::Str(moduleFileName);
 					dict->Set("file", X::Value(pStrFileName));
 					Data::Str* pStrMd5 = new Data::Str(Dbg::GetExpModule(pExp)->GetMd5());

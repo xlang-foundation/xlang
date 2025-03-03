@@ -22,6 +22,8 @@ limitations under the License.
 #include <chrono>
 #include <filesystem>
 #include "xlog.h"
+#include "../utils/utility.h"
+
 
 namespace X
 {
@@ -38,9 +40,6 @@ namespace X
 				if (!m_Connected) {
 					m_srv.stop();
 					std::cout << "no connection in 10 seconds, xlang exited" << std::endl;
-#if (WIN32)
-					system("pause");
-#endif
 					std::exit(0);
 				}
 			});
@@ -127,7 +126,11 @@ namespace X
 					const char* data = req.body.data();
 					uint32_t codeLen = ntohl(*reinterpret_cast<const uint32_t*>(data));
 					data += 4;
+					#ifdef _WIN32
+					code = utf8ToSystemCp(std::string(data, codeLen));
+					#else
 					code = std::string(data, codeLen);
+					#endif
 					if (req.body.size() > codeLen + 4)
 					{
 						data += codeLen;

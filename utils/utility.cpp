@@ -487,3 +487,39 @@ void _mkdir(const char* dir) {
     }
 #endif
 }
+
+#ifdef _WIN32
+std::string systemCpToUtf8(const std::string& input) {
+	if (input.empty()) return "";
+	int wideLen = MultiByteToWideChar(CP_ACP, 0, input.c_str(), -1, NULL, 0);
+	if (wideLen == 0) return "";
+	std::vector<wchar_t> wideStr(wideLen);
+	if (MultiByteToWideChar(CP_ACP, 0, input.c_str(), -1, wideStr.data(), wideLen) == 0) {
+		return "";
+	}
+	int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wideStr.data(), -1, NULL, 0, NULL, NULL);
+	if (utf8Len == 0) return "";
+	std::vector<char> utf8Str(utf8Len);
+	if (WideCharToMultiByte(CP_UTF8, 0, wideStr.data(), -1, utf8Str.data(), utf8Len, NULL, NULL) == 0) {
+		return "";
+	}
+	return std::string(utf8Str.data());
+}
+
+std::string utf8ToSystemCp(const std::string& utf8Str) {
+	if (utf8Str.empty()) return "";
+	int wideLen = MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, NULL, 0);
+	if (wideLen == 0) return "";
+	std::vector<wchar_t> wideStr(wideLen);
+	if (MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, wideStr.data(), wideLen) == 0) {
+		return "";
+	}
+	int mbLen = WideCharToMultiByte(CP_ACP, 0, wideStr.data(), -1, NULL, 0, NULL, NULL);
+	if (mbLen == 0) return "";
+	std::vector<char> mbStr(mbLen);
+	if (WideCharToMultiByte(CP_ACP, 0, wideStr.data(), -1, mbStr.data(), mbLen, NULL, NULL) == 0) {
+		return "";
+	}
+	return std::string(mbStr.data());
+}
+#endif
