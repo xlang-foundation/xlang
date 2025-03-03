@@ -8,7 +8,7 @@ project ("xlang_devsrv")
 include_directories("../Api")
 include_directories("../Http")
 include_directories("../utils")
-include_directories("../inc")
+include_directories("../Inc")
 
 FILE(GLOB API_SRC "../Api/value.cpp")
 FILE(GLOB Main_SRC "*.cpp" 
