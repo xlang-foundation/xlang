@@ -503,6 +503,7 @@ public:
 	bool IsList() const;
 	bool IsDict() const;
 	bool IsBin() const;
+	bool IsTensor() const;
 	bool IsString() const;
 	FORCE_INLINE bool IsTrue()
 	{

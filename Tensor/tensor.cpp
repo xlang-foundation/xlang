@@ -317,6 +317,17 @@ namespace X
 			return true;
 		}
 
+		// Helper function to convert a BFLOAT16 value (stored as uint16_t)
+		// to a 32-bit float.
+		static float BFloat16ToFloat(uint16_t b) 
+		{
+			// Shift b to the high 16 bits of a 32-bit int
+			uint32_t temp = static_cast<uint32_t>(b) << 16;
+			float result;
+			std::memcpy(&result, &temp, sizeof(result));
+			return result;
+		}
+
 		X::Value Tensor::GetDataWithIndices(std::vector<long long>& indices)
 		{
 			long long addr = CalcItemOffset(indices);
@@ -366,6 +377,15 @@ namespace X
 			case X::TensorDataType::DOUBLE:
 				retVal = X::Value(*(double*)pAddr);
 				break;
+			case X::TensorDataType::BFLOAT16:
+			{
+				// Read the 16-bit bfloat16 value
+				uint16_t bval = *(uint16_t*)pAddr;
+				// Convert to float using the helper function
+				float fval = BFloat16ToFloat(bval);
+				retVal = X::Value(fval);
+				break;
+			}
 			case X::TensorDataType::CFLOAT:
 				break;
 			case X::TensorDataType::CDOUBLE:
@@ -571,6 +591,10 @@ namespace X
 				indices.push_back(index);
 			}
 			int dimCount = (int)m_dims.size();
+			if (dimCount <= 0)
+			{
+				return nullptr;
+			}
 			int lastDimIndex = (int)indices.size();
 			long long lastDimSize = m_dims[lastDimIndex].size;
 			if (startIndex < 0 || startIndex >= lastDimSize)

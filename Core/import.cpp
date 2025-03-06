@@ -157,7 +157,11 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 		else
 		{
 			prefixPath = m_path;
-			ReplaceAll(prefixPath, ".", Path_Sep_S);
+			if (!m_pathHasQuotation)
+			{
+				//if not use from "path", then python style, replce . with /
+				ReplaceAll(prefixPath, ".", Path_Sep_S);
+			}
 		}
 	}
 	if (!bHaveX)
@@ -228,6 +232,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 		Value v0;
 		if (ExpExec(m_from,rt, action, pContext, v0, nullptr))
 		{
+			m_pathHasQuotation = m_from->PathHasQuotation();
 			m_path = v0.ToString();
 		}
 	}
