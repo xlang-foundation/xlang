@@ -129,6 +129,15 @@ namespace X
 				}
 				return size;
 			}
+			virtual X::Value Shapes() override
+			{
+				X::List shapes;
+				for (auto& d : m_dims)
+				{
+					shapes += d.size;
+				}
+				return shapes;
+			}
 			long long GetCount()
 			{
 				long long itemCnt = 1;

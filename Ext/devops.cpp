@@ -115,8 +115,16 @@ namespace X
 				std::string strID(strBuf);
 				X::Value objId(strID);
 				dict->Set("Id", objId);
-				X::Value valSize(val.GetObj()->Size());
-				dict->Set("Size", valSize);
+				X::Value valShape = val.GetObj()->Shapes();
+				if (valShape.IsList())
+				{
+					dict->Set("Size", valShape);
+				}
+				else
+				{
+					X::Value valSize(val.GetObj()->Size());
+					dict->Set("Size", valSize);
+				}
 			}
 			return true;
 		}
