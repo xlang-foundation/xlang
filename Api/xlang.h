@@ -465,6 +465,8 @@ namespace X
 		virtual void SetData(char* data, long long size) = 0;
 		virtual TensorDataType GetDataType() = 0;
 		virtual bool Create(X::Value& initData) = 0;
+		virtual X::Value GetDesc() = 0;
+		virtual void SetDesc(X::Value& v) = 0;
 	};
 	class XTensorExpression :
 		virtual public XObj

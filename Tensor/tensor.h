@@ -71,6 +71,16 @@ namespace X
 			int m_startItemOffet = 0;// unit is sizeof data type
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType;
+			X::Value m_desc;//used to hold extra info
+
+			FORCE_INLINE virtual X::Value GetDesc() override
+			{
+				return m_desc;
+			}
+			FORCE_INLINE virtual void SetDesc(X::Value& v) override
+			{
+				m_desc = v;
+			}
 		public:
 			virtual long long GetItemSize() override
 			{
@@ -595,6 +605,7 @@ namespace X
 					case X::TensorDataType::ULONGLONG:
 						snprintf((char *)v, sizeof(v), "%lld",(unsigned long long)val.GetLongLong());
 						break;
+					case X::TensorDataType::BFLOAT16:
 					case X::TensorDataType::FLOAT:
 						snprintf((char *)v, sizeof(v), "%f",(float)val.GetDouble());
 						break;

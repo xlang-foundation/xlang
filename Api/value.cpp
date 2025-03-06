@@ -788,6 +788,11 @@ namespace X
 		return (t == ValueType::Object)
 			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Binary);
 	}
+	bool Value::IsTensor() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Tensor);
+	}
 	bool Value::IsString() const
 	{ 
 		if (t == ValueType::Str)
