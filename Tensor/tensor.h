@@ -605,6 +605,7 @@ namespace X
 					case X::TensorDataType::ULONGLONG:
 						snprintf((char *)v, sizeof(v), "%lld",(unsigned long long)val.GetLongLong());
 						break;
+					case X::TensorDataType::BFLOAT16:
 					case X::TensorDataType::FLOAT:
 						snprintf((char *)v, sizeof(v), "%f",(float)val.GetDouble());
 						break;
