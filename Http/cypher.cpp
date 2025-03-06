@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "cypher.h"
 
 #include <iostream>
@@ -27,6 +42,43 @@
 #include <aclapi.h>
 #include <iostream>
 #include <string>
+
+//for windows if no openssl support, using dummy functions
+
+#ifndef CPPHTTPLIB_OPENSSL_SUPPORT
+
+// Dummy implementation of CertCloseStore
+BOOL WINAPI CertCloseStore(HCERTSTORE hCertStore, DWORD dwFlags) {
+	// Dummy implementation, just return TRUE
+	return TRUE;
+}
+
+// Dummy implementation of CertFindCertificateInStore
+PCCERT_CONTEXT WINAPI CertFindCertificateInStore(
+	HCERTSTORE hCertStore,
+	DWORD dwCertEncodingType,
+	DWORD dwFindFlags,
+	DWORD dwFindType,
+	const void* pvFindPara,
+	PCCERT_CONTEXT pPrevCertContext
+) {
+	// Dummy implementation, just return nullptr
+	return nullptr;
+}
+
+// Dummy implementation of CertFreeCertificateContext
+BOOL WINAPI CertFreeCertificateContext(PCCERT_CONTEXT pCertContext) {
+	// Dummy implementation, just return TRUE
+	return TRUE;
+}
+
+// Dummy implementation of CertOpenSystemStoreW
+HCERTSTORE WINAPI CertOpenSystemStoreW(HCRYPTPROV_LEGACY hProv, LPCWSTR szSubsystemProtocol) {
+	// Dummy implementation, just return nullptr
+	return nullptr;
+}
+
+#endif
 
 bool ChmodWin(const std::string& filename) {
 	// Get the SID of the current user
@@ -294,13 +346,26 @@ void send_to_server(const std::string& data) {
 
 // Function to encrypt a message using a private key
 
-std::vector<unsigned char> encrypt_with_private_key(int paddingMode,const std::string& message, RSA* rsa) {
-	auto rsa_size = RSA_size(rsa);
-	if (rsa_size < message.size())
-	{
-		return long_msg_encrypt_with_private_key(paddingMode,message, rsa);
+std::vector<unsigned char> encrypt_with_private_key(int paddingMode, const std::string& message, RSA* rsa) {
+	// Determine the maximum message size allowed for this RSA key and padding.
+	size_t maxMessageSize = get_max_message_size(paddingMode, rsa);
+
+	// Special handling for no padding: plaintext must exactly match RSA size.
+	if (paddingMode == RSA_NO_PADDING) {
+		if (message.size() != maxMessageSize) {
+			throw std::runtime_error("Message length must equal RSA key size when using no padding");
+		}
 	}
+	// For other padding modes, if the message is too large, use the alternative method.
+	else if (message.size() > maxMessageSize) {
+		return long_msg_encrypt_with_private_key(paddingMode, message, rsa);
+	}
+
+	// Prepare the encrypted buffer.
+	int rsa_size = RSA_size(rsa);
 	std::vector<unsigned char> encrypted(rsa_size);
+
+	// Attempt to encrypt using the private key.
 	int encrypted_length = RSA_private_encrypt(
 		message.size(),
 		reinterpret_cast<const unsigned char*>(message.data()),
@@ -311,78 +376,114 @@ std::vector<unsigned char> encrypt_with_private_key(int paddingMode,const std::s
 
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		throw std::runtime_error("Encryption failed.");
+		throw std::runtime_error("Encrypt with private key failed.");
 	}
 
+	// Resize the vector to the actual encrypted length.
 	encrypted.resize(encrypted_length);
 	return encrypted;
 }
 
 // Function to encrypt a message using a public key
 std::vector<unsigned char> encrypt_with_public_key(int paddingMode, const std::string& message, RSA* rsa) {
-	auto rsa_size = RSA_size(rsa);
-	if (rsa_size < message.size())
-	{
-		return long_msg_encrypt_with_public_key(paddingMode,message, rsa);
+	// Determine the maximum message size allowed for this RSA key and padding mode.
+	size_t maxMessageSize = get_max_message_size(paddingMode, rsa);
+
+	// For no padding, the message must exactly match the RSA key size.
+	if (paddingMode == RSA_NO_PADDING) {
+		if (message.size() != maxMessageSize) {
+			throw std::runtime_error("Message length must equal RSA key size when using no padding");
+		}
 	}
+	// For other padding modes, if the message is too long, delegate to the long message handler.
+	else if (message.size() > maxMessageSize) {
+		return long_msg_encrypt_with_public_key(paddingMode, message, rsa);
+	}
+
+	int rsa_size = RSA_size(rsa);
 	std::vector<unsigned char> encrypted(rsa_size);
+
 	int encrypted_length = RSA_public_encrypt(
 		message.size(),
 		reinterpret_cast<const unsigned char*>(message.data()),
-		reinterpret_cast<unsigned char*>(encrypted.data()),
+		encrypted.data(),
 		rsa,
 		paddingMode
 	);
+
 	if (encrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
+		throw std::runtime_error("Encrypt with public key failed.");
 	}
+
 	encrypted.resize(encrypted_length);
 	return encrypted;
 }
 
 // Function to decrypt a message using a public key
 std::string decrypt_with_public_key(int paddingMode, std::vector<unsigned char>& encrypted, RSA* rsa) {
-	auto rsa_size = RSA_size(rsa);
-	if (rsa_size < encrypted.size())
-	{
-		return long_msg_decrypt_with_public_key(paddingMode,encrypted, rsa);
+	int rsa_size = RSA_size(rsa);
+
+	// If the encrypted data spans more than one RSA block, use the long message handler.
+	if (rsa_size < static_cast<int>(encrypted.size())) {
+		return long_msg_decrypt_with_public_key(paddingMode, encrypted, rsa);
 	}
+
+	// Allocate a buffer of size RSA_size.
 	std::string decrypted(rsa_size, '\0');
 	int decrypted_length = RSA_public_decrypt(
 		encrypted.size(),
 		reinterpret_cast<const unsigned char*>(encrypted.data()),
-		reinterpret_cast<unsigned char*>(decrypted.data()),
+		reinterpret_cast<unsigned char*>(&decrypted[0]),
 		rsa,
 		paddingMode
 	);
+
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
+		throw std::runtime_error("Decrypt with public key failed.");
 	}
+
+	// Optionally verify the decrypted length against the maximum allowed plaintext size.
+	size_t maxMessageSize = get_max_message_size(paddingMode, rsa);
+	if (paddingMode != RSA_NO_PADDING && static_cast<size_t>(decrypted_length) > maxMessageSize) {
+		throw std::runtime_error("Decrypted message exceeds maximum allowed size.");
+	}
+
 	decrypted.resize(decrypted_length);
 	return decrypted;
 }
 
 // Function to decrypt a message using a private key
 std::string decrypt_with_private_key(int paddingMode, std::vector<unsigned char>& encrypted, RSA* rsa) {
-	auto rsa_size = RSA_size(rsa);
-	if (rsa_size < encrypted.size())
-	{
+	int rsa_size = RSA_size(rsa);
+
+	// If the encrypted data spans more than one RSA block, delegate to the long message handler.
+	if (static_cast<size_t>(rsa_size) < encrypted.size()) {
 		return long_msg_decrypt_with_private_key(paddingMode, encrypted, rsa);
 	}
+
+	// Allocate a buffer for the decrypted data.
 	std::string decrypted(rsa_size, '\0');
 	int decrypted_length = RSA_private_decrypt(
 		encrypted.size(),
 		reinterpret_cast<const unsigned char*>(encrypted.data()),
-		reinterpret_cast<unsigned char*>(decrypted.data()),
+		reinterpret_cast<unsigned char*>(&decrypted[0]),
 		rsa,
 		paddingMode
 	);
+
 	if (decrypted_length == -1) {
 		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
+		throw std::runtime_error("Decrypt with private key failed.");
 	}
+
+	// Verify that the decrypted length does not exceed the maximum allowed plaintext size.
+	size_t maxMessageSize = get_max_message_size(paddingMode, rsa);
+	if (paddingMode != RSA_NO_PADDING && static_cast<size_t>(decrypted_length) > maxMessageSize) {
+		throw std::runtime_error("Decrypted message exceeds maximum allowed size.");
+	}
+
 	decrypted.resize(decrypted_length);
 	return decrypted;
 }
@@ -487,7 +588,7 @@ X::Cypher::~Cypher()
 	ERR_free_strings();
 }
 
-std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder)
+std::string X::Cypher::GenerateKeyPair(int key_size, std::string keyName)
 {
 	// Generate RSA key pair
 	RSA* rsa = generate_key_pair(key_size);
@@ -508,25 +609,70 @@ bool X::Cypher::RemovePrivateKey(std::string keyName)
 	return remove_private_key(keyName, mStorePath);
 }
 
-X::Value X::Cypher::EncryptWithPrivateKey(std::string msg, std::string keyName)
+bool X::Cypher::EncryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 {
+	std::string msg;
+	std::string keyName;
+	if (params.size() <2)
+	{
+		retValue = X::Value(false);
+		return true;
+	}
+	X::Value valMsg = params[0];
+	if (valMsg.IsString())
+	{
+		msg = valMsg.ToString();
+	}
+	else if (valMsg.IsBin())
+	{
+		X::Bin binMsg(valMsg);
+		auto pData = binMsg->Data();
+		msg = std::string(pData, pData + binMsg.Size());
+	}
+	else
+	{
+		retValue = X::Value(false);
+		return true;
+	}
+	keyName = params[1].ToString();
 	RSA* rsa = get_stored_private_key(keyName, mStorePath);
 	if (!rsa)
 	{
 		std::cerr << "Failed to retrieve the stored private key." << std::endl;
-		return "";
+		retValue = X::Value(false);
+		return true;
 	}
-	auto encrypted = encrypt_with_private_key(m_rsa_padding_mode,msg, rsa);
-	RSA_free(rsa);
-	size_t size = encrypted.size();
-	char* pBuf = new char[size];
-	memcpy(pBuf, encrypted.data(), encrypted.size());
-	X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
-	return valEncrypted;
+	try
+	{
+		auto encrypted = encrypt_with_private_key(m_rsa_padding_mode,msg, rsa);
+		RSA_free(rsa);
+		size_t size = encrypted.size();
+		X::XBin* pBin = X::g_pXHost->CreateBin(nullptr, size, true);
+		char* pBuf = pBin->Data();
+		memcpy(pBuf, encrypted.data(), encrypted.size());
+		X::Value valEncrypted(pBin, false);
+		retValue = valEncrypted;
+	}
+	catch (...)
+	{
+		std::cout << "EncryptWithPrivateKey failed." << std::endl;
+		retValue = X::Value(false);
+	}
+	return true;
 }
 
-std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string keyName)
+bool X::Cypher::DecryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 {
+	if (params.size() < 2)
+	{
+		retValue = X::Value(false);
+		return true;
+	}
+	X::Value encrypted = params[0];
+	std::string keyName = params[1].ToString();
+
 	RSA* rsa = get_stored_private_key(keyName, mStorePath);
 	if (!rsa) {
 		std::cerr << "Failed to retrieve the stored private key." << std::endl;
@@ -535,38 +681,107 @@ std::string X::Cypher::DecryptWithPrivateKey(X::Value& encrypted, std::string ke
 	X::Bin binEnc(encrypted);
 	auto pData = binEnc->Data();
 	std::vector<unsigned char> ary_encrypted(pData, pData + binEnc.Size());
-	std::string msg = decrypt_with_private_key(m_rsa_padding_mode,ary_encrypted, rsa);
-	RSA_free(rsa);
-	return msg;
+	try
+	{
+		std::string msg = decrypt_with_private_key(m_rsa_padding_mode, ary_encrypted, rsa);
+		RSA_free(rsa);
+		X::Bin bin((int)msg.size(), true);
+		memcpy(bin->Data(), msg.data(), msg.size());
+		retValue = bin;
+	}
+	catch (...)
+	{
+		std::cout << "DecryptWithPrivateKey failed." << std::endl;
+		retValue = X::Value(false);
+	}
+	return true;
 }
 
-X::Value X::Cypher::EncryptWithPublicKey(std::string msg, std::string perm_key)
+bool X::Cypher::EncryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 {
+	std::string msg;
+	std::string perm_key;
+	if (params.size() < 2)
+	{
+		retValue = X::Value(false);
+		return true;
+	}
+	X::Value valMsg = params[0];
+	if (valMsg.IsString())
+	{
+		msg = valMsg.ToString();
+	}
+	else if (valMsg.IsBin())
+	{
+		X::Bin binMsg(valMsg);
+		auto pData = binMsg->Data();
+		msg = std::string(pData, pData + binMsg.Size());
+	}
+	else
+	{
+		retValue = X::Value(false);
+		return true;
+	}
+	perm_key = params[1].ToString();
+
 	RSA* rsa = create_rsa_from_public_key_pem(perm_key);
 	if (!rsa) {
 		std::cerr << "Failed to create RSA from public key." << std::endl;
 		return "";
 	}
-	auto encrypted = encrypt_with_public_key(m_rsa_padding_mode,msg, rsa);
-	RSA_free(rsa);
-	size_t size = encrypted.size();
-	char* pBuf = new char[size];
-	memcpy(pBuf, encrypted.data(), encrypted.size());
-	X::Value valEncrypted(X::g_pXHost->CreateBin(pBuf, size, true), false);
-	return valEncrypted;
+	
+	try
+	{
+		auto encrypted = encrypt_with_public_key(m_rsa_padding_mode, msg, rsa);
+		RSA_free(rsa);
+		size_t size = encrypted.size();
+		X::XBin* pBin = X::g_pXHost->CreateBin(nullptr, size, true);
+		char* pBuf = pBin->Data();
+		memcpy(pBuf, encrypted.data(), encrypted.size());
+		X::Value valEncrypted(pBin, false);
+		retValue = valEncrypted;
+	}
+	catch (...)
+	{
+		std::cout << "EncryptWithPublicKey failed." << std::endl;
+		retValue = X::Value(false);
+	}
+	return true;
 }
 
-std::string X::Cypher::DecryptWithPublicKey(X::Value& encrypted, std::string perm_key)
+bool X::Cypher::DecryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
+	X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
 {
+	if (params.size() < 2)
+	{
+		retValue = X::Value(false);
+		return true;
+	}
+	X::Value encrypted = params[0];
+	std::string perm_key = params[1].ToString();
+
 	RSA* rsa = create_rsa_from_public_key_pem(perm_key);
-	if (!rsa) {
-		std::cerr << "Failed to create RSA from public key." << std::endl;
-		return "";
+	if (!rsa) 
+	{
+		retValue = X::Value(false);
+		return true;
 	}
 	X::Bin binEnc(encrypted);
 	auto pData = binEnc->Data();
 	std::vector<unsigned char> ary_encrypted(pData, pData + binEnc.Size());
-	std::string msg = decrypt_with_public_key(m_rsa_padding_mode,ary_encrypted, rsa);
-	RSA_free(rsa);
-	return msg;
+	try
+	{
+		std::string msg = decrypt_with_public_key(m_rsa_padding_mode, ary_encrypted, rsa);
+		RSA_free(rsa);
+		X::Bin bin((int)msg.size(), true);
+		memcpy(bin->Data(), msg.data(), msg.size());
+		retValue = bin;
+	}
+	catch (...)
+	{
+		std::cout << "DecryptWithPublicKey failed." << std::endl;
+		retValue = X::Value(false);
+	}
+	return true;
 }

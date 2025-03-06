@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 
 #include "object.h"
@@ -33,7 +48,21 @@ namespace X
 				}
 				m_realObj = val;
 			}
-			virtual const char* ToString(bool WithFormat = false) override
+			//help function for type object
+			bool IsType(std::string name) 
+			{ 
+				auto typeName = GetTypeNameString();
+				if (typeName == name)
+				{
+					return true;
+				}
+				else if (typeName.find("'" + name + "'") > 0)
+				{
+					return true;
+				}
+				return false; 
+			}
+			FORCE_INLINE std::string GetTypeNameString()
 			{
 				std::string strType;
 				switch (m_valType)
@@ -123,9 +152,6 @@ namespace X
 					case X::ObjType::RemoteObject:
 						strType = "<class 'remoteobject'>";
 						break;
-					case X::ObjType::RemoteClientObject:
-						strType = "<class 'remoteclientobject'>";
-						break;
 					case X::ObjType::PyProxyObject:
 						strType = "<class 'pythonobject'>";
 						break;
@@ -142,7 +168,12 @@ namespace X
 				default:
 					break;
 				}
-				return GetABIString(strType);
+				return strType;
+			}
+			virtual const char* ToString(bool WithFormat = false) override
+			{
+				auto strRet = GetTypeNameString();
+				return GetABIString(strRet);
 			}
 
 			X::Value GetMembers(X::XlangRuntime* rt);

@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "value.h"
 #include "xlang.h"
 #include "xhost.h"
@@ -90,6 +105,10 @@ namespace X
 	}
 	Value Value::operator- (const Value& right)
 	{
+		if (t == ValueType::Invalid || right.t == ValueType::Invalid)
+		{
+			return Value();
+		}
 		Value ret;
 		bool done = false;
 		if (t == ValueType::Object)
@@ -120,10 +139,10 @@ namespace X
 
 	void Value::operator -= (const Value& v)
 	{
-		//if (IsObject())
-		//{
-		//	ReleaseObject(x.obj);
-		//}
+		if (t == ValueType::Invalid || v.t == ValueType::Invalid)
+		{
+			return;
+		}
 		flags = v.flags;
 		if (t == ValueType::Object)
 		{
@@ -144,10 +163,10 @@ namespace X
 			switch (t)
 			{
 			case ValueType::Int64:
-				x.l -= ToInt64(v);
+				x.l -= ValueToInt64(v);
 				break;
 			case ValueType::Double:
-				x.d -= ToDouble(v);
+				x.d -= ValueToDouble(v);
 				break;
 			case ValueType::Str:
 				x.str = v.x.str;
@@ -194,6 +213,24 @@ namespace X
 		SetObj(g_pXHost->CreateRuntime());
 	}
 	template<>
+	template<>
+	void V<XModule>::Create(char* xModuleFile)
+	{
+		g_pXHost->Import(g_pXHost->GetCurrentRuntime(), xModuleFile, nullptr, nullptr, *this);
+	}
+	template<>
+	template<>
+	void V<XModule>::Create(char* xModuleFile, char* from)
+	{
+		g_pXHost->Import(g_pXHost->GetCurrentRuntime(), xModuleFile, from, nullptr, *this);
+	}
+	template<>
+	template<>
+	void V<XModule>::Create(char* xModuleFile, char* from,char* thru)
+	{
+		g_pXHost->Import(g_pXHost->GetCurrentRuntime(), xModuleFile, from, thru, *this);
+	}
+	template<>
 	void V<XDict>::Create()
 	{
 		SetObj(g_pXHost->CreateDict());
@@ -227,9 +264,21 @@ namespace X
 	}
 	template<>
 	template<>
+	void V<XError>::Create(int code,const char* info)
+	{
+		SetObj(g_pXHost->CreateError(code, info));
+	}
+	template<>
+	template<>
 	void V<XStruct>::Create(char* data, int size, bool asRef)
 	{
 		SetObj(g_pXHost->CreateStruct(data, size, asRef));
+	}
+	//only need one template<>
+	template<>
+	void V<XStruct>::Create(void)
+	{
+		SetObj(g_pXHost->CreateStruct(nullptr,0,false));
 	}
 	template<>
 	template<>
@@ -242,6 +291,30 @@ namespace X
 	void V<XBin>::Create(char* s, int size, bool bOwnData)
 	{
 		SetObj(g_pXHost->CreateBin(s, size, bOwnData));
+	}
+	template<>
+	template<>
+	void V<XBin>::Create(int size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin((char*)nullptr, size, bOwnData));
+	}
+	template<>
+	template<>
+	void V<XBin>::Create(unsigned int size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin((char*)nullptr, size, bOwnData));
+	}
+	template<>
+	template<>
+	void V<XBin>::Create(unsigned long long size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin((char*)nullptr, size, bOwnData));
+	}
+	template<>
+	template<>
+	void V<XBin>::Create(long long size, bool bOwnData)
+	{
+		SetObj(g_pXHost->CreateBin((char*)nullptr, size, bOwnData));
 	}
 	template<>
 	template<>
@@ -341,12 +414,28 @@ namespace X
 	Value Value::ObjCall(Port::vector<X::Value>& params, Port::StringMap<X::Value>& kwParams)
 	{
 		auto* pObj = GetObj();
-		if (pObj == nullptr || pObj->RT() == nullptr)
+		if (pObj == nullptr)
 		{
 			return Value();
 		}
 		Value v0;
 		pObj->Call(pObj->RT(), pObj->Parent(), params, kwParams, v0);
+		if (v0.IsObject())
+		{
+			v0.GetObj()->SetContext(pObj->RT(), pObj->Parent());
+		}
+		return v0;
+	}
+	Value Value::ObjCallEx(Port::vector<X::Value>& params,
+		Port::StringMap<X::Value>& kwParams, X::Value& trailer)
+	{
+		auto* pObj = GetObj();
+		if (pObj == nullptr || pObj->RT() == nullptr)
+		{
+			return Value();
+		}
+		Value v0;
+		pObj->CallEx(pObj->RT(), pObj->Parent(), params, kwParams, trailer, v0);
 		if (v0.IsObject())
 		{
 			v0.GetObj()->SetContext(pObj->RT(), pObj->Parent());
@@ -631,8 +720,11 @@ namespace X
 			if (pObj)
 			{
 				const char* retStrType = pObj->GetTypeString();
-				strType = std::string(retStrType);
-				g_pXHost->ReleaseString(retStrType);
+				if (retStrType)
+				{
+					strType = std::string(retStrType);
+					g_pXHost->ReleaseString(retStrType);
+				}
 			}
 			else
 			{
@@ -686,6 +778,33 @@ namespace X
 		return (t == ValueType::Object)
 			&& (x.obj != nullptr && x.obj->GetType() == ObjType::List);
 	}
+	bool Value::IsDict() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Dict);
+	}
+	bool Value::IsBin() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Binary);
+	}
+	bool Value::IsTensor() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Tensor);
+	}
+	bool Value::IsString() const
+	{ 
+		if (t == ValueType::Str)
+		{
+			return true;
+		}
+		else
+		{
+			return (t == ValueType::Object)
+				&& (x.obj != nullptr && x.obj->GetType() == ObjType::Str);
+		}
+	}
 	bool Value::ToBytes(XLStream* pStream)
 	{
 		return g_pXHost->ConvertToBytes(*this, pStream);
@@ -701,5 +820,22 @@ namespace X
 	void Value::setattr(const char* attrName, X::Value& attrVal) const
 	{
 		g_pXHost->SetAttr(*this, attrName, attrVal);
+	}
+	bool Value::SetPropValue(const char* propName, X::Value value)
+	{
+		X::Value propObj = QueryMember(propName);
+		if (propObj.IsObject())
+		{
+			XObj* pObj = propObj.GetObj();
+			if (pObj->GetType() == X::ObjType::Prop)
+			{
+				XProp* pProp = dynamic_cast<XProp*>(pObj);
+				if (pProp)
+				{
+					return pProp->Set(value);
+				}
+			}
+		}
+		return false;
 	}
 }

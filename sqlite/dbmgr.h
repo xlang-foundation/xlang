@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include <string>
 #include "xpackage.h"
@@ -5,6 +20,9 @@
 #include "singleton.h"
 #include "dbop.h"
 #include "sqlite/sqlite3.h"
+#include <unordered_map>
+#include <mutex>
+#include "utility.h"
 
 struct sqlite3;
 
@@ -12,6 +30,7 @@ namespace X
 {
 	namespace Database
 	{
+		std::string norm_db_path(X::XRuntime* rt, std::string dbPath, std::string curModulePath);
 		class SqliteDB
 		{
 			BEGIN_PACKAGE(SqliteDB)
@@ -59,11 +78,18 @@ namespace X
 			END_PACKAGE
 		bool Open();
 		public:
+			Cursor()
+			{
+			}
 			Cursor(std::string strSql)
 			{
 				m_sql = strSql;
 			}
 			~Cursor();
+			void SetSql(std::string strSql)
+			{
+				m_sql = strSql;
+			}
 			void SetDb(SqliteDB* db)
 			{
 				m_db = db;
@@ -76,13 +102,17 @@ namespace X
 			X::Value  GetCols();
 
 		};
+
 		class Manager :
 			public Singleton<Manager>
 		{
-			std::vector<Cursor*> m_cursors;
+			std::mutex m_mutexOpenDbs;
+			std::mutex m_mutexThreadDbStack;
+			//threadId->dbStack( item include padIndex+db)
+			std::unordered_map<unsigned long, std::vector<std::pair<int,X::Value>>> m_threadDbStack;
 			X::Value m_curModule;
-			SqliteDB m_db;
 			std::string m_curPath;
+
 			BEGIN_PACKAGE(Manager)
 				APISET().AddConst("OK", SQLITE_OK);
 				APISET().AddConst("ERROR", SQLITE_ERROR);
@@ -92,18 +122,117 @@ namespace X
 				APISET().AddConst("DONE", SQLITE_DONE);
 				APISET().AddFunc<0>("WritePadUseDataBinding",
 					&Manager::WritePadUseDataBinding);
-				APISET().AddRTFunc<2>("WritePad", &Manager::WritePad);
+				APISET().AddRTFunc<1>("UseDatabase",&Manager::UseDatabase);
+				APISET().AddVarFunc("WritePad", &Manager::WritePad);
 				APISET().AddClass<1, SqliteDB>("Database");
 				APISET().AddClass<1, Cursor>("Cursor");
 			END_PACKAGE
 			bool RunSQLStatement(X::XRuntime* rt, X::XObj* pContext,
-				std::string& strSql,X::Value& BindingDataList);
+				std::string& strSql,X::Value& BindingDataList,int pad_index);
 			bool LiteParseStatement(std::string& strSql,std::string& varName,
 				std::string& outSql);
 		public:
 			void SetModule(X::Value curModule)
 			{
 				m_curModule = curModule;
+			}
+			void PushThreadDbStack(int padIndex,X::Value db)
+			{
+				auto threadId = GetThreadID();
+				std::lock_guard<std::mutex> lock(m_mutexThreadDbStack);
+				m_threadDbStack[threadId].push_back(std::pair(padIndex,db));
+			}
+			X::Value GetThreadDB(X::XRuntime* rt,int padIndex)
+			{
+				X::Value moduleObj = rt->GetModuleObject();
+				//check last of stack per this thread
+				auto threadId = GetThreadID();
+				std::lock_guard<std::mutex> lock(m_mutexThreadDbStack);
+				auto it = m_threadDbStack.find(threadId);
+				if (it != m_threadDbStack.end())
+				{
+					auto& dbStack = it->second;
+					if (dbStack.size() > 0)
+					{
+						auto& last = dbStack.back();
+						if (last.first == padIndex)
+						{
+							return last.second;
+						}
+					}
+				}
+				X::Value tdb;
+				m_mutexOpenDbs.lock();
+				X::Value varDbs = moduleObj["getcache"]("sqllite-dbs");
+				if (varDbs.IsValid())
+				{
+					X::Dict dictDbs(varDbs);
+					tdb = dictDbs["default"];
+				}
+				m_mutexOpenDbs.unlock();
+				return tdb;
+			}
+			void PopThreadDbStack(int padIndex)
+			{
+				//from stack top to bottom if padIndex is found, pop it
+				//may have multiple db with same padIndex but need to continue pop
+				//if meet padIndex is not the same,break
+				auto threadId = GetThreadID();
+				std::lock_guard<std::mutex> lock(m_mutexThreadDbStack);
+				auto it = m_threadDbStack.find(threadId);
+				if (it != m_threadDbStack.end())
+				{
+					auto& dbStack = it->second;
+					if (!dbStack.empty())
+					{
+						auto it2 = dbStack.rbegin();
+						while (it2 != dbStack.rend())
+						{
+							if (it2->first == padIndex)
+							{
+								// Convert reverse iterator to forward iterator and erase the element
+								it2 = decltype(it2)(dbStack.erase(std::next(it2).base()));
+							}
+							else
+							{
+								break;  // Stop the loop if we find an element that doesn't match padIndex
+							}
+						}
+					}
+					if (dbStack.empty())
+					{
+						m_threadDbStack.erase(it);
+					}
+				}
+			}
+			X::Value UseDatabase(X::XRuntime* rt, X::XObj* pContext,std::string dbPath)
+			{
+				X::Value moduleObj = rt->GetModuleObject();
+				dbPath = norm_db_path(rt, dbPath, m_curPath);
+				m_mutexOpenDbs.lock();
+				X::Value varDbs = moduleObj["getcache"]("sqllite-dbs");
+				if (varDbs.IsInvalid())
+				{
+					varDbs = X::Dict();
+					moduleObj["addcache"]("sqllite-dbs", varDbs);
+				}
+				X::Value varDb = varDbs[dbPath.c_str()];
+				if (varDb.IsValid())
+				{
+					m_mutexOpenDbs.unlock();
+					return varDb;
+				}
+				m_mutexOpenDbs.unlock();
+
+				X::XPackageValue<SqliteDB> packDb;
+				SqliteDB* pDb = packDb.GetRealObj();
+				pDb->Open(dbPath);
+				X::Value valDb(packDb);
+				std::lock_guard<std::mutex> lock(m_mutexOpenDbs);
+				X::Dict dictDbs(varDbs);
+				dictDbs->Set(dbPath,valDb);
+				dictDbs->Set("default", valDb);
+				return valDb;
 			}
 			X::Value& GetModule() { return m_curModule; }
 			std::string GetCurrentPath()
@@ -125,8 +254,8 @@ namespace X
 			{
 				return true;
 			}
-			X::Value WritePad(X::XRuntime* rt, X::XObj* pContext,
-				X::Value& input, X::Value& BindingDataList);
+			bool WritePad(X::XRuntime* rt, XObj* pContext,
+				ARGS& params, KWARGS& kwParams, X::Value& retValue);
 		};
 	}
 }

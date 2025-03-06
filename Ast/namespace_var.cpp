@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "namespace_var.h"
 #include "dotop.h"
 
@@ -56,6 +71,23 @@ namespace X
 				//Obj()->Set(index, valRight);
 			}
 		}
+		// Helper function to recursively get the leftmost Var name
+		std::string NamespaceVar::GetLeftmostVarName(Expression* obj)
+		{
+			if (!obj)
+				return "";
+
+			if (obj->m_type == ObType::Var)
+			{
+				return dynamic_cast<Var*>(obj)->GetNameString();
+			}
+			else if (obj->m_type == ObType::Dot)
+			{
+				return GetLeftmostVarName(dynamic_cast<DotOp*>(obj)->GetL());
+			}
+
+			return ""; // Handle other types if needed
+		}
 		void NamespaceVar::ScopeLayout()
 		{
 			Scope* pMyScope = GetScope();
@@ -69,8 +101,7 @@ namespace X
 				}
 				else if (R->m_type == ObType::Dot)
 				{
-					auto* dotOp = dynamic_cast<DotOp*>(R);
-					strName = dynamic_cast<Var*>(dotOp->GetL())->GetNameString();
+					strName = GetLeftmostVarName(dynamic_cast<DotOp*>(R)->GetL());
 				}
 			}
 

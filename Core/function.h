@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "xlang.h"
 #include "object.h"
@@ -21,6 +36,18 @@ namespace X
 			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
+			virtual XObj* Clone() override
+			{
+				Function* pNewFunc = new Function();
+				pNewFunc->m_ownFunc = false;//we borrow the reference
+				pNewFunc->m_func = m_func;
+				pNewFunc->IncRef();
+				return dynamic_cast<XObj*>(pNewFunc);
+			}
+			virtual X::Value GetName() override
+			{
+				return m_func->GetFuncName();
+			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 			{
 				AST::Expression exp;
@@ -40,7 +67,7 @@ namespace X
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
-			virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override;
+			virtual int QueryMethod(const char* name, int* pFlags) override;
 			virtual bool GetIndexValue(int idx, Value& v) override;
 
 			std::string GetDoc()

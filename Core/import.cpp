@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "import.h"
 #include "manager.h"
 #include "pyproxyobject.h"
@@ -8,6 +23,9 @@
 #include "remote_object.h"
 #include "deferred_object.h"
 #include "op.h"
+#include "../Jit/md5.h"
+#include <filesystem>
+#include "extension_loader.h"
 
 namespace X
 {
@@ -28,59 +46,72 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	std::string& loadingModuleName)
 {
 	std::string loadDllName;
-	bool bHaveDll = false;
-	//search xlang.app folder first
-	std::vector<std::string> candiateFiles;
-	bool bRet = file_search(g_pXload->GetConfig().appPath,
-		LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
-	if (bRet && candiateFiles.size() > 0)
+	std::string loadingModuleFullName; 
+
+	//not with path, just add lib at linux and append ext name also
+	//we need to deal with the passing loadingModuleName already has lib as prefix
+	//maybe two cases: 1) user call import add lib as prefix for example: libXXXX
+	//2) like some remote call with passing the lib also has lib as prefix
+	//so we check here if it already has it, we do a search and if not find add lib to do again
+	//this only used for Linux, not windows
+	loadingModuleFullName = LibPrefix + loadingModuleName + ShareLibExt;
+#if !(WIN32)
+	std::string loadingModuleFullName2 = loadingModuleName + ShareLibExt;
+#endif
+	//Collect all candidate paths
+	std::vector<std::string> candidate_paths;
+	if (g_pXload->GetConfig().appPath)
 	{
-		loadDllName = candiateFiles[0];
-		bHaveDll = true;
+		candidate_paths.push_back(g_pXload->GetConfig().appPath);
 	}
-	//search xlang.engine folder first
-	if (!bHaveDll)
+	if (g_pXload->GetConfig().xlangEnginePath)
 	{
-		bRet = file_search(g_pXload->GetConfig().xlangEnginePath,
-			LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
-		if (bRet && candiateFiles.size() > 0)
-		{
-			loadDllName = candiateFiles[0];
-			bHaveDll = true;
-		}
+		candidate_paths.push_back(g_pXload->GetConfig().xlangEnginePath);
 	}
-	//check dll search path
-	if (!bHaveDll && g_pXload->GetConfig().dllSearchPath)
+	if (g_pXload->GetConfig().dllSearchPath)
 	{
 		std::string dllSearchPath(g_pXload->GetConfig().dllSearchPath);
 		std::vector<std::string> paths = split(dllSearchPath, '\n');
-		for (auto& p : paths)
+		for (auto& s : paths)
 		{
-			bRet = file_search(p, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
-			if (bRet && candiateFiles.size() > 0)
-			{
-				loadDllName = candiateFiles[0];
-				bHaveDll = true;
-				break;
-			}
+			candidate_paths.push_back(s);
 		}
 	}
-	if (!bHaveDll && !curModulePath.empty())
+	if (!curModulePath.empty())
 	{
-		bRet = file_search(curModulePath, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
-		if (bRet && candiateFiles.size() > 0)
-		{
-			loadDllName = candiateFiles[0];
-			bHaveDll = true;
-		}
+		candidate_paths.push_back(curModulePath);
 	}
-	if (!bHaveDll)
+	//Moudle's search path
+	if(rt && rt->M())
 	{
 		std::vector<std::string> searchPaths;
 		rt->M()->GetSearchPaths(searchPaths);
 		for (auto& pa : searchPaths)
 		{
-			bRet = file_search(pa, LibPrefix + loadingModuleName + ShareLibExt, candiateFiles);
+			candidate_paths.push_back(pa);
+		}
+	}
+	//now do search
+	bool bHaveDll = false;
+	for (auto& pa : candidate_paths)
+	{
+		std::vector<std::string> candiateFiles;
+		bool bRet = file_search(pa,loadingModuleFullName, candiateFiles);
+		if (bRet && candiateFiles.size() > 0)
+		{
+			loadDllName = candiateFiles[0];
+			bHaveDll = true;
+			break;
+		}
+	}
+#if !(WIN32)
+	//search for name without add prefix 'lib'
+	if (!bHaveDll)
+	{
+		for (auto& pa : candidate_paths)
+		{
+			std::vector<std::string> candiateFiles;
+			bool bRet = file_search(pa, loadingModuleFullName2, candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
 				loadDllName = candiateFiles[0];
@@ -89,22 +120,11 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 			}
 		}
 	}
+#endif
 	bool bOK = false;
 	if (bHaveDll)
 	{
-		typedef void (*LOAD)(void* pHost, X::Value module);
-		void* libHandle = LOADLIB(loadDllName.c_str());
-		if (libHandle)
-		{
-			LOAD load = (LOAD)GetProc(libHandle, "Load");
-			if (load)
-			{
-				ModuleObject* pModuleObj = new ModuleObject(rt->M());
-				Value curModule = Value(pModuleObj);
-				load((void*)g_pXHost, curModule);
-			}
-			bOK = true;
-		}
+		bOK = ExtensionLoader::I().Load(rt,loadDllName);
 	}
 	return bOK;
 }
@@ -120,6 +140,7 @@ bool endsWithDotX(const std::string& str)
 bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	std::string& curModulePath,
 	std::string& loadingModuleName,
+	X::ARGS& args, X::KWARGS& kwargs,
 	Module** ppSubModule)
 {
 	std::string loadXModuleFileName;
@@ -136,7 +157,11 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 		else
 		{
 			prefixPath = m_path;
-			ReplaceAll(prefixPath, ".", Path_Sep_S);
+			if (!m_pathHasQuotation)
+			{
+				//if not use from "path", then python style, replce . with /
+				ReplaceAll(prefixPath, ".", Path_Sep_S);
+			}
 		}
 	}
 	if (!bHaveX)
@@ -173,17 +198,24 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 	if (bHaveX)
 	{
 		std::string code;
+		std::filesystem::path pathModuleName(loadXModuleFileName);
+		loadXModuleFileName = pathModuleName.generic_string();
+
 		bOK = LoadStringFromFile(loadXModuleFileName, code);
 		if (bOK)
 		{
 			unsigned long long moduleKey = 0;
 			auto* pSubModule = Hosting::I().Load(loadXModuleFileName.c_str(),
-				code.c_str(), (int)code.size(), moduleKey);
+				code.c_str(), (int)code.size(), moduleKey, md5(code));
 			if (pSubModule)
 			{
 				X::Value v0;
 				std::vector<X::Value> passInParams;
-				bOK = Hosting::I().Run(pSubModule, v0, passInParams);
+				for (auto& arg : args)
+				{
+					passInParams.push_back(arg);
+				}
+				bOK = Hosting::I().RunWithKWArgs(pSubModule, v0, passInParams,kwargs);
 			}
 			*ppSubModule = pSubModule;
 		}
@@ -200,6 +232,7 @@ bool X::AST::Import::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
 		Value v0;
 		if (ExpExec(m_from,rt, action, pContext, v0, nullptr))
 		{
+			m_pathHasQuotation = m_from->PathHasQuotation();
 			m_path = v0.ToString();
 		}
 	}
@@ -334,10 +367,18 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 			}
 		}
 	}
+	ARGS params(0);
+	KWARGS kwParams;
+
+	if (im.params)
+	{
+		GetParamList(rt, im.params, params, kwParams);
+	}
+
 	//Check if it is X module
 	std::string curPath = rt->M()->GetModulePath();
 	Module* pSubModule = nullptr;
-	bool bOK = FindAndLoadXModule(rt, curPath, im.name, &pSubModule);
+	bool bOK = FindAndLoadXModule(rt, curPath, im.name, params, kwParams,&pSubModule);
 	if (bOK && pSubModule != nullptr)
 	{
 		ModuleObject* pModuleObj = new ModuleObject(pSubModule);
@@ -491,6 +532,24 @@ void X::AST::Import::ScopeLayout()
 			}
 		}
 	};
+	auto proc_Pair = [&](Expression* expr)
+	{
+		PairOp* pPair = dynamic_cast<PairOp*>(expr);
+		if (pPair->GetL())
+		{
+			auto name = (dynamic_cast<Var*>(pPair->GetL()))->GetNameString();
+			ImportInfo importInfo;
+			importInfo.name = name;
+			auto params = pPair->GetR();
+			if (params)
+			{
+				params->SetParent(m_parent);
+				params->ScopeLayout();
+				importInfo.params = params;
+			}
+			m_importInfos.push_back(importInfo);
+		}
+	};
 	if (m_imports)
 	{//{var|AsOp}*
 		switch (m_imports->m_type)
@@ -506,6 +565,9 @@ void X::AST::Import::ScopeLayout()
 			break;
 		case ObType::Deferred:
 			proc_Deferred(m_imports);
+			break;
+		case ObType::Pair:
+			proc_Pair(m_imports);
 			break;
 		default:
 			break;

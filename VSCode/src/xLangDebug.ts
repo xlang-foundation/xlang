@@ -1,4 +1,18 @@
-﻿
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 import {
 	Logger, logger,
 	LoggingDebugSession,
@@ -14,13 +28,26 @@ import { XLangRuntime, IRuntimeBreakpoint,RuntimeVariable, timeout, IRuntimeVari
 import { Subject } from 'await-notify';
 import * as base64 from 'base64-js';
 import * as vscode from 'vscode';
-import * as path from 'path';
+//import * as path from 'path';
 import * as net from 'net';
-import * as cp from 'child_process';
+//import * as cp from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as crypto from 'crypto';
 
 const ipPortRegex = /^((localhost)|((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)):([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/i
 const ipRegex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})$/;
 const ipHostPortRegex = /^(?:(?:\d{1,3}\.){3}\d{1,3}|\[(?:[a-fA-F0-9:]+)\]|(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+|\w+):\d{1,5}$/;
+
+function isPathMatchOs(path: string): boolean {
+    const platform = os.platform();
+    if (platform === 'win32') {
+        return /^[a-zA-Z]:[\\\/].*/.test(path);
+    } else if (platform === 'linux' || platform === 'darwin') {
+        return /^[\/].*/.test(path);
+    }
+    return false;
+}
 
 /**
  * This interface describes the xLang specific launch attributes
@@ -43,6 +70,22 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 interface IAttachRequestArguments extends ILaunchRequestArguments { }
 
+interface SrcRelPath {
+	relPath: string;
+	md5: string;
+}
+
+function calMD5(str: string): string {
+    const hash = crypto.createHash('md5');
+    hash.update(str);
+    return hash.digest('hex');
+}
+
+function calFileMD5(filePath: string): string {
+    let content = fs.readFileSync(filePath, 'utf-8');
+	content = content.replace(/\r\n/g, '\n');
+    return calMD5(content);
+}
 
 export class XLangDebugSession extends LoggingDebugSession {
 
@@ -71,10 +114,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private _mapFrameIdThreadId : Map<Number, Number> = new Map();
 
-	private _srcList : string[] = [];
+	private _srcMd5List : string[] = [];
 
-	private _xlangProcess;
+	private _srcEntryPath : string;
+	private _mapSrcMd5 = new Map<string, string>();
+	private _mapMd5Src = new Map<string, string>();
 
+	//private _xlangProcess;
+	private _serverEnded : boolean = false;
 	public getRuntime(){
 		return this._runtime;
 	}
@@ -144,25 +191,28 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this.sendEvent(e);
 		});
 		this._runtime.on('end', () => {
+			this._serverEnded = true;
 			this.sendEvent(new TerminatedEvent());
 		});
-		this._runtime.on('breakpointState', (path, line, actualLine) => {
-			path = path.replaceAll('/', '\\');
+		this._runtime.on('breakpointState', (md5, line, actualLine) => {
 			if (actualLine === -1){ // failed
-				this.sendEvent(new BreakpointEvent('changed', {verified: false, id: this.getBreakpointId(path, line, 0)}));
+				this.sendEvent(new BreakpointEvent('changed', {verified: false, id: this.getBreakpointIdMd5(md5, line, 0)}));
 			}else{
-				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: this.getBreakpointId(path, line, 0), line: actualLine}));
+				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: this.getBreakpointIdMd5(md5, line, 0), line: actualLine}));
 			}
+		});
+		this._runtime.on('moduleLoaded', (path, md5) => {
+			this._runtime.addOutput(`module(file has breakpoints) loaded: "${md5}"   "${path}"`);
 		});
 		this._runtime.on('xlangStarted', (started) => {
 			this._xlangStarted.notifyValue = started;
 			this._xlangStarted.notify();
 		});
 	}
-	// use src path index， origin line and column to make a unique id 
-	private getBreakpointId(path :string, line : number, column: number) : number
+	// use src md5 index， origin line and column to make a unique id 
+	private getBreakpointIdMd5(md5 :string, line : number, column: number) : number
 	{
-		let srcIdx = this._srcList.indexOf(path);
+		let srcIdx = this._srcMd5List.indexOf(md5);
 		return srcIdx * 10000000 + line * 1000 + column;
 	}
 
@@ -272,13 +322,18 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
 		console.log(`disconnectRequest suspend: ${args.suspendDebuggee}, terminate: ${args.terminateDebuggee}`);
-		if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart))
-		{
+		if (this._serverEnded)
 			this._runtime.close(true);
-		}
 		else
 		{
-			this._runtime.close(false);
+			if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart))
+			{
+				this._runtime.close(true);
+			}
+			else
+			{
+				this._runtime.close(false);
+			}
 		}
 		
 		this.sendResponse(response);
@@ -290,6 +345,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async attachRequest(response: DebugProtocol.AttachResponse, args: IAttachRequestArguments) {
+		this._runtime.addOutput("--------------------------------------------------");
 		this._isLaunch = false;
 		this._runtime.runMode = 'attach';
 		this._runtime.serverAddress = args.dbgIp;
@@ -298,9 +354,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
+		this._runtime.addOutput("--------------------------------------------------");
 		let port = await this.getValidPort();
 		let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
-		this._xlangProcess = cp.spawn(xlangBin, ['-event_loop', '-dbg', '-enable_python', `-port ${port}`], { shell: true, detached: true });
+		// launch xlang in vscode's terminal
+		const terminal = vscode.window.createTerminal(`XLang server ${port}`);
+	    terminal.show();
+		terminal.sendText(`${xlangBin} -event_loop -dbg -enable_python -port ${port}`);
+
 		this._runtime.serverAddress = "localhost";
 		this._runtime.serverPort = port;
 		this._isLaunch = true;
@@ -310,21 +371,33 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private async startDebug(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments)
 	{
-		this._runtime.checkStarted();
+		this._mapSrcMd5.clear();
+		this._mapMd5Src.clear();
+		this._srcEntryPath = this._runtime.normalizePathAndCasing(args.program);
+		let md5 = calFileMD5(this._srcEntryPath);
+		this._runtime.checkStarted(this._srcEntryPath, md5);
 		await this._xlangStarted.wait();
 		if (!this._xlangStarted.notifyValue)
 		{
-			await vscode.window.showErrorMessage(`can not connect to a xlang dbg server at ${this._runtime.serverAddress}:${this._runtime.serverPort} debugging stopped`, { modal: true }, "ok");
+			await vscode.window.showErrorMessage(`can not connect to a xlang dbg server at ${this._runtime.serverAddress}:${this._runtime.serverPort} debugging stopped`, { modal: true }, "OK");
 			this.sendResponse(response);
 			this.sendEvent(new TerminatedEvent());
 			return;
 		}
-		
-		//todo: if attach mode, enable xlang debug state
-
+		this._serverEnded = false;
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
-		await this._runtime.loadSource(args.program);
+		this._mapSrcMd5.set(this._srcEntryPath, md5);
+		this._mapMd5Src.set(md5, this._srcEntryPath);
+		this._runtime.addOutput(`load entry source file on server: "${md5}"   "${this._srcEntryPath}"`);
+		let retVal = await this._runtime.loadSource(this._srcEntryPath);
+		if (retVal == -1) // is run file
+		{
+			this.sendResponse(response);
+			//this.sendEvent(new TerminatedEvent());
+			vscode.window.showInformationMessage(`file "${this._runtime.runFile}" is running`, { modal: true }, "OK");
+			return;
+		}
 		this.sendEvent(new InitializedEvent());
 		// wait configuration has finished (and configurationDoneRequest has been called)
 		await this._configurationDone.wait();
@@ -351,24 +424,41 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
-		const path = (args.source.path as string).toLowerCase();
+		const path = this._runtime.normalizePathAndCasing(args.source.path as string);
 		//const clientLines = args.lines || [];
 		const clientLines = args.breakpoints?.map(col => {return col.line;}) || [];
-		let srcIdx = this._srcList.indexOf(path);
+		let bNew = false
+		let md5 = "";
+		if (!this._mapSrcMd5.has(path))
+		{
+			md5 = calFileMD5(path);
+			console.log(path, "  ", md5);
+			this._mapSrcMd5.set(path, md5);
+			this._mapMd5Src.set(md5, path);
+			bNew = true;//this._runtime.addOutput(`breakpoint source file: "${md5}"   "${path}"`);
+		}
+		else
+		{
+			md5 = this._mapSrcMd5.get(path) || "";
+		}
+
+		let srcIdx = this._srcMd5List.indexOf(md5);
 		if ( srcIdx < 0){
-			this._srcList.push(path);
-			srcIdx = this._srcList.length - 1;
+			this._srcMd5List.push(md5);
+			srcIdx = this._srcMd5List.length - 1;
 		}
 		
-		this._runtime.setBreakPoints(path, clientLines, (lines) => {
+		this._runtime.setBreakPoints(path, md5, clientLines, (lines) => {
 			let actualBreakpoints: Breakpoint[] = [];
+			let bModuleLoaded : boolean = true;
 			for(let i = 0; i < lines.length; i += 2)
 			{
 				let bp: Breakpoint;
 				let l = lines[i]; // origin line
 				let al = lines[i + 1]; // actual line
-				let id = this.getBreakpointId(path, l, 0); // breakpoint id
+				let id = this.getBreakpointIdMd5(md5, l, 0); // breakpoint id
 				if (al === -2){ //'pending'
+					bModuleLoaded = false;
 					bp = new Breakpoint(false, l);
 					bp.setId(id);
 				}
@@ -381,6 +471,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 					bp.setId(id);
 				}
 				actualBreakpoints.push(bp);
+			}
+			if (bNew)
+			{
+				if (bModuleLoaded === false)
+					this._runtime.addOutput(`source file has breakpoints: "${md5}"   "${path}" is not loaded on server`);
+				else
+					this._runtime.addOutput(`source file has breakpoints: "${md5}"   "${path}" has loaded on server`);
 			}
 			response.body = {
 				breakpoints: actualBreakpoints
@@ -488,7 +585,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			response.body = {
 				stackFrames: stk.frames.map((f, ix) => {
 					this._mapFrameIdThreadId.set(f.id, threadId);
-					const sf: DebugProtocol.StackFrame = new StackFrame(f.id, f.name, this.createSource(f.file), this.convertDebuggerLineToClient(f.line));
+					const sf: DebugProtocol.StackFrame = new StackFrame(f.id, f.name, this.createSourceMd5(f.md5, f.file), this.convertDebuggerLineToClient(f.line));
 					if (typeof f.column === 'number') {
 						sf.column = this.convertDebuggerColumnToClient(f.column);
 					}
@@ -1103,6 +1200,40 @@ export class XLangDebugSession extends LoggingDebugSession {
 		return new Source(basename(filePath), this.convertDebuggerPathToClient(filePath), undefined, undefined, 'xLang-adapter-data');
 	}
 
+	private createSourceMd5(md5: string, src_path: string): Source {
+		let path = "";
+		if (this._mapMd5Src.has(md5))
+			path = this._mapMd5Src.get(md5) || "";
+		if (path === "")
+		{
+			if (isPathMatchOs(src_path))
+			{
+				if (this._mapSrcMd5.has(src_path))
+				{
+					let local_md5 = this._mapSrcMd5.get(src_path);
+					this._runtime.addOutput(`source file "${src_path}" on server md5 not match, local: "${local_md5}", server: "${md5}"`);
+				}
+				else
+				{
+					let exists = fs.existsSync(src_path);
+					if (exists)
+					{
+						let local_md5 = calFileMD5(src_path);
+						if (local_md5 === md5)
+							path = src_path;
+						else
+							this._runtime.addOutput(`source file "${src_path}" on server md5 not match, local: "${local_md5}", server: "${md5}"`);
+					}
+					else
+						this._runtime.addOutput(`source file "${src_path}" on server not exists on local`);
+				}
+			}
+			else
+				this._runtime.addOutput(`Current os is not same with server, please open source file accroding to "${src_path}" and add breakpoints first`);		
+		}
+		return new Source(basename(path), this.convertDebuggerPathToClient(path), undefined, undefined, 'xLang-adapter-data');
+	}
+
 	private async getValidPort() : Promise<number>
 	{
 		let port : number = 35000;
@@ -1133,4 +1264,3 @@ export class XLangDebugSession extends LoggingDebugSession {
         });
 	}
 }
-

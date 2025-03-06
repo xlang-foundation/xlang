@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 
 //ABI check,string used here just for local usage, not cross ABI
@@ -20,9 +35,9 @@ enum class ValueType
 	Value,
 };
 
-#define ToDouble(v) \
+#define ValueToDouble(v) \
 	((v.t == ValueType::Int64) ? (double)v.x.l:((v.t == ValueType::Double)?v.x.d:0.0))
-#define ToInt64(v) \
+#define ValueToInt64(v) \
 	((v.t == ValueType::Int64) ? v.x.l:((v.t == ValueType::Double)?(long long)v.x.d:0))
 #define ToStr(p,size) \
 	std::string((char*)p,(size_t)size)
@@ -39,10 +54,10 @@ switch (t)\
 case ValueType::None:\
 	break; \
 case ValueType::Int64:\
-	x.l op ToInt64(r); \
+	x.l op ValueToInt64(r); \
 	break; \
 case ValueType::Double:\
-	x.d op ToDouble(r); \
+	x.d op ValueToDouble(r); \
 	break; \
 case ValueType::Str:\
 	ChangeToStrObject(); \
@@ -65,10 +80,10 @@ void Value::operator op (const Value & r)\
 	case ValueType::None:\
 		break;\
 	case ValueType::Int64:\
-		x.l op ToInt64(r);\
+		x.l op ValueToInt64(r);\
 		break;\
 	case ValueType::Double:\
-		x.d op ToDouble(r);\
+		x.d op ValueToDouble(r);\
 		break;\
 	case ValueType::Str:\
 		ChangeToStrObject();\
@@ -97,10 +112,10 @@ bool operator op (const Value& r) const\
 		bRet = (r.t op ValueType::None);\
 		break;\
 	case ValueType::Int64:\
-		bRet = (x.l op ToInt64(r));\
+		bRet = (x.l op ValueToInt64(r));\
 		break;\
 	case ValueType::Double:\
-		bRet = (x.d op ToDouble(r));\
+		bRet = (x.d op ValueToDouble(r));\
 		break;\
 	case ValueType::Object:\
 		bRet = (obj_cmp((Value*)&r) op 0);\
@@ -205,6 +220,7 @@ public:
 	FORCE_INLINE Value(ValueType t0)
 	{
 		t = t0;
+		x.l = 0;
 	}
 	FORCE_INLINE Value(bool b)
 	{//use 1 as true and 0 as false, set flag to -1
@@ -302,6 +318,10 @@ public:
 		AssignObject(p, AddRef);
 	}
 	Value(std::string& s);
+	Value(const std::string& s)
+	{
+		SetString((std::string&)s);
+	}
 	Value(std::string&& s);
 
 	int obj_cmp(Value* r) const;
@@ -309,6 +329,14 @@ public:
 	{
 		t = ValueType::Object;
 		x.obj = p;
+	}
+	FORCE_INLINE bool contains(const char* key)
+	{
+		return QueryMember(key).IsValid();
+	}
+	FORCE_INLINE bool contains(const std::string& key)
+	{
+		return QueryMember(key.c_str()).IsValid();
 	}
 	bool Clone();
 	bool ChangeToStrObject();
@@ -339,10 +367,10 @@ public:
 		switch (t)
 		{
 		case ValueType::Int64:
-			x.l = ToInt64(v);
+			x.l = ValueToInt64(v);
 			break;
 		case ValueType::Double:
-			x.d = ToDouble(v);
+			x.d = ValueToDouble(v);
 			break;
 		case ValueType::Str:
 			x.str = v.x.str;
@@ -473,6 +501,10 @@ public:
 		return (t == ValueType::Object) && (x.obj != nullptr);
 	}
 	bool IsList() const;
+	bool IsDict() const;
+	bool IsBin() const;
+	bool IsTensor() const;
+	bool IsString() const;
 	FORCE_INLINE bool IsTrue()
 	{
 		return !IsZero();
@@ -526,10 +558,10 @@ public:
 		switch (t)
 		{
 		case ValueType::Int64:
-			x.l = ToInt64(v);
+			x.l = ValueToInt64(v);
 			break;
 		case ValueType::Double:
-			x.d = ToDouble(v);
+			x.d = ValueToDouble(v);
 			break;
 		case ValueType::Str:
 			x.str = v.x.str;
@@ -581,12 +613,12 @@ public:
 				}
 				else
 				{
-					x.l += ToInt64(v);
+					x.l += ValueToInt64(v);
 				}
 			}
 			break;
 			case ValueType::Double:
-				x.d += ToDouble(v);
+				x.d += ValueToDouble(v);
 				break;
 			case ValueType::Str:
 				x.str = v.x.str;
@@ -602,7 +634,7 @@ public:
 
 	Value ObjCall(Port::vector<X::Value>& params);
 	Value ObjCall(Port::vector<X::Value>& params,Port::StringMap<X::Value>& kwParams);
-
+	Value ObjCallEx(Port::vector<X::Value>& params, Port::StringMap<X::Value>& kwParams, X::Value& trailer);
 	template<typename... VarList>
 	FORCE_INLINE Value operator()(VarList... args)
 	{
@@ -623,11 +655,12 @@ public:
 	{
 		if (!IsObject())
 		{
-			return Value();
+			return *this;
 		}
 		Port::vector<X::Value> params(0);
 		return ObjCall(params);
 	}
+	bool SetPropValue(const char* propName, X::Value value);
 	Value GetItemValue(long long idx);
 	Value GetObjectValue(Port::vector<X::Value>& IdxAry);
 	template<typename... VarList>
@@ -650,6 +683,23 @@ public:
 	{
 		return QueryMember(key);
 	}
+	FORCE_INLINE double ToDouble()
+	{
+		return double(*this);
+	}
+	FORCE_INLINE int ToInt()
+	{
+		return int(*this);
+	}
+	FORCE_INLINE long long ToLongLong()
+	{
+		return (long long)(*this);
+	}
+	FORCE_INLINE bool ToBool()
+	{
+		return bool(*this);
+	}
+
 	//ARITH_OP(-= );
 	ARITH_OP(*= );
 	ARITH_OP(/= );
@@ -666,6 +716,7 @@ public:
 	Value getattr(const char* attrName) const;
 	void setattr(const char* attrName, X::Value& attrVal) const;
 	long long Size();
+	inline long long size() { return Size(); }
 };
 template<typename T>
 class V:

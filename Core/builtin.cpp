@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "builtin.h"
 
 #include "exp.h"
@@ -29,7 +44,6 @@
 #include "metascope.h"
 #include "attribute.h"
 #include "devops.h"
-#include "msgthread.h"
 #include "runtime.h"
 #include "pyproxyobject.h"
 #include "moduleobject.h"
@@ -50,6 +64,9 @@
 #include "glob.h"
 #include "dbg.h"
 #include "range.h"
+#include "error_obj.h"
+#include "MsgService.h"
+#include "../Jit/md5.h"
 
 namespace X
 {
@@ -144,7 +161,7 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 				IsRenderByPrimtive = pObj->Call(outputPrimitive.rt,	nullptr, params_p, kwargs_p, retValue);
 			}
 		}
-		int iExeNum = X::Hosting::I().GetInteractiveExeNum();
+		int iExeNum = X::Hosting::I().GetExeNum();
 		if (iExeNum != -1) //
 		{
 			X::KWARGS kw;
@@ -168,16 +185,17 @@ bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	return true;
 }
-bool U_Input(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+bool U_Input(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
 	std::string in;
-	std::cin >> in;
+	std::getline(std::cin, in);
 	retValue = X::Value(in);
 	return true;
 }
+
 bool U_Alert(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -208,25 +226,30 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		return true;
 	}
 	std::string code;
+	std::string codeMd5;
 	std::string runMode;
 	bool loadFromFile = true;
-	if (params.size() == 3) // launch or attach with source code
+	if (params.size() == 3) // attach with source code (remote server)
 	{
 		runMode = params[1].ToString();
-		code = params[2].ToString();
+		codeMd5 = params[2].ToString();
+		code = X::g_pXHost->GetAttr(X::Value(), codeMd5.c_str()).ToString();
 		loadFromFile = false;
 	}
-	else if (params.size() == 2) // launch or attach without source code
+	std::vector<X::AST::Module*> findModules;
+	if (!runMode.empty())
 	{
-		runMode = params[1].ToString();
+		X::G::I().SetTrace(X::Dbg::xTraceFunc);// enable debug
+		if (!codeMd5.empty())
+			findModules = X::Hosting::I().QueryModulesByMd5(codeMd5);
+		else
+			findModules = X::Hosting::I().QueryModulesByPath(fileName);
 	}
+	else
+		findModules = X::Hosting::I().QueryModulesByPath(fileName);
 
-	if (!runMode.empty()) // enable debug
-		X::G::I().SetTrace(X::Dbg::xTraceFunc);
-
-	std::vector<X::AST::Module*> modules = X::Hosting::I().QueryModulesByPath(fileName);
 	unsigned long long moduleKey = 0;
-	if (/*runMode.empty() || */modules.size() == 0)
+	if (findModules.size() == 0)
 	{
 		if (loadFromFile)
 		{
@@ -234,15 +257,15 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			code = std::string(std::istreambuf_iterator<char>(moduleFile), std::istreambuf_iterator<char>());
 			moduleFile.close();
 		}
-		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey);
+		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey, md5(code));
 		retValue = X::Value(moduleKey);
 	}
 	else
 	{
 		if (!runMode.empty())
-			retValue = X::Value(0); // for vscode debug extension
+			retValue = X::Value(0); // to vscode, module is loaded previously
 		else
-			retValue = X::Value((unsigned long long)modules[0]);
+			retValue = X::Value((unsigned long long)findModules[0]);
 	}
 	
 	return true;
@@ -259,7 +282,7 @@ bool U_LoadS(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	std::string code = params[0].ToString();
 	unsigned long long moduleKey = 0;
-	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey);
+	X::Hosting::I().Load("default", code.c_str(), (int)code.size(), moduleKey, md5(code));
 	retValue = X::Value(moduleKey);
 	return true;
 }
@@ -454,23 +477,12 @@ bool U_Sleep(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 {
 	bool bOK = true;
 	long long t = 0;
-	if (pContext == nullptr)
+	if (params.size() > 0)
 	{
-		if (params.size() > 0)
-		{
-			t = params[0].GetLongLong();
-		}
-		else
-		{
-			auto it = kwParams.find("time");
-			if (it)
-			{
-				t = it->val.GetLongLong();
-			}
-		}
+		t = params[0].GetLongLong();
 	}
 	else
-	{//must put into kwargs with time=t
+	{
 		auto it = kwParams.find("time");
 		if (it)
 		{
@@ -478,19 +490,7 @@ bool U_Sleep(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		}
 	}
 	MS_SLEEP((int)t);
-	if (pContext)
-	{//with a function, means after sleep, call this function
-		X::Data::Function* pFuncObj = dynamic_cast<X::Data::Function*>(pContext);
-		if (pFuncObj)
-		{
-			X::AST::Func* pFunc = pFuncObj->GetFunc();
-			bOK = pFunc->Call(rt, nullptr, params, kwParams, retValue);
-		}
-	}
-	else
-	{
-		retValue = X::Value(bOK);
-	}
+
 	return bOK;
 }
 bool U_Time(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
@@ -626,7 +626,18 @@ bool U_ObjectUnlock(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	return true;
 }
 namespace X {
-void Builtin::Cleanup()
+
+	static Builtin* g_pBuiltin = nullptr;
+	Builtin& Builtin::I()
+	{
+		if (g_pBuiltin == nullptr)
+		{
+			g_pBuiltin = new Builtin();
+		}
+		return *g_pBuiltin;
+	}
+
+	void Builtin::Cleanup()
 {
 	m_lock.Lock();
 	for (auto it : m_Funcs)
@@ -1373,15 +1384,15 @@ bool U_LRpc_Listen(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	if (port != 0)
 	{
-		MsgThread::I().SetPort(port);
+		IPC::MsgService::I().SetPort(port);
 	}
 	if (params.size() > 1 && params[1].IsTrue())
 	{//block mode
-		MsgThread::I().run();
+		IPC::MsgService::I().run();
 	}
 	else
 	{
-		X::MsgThread::I().Start();
+		IPC::MsgService::I().Start();
 	}
 #endif
 	return true;
@@ -1515,7 +1526,76 @@ bool U_CreateBaseObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(pBaseObj);
 	return true;
 }
+bool U_CreateErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	int code;
+	std::string msg;
+	if (params.size() == 1)
+	{
+		code = (int)params[0];
+	}
+	else if (params.size() >= 2)
+	{
+		code = (int)params[0];
+		msg = params[1].ToString();
+	}
+	X::Data::Error* pObj = new X::Data::Error(code, msg);
+	retValue = X::Value(pObj);
+	return true;
+}
 
+bool U_Hash(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		retValue = params[0].Hash();
+		return true;
+	}
+	else if (pContext)
+	{
+		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
+		retValue = pObj->Hash();
+		return true;
+	}
+}
+
+bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 1)
+	{
+		auto& v = params[0];
+		if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::Error)
+		{
+			retValue = X::Value(true);
+		}
+		else
+		{
+			retValue = X::Value(false);
+		}
+	}
+	else if (pContext)
+	{
+		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
+		if (pObj->GetType() == X::ObjType::Error)
+		{
+			retValue = X::Value(true);
+		}
+		else
+		{
+			retValue = X::Value(false);
+		}
+	}
+	return true;
+}
 bool U_CreateComplexObject(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1694,7 +1774,25 @@ bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	}
 	return true;
 }
-bool U_CreateDict(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+bool U_CreateList(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	bool bOK = false;
+	if (params.size() > 0)
+	{
+		//TODO: add code to impl same list(...) as Python
+	}
+	else
+	{
+		auto* pList = new X::Data::List();
+		retValue = X::Value(pList);
+		bOK = true;
+	}
+	return bOK;
+}
+bool U_CreateDict(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
@@ -1798,6 +1896,59 @@ bool U_CreateTensor(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 #endif
 	return bOK;
 }
+bool U_IsInstance(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if(params.size() < 2)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	auto& obj = params[0];
+	X::Data::TypeObject typeObj(obj);
+	auto& varType = params[1];
+	auto IsFuncType = [](auto& typeObj,X::Value& varType,bool& isMyType)->bool {
+		if (varType.GetObj()->GetType() == X::ObjType::Function)
+		{
+			X::Func func(varType);
+			auto funcName = func->GetName().ToString();
+			isMyType = typeObj.IsType(funcName);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	};
+
+	if (varType.IsObject())
+	{
+		//we use function name in the Builtin as the type name for
+		//int,float,dict,list etc
+		bool isMyType = false;
+		if(IsFuncType(typeObj,varType,isMyType))
+		{
+			retValue = X::Value(isMyType);
+			return true;
+		}
+		else if(varType.GetObj()->GetType() == X::ObjType::List)
+		{
+			X::List list(varType);
+			for (auto l : *list)
+			{
+				if(IsFuncType(typeObj,l, isMyType))
+				{
+					retValue = X::Value(isMyType);
+					return true;
+				}
+			}
+		}
+	}
+	retValue = X::Value(false);
+	return false;
+}
 
 bool Builtin::RegisterInternals()
 {
@@ -1807,7 +1958,7 @@ bool Builtin::RegisterInternals()
 #if not defined(BARE_METAL)
 	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
 	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
-	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml");
+	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml0");
 	X::RegisterPackage<X::HtmlWrapper>(m_libName.c_str(), "html");
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
@@ -1868,16 +2019,21 @@ bool Builtin::RegisterInternals()
 	Register("type", (X::U_FUNC)U_GetType, params);
 	Register("len", (X::U_FUNC)U_GetLength, params);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
+	Register("error", (X::U_FUNC)U_CreateErrorObject, params);
+	Register("is_error", (X::U_FUNC)U_IsErrorObject, params, "is_error", true);
 	Register("event_loop", (X::U_FUNC)U_Event_Loop, params);
 	Register("complex", (X::U_FUNC)U_CreateComplexObject, params);
 	Register("set", (X::U_FUNC)U_CreateSetObject, params);
 	Register("struct", (X::U_FUNC)U_CreateStructObject, params);
 	Register("taskpool", (X::U_FUNC)U_CreateTaskPool, params,"taskpool(max_task_num=num,run_in_ui=true|false) or taskpool(task_num)");
+	Register("list", (X::U_FUNC)U_CreateList, params, "l = list()|list(vars)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");
 #if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 #endif
+	Register("isinstance", (X::U_FUNC)U_IsInstance, params);
+	Register("hash", (X::U_FUNC)U_Hash, params, "hash(obj) or obj.hash()", true);
 	return true;
 }
 
@@ -1885,7 +2041,7 @@ int Builtin::AddMember(PackageMemberType type, const char* name, const char* doc
 {
 	return 0;
 }
-int Builtin::QueryMethod(const char* name, bool* pKeepRawParams)
+int Builtin::QueryMethod(const char* name, int* pFlags)
 {
 	AutoLock autoLock(m_lock);
 	auto it = m_mapNameToIndex.find(name);

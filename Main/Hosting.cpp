@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "Hosting.h"
 #include "parser.h"
 #include "gthread.h"
@@ -7,7 +22,9 @@
 #include "exp_exec.h"
 #include "port.h"
 #include "dbg.h"
-#include <algorithm>
+#include "../Jit/md5.h"
+#include <filesystem>
+
 
 namespace X
 {
@@ -153,7 +170,7 @@ namespace X
 		return X::Value(pModuleObj);
 	}
 	AST::Module* Hosting::Load(const char* moduleName,
-		const char* code, int size, unsigned long long& moduleKey)
+		const char* code, int size, unsigned long long& moduleKey, const std::string& md5)
 	{
 		Parser parser;
 		if (!parser.Init())
@@ -162,17 +179,27 @@ namespace X
 		}
 		//prepare top module for this code
 		AST::Module* pTopModule = new AST::Module();
-		std::string strModuleName(moduleName);
+		std::filesystem::path modulePath(moduleName);
+		// Check if the moduleName is not an absolute path, and resolve it
+		if (!modulePath.is_absolute())
+		{
+			modulePath = std::filesystem::absolute(modulePath);
+		}
+		std::string strModuleName = modulePath.string();
+		parser.SetModuleName(strModuleName);
 		pTopModule->SetModuleName(strModuleName);
+		pTopModule->SetMd5(md5);
 		pTopModule->ScopeLayout();
 		parser.Compile(pTopModule,(char*)code, size);
 
 		strModuleName = pTopModule->GetModuleName();
-		std::transform(strModuleName.begin(), strModuleName.end(), strModuleName.begin(),
-			[](unsigned char c) { return std::tolower(c); });
+		std::filesystem::path pathModuleName(strModuleName);
+		strModuleName = pathModuleName.generic_string();
 		// if source file has breakpoint data, set breakpoint for this new created module
-		std::vector<int> lines = G::I().GetBreakPoints(strModuleName);
-		bool bValid = G::I().IsBreakpointValid(strModuleName); // Whether the source file's breakpoints have been checked 
+		std::vector<int> lines = G::I().GetBreakPointsMd5(md5);
+		if (lines.size() > 0)
+			SendModuleLoaded(md5, strModuleName);
+		bool bValid = G::I().IsBreakpointValidMd5(md5); // Whether the source file's breakpoints have been checked 
 		for (const auto& l : lines)
 		{
 			int al = pTopModule->SetBreakpoint(l, (int)GetThreadID());
@@ -180,13 +207,13 @@ namespace X
 			if (!bValid) // if source file has not been checked, return breakpoint's state to debugger
 			{
 				if (al >= 0)
-					SendBreakpointState(strModuleName, l, al);
+					SendBreakpointState(md5, l, al);
 				else
-					SendBreakpointState(strModuleName, l, -1); // failed state
+					SendBreakpointState(md5, l, -1); // failed state
 			}
 		}
 		if (!bValid)
-			G::I().AddBreakpointValid(strModuleName); // add source file path to the checked list
+			G::I().AddBreakpointValidMd5(md5);
 
 
 		moduleKey = AddModule(pTopModule);
@@ -242,13 +269,15 @@ namespace X
 	}
 	bool Hosting::Run(AST::Module* pTopModule, X::Value& retVal,
 		std::vector<X::Value>& passInParams,
-		bool stopOnEntry, bool keepModuleWithRuntime)
+		bool stopOnEntry, bool keepModuleWithRuntime, bool noDebug)
 	{
 		pTopModule->SetArgs(passInParams);
 		std::string name("main");
-		if (pTopModule->GetModuleName() != "devops_run.x")
-			std::string dname = pTopModule->GetModuleName();
 		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(),nullptr);
+		if (noDebug)
+		{
+			pRuntime->SetNoDbg(true);
+		}
 		AST::Module* pOldModule = pRuntime->M(); 
 		pTopModule->SetRT(pRuntime);
 		pRuntime->SetM(pTopModule);
@@ -280,20 +309,90 @@ namespace X
 		{
 			retVal = v;
 		}
+		pRuntime->PopFrame(); //move from line 314, we think this module's run finished, 
+		//need to popup its frame,if not, will leave a dirty stack here 
 		if (!keepModuleWithRuntime)
 		{
-			pRuntime->PopFrame();
+			//pRuntime->PopFrame();
 			if (pOldModule)
+			{
 				pRuntime->SetM(pOldModule);
+			}
 			else
-			delete pRuntime;
+			{
+				delete pRuntime;
+			}
+		}
+
+		return bOK;
+	}
+	bool Hosting::RunWithKWArgs(AST::Module* pTopModule, X::Value& retVal,
+		std::vector<X::Value>& passInParams, X::KWARGS& kwargs,
+		bool stopOnEntry, bool keepModuleWithRuntime, bool noDebug)
+	{
+		pTopModule->SetArgs(passInParams);
+		for (auto& it : kwargs)
+		{
+			std::string name(it.key);
+			pTopModule->AddModuleVariable(name, it.val);
+		}
+		std::string name("main");
+		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(), nullptr);
+		if (noDebug)
+		{
+			pRuntime->SetNoDbg(true);
+		}
+		AST::Module* pOldModule = pRuntime->M();
+		pTopModule->SetRT(pRuntime);
+		pRuntime->SetM(pTopModule);
+		G::I().BindRuntimeToThread(pRuntime);
+
+		if (stopOnEntry || (!pRuntime->m_bNoDbg && G::I().GetTrace()))
+		{
+			pTopModule->SetDebug(true, pRuntime);
+			if (stopOnEntry && !pOldModule)
+				pRuntime->SetDbgType(X::dbg::Step, dbg::None);
+			else
+				pRuntime->SetDbgType(X::dbg::Continue, dbg::Continue);
+		}
+
+		AST::StackFrame* pModuleFrame = pTopModule->GetStack();
+		pModuleFrame->SetLine(pTopModule->GetStartLine());
+		pTopModule->AddBuiltins(pRuntime);
+		pRuntime->PushFrame(pModuleFrame, pTopModule->GetMyScope()->GetVarNum());
+		X::Value v;
+		X::AST::ExecAction action;
+		//bool bOK = X::Exp::ExpExec(pTopModule,pRuntime,action,nullptr, v);
+		bool bOK = ExpExec(pTopModule, pRuntime, action, nullptr, v);
+		X::Value v1 = pModuleFrame->GetReturnValue();
+		if (v1.IsValid())
+		{
+			retVal = v1;
+		}
+		else
+		{
+			retVal = v;
+		}
+		pRuntime->PopFrame(); //move from line 314, we think this module's run finished, 
+		//need to popup its frame,if not, will leave a dirty stack here 
+		if (!keepModuleWithRuntime)
+		{
+			//pRuntime->PopFrame();
+			if (pOldModule)
+			{
+				pRuntime->SetM(pOldModule);
+			}
+			else
+			{
+				delete pRuntime;
+			}
 		}
 
 		return bOK;
 	}
 	bool Hosting::RunFragmentInModule(
 		AST::ModuleObject* pModuleObj,
-		const char* code, int size, X::Value& retVal)
+		const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
 	{
 		AST::Module* pModule = pModuleObj->M();
 		long long lineCntBeforeAdd = pModule->GetBodySize();
@@ -308,21 +407,22 @@ namespace X
 			//todo:syntax error
 			return false;
 		}
+		m_ExeNum = exeNum;
 		auto* rt = pModule->GetRT();
 		if (rt)
 		{
 			rt->AdjustStack(pModule->GetMyScope()->GetVarNum());
 		}
 		bOK = pModule->RunFromLine(rt, pModuleObj, lineCntBeforeAdd,retVal);
+		m_ExeNum = -1;
 		return bOK;
 	}
 	/*
 		keep a module to run lines from interactive mode
 		such as commmand line input
 	*/
-	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
+	bool Hosting::RunCodeLine(const char* code, int size, X::Value& retVal)
 	{
-		m_pInteractiveExeNum = exeNum;
 		if (m_pInteractiveModule == nullptr)
 		{
 			auto* pTopModule = new AST::Module();
@@ -351,7 +451,6 @@ namespace X
 		}
 		m_pInteractiveRuntime->AdjustStack(m_pInteractiveModule->GetMyScope()->GetVarNum());
 		bOK = m_pInteractiveModule->RunLast(m_pInteractiveRuntime, nullptr, retVal);
-		m_pInteractiveExeNum = -1;
 		return bOK;
 	}
 	bool Hosting::GetInteractiveCode(std::string& code)
@@ -365,15 +464,16 @@ namespace X
 	bool Hosting::Run(const char* moduleName,
 		const char* code, int size, 
 		std::vector<X::Value>& passInParams,
-		X::Value& retVal)
+		X::Value& retVal,
+		bool noDebug)
 	{
 		unsigned long long moduleKey = 0;
-		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
+		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey, md5(code));
 		if (pTopModule == nullptr)
 		{
 			return false;
 		}
-		bool bOK =  Run(pTopModule,retVal, passInParams);
+		bool bOK =  Run(pTopModule,retVal, passInParams,false,false,true);
 		Unload(pTopModule);
 		return bOK;
 	}
@@ -385,7 +485,7 @@ namespace X
 		X::Value& retVal)
 	{
 		unsigned long long moduleKey = 0;
-		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey);
+		AST::Module* pTopModule = Load(moduleName, code, size, moduleKey, md5(code));
 		if (pTopModule == nullptr)
 		{
 			return false;
@@ -440,14 +540,29 @@ namespace X
 		return bOK;
 	}
 
-	void Hosting::SendBreakpointState(const std::string& path, int line, int actualLine)
+	void Hosting::SendBreakpointState(const std::string& md5, int line, int actualLine)
 	{
 		KWARGS kwParams;
 		X::Value valAction("notify");
 		kwParams.Add("action", valAction);
 		const int online_len = 1000;
 		char strBuf[online_len];
-		SPRINTF(strBuf, online_len, "[{\"BreakpointPath\":\"%s\", \"line\":%d, \"actualLine\":%d}]", path.c_str(), line, actualLine);
+		SPRINTF(strBuf, online_len, "[{\"BreakpointMd5\":\"%s\", \"line\":%d, \"actualLine\":%d}]", md5.c_str(), line, actualLine);
+		X::Value valParam(strBuf);
+		kwParams.Add("param", valParam);
+		std::string evtName("devops.dbg");
+		ARGS params(0);
+		X::EventSystem::I().Fire(nullptr, nullptr, evtName, params, kwParams);
+	}
+
+	void Hosting::SendModuleLoaded(const std::string& md5, const std::string& path)
+	{
+		KWARGS kwParams;
+		X::Value valAction("notify");
+		kwParams.Add("action", valAction);
+		const int online_len = 1000;
+		char strBuf[online_len];
+		SPRINTF(strBuf, online_len, "[{\"ModuleLoaded\":\"%s\", \"md5\":\"%s\"}]", path.c_str(), md5.c_str());
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
 		std::string evtName("devops.dbg");

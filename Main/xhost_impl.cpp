@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "xhost_impl.h"
 #include "xlang.h"
 #include "str.h"
@@ -14,9 +29,8 @@
 #include "Hosting.h"
 #include "event.h"
 #include "remote_object.h"
-#include "msgthread.h"
+#include "MsgService.h"
 #include "import.h"
-#include "RemoteObjectStub.h"
 #include "tensor.h"
 #include "tensorop.h"
 #include "tensor_graph.h"
@@ -27,12 +41,21 @@
 #include "moduleobject.h"
 #include "parser.h"
 #include <algorithm> 
+#include "PyEngHost.h"
+#include "RemotingStub.h"
+#include "error_obj.h"
+#include "../Jit/md5.h"
+#include <filesystem>
+#include "log.h"
 
 namespace X 
 {
 	X::XHost* g_pXHost = nullptr;
+	extern XLoad* g_pXload;
 	X::XHost* CreatXHost()
 	{
+		IPC::RemotingStub::I().Register();
+
 		g_pXHost = new XHost_Impl();
 		return g_pXHost;
 	}
@@ -43,6 +66,11 @@ namespace X
 			delete g_pXHost;
 		}
 	}
+	void XHost_Impl::SetPyEngHost(void* pHost)
+	{
+		g_pPyHost = (PyEngHost*)pHost;
+	}
+
 	void XHost_Impl::AddSysCleanupFunc(CLEANUP f)
 	{
 		Manager::I().AddCleanupFunc(f);
@@ -74,6 +102,13 @@ namespace X
 		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
 		pStrObj->IncRef();
 		return dynamic_cast<XStr*>(pStrObj);
+	}
+	XError* XHost_Impl::CreateError(int code, const char* info)
+	{
+		std::string strInfo(info);
+		Data::Error* pErroObj = new Data::Error(code, strInfo);
+		pErroObj->IncRef();
+		return dynamic_cast<XError*>(pErroObj);
 	}
 	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator, void* pContext)
 	{
@@ -338,7 +373,10 @@ return nullptr;
 	}
 	void XHost_Impl::ReleaseString(const char* str)
 	{
-		delete str;
+		if (str)
+		{
+			delete str;
+		}
 	}
 	XBin* XHost_Impl::CreateBin(char* data, size_t size, bool bOwnData)
 	{
@@ -450,11 +488,18 @@ return nullptr;
 		stream.SetProvider(pStream);
 		return stream.CopyTo(buffer, size);
 	}
-	bool XHost_Impl::RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal)
+	bool XHost_Impl::RunCode(const char* moduleName, const char* code, 
+		int codeSize,X::Value& retVal)
 	{
 		std::vector<X::Value> passInParams;
 		return X::Hosting::I().Run(moduleName, code,
 			codeSize, passInParams,retVal);
+	}
+	bool XHost_Impl::RunCodeInNonDebug(const char* moduleName, const char* code, 
+		int codeSize, X::Value& retVal)
+	{
+		std::vector<X::Value> passInParams;
+		return X::Hosting::I().Run(moduleName, code,codeSize, passInParams, retVal,true);
 	}
 	bool XHost_Impl::RunCodeWithParam(const char* moduleName, 
 		const char* code, int codeSize, X::ARGS& args, X::Value& retVal)
@@ -470,11 +515,10 @@ return nullptr;
 	bool XHost_Impl::LoadModule(const char* moduleName, 
 		const char* code, int codeSize, X::Value& objModule)
 	{
-		std::string path(moduleName);
-		std::replace(path.begin(), path.end(), '\\', '/');
-		std::transform(path.begin(), path.end(), path.begin(),[](unsigned char c) { return std::tolower(c); });
+		std::filesystem::path pathModuleName(moduleName);
+		std::string normalizedPath = pathModuleName.generic_string();
 		unsigned long long moduleKey = 0;
-		AST::Module* pModule = X::Hosting::I().Load(path.c_str(), code, codeSize, moduleKey);
+		AST::Module* pModule = X::Hosting::I().Load(normalizedPath.c_str(), code, codeSize, moduleKey, md5(code));
 		if (pModule == nullptr)
 		{
 			return false;
@@ -524,9 +568,19 @@ return nullptr;
 		}
 		return X::Hosting::I().RunAsBackend(strModuleName, strCode, passinParams);
 	}
-	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal, int exeNum /*= -1*/)
+	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal)
 	{
-		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal, exeNum);
+		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal);
+	}
+
+	bool XHost_Impl::RunFragmentInModule(X::Value moduleObj, const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
+	{
+		return X::Hosting::I().RunFragmentInModule(dynamic_cast<X::AST::ModuleObject*>(moduleObj.GetObj()), code, size, retVal, exeNum);
+	}
+
+	X::Value XHost_Impl::NewModule()
+	{
+		return X::Hosting::I().NewModule();
 	}
 	const char* XHost_Impl::GetInteractiveCode()
 	{
@@ -570,6 +624,14 @@ return nullptr;
 				}
 			}
 		}
+		else
+		{
+			auto it = m_KV.find(attrName);
+			if (it != m_KV.end())
+				return it->second;
+			else
+				return X::Value();
+		}
 		return retVal;
 	}
 	void XHost_Impl::SetAttr(const X::Value& v, const char* attrName, X::Value& attrVal)
@@ -586,6 +648,10 @@ return nullptr;
 				}
 			}
 		}
+		else
+		{
+			m_KV[attrName] = attrVal;
+		}
 	}
 	AppEventCode XHost_Impl::HandleAppEvent(int signum)
 	{
@@ -596,15 +662,15 @@ return nullptr;
 		bool bOK = true;
 #if not defined(BARE_METAL)
 		Manager::I().AddLrpcPort(port);
-		MsgThread::I().SetPort(port);
+		IPC::MsgService::I().SetPort(port);
 		if (blockMode)
 		{
-			MsgThread::I().run();
+			IPC::MsgService::I().run();
 			Manager::I().RemoveLrpcPort(port);
 		}
 		else
 		{
-			bOK = MsgThread::I().Start();
+			bOK = IPC::MsgService::I().Start();
 		}
 #endif
 		return bOK;
@@ -708,7 +774,7 @@ return nullptr;
 		X::Value& nativeObj)
 	{
 #if not defined(BARE_METAL)
-		return RemoteObjectStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
+		return IPC::RemotingStub::I().ExtractNativeObjectFromRemoteObject(remoteObj, nativeObj);
 #else
 		return false;
 #endif
@@ -754,8 +820,53 @@ return nullptr;
 		return false;
 	}
 
+	bool XHost_Impl::PyObjToValue(void* pyObj, X::Value& valObject)
+	{
+		if (g_pPyHost)
+		{
+			//need to add one ref during PyEng::Object's deconstuctor will release one
+			PyEng::Object obj(pyObj,true);
+			auto* pProxyObj = new Data::PyProxyObject(obj);
+			valObject = Value(pProxyObj);
+			return true;
+		}
+		return false;
+	}
 	void XHost_Impl::SetDebugMode(bool bDebug)
 	{
 		Hosting::I().SetDebugMode(bDebug);
+	}
+	extern bool LoadPythonEngine();
+	void XHost_Impl::EnalbePython(bool bEnable, bool bEnablePythonDebug)
+	{
+		if (bEnable)
+		{
+			if (g_pXload && !g_pXload->GetConfig().enablePython)
+			{
+				LoadPythonEngine();
+				g_pXload->GetConfig().enablePython = true;
+			}
+		}
+	}
+	extern bool LoadDevopsEngine(int port);
+	void XHost_Impl::EnableDebug(bool bEnable, int port)
+	{
+		if (bEnable)
+		{
+			if (g_pXload && !g_pXload->GetConfig().dbg)
+			{
+				LoadDevopsEngine(port);
+				g_pXload->GetConfig().dbg = true;
+				g_pXload->GetConfig().dbgPort = port;
+			}
+		}
+	}
+	void* XHost_Impl::GetLogger()
+	{
+		return (void*)&X::log;
+	}
+	bool XHost_Impl::IsModuleLoadedMd5(const char* md5)
+	{
+		return X::Hosting::I().QueryModulesByMd5(md5).size() > 0;
 	}
 }

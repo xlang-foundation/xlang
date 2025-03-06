@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include <string>
 #include <unordered_map>
@@ -30,9 +45,11 @@ namespace X
 			XProxyFilter filter = nullptr;
 			std::unordered_map<std::string, XProxy*> Instances;
 		};
+		Locker m_lockMapPackage;
 		std::unordered_map<std::string, PackageInfo> m_mapPackage;
 		Locker m_proxyMapLock;
 		std::unordered_map<std::string, XProxyInfo> m_mapXProxy;
+		Locker m_lockCleanups;
 		std::vector<CLEANUP> m_cleanups;
 		//if in xlang code, for example use line below
 		//import some_module thru 'lrpc:1000'
@@ -84,17 +101,26 @@ namespace X
 		}
 		void Cleanup()
 		{
+			m_lockMapPackage.Lock();
 			m_mapPackage.clear();
+			m_lockMapPackage.Unlock();
+			m_proxyMapLock.Lock();
 			m_mapXProxy.clear();
+			m_proxyMapLock.Unlock();
+
+			m_lockCleanups.Lock();
 			for (auto f : m_cleanups)
 			{
 				f();
 			}
 			m_cleanups.clear();
+			m_lockCleanups.Unlock();
 		}
 		void AddCleanupFunc(CLEANUP f)
 		{
+			m_lockCleanups.Lock();
 			m_cleanups.push_back(f);
+			m_lockCleanups.Unlock();
 		}
 		bool RegisterProxy(const char* name, XProxyCreator creator,XProxyFilter filter = nullptr)
 		{
@@ -178,16 +204,22 @@ namespace X
 		}
 		bool Register(const char* name,PackageCreator creator,void* pContextForCreator = nullptr)
 		{
+			m_lockMapPackage.Lock();
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ creator,Value(pContextForCreator)}));
+			m_lockMapPackage.Unlock();
 			return true;
 		}
 		bool Register(const char* name,Value& objPackage)
 		{
+			m_lockMapPackage.Lock();
 			m_mapPackage.emplace(std::make_pair(name, PackageInfo{ nullptr,objPackage }));
+			m_lockMapPackage.Unlock();
 			return true;
 		}
 		bool UnloadPackage(std::string packName)
 		{
+			AutoLock lk(m_lockMapPackage);
+
 			auto it = m_mapPackage.find(packName);
 			if (it != m_mapPackage.end())
 			{
@@ -198,6 +230,8 @@ namespace X
 		}
 		bool QueryPackage(std::string& name,Value& valPack)
 		{
+			AutoLock lk(m_lockMapPackage);
+
 			bool bHave = false;
 			auto it = m_mapPackage.find(name);
 			if (it != m_mapPackage.end())
@@ -211,6 +245,8 @@ namespace X
 		bool QueryAndCreatePackage(XlangRuntime* rt,std::string& name,
 			Value& valPack)
 		{
+			AutoLock lk(m_lockMapPackage);
+
 			bool bCreated = false;
 			auto it = m_mapPackage.find(name);
 			if (it != m_mapPackage.end())
@@ -231,6 +267,8 @@ namespace X
 		}
 		bool HasPackage(std::string& name)
 		{
+			AutoLock lk(m_lockMapPackage);
+
 			auto it = m_mapPackage.find(name);
 			return (it != m_mapPackage.end());
 		}

@@ -7,7 +7,7 @@ project (${PROJECT_NAME})
 
 find_package (Python3 COMPONENTS Interpreter Development NumPy)
 
-string(REPLACE "numpy/core/include" "" Python3_SITELIB ${Python3_NumPy_INCLUDE_DIRS})
+string(REPLACE "numpy/core/include" "" Python3_SITELIB "${Python3_NumPy_INCLUDE_DIRS}")
 
 message(STATUS
     "Python: version=${Python3_VERSION} interpreter=${Python3_EXECUTABLE}")
@@ -55,12 +55,13 @@ else()
     #set(Python3_LIBRARIES,"${_Python3_LIBRARY_RELEASE})
     FILE(GLOB SRC *.cpp)
     FILE(GLOB Out_SRC ../utils/utility.cpp)
+    file(GLOB Xlang_Api_SRC "../Api/*.cpp")
 
     add_library(${PROJECT_NAME} 
 	    SHARED
         ${Out_SRC}
-	    ${SRC}
-    )
+        ${Xlang_Api_SRC}
+	    ${SRC})
 
     target_include_directories(${PROJECT_NAME} 
 	    PUBLIC
@@ -77,10 +78,14 @@ else()
     target_link_libraries(${PROJECT_NAME} PUBLIC 
         "${Python3_LIBRARIES}" Ws2_32
 	    )
+
+    configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.bat" "${CMAKE_BINARY_DIR}/bin/install_py_xlang.bat")
+
     else()
+    configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.sh" "${CMAKE_BINARY_DIR}/bin/install_py_xlang.sh")
     target_link_libraries(${PROJECT_NAME} PUBLIC 
         "${Python3_LIBRARIES}"
 	    )
     endif()
-
 endif()
+

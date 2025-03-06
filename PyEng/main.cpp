@@ -1,5 +1,22 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "PyEngHostImpl.h"
 #include <string>
+#include "xlang.h"
+#include "xhost.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -20,6 +37,7 @@ extern "C"
 #define X_EXPORT __declspec(dllexport) 
 #else
 #define X_EXPORT
+#include <dlfcn.h>
 #endif
 #include <iostream>
 
@@ -81,17 +99,48 @@ int x_Py_tracefunc(PyObject* self,
 	}
 	return 0;
 }
-
-extern "C"  X_EXPORT void Load(void** ppHost)
+namespace X
 {
+	extern XHost* g_pXHost;//defined in xload.cpp which included for PyBind.cpp
+}
+#if !(WIN32)
+static void* __py_handle__ = nullptr;
+static void PreloadPythonToSolveGlobaleExportTable()
+{
+	Dl_info dl_info;
+	if (dladdr((void*)Py_Initialize, &dl_info)) 
+	{
+		const char* libpython_path = dl_info.dli_fname;
+		__py_handle__ = dlopen(libpython_path, RTLD_NOW | RTLD_GLOBAL);
+	}
+}
+static void UnloadPython()
+{
+	if (__py_handle__)
+	{
+		dlclose(__py_handle__);
+	}
+}
+#endif
+extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
+{
+	X::g_pXHost = (X::XHost*)pXHost;
+#if !(WIN32)
+	PreloadPythonToSolveGlobaleExportTable();
+#endif
 	Py_Initialize();
 	g_pPyHost = &GrusPyEngHost::I();
 	*ppHost = (void*)g_pPyHost;
+	//todo: add lines below back for Python debug?
 	//auto ts = PyThreadState_GET();
 	//PyEval_SetTrace(x_Py_tracefunc, nullptr);
 }
 
 extern "C"  X_EXPORT void Unload()
 {
+	X::g_pXHost = nullptr;
 	Py_FinalizeEx();
+#if !(WIN32)
+	UnloadPython();
+#endif
 }

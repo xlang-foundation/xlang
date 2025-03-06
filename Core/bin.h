@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "object.h"
 #include "port.h"
@@ -17,12 +32,15 @@ namespace X
 		{
 		protected:
 			char* m_data = nullptr;
-			bool m_OwnData = true;
+			bool m_OwnData = true;//if true, this object will delete m_data in destructor
 			size_t m_size;
 		public:
 			static void Init();
 			static void cleanup();
 
+			//if bOwnData is true,means the data passed in
+			// will be keep in this object, and will be deleted in destructor
+			//but this data must alloced in same heap
 			Binary(char* data, size_t size,bool bOwnData):
 				XBin(0)
 			{//new copy
@@ -152,7 +170,14 @@ namespace X
 				retStr += "'";
 				return GetABIString(retStr);
 			}
-			virtual char* Data() override { return m_data; }
+			FORCE_INLINE virtual char* Data() override { return m_data; }
+			virtual char* BorrowDta() override 
+			{ 
+				char* p = m_data;
+				m_OwnData = false;
+				m_data = nullptr;
+				return p;
+			}
 			FORCE_INLINE virtual long long  Size()  override { return m_size; }
 			~Binary()
 			{
@@ -168,7 +193,7 @@ namespace X
 			{
 				return true;
 			}
-
+			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
 				long long startIndex, long long count)

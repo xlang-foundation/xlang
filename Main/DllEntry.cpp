@@ -1,3 +1,17 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 #include "builtin.h"
 #include "manager.h"
@@ -15,7 +29,6 @@
 #include "xload.h"
 #include "Hosting.h"
 #include "EventLoopInThread.h"
-#include "Proxy.h"
 #include "str.h"
 #include "list.h"
 #include "dict.h"
@@ -33,6 +46,9 @@
 #include "tensor.h"
 #include "tensor_graph.h"
 #include "struct.h"
+#include "RemotingProxy.h"
+#include "error_obj.h"
+#include "log.h"
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -145,7 +161,7 @@ PyEngObjectPtr Xlang_CallFunc_Impl(
 }
 bool LoadPythonEngine()
 {
-	typedef void (*LOAD)(void** ppHost);
+	typedef void (*LOAD)(void* pHost,void** ppHost);
 
 	std::string loadDllName;
 	bool bHaveDll = false;
@@ -188,7 +204,7 @@ bool LoadPythonEngine()
 		LOAD load = (LOAD)GetProc(libHandle, "Load");
 		if (load)
 		{
-			load((void**)&g_pPyHost);
+			load((void*)X::g_pXHost,(void**)&g_pPyHost);
 		}
 		g_pXload->SetPythonLibHandler(libHandle);
 		if (g_pPyHost)
@@ -214,7 +230,7 @@ void XLangStaticLoad()
 	BuildOps();
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
-	XLangProxyManager::I().Register();
+	X::IPC::RemotingProxyManager::I().Register();
 
 }
 void XLangStaticRun(std::string code)
@@ -230,6 +246,7 @@ static void XLangInternalInit()
 {
 	X::Data::Str::Init();
 	X::AST::ModuleObject::Init();
+	X::Data::Future::Init();
 	X::Data::List::Init();
 	X::Data::Binary::Init();
 	X::Data::Dict::Init();
@@ -240,6 +257,7 @@ static void XLangInternalInit()
 	X::Data::DeferredObject::Init();
 	X::Data::TypeObject::Init();
 	X::Data::XlangStruct::Init();
+	X::Data::Error::Init();
 }
 void XLangRun()
 {
@@ -256,7 +274,7 @@ void XLangRun()
 	}
 	ScriptsManager::I().Load();
 	ScriptsManager::I().Run();
-	XLangProxyManager::I().Register();
+	X::IPC::RemotingProxyManager::I().Register();
 
 	std::vector<X::Value> passInParams;
 	if (g_pXload->GetConfig().passInParams)
@@ -374,6 +392,7 @@ void XLangStaticUnload()
 	X::Data::TypeObject::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 	X::Data::XlangStruct::cleanup();
+	X::Data::Error::cleanup();
 	Hosting::I().Cleanup();
 	G::I().Check();
 	DestoryXHost();
@@ -392,6 +411,7 @@ void XLangUnload()
 	X::Data::DeferredObject::cleanup();
 	X::Data::TypeObject::cleanup();
 	X::Data::XlangStruct::cleanup();
+	X::Data::Error::cleanup();
 
 	if (g_pXload->GetConfig().enablePython)
 	{
@@ -437,6 +457,10 @@ void test()
 #define X_EXPORT
 #endif
 
+extern "C"  X_EXPORT void SetLogFuncs(void* lock,void* unlock, void* logWrite)
+{
+	InitLog((X::LOGLOCK)lock, (X::LOGUNLOCK)unlock, (X::LOGWRITE)logWrite);
+}
 extern "C"  X_EXPORT void Load(void* pXload, void** pXHostHolder)
 {
 	std::string strFullPath;

@@ -1,13 +1,30 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include <chrono>
 #include <ctime>
 #include <thread>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include "struct.h"
 
 namespace X
 {
+#define TM_SIZE (9*sizeof(int)) //we just use first 9 int fields
     class TimeObject {
         BEGIN_PACKAGE(TimeObject)
             APISET().AddFunc<0>("time", &TimeObject::GetTime);
@@ -46,11 +63,10 @@ namespace X
 #ifdef _WIN32
             localtime_s(&local_tm, &time);
 #else
-            local_tm = *std::localtime(&time);
+            localtime_r(&time, &local_tm);
 #endif
             // Handle milliseconds separately
             int milliseconds = static_cast<int>((secs - static_cast<std::time_t>(secs)) * 1000);
-
             retValue = CreateXlangStructFromTM(local_tm, milliseconds);
             return true;
         }
@@ -70,16 +86,28 @@ namespace X
             retValue = CreateXlangStructFromTM(gm_tm, milliseconds);
             return true;
         }
-
+        //work with two ways, 
+        //1) if pContext is a XlangStruct, then we assume it is time struct
+        //2) if passing two parameters: fmt,XlangStruct
         bool StrfTime(X::XRuntime* rt, X::XObj* pContext, X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue) {
-            if (params.size() < 2) {
+            if (params.size() < 1) {
                 retValue = X::Value("");
-                return false;
+                return true;
             }
 
-            X::Value structValue = params[0];
-            std::string format = params[1].ToString();
-            bool includeMilliseconds = (params.size() > 2) ? static_cast<bool>(params[2]) : false;
+            X::Value structValue;
+            bool includeMilliseconds;
+            std::string format = params[0].ToString();
+            if (params.size() >= 2)
+            {
+                structValue = params[1];
+                includeMilliseconds = (params.size() >= 3) ? static_cast<bool>(params[2]) : false;
+            }
+            else
+            {
+                structValue = pContext;
+                includeMilliseconds = (params.size() > 2) ? static_cast<bool>(params[1]) : false;
+            }
 
             X::Data::XlangStruct* xStruct = dynamic_cast<X::Data::XlangStruct*>(structValue.GetObj());
             if (xStruct == nullptr) {
@@ -125,7 +153,11 @@ namespace X
                 retValue = X::Value();
                 return false;
             }
-
+            if (!params[0].IsObject() || !params[1].IsObject())
+            {
+                retValue = X::Value();
+                return false;
+            }
             X::Data::XlangStruct* startStruct = dynamic_cast<X::Data::XlangStruct*>(params[0].GetObj());
             X::Data::XlangStruct* endStruct = dynamic_cast<X::Data::XlangStruct*>(params[1].GetObj());
 
@@ -155,7 +187,11 @@ namespace X
                 retValue = X::Value();
                 return false;
             }
-
+            if (!params[0].IsObject())
+            {
+                retValue = X::Value();
+                return false;
+            }
             X::Data::XlangStruct* startStruct = dynamic_cast<X::Data::XlangStruct*>(params[0].GetObj());
 
             int startMilliseconds = 0;
@@ -189,9 +225,14 @@ namespace X
                 retValue = X::Value();
                 return false;
             }
-
+            if (!params[0].IsObject())
+            {
+                retValue = X::Value();
+                return false;
+            }
             // Get the time structure and seconds to add
             X::Data::XlangStruct* timeStruct = dynamic_cast<X::Data::XlangStruct*>(params[0].GetObj());
+
             double secondsToAdd = static_cast<double>(params[1]);
 
             int milliseconds = 0;
@@ -306,11 +347,11 @@ namespace X
 
             char* data = xStruct->Data();
 #ifdef _WIN32
-            std::memcpy(data, &tm, sizeof(std::tm)); // Copy the tm structure into the XlangStruct's data
-            std::memcpy(data + sizeof(std::tm), &milliseconds, sizeof(int)); // Copy the milliseconds
+            std::memcpy(data, &tm, TM_SIZE); // Copy the tm structure into the XlangStruct's data
+            std::memcpy(data + TM_SIZE, &milliseconds, sizeof(int)); // Copy the milliseconds
 #else
-            memcpy(data, &tm, sizeof(std::tm)); // Copy the tm structure into the XlangStruct's data
-            memcpy(data + sizeof(std::tm), &milliseconds, sizeof(int)); // Copy the milliseconds
+            memcpy(data, &tm, TM_SIZE); // Copy the tm structure into the XlangStruct's data
+            memcpy(data + TM_SIZE, &milliseconds, sizeof(int)); // Copy the milliseconds
 #endif
             return X::Value(xStruct);
         }
@@ -319,9 +360,9 @@ namespace X
             std::tm tm = {};
             char* data = xStruct->Data();
 #ifdef _WIN32
-            std::memcpy(&tm, data, sizeof(std::tm)); // Copy the data back into a tm structure
+            std::memcpy(&tm, data, TM_SIZE); // Copy the data back into a tm structure
 #else
-            memcpy(&tm, data, sizeof(std::tm)); // Copy the data back into a tm structure
+            memcpy(&tm, data, TM_SIZE); // Copy the data back into a tm structure
 #endif
 
             X::Value millisecondsValue;

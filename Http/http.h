@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "xpackage.h"
 #include "xlang.h"
@@ -6,6 +21,7 @@
 #include <iostream>
 #include <regex>
 #include "singleton.h"
+#include "curl_module.h"
 
 namespace X
 {
@@ -75,6 +91,7 @@ namespace X
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
 			APISET().AddVarFuncEx("route", &HttpServer::Route);
+			APISET().AddFunc<1>("getMimeType", &HttpServer::GetMimeType);
 			END_PACKAGE
 	public:
 
@@ -104,6 +121,7 @@ namespace X
 			Init(m_bAsHttps);
 		}
 		~HttpServer();
+		X::Value GetMimeType(std::string extName);
 		void Init(bool asHttps);
 		bool Listen(std::string srvName, int port);
 		bool Stop();
@@ -160,13 +178,24 @@ namespace X
 	class HttpClient
 	{
 		void* m_pClient = nullptr;
+		bool m_isHttps = false;
 		int m_status = 0;
 		X::Value m_body;
-		X::Value m_headers;
+		X::Dict m_headers;
+		X::Value m_response_headers;
+		std::string m_path;
+		void set_enable_server_certificate_verification(bool b);
 	public:
 		BEGIN_PACKAGE(HttpClient)
 			APISET().AddFunc<1>("get", &HttpClient::Get);
 			APISET().AddFunc<3>("post", &HttpClient::Post);
+			APISET().AddFunc<1>("setHeaders", &HttpClient::SetHeaders);
+			APISET().AddProp0("headers", &HttpClient::m_headers);
+			APISET().AddPropL("enable_server_certificate_verification", 
+				[](auto* pThis, X::Value v) {
+					pThis->set_enable_server_certificate_verification((bool)v);
+				},[](auto* pThis) {return false; });
+
 			APISET().AddPropL("status",[](auto* pThis, X::Value v) {},
 				[](auto* pThis){return pThis->GetStatus(); });
 			APISET().AddPropL("response_headers", [](auto* pThis, X::Value v) {},
@@ -174,13 +203,17 @@ namespace X
 			APISET().AddPropL("body", [](auto* pThis, X::Value v) {},
 				[](auto* pThis) {return pThis->GetBody(); });
 		END_PACKAGE
-		HttpClient(std::string scheme_host_port);
+		HttpClient(std::string url);
 		~HttpClient();
 		bool Get(std::string path);
 		bool Post(std::string path, std::string content_type, std::string body);
 		X::Value GetStatus();
 		X::Value GetBody();
-		X::Value GetResponseHeaders() { return m_headers; }
+		X::Value GetResponseHeaders() { return m_response_headers; }
+		void SetHeaders(X::Value& headers)
+		{
+			m_headers = headers;
+		}
 	};
 	class Http:
 		public Singleton<Http>
@@ -200,6 +233,7 @@ namespace X
 			APISET().AddClass<0, HttpResponse>("Response");
 			APISET().AddClass<0, HttpRequest>("Request");
 			APISET().AddClass<1, HttpClient>("Client");
+			APISET().AddClass<0, Curl>("Curl");
 		END_PACKAGE
 		X::Value WritePad(X::Value& input);
 		std::string& GetModulePath()

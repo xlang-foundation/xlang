@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include <vector>
 #include <string>
@@ -12,6 +27,7 @@
 #include "xlang.h"
 #include "XLangStream.h"
 #include "Locker.h"
+#include <atomic>
 
 namespace X {
 	namespace AST { class Scope; }
@@ -28,14 +44,16 @@ namespace Data {
 		virtual public XObj,
 		virtual public ObjRef
 	{
+		static std::atomic<unsigned long long> s_idCounter;
 	protected:
 		ObjType m_t = ObjType::Base;
 		AttributeBag* m_aBag = nullptr;
 		AST::Scope* m_extraScope = nullptr;//ref to extra scope, don't delete it
+		unsigned long long m_id;
 		Locker m_lock;
 		Locker m_external_lock;
 	public:
-		Object():XObj(), ObjRef()
+		Object():XObj(), ObjRef(), m_id(++s_idCounter)
 		{
 			G::I().AddObj(this);
 		}
@@ -44,6 +62,11 @@ namespace Data {
 			DeleteAttrBag();
 			G::I().RemoveObj(this);
 		}
+		virtual unsigned long long GetID() override
+		{
+			return m_id;
+		}
+		FORCE_INLINE unsigned long long ID() { return m_id; }
 		FORCE_INLINE virtual AST::Scope* GetMyScope()
 		{
 			return nullptr;
@@ -220,8 +243,6 @@ namespace Data {
 				return "Table";
 			case X::ObjType::RemoteObject:
 				return "RemoteObject";
-			case X::ObjType::RemoteClientObject:
-				return "RemoteClientObject";
 			case X::ObjType::PyProxyObject:
 				return "PyObject";
 			case X::ObjType::DeferredObject:
@@ -293,8 +314,8 @@ namespace Data {
 		}
 		virtual bool Get(long long idx, X::Value& val) { return false; }
 		virtual bool Set(long long idx, X::Value& val) { return false; }
-		virtual bool Set(Value valIdx, X::Value& val) { return false; }
 	};
+
 	class Expr
 		: public virtual Object
 	{//any valid AST tree with one root

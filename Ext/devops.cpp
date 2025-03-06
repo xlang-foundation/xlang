@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "devops.h"
 #include <iostream>
 #include "Hosting.h"
@@ -11,19 +26,30 @@
 #include "event.h"
 #include "utility.h"
 #include "dbg.h"
+#include <filesystem>
 
 namespace X
 {
+	extern XLoad* g_pXload;
 	namespace DevOps
 	{
 #define	dbg_evt_name "devops.dbg"
 #define dbg_scope_special_type "Scope.Special"
+
+		bool DebugService::s_bRegPlugins = true;
+		std::unordered_map<std::string, X::Value> DebugService::m_mapPluginModule;
+
 		DebugService::DebugService()
 		{
 			X::ObjectEvent* pEvt = X::EventSystem::I().Register(dbg_evt_name);
 			if (pEvt)
 			{
 				pEvt->IncRef();
+			}
+			if (s_bRegPlugins)
+			{
+				s_bRegPlugins = false;
+				registerPlugins();
 			}
 		}
 
@@ -62,8 +88,13 @@ namespace X
 			auto valType = val.GetValueType();
 			Data::Str* pStrType = new Data::Str(valType);
 			dict->Set("Type", X::Value(pStrType));
-			if (!val.IsObject() || (val.IsObject() &&
-				dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
+			if (!val.IsObject())
+			{
+				dict->Set("Value", val);
+			}
+			else if ((val.IsObject() && dynamic_cast<Data::Object*>(val.GetObj()) != nullptr 
+				//for Builtin (is not an object) check
+				&& dynamic_cast<Data::Object*>(val.GetObj())->IsStr()))
 			{
 				dict->Set("Value", val);
 			}
@@ -311,6 +342,10 @@ namespace X
 				return true;
 			}
 			Data::Object* pObjRoot = dynamic_cast<Data::Object*>((XObj*)ullRootId);
+			if (pObjRoot == nullptr)
+			{
+				return false;
+			}
 			XObj* pContextObj = nullptr;
 			if (rootIdPair.size() >= 2)
 			{
@@ -377,6 +412,8 @@ namespace X
 					dict->Set("name", X::Value(pStrName));
 					Data::Str* pStrFileName = new Data::Str(moduleFileName);
 					dict->Set("file", X::Value(pStrFileName));
+					Data::Str* pStrMd5 = new Data::Str(Dbg::GetExpModule(pExp)->GetMd5());
+					dict->Set("md5", X::Value(pStrMd5));
 					dict->Set("line", X::Value(line));
 					dict->Set("column", X::Value(column));
 					X::Value valDict(dict);
@@ -425,7 +462,7 @@ namespace X
 		}
 
 		// Breakpoints should work in both currently running and later created modules
-		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext, Value& varPath, Value& varLines)
+		X::Value DebugService::SetBreakpoints(X::XRuntime* rt, X::XObj* pContext, Value& varPath, Value& varMd5, Value& varLines)
 		{
 			if (!varLines.IsObject()
 				|| varLines.GetObj()->GetType() != X::ObjType::List)
@@ -434,18 +471,19 @@ namespace X
 			}
 
 			std::string path = varPath.ToString();
+			std::string md5 = varMd5.ToString();
 			auto* pLineList = dynamic_cast<X::Data::List*>(varLines.GetObj());
 			auto lines = pLineList->Map<int>(
 				[](X::Value& elm, unsigned long long idx) {
 					return elm; }
 			);
 
-			G::I().SetBreakPoints(path, lines); // record 
-			std::vector<AST::Module*> modules = Hosting::I().QueryModulesByPath(path);
+			G::I().SetBreakPointsMd5(varMd5, lines); // record 
+			std::vector<AST::Module*> modulesMd5 = Hosting::I().QueryModulesByMd5(varMd5);
 			X::List list;
-			if (modules.size() > 0)
+			if (modulesMd5.size() > 0)
 			{
-				for (auto m : modules)
+				for (auto m : modulesMd5)
 				{
 					m->ClearBreakpoints();
 					for (auto l : lines)
@@ -462,7 +500,7 @@ namespace X
 							list += -1;// failed state
 						}
 					}
-					G::I().AddBreakpointValid(path); // record this source file's breakpoints has been checked
+					G::I().AddBreakpointValidMd5(path); // record this source file's breakpoints has been checked
 				}
 			}
 			else
@@ -476,6 +514,7 @@ namespace X
 
 			return X::Value(list);
 		}
+		
 		bool DebugService::Command(X::XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
@@ -663,6 +702,106 @@ namespace X
 				//retValue = X::Value(true);
 			}
 			return true;
+		}
+		
+		void DebugService::registerPlugins()
+		{
+			std::filesystem::path pluginPath = std::string(g_pXload->GetConfig().appPath) + Path_Sep_S + "DevSrv_Plugins";
+			try 
+			{
+				for (const auto& entry : std::filesystem::directory_iterator(pluginPath)) 
+				{
+					if (entry.is_regular_file() && entry.path().extension() == ".x") 
+					{
+						//std::cout << "Found .x file: " << entry.path() << std::endl;
+						//std::string path = entry.path().string();
+						std::string fileName = entry.path().stem().string();
+						std::string filePath = entry.path().string();
+						X::Module m((char*)fileName.c_str(), (char*)filePath.c_str());
+						X::Value regInfo = m["Register"]();
+						if (regInfo.IsList())
+						{
+							XList* pList = dynamic_cast<XList*>(regInfo.GetObj());
+							for (int i = 0; i < pList->Size(); ++i)
+							{
+								if (pList->Get(i).IsDict())
+								{
+									XDict* pDict = dynamic_cast<XDict*>(pList->Get(i).GetObj());
+									pDict->Enum([](X::Value& key, X::Value& val) {
+										m_mapPluginModule[key.ToString()] = val;
+									});
+									//m_mapPluginModule[pList->Get(0).ToString()] = pList->Get(1);
+								}
+							}
+						}
+					}
+				}
+			}
+			catch (const std::filesystem::filesystem_error& e) 
+			{
+				//std::cerr << "Error accessing directory: " << e.what() << std::endl;
+			}
+		}
+
+		bool DebugService::RunFile(X::XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
+		{
+			if (params.size() == 0)
+			{
+				retValue = X::Value(false);
+				return true;
+			}
+			std::string filePath = params[0].ToString();
+			retValue = execFile(true, filePath, rt);
+			return true;
+		}
+
+		bool DebugService::StopFile(X::XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
+		{
+			if (params.size() == 0)
+			{
+				retValue = X::Value(false);
+				return true;
+			}
+			std::string filePath = params[0].ToString();
+			retValue = execFile(false, filePath, rt);
+			return true;
+		}
+
+		X::Value DebugService::execFile(bool bRun, const std::string& filePath, X::XRuntime* rt)
+		{
+			size_t dotPos = filePath.rfind('.');
+			if (dotPos != std::string::npos)
+			{
+				std::string ext = filePath.substr(dotPos);
+				if (m_mapPluginModule.contains(ext))
+				{
+					X::Value funcs = m_mapPluginModule[ext];
+					if (funcs.IsDict())
+					{
+						XDict* funcsDic = dynamic_cast<XDict*>(funcs.GetObj());
+						X::Value func = bRun ? (*funcsDic)["run"] : (*funcsDic)["stop"];
+						if (func.IsValid() && func.IsObject())
+						{
+							func.GetObj()->SetRT(rt);
+							return func(filePath);
+						}
+						else
+						{
+							if (bRun)
+								return "wrong handler for run";
+							else
+								return "wrong handler for stop";
+						}
+					}
+					else
+						return "wrong handler in plugin ";
+				}
+				else
+					return "no plugin for this file type";
+			}
+			return "wrong file name";
 		}
 	}
 }

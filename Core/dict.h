@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 
 #include "object.h"
@@ -38,6 +53,10 @@ namespace X
 			{
 				return mMap.size();
 			}
+			virtual X::Value Get(const X::Value& key) override
+			{
+				return mMap[key];
+			}
 			virtual Value Member(XRuntime* rt, const char* name) override
 			{
 				X::Value val;
@@ -51,7 +70,24 @@ namespace X
 				auto it = mMap.find(val);
 				return it != mMap.end();
 			}
-			virtual void Set(X::Value& key, X::Value& val) override
+			virtual Value& operator[](X::Value& key) override
+			{
+				return mMap[key];
+			}
+			virtual bool Set(X::Value valIdx, X::Value& val) override
+			{
+				auto it = mMap.find(valIdx);
+				if (it != mMap.end())
+				{
+					it->second = val;
+				}
+				else
+				{
+					mMap.emplace(std::make_pair(valIdx, val));
+				}
+				return true;
+			}
+			virtual void Set(const X::Value& key, const X::Value& val) override
 			{
 				auto it = mMap.find(key);
 				if (it != mMap.end())
@@ -117,6 +153,39 @@ namespace X
 				}
 				return bOK;
 			}
+			virtual bool Compare(X::Value& dict) override
+			{
+				// Verify that 'dict' is a valid Dict object.
+				if (!dict.IsObject())
+					return false;
+				Object* pObj = dynamic_cast<Object*>(dict.GetObj());
+				if (!pObj || pObj->GetType() != ObjType::Dict)
+					return false;
+				Dict* pOtherDict = dynamic_cast<Dict*>(pObj);
+				if (!pOtherDict)
+					return false;
+
+				// Ensure both dictionaries have the same number of keys.
+				// This check guarantees that if the passed dictionary has extra keys, the sizes will differ and we return false.
+				if (mMap.size() != pOtherDict->mMap.size())
+					return false;
+
+				// Compare each key-value pair.
+				for (const auto& pair : mMap)
+				{
+					// Look for the same key in the other dictionary.
+					auto it = pOtherDict->mMap.find(pair.first);
+					if (it == pOtherDict->mMap.end())
+						return false; // Key not found in the passed dict.
+					X::Value val = pair.second;
+					// Compare the values using their string representations.
+					// This may be replaced with a more robust comparison if needed.
+					if (val.ToString() != it->second.ToString())
+						return false;
+				}
+				return true;
+			}
+
 			bool Remove(X::Value& key)
 			{
 				bool bOK = false;
@@ -128,7 +197,6 @@ namespace X
 				}
 				return bOK;
 			}
-			void HookLValue(X::Value& key,X::LValue* lValue);
 			bool Get(X::Value& key, X::Value& val,
 				X::LValue* lValue = nullptr)
 			{
@@ -141,15 +209,14 @@ namespace X
 						*lValue = &it->second;
 					}
 				}
-				else
-				{
-					if (lValue)
-					{
-						HookLValue(key, lValue);
-					}
-				}
-				//Always true to say this call is OK
-				return true;
+				return true;//always true to make caller OK
+			}
+			bool GetLValueToAssign(X::Value& key, X::Value& value);
+			inline virtual bool Get(XRuntime* rt, XObj* pContext, 
+				X::Port::vector<X::Value>& IdxAry, X::Value& val) override
+			{
+				//only take firs one from IdxAry
+				return IdxAry.size()>0?Get(IdxAry[0], val):false;
 			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 			{

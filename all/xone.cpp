@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include <signal.h>
 #include "PyEngHost.h"
 #include "xlang.h"
@@ -13,9 +28,7 @@
 #include "xhost_impl.h"
 #include "builtin.h"
 #include "AddScripts.h"
-#include "Proxy.h"
 #include "EventLoopInThread.h"
-#include "Proxy.h"
 #include "str.h"
 #include "list.h"
 #include "dict.h"
@@ -34,7 +47,8 @@
 #include "tensor_graph.h"
 #include "manager.h"
 #include "struct.h"
-
+#include "RemotingProxy.h"
+#include "error_obj.h"
 //for OS Module
 #include "os/fs.h"
 #include "os/utils.h"
@@ -153,13 +167,14 @@ namespace X
 		X::BuildOps();
 		X::ScriptsManager::I().Load();
 		X::ScriptsManager::I().Run();
-		X::XLangProxyManager::I().Register();
+		X::IPC::RemotingProxyManager::I().Register();
 
 	}
 	static void XLangInternalInit()
 	{
 		X::Data::Str::Init();
 		X::AST::ModuleObject::Init();
+		X::Data::Future::Init();
 		X::Data::List::Init();
 		X::Data::Binary::Init();
 		X::Data::Dict::Init();
@@ -170,6 +185,7 @@ namespace X
 		X::Data::DeferredObject::Init();
 		X::Data::TypeObject::Init();
 		X::Data::XlangStruct::Init();
+		X::Data::Error::Init();
 	}
 	void UnloadDevopsEngine()
 	{
@@ -251,7 +267,7 @@ namespace X
 		}
 		ScriptsManager::I().Load();
 		ScriptsManager::I().Run();
-		XLangProxyManager::I().Register();
+		X::IPC::RemotingProxyManager::I().Register();
 
 		std::vector<X::Value> passInParams;
 		if (config.passInParams)
@@ -369,6 +385,7 @@ namespace X
 		X::Data::TypeObject::cleanup();
 		X::AST::MetaScope().I().Cleanup();
 		X::Data::XlangStruct::cleanup();
+		X::Data::Error::cleanup();
 		Hosting::I().Cleanup();
 		G::I().Check();
 		DestoryXHost();

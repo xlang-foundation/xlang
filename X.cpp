@@ -1,4 +1,19 @@
-﻿// LitePy.cpp : Defines the entry point for the application.
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// LitePy.cpp : Defines the entry point for the application.
 //
 #include <signal.h>
 #include <vector>
@@ -8,11 +23,20 @@
 #include "xload.h"
 #include "cli.h"
 
+
 #if (WIN32)
 #include <Windows.h>
+#include <cstdlib>
 #define Path_Sep_S "\\"
 #define Path_Sep '\\'
+#elif defined(__APPLE__)
+#include <sys/types.h>
+#include <sys/ptrace.h>
+#include <signal.h>
+#define Path_Sep_S "/"
+#define Path_Sep '/'
 #else
+#include <sys/prctl.h>
 #include <string.h> //for memcpy
 #define Path_Sep_S "/"
 #define Path_Sep '/'
@@ -32,7 +56,14 @@ void signal_callback_handler(int signum)
 	X::AppEventCode code = g_xLoad.HandleAppEvent(signum);
 	if (code == X::AppEventCode::Exit)
 	{
-		exit(signum);
+#if (WIN32)
+		_set_abort_behavior(0, _WRITE_ABORT_MSG); // disable error messagebox
+#elif defined(__APPLE__)
+		ptrace(PT_DENY_ATTACH, 0, 0, 0);
+#else
+		prctl(PR_SET_DUMPABLE, 0); // disable core dump
+#endif
+		abort();
 	}
 	signal(SIGINT, signal_callback_handler);
 }
@@ -202,7 +233,6 @@ int main(int argc, char* argv[])
 	//Workaround_WSLThread_Problem();
 	std::vector<std::string> params(argv, argv+argc);
 	ParamConfig paramConfig;
-
 	ParseCommandLine(params, paramConfig);
 	if (paramConfig.print_usage)
 	{
@@ -214,6 +244,7 @@ int main(int argc, char* argv[])
 	if (retCode == 0)
 	{
 		retCode = g_xLoad.Run();
+
 		if (paramConfig.cli)
 		{
 			X::CLI cli;

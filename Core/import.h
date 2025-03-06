@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "exp.h"
 #include "object.h"
@@ -205,6 +220,7 @@ public:
 class From :
 	public UnaryOp
 {
+	bool m_pathHasQuotation = false;
 	std::string m_path;
 public:
 	From() :
@@ -221,6 +237,10 @@ public:
 	{
 		return m_path;
 	}
+	bool PathHasQuotation()
+	{
+		return m_pathHasQuotation;
+	}
 	bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		Value& v, LValue* lValue) override
 	{
@@ -232,6 +252,7 @@ public:
 			{
 				Str* pStr = dynamic_cast<Str*>(R);
 				m_path = std::string(pStr->GetChars(), pStr->Size());
+				m_pathHasQuotation = true;
 			}
 			else if (R->m_type == ObType::Var)
 			{
@@ -331,6 +352,7 @@ struct ImportInfo
 	std::string name;
 	std::string alias;
 	std::string fileName;
+	Expression* params = nullptr;
 	bool Deferred = false;
 };
 class Import :
@@ -342,12 +364,14 @@ class Import :
 	//from path import moudule_lists
 	//only put one path after term: from
 	std::string m_path;
+	bool m_pathHasQuotation = false;
 	std::string m_thruUrl;
 	std::vector<ImportInfo> m_importInfos;
 	bool FindAndLoadExtensions(XlangRuntime* rt,
 		std::string& curModulePath, std::string& loadingModuleName);
 	bool FindAndLoadXModule(XlangRuntime* rt,
 		std::string& curModulePath, std::string& loadingModuleName,
+		X::ARGS& args, X::KWARGS& kwargs,
 		Module** ppSubModule);
 	bool LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 		XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange);
@@ -504,7 +528,8 @@ public:
 			if (expr->m_type == ObType::Var 
 				||expr->m_type == ObType::List
 				|| expr->m_type == ObType::As
-				|| expr->m_type == ObType::Deferred)
+				|| expr->m_type == ObType::Deferred
+				|| expr->m_type == ObType::Pair)
 			{
 				m_imports = expr;
 				operands.pop();

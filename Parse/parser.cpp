@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "parser.h"
 #include <iostream>
 #include <string>
@@ -10,6 +25,7 @@
 #include "op_registry.h"
 #include "jitblock.h"
 #include "jitlib.h"
+#include "xlog.h"
 
 namespace X
 {
@@ -96,14 +112,16 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		{
 			if (line->GetEndLine() > line->GetStartLine())
 			{
-				std::cout << "Line:" << line->GetStartLine()
-					<< "-" << line->GetEndLine()
-					<< "Error: line indent not match" << std::endl;
+				LOG << LOG_RED << "Module: " << m_strModuleName << ":" << line->GetStartLine()
+					<< ":" << line->GetEndLine()
+					<< ",Error: line indent not match"
+					<< LOG_RESET << LINE_END;
 			}
 			else
 			{
-				std::cout << "Line:" << line->GetStartLine()
-					<< ", Compile Error: line indent not match" << std::endl;
+				LOG << LOG_RED << "Module: " << m_strModuleName << ":" << line->GetStartLine()
+					<< ",Compile Error: line indent not match"
+					<< LOG_RESET << LINE_END;
 			}
 			return false;
 		}
@@ -112,7 +130,12 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 	{//go back to parent
 		if (!m_stackBlocks.empty())
 		{
-			delete m_stackBlocks.top();
+			auto top = m_stackBlocks.top();
+			if (top == m_curBlkState)
+			{
+				m_curBlkState = nullptr;//TODO:check here
+			}
+			delete top;
 			m_stackBlocks.pop();
 		}
 		curBlock = nil;
@@ -133,6 +156,10 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 			{
 				//for func or class, we need to re-calc line info bases on body's last item
 				curBlock->ReCalcHintWithBody();
+				if (pCurBlockState == m_curBlkState)
+				{
+					m_curBlkState = nullptr;//TODO: check here
+				}
 				delete pCurBlockState;
 				m_stackBlocks.pop();
 			}
@@ -144,7 +171,9 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 		}
 		else
 		{
-			std::cout << "Error: no block to add line" << std::endl;
+			LOG << LOG_RED << "Module: " << m_strModuleName << ":" << line->GetStartLine()
+				<< ",Compile Error: no block to add line"
+				<< LOG_RESET << LINE_END;
 			return false;
 		}
 	}
@@ -152,6 +181,10 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 }
 bool Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 {
+	if (m_curBlkState == nullptr)
+	{
+		return false;
+	}
 	if (meetLineFeed_n && m_curBlkState->m_SkipLineFeedN)
 	{
 		ResetForNewLine();
@@ -240,6 +273,10 @@ bool Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 			m_curBlkState = pBlockState;
 		}
 	}
+	if (m_curBlkState == nullptr)
+	{
+		return false;
+	}
 	ResetForNewLine();
 	return true;
 }
@@ -256,6 +293,10 @@ void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 			{
 				auto blk = m_stackBlocks.top();
 				m_stackBlocks.pop();
+				if (m_curBlkState == blk)
+				{
+					m_curBlkState = nullptr;//TODO check here
+				}
 				delete blk;
 			}
 			if (!m_stackBlocks.empty())
@@ -444,6 +485,13 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		s = one.id;
 		//std::cout << startLine << ":" << std::string(s.s, s.size) << std::endl;
 		leadingSpaceCnt = one.leadingSpaceCnt;
+		if (m_curBlkState == nullptr)
+		{
+			LOG << LOG_RED <<"Module: "<<m_strModuleName <<":" << (startLine+1) 
+				<< ",Token(s):" << std::string(s.s, s.size) <<",block match error"
+				<< LOG_RESET << LINE_END;
+			break;
+		}
 		if (m_curBlkState->m_NewLine_WillStart)
 		{
 			m_curBlkState->m_LeadingSpaceCountAtLineBegin
@@ -621,6 +669,10 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 	{
 		auto top = m_stackBlocks.top();
 		m_stackBlocks.pop();//only keep top one
+		if (top == m_curBlkState)
+		{
+			m_curBlkState = nullptr;//TODO: Check here
+		}
 		delete top;
 	}
 #if not defined(BARE_METAL)

@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 'use strict';
 
 import * as vscode from 'vscode';
@@ -17,7 +32,7 @@ async function SetExePath() : Promise<string | undefined>
 		});
 		if (ret?.length > 0)
 			exePath = ret[0].fsPath;
-	} else if (process.platform === "linux") {
+	} else if (process.platform === "linux" || process.platform === "darwin") {
 		const ret = await vscode.window.showOpenDialog({
 			openLabel:'choose',
 			canSelectFiles: true,
@@ -197,7 +212,7 @@ class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 		// if launch.json is missing or empty
 		if (!config.type && !config.request && !config.name) {
 			const editor = vscode.window.activeTextEditor;
-			if (editor && editor.document.languageId === 'xlang') {
+			if (editor && (editor.document.languageId === 'xlang' || editor.document.languageId === 'yml')) {
 				const items = ['launch', 'attach'];
 				const options: vscode.QuickPickOptions = {
 					title: 'Select a mode to run debug',
@@ -214,7 +229,7 @@ class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 				}
 				if (config.request === 'attach')
 				{
-					let dbgAddr = await vscode.window.showInputBox({value: "localhost:3142", prompt: "input remote xlang dbg address and port, empty or cancel to run xlang on a random port locally", placeHolder: "ip or host name:port"});
+					let dbgAddr = await vscode.window.showInputBox({value: "localhost:3142", prompt: "input remote xlang dbg address and port", placeHolder: "ip or host name:port"});
 					if (dbgAddr)
 					{
 						dbgAddr = dbgAddr.replace(/\s/g, '');
@@ -229,6 +244,12 @@ class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 							await vscode.window.showErrorMessage("please input valid address and port to attach, debugging stopped", { modal: true }, "ok");
 							return undefined;
 						}
+					}
+					else
+					{
+						await vscode.window.showErrorMessage("cancel attach, debugging stopped", { modal: true }, "ok");
+						return undefined;
+
 					}
 				}
 				

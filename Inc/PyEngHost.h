@@ -1,7 +1,24 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #ifndef _PyEngHost_H_
 #define _PyEngHost_H_
 
 #include "xport.h"
+#include "xlang.h"
+#include <functional>
 
 //all function,if return PyEngObjectPtr will hold a new reference
 typedef void* PyEngObjectPtr;
@@ -33,6 +50,8 @@ public:
 	virtual PyEngObjectPtr from_double(double val) = 0;
 	virtual const char* to_str(PyEngObjectPtr pVar) = 0;
 	virtual PyEngObjectPtr from_str(const char* val) = 0;
+	virtual X::Value to_xvalue(PyEngObjectPtr pVar) = 0;
+	virtual PyEngObjectPtr from_xvalue(const X::Value& val) = 0;
 
 	virtual long long GetCount(PyEngObjectPtr objs) = 0;
 	virtual PyEngObjectPtr Get(PyEngObjectPtr objs, int idx) = 0;
@@ -82,6 +101,10 @@ public:
 	virtual PyEngObjectPtr GetLocals() = 0;
 	virtual bool CallReleaseForTupleItems(PyEngObjectPtr tuple) = 0;
 	virtual bool Exec(const char* code, PyEngObjectPtr args) = 0;
+	virtual void InitPythonThreads() = 0;
+	virtual int GilLock() = 0;
+	virtual void GilUnlock(int state) = 0;
+	virtual void SubmitPythonTask(const std::function<void()>& task) = 0;
 };
 
 extern PyEngHost* g_pPyHost;

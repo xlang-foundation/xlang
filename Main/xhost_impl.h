@@ -1,5 +1,21 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "xhost.h"
+#include <unordered_map>
 
 namespace X
 {
@@ -8,11 +24,13 @@ namespace X
 	{
 		UI_THREAD_RUN_HANDLER m_uiThreadRunHandler = nullptr;
 		void* m_uiThreadRunContext = nullptr;
+		std::unordered_map<std::string, X::Value> m_KV;
 	public:
 		virtual void AddSysCleanupFunc(CLEANUP f) override;
 		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) override;
 		virtual XRuntime* GetCurrentRuntime() override;
 		virtual XStr* CreateStr(const char* data, int size) override;
+		virtual XError* CreateError(int code, const char* info) override;
 		virtual bool RegisterPackage(const char* name,PackageCreator creator,void* pContext) override;
 		virtual bool RegisterPackage(const char* name,Value& objPackage) override;
 		virtual Value QueryMember(XRuntime* rt, XObj* pObj, const char* name) override;
@@ -47,6 +65,7 @@ namespace X
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) override;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) override;
 		virtual bool RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal) override;
+		virtual bool RunCodeInNonDebug(const char* moduleName, const char* code, int codeSize, X::Value& retVal) override;
 		virtual bool RunCodeWithParam(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::Value& retVal) override;
 		virtual bool LoadModule(const char* moduleName, const char* code, int codeSize, X::Value& objModule) override;
 		virtual bool UnloadModule(X::Value objModule) override;
@@ -57,8 +76,11 @@ namespace X
 			return RunModule(objModule,args, retVal, keepModuleWithRuntime);
 		}
 		virtual bool RunModule(X::Value objModule, X::ARGS& args, X::Value& retVal, bool keepModuleWithRuntime) override;
+		virtual bool IsModuleLoadedMd5(const char* md5) override;
+		virtual X::Value NewModule() override;
 		virtual unsigned long long RunModuleInThread(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::KWARGS& kwargs) override;
-		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal, int exeNum = -1) override;
+		virtual bool RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal) override;
+		virtual bool RunFragmentInModule(X::Value moduleObj, const char* code, int size, X::Value& retVal, int exeNum = -1) override;
 		virtual const char* GetInteractiveCode() override;
 		virtual long OnEvent(const char* evtName, EventHandler handler) override;
 		virtual void OffEvent(const char* evtName, long Cookie) override;
@@ -79,7 +101,12 @@ namespace X
 		virtual void* GetUIThreadRunContext() override;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) override;
 		virtual bool PyRun(const char* code, X::ARGS& args) override;
+		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) override;
+		virtual void SetPyEngHost(void* pHost) override;
 		virtual void SetDebugMode(bool bDebug) override;
+		virtual void EnalbePython(bool bEnable, bool bEnablePythonDebug) override;
+		virtual void EnableDebug(bool bEnable, int port=3142) override;
+		virtual void* GetLogger() override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

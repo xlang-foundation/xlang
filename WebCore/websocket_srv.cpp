@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 //to avoid winsock head file issue
 //put all boost include ahead others
 #include <boost/asio.hpp>
@@ -13,7 +28,7 @@
 #include <vector>
 #include "value.h"
 #include "xhost.h"
-
+#include "xlog.h"
 
 namespace X
 {
@@ -84,7 +99,7 @@ namespace X
                 WebSocketSessionImpl* pThis = this;
                 m_lockThreadCount.Lock();
                 m_threadCount--;
-                CanRemove == (m_threadCount == 0);
+                CanRemove = (m_threadCount == 0);
                 m_lockThreadCount.Unlock();
                 if (CanRemove)
                 {
@@ -105,6 +120,10 @@ namespace X
             }
             ~WebSocketSessionImpl()
 			{
+                if (mRealSession)
+                {
+					mRealSession->SetImpl(nullptr);
+                }
 				delete m_QueueWait;
 				m_QueueWait = nullptr;
                 delete m_wsSocket;
@@ -167,6 +186,7 @@ namespace X
                 catch (const std::exception& e)
                 {
                     std::cout << "Error:" << e.what() << std::endl;
+
                 }
                 PrepareStop();
                 TryToRemoveSession();
@@ -212,7 +232,7 @@ namespace X
                 }
                 catch (const std::exception& e)
                 {
-                    //LOG << "Error:" << e.what() << LINE_END;
+                    LOG <<LOG_RED<< "Error:" << e.what() <<LOG_RESET<< LINE_END;
                 }
                 PrepareStop();
                 TryToRemoveSession();
@@ -246,23 +266,39 @@ namespace X
 
         void WebSocketSrvThread::run()
         {
-            asio::io_context io_context;
-            tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), mPort));
-            while (mRun)
+            try 
             {
-                tcp::socket socket(io_context);
-                acceptor.accept(socket);
+                asio::io_context io_context;
+                tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), mPort));
+                while (mRun)
+                {
+                    tcp::socket socket(io_context);
+                    acceptor.accept(socket);
 
-                auto* pSesison = new WebSocketSessionImpl(this, &socket);
-                m_lockSessions.Lock();
-                m_Sessions.push_back(pSesison);
-                m_lockSessions.Unlock();
-                pSesison->Start();
-                X::ARGS args(1);
-                args.push_back(pSesison->GetSession());
-                X::KWARGS kwargs;
-                mServer->Fire(0, args, kwargs);
+                    auto* pSesison = new WebSocketSessionImpl(this, &socket);
+                    m_lockSessions.Lock();
+                    m_Sessions.push_back(pSesison);
+                    m_lockSessions.Unlock();
+                    pSesison->Start();
+                    X::ARGS args(1);
+                    args.push_back(pSesison->GetSession());
+                    X::KWARGS kwargs;
+                    mServer->Fire(0, args, kwargs);
+                }
             }
+            catch (const boost::system::system_error& e)
+            {
+                LOG << LOG_BLINK <<LOG_RED <<"Port:"<< mPort << ",Boost system error: " << e.what() << LOG_RESET << LINE_END;
+            }
+            catch (const std::exception& e)
+            {
+                LOG << LOG_BLINK << LOG_RED << "Port:" << mPort << ",Standard exception: " << e.what() << LOG_RESET << LINE_END;
+            }
+            catch (...)
+            {
+                LOG << LOG_BLINK << LOG_RED << "Port:" << mPort <<",Unknown exception occurred." << LOG_RESET << LINE_END;
+            }
+			//Clean up
             m_lockSessions.Lock();
             for (auto* pSession : m_Sessions)
             {
@@ -313,7 +349,10 @@ namespace X
         }
         bool WebSocketSession::Write(X::Value& value)
         {
-            return ((WebSocketSessionImpl*)m_pImpl)->Write(value);
+			m_lockImpl.Lock();
+            bool bOK =  ((WebSocketSessionImpl*)m_pImpl)->Write(value);
+			m_lockImpl.Unlock();
+            return bOK;
         }
 }
 }

@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "exp.h"
 #include "object.h"
@@ -163,13 +178,19 @@ public:
 		}
 		return idx;
 	}
-	FORCE_INLINE virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
+	FORCE_INLINE virtual int QueryMethod(const char* name, int* pFlags = nullptr) override
 	{
 		std::string strName(name);
 		SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, true);
-		if (idx>=0 && pKeepRawParams)
+		if (idx>=0 && pFlags)
 		{
-			*pKeepRawParams = m_memberInfos[idx].KeepRawParams;
+			auto& memberInfo = m_memberInfos[idx];
+			int flags = 0xFF&int(memberInfo.type);
+			if (memberInfo.KeepRawParams)
+			{
+				flags |=(int)X::MemberFlag::KeepRawParams;
+			}
+			*pFlags = flags;
 		}
 		return idx;
 	}
@@ -304,7 +325,16 @@ public:
 					//continue;
 					//v0.GetObj()->IncRef();
 				}
-				if (v0.IsObject() && v0.GetObj()->GetType() == ObjType::ObjectEvent)
+				//we change to clone all objects
+				// to make like following code work
+				/*
+					auto db1 = sqlite["Database"](dbName1);
+					auto db2 = sqlite["Database"](dbName2);
+					auto s1_call = db1["statement"];
+					auto s2_call = db2["statement"];
+					to make s1_call and s2_call are diffrent objects
+				*/
+				//if (v0.IsObject() && v0.GetObj()->GetType() == ObjType::ObjectEvent)
 				{
 					v0.Clone();
 				}
@@ -393,9 +423,9 @@ public:
 	{
 		return m_pPackage->AddMember(type,name,doc,keepRawParams);
 	}
-	FORCE_INLINE virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override
+	FORCE_INLINE virtual int QueryMethod(const char* name, int* pFlags = nullptr) override
 	{
-		return m_pPackage->QueryMethod(name, pKeepRawParams);
+		return m_pPackage->QueryMethod(name, pFlags);
 	}
 	FORCE_INLINE virtual MemberIndexInfo QueryMethod(std::string name)
 	{
@@ -425,6 +455,8 @@ public:
 	}
 	FORCE_INLINE virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{
+		//add myself whihc is instance of Package Scope
+		bases.push_back(m_pMyScope);
 		bases.push_back(m_pPackage->GetMyScope());
 	}
 	virtual bool Init(int varNum) override

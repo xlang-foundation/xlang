@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #ifndef _X_HOST_H_
 #define _X_HOST_H_
 #include "value.h"
@@ -26,6 +41,7 @@ namespace X
 	class XProxy;
 	class XCustomScope;
 	class XRuntime;
+	class XError;
 	typedef XPackage* (*PackageCreator)(X::Value context);
 	typedef long long (*PackageGetContentSizeFunc)(void* pContextObj);
 	typedef bool (*PackageToBytesFunc)(void* pContextObj, X::XLStream* pStream);
@@ -70,6 +86,7 @@ namespace X
 		virtual bool QueryPackage(XRuntime* rt,const char* name, Value& objPackage) = 0;
 		virtual XObj* ConvertObjFromPointer(void* pObjectPtr) = 0;
 		virtual XStr* CreateStr(const char* data, int size) = 0;
+		virtual XError* CreateError(int code, const char* info) = 0;
 		virtual XDict* CreateDict() = 0;
 		virtual XList* CreateList() = 0;
 		virtual XTensor* CreateTensor() = 0;
@@ -99,14 +116,18 @@ namespace X
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) = 0;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) = 0;
 		virtual bool RunCode(const char* moduleName,const char* code, int codeSize,X::Value& retVal) = 0;
+		virtual bool RunCodeInNonDebug(const char* moduleName, const char* code, int codeSize, X::Value& retVal) = 0;
 		virtual bool RunCodeWithParam(const char* moduleName, const char* code, int codeSize, X::ARGS& args, X::Value& retVal) = 0;
 		virtual bool LoadModule(const char* moduleName, const char* code, int codeSize, X::Value& objModule) = 0;
 		virtual bool UnloadModule(X::Value objModule) = 0;
 		virtual bool UnloadXPackage(const char* packageName) = 0;
 		virtual bool RunModule(X::Value objModule, X::Value& retVal, bool keepModuleWithRuntime) = 0;
 		virtual bool RunModule(X::Value objModule, X::ARGS& args,X::Value& retVal,bool keepModuleWithRuntime) = 0;
+		virtual bool IsModuleLoadedMd5(const char* md5) = 0;
+		virtual X::Value NewModule() = 0;
 		virtual unsigned long long RunModuleInThread(const char* moduleName, const char* code, int codeSize,X::ARGS& args,X::KWARGS& kwargs) = 0;
-		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal, int exeNum = -1) = 0;
+		virtual bool RunCodeLine(const char* codeLine, int codeSize,X::Value& retVal) = 0;
+		virtual bool RunFragmentInModule(X::Value moduleObj, const char* code, int size, X::Value& retVal, int exeNum = -1) = 0;
 		virtual const char* GetInteractiveCode() = 0;
 		virtual long OnEvent(const char* evtName, EventHandler handler) = 0;
 		virtual void OffEvent(const char* evtName, long Cookie) = 0;
@@ -127,7 +148,12 @@ namespace X
 		virtual void* GetUIThreadRunContext() =0;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) = 0;
 		virtual bool PyRun(const char* code, X::ARGS& args) = 0;
+		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) = 0;
+		virtual void SetPyEngHost(void* pHost) = 0;
 		virtual void SetDebugMode(bool bDebug) = 0;
+		virtual void EnalbePython(bool bEnable,bool bEnablePythonDebug) = 0;
+		virtual void EnableDebug(bool bEnable, int port=3142) = 0;
+		virtual void* GetLogger() = 0;
 	};
 	extern XHost* g_pXHost;
 }

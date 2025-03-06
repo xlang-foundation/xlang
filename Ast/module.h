@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "exp.h"
 #include "scope.h"
@@ -42,6 +57,9 @@ class Module :
 
 	//if this module has Jit Blocks, will have this member
 	X::Jit::JitLib* m_pJitLib = nullptr;
+	//used for store something in Module level
+	Locker m_moduleCacheLock;
+	std::unordered_map<std::string, X::Value> m_moduleCache;
 
 	StackFrame* m_stackFrame = nullptr;
 	XlangRuntime* m_pRuntime=nullptr;//for top module, we need it
@@ -49,6 +67,7 @@ class Module :
 	Locker m_lockSearchPath;
 	std::vector<std::string> m_searchPaths;
 	std::string m_moduleName;
+	std::string m_md5;
 	std::string m_path;
 	// for var name and value with str
 	// we keep string pointer not copy from the source code memory
@@ -64,7 +83,7 @@ class Module :
 	std::vector<X::Value> m_args;
 	//for debug
 	//Locker m_addCommandLock;
-	
+	Locker m_lockDbgScopes;
 	std::vector<Scope*> m_dbgScopes;
 	
 	Locker m_lockBreakpoints;
@@ -86,9 +105,46 @@ public:
 		m_pMyScope->SetVarFrame(m_stackFrame);
 		SetIndentCount({ 0,-1,-1 });//then each line will have 0 indent
 	}
+	FORCE_INLINE void AddModuleVariable(std::string& name,X::Value& value)
+	{
+		int idx = m_pMyScope->AddOrGet(name, false);
+		if (idx >= 0)
+		{
+			m_pMyScope->SimpleSet(idx, value);
+		}
+	}
 	FORCE_INLINE void SetJitLib(X::Jit::JitLib* pLib)
 	{
 		m_pJitLib = pLib;
+	}
+	FORCE_INLINE void AddModuleCache(std::string& name, X::Value& val)
+	{
+		m_moduleCacheLock.Lock();
+		m_moduleCache[name] = val;
+		m_moduleCacheLock.Unlock();
+	}
+	FORCE_INLINE X::Value GetModuleCache(std::string& name)
+	{
+		m_moduleCacheLock.Lock();
+		auto it = m_moduleCache.find(name);
+		if (it != m_moduleCache.end())
+		{
+			X::Value v = it->second;
+			m_moduleCacheLock.Unlock();
+			return v;
+		}
+		m_moduleCacheLock.Unlock();
+		return X::Value();
+	}
+	FORCE_INLINE void RemoveModuleCache(std::string& name)
+	{
+		m_moduleCacheLock.Lock();
+		auto it = m_moduleCache.find(name);
+		if (it != m_moduleCache.end())
+		{
+			m_moduleCache.erase(it);
+		}
+		m_moduleCacheLock.Unlock();
 	}
 	void ChangeMyScopeTo(Scope* pNewMyScope)
 	{
@@ -225,7 +281,11 @@ public:
 	{
 		return m_moduleName;
 	}
-	
+	std::string GetMd5() { return m_md5; }
+	void SetMd5(const std::string& val) {
+		m_md5 = val; 
+		//std::cout << "new module: " << m_md5 << "  " << m_moduleName << std::endl;
+	}
 	FORCE_INLINE char* SetCode(char* code, int size)
 	{
 		std::string strCode(code, size);
@@ -272,6 +332,7 @@ public:
 			return true;
 		}
 		bool bIn = false;
+		m_lockDbgScopes.Lock();
 		if (m_dbgScopes.size() > 0)
 		{
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
@@ -279,49 +340,59 @@ public:
 			{
 				bIn = true;
 			}
-		}	
+		}
+		m_lockDbgScopes.Unlock();
 		return bIn;
 	}
 	FORCE_INLINE Scope* LastScope()
 	{
-		return m_dbgScopes.size() > 0 ? 
+		m_lockDbgScopes.Lock();
+		Scope* retScope =  m_dbgScopes.size() > 0 ? 
 			m_dbgScopes[m_dbgScopes.size() - 1] : nullptr;
+		m_lockDbgScopes.Unlock();
+		return retScope;
 	}
 	FORCE_INLINE ScopeWaitingStatus HaveWaitForScope()
 	{
-		return m_dbgScopes.size() > 0?
+		m_lockDbgScopes.Lock();
+		ScopeWaitingStatus s =  m_dbgScopes.size() > 0?
 			m_dbgScopes[m_dbgScopes.size() - 1]->IsWaitForCall():
 			ScopeWaitingStatus::NoWaiting;
+		m_lockDbgScopes.Unlock();
+		return s;
 	}
 	FORCE_INLINE void ReplaceLastDbgScope(Scope* s)
 	{
+		m_lockDbgScopes.Lock();
 		if (m_dbgScopes.size() > 0)
 		{
 			Scope* last = m_dbgScopes[m_dbgScopes.size() - 1];
 			m_dbgScopes[m_dbgScopes.size() - 1] = s;
 		}
+		m_lockDbgScopes.Unlock();
 	}
 	FORCE_INLINE void AddDbgScope(Scope* s)
 	{
+		m_lockDbgScopes.Lock();
 		m_dbgScopes.push_back(s);
+		m_lockDbgScopes.Unlock();
 	}
 	FORCE_INLINE void RemoveDbgScope(Scope* s)
 	{
-		auto rit = m_dbgScopes.rbegin();
-		while (rit != m_dbgScopes.rend())
+		m_lockDbgScopes.Lock();
+		for (auto rit = m_dbgScopes.rbegin(); rit != m_dbgScopes.rend(); ++rit)
 		{
 			Scope* s0 = (*rit);
 			if (s0->isEqual(s))
 			{
-				m_dbgScopes.erase((++rit).base());
+				// Convert reverse iterator to a normal iterator and erase
+				m_dbgScopes.erase(std::next(rit).base());
 				break;
 			}
-			else
-			{
-				++rit;
-			}
 		}
+		m_lockDbgScopes.Unlock();
 	}
+
 };
 }
 }

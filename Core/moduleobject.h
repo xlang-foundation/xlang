@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "exp.h"
 #include "object.h"
@@ -39,7 +54,7 @@ namespace X
 				std::string str = m_pModule ? m_pModule->GetModulePath() : "";
 				return GetABIString(str);
 			}
-			virtual int QueryMethod(const char* name, bool* pKeepRawParams = nullptr) override;
+			virtual int QueryMethod(const char* name, int* pFlags = nullptr) override;
 			virtual bool GetIndexValue(int idx, Value& v) override;
 			//return size of Module's member count
 			virtual long long Size() override;

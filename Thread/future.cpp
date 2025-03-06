@@ -1,49 +1,44 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "future.h"
 #include "scope.h"
 #include "function.h"
+#include "task.h"
 #include "glob.h"
+#include "obj_func_scope.h"
 
 namespace X
 {
 	namespace Data
 	{
-		class FutureScope :
-			virtual public AST::Scope
-		{
-			AST::StackFrame* m_stackFrame = nullptr;
-		public:
-			FutureScope() :
-				Scope()
-			{
-				Init();
-			}
-			void clean()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-					m_stackFrame = nullptr;
-				}
-			}
-			~FutureScope()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
-			}
-			void Init()
-			{
-				m_stackFrame = new AST::StackFrame();
-				m_stackFrame->SetVarCount(2);
+		static Obj_Func_Scope<6> _futureScope;
 
-				std::string strName;
-				{
-					strName = "get";
-					auto f = [](X::XRuntime* rt, XObj* pThis,XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
+		void Future::GetBaseScopes(std::vector<AST::Scope*>& bases)
+		{
+			Object::GetBaseScopes(bases);
+			bases.push_back(_futureScope.GetMyScope());
+		}
+		void Future::Init()
+		{
+			_futureScope.Init();
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
 					{
 						bool bOK = false;
 						if (params.size() > 0)
@@ -57,21 +52,13 @@ namespace X
 						}
 						return bOK;
 					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"get(timeout)",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-				{
-					strName = "then";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
+				_futureScope.AddFunc("get", "get(timeout)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
 					{
 						if (params.size() > 0)
 						{
@@ -82,54 +69,90 @@ namespace X
 						retValue = X::Value(pContext);
 						return true;
 					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"then(callable)",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
+				_futureScope.AddFunc("then", "then(proc)", f);
 			}
-#if __TODO_SCOPE__
-			// Inherited via Scope
-			virtual Scope* GetParentScope() override
 			{
-				return nullptr;
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Future* pObj = dynamic_cast<Future*>(pContext);
+						pObj->Cancel();
+						retValue = X::Value(true);
+						return true;
+					};
+				_futureScope.AddFunc("cancel", "cancel()", f);
 			}
-			virtual bool Set(XlangRuntime* rt, XObj* pContext, int idx, Value& v) override
 			{
-				m_stackFrame->Set(idx, v);
-				return true;
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Future* pObj = dynamic_cast<Future*>(pContext);
+						retValue = pObj->IsCancelled();
+						return true;
+					};
+				_futureScope.AddFunc("isCancelled", "isCancelled()", f);
 			}
-			virtual bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
-				LValue* lValue = nullptr) override
 			{
-				m_stackFrame->Get(idx, v, lValue);
-				return true;
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Future* pObj = dynamic_cast<Future*>(pContext);
+						retValue = pObj->getRunTime();
+						return true;
+					};
+				_futureScope.AddFunc("getRunTime", "getRunTime()", f);
 			}
-#endif
-		};
-		static FutureScope* _FutureScope = nullptr;
-
-		void Future::GetBaseScopes(std::vector<AST::Scope*>& bases)
-		{
-			if (_FutureScope == nullptr)
 			{
-				_FutureScope = new FutureScope();
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Future* pObj = dynamic_cast<Future*>(pContext);
+						retValue = pObj->getTotalTime();
+						return true;
+					};
+				_futureScope.AddFunc("getTotalTime", "getTotalTime()", f);
 			}
-			Object::GetBaseScopes(bases);
-			bases.push_back(_FutureScope);
 		}
 		void Future::cleanup()
 		{
-			if (_FutureScope)
+			_futureScope.Clean();
+		}
+		long long Future::getRunTime()
+		{
+			AutoLock l(m_lock);
+			if (m_pTask)
 			{
-				_FutureScope->clean();
-				delete _FutureScope;
-				_FutureScope = nullptr;
+				return m_pTask->GetEndRunTime() - m_pTask->GetStartRunTime();
 			}
+			return 0;
+		}
+		long long Future::getTotalTime()
+		{
+			AutoLock l(m_lock);
+			if (m_pTask)
+			{
+				return m_pTask->GetEndRunTime() - m_pTask->GetEnqueueTime();
+			}
+			return 0;
+		}
+		void Future::Cancel()
+		{
+			m_pTask->Cancel();
+			Lock();
+			for (auto* w : m_waits)
+			{
+				w->Release();
+			}
+			m_waits.clear();
+			Unlock();
 		}
 		void Future::SetVal(X::Value& v)
 		{

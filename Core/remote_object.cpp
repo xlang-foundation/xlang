@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "remote_object.h"
 #include "list.h"
 
@@ -15,8 +30,10 @@ namespace X
 		{
 			IdList_new.push_back(id);
 		}
-		bool bOK = m_proxy->FlatPack(m_remote_Parent_Obj_id,
-			m_remote_Obj_id, IdList_new, id_offset,startIndex, count, valPack);
+		m_proxyLock.Lock();
+		bool bOK = m_proxy?m_proxy->FlatPack(m_remote_Parent_Obj_id,
+			m_remote_Obj_id, IdList_new, id_offset,startIndex, count, valPack):false;
+		m_proxyLock.Unlock();
 		if (bOK && valPack.IsObject())
 		{
 			pPackList = dynamic_cast<X::Data::List*>(valPack.GetObj());
@@ -37,7 +54,14 @@ namespace X
 		{
 			IdList_new.push_back(id);
 		}
-		return m_proxy->UpdateItemValue(m_remote_Parent_Obj_id,
-			m_remote_Obj_id, IdList_new, id_offset, itemName, val);
+		X::Value retValue;
+		m_proxyLock.Lock();
+		if (m_proxy)
+		{
+			retValue = m_proxy->UpdateItemValue(m_remote_Parent_Obj_id,
+				m_remote_Obj_id, IdList_new, id_offset, itemName, val);
+		}
+		m_proxyLock.Unlock();
+		return retValue;
 	}
 }

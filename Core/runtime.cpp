@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "runtime.h"
 #include "stackframe.h"
 #include "exp.h"
@@ -93,6 +108,8 @@ namespace X
 				params.push_back(fmtString);
 			}
 			KWARGS kwargs;
+			X::Value varPadIndex(i);
+			kwargs.Add("pad_index", varPadIndex);
 			Value retVal;
 			bool bOK = pad.writePadFunc.GetObj()->Call(
 				this, pad.obj.GetObj(), params, kwargs, retVal);
@@ -160,7 +177,8 @@ namespace X
 		{
 			return;
 		}
-		auto last = m_WritePads[size - 1];
+		int padIndex = size - 1;
+		auto last = m_WritePads[padIndex];
 		ARGS params(2);
 		params.push_back(X::Value());//Invalid value means cleanup this pad
 		if (last.UsingDataBinding)
@@ -169,6 +187,8 @@ namespace X
 		}
 		params.Close();
 		KWARGS kwargs;
+		X::Value varPadIndex(padIndex);
+		kwargs.Add("pad_index", varPadIndex);
 		Value retVal;
 		last.writePadFunc.GetObj()->Call(
 			this, last.obj.GetObj(), params, kwargs, retVal);
@@ -198,6 +218,34 @@ namespace X
 		PushFrame(pModuleFrame, m_pModule->GetMyScope()->GetVarNum());
 
 		return true;
+	}
+	X::Value XlangRuntime::GetModuleObject()
+	{
+		AST::Module* pCurModule = nullptr;
+		//trust stack's current module
+		if (m_stackBottom)
+		{
+			auto* pExp = m_stackBottom->GetCurExp();
+			if (pExp)
+			{
+				auto* pModule = pExp->FindModule();
+				if (pModule)
+				{
+					pCurModule = pModule;
+				}
+			}
+		}
+		if (!pCurModule && m_pModule)
+		{
+			pCurModule = m_pModule;
+		}
+		if (pCurModule == nullptr)
+		{
+			return X::Value();
+		}
+		AST::ModuleObject* pMoudleObject = new AST::ModuleObject(pCurModule);
+
+		return X::Value(pMoudleObject);
 	}
 	X::Value XlangRuntime::GetXModuleFileName()
 	{

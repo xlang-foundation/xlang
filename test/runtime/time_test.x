@@ -1,3 +1,18 @@
+﻿#
+# Copyright (C) 2024 The XLang Foundation
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# <END>
+
 import time
 # 1. Get current time in seconds since the Epoch
 var1 = time.time()
@@ -14,6 +29,10 @@ print("GMT time as struct_time:", var3.tm_year, "-", var3.tm_mon, "-", var3.tm_m
 # 4. Format the local time into a readable string
 var4 = time.strftime("%Y-%m-%d %H:%M:%S", var2)
 print("Formatted local time:", var4)
+# include milliseconds
+var4_1 = time.strftime("%Y-%m-%d %H:%M:%S", var2,True)
+print("Formatted local time(+ms):", var4_1)
+
 
 # 5. Parse a formatted time string back into a struct_time
 time_string = "2024-08-24 15:32:36"

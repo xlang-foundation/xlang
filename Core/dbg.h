@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "exp.h"
 #include "runtime.h"
@@ -143,7 +158,7 @@ public:
 			{
 				std::vector<AST::Scope*> callables;
 				exp->CalcCallables(rtForDebugThread, pContext, callables);
-				if (callables.size() > 0 && callables[0]->GetExp() && callables[0]->GetExp()->m_type == AST::ObType::Func)// can trace into
+				if (!(exp->m_type == AST::ObType::Func || exp->m_type == AST::ObType::Class) && callables.size() > 0 && callables[0]->GetExp() && callables[0]->GetExp()->m_type == AST::ObType::Func)// can trace into
 				{
 					m_rt->SetDbgType(dbg::StepOut, dbg::Step); // set DbgType to StepOut to skip trace in this exp
 					m_rt->m_pFirstStepOutExp = callables[0]->GetExp();
@@ -221,7 +236,7 @@ public:
 			return true;
 
 		AST::Module* expModule = GetExpModule(exp);
-		if (!expModule && !G::I().GetTrace())
+		if (!expModule || !G::I().GetTrace())
 		{
 			return false;
 		}

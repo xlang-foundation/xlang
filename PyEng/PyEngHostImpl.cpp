@@ -1,9 +1,26 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "PyEngHostImpl.h"
 #include "utility.h"
 #include "PyFunc.h"
 #include <iostream>
 #include <sstream>
 #include "port.h"
+#include "PyObjectXLangConverter.h"
+#include "PyGILState.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -38,7 +55,8 @@ static void LoadNumpy()
 #define SURE_NUMPY_API() LoadNumpy()
 
 
-GrusPyEngHost::GrusPyEngHost()
+GrusPyEngHost::GrusPyEngHost():
+	m_pyTaskPool(3)
 {
 
 }
@@ -49,58 +67,68 @@ GrusPyEngHost::~GrusPyEngHost()
 PyEngObjectPtr GrusPyEngHost::CreatePythonFuncProxy(
 	void* realFuncObj, void* pContext)
 {
+	MGil gil;
 	PyObject* pRetObj = CreateFuncWrapper(this, realFuncObj, pContext);
 	return (PyEngObjectPtr)pRetObj;
 }
 int GrusPyEngHost::to_int(PyEngObjectPtr pVar)
 {
+	MGil gil;
 	return (int)PyLong_AsLong((PyObject*)pVar);
 }
 
 PyEngObjectPtr GrusPyEngHost::from_int(int val)
 {
+	MGil gil;
 	PyObject* pOb = PyLong_FromLong(val);
 	return (PyEngObjectPtr)pOb;
 }
 
 long long GrusPyEngHost::to_longlong(PyEngObjectPtr pVar)
 {
+	MGil gil;
 	return PyLong_AsLongLong((PyObject*)pVar);
-
 }
 
 PyEngObjectPtr GrusPyEngHost::from_longlong(long long val)
 {
+	MGil gil;
 	PyObject* pOb = PyLong_FromLongLong(val);
 	return (PyEngObjectPtr)pOb;
 }
 
 double GrusPyEngHost::to_double(PyEngObjectPtr pVar)
 {
+	MGil gil;
 	return (double)PyFloat_AsDouble((PyObject*)pVar);
 }
 
 PyEngObjectPtr GrusPyEngHost::from_double(double val)
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyFloat_FromDouble((double)val);
 }
 
 bool GrusPyEngHost::IsNone(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return ((PyObject*)obj == Py_None);
 }
 
 float GrusPyEngHost::to_float(PyEngObjectPtr pVar)
 {
+	MGil gil;
 	return (float)PyFloat_AsDouble((PyObject*)pVar);
 }
 
 PyEngObjectPtr GrusPyEngHost::from_float(float val)
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyFloat_FromDouble((double)val);
 }
 std::string ConvertFromObject(PyObject* pOb)
 {
+	MGil gil;
 	std::string strVal;
 	if (pOb == nullptr)
 	{
@@ -130,11 +158,13 @@ const char* GrusPyEngHost::to_str(PyEngObjectPtr pVar)
 
 PyEngObjectPtr GrusPyEngHost::from_str(const char* val)
 {
+	MGil gil;
 	return (PyEngObjectPtr*)PyUnicode_FromString(val);
 }
 
 long long GrusPyEngHost::GetCount(PyEngObjectPtr objs)
 {
+	MGil gil;
 	PyObject* pOb = (PyObject*)objs;
 	if (pOb == nullptr)
 	{
@@ -166,6 +196,7 @@ long long GrusPyEngHost::GetCount(PyEngObjectPtr objs)
 
 PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, int idx)
 {
+	MGil gil;
 	PyObject* pOb = (PyObject*)objs;
 	PyObject* pRetOb = Py_None;
 	if (PyTuple_Check(pOb))
@@ -207,6 +238,7 @@ PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, int idx)
 
 int GrusPyEngHost::Set(PyEngObjectPtr objs, int idx, PyEngObjectPtr val)
 {	
+	MGil gil;
 	PyObject* pOb = (PyObject*)objs;
 	int retVal = 0;
 	if (PyList_Check(pOb))
@@ -233,6 +265,7 @@ void GrusPyEngHost::Free(const char* sz)
 
 PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, const char* key)
 {
+	MGil gil;
 	PyObject* pOb = (PyObject*)objs;
 	PyObject* pRetOb = nullptr;
 	if (pOb != nullptr && PyDict_Check(pOb))
@@ -306,6 +339,7 @@ PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, const char* key)
 
 PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, int argNum, PyEngObjectPtr* args)
 {
+	MGil gil;
 	PyObject* pRetOb = Py_None;
 	PyObject* pCallOb = (PyObject*)obj;
 	if (!PyCallable_Check(pCallOb))
@@ -325,8 +359,21 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, int argNum, PyEngObjectPt
 
 	return (PyEngObjectPtr)pRetOb;
 }
+void EnablePdbInThread() {
+	PyObject* pdb_module = PyImport_ImportModule("pdb");
+	if (pdb_module) {
+		PyObject* trace_func = PyObject_GetAttrString(pdb_module, "trace_dispatch");
+		if (trace_func) {
+			PyEval_SetTrace((Py_tracefunc)PyObject_CallFunctionObjArgs, trace_func);
+			Py_DECREF(trace_func);
+		}
+		Py_DECREF(pdb_module);
+	}
+}
+
 PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEngObjectPtr kwargs)
 {
+	MGil gil;
 	PyObject* pRetOb = Py_None;
 	PyObject* pCallOb = (PyObject*)obj;
 	if (!PyCallable_Check(pCallOb))
@@ -334,11 +381,15 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEn
 		Py_IncRef(pRetOb);
 		return pRetOb;
 	}
+	// Trigger pdb.set_trace() to enter Python's interactive debugger
+	//PyRun_SimpleString("import pdb; pdb.set_trace()");
+	//EnablePdbInThread();
 	pRetOb = PyObject_Call(pCallOb,(PyObject*)args, (PyObject*)kwargs);
 	return (PyEngObjectPtr)pRetOb;
 }
 PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, int argNum, PyEngObjectPtr* args, PyEngObjectPtr kwargs)
 {
+	MGil gil;
 	PyObject* pRetOb = Py_None;
 	PyObject* pCallOb = (PyObject*)obj;
 	if (!PyCallable_Check(pCallOb))
@@ -363,6 +414,7 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, int argNum, PyEngObjectPt
 
 bool GrusPyEngHost::ContainKey(PyEngObjectPtr container, PyEngObjectPtr key)
 {
+	MGil gil;
 	bool bOK = false;
 	if (PyDict_Check((PyObject*)container))
 	{
@@ -373,6 +425,7 @@ bool GrusPyEngHost::ContainKey(PyEngObjectPtr container, PyEngObjectPtr key)
 
 bool GrusPyEngHost::KVSet(PyEngObjectPtr container, PyEngObjectPtr key, PyEngObjectPtr val)
 {
+	MGil gil;
 	int  ret = 0;
 	if (PyDict_Check((PyObject*)container))
 	{
@@ -386,20 +439,24 @@ bool GrusPyEngHost::KVSet(PyEngObjectPtr container, PyEngObjectPtr key, PyEngObj
 }
 PyEngObjectPtr GrusPyEngHost::NewTuple(long long size)
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyTuple_New(size);
 }
 PyEngObjectPtr GrusPyEngHost::NewList(long long size)
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyList_New(size);
 }
 
 PyEngObjectPtr GrusPyEngHost::NewDict()
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyDict_New();
 }
 
 PyEngObjectPtr GrusPyEngHost::NewArray(int nd, unsigned long long* dims, int itemDataType,void* data)
 {
+	MGil gil;
 	SURE_NUMPY_API();
 	
 	PyEngObjectPtr aryData = nullptr;
@@ -418,10 +475,12 @@ PyEngObjectPtr GrusPyEngHost::NewArray(int nd, unsigned long long* dims, int ite
 void GrusPyEngHost::SetTrace(Python_TraceFunc func,
 	PyEngObjectPtr args)
 {
+	MGil gil;
 	PyEval_SetTrace((Py_tracefunc)func, (PyObject*)args);
 }
 PyEngObjectPtr GrusPyEngHost::Import(const char* key)
 {
+	MGil gil;
 	auto* pOb = PyImport_ImportModule(key);
 	return (PyEngObjectPtr)pOb;
 }
@@ -430,6 +489,7 @@ PyEngObjectPtr GrusPyEngHost::Import(const char* key)
 //deal with import cv2 case, emebed Python bugs: need to preload cv2.pyd at least in Windows
 PyEngObjectPtr GrusPyEngHost::ImportWithPreloadRequired(const char* key)
 {
+	MGil gil;
 	auto load = [key](std::string& path) {
 		std::string fullPath = path + Path_Sep_S + key+ Path_Sep_S+key;
 #if (WIN32)
@@ -488,6 +548,7 @@ bool GrusPyEngHost::ImportWithFromList(
 	X::Port::vector<const char*>& fromList,
 	X::Port::vector<PyEngObjectPtr>& subs)
 {
+	MGil gil;
 	PyObject* pFromArgs = PyTuple_New(fromList.size());
 	for (auto& from : fromList)
 	{
@@ -514,12 +575,14 @@ bool GrusPyEngHost::ImportWithFromList(
 
 void GrusPyEngHost::Release(PyEngObjectPtr obj)
 {
+	MGil gil;
 	PyObject* pOb = (PyObject*)obj;
 	Py_DecRef(pOb);
 }
 
 int GrusPyEngHost::AddRef(PyEngObjectPtr obj)
 {
+	MGil gil;
 	PyObject* pOb = (PyObject*)obj;
 	Py_IncRef(pOb);
 	return (int)pOb->ob_refcnt;
@@ -527,6 +590,7 @@ int GrusPyEngHost::AddRef(PyEngObjectPtr obj)
 
 void* GrusPyEngHost::GetDataPtr(PyEngObjectPtr obj)
 {
+	MGil gil;
 	SURE_NUMPY_API();
 	PyObject* pOb = (PyObject*)obj;
 	if (PyArray_Check(pOb))
@@ -546,6 +610,7 @@ bool GrusPyEngHost::GetDataDesc(PyEngObjectPtr obj,
 	X::Port::vector<unsigned long long>& dims,
 	X::Port::vector<unsigned long long>& strides)
 {
+	MGil gil;
 	SURE_NUMPY_API();
 	PyObject* pOb = (PyObject*)obj;
 	if (PyArray_Check(pOb))
@@ -571,11 +636,13 @@ bool GrusPyEngHost::GetDataDesc(PyEngObjectPtr obj,
 }
 bool GrusPyEngHost::IsDict(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PyDict_Check((PyObject*)obj);
 }
 bool GrusPyEngHost::DictContain(PyEngObjectPtr dict,
 	const char* strKey)
 {
+	MGil gil;
 	PyObject* keyOb = (PyObject*)g_pPyHost->from_str(strKey);
 	bool bContain = PyDict_Check((PyObject*)dict) &&
 		PyDict_Contains((PyObject*)dict, keyOb);
@@ -584,32 +651,38 @@ bool GrusPyEngHost::DictContain(PyEngObjectPtr dict,
 }
 bool GrusPyEngHost::IsArray(PyEngObjectPtr obj)
 {
+	MGil gil;
 	SURE_NUMPY_API();
 	return PyArray_Check((PyObject*)obj);
 }
 bool GrusPyEngHost::IsList(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PyList_Check((PyObject*)obj);
 }
 PyEngObjectPtr GrusPyEngHost::GetDictKeys(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PyDict_Keys((PyObject*)obj);
 }
 
 
 const char* GrusPyEngHost::GetObjectType(PyEngObjectPtr obj)
 {
+	MGil gil;
 	PyObject* pOb = (PyObject*)obj;
 	return Py_TYPE(pOb)->tp_name;
 }
 
 PyEngObjectPtr GrusPyEngHost::GetDictItems(PyEngObjectPtr dict)
 {
+	MGil gil;
 	return PyDict_Items((PyObject*)dict);
 }
 
 PyEngObjectPtr GrusPyEngHost::GetPyNone()
 {
+	MGil gil;
 	PyObject* pOb = Py_None;
 	Py_IncRef(pOb);
 	return pOb;
@@ -617,59 +690,71 @@ PyEngObjectPtr GrusPyEngHost::GetPyNone()
 
 PyEngObjectPtr GrusPyEngHost::GetLocals()
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyEval_GetLocals();
 }
 
 PyEngObjectPtr GrusPyEngHost::GetGlobals()
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyEval_GetGlobals();
 }
 
 PyEngObjectPtr GrusPyEngHost::CreateByteArray(const char* buf, long long size)
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyByteArray_FromStringAndSize(buf,size);
 }
 
 bool GrusPyEngHost::IsBool(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PyBool_Check((PyObject*)obj);
 }
 
 bool GrusPyEngHost::IsLong(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PyLong_Check((PyObject*)obj);
 }
 
 bool GrusPyEngHost::IsDouble(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PyFloat_Check((PyObject*)obj);
 }
 
 bool GrusPyEngHost::IsString(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PyUnicode_Check((PyObject*)obj);
 }
 
 bool GrusPyEngHost::IsTuple(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PyTuple_Check((PyObject*)obj);
 }
 
 bool GrusPyEngHost::IsSet(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return PySet_Check((PyObject*)obj);
 }
 PyEngObjectPtr GrusPyEngHost::GetIter(PyEngObjectPtr obj)
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyObject_GetIter((PyObject*)obj);
 }
 PyEngObjectPtr GrusPyEngHost::GetIterNext(PyEngObjectPtr iterator)
 {
+	MGil gil;
 	return (PyEngObjectPtr)PyIter_Next((PyObject*)iterator);
 }
 bool GrusPyEngHost::EnumDictItem(PyEngObjectPtr dict, long long& pos,
 	PyEngObjectPtr& key, PyEngObjectPtr& val)
 {
+	MGil gil;
 	Py_ssize_t pyPos = pos;
 	PyObject* pyKey = nullptr;
 	PyObject* pyVal = nullptr;
@@ -682,6 +767,7 @@ bool GrusPyEngHost::EnumDictItem(PyEngObjectPtr dict, long long& pos,
 
 bool GrusPyEngHost::CallReleaseForTupleItems(PyEngObjectPtr tuple)
 {
+	MGil gil;
 	if (!PyTuple_Check((PyObject*)tuple))
 	{
 		return false;
@@ -703,6 +789,7 @@ bool GrusPyEngHost::CallReleaseForTupleItems(PyEngObjectPtr tuple)
 
 bool GrusPyEngHost::Exec(const char* code, PyEngObjectPtr args)
 {
+	MGil gil;
 	PyObject* argsTuple = (PyObject*)args;
 	PyObject* sysModule = PyImport_ImportModule("sys");
 	if (!sysModule) 
@@ -732,4 +819,53 @@ bool GrusPyEngHost::Exec(const char* code, PyEngObjectPtr args)
 	Py_DECREF(sysArgv);
 
 	return (ret ==0);
+}
+
+X::Value GrusPyEngHost::to_xvalue(PyEngObjectPtr pVar)
+{
+	//Gil aquuire inside function below
+	return PyObjectXLangConverter::ConvertToXValue((PyObject*)pVar);
+}
+
+PyEngObjectPtr GrusPyEngHost::from_xvalue(const X::Value& val)
+{
+	//Gil aquuire inside function below
+	return PyObjectXLangConverter::ConvertToPyObject((X::Value&)val);
+}
+void GrusPyEngHost::InitPythonThreads()
+{
+	Py_Initialize();
+	PyEval_InitThreads();
+
+
+}
+int GrusPyEngHost::GilLock()
+{
+	static bool __init_py = true;
+	if (!__init_py)
+	{
+		Py_Initialize();
+		PyEval_InitThreads();
+		__init_py = true;
+	}
+	//PyThreadState* tstate = PyThreadState_Get();
+	//if (tstate == nullptr)
+	{
+		//return -1;//don't call unlock in GilUnlock
+	}
+	PyGILState_STATE gstate = PyGILState_Ensure();
+	return (int)gstate;
+}
+void GrusPyEngHost::GilUnlock(int state)
+{
+	if(state ==-1)
+	{
+		return;
+	}
+	PyGILState_STATE gstate = (PyGILState_STATE)state;
+	PyGILState_Release(gstate);
+}
+void GrusPyEngHost::SubmitPythonTask(const std::function<void()>& task)
+{
+	m_pyTaskPool.submit(task);
 }

@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "XLangStream.h"
 #include <stdexcept>
 #include "object.h"
@@ -11,7 +26,7 @@
 #include "struct.h"
 #include "deferred_object.h"
 #include "funclist.h"
-#include "remote_client_object.h"
+
 
 namespace X 
 {
@@ -292,7 +307,7 @@ namespace X
 			X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(v.GetObj());
 			//save pObj as Id and with a flag to indicate it's a object embeded here or just
 			//a reference to an object
-			unsigned long long id = (unsigned long long)pObj;
+			unsigned long long id = pObj->ID();
 			(*this) << id;
 			bool bRef = (m_scope_space->Query(id) != nullptr);
 			(*this) << bRef;
@@ -461,10 +476,6 @@ namespace X
 					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteObject(nullptr));
 					pObjToRestore->IncRef();
 					break;
-				case X::ObjType::RemoteClientObject:
-					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::RemoteClientObject(nullptr));
-					pObjToRestore->IncRef();
-					break;
 #endif
 				case X::ObjType::PyProxyObject:
 					assert(false);
@@ -478,6 +489,20 @@ namespace X
 					if (needToCallFromBytesFunc)
 					{
 						pObjToRestore->FromBytes(*this);
+						//check remore object if belongs to this process
+						if (objT == X::ObjType::RemoteObject)
+						{
+							auto* pRemoteObj = dynamic_cast<X::RemoteObject*>(pObjToRestore);
+							auto rid = pRemoteObj->GetObjId();
+							if (rid.pid == GetPID())
+							{
+								X::XObj* pLocalObj = (X::XObj*)rid.objId;
+								pObjToRestore = dynamic_cast<X::Data::Object*>(pLocalObj);
+								//need to keep one refcount for return value v
+								pObjToRestore->IncRef();
+								pRemoteObj->DecRef();
+							}
+						}
 					}
 					v = X::Value(dynamic_cast<XObj*>(pObjToRestore), false);
 				}

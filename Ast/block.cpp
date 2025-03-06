@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "block.h"
 #include "var.h"
 #include "func.h"
@@ -7,6 +22,7 @@
 #include "utility.h"
 #include "InlineCall.h"
 #include "iterator.h"
+#include "log.h"
 
 extern bool U_Print(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
@@ -80,19 +96,18 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		{
 			auto* pActionOperator = dynamic_cast<ActionOperator*>(i);
 			OP_ID opId = pActionOperator->GetId();
-			if (opId == OP_ID::Break)
+			switch (opId)
 			{
+			case OP_ID::Break:
 				action.type = ExecActionType::Break;
 				break;
-			}
-			else if (opId == OP_ID::Continue)
-			{
+			case OP_ID::Continue:
 				action.type = ExecActionType::Continue;
 				break;
-			}
-			else if (opId == OP_ID::Pass)
-			{
-				continue;//just run next line
+			case OP_ID::Pass:
+				continue;//just run next line					
+			default:
+				break;
 			}
 		}
 		Value v0;
@@ -107,12 +122,11 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 			break;
 		}
 		//std::cout << "after run line:" << line << std::endl;
-		if (!bOk)
+		if (!bOk && !rt->IfNoThreadBinding()) //check if json parse case, no need to dump errors
 		{//TODO: error process here
-			auto pid = GetPID();
-			std::cout << "Error Occurs in line:" << line << ",pid:" << pid << std::endl;
+			LOG << LOG_RED << "Error Occurs in " << rt->GetName() << ",line:" << line << LOG_RESET << LINE_END;
 			auto code = i->GetCode();
-			std::cout <<"*** " << code << std::endl;
+			LOG << LOG_RED << "*** " << code << LOG_RESET << LINE_END;
 			//break;
 		}
 		if (v0.IsValid() && (i == last))
@@ -353,7 +367,7 @@ bool If::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue
 		Value v0;
 		ExecAction actionR;
 		bool bOK = ExpExec(R,rt, actionR,pContext,v0);
-		if (bOK && v0 == Value(true))
+		if (bOK && v0.IsTrue())
 		{
 			bCanRun = true;
 		}

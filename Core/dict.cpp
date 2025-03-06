@@ -1,18 +1,50 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "dict.h"
 #include "list.h"
 #include "port.h"
 #include "function.h"
 #include "obj_func_scope.h"
 #include "op.h"
+#include "internal_assign.h"
 
 namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<3> _dictScope;
+		static Obj_Func_Scope<7> _dictScope;
 		void Dict::Init()
 		{
 			_dictScope.Init();
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						if (params.size() == 0)
+						{
+							return false;
+						}
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						retValue = X::Value(pObj->Compare(params[0]));
+						return true;
+					};
+				_dictScope.AddFunc("compare", "compare(another-Dict)", f);
+			}
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 					X::ARGS& params,
@@ -50,6 +82,63 @@ namespace X
 					};
 				_dictScope.AddFunc("set", "set(key,val)", f);
 			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						if (params.size() == 0)
+						{
+							return true;
+						}
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						retValue.Clear();
+						pObj->Get(params[0], retValue);
+						if (retValue.IsInvalid() && params.size()>1)
+						{
+							retValue = params[1];
+						}
+						//we don't need to care if find it or not
+						//always make it success, so xlang run statement is OK
+						return true;
+					};
+				_dictScope.AddFunc("get", "val = get(key)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						X::List list;
+						for (auto& it : pObj->mMap)
+						{
+							list += it.first;
+						}
+						retValue = list;
+						return true;
+					};
+				_dictScope.AddFunc("keys", "key_list = dict.keys()", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						Dict* pObj = dynamic_cast<Dict*>(pContext);
+						X::List list;
+						for (auto& it : pObj->mMap)
+						{
+							list += it.second;
+						}
+						retValue = list;
+						return true;
+					};
+				_dictScope.AddFunc("values", "value_list = dict.values()", f);
+			}
 			_dictScope.Close();
 		}
 		void Dict::cleanup()
@@ -60,6 +149,12 @@ namespace X
 		{
 			m_t = ObjType::Dict;
 			m_bases.push_back(_dictScope.GetMyScope());
+		}
+		bool Dict::GetLValueToAssign(X::Value& key, X::Value& value)
+		{
+			InternalAssign* pAssign = new InternalAssign(this, key);
+			value = X::Value(pAssign);
+			return true;
 		}
 		List* Dict::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
@@ -163,34 +258,6 @@ namespace X
 			X::Value itemKey(itemName);
 			Set(itemKey, val);
 			return val;
-		}
-		class DictValue :
-			public Value
-		{
-			Dict* m_dict = nullptr;
-			Value m_key;
-		public:
-			DictValue(Dict* d, Value& k)
-			{
-				d->IncRef();
-				SetObj(d);
-				m_key = k;
-				m_dict = d;
-			}
-			FORCE_INLINE void operator += (const Value& v)
-			{
-				m_dict->AddKeyValue(m_key, v);
-			}
-			FORCE_INLINE void operator = (const Value& v)
-			{
-				m_dict->SetKV(m_key, v);
-			}
-		};
-		void Dict::HookLValue(X::Value& key,X::LValue* lValue)
-		{
-			auto* pDictVal = new DictValue(this, key);
-			*lValue = pDictVal;
-			lValue->SetReleaseFlag(true);
 		}
 	}
 }

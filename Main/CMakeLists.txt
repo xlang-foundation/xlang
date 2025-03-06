@@ -15,7 +15,7 @@ include_directories("../Executor")
 include_directories("../Ast")
 include_directories("../Parse")
 include_directories("../Serialize")
-include_directories("../rpc")
+include_directories("../Ipc")
 include_directories("../Thread")
 include_directories("../Ext")
 include_directories("../Core")
@@ -23,6 +23,7 @@ include_directories("../Text")
 include_directories("../Scripts")
 include_directories("../Tensor")
 include_directories("../Jit")
+include_directories("../log")
 include_directories(".")
 
 FILE(GLOB Api_SRC "../Api/value.cpp")
@@ -35,10 +36,10 @@ FILE(GLOB Parse_SRC "../Parse/*.cpp")
 FILE(GLOB Thread_SRC "../Thread/*.cpp")
 FILE(GLOB Ext_SRC "../Ext/*.cpp")
 FILE(GLOB Text_SRC "../Text/*.cpp")
-FILE(GLOB Rpc_SRC "../rpc/*.cpp")
+FILE(GLOB Ipc_SRC "../Ipc/*.cpp")
 FILE(GLOB Nn_SRC "../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../Jit/*.cpp")
-FILE(GLOB Main_SRC "*.cpp")
+FILE(GLOB Main_SRC "*.cpp" "../log/log.cpp")
 
 add_library(${PROJECT_NAME} SHARED 
 	${Api_SRC}
@@ -51,7 +52,7 @@ add_library(${PROJECT_NAME} SHARED
 	${Thread_SRC}
 	${Ext_SRC}
 	${Text_SRC}
-	${Rpc_SRC}
+	${Ipc_SRC}
 	${Nn_SRC}
 	${Jit_SRC}
 	${Main_SRC}

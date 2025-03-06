@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "object.h"
 #include "str.h"
@@ -371,7 +386,10 @@ public:
 			{
 				//TODO: why need to process function?
 				std::vector<Value> dummy;
-				MakeCommonBases(rt->M(), dummy);
+				if (rt)
+				{
+					MakeCommonBases(rt->M(), dummy);
+				}
 			}
 		}
 		m_data.push_back(v);
@@ -382,6 +400,17 @@ public:
 	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val) override;
+	FORCE_INLINE virtual bool Set(X::Value context, X::Value& val) override
+	{
+		if (context.IsLong())
+		{
+			return Set((long long)context, val);
+		}
+		else
+		{
+			return false;
+		}
+	}
 	FORCE_INLINE virtual bool Set(long long index, X::Value& v) override
 	{
 		AutoLock autoLock(m_lock);
@@ -471,7 +500,11 @@ public:
 		AutoLock autoLock(m_lock);
 		if (m_useLValue)
 		{
-			if (idx >= (long long)m_ptrs.size())
+			if (idx <0)
+			{
+				idx = (long long)m_ptrs.size() +idx;
+			}
+			if (idx >= (long long)m_ptrs.size() || idx<0)
 			{
 				return false;
 			}
@@ -484,6 +517,14 @@ public:
 		}
 		else
 		{
+			if (idx < 0)
+			{
+				idx = (long long)m_ptrs.size() + idx;
+			}
+			if (idx < 0)
+			{
+				return false;
+			}
 			if (idx >= (long long)m_data.size())
 			{
 				m_data.resize(idx + 1);

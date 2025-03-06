@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "ast.h"
 #include "Hosting.h"
 #include "block.h"
@@ -5,6 +20,7 @@
 #include "func.h"
 #include "module.h"
 #include "import.h"
+#include "../Jit/md5.h"
 
 namespace X
 {
@@ -16,7 +32,7 @@ namespace X
         X::Value AstWrapper::LoadFromStringImpl(std::string& moduleName, std::string& xcode)
         {
             unsigned long long moduleKey = 0;
-            auto* pModule = Hosting::I().Load(moduleName.c_str(), xcode.c_str(), (int)xcode.size(), moduleKey);
+            auto* pModule = Hosting::I().Load(moduleName.c_str(), xcode.c_str(), (int)xcode.size(), moduleKey, md5(xcode));
             if (pModule == nullptr)
             {
                 return X::Value();

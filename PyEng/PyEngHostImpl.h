@@ -1,12 +1,30 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "singleton.h"
 #include "PyEngHost.h"
+#include "xlang.h"
+#include "PythonThreadPool.h"
 
 class GrusPyEngHost :
 	public PyEngHost,
 	public Singleton<GrusPyEngHost>
 {
 	Xlang_CallFunc m_xlang_call_func = nullptr;
+	PythonThreadPool m_pyTaskPool;
 public:
 	GrusPyEngHost();
 	~GrusPyEngHost();
@@ -86,6 +104,10 @@ public:
 	virtual PyEngObjectPtr GetPyNone() override;
 	virtual PyEngObjectPtr GetGlobals() override;
 	virtual PyEngObjectPtr GetLocals() override;
+	virtual void InitPythonThreads() override;
+	virtual int GilLock() override;
+	virtual void GilUnlock(int state) override;
+	virtual void SubmitPythonTask(const std::function<void()>& task) override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 
@@ -105,4 +127,8 @@ private:
 
 	virtual bool CallReleaseForTupleItems(PyEngObjectPtr tuple) override;
 	virtual bool Exec(const char* code, PyEngObjectPtr args) override;
+
+	// Inherited via PyEngHost
+	X::Value to_xvalue(PyEngObjectPtr pVar) override;
+	PyEngObjectPtr from_xvalue(const X::Value& val) override;
 };

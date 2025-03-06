@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #ifndef _PyEngObject_H_
 #define _PyEngObject_H_
 
@@ -176,62 +191,7 @@ public:
 	}
 	FORCE_INLINE void Assign(X::Value& v)
 	{
-		switch (v.GetType())
-		{
-		case X::ValueType::None:
-			m_p = g_pPyHost->GetPyNone();
-			break;
-		case X::ValueType::Int64:
-			m_p = g_pPyHost->from_longlong(v);
-			break;
-		case X::ValueType::Double:
-			m_p = g_pPyHost->from_double(v);
-			break;
-		case X::ValueType::Object:
-		{
-			if (v.GetObj()->GetType() == X::ObjType::Str)
-			{
-				m_p = g_pPyHost->from_str(v.ToString().c_str());
-			}
-			else if (v.GetObj()->GetType() == X::ObjType::PyProxyObject)
-			{
-				auto* pPyObj = dynamic_cast<X::XPyObject*>(v.GetObj());
-				if (pPyObj)
-				{
-					pPyObj->GetObj(&m_p);
-				}
-			}
-			else if (v.GetObj()->GetType() == X::ObjType::Function)
-			{
-				m_p = g_pPyHost->CreatePythonFuncProxy(v.GetObj(), nullptr);
-			}
-			else if (v.GetObj()->GetType() == X::ObjType::List)
-			{
-				X::XList* list = dynamic_cast<X::XList*>(v.GetObj());
-				auto size = list->Size();
-				m_p = g_pPyHost->NewList(size);
-				for (int i = 0; i < size; i++)
-				{
-					X::Value vi = list->Get(i);
-					g_pPyHost->Set(m_p, i, (Object)vi);
-				}
-			}
-			else if (v.GetObj()->GetType() == X::ObjType::Dict)
-			{
-				X::XDict* dict = dynamic_cast<X::XDict*>(v.GetObj());
-				auto size = dict->Size();
-				m_p = g_pPyHost->NewDict();
-				//todo: add code to finish
-			}
-		}
-			break;
-		case X::ValueType::Str:
-			m_p = g_pPyHost->from_str(v.ToString().c_str());
-			break;
-		default:
-			m_p = g_pPyHost->GetPyNone();
-			break;
-		}
+		m_p = g_pPyHost->from_xvalue(v);
 	}
 	template <typename VALUE>
 	Object(std::vector<VALUE> li)
@@ -541,9 +501,14 @@ public:
 	{
 		m_p = g_pPyHost->NewTuple(0);
 	}
-	~Tuple() //make sure to call Object's deconstructor
+	~Tuple() 
 	{
-		g_pPyHost->CallReleaseForTupleItems(m_p);
+		//for tuple, the release will auto release its children
+		//'s refcount
+		g_pPyHost->Release(m_p);
+		//todo: check 
+		//make sure to call Object's deconstructor
+		//g_pPyHost->CallReleaseForTupleItems(m_p);
 	}
 	Tuple(long long size) :
 		Object()

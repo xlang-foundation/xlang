@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "http.h"
 #include "httplib.h"
 #include <iterator>
@@ -6,11 +21,17 @@
 #include <string>
 #include <map>
 #include <tuple>
+#include <regex>
+#include <optional>
+#include <sstream>
+#include <iomanip>
 
 namespace fs = std::filesystem;
 
 namespace X
 {
+	std::tuple<std::string, bool> getMimeTypeAndBinaryFlag(const std::string& extension);
+
 	X::Value Http::WritePad(X::Value& input)
 	{
 		std::string strInput = input.ToString();
@@ -26,6 +47,7 @@ namespace X
 			httplib::Response& res)
 		{
 			bool bHandled = false;
+
 			HttpRequest* pHttpReq = new HttpRequest((void*)&req);
 			X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq));
 
@@ -97,7 +119,7 @@ namespace X
 			return bHandled;
 		};
 
-		auto pre_handler = [this, ProcessRequestUrl](
+		auto routing_handler_ = [this, ProcessRequestUrl](
 			const httplib::Request& req,
 			httplib::Response& res)
 		{
@@ -111,6 +133,7 @@ namespace X
 		};
 		if (asHttps)
 		{
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 			httplib::SSLServer* pSrv = new httplib::SSLServer(
 				m_cert_path =="" ? nullptr:m_cert_path.c_str(),
 				m_private_key_path =="" ? nullptr:m_private_key_path.c_str(),
@@ -121,8 +144,9 @@ namespace X
 			{
 				printf("server has an error...\n");
 			}
-			pSrv->set_pre_routing_handler(pre_handler);
+			pSrv->set_routing_handler(routing_handler_);
 			m_pSrv = (void*)pSrv;
+#endif
 		}
 		else
 		{
@@ -131,7 +155,7 @@ namespace X
 			{
 				printf("server has an error...\n");
 			}
-			pSrv->set_pre_routing_handler(pre_handler);
+			pSrv->set_routing_handler(routing_handler_);
 			m_pSrv = (void*)pSrv;
 		}
 	}
@@ -143,6 +167,14 @@ namespace X
 			pFuncObj->DecRef();
 		}
 		m_handlers.clear();
+	}
+	X::Value HttpServer::GetMimeType(std::string extName)
+	{
+		auto [mimeType, isBinary] = getMimeTypeAndBinaryFlag(extName);
+		X::List list;
+		list += mimeType;
+		list += isBinary;
+		return list;
 	}
 	bool HttpServer::Listen(std::string srvName,int port)
 	{
@@ -266,7 +298,8 @@ namespace X
 	// Function to read the entire contents of a binary file
 	std::vector<char> BinReadAll(const std::string& filePath) 
 	{
-		std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+		std::filesystem::path fsPath = std::filesystem::u8path(filePath);
+		std::ifstream file(fsPath, std::ios::binary | std::ios::ate);
 		if (!file) 
 		{
 			throw std::runtime_error("Could not open file for reading: " + filePath);
@@ -285,7 +318,8 @@ namespace X
 	// Function to read the entire contents of a text file
 	std::string TextReadAll(const std::string& filePath) 
 	{
-		std::ifstream file(filePath);
+		std::filesystem::path fsPath = std::filesystem::u8path(filePath);
+		std::ifstream file(fsPath);
 		if (!file) 
 		{
 			throw std::runtime_error("Could not open file for reading: " + filePath);
@@ -324,27 +358,33 @@ namespace X
 				return false;
 			}
 		};
+
 		if (path == "/")
 		{
 			path = m_staticIndexFile;
 		}
-		else if (path.starts_with("/")) //Stip the leading slash
+		else if (path.starts_with("/")) //Strip the leading slash
 		{
 			path = path.substr(1);
 		}
+		std::filesystem::path fsPath = std::filesystem::u8path(path);
 		//Try root first
 		for (auto& root : m_staticFileRoots) {
-			fs::path fullPath = fs::path(root) / path;
+			fs::path fullPath = fs::path(root) / fsPath;
 			// Check if this exists
 			if (fs::exists(fullPath)) {
-				return setResponseContent(fullPath.string());
+				std::u8string u8Str = fullPath.u8string();
+				std::string filePath(reinterpret_cast<const char*>(u8Str.data()), u8Str.size());
+				return setResponseContent(filePath);
 			}
 		}
 		//then Moudle Path
 		std::string& root = X::Http::I().GetHttpModulePath(); 
 		fs::path fullPath = fs::path(root) / path;
 		if (fs::exists(fullPath)) {
-			return setResponseContent(fullPath.string());
+			std::u8string u8Str = fullPath.u8string();
+			std::string filePath(reinterpret_cast<const char*>(u8Str.data()), u8Str.size());
+			return setResponseContent(filePath);
 		}
 
 		return false;
@@ -499,11 +539,102 @@ namespace X
 		auto* pReq = (httplib::Request*)m_pRequest; 
 		return X::Value(pReq->method);
 	}
+
+	// Function to determine if the MIME type is binary or textual
+	inline bool isBinaryContentType(const std::string& content_type) 
+	{
+		// Set of known textual MIME types (extend as needed)
+		static const std::unordered_set<std::string> textMimeTypes = {
+			"text/plain", "text/html", "text/css", "text/javascript",
+			"application/json", "application/xml", "application/x-www-form-urlencoded"
+		};
+
+		// If content type starts with "text/", it's likely textual
+		if (content_type.find("text/") == 0) {
+			return false; // Not binary, it's text
+		}
+
+		// If content type is in the predefined textual set, it's text
+		if (textMimeTypes.find(content_type) != textMimeTypes.end()) {
+			return false; // Not binary, it's text
+		}
+
+		// For other known cases, check if it's binary (can extend the list)
+		if (content_type.find("image/") == 0 || // Image files
+			content_type.find("audio/") == 0 || // Audio files
+			content_type.find("video/") == 0 || // Video files
+			content_type == "application/octet-stream") { // Generic binary stream
+			return true; // It's binary
+		}
+
+		// Default fallback for unknown content types
+		return true; // Assume it's binary if unknown
+	}
+	inline std::optional<std::string> getContentType(auto& headers) 
+	{
+		auto it = headers.find("Content-Type");
+		if (it != headers.end()) 
+		{
+			return it->second; // Return the content type value
+		}
+		return std::nullopt; // No content-type found
+	}
 	X::Value  HttpRequest::GetBody()
 	{
+		X::Value retVal;
 		auto* pReq = (httplib::Request*)m_pRequest;
-		std::string strVal = pReq->body;
-		return X::Value((char*)strVal.c_str(), (int)strVal.size());
+		if (pReq->body.empty())
+		{
+			X::List listBody;
+			//check files for MultipartFormDataMap files;
+			for (const auto& pair : pReq->files)
+			{
+				X::Dict dataMap;
+				const std::string& key = pair.first;
+				auto& value = pair.second;
+				dataMap->Set("name", value.name);
+				bool isBin = isBinaryContentType(value.content_type);
+				if (isBin)
+				{
+					X::Bin binContent((char*)nullptr, 
+						(unsigned long long)value.content.size(), 
+						static_cast<bool>(true));
+					memcpy(binContent->Data(), value.content.data(), value.content.size());
+					dataMap->Set("content", binContent);
+				}
+				else
+				{
+					dataMap->Set("content", value.content);
+				}
+				dataMap->Set("filename", value.filename);
+				dataMap->Set("content_type", value.content_type);
+				listBody += dataMap;
+			}
+			retVal = listBody;
+
+		}
+		else
+		{
+			bool isBin = true;
+			std::string& strVal = pReq->body;
+			if (auto content_type = getContentType(pReq->headers))
+			{
+				isBin = isBinaryContentType(*content_type);
+			}
+			if (isBin)
+			{
+				X::Bin binContent((char*)nullptr, 
+					(unsigned long long)strVal.size(),
+					static_cast<bool>(true));
+				memcpy(binContent->Data(), strVal.data(), strVal.size());
+				retVal = binContent;
+			}
+			else
+			{
+				retVal = strVal;
+			}
+		}
+		return retVal;
 	}
 	X::Value  HttpRequest::GetPath()
 	{
@@ -545,121 +676,234 @@ namespace X
 		}
 		return dict;
 	}
-	HttpClient::HttpClient(std::string scheme_host_port)
+	void HttpClient::set_enable_server_certificate_verification(bool b)
 	{
-		m_pClient = new httplib::Client(scheme_host_port);
+		if (!m_isHttps)
+		{
+			return;
+		}
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+		auto* client = static_cast<httplib::SSLClient*>(m_pClient);
+		//auto* ctx = client->ssl_context();
+		//SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+		client->enable_server_certificate_verification(b);
+#endif
+	}
+	HttpClient::HttpClient(std::string url)
+	{
+		// Regular expression to parse the URL
+		std::regex url_regex(R"(^(http|https)://([^/:]+)(?::(\d+))?(/.*)?$)");
+		std::smatch url_match_result;
+
+		if (std::regex_match(url, url_match_result, url_regex)) 
+		{
+			// Extract protocol, host, port, and path
+			std::string protocol = url_match_result[1];
+			std::string host = url_match_result[2];
+			std::string port_str = url_match_result[3];
+			std::string path = url_match_result[4];
+
+			if (!path.empty()) {
+				m_path = path;
+			}
+
+			int port = 0;
+			if (!port_str.empty()) {
+				port = std::stoi(port_str);
+			}
+			else {
+				port = (protocol == "https") ? 443 : 80;
+			}
+
+			if (protocol == "http") {
+				m_isHttps = false;
+				m_pClient = new httplib::Client(host.c_str(), port);
+			}
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+			else if (protocol == "https") {
+				m_isHttps = true;
+				m_pClient = new httplib::SSLClient(host.c_str(), port);
+			}
+#endif
+			else {
+				throw std::runtime_error("Unsupported protocol: " + protocol);
+			}
+		}
+		else {
+			throw std::runtime_error("Invalid URL format: " + url);
+		}
 	}
 	HttpClient::~HttpClient()
 	{
-		delete (httplib::Client*)m_pClient;
+		if (m_isHttps)
+		{
+#if CPPHTTPLIB_OPENSSL_SUPPORT
+			delete (httplib::SSLClient*)m_pClient;
+#endif
+		}
+		else
+		{
+			delete (httplib::Client*)m_pClient;
+		}
 	}
 
 	bool HttpClient::Get(std::string path)
 	{
-		char* pDataHead = nullptr;
-		char* pBuf = nullptr;
-		int buf_size = 0;
-		int data_cur_size = 0;
 		bool isText = false;
-		//if has content length,allocate one time
-		//if not, allocated  when data receiving
+		int expectedContentLength = 0;
+		X::XBin* pBin = nullptr;
+		char* pCurrentPos = nullptr;
+		size_t totalReceivedSize = 0;
+
 		httplib::Headers headers;
-		auto res = ((httplib::Client*)m_pClient)->Get(
-			path, headers,
-			[&](const httplib::Response& response) {
-				auto it0 = response.headers.find("Content-Type");
-				if (it0 != response.headers.end())
-				{
-					if ((it0->second.find("text/") != it0->second.npos) ||
-						(it0->second.find("application/x-javascript") != it0->second.npos) ||
-						(it0->second.find("application/x-csh") != it0->second.npos) ||
-						(it0->second.find("application/x-sh") != it0->second.npos) ||
-						(it0->second.find("application/json") != it0->second.npos) ||
-						(it0->second.find("application/xml") != it0->second.npos) ||
-						(it0->second.find("application/xhtml+xml") != it0->second.npos) ||
-						(it0->second.find("application/x-httpd-php") != it0->second.npos))
-					{
-						isText = true;
-					}
-				}
-				int len = 0;
-				auto it = response.headers.find("Content-Length");
-				if (it != response.headers.end())
-				{
-					len = std::stoi(it->second);
-				}
-				if (len > 0)
-				{
-					pBuf = new char[len];
-					pDataHead = pBuf;
-					buf_size = len;
-				}
-				X::Dict dict;
-				//dump response headers
-				for (auto& kv : response.headers)
-				{
-					X::Str key(kv.first.c_str(), (int)kv.first.size());
-					X::Str val(kv.second.c_str(), (int)kv.second.size());
-					dict->Set(key, val);
-				}
-				m_headers = dict;
-				return true;
-				// return 'false' if you want to cancel the request.
-			},
-			[&](const char* data, size_t data_length) {
-				if (data_length)
-				{
-					if (pBuf == nullptr)
-					{
-						pBuf = new char[data_length];
-						pDataHead = pBuf;
-						buf_size = data_length;
-					}
-					else if((data_cur_size + data_length)> buf_size)
-					{
-						pBuf = new char[data_cur_size + data_length];
-						buf_size = data_cur_size + data_length;
-						memcpy(pBuf, pDataHead, data_cur_size);
-						delete pDataHead;
-						pDataHead = pBuf;
-						data_cur_size += data_length;
-						pBuf += data_length;
-					}
-					memcpy(pBuf, data, data_length);
-					pBuf += data_length;
-					data_cur_size += data_length;
-				}
-				return true; 
-				// return 'false' if you want to cancel the request.
+		//use X::Dict m_headers to fill in headers
+		m_headers->Enum([&](X::Value& key, X::Value& value) {
+			headers.emplace(key.ToString(), value.ToString());
 			});
 
+		auto response_handler = [&](const httplib::Response& response) {
+			auto it0 = response.headers.find("Content-Type");
+			if (it0 != response.headers.end())
+			{
+				if ((it0->second.find("text/") != it0->second.npos) ||
+					(it0->second.find("application/x-javascript") != it0->second.npos) ||
+					(it0->second.find("application/x-csh") != it0->second.npos) ||
+					(it0->second.find("application/x-sh") != it0->second.npos) ||
+					(it0->second.find("application/json") != it0->second.npos) ||
+					(it0->second.find("application/xml") != it0->second.npos) ||
+					(it0->second.find("application/xhtml+xml") != it0->second.npos) ||
+					(it0->second.find("application/x-httpd-php") != it0->second.npos))
+				{
+					isText = true;
+				}
+			}
+
+			auto it = response.headers.find("Content-Length");
+			if (it != response.headers.end())
+			{
+				expectedContentLength = std::stoi(it->second);
+				// If we know the size, pre-allocate the XBin regardless of content type
+				if (expectedContentLength > 0) {
+					pBin = X::g_pXHost->CreateBin(nullptr, expectedContentLength, true);
+					pCurrentPos = pBin->Data();
+				}
+			}
+
+			X::Dict dict;
+			//dump response headers
+			for (auto& kv : response.headers)
+			{
+				X::Str key(kv.first.c_str(), (int)kv.first.size());
+				X::Str val(kv.second.c_str(), (int)kv.second.size());
+				dict->Set(key, val);
+			}
+			m_response_headers = dict;
+			return true;
+			};
+
+		auto content_receiver = [&](const char* data, size_t data_length) {
+			if (data_length)
+			{
+				// For both text and binary data, handle the same way
+				if (pBin == nullptr) {
+					// First chunk or didn't know content length
+					pBin = X::g_pXHost->CreateBin(nullptr, data_length, true);
+					pCurrentPos = pBin->Data();
+				}
+				else if (totalReceivedSize + data_length > pBin->Size()) {
+					// Need to resize
+					size_t newSize = totalReceivedSize + data_length;
+					X::XBin* pNewBin = X::g_pXHost->CreateBin(nullptr, newSize, true);
+					char* pNewData = pNewBin->Data();
+
+					// Copy existing data
+					memcpy(pNewData, pBin->Data(), totalReceivedSize);
+					// Release the old bin
+					pBin->DecRef();
+
+					// Update pointers
+					pBin = pNewBin;
+					pCurrentPos = pNewData + totalReceivedSize;
+				}
+
+				// Copy new data directly to the XBin buffer
+				memcpy(pCurrentPos, data, data_length);
+				pCurrentPos += data_length;
+				totalReceivedSize += data_length;
+			}
+			return true;
+			};
+
+		std::string full_path = m_path + path;
+		auto call = [&]() {
+			if (m_isHttps) {
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+				return ((httplib::SSLClient*)m_pClient)->Get(full_path, headers,
+					response_handler, content_receiver);
+#endif
+			}
+			else {
+				return ((httplib::Client*)m_pClient)->Get(full_path, headers,
+					response_handler, content_receiver);
+			}
+			};
+
+		auto res = call();
 		if (!res)
 		{
+			// Clean up if request failed
+			if (pBin != nullptr) {
+				pBin->DecRef();
+			}
 			return false;
 		}
+
 		m_status = res->status;
 
-		if (data_cur_size >0)
+		// Process the collected data
+		if (pBin != nullptr && totalReceivedSize > 0)
 		{
 			if (isText)
 			{
-				auto* pStr = X::g_pXHost->CreateStr(pDataHead, data_cur_size);
-				delete pDataHead;
+				// For text, create string directly from the XBin data
+				auto* pStr = X::g_pXHost->CreateStr(pBin->BorrowDta(), totalReceivedSize);
 				m_body = X::Value(pStr, false);
+				// Release the XBin as we no longer need it
+				pBin->DecRef();
 			}
 			else
 			{
-				auto* pBinBuf = X::g_pXHost->CreateBin(pDataHead, data_cur_size, true);
-				m_body = X::Value(pBinBuf, false);
+				// For binary, we already have the data in the XBin
+				m_body = X::Value(pBin, false);
 			}
 		}
+
 		return true;
 	}
+
 	bool HttpClient::Post(std::string path, std::string content_type, std::string body)
 	{
 		if (m_pClient) 
 		{
-			auto res = ((httplib::Client*)m_pClient)->Post(path, body, content_type);
+			std::string full_path = m_path + path;
+			httplib::Headers headers;
+			//use X::Dict m_headers to fill in headers
+			m_headers->Enum([&](X::Value& key, X::Value& value) {
+				headers.emplace(key.ToString(), value.ToString());
+				});
+			auto callPost = [&]() {
+				if (m_isHttps)
+				{
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+					return ((httplib::SSLClient*)m_pClient)->Post(full_path, headers, body, content_type);
+#endif
+				}
+				else
+				{
+					return ((httplib::Client*)m_pClient)->Post(full_path, headers, body, content_type);
+				}
+			};
+			httplib::Result res = callPost();
 			if (res) 
 			{
 				m_status = res->status;
@@ -672,7 +916,7 @@ namespace X
 					X::Str val(kv.second.c_str(), (int)kv.second.size());
 					dict->Set(key, val);
 				}
-				m_headers = dict;
+				m_response_headers = dict;
 				return true;
 			}
 		}

@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "def.h"
 #include "value.h"
@@ -156,7 +171,7 @@ public:
 		{
 			//TODO: just hack here, need to find why
 			SetVarCount(idx+1);
-			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
+			//std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		m_Values[idx] = v;
 #if XLANG_ENG_DBG
@@ -178,7 +193,7 @@ public:
 		if (m_bShared) m_lock.Lock();
 		if (idx < 0 && idx >= m_varCnt)
 		{
-			std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
+			//std::cout << "StackFrame,Overflow,Var=" << m_varCnt << "Index="<<idx << std::endl;
 		}
 		X::Value& v0 = m_Values[idx];
 		v = v0;

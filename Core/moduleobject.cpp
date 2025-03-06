@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "moduleobject.h"
 #include "function.h"
 #include "Hosting.h"
@@ -7,7 +22,7 @@ namespace X
 {
 	namespace AST
 	{
-		static Obj_Func_Scope<2> _listScope;
+		static Obj_Func_Scope<5> _listScope;
 		void ModuleObject::Init()
 		{
 			_listScope.Init();
@@ -76,6 +91,60 @@ namespace X
 					};
 				_listScope.AddFunc("setprimitive", "setprimitive(key,func)", f);
 			}
+			//API: addcache
+			{
+				std::string name("addcache");
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params,
+					KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						if (params.size() == 2)
+						{
+							std::string name = params[0].ToString();
+							auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
+							pModuleObj->M()->AddModuleCache(name, params[1]);
+						}
+						return true;
+					};
+				_listScope.AddFunc("addcache", "addcache(key,value)", f);
+			}
+			//API: getcache
+			{
+				std::string name("getcache");
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params,
+					KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						if (params.size() == 1)
+						{
+							std::string name = params[0].ToString();
+							auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
+							retValue = pModuleObj->M()->GetModuleCache(name);
+						}
+						return true;
+					};
+				_listScope.AddFunc("getcache", "value = getcache(key)", f);
+			}
+			//API: removecache
+			{
+				std::string name("removecache");
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params,
+					KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						if (params.size() == 1)
+						{
+							std::string name = params[0].ToString();
+							auto* pModuleObj = dynamic_cast<ModuleObject*>(pContext);
+							pModuleObj->M()->RemoveModuleCache(name);
+						}
+						return true;
+					};
+				_listScope.AddFunc("removecache", "removecache(key)", f);
+			}
 			_listScope.Close();
 		}
 		void ModuleObject::cleanup()
@@ -88,7 +157,7 @@ namespace X
 			bases.push_back(_listScope.GetMyScope());
 			bases.push_back(m_pModule->GetMyScope());
 		}
-		int ModuleObject::QueryMethod(const char* name, bool* pKeepRawParams)
+		int ModuleObject::QueryMethod(const char* name, int* pFlags)
 		{
 			std::string strName(name);
 			int idx = _listScope.GetMyScope()->AddOrGet(strName,true);

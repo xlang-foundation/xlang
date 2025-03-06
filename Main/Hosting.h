@@ -1,9 +1,26 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "singleton.h"
 #include "module.h"
 #include <vector>
 #include "Locker.h"
 #include <unordered_map>
+#include <algorithm>
+
 namespace X
 {
 	namespace AST
@@ -16,7 +33,7 @@ namespace X
 		//use to run code line for interactive mode
 		AST::Module* m_pInteractiveModule = nullptr;
 		XlangRuntime* m_pInteractiveRuntime = nullptr;
-		int m_pInteractiveExeNum = -1;
+		int m_ExeNum = -1;
 
 		std::vector<AST::Module*> m_Modules;
 		std::unordered_map<unsigned long long, AST::Module*> m_ModuleMap;
@@ -55,7 +72,8 @@ namespace X
 			m_lock.Unlock();
 		}
 
-		void SendBreakpointState(const std::string& path, int line, int actualLine);
+		void SendBreakpointState(const std::string& md5, int line, int actualLine);
+		void SendModuleLoaded(const std::string& md5, const std::string& path);
 	public:
 		void Cleanup()
 		{
@@ -91,26 +109,49 @@ namespace X
 			m_lock.Unlock();
 			return modules;
 		}
+		std::vector<AST::Module*> QueryModulesByMd5(const std::string& strMd5)
+		{
+			std::vector<AST::Module*> modules;
+			m_lock.Lock();
+			auto mapIt = m_ModuleMap.begin();
+			while (mapIt != m_ModuleMap.end())
+			{
+				if (mapIt->second->GetMd5() == strMd5)
+				{
+					modules.push_back(mapIt->second);
+					break;
+				}
+				++mapIt;
+			}
+			m_lock.Unlock();
+			return modules;
+		}
 		AppEventCode HandleAppEvent(int signum);
 		AST::Module* Load(const char* moduleName,
-			const char* code, int size,unsigned long long& moduleKey);
+			const char* code, int size,unsigned long long& moduleKey, const std::string& md5);
 		AST::Module* LoadWithScope(AST::Scope* pScope,const char* code, int size);
 		X::Value NewModule();
 		bool Run(unsigned long long moduleKey,X::KWARGS& kwParams,X::Value& retVal);
 		bool InitRun(AST::Module* pTopModule,X::Value& retVal);
-		bool RunFragmentInModule(AST::ModuleObject* pModuleObj,
-			const char* code, int size, X::Value& retVal);
-		bool RunCodeLine(const char* code, int size, X::Value& retVal, int exeNum = -1);
+		bool RunFragmentInModule(AST::ModuleObject* pModuleObj,	const char* code, int size, X::Value& retVal, int exeNum = -1);
+		bool RunCodeLine(const char* code, int size, X::Value& retVal);
 		bool GetInteractiveCode(std::string& code);
-		int GetInteractiveExeNum(){return m_pInteractiveExeNum;};
+		int GetExeNum(){return m_ExeNum;};
 		bool Unload(AST::Module* pTopModule);
 		bool Run(AST::Module* pTopModule,X::Value& retVal,
 			std::vector<X::Value>& passInParams,
-			bool stopOnEntry = false,bool keepModuleWithRuntime = false);
+			bool stopOnEntry = false,
+			bool keepModuleWithRuntime = false,
+			bool noDebug = false);
+		bool RunWithKWArgs(AST::Module* pTopModule, X::Value& retVal,
+			std::vector<X::Value>& passInParams, X::KWARGS& kwargs,
+			bool stopOnEntry = false, 
+			bool keepModuleWithRuntime = false, 
+			bool noDebug = false);
 		bool Run(const char* moduleName,
 			const char* code, int size,
 			std::vector<X::Value>& passInParams,
-			X::Value& retVal);
+			X::Value& retVal,bool noDebug = false);
 		bool SimpleRun(const char* moduleName,
 			const char* code, int size,
 			X::Value& retVal);

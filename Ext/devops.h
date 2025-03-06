@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "xpackage.h"
 #include "function.h"
@@ -42,19 +57,35 @@ namespace X
 			BEGIN_PACKAGE(DebugService)
 				APISET().AddFunc<1>("get_startline", &DebugService::GetModuleStartLine);
 				APISET().AddFunc<0>("get_threads", &DebugService::GetThreads);
-				APISET().AddRTFunc<2>("set_breakpoints", &DebugService::SetBreakpoints);
+				APISET().AddRTFunc<3>("set_breakpoints", &DebugService::SetBreakpoints);
 				APISET().AddVarFunc("command", &DebugService::Command);
+				APISET().AddVarFunc("run_file", &DebugService::RunFile);
+				APISET().AddVarFunc("stop_file", &DebugService::StopFile);
 				APISET().AddFunc<1>("set_debug", &DebugService::SetDebug);
 			END_PACKAGE
 			DebugService();
 			int GetModuleStartLine(unsigned long long moduleKey);
 			X::Value GetThreads();
-			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext, Value& varPath, Value& varLines);
+			X::Value SetBreakpoints(X::XRuntime* rt,X::XObj* pContext, Value& varPath, Value& varMd5, Value& varLines);
 			bool Command(X::XRuntime* rt, X::XObj* pContext,
 				ARGS& params,
 				KWARGS& kwParams,
 				X::Value& retValue);
+			bool RunFile(X::XRuntime* rt, X::XObj* pContext,
+				ARGS& params,
+				KWARGS& kwParams,
+				X::Value& retValue);
+			bool StopFile(X::XRuntime* rt, X::XObj* pContext,
+				ARGS& params,
+				KWARGS& kwParams,
+				X::Value& retValue);
 			void SetDebug(int iVal);
+		private:
+			static bool s_bRegPlugins;
+			static std::unordered_map<std::string, X::Value> m_mapPluginModule;
+			static void registerPlugins();
+
+			X::Value execFile(bool bRun, const std::string& filePath, X::XRuntime* rt);
 		};
 	}
 }

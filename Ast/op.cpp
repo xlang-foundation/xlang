@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "op.h"
 #include "var.h"
 #include "object.h"
@@ -10,6 +25,7 @@
 #include "remote_object.h"
 #include "iterator.h"
 #include "struct.h"
+#include "internal_assign.h"
 
 namespace X
 {
@@ -54,12 +70,20 @@ namespace AST
 		auto ty = pObj->GetType();
 		switch (ty)
 		{
+		case X::ObjType::InternalAssign:
+		{
+			auto* pAssign = dynamic_cast<Data::InternalAssign*>(pObj);
+			bOK = pAssign->SetValue(v_r);
+			v = Value(bOK);
+		}
+		break;
 		case X::ObjType::FuncCalls:
 		{
 			auto* pCalls = dynamic_cast<Data::FuncCalls*>(pObj);
 			bOK = pCalls->SetValue(v_r);
 			v = Value(bOK);
 		}
+		break;
 		case X::ObjType::Prop:
 		{
 			auto* pPropObj = dynamic_cast<Data::PropObject*>(pObj);
@@ -91,6 +115,7 @@ namespace AST
 				v = Value(bOK);
 			}
 		}
+		break;
 		default:
 			bOK = false;
 			break;
@@ -251,6 +276,13 @@ bool ColonOP::OpWithOperands(std::stack<AST::Expression*>& operands, int LeftTok
 		return false;
 	}
 #endif
+	if (operandR == nullptr)
+	{
+		//for example: if somethong:
+		//just use operandL
+		operands.push(operandL);
+		return true;
+	}
 	auto param = new AST::Param(operandL, operandR);
 	if (operandL)
 	{

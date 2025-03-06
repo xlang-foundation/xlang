@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "exp.h"
 #include "scope.h"
@@ -232,6 +247,10 @@ public:
 	{
 		return std::string(m_Name.s, m_Name.size);
 	}
+	virtual std::string GetFuncName()
+	{
+		return GetNameString();
+	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<Scope*>& callables) override
 	{
@@ -271,6 +290,11 @@ public:
 			//content used by func,and clear to nil,
 			//not be used anymore, so delete it
 			delete pair;
+		}
+		else if (r->m_type == AST::ObType::Var)
+		{
+			//for case no () after the name like class and func
+			SetName(r);
 		}
 		//only accept once
 		NeedParam = false;
@@ -352,6 +376,10 @@ public:
 			m_pContext->DecRef();
 		}
 	}
+	FORCE_INLINE virtual std::string GetFuncName() override
+	{
+		return m_funcName;
+	}
 	virtual std::string GetDoc() override
 	{
 		return m_doc;
@@ -414,12 +442,17 @@ public:
 		{
 			pPassInContext = pContext;
 		}
+		X::Value trailer;
+		if ((!m_func)&& params.size() > 0)
+		{
+			trailer = params[params.size() - 1];
+		}
 		return m_func ? m_func(rt, pPassInContext, pContext,
 			params, kwParams, retValue) : 
 			(
 				m_func_ex ? m_func_ex(rt, m_pContext,
 					pContext == nullptr ? m_pContext : pContext, params,
-					kwParams, params[0], retValue) : false
+					kwParams, trailer,retValue) : false
 			);
 	}
 };

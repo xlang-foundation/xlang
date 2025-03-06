@@ -1,5 +1,22 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "taskpool.h"
 #include "task.h"
+#include "utility.h"
+
 namespace X
 {
 
@@ -30,7 +47,6 @@ namespace X
 		}
 		TaskPool::~TaskPool()
 		{
-			std::cout << "TaskPool::~TaskPool()";
 			CancelAll();
 		}
 
@@ -42,6 +58,7 @@ namespace X
 			//and can be deleted
 			for (auto* pTsk : m_tasks)
 			{
+				pTsk->Cancelled();
 				delete pTsk;
 			}
 			m_tasks.clear();
@@ -52,6 +69,26 @@ namespace X
 			}
 			m_threads.clear();
 			m_lock.Unlock();
+		}
+		bool TaskPool::CancelTask(Task* pTask)
+		{
+			m_lock.Lock();
+			for (auto it = m_tasks.begin(); it != m_tasks.end();)
+			{
+				if (*it == pTask)
+				{
+					m_tasks.erase(it);
+					m_lock.Unlock();
+					pTask->Cancelled();
+					delete pTask;
+					return true;
+				}
+				else
+				{
+					++it;
+				}
+			}
+			return false;
 		}
 		Task* TaskPool::GetTaskToRun()
 		{
@@ -114,7 +151,10 @@ namespace X
 				m_threads.push_back(pIdelThread);
 				pIdelThread->Start();
 			}
-			pIdelThread->ReleaseWait();
+			if (pIdelThread)
+			{
+				pIdelThread->ReleaseWait();
+			}
 			m_lock.Unlock();
 			return true;
 		}

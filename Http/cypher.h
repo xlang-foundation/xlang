@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "xpackage.h"
 #include "xlang.h"
@@ -27,23 +42,27 @@ namespace X
 
 		APISET().AddPropWithType<int>("rsa_padding_mode", &Cypher::m_rsa_padding_mode);
 
-		APISET().AddFunc<3>("generate_key_pair", &Cypher::GenerateKeyPair);
+		APISET().AddFunc<2>("generate_key_pair", &Cypher::GenerateKeyPair);
 		APISET().AddFunc<1>("remove_private_key", &Cypher::RemovePrivateKey);
-		APISET().AddFunc<2>("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
-		APISET().AddFunc<2>("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
-		APISET().AddFunc<2>("encrypt_with_public_key", &Cypher::EncryptWithPublicKey);
-		APISET().AddFunc<2>("decrypt_with_public_key", &Cypher::DecryptWithPublicKey);
+		APISET().AddVarFunc("encrypt_with_private_key", &Cypher::EncryptWithPrivateKey);
+		APISET().AddVarFunc("decrypt_with_private_key", &Cypher::DecryptWithPrivateKey);
+		APISET().AddVarFunc("encrypt_with_public_key", &Cypher::EncryptWithPublicKey);
+		APISET().AddVarFunc("decrypt_with_public_key", &Cypher::DecryptWithPublicKey);
 		END_PACKAGE
 
 	public:
 		Cypher();
 		~Cypher();
 		//return public key
-		std::string GenerateKeyPair(int key_size, std::string keyName, std::string storeFolder);
+		std::string GenerateKeyPair(int key_size, std::string keyName);
 		bool RemovePrivateKey(std::string keyName);
-		X::Value EncryptWithPrivateKey(std::string msg, std::string keyName);
-		std::string DecryptWithPrivateKey(X::Value& encrypted, std::string keyName);
-		X::Value EncryptWithPublicKey(std::string msg, std::string perm_key);
-		std::string DecryptWithPublicKey(X::Value& encrypted, std::string perm_key);
+		bool EncryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+		bool DecryptWithPrivateKey(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+		bool EncryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+		bool DecryptWithPublicKey(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
 	};
 }

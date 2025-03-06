@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "stackframe.h"
 #include "utility.h"
@@ -130,12 +145,20 @@ public:
 	{
 		m_threadId = GetThreadID();
 	}
-	void SetNoThreadBinding(bool b)
+	FORCE_INLINE void SetNoThreadBinding(bool b)
 	{
 		m_noThreadBinding = b;
 	}
+	FORCE_INLINE bool IfNoThreadBinding()
+	{
+		return m_noThreadBinding;
+	}
+	void SetNoDbg(bool b)
+	{
+		m_bNoDbg = b;
+	}
 	~XlangRuntime();
-	bool m_bNoDbg = false; // do not trace
+	bool m_bNoDbg = false; // do not trace this runtime if module is devops_run.x or Cleanup.x
 	bool m_bStoped = false; // stopped on breakpoint or step
 	AST::Expression* m_pFirstStepOutExp = nullptr;
 	FORCE_INLINE void SetDbgType(dbg d, dbg lastRequest)
@@ -152,6 +175,7 @@ public:
 	int PushWritePad(X::Value valObj, std::string alias);
 	void PopWritePad();
 	virtual bool CreateEmptyModule() override;
+	virtual X::Value GetModuleObject() override;
 	FORCE_INLINE void SetName(std::string& name) { m_name = name; }
 	FORCE_INLINE std::string& GetName() { return m_name; }
 	FORCE_INLINE long long GetThreadId() { return m_threadId; }

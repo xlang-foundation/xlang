@@ -1,3 +1,18 @@
+﻿/*
+Copyright (C) 2024 The XLang Foundation
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 #include "singleton.h"
 #include "xpackage.h"
@@ -49,9 +64,10 @@ namespace X
 			}
 			if (m_IsBinary)
 			{
-				char* data = new char[size];
+				X::XBin* pBin = g_pXHost->CreateBin(nullptr, size, true);
+				char* data = pBin->Data();
 				m_stream.read(data, size);
-				return X::Value(g_pXHost->CreateBin(data, size,true),false);
+				return X::Value(pBin,false);
 			}
 			else
 			{
@@ -89,17 +105,7 @@ namespace X
 			}
 			return true;
 		}
-		X::Value get_size()
-		{
-			struct stat stat_buf;
-			int rc = stat(m_fileName.c_str(), &stat_buf);
-			size_t size = -1;
-			if (rc == 0)
-			{
-				size = stat_buf.st_size;
-			}
-			return X::Value((long long)size);
-		}
+		X::Value get_size();
 	};
 
 	class FileSystem:
@@ -180,23 +186,23 @@ namespace X
 			std::string modulePath = GetModulePath();
 			std::filesystem::path rootPath = modulePath;
 			std::filesystem::path fullPath;
+
 			// Check if the path is already absolute
 			if (std::filesystem::path(strPath).is_absolute())
 			{
-				fullPath = std::filesystem::canonical(strPath);
+				fullPath = std::filesystem::absolute(strPath);
 			}
 			else {
-				// Combine the paths and normalize
-				try {
-					fullPath = std::filesystem::absolute(rootPath / strPath);
-					fullPath = std::filesystem::canonical(fullPath);
-				}
-				catch (const std::filesystem::filesystem_error& e) {
-					return "";
-				}
+				// Combine the paths and make absolute
+				fullPath = std::filesystem::absolute(rootPath / strPath);
 			}
+
+			// Normalize the path by resolving '..' and '.'
+			fullPath = fullPath.lexically_normal();
+
 			return fullPath.string();
 		}
+
 		std::string ReadAllTexts(std::string fileName)
 		{
 			auto fullPath = ConvertReletivePathToFullPath(fileName);
