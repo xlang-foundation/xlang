@@ -324,7 +324,11 @@ namespace X
 			// Shift b to the high 16 bits of a 32-bit int
 			uint32_t temp = static_cast<uint32_t>(b) << 16;
 			float result;
+#ifdef _WIN32
 			std::memcpy(&result, &temp, sizeof(result));
+#else
+			memcpy(&result, &temp, sizeof(result));
+#endif
 			return result;
 		}
 
