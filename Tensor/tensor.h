@@ -121,7 +121,10 @@ namespace X
 				case X::TensorDataType::CDOUBLE:
 					size = 16;
 					break;
-				case X::TensorDataType::FLOAT8:
+				case X::TensorDataType::FLOAT8_E4M3FN:
+				case X::TensorDataType::FLOAT8_E4M3FNUZ:
+				case X::TensorDataType::FLOAT8_E5M2:
+				case X::TensorDataType::FLOAT8_E5M2FNUZ:
 					size = 1;
 					break;
 				default:
