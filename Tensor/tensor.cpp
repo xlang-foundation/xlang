@@ -631,7 +631,12 @@ namespace X
 					X::Value objId((unsigned long long)dynamic_cast<XObj*>(this));
 					dict->Set("Value", objId);
 					X::Value valSize(m_dims[lastDimIndex + 1].size);
-					dict->Set("Size", valSize);
+					X::List sizeList;
+					for (int i = 0; i < lastDimIndex + 1; i++)
+					{
+						sizeList += m_dims[i].size;
+					}
+					dict->Set("Size", sizeList);
 				}
 				else
 				{
@@ -650,8 +655,16 @@ namespace X
 					{
 						X::Value objId((unsigned long long)val.GetObj());
 						dict->Set("Value", objId);
-						X::Value valSize(val.GetObj()->Size());
-						dict->Set("Size", valSize);
+						X::Value valShape = val.GetObj()->Shapes();
+						if (valShape.IsList())
+						{
+							dict->Set("Size", valShape);
+						}
+						else
+						{
+							X::Value valSize(val.GetObj()->Size());
+							dict->Set("Size", valSize);
+						}
 					}
 				}
 

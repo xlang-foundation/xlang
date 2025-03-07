@@ -64,8 +64,16 @@ namespace X
 				{
 					X::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
-					X::Value valSize(val.GetObj()->Size());
-					dict->Set("Size", valSize);
+					X::Value valShape = val.GetObj()->Shapes();
+					if (valShape.IsList())
+					{
+						dict->Set("Size", valShape);
+					}
+					else
+					{
+						X::Value valSize(val.GetObj()->Size());
+						dict->Set("Size", valSize);
+					}
 				}
 				X::Value valDict(dict);
 				pOutList->Add(rt, valDict);

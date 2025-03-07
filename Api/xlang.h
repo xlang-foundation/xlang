@@ -182,6 +182,7 @@ namespace X
 		virtual ObjType GetType() { return ObjType::Base; }
 		virtual const char* GetTypeString() { return nullptr; }
 		virtual long long Size() { return 0; }
+		virtual X::Value Shapes() { return X::Value(); }
 		virtual size_t Hash() { return 0; }
 		virtual unsigned long long GetID() { return 0; }
 		virtual const char* ToString(bool WithFormat = false) 
@@ -447,7 +448,11 @@ namespace X
 		QINT8 = 15,
 		QUINT8 = 16,
 		QINT32 = 17,
-		FLOAT8 = 18
+		FLOAT8 = 18,
+		FLOAT8_E4M3FN = 18,
+		FLOAT8_E4M3FNUZ,
+		FLOAT8_E5M2,
+		FLOAT8_E5M2FNUZ
 	};
 
 	class XTensor :
