@@ -418,6 +418,9 @@ namespace X
 					}
 					Data::Str* pStrName = new Data::Str(name);
 					dict->Set("name", X::Value(pStrName));
+					#ifdef _WIN32
+					moduleFileName = systemCpToUtf8(moduleFileName);
+					#endif
 					Data::Str* pStrFileName = new Data::Str(moduleFileName);
 					dict->Set("file", X::Value(pStrFileName));
 					Data::Str* pStrMd5 = new Data::Str(Dbg::GetExpModule(pExp)->GetMd5());
@@ -486,8 +489,8 @@ namespace X
 					return elm; }
 			);
 
-			G::I().SetBreakPointsMd5(varMd5, lines); // record 
-			std::vector<AST::Module*> modulesMd5 = Hosting::I().QueryModulesByMd5(varMd5);
+			G::I().SetBreakPointsMd5(md5, lines); // record 
+			std::vector<AST::Module*> modulesMd5 = Hosting::I().QueryModulesByMd5(md5);
 			X::List list;
 			if (modulesMd5.size() > 0)
 			{

@@ -28,8 +28,10 @@ limitations under the License.
 
 #include "service.h"
 
+#ifndef _WIN32
 #ifdef __APPLE__
 extern char** environ;  // Explicitly declare environ on macOS
+#endif
 #include <unistd.h>
 #endif
 
