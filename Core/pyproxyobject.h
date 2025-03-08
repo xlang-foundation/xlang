@@ -350,6 +350,7 @@ namespace X
 				if (m_path.empty()) return m_name + ".py";
 				else return m_path + "/" + m_name + ".py";
 			}
+			virtual X::Value ToXlang() override;
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*> & callables) override; 
 

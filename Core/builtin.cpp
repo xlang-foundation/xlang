@@ -1563,6 +1563,7 @@ bool U_Hash(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 		retValue = pObj->Hash();
 		return true;
 	}
+	return false;
 }
 
 bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,

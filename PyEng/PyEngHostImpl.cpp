@@ -562,7 +562,6 @@ bool GrusPyEngHost::ImportWithFromList(
 	if (pModule)
 	{
 		bOK = true;
-		subs.resize((int)fromList.size());
 		for (auto& from : fromList)
 		{
 			auto* pSubOb = PyObject_GetAttrString(pModule, from);//New reference

@@ -101,7 +101,7 @@ namespace X
 				//for python: from module_name_here import sub1, sub2...
 				//from part is the module, and import parts are subs inside
 				//this module
-				X::Port::vector<PyEngObjectPtr> subs(0);
+				X::Port::vector<PyEngObjectPtr> subs(1);
 				X::Port::vector<const char*> fromList(1);
 				fromList.push_back(name.c_str());
 				bool bOK = g_pPyHost->ImportWithFromList(fromPath.c_str(),
@@ -119,6 +119,10 @@ namespace X
 				std::string strFileName = GetPyModuleFileName();
 				PyObjectCache::I().RemoveModule(strFileName);
 			}
+		}
+		X::Value PyProxyObject::ToXlang()
+		{
+			return g_pPyHost->to_xvalue(m_obj);
 		}
 		bool PyProxyObject::ToValue(X::Value& val)
 		{

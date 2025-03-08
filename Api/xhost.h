@@ -148,6 +148,8 @@ namespace X
 		virtual void* GetUIThreadRunContext() =0;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) = 0;
 		virtual bool PyRun(const char* code, X::ARGS& args) = 0;
+		virtual bool PyImport(XRuntime* rt, const char* moduleName,
+			const char* from, const char* currentPath,X::Value& pyObj) = 0;
 		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) = 0;
 		virtual void SetPyEngHost(void* pHost) = 0;
 		virtual void SetDebugMode(bool bDebug) = 0;
