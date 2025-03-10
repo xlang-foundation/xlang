@@ -70,7 +70,7 @@ namespace X
 			char* m_data=nullptr;
 			int m_startItemOffet = 0;// unit is sizeof data type
 			std::vector<TensorDim> m_dims;
-			TensorDataType m_dataType;
+			TensorDataType m_dataType = TensorDataType::UNKNOWN;
 			X::Value m_desc;//used to hold extra info
 
 			FORCE_INLINE virtual X::Value GetDesc() override
