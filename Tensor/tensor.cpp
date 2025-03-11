@@ -630,9 +630,9 @@ namespace X
 					dict->Set("Type", X::Value(pStrType));
 					X::Value objId((unsigned long long)dynamic_cast<XObj*>(this));
 					dict->Set("Value", objId);
-					X::Value valSize(m_dims[lastDimIndex + 1].size);
+					//X::Value valSize(m_dims[lastDimIndex + 1].size);
 					X::List sizeList;
-					for (int i = 0; i < lastDimIndex + 1; i++)
+					for (int i = lastDimIndex + 1; i < dimCount; i++)
 					{
 						sizeList += m_dims[i].size;
 					}
