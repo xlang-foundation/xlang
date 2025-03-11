@@ -14,7 +14,7 @@
 # <END>
 
 import time
-num =10000000
+num =1000000
 print("Test Loop with XLang Jit:",num)
 @jit
 def sum_all(toNum:unsigned long long)->unsigned long long:
