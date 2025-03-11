@@ -155,7 +155,7 @@ xlang -help | -? | -h for help
 - **Running a Script File:**  
   To run an **XLang™** script file:
   ```bash
-  $ ./xlang my_script.x
+  $ ./xlang your_script.x
   ```
 
 - **Running Inline Code with Event Loop:**  
