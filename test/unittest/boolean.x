@@ -49,7 +49,7 @@ Any number is True, except 0.
 
 Any list, tuple, set, and dictionary are True, except empty ones.
 """
-bool("abc")
+bool("abcd")
 bool(123)
 bool(["apple", "cherry", "banana"])
 
