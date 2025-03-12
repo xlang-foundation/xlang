@@ -42,6 +42,7 @@ namespace X
 			void BuildGraph(void* pBuildContext,
 				XObj* pContext, TensorExpression* pTensor, GraphBuildAction& retAction);
 
+			X::Value m_runner;//which impl. ops for tensor
 			std::vector<TensorRunItem> m_runItems;
 
 			Tensor_OperatorHandler QueryRegisteredOpHandler(void* pBuildContext,

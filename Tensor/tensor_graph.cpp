@@ -290,6 +290,8 @@ namespace X
 		}
 		void TensorGraph::Create(XObj* pContext, X::ARGS& params, X::KWARGS& kwParams)
 		{
+			m_runner = X::Value(pContext);
+
 			GraphBuildContext buildContext;
 			//check tensor's m_op, if the tensor package(pContext) has
 			//this operator impl., replace with that
