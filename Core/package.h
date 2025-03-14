@@ -289,6 +289,8 @@ public:
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{
 	}
+	virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
+		KWARGS& kwParams, X::Value& retValue) override;
 	FORCE_INLINE virtual bool wait(int timeout) override
 	{
 		bool bOK = true;

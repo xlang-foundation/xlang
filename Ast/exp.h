@@ -73,6 +73,7 @@ enum class ObType
 	Deferred,
 	Import,
 	NamespaceVar,
+	RefOp,
 };
 enum class ExecActionType
 {

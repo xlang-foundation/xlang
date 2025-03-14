@@ -58,6 +58,7 @@ namespace X
 		PyProxyObject,
 		InternalAssign,
 		Error,
+		Ref
 	};
 
 	enum class MemberFlag
@@ -466,6 +467,7 @@ namespace X
 		virtual long long GetItemSize() = 0;
 		virtual char* GetData() = 0;
 		virtual int GetDimCount() = 0;
+		virtual long long GetCount() = 0;
 		virtual long long GetDimSize(int dimIdx) = 0;
 		virtual void SetShape(Port::vector<int>& shapes) = 0;
 		virtual void SetDataType(TensorDataType t) = 0;
@@ -556,6 +558,14 @@ namespace X
 		virtual X::Value ToXlang() = 0;
 		virtual bool GetObj(void** ppObjPtr) = 0;
 	};
+	class XRef :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XRef);
+		virtual X::Value Apply() = 0;
+	};
+
 	class XRemoteObject :
 		virtual public XObj
 	{

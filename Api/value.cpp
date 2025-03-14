@@ -838,6 +838,11 @@ namespace X
 		}
 		return false;
 	}
+	template<>
+	void V<XRef>::Create()
+	{
+		//SetObj(g_pXHost->CreateRef());
+	}
 
 	template<>
 	template<>

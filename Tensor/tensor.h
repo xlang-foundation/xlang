@@ -141,7 +141,7 @@ namespace X
 				}
 				return shapes;
 			}
-			long long GetCount()
+			virtual long long GetCount() override
 			{
 				long long itemCnt = 1;
 				for (auto& d : m_dims)
