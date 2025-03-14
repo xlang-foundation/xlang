@@ -1566,6 +1566,30 @@ bool U_Hash(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	return false;
 }
 
+bool U_MD5(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	std::string str;
+	if (params.size() == 1)
+	{
+		auto& v = params[0];
+		str = v.ToString();
+	}
+	else if (pContext)
+	{
+		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
+		if (pObj)
+		{
+			str = pObj->ToString();
+		}
+	}
+	std::string md5_code = md5(str);
+	retValue = md5_code;
+	return true;
+}
+
 bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -2035,6 +2059,7 @@ bool Builtin::RegisterInternals()
 #endif
 	Register("isinstance", (X::U_FUNC)U_IsInstance, params);
 	Register("hash", (X::U_FUNC)U_Hash, params, "hash(obj) or obj.hash()", true);
+	Register("md5", (X::U_FUNC)U_MD5, params, "md5(obj) or obj.md5()", true);
 	return true;
 }
 
