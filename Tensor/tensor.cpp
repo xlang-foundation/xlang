@@ -685,25 +685,32 @@ namespace X
 				List* pList = dynamic_cast<List*>(dimData.GetObj());
 				long long dimSize = pList->Size();
 				m_dims.push_back(TensorDim{ 0,dimSize,dimSize });
-				if (dimSize > 0)
+				if (m_dataType == TensorDataType::UNKNOWN)
 				{
-					dimData = pList->Get(0);
-					if (!dimData.IsList())
+					if (dimSize > 0)
 					{
-						auto ty = dimData.GetType();
-						switch (ty)
+						dimData = pList->Get(0);
+						if (!dimData.IsList())
 						{
-						case X::ValueType::Int64:
-							m_dataType = TensorDataType::LONGLONG;
-							break;
-						case X::ValueType::Double:
-							m_dataType = TensorDataType::DOUBLE;
-							break;
-						default:
+							auto ty = dimData.GetType();
+							switch (ty)
+							{
+							case X::ValueType::Int64:
+								m_dataType = TensorDataType::LONGLONG;
+								break;
+							case X::ValueType::Double:
+								m_dataType = TensorDataType::DOUBLE;
+								break;
+							default:
+								break;
+							}
 							break;
 						}
-						break;
 					}
+				}
+				else
+				{
+					break;
 				}
 			}
 			CalcDimProd();

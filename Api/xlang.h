@@ -376,6 +376,7 @@ namespace X
 		Internal_Reserve(XDict)
 		virtual void Set(const X::Value& key, const X::Value& val) = 0;
 		virtual X::Value Get(const X::Value& key) = 0;
+		virtual bool Has(const X::Value& key) = 0;
 		virtual void Enum(Dict_Enum proc) = 0;
 		virtual bool Compare(X::Value& dict) = 0;
 		FORCE_INLINE void Set(const char* key, X::Value val)
@@ -452,7 +453,8 @@ namespace X
 		FLOAT8_E4M3FN = 18,
 		FLOAT8_E4M3FNUZ,
 		FLOAT8_E5M2,
-		FLOAT8_E5M2FNUZ
+		FLOAT8_E5M2FNUZ,
+		UNKNOWN
 	};
 
 	class XTensor :
@@ -551,6 +553,7 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XPyObject);
+		virtual X::Value ToXlang() = 0;
 		virtual bool GetObj(void** ppObjPtr) = 0;
 	};
 	class XRemoteObject :
@@ -714,6 +717,7 @@ namespace X
 	using Event = V<XEvent>;
 	using Func = V<XFunc>;
 	using XlangClass = V<XLangClass>;
+	using PyObject = V<XPyObject>;
 	using Runtime = V<XRuntime>;
 	using Module = V<XModule>;
 }

@@ -838,4 +838,21 @@ namespace X
 		}
 		return false;
 	}
+
+	template<>
+	template<>
+	void V<XPyObject>::Create(Runtime rt, const char* moduleName,
+		const char* from,const char* currentPath)
+	{
+		Value v0;
+		if (g_pXHost->PyImport(rt, moduleName, from, currentPath, v0))
+		{
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
+		}
+	}
 }

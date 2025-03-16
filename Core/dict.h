@@ -143,6 +143,11 @@ namespace X
 				}
 				return *this;
 			}
+			virtual bool Has(const X::Value& key) override
+			{
+				auto it = mMap.find(key);
+				return it != mMap.end();
+			}
 			bool Has(X::Value& key)
 			{
 				bool bOK = false;
