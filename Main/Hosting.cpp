@@ -185,7 +185,7 @@ namespace X
 		{
 			modulePath = std::filesystem::absolute(modulePath);
 		}
-		std::string strModuleName = modulePath.string();
+		std::string strModuleName = modulePath.generic_string();
 		parser.SetModuleName(strModuleName);
 		pTopModule->SetModuleName(strModuleName);
 		pTopModule->SetMd5(md5);
