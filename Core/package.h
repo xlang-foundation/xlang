@@ -46,7 +46,12 @@ class Package :
 	PackageCleanup m_funcPackageCleanup = nullptr;
 	PackageWaitFunc m_funcPackageWait = nullptr;
 	PackageAccessor m_funcAccessor;
+	U_FUNC m_funcCall;
 
+	virtual void SetPackageCall(U_FUNC func) override
+	{
+		m_funcCall = func;
+	}
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{
 		m_funcAccessor = func;
@@ -106,6 +111,10 @@ public:
 	PackageAccessor GetAccessor()
 	{
 		return m_funcAccessor;
+	}
+	U_FUNC GetCall()
+	{
+		return m_funcCall;
 	}
 	PackageWaitFunc GetWaitFunc()
 	{
@@ -287,6 +296,9 @@ class PackageProxy :
 public:
 	Package* GetPackage() { return m_pPackage; }
 	virtual void SetPackageAccessor(PackageAccessor func) override
+	{
+	}
+	virtual void SetPackageCall(U_FUNC func) override
 	{
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,

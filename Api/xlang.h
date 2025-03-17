@@ -496,6 +496,8 @@ namespace X
 	public:
 		Internal_Reserve(XTensorGraph)
 		virtual void Create(XObj* pContext,X::ARGS& params, X::KWARGS& kwParams) = 0;
+		virtual void PutTensorIntoCache(X::Value& vTensor) = 0;
+		virtual void RemoveTensorFromCache(X::Value& vTensor) = 0;
 	};
 	class XComplex :
 		virtual public XObj
@@ -541,6 +543,8 @@ namespace X
 	{
 	public:
 		virtual X::Value GetName() = 0;
+		virtual void ChangeStatmentsIntoTranslateMode(
+			bool changeIfStatment,bool changeLoopStatment) = 0;
 	};
 	class XLangClass :
 		virtual public XObj
@@ -603,6 +607,7 @@ namespace X
 		virtual void SetPackageCleanupFunc(PackageCleanup func) = 0;
 		virtual void SetPackageWaitFunc(PackageWaitFunc func) = 0;
 		virtual void SetPackageAccessor(PackageAccessor func) = 0;
+		virtual void SetPackageCall(U_FUNC func) = 0;
 		virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) = 0;
 		virtual int GetPackageName(char* buffer,int bufferSize)= 0;
 		virtual void* GetEmbedObj() = 0;
@@ -719,7 +724,9 @@ namespace X
 	using Struct = V<XStruct>;
 	using Dict = V<XDict>;
 	using List = V<XList>;
+	//XTensorGraph
 	using Tensor = V<XTensor>;
+	using TensorGraph = V<XTensorGraph>;
 	using Set = V<XSet>;
 	using Complex = V<XComplex>;
 	using Bin = V<XBin>;

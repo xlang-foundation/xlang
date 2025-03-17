@@ -350,6 +350,8 @@ bool If::EatMe(Expression* other)
 			n = n->m_next;
 		}
 		p->m_next = elseIf;
+		elseIf->m_prev = p;
+
 		elseIf->SetParent(p);
 		return true;
 	}
@@ -358,8 +360,27 @@ bool If::EatMe(Expression* other)
 		return false;
 	}
 }
+
+bool If::Translate(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+{
+	//we reach out all if/elif/else for translate mode
+	bool bRet = Block::Exec_i(rt, action, pContext, v);
+	If* next = m_next;
+	while (next)
+	{
+		bRet = bRet && next->Exec_i(rt, action, pContext, v);
+		next = next->m_next;
+	}
+	return bRet;
+}
+
 bool If::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
+	if (m_translateMode)
+	{
+		return Translate(rt, action, pContext, v, lValue);
+	}
+
 	bool bRet = true;
 	bool bCanRun = false;
 	if (R)

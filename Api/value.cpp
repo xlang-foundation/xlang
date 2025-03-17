@@ -243,7 +243,14 @@ namespace X
 	template<>
 	void V<XTensor>::Create()
 	{
-		SetObj(g_pXHost->CreateTensor());
+		auto* t = g_pXHost->CreateTensor();
+		SetObj(t);
+	}
+	template<>
+	void V<XTensorGraph>::Create()
+	{
+		auto* t = g_pXHost->CreateTensorGraph();
+		SetObj(t);
 	}
 	template<>
 	void V<XComplex>::Create()

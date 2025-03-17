@@ -116,6 +116,11 @@ namespace X
 				delete m_func;
 			}
 		}
+		void Function::ChangeStatmentsIntoTranslateMode(bool changeIfStatment, 
+			bool changeLoopStatment)
+		{
+			m_func->ChangeStatmentsIntoTranslateMode(changeIfStatment, changeLoopStatment);
+		}
 		bool Function::Call(XRuntime* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,

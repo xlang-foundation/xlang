@@ -98,7 +98,6 @@ enum class ScopeType
 };
 //Variables scope support, for Module and Func/Class
 
-class Expresion;
 class Scope
 {
 	Locker m_lock;
@@ -232,7 +231,7 @@ public:
 			m_Vars.emplace(std::make_pair(name, idx));
 			if (m_varFrame)
 			{
-				m_varFrame->SetVarCount(m_Vars.size());
+				m_varFrame->SetVarCount((int)m_Vars.size());
 			}
 			return idx;
 		}

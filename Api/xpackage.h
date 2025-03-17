@@ -269,6 +269,7 @@ namespace X
 		public APISetBase
 	{
 		PackageAccessor m_accessor;
+		U_FUNC m_call;
 	public:
 		void SetAccessor(PackageAccessor a)
 		{
@@ -283,6 +284,21 @@ namespace X
 				auto* pThis = (T*)pPackage->GetEmbedObj();
 				return (pThis->*f)(IdxAry);
 			};
+		}
+
+		void SetCallHandler(U_FUNC func)
+		{
+			m_call = func;
+		}
+		template<typename F>
+		void SetCallHandler(F f)
+		{
+			m_call = [f](X::XRuntime* rt, X::XObj* pObject,X::XObj* pContext, ARGS& params, KWARGS& kwParams,X::Value& retValue)
+				{
+					auto* pPackage = dynamic_cast<X::XPackage*>(pObject);
+					auto* pThis = (T*)pPackage->GetEmbedObj();
+					return (pThis->*f)(rt,params, kwParams, retValue);
+				};
 		}
 		bool IsCreated() { return m_alreadyCallBuild; }
 		FORCE_INLINE virtual XPackage* GetPack() override { return m_xPack; }
@@ -712,6 +728,37 @@ namespace X
 					})
 				});
 		}
+
+		template<typename F>
+		bool AddTensorStructuralOps(const char* name, F f, const char* doc = "")
+		{
+			//like this
+			//X::Value StructuralOps(X::ARGS& params)
+			m_bHaveTensorOps = true;
+			X::U_FUNC dummy;
+			X::U_FUNC_EX dummyEx;
+			//add func with name to return a TensorOperator
+			m_members.push_back(MemberInfo{
+				PackageMemberType::Func,name,X::Value(),
+				(X::U_FUNC)([f,name](X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+					X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+					{
+						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
+						auto* tThis = (T*)pPackage->GetEmbedObj();
+						Tensor_OperatorHandler handler = [tThis, f, params, kwParams]
+						(X::Value& graph,X::ARGS& inputs, X::Value& retVal)
+						{
+							retVal = (tThis->*f)(graph,inputs);
+						};
+						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,true);
+						std::string strName(name);
+						pTensorOp->SetName(strName.c_str());
+						retValue = X::Value(pTensorOp);
+						return true;
+					}),dummy,dummyEx,false,std::string(doc) });
+			return true;
+		}
+
 		template<typename F>
 		bool AddTensorUnaryOp(const char* name, F f,const char* doc = "")
 		{
@@ -727,12 +774,12 @@ namespace X
 						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
 						auto* tThis = (T*)pPackage->GetEmbedObj();
 						Tensor_OperatorHandler handler= [tThis, f, params, kwParams]
-						(X::ARGS& inputs, X::Value& retVal)
+						(X::Value& graph,X::ARGS& inputs, X::Value& retVal)
 						{
 							//todo: check performace impact
 							X::ARGS params0 = params;
 							X::KWARGS kwParams0 = kwParams;
-							(tThis->*f)(params0, kwParams0, inputs[0], retVal);
+							(tThis->*f)(graph,params0, kwParams0, inputs[0], retVal);
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,true);
 						std::string strName(name);
@@ -757,12 +804,12 @@ namespace X
 						auto* pPackage = HelpFuncs::MakePackagePointer(pThis,pContext);
 						auto* tThis = (T*)pPackage->GetEmbedObj();
 						Tensor_OperatorHandler handler= [tThis, f, params, kwParams]
-						(X::ARGS& inputs, X::Value& retVal)
+						(X::Value& graph,X::ARGS& inputs, X::Value& retVal)
 						{
 							//todo: check performace impact
 							X::ARGS params0 = params;
 							X::KWARGS kwParams0 = kwParams;
-							(tThis->*f)(params0, kwParams0, inputs[0], inputs[1], retVal);
+							(tThis->*f)(graph,params0, kwParams0, inputs[0], inputs[1], retVal);
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,false);
 						std::string strName(name);
@@ -828,6 +875,7 @@ namespace X
 			}
 			pPackage->SetPackageWaitFunc(waitFunc);
 			pPackage->SetPackageAccessor(m_accessor);
+			pPackage->SetPackageCall(m_call);
 			pPackage->Init(memberNum);
 			for (auto* b : bases)
 			{

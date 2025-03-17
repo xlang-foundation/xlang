@@ -562,6 +562,22 @@ namespace X
 			}
 
 		}
+		X::AST::Expression* Tensor::GetCurrentExecContext()
+		{
+			auto* rt0 = G::I().GetCurrentRuntime();
+			XlangRuntime* rt = dynamic_cast<XlangRuntime*>(rt0);
+			if (rt == nullptr)
+			{
+				return nullptr;
+			}
+			auto* pCurStack = rt->GetCurrentStack();
+			if (pCurStack == nullptr)
+			{
+				return nullptr;
+			}
+			auto* pCurLine = pCurStack->GetCurExp();
+			return pCurLine;
+		}
 		void Tensor::DeepCopyDataFromList(List* pList, std::vector<long long>& indices, int level)
 		{
 			long long size = pList->Size();
@@ -794,7 +810,10 @@ namespace X
 		}
 		bool Tensor::Multiply(const X::Value& r, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(this);
 			newTensor->SetLeftVal(left);
 			X::Value right(r);
@@ -806,7 +825,10 @@ namespace X
 		}
 		bool Tensor::Divide(const X::Value& r, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(this);
 			newTensor->SetLeftVal(left);
 			X::Value right(r);
@@ -818,7 +840,10 @@ namespace X
 		}
 		bool Tensor::Divided(const X::Value& leftValue, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(leftValue);
 			newTensor->SetLeftVal(left);
 			X::Value right(this);
@@ -831,7 +856,10 @@ namespace X
 		}
 		bool Tensor::Add(const X::Value& r, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(this);
 			newTensor->SetLeftVal(left);
 			X::Value right(r);
@@ -844,7 +872,10 @@ namespace X
 		}
 		bool Tensor::Minus(const X::Value& r, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(this);
 			newTensor->SetLeftVal(left);
 			X::Value right(r);
@@ -857,7 +888,10 @@ namespace X
 		}
 		bool Tensor::Minuend(const X::Value& leftValue, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(leftValue);
 			newTensor->SetLeftVal(left);
 			X::Value right(this);

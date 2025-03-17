@@ -390,7 +390,12 @@ namespace X
 		bool PackageProxy::Call(XRuntime* rt, XObj* pContext, 
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
-			return false;
+			auto func = m_pPackage->GetCall();
+			if(func)
+			{
+				return func(rt,this, pContext, params, kwParams, retValue);
+			}
+			return true;
 		}
 		X::Data::List* PackageProxy::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,

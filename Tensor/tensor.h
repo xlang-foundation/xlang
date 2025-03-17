@@ -72,6 +72,7 @@ namespace X
 			std::vector<TensorDim> m_dims;
 			TensorDataType m_dataType = TensorDataType::UNKNOWN;
 			X::Value m_desc;//used to hold extra info
+			X::AST::Expression* m_currentLine = nullptr;
 
 			FORCE_INLINE virtual X::Value GetDesc() override
 			{
@@ -81,7 +82,16 @@ namespace X
 			{
 				m_desc = v;
 			}
+			X::AST::Expression* GetCurrentExecContext();
 		public:
+			FORCE_INLINE void SetCurrentLine(X::AST::Expression* line)
+			{
+				m_currentLine = line;
+			}
+			FORCE_INLINE X::AST::Expression* GetCurrentLine()
+			{
+				return m_currentLine;
+			}
 			virtual long long GetItemSize() override
 			{
 				long long size = 1;
@@ -713,5 +723,6 @@ namespace X
 			}
 
 		};
+
 	}
 }
