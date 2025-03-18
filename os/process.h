@@ -68,7 +68,7 @@ namespace X {
                 std::string paramString;
                 int size = (int)paramList.Size();
                 for (int i = 0; i < size;i++) {
-                    X::Value param = paramList[i];
+                    X::Value param = paramList->Get(i);
                     paramString += param.ToString() + " ";
                 }
                 return paramString;
