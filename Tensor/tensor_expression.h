@@ -40,9 +40,9 @@ namespace X
 		// Flow block (entire if/elif/else structure)
 		struct FlowBlock
 		{
-			int id;                     // Unique ID for this flow block
+			unsigned long long id;                     // Unique ID for this flow block
 			std::vector<FlowBranch> branches;  // All branches in this block
-			int parentId = -1;          // Parent flow block ID (for nesting)
+			unsigned long long parentId = 0;          // Parent flow block ID (for nesting)
 			int parentBranchId = -1;    // Branch ID in parent that contains this block
 		};
 

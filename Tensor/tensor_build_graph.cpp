@@ -95,10 +95,10 @@ namespace X
                                 int parentBranchId = -1;
                                 bool hasParentIf = IsInIfStatement(pIfStmt->GetParent(), &parentIfStmt, &parentBranchId);
 
-                                int flowId = -1;
+                                unsigned long long flowId = 0;
                                 if (hasParentIf && parentIfStmt) {
                                     // First get/create the parent flow block
-                                    int parentFlowId = GetOrCreateFlowBlock(parentIfStmt);
+                                    unsigned long long parentFlowId = GetOrCreateFlowBlock(parentIfStmt);
 
                                     // Then get/create this flow block
                                     flowId = GetOrCreateFlowBlock(pIfStmt, parentFlowId, parentBranchId);
