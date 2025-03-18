@@ -120,7 +120,7 @@ namespace X
 				{
 					dict->Set("Size", valShape);
 				}
-				else
+				else if(valShape.IsObject())
 				{
 					X::Value valSize(val.GetObj()->Size());
 					dict->Set("Size", valSize);

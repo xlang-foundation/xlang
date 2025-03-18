@@ -243,7 +243,14 @@ namespace X
 	template<>
 	void V<XTensor>::Create()
 	{
-		SetObj(g_pXHost->CreateTensor());
+		auto* t = g_pXHost->CreateTensor();
+		SetObj(t);
+	}
+	template<>
+	void V<XTensorGraph>::Create()
+	{
+		auto* t = g_pXHost->CreateTensorGraph();
+		SetObj(t);
 	}
 	template<>
 	void V<XComplex>::Create()
@@ -791,7 +798,8 @@ namespace X
 	bool Value::IsTensor() const
 	{
 		return (t == ValueType::Object)
-			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Tensor);
+			&& (x.obj != nullptr && (x.obj->GetType() == ObjType::Tensor ||
+				x.obj->GetType() == ObjType::TensorExpression));
 	}
 	bool Value::IsString() const
 	{ 
@@ -837,6 +845,11 @@ namespace X
 			}
 		}
 		return false;
+	}
+	template<>
+	void V<XRef>::Create()
+	{
+		//SetObj(g_pXHost->CreateRef());
 	}
 
 	template<>

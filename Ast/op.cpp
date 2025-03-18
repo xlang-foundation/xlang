@@ -64,6 +64,42 @@ namespace AST
 		return bOK;
 	}
 
+	void Assign::ObjectSetName(XlangRuntime* rt, XObj* pContext, XObj* pRightObj)
+	{
+		auto* pRightObject = dynamic_cast<X::Data::Object*>(pRightObj);
+		switch (L->m_type)
+		{
+		case ObType::Var:
+		{
+			Var* pVar = dynamic_cast<Var*>(L);
+			std::string name = pVar->GetNameString();
+			pRightObject->SetObjectName(name);
+		}
+			break;
+		case ObType::Pair:
+		{
+			PairOp* pPair = dynamic_cast<PairOp*>(L);
+			if (pPair->GetR())
+			{
+				auto* r = pPair->GetR();
+				if (r->m_type == ObType::Str)
+				{
+					ExecAction act00;
+					X::Value rVal;
+					if (r->Exec(rt, act00, pContext, rVal))
+					{
+						std::string name = rVal.ToString();
+						pRightObject->SetObjectName(name);
+					}
+				}
+			}
+		}
+			break;
+		case ObType::Dot:
+			break;
+		}
+	}
+
 	bool Assign::ObjectAssign(XlangRuntime* rt, XObj* pContext,XObj* pObj, Value& v, Value& v_r, LValue& lValue_L)
 	{
 		bool bOK = true;

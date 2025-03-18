@@ -233,11 +233,13 @@ namespace X
 							delete[] m_data;
 						}
 						m_data = pNewData;
+						m_curPos = m_size;
 						m_size = size;
 					}
 					else
 					{
 						m_size = 0;
+						m_curPos = 0;
 						if (m_data)
 						{
 							delete[] m_data;

@@ -562,6 +562,22 @@ namespace X
 			}
 
 		}
+		X::AST::Expression* Tensor::GetCurrentExecContext()
+		{
+			auto* rt0 = G::I().GetCurrentRuntime();
+			XlangRuntime* rt = dynamic_cast<XlangRuntime*>(rt0);
+			if (rt == nullptr)
+			{
+				return nullptr;
+			}
+			auto* pCurStack = rt->GetCurrentStack();
+			if (pCurStack == nullptr)
+			{
+				return nullptr;
+			}
+			auto* pCurLine = pCurStack->GetCurExp();
+			return pCurLine;
+		}
 		void Tensor::DeepCopyDataFromList(List* pList, std::vector<long long>& indices, int level)
 		{
 			long long size = pList->Size();
@@ -677,65 +693,90 @@ namespace X
 		{
 			return X::Value();
 		}
+
 		bool Tensor::Create(X::Value& initData)
 		{
+			// First, determine dimensions and data type from the nested list structure
 			X::Value dimData = initData;
+			X::ValueType dataValueType = X::ValueType::Invalid;
+			if (dimData.IsNumber() || dimData.IsBool())
+			{
+				//just one element
+				m_dims.push_back(TensorDim{ 0, 1, 1, 0 });
+				dataValueType = dimData.GetType();
+			}
+			// Traverse the nested lists to determine dimensions
 			while (dimData.IsList())
 			{
 				List* pList = dynamic_cast<List*>(dimData.GetObj());
 				long long dimSize = pList->Size();
-				m_dims.push_back(TensorDim{ 0,dimSize,dimSize });
-				if (m_dataType == TensorDataType::UNKNOWN)
-				{
-					if (dimSize > 0)
-					{
-						dimData = pList->Get(0);
-						if (!dimData.IsList())
-						{
-							auto ty = dimData.GetType();
-							switch (ty)
-							{
-							case X::ValueType::Int64:
-								m_dataType = TensorDataType::LONGLONG;
-								break;
-							case X::ValueType::Double:
-								m_dataType = TensorDataType::DOUBLE;
-								break;
-							default:
-								break;
-							}
-							break;
-						}
-					}
-				}
-				else
-				{
+
+				// Add this dimension
+				m_dims.push_back(TensorDim{ 0, dimSize, dimSize, 0 }); // dimProd will be calculated later
+
+				// If the list is empty, we can't determine data type
+				if (dimSize <= 0)
 					break;
+
+				// Move to the first element of this dimension to continue traversal
+				dimData = pList->Get(0);
+
+				// If we've reached a non-list item, determine data type
+				if (!dimData.IsList() && m_dataType == TensorDataType::UNKNOWN)
+				{
+					dataValueType = dimData.GetType();
+					switch (dataValueType)
+					{
+					case X::ValueType::Int64:
+						m_dataType = TensorDataType::LONGLONG;
+						break;
+					case X::ValueType::Double:
+						m_dataType = TensorDataType::DOUBLE;
+						break;
+					default:
+						// Default to a reasonable type if unknown
+						m_dataType = TensorDataType::DOUBLE;
+						break;
+					}
+					// Do NOT break out of the loop - just store the type and continue
+					// the dimension discovery using the first element at each level
 				}
 			}
+
+			// Fallback if data type is still unknown after traversal
+			if (m_dataType == TensorDataType::UNKNOWN)
+			{
+				m_dataType = TensorDataType::DOUBLE; // Choose a reasonable default
+			}
+
+			// Calculate dimension products for indexing
 			CalcDimProd();
+
+			// Allocate memory for tensor data
 			long long totalSize = GetCount() * GetItemSize();
 			if (totalSize > 0)
 			{
 				m_data = new char[totalSize];
 				m_dataSize = totalSize;
 			}
-			int dim = (int)m_dims.size();
-			//copy data from initData
+
+			// Copy data from initData if provided
 			if (initData.IsList())
 			{
+				int dim = (int)m_dims.size();
 				std::vector<long long> indices;
 				indices.resize(dim);
 				List* pList = dynamic_cast<List*>(initData.GetObj());
 				DeepCopyDataFromList(pList, indices, 0);
 			}
 			else if (initData.IsValid())
-			{//treat as scala,and set all items to this value
+			{
+				// Treat as scalar and set all items to this value
 				auto it_proc = [this, initData](std::vector<long long>& indices)
-				{
-					X::Value val = initData;
-					SetDataWithIndices(indices, val);
-				};
+					{
+						X::Value val = initData;
+						SetDataWithIndices(indices, val);
+					};
 				IterateAll(it_proc);
 			}
 
@@ -769,7 +810,10 @@ namespace X
 		}
 		bool Tensor::Multiply(const X::Value& r, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(this);
 			newTensor->SetLeftVal(left);
 			X::Value right(r);
@@ -781,7 +825,10 @@ namespace X
 		}
 		bool Tensor::Divide(const X::Value& r, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(this);
 			newTensor->SetLeftVal(left);
 			X::Value right(r);
@@ -793,7 +840,10 @@ namespace X
 		}
 		bool Tensor::Divided(const X::Value& leftValue, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(leftValue);
 			newTensor->SetLeftVal(left);
 			X::Value right(this);
@@ -806,7 +856,10 @@ namespace X
 		}
 		bool Tensor::Add(const X::Value& r, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(this);
 			newTensor->SetLeftVal(left);
 			X::Value right(r);
@@ -819,7 +872,10 @@ namespace X
 		}
 		bool Tensor::Minus(const X::Value& r, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(this);
 			newTensor->SetLeftVal(left);
 			X::Value right(r);
@@ -832,7 +888,10 @@ namespace X
 		}
 		bool Tensor::Minuend(const X::Value& leftValue, X::Value& retVal)
 		{
+			auto* pCurLine = GetCurrentExecContext();
 			auto* newTensor = new TensorExpression();
+			newTensor->SetCurrentLine(pCurLine);
+
 			X::Value left(leftValue);
 			newTensor->SetLeftVal(left);
 			X::Value right(this);

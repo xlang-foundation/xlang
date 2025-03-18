@@ -97,6 +97,7 @@ namespace X {
 
 		// Inherited via XPackage
 		virtual void SetPackageAccessor(PackageAccessor func) override {}
+		virtual void SetPackageCall(U_FUNC func) override {}
 		virtual void SetPackageCleanupFunc(PackageCleanup func) override {}
 		virtual void SetPackageWaitFunc(PackageWaitFunc func) override {}
 		virtual void SetAPISet(void* pApiSet) override {}

@@ -325,6 +325,8 @@ namespace Data {
 		}
 		virtual bool Get(long long idx, X::Value& val) { return false; }
 		virtual bool Set(long long idx, X::Value& val) { return false; }
+		virtual bool CanSetObjectName() override { return false; }
+		virtual void SetObjectName(std::string& name) {}
 	};
 
 	class Expr

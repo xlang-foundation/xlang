@@ -36,6 +36,8 @@ namespace X
 			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
+			virtual void ChangeStatmentsIntoTranslateMode(
+				bool changeIfStatment, bool changeLoopStatment) override;
 			virtual XObj* Clone() override
 			{
 				Function* pNewFunc = new Function();

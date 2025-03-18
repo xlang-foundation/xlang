@@ -317,6 +317,9 @@ public:
 	{
 		return Params;
 	}
+	void ChangeStatmentsIntoTranslateMode(
+		bool changeIfStatment,
+		bool changeLoopStatment);
 	virtual bool Call(XRuntime* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,

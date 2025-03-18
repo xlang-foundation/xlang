@@ -58,6 +58,7 @@ namespace X
 		PyProxyObject,
 		InternalAssign,
 		Error,
+		Ref
 	};
 
 	enum class MemberFlag
@@ -170,6 +171,7 @@ namespace X
 			m_parent = o.m_parent;
 			return *this;
 		}
+		FORCE_INLINE virtual bool CanSetObjectName() { return false; }
 		virtual XObj* Clone() { return nullptr; }
 		virtual bool SupportAssign() { return false; }
 		virtual void Assign(const X::Value& val) {}
@@ -466,6 +468,7 @@ namespace X
 		virtual long long GetItemSize() = 0;
 		virtual char* GetData() = 0;
 		virtual int GetDimCount() = 0;
+		virtual long long GetCount() = 0;
 		virtual long long GetDimSize(int dimIdx) = 0;
 		virtual void SetShape(Port::vector<int>& shapes) = 0;
 		virtual void SetDataType(TensorDataType t) = 0;
@@ -474,6 +477,7 @@ namespace X
 		virtual bool Create(X::Value& initData) = 0;
 		virtual X::Value GetDesc() = 0;
 		virtual void SetDesc(X::Value& v) = 0;
+		virtual X::Value GetName() = 0;
 	};
 	class XTensorExpression :
 		virtual public XObj
@@ -494,6 +498,8 @@ namespace X
 	public:
 		Internal_Reserve(XTensorGraph)
 		virtual void Create(XObj* pContext,X::ARGS& params, X::KWARGS& kwParams) = 0;
+		virtual void PutTensorIntoCache(X::Value& vTensor) = 0;
+		virtual void RemoveTensorFromCache(X::Value& vTensor) = 0;
 	};
 	class XComplex :
 		virtual public XObj
@@ -539,6 +545,8 @@ namespace X
 	{
 	public:
 		virtual X::Value GetName() = 0;
+		virtual void ChangeStatmentsIntoTranslateMode(
+			bool changeIfStatment,bool changeLoopStatment) = 0;
 	};
 	class XLangClass :
 		virtual public XObj
@@ -556,6 +564,14 @@ namespace X
 		virtual X::Value ToXlang() = 0;
 		virtual bool GetObj(void** ppObjPtr) = 0;
 	};
+	class XRef :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XRef);
+		virtual X::Value Apply() = 0;
+	};
+
 	class XRemoteObject :
 		virtual public XObj
 	{
@@ -593,6 +609,7 @@ namespace X
 		virtual void SetPackageCleanupFunc(PackageCleanup func) = 0;
 		virtual void SetPackageWaitFunc(PackageWaitFunc func) = 0;
 		virtual void SetPackageAccessor(PackageAccessor func) = 0;
+		virtual void SetPackageCall(U_FUNC func) = 0;
 		virtual int AddMember(PackageMemberType type,const char* name,const char* doc,bool keepRawParams =false) = 0;
 		virtual int GetPackageName(char* buffer,int bufferSize)= 0;
 		virtual void* GetEmbedObj() = 0;
@@ -709,7 +726,9 @@ namespace X
 	using Struct = V<XStruct>;
 	using Dict = V<XDict>;
 	using List = V<XList>;
+	//XTensorGraph
 	using Tensor = V<XTensor>;
+	using TensorGraph = V<XTensorGraph>;
 	using Set = V<XSet>;
 	using Complex = V<XComplex>;
 	using Bin = V<XBin>;

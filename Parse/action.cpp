@@ -30,6 +30,7 @@ limitations under the License.
 #include "sql.h"
 #include "await.h"
 #include "jitblock.h"
+#include "refop.h"
 
 namespace X {
 
@@ -165,6 +166,7 @@ void Register(OpRegistry* reg)
 		"const","var","namespace","|-",//same meaning
 		"not", "or", "pass", "raise", "return",
 		"try", "while", "with", "yield");
+	RegOP("ref");//use to refernce a variable or expression
 	RegOP("extern", "nonlocal","global")
 		.SetProcess(
 			[](Parser* p, short opIndex) {
@@ -180,6 +182,11 @@ void Register(OpRegistry* reg)
 		.SetProcess([](Parser* p, short opIndex) {
 			auto op = new AST::UnaryOp(opIndex);
 			return (AST::Operator*)op;
+		});
+	RegOP("ref")
+		.SetProcess([](Parser* p, short opIndex) {
+		auto op = new AST::RefOp(opIndex);
+		return (AST::Operator*)op;
 		});
 	RegOP("from")
 		.SetProcess([](Parser* p, short opIndex) {
@@ -501,6 +508,9 @@ void Register(OpRegistry* reg)
 
 	RegOP("extern", "nonlocal", "global")
 		.SetPrecedence(Precedence_LOW2);
+
+	RegOP("ref")
+		.SetPrecedence(Precedence_Reqular);
 #if ADD_SQL
 	RegOP("SELECT")
 		.SetPrecedence(Precedence_LOW1-1);
