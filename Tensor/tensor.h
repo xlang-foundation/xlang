@@ -92,6 +92,19 @@ namespace X
 			{
 				return m_currentLine;
 			}
+			FORCE_INLINE virtual bool CanSetObjectName() override { return true; }
+			FORCE_INLINE virtual void SetObjectName(std::string& name)
+			{
+				m_name = name;
+			}
+			FORCE_INLINE std::string& GetTensorName()
+			{
+				return m_name;
+			}
+			FORCE_INLINE virtual X::Value GetName() override
+			{
+				return m_name;
+			}
 			virtual long long GetItemSize() override
 			{
 				long long size = 1;
@@ -207,7 +220,6 @@ namespace X
 			{
 				m_name = n;
 			}
-			FORCE_INLINE std::string& GetName() { return m_name; }
 			//this function only return first dim's size
 			//because debug will use it as first level
 			virtual long long Size() override

@@ -798,7 +798,8 @@ namespace X
 	bool Value::IsTensor() const
 	{
 		return (t == ValueType::Object)
-			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Tensor);
+			&& (x.obj != nullptr && (x.obj->GetType() == ObjType::Tensor ||
+				x.obj->GetType() == ObjType::TensorExpression));
 	}
 	bool Value::IsString() const
 	{ 

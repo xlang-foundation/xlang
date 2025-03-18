@@ -749,6 +749,7 @@ namespace X
 						(X::Value& graph,X::ARGS& inputs, X::Value& retVal)
 						{
 							retVal = (tThis->*f)(graph,inputs);
+							return retVal;
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,true);
 						std::string strName(name);
@@ -779,7 +780,7 @@ namespace X
 							//todo: check performace impact
 							X::ARGS params0 = params;
 							X::KWARGS kwParams0 = kwParams;
-							(tThis->*f)(graph,params0, kwParams0, inputs[0], retVal);
+							return (tThis->*f)(graph,params0, kwParams0, inputs[0], retVal);
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,true);
 						std::string strName(name);
@@ -809,7 +810,7 @@ namespace X
 							//todo: check performace impact
 							X::ARGS params0 = params;
 							X::KWARGS kwParams0 = kwParams;
-							(tThis->*f)(graph,params0, kwParams0, inputs[0], inputs[1], retVal);
+							return (tThis->*f)(graph,params0, kwParams0, inputs[0], inputs[1], retVal);
 						};
 						auto* pTensorOp = X::g_pXHost->CreateTensorOperator(handler,false);
 						std::string strName(name);

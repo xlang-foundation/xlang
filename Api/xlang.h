@@ -171,6 +171,7 @@ namespace X
 			m_parent = o.m_parent;
 			return *this;
 		}
+		FORCE_INLINE virtual bool CanSetObjectName() { return false; }
 		virtual XObj* Clone() { return nullptr; }
 		virtual bool SupportAssign() { return false; }
 		virtual void Assign(const X::Value& val) {}
@@ -476,6 +477,7 @@ namespace X
 		virtual bool Create(X::Value& initData) = 0;
 		virtual X::Value GetDesc() = 0;
 		virtual void SetDesc(X::Value& v) = 0;
+		virtual X::Value GetName() = 0;
 	};
 	class XTensorExpression :
 		virtual public XObj

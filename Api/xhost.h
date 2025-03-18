@@ -72,7 +72,7 @@ namespace X
 	using EventHandler = X::Port::Function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;
 	using OnEventHandlerChanged = X::Port::Function<void(bool AddOrRemove,int handlerCnt)>;
-	using Tensor_OperatorHandler = X::Port::Function<void(X::Value& graph,X::ARGS& inputs, X::Value& retVal)>;
+	using Tensor_OperatorHandler = X::Port::Function<X::Value(X::Value& graph,X::ARGS& inputs, X::Value& retVal)>;
 
 	typedef bool (*UI_THREAD_RUN_HANDLER) (X::Value& callable,void* pContext);
 

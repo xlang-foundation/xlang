@@ -87,7 +87,7 @@ namespace X
 		CpuTensor()
 		{
 		}
-		void Permute(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input, X::Value& retVal)
+		X::Value Permute(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input, X::Value& retVal)
 		{
 			std::vector<int> axes;
 			if (params.size() > 0)
@@ -104,26 +104,26 @@ namespace X
 				}
 				else
 				{
-					return;
+					return X::Value();
 				}
 			}
 			else
 			{
-				return;
+				return X::Value();
 			}
 			if (!input.IsObject())
 			{
-				return;
+				return X::Value();
 			}
 			auto* pInputTensor = dynamic_cast<X::Data::Tensor*>(input.GetObj());
 			if (pInputTensor == nullptr)
 			{
-				return;
+				return X::Value();
 			}
 			auto* pNewTensor = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());
 			if (pNewTensor == nullptr)
 			{
-				return;
+				return X::Value();
 			}
 			pNewTensor->CreateBaseOnTensorWithPermute(pInputTensor, axes);
 			int dimCnt = (int)pInputTensor->GetDimCount();
@@ -306,7 +306,7 @@ namespace X
 			}	
 			return true;
 		}
-		void Add(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
+		X::Value  Add(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1,X::Value input2,X::Value& retVal)
 		{
 			bool IsTensor1 = IsTensor (input1);
 			bool IsTensor2 = IsTensor (input2);
@@ -316,12 +316,12 @@ namespace X
 
 			if (!IsTensor1 && !IsTensor2)
 			{
-				return;  //todo, error handling
+				return X::Value();  //todo, error handling
 			}
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
 				if (!IsNum(input2))	//the other must be a number
-					return;
+					return X::Value();
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
@@ -335,7 +335,7 @@ namespace X
 			}
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
 				if (!IsNum(input1))	//the other must be a number
-					return;
+					return X::Value();
 
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 
@@ -423,9 +423,10 @@ namespace X
 
 				} //bAddable
 			} // both tensors
+			return X::Value();
 		}// Add
 
-		void Minus(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		X::Value  Minus(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			bool IsTensor1 = IsTensor (input1);
 			bool IsTensor2 = IsTensor (input2);
@@ -435,12 +436,12 @@ namespace X
 
 			if (!IsTensor1 && !IsTensor2)
 			{
-				return;  //todo, error handling
+				return X::Value();  //todo, error handling
 			}
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
 				if (!IsNum(input2))	//the other must be a number
-					return;
+					return X::Value();
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
@@ -454,7 +455,7 @@ namespace X
 			}
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
 				if (!IsNum(input1))	//the other must be a number
-					return;
+					return X::Value();
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 
 				pRetVal->CreateBaseOnTensor(pTensor);
@@ -542,9 +543,10 @@ namespace X
 
 				} //bAddable
 			}//both tensors
+			return X::Value();
 		} // Minus
 
-		void Multiply(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		X::Value  Multiply(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			bool IsTensor1 = IsTensor (input1);
 			bool IsTensor2 = IsTensor (input2);
@@ -554,12 +556,12 @@ namespace X
 
 			if (!IsTensor1 && !IsTensor2)
 			{
-				return;  //todo, error handling
+				return X::Value();  //todo, error handling
 			}
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
 				if (!IsNum(input2))	//the other must be a number
-					return;
+					return X::Value();
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor);
 				auto it_proc_scaler_add = [pTensor, input2, pRetVal](std::vector<long long>& indices)
@@ -572,7 +574,7 @@ namespace X
 			}
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
 				if (!IsNum(input1))	//the other must be a number
-					return;
+					return X::Value();
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor);
 				auto it_proc_scaler_add = [pTensor, input1, pRetVal](std::vector<long long>& indices)
@@ -658,9 +660,10 @@ namespace X
 				} //bAddable
 
 			} // both tensors
+			return X::Value();
 		} //Multiply
 
-		void Divide(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		X::Value  Divide(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			bool IsTensor1 = IsTensor (input1);
 			bool IsTensor2 = IsTensor (input2);
@@ -670,12 +673,12 @@ namespace X
 
 			if (!IsTensor1 && !IsTensor2)
 			{
-				return;  //todo, error handling
+				return X::Value();  //todo, error handling
 			}
 			else if (IsTensor1 && !IsTensor2)//if input1 is a tensor, input2 is not a tensor
 			{
 				if (!IsNum(input2))	//the other must be a number
-					return;
+					return X::Value();
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor);
 				auto it_proc_scaler_div = [pTensor, input2, pRetVal](std::vector<long long>& indices)
@@ -689,7 +692,7 @@ namespace X
 			else if (!IsTensor1 && IsTensor2) {//if input2 is a tensor, input1 is not a tensor
 				std::cout << "In tensor_cpu.h::Divide(), input1 is not a tensor, input2 is a tensor" << std::endl;
 				if (!IsNum(input1))	//the other must be a number
-					return;
+					return X::Value();
 				X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
 				pRetVal->CreateBaseOnTensor(pTensor);
 				auto it_proc_scaler_div = [pTensor, input1, pRetVal](std::vector<long long>& indices)
@@ -775,9 +778,10 @@ namespace X
 						pTensor1->IterateAll(it_proc_tensor_div_b);				
 				} //bAddable
 			} // both tensors
+			return X::Value();
 		} //Divide
 
-		void Matmul(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		X::Value  Matmul(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());
 			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj());
@@ -825,7 +829,7 @@ namespace X
 					int n = pTensor1->GetDims()[1].size; //columns of matrix
 					int v = pTensor2->GetDims()[0].size; //vector
 					if (n!=v)  //To do, error handling
-						return;
+						return X::Value();
 
 
 					std::vector<int> dims;
@@ -867,63 +871,10 @@ namespace X
 		
 
 			}// matrix 
-
+			return X::Value();
 		} //matmul
 
-		void Conv2d_old(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
-		{
-			
-			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());  
-			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
-			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-
-			int m = pTensor1->GetDims()[0].size; //rows of matrix1
-			int n = pTensor1->GetDims()[1].size; //columns of matrix1
-			int u = pTensor2->GetDims()[0].size; //rows of matrix2
-			int v = pTensor2->GetDims()[1].size; //columns of matrix2
-
-			if ( m+u-1 < 0 || n+v-1 < 0)
-				return;
-
-			std::vector<int> dims;
-			dims.push_back(m+u-1);
-			dims.push_back(n+v-1);
-			TensorDataType dataType = pTensor1->GetDataType();
-			pRetVal->SetDataType(dataType);
-			pRetVal->CreateBaseOnShape(dims);
-
-			int i, j, k, l;
-			X::Value val_1, val_2, val;
-			std::vector<long long> indices1, indices2, indices;
-			indices.resize(2);
-			indices1.resize(2);
-			indices2.resize(2);
-
-			for ( i = 0; i < m+u-1; i++) {
-				for (j = 0; j < n+v-1; j ++) {
-					indices[0] = i;
-					indices[1] = j;
-					val = 0;
-					for (k = 0; k < m; k++) { 
-						for (l = 0; l < n; l++) { 
-							if (i-k >=0 && i-k < u && j-l>=0 && j-l < v) 
-							{
-								indices1[0] = k;
-								indices1[1] = l;
-								indices2[0] = i-k;
-								indices2[1] = j-l;
-								val_1 = pTensor1->GetDataWithIndices(indices1);
-								val_2 = pTensor2->GetDataWithIndices(indices2);								
-								val_1 *= val_2;
-								val += val_1;
-							} //if
-						} //for l
-					} //for k
-					pRetVal->SetDataWithIndices(indices, val);
-				}//for j
-			}//for i
-		}
-		void Transpose(X::Value& graph, X::Data::Tensor* pTensor, X::Data::Tensor* pTensorTran, long long u, long long v)
+		X::Value  Transpose(X::Value& graph, X::Data::Tensor* pTensor, X::Data::Tensor* pTensorTran, long long u, long long v)
 		{
 			//X::Data::Tensor* pTensor = dynamic_cast<X::Data::Tensor*>(input.GetObj());  
 			//X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
@@ -942,54 +893,7 @@ namespace X
 			};
 			std::cout << "input u = " << u << ", v = " << v << std::endl;
 			pTensor->IterateAll(it_proc_tensor_transpose);
-		}
-		void Conv2d_old2(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
-		{
-			std::cout << "in tensor_cpu.h::conv2d()" << std::endl;
-			
-			auto input_channels = kwParams.find("input_channels");  
-			auto output_channels = kwParams.find("output_channels");  
-			auto stride = kwParams.find("stride");  
-			auto dilation = kwParams.find("dilation");  
-			auto conv_mode = kwParams.find("conv_mode");  //- full, same, valid
-			auto padding = kwParams.find("padding");
-			auto padding_mode = kwParams.find("padding_mode");
-			auto bias = kwParams.find("bias");
-
-			X::Data::Tensor* pTensor1 = dynamic_cast<X::Data::Tensor*>(input1.GetObj());  
-			X::Data::Tensor* pTensor2 = dynamic_cast<X::Data::Tensor*>(input2.GetObj()); //core or filter
-			X::Data::Tensor* pRetVal = dynamic_cast<X::Data::Tensor*>(retVal.GetObj());		
-
-			/*
-			X::Value input_matrix, weight_matrix;
-			std::vector<Data::TensorIndex> IdxAry;
-			IdxAry.push_back({0,1});  //matrix only
-			pTensor1->Get(IdxAry, input_matrix);
-			pTensor2->Get(IdxAry, weight_matrix);
-			*/
-
-
-			int m = pTensor1->GetDims()[0].size; //rows of matrix1
-			int n = pTensor1->GetDims()[1].size; //columns of matrix1
-			int u = pTensor2->GetDims()[0].size; //rows of matrix1
-			int v = pTensor2->GetDims()[1].size; //columns of matrix1
-
-			std::vector<int> dims;
-			dims.push_back(m);
-			dims.push_back(n);
-			TensorDataType dataType = pTensor1->GetDataType();
-			pRetVal->CreateBaseOnShape(dims);
-			pRetVal->SetDataType(dataType);
-
-			//X::Data::Tensor* pTensor2t = new X::Data::Tensor(*pTensor2); 
-			X::Data::Tensor* pTensor2t = new X::Data::Tensor(); 
-			TensorDataType dataType2 = pTensor2->GetDataType();
-			pTensor2t->CreateBaseOnTensor(pTensor2);
-			pTensor2t->SetDataType(dataType2);
-			Transpose(graph,pTensor2, pTensor2t, u, v); 
-
-			Conv2d_internal(pTensor1, pTensor2t, pRetVal, /*(int)padding*/ 0);
-
+			return X::Value();
 		}
 
 		void Conv2d_internal(X::Data::Tensor* pTensor1 , X::Data::Tensor* pTensor2, X::Data::Tensor* pRetVal, int padding = 0)
@@ -1123,7 +1027,7 @@ namespace X
 			pRetVal->IterateAll(it_proc_tensor_conv2d);				
 		}
 
-		void Conv2d(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		X::Value  Conv2d(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "in tensor_cpu.h::conv2d()" << std::endl;
 			
@@ -1250,17 +1154,17 @@ namespace X
 			else 
 				pTensor1->IterateAll(it_proc_tensor_conv2d);				
 
-
+			return X::Value();
 		}
 
-		void Relu(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		X::Value  Relu(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "in tensor_cpu.h::Relu()" << std::endl;
-
+			return X::Value();
 		} //Relu
 
 
-		void MaxPool2d(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
+		X::Value  MaxPool2d(X::Value& graph, X::ARGS& params, X::KWARGS& kwParams,X::Value input1, X::Value input2, X::Value& retVal)
 		{
 			std::cout << "in tensor_cpu.h::MaxPool2d()" << std::endl;
 			/*
@@ -1277,7 +1181,7 @@ namespace X
 				}
 			}
 			*/
-
+			return X::Value();
 		}  // MaxPool2d
 
 	}; //class CpuTensor

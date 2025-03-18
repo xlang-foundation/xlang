@@ -224,7 +224,7 @@ namespace X
 							Tensor* pTensor = dynamic_cast<Tensor*>(in.GetObj());
 							if (pTensor)
 							{
-								inputName = pTensor->GetName();
+								inputName = pTensor->GetTensorName();
 							}
 						}
 						else if (in.GetObj()->GetType() == ObjType::TensorExpression)
@@ -232,7 +232,7 @@ namespace X
 							TensorExpression* pTensorExp = dynamic_cast<TensorExpression*>(in.GetObj());
 							if (pTensorExp)
 							{
-								inputName = pTensorExp->GetName();
+								inputName = pTensorExp->GetTensorName();
 							}
 						}
 					}
@@ -252,7 +252,7 @@ namespace X
 						Tensor* pTensor = dynamic_cast<Tensor*>(item.output.GetObj());
 						if (pTensor)
 						{
-							outputName = pTensor->GetName();
+							outputName = pTensor->GetTensorName();
 						}
 					}
 					else if (item.output.GetObj()->GetType() == ObjType::TensorExpression)
@@ -260,7 +260,7 @@ namespace X
 						TensorExpression* pTensorExp = dynamic_cast<TensorExpression*>(item.output.GetObj());
 						if (pTensorExp)
 						{
-							outputName = pTensorExp->GetName();
+							outputName = pTensorExp->GetTensorName();
 						}
 					}
 					lineOut += " -> " + outputName;
