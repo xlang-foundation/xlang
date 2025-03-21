@@ -27,11 +27,14 @@ limitations under the License.
 namespace X {
     namespace Data {
 
+        class TensorGraph;
         // Code generator using TensorRunItem's built-in handlers
         class CodeGenerator {
+			TensorGraph* m_pGraph;
         public:
             // Constructor
-            CodeGenerator() {}
+			CodeGenerator() { m_pGraph = nullptr; }
+            CodeGenerator(TensorGraph* g) { m_pGraph = g; }
             // Set handlers for structural code generation
             void setHeaderHandler(Tensor_OperatorHandler handler) { m_headerHandler = handler; }
             void setTrailerHandler(Tensor_OperatorHandler handler) { m_trailerHandler = handler; }

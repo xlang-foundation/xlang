@@ -14,6 +14,9 @@ limitations under the License.
 */
 
 #include "code_generator.h"
+#include "ast.h"
+#include "tensor_graph.h"
+#include "ref_object.h"
 
 namespace X
 {
@@ -124,7 +127,20 @@ namespace X
                     }
 
                     // Generate branch begin code
-                    X::ARGS beginArgs(4);
+                    X::ARGS beginArgs(5);
+                    X::XPackageValue<AST::AstNode> valNode;
+                    AST::AstNode& astNode = *valNode;
+                    if (item.branchId >= 0)
+                    {
+                        X::Value condition = m_pGraph->GetBlockCondition(item.flowId, item.branchId);
+                        auto* refObj = dynamic_cast<X::Data::RefObject*>(condition.GetObj());
+                        if (refObj)
+                        {
+                            astNode.SetNode(refObj->GetExpression());
+                        }
+                    }
+
+					beginArgs.push_back(valNode); // condition expression
                     beginArgs.push_back(X::Value(branchType));          // branch type
                     beginArgs.push_back(X::Value(item.flowId));         // flow ID
                     beginArgs.push_back(X::Value(item.branchId));       // branch ID

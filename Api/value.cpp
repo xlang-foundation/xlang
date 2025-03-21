@@ -754,8 +754,7 @@ namespace X
 	{
 		if (x.obj->SupportAssign())
 		{
-			x.obj->Assign(v);
-			return true;
+			return x.obj->Assign(v);
 		}
 		return false;
 	}

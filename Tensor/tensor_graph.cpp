@@ -238,7 +238,7 @@ namespace X
 					}
 					else
 					{
-						inputName = "_"; // For scalar 
+						inputName = in.ToString(); // For scalar 
 					}
 					lineOut += " " + inputName;
 				}

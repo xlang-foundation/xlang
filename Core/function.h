@@ -36,6 +36,10 @@ namespace X
 			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
+			virtual X::Value GetParameterNameList() override
+			{
+				return m_func->GetParameterNameList();
+			}
 			virtual void ChangeStatmentsIntoTranslateMode(
 				bool changeIfStatment, bool changeLoopStatment) override;
 			virtual XObj* Clone() override
