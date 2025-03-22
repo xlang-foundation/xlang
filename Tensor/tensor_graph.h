@@ -101,7 +101,7 @@ namespace X
 			{
 				m_t = ObjType::TensorGraph;
 			}
-			FORCEINLINE X::Value GetBlockCondition(unsigned long long flowId,int branchId)
+			FORCE_INLINE X::Value GetBlockCondition(unsigned long long flowId,int branchId)
 			{
 				return m_flowBlocks[flowId].branches[branchId].condition;
 			}
