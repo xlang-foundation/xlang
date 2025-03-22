@@ -1,4 +1,4 @@
-# XLang：面向分布式 AI 与物联网的高性能 Python 类编程语言
+# XLang：面向分布式 AI 与物联网的高性能编程语言
 
 【摘要】  
 XLang 是一门创新的编程语言，专为分布式计算、人工智能（AI）和物联网（IoT）场景设计。它在继承 Python 简洁易用语法的同时，融合了动态编程、先进并发处理、多语言互操作以及即时编译（JIT）等多项高性能特性，为开发者提供了一种高效且灵活的编程工具。本文详细介绍了 XLang 的设计理念、架构实现、完整语言规格（经过适当修改和扩充），以及在实际应用中的强大能力。
@@ -160,8 +160,6 @@ XLang 提供了多种内建原生模块，扩展语言功能，包括但不限�
 - **Visual Studio Code 集成**  
   提供 VSCode 调试器，支持设置断点、逐步执行代码、跨语言调试（如 XLang 与 Python 模块间的调试）。
 
-*(以上规格内容经过修改与扩充，基于官方 XLang 语言规格文档，详情请参阅 [XLang Specification](https://archive.org) 。)*
-
 ---
 
 ## 四、实现细节
@@ -216,6 +214,8 @@ print("Finished running")
 *说明：*  
 该示例展示了如何在 XLang 中导入 Python 模块、转换数据类型并调用 Python 函数，实现两种语言的无缝互操作。
 
+<div style="page-break-after: always;"></div>
+
 ### 示例 2：张量与图像操作
 
 ```python
@@ -246,5 +246,5 @@ XLang 以其独特的设计理念和高性能实现，为现代编程领域带�
 
 1. **XLang™ 基金会官网** – [xlangfoundation.org](https://www.xlangfoundation.org)  
 2. **XLang GitHub 仓库** – [github.com/xlang-foundation/xlang](https://github.com/xlang-foundation/xlang)  
-3. **XLang 语言规格文档** – 基于官方文档内容扩充而成，详情参见 [XLang Specification](https://archive.org)  
+3. **XLang 语言规格文档** – 基于官方文档内容扩充而成，详情参见 [XLang Specification](https://github.com/xlang-foundation/xlang/blob/main/Docs/xlang_spec.pdf)  
 

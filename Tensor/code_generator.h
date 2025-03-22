@@ -21,17 +21,20 @@ limitations under the License.
 #include <vector>
 #include <stack>
 #include <functional>
-
+#include <unordered_set>
 #include "tensor_expression.h"
 
 namespace X {
     namespace Data {
 
+        class TensorGraph;
         // Code generator using TensorRunItem's built-in handlers
         class CodeGenerator {
+			TensorGraph* m_pGraph;
         public:
             // Constructor
-            CodeGenerator() {}
+			CodeGenerator() { m_pGraph = nullptr; }
+            CodeGenerator(TensorGraph* g) { m_pGraph = g; }
             // Set handlers for structural code generation
             void setHeaderHandler(Tensor_OperatorHandler handler) { m_headerHandler = handler; }
             void setTrailerHandler(Tensor_OperatorHandler handler) { m_trailerHandler = handler; }
@@ -51,11 +54,21 @@ namespace X {
 
             // Helper method for handling flow transitions
             void handleFlowTransitions(
-				X::Value& graph,
+                X::Value& graph,
                 std::stringstream& code,
                 const TensorRunItem& item,
                 std::stack<std::pair<unsigned long long, int>>& activeFlowStack,
-                std::unordered_map<unsigned long long, std::vector<int>>& processedBranches);
+                std::unordered_map<unsigned long long, std::vector<int>>& processedBranches,
+                std::unordered_set<unsigned long long>& openedFlows,
+                const std::unordered_map<unsigned long long, FlowBlock>& flowBlocks);
+            void ensureParentFlowsOpened(
+                X::Value& graph,
+                std::stringstream& code,
+                const TensorRunItem& item,
+                std::stack<std::pair<unsigned long long, int>>& activeFlowStack,
+                std::unordered_map<unsigned long long, std::vector<int>>& processedBranches,
+                std::unordered_set<unsigned long long>& openedFlows,
+                const std::unordered_map<unsigned long long, FlowBlock>& flowBlocks);
 		};
     } // namespace Data
 } // namespace X

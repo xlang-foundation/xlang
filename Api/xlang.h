@@ -173,8 +173,8 @@ namespace X
 		}
 		FORCE_INLINE virtual bool CanSetObjectName() { return false; }
 		virtual XObj* Clone() { return nullptr; }
-		virtual bool SupportAssign() { return false; }
-		virtual void Assign(const X::Value& val) {}
+		FORCE_INLINE virtual bool SupportAssign() { return false; }
+		FORCE_INLINE virtual bool Assign(const X::Value& val) { return false; }
 		virtual int QueryMethod(const char* name, int* pFlags = nullptr) { return -1; };
 		virtual bool GetIndexValue(int idx, Value& v) { return false; };
 		virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry, X::Value& val) { return false; }
@@ -478,6 +478,7 @@ namespace X
 		virtual X::Value GetDesc() = 0;
 		virtual void SetDesc(X::Value& v) = 0;
 		virtual X::Value GetName() = 0;
+		virtual void SetName(X::Value& name) = 0;
 	};
 	class XTensorExpression :
 		virtual public XObj
@@ -545,6 +546,7 @@ namespace X
 	{
 	public:
 		virtual X::Value GetName() = 0;
+		virtual X::Value GetParameterNameList() = 0;
 		virtual void ChangeStatmentsIntoTranslateMode(
 			bool changeIfStatment,bool changeLoopStatment) = 0;
 	};

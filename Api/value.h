@@ -345,7 +345,7 @@ public:
 	void ReleaseObject(XObj* p);
 	FORCE_INLINE Value Negative() const
 	{
-		Value newV = this;
+		Value newV = *this;
 		switch (t)
 		{
 		case ValueType::Int64:

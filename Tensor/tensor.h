@@ -84,7 +84,7 @@ namespace X
 			}
 			X::AST::Expression* GetCurrentExecContext();
 		public:
-			FORCE_INLINE void SetCurrentLine(X::AST::Expression* line)
+			virtual void SetCurrentLine(X::AST::Expression* line)
 			{
 				m_currentLine = line;
 			}
@@ -100,6 +100,10 @@ namespace X
 			FORCE_INLINE std::string& GetTensorName()
 			{
 				return m_name;
+			}
+			FORCE_INLINE virtual void SetName(X::Value& name) override
+			{
+				m_name = name.ToString();
 			}
 			FORCE_INLINE virtual X::Value GetName() override
 			{

@@ -462,6 +462,115 @@ namespace X
             }
             return X::Value();
         }
+        X::Value AstNode::get_operator_type()
+        {
+            auto type = m_pNode->m_type;
+            AST::Operator* pOp = nullptr;
+            switch (type)
+            {
+            case X::AST::ObType::Assign:
+                pOp = (AST::Operator*)m_pNode;
+                break;
+            case X::AST::ObType::BinaryOp:
+                pOp = (AST::Operator*)m_pNode;
+                break;
+            case X::AST::ObType::UnaryOp:
+                pOp = (AST::Operator*)m_pNode;
+                break;
+            default:
+                break;
+            }
+
+            if (pOp)
+            {
+                OP_ID opId = pOp->GetId();
+
+                // Convert operator ID to string
+                switch (opId)
+                {
+                case OP_ID::None:
+                    return X::Value("None");
+                case OP_ID::Parenthesis_L:
+                    return X::Value("(");
+                case OP_ID::Brackets_L:
+                    return X::Value("[");
+                case OP_ID::Curlybracket_L:
+                    return X::Value("{");
+                case OP_ID::TableBracket_L:
+                    return X::Value("[");  // Assuming table bracket is also [
+                case OP_ID::Slash:
+                    return X::Value("/");
+                case OP_ID::Colon:
+                    return X::Value(":");
+                case OP_ID::Comma:
+                    return X::Value(",");
+                case OP_ID::Tab:
+                    return X::Value("\t");
+                    // Assignment operators
+                case OP_ID::Equ:
+                    return X::Value("=");
+                case OP_ID::AddEqu:
+                    return X::Value("+=");
+                case OP_ID::MinusEqu:
+                    return X::Value("-=");
+                case OP_ID::MulEqu:
+                    return X::Value("*=");
+                case OP_ID::DivEqu:
+                    return X::Value("/=");
+                case OP_ID::ModEqu:
+                    return X::Value("%=");
+                case OP_ID::FloorDivEqu:
+                    return X::Value("//=");
+                case OP_ID::PowerEqu:
+                    return X::Value("**=");
+                case OP_ID::AndEqu:
+                    return X::Value("&=");
+                case OP_ID::OrEqu:
+                    return X::Value("|=");
+                case OP_ID::NotEqu:
+                    return X::Value("^=");
+                case OP_ID::RightShiftEqu:
+                    return X::Value(">>=");
+                case OP_ID::LeftShitEqu:
+                    return X::Value("<<=");
+                    // Comparison operators
+                case OP_ID::Equal:
+                    return X::Value("==");
+                case OP_ID::NotEqual:
+                    return X::Value("!=");
+                case OP_ID::Great:
+                    return X::Value(">");
+                case OP_ID::Less:
+                    return X::Value("<");
+                case OP_ID::GreatAndEqual:
+                    return X::Value(">=");
+                case OP_ID::LessAndEqual:
+                    return X::Value("<=");
+                    // Logical operators
+                case OP_ID::And:
+                    return X::Value("and");
+                case OP_ID::Or:
+                    return X::Value("or");
+                    // Control flow
+                case OP_ID::Break:
+                    return X::Value("break");
+                case OP_ID::Continue:
+                    return X::Value("continue");
+                case OP_ID::Pass:
+                    return X::Value("pass");
+                case OP_ID::ReturnType:
+                    return X::Value("->");
+                case OP_ID::ReturnOp:
+                    return X::Value("return");
+                case OP_ID::Count:
+                    return X::Value("Count");
+                default:
+                    return X::Value("Unknown");
+                }
+            }
+
+            return X::Value(""); // Return empty string if no operator was found
+        }
         X::Value AstNode::get_type()
         {
             if (m_pNode == nullptr)

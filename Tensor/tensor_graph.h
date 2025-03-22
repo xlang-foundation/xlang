@@ -20,6 +20,7 @@ limitations under the License.
 #include "code_generator.h"
 #include <unordered_map>
 #include <string>
+#include "code_generator.h"
 
 namespace X
 {
@@ -88,16 +89,21 @@ namespace X
 			Tensor_OperatorHandler QueryRegisteredOpHandler(void* pBuildContext,
 				XObj* pPackage, int opIndex);
 
-			// New helper methods for control flow
-			bool IsInIfStatement(X::AST::Expression* expr, X::AST::If** ppIfStmt, int* pBranchId);
 			unsigned long long GetOrCreateFlowBlock(X::AST::If* pIfStmt, unsigned long long parentFlowId = 0, int parentBranchId = -1);
+
+		public:
+			static bool IsInIfStatement(X::AST::Expression* expr, X::AST::If** ppIfStmt, int* pBranchId);
 
 		public:
 			static void Init();
 			static void cleanup();
-			TensorGraph():XTensorGraph(0),XObj(),Object()
+			TensorGraph() :XTensorGraph(0), XObj(), Object(), m_gen(this)
 			{
 				m_t = ObjType::TensorGraph;
+			}
+			FORCEINLINE X::Value GetBlockCondition(unsigned long long flowId,int branchId)
+			{
+				return m_flowBlocks[flowId].branches[branchId].condition;
 			}
 			virtual void Create(XObj* pContext,X::ARGS& params, X::KWARGS& kwParams) override;
 			virtual void PutTensorIntoCache(X::Value& vTensor) override;
