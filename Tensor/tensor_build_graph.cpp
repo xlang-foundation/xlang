@@ -182,6 +182,9 @@ namespace X
                             {
                                 // Binary Op, need to use up level's right Value as right value
                                 retAction = GraphBuildAction::MeetBinaryOp;
+                                //TODO: ChatGPT ask to use line below?
+                                //thisLevel_Action = GraphBuildAction::MeetBinaryOp;
+
                             }
                         }
                     }

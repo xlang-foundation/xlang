@@ -341,6 +341,24 @@ namespace X
 			inline void SetTranslateMode(bool bMode)
 			{
 				m_translateMode = bMode;
+
+				auto bodySize = Body.size();
+				for (size_t idx = 0; idx < bodySize; idx++)
+				{
+					auto& i = Body[idx];
+					if (i->m_type == ObType::If)
+					{
+						If* pIf = dynamic_cast<If*>(i);
+						if (pIf)
+						{
+							pIf->SetTranslateMode(bMode);
+						}
+					}
+				}
+				if (m_next)
+				{
+					m_next->SetTranslateMode(bMode);
+				}
 			}
 			bool Translate(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue);
 			inline void SetFlag(bool b)

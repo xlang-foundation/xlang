@@ -21,7 +21,7 @@ limitations under the License.
 #include <vector>
 #include <stack>
 #include <functional>
-
+#include <unordered_set>
 #include "tensor_expression.h"
 
 namespace X {
@@ -54,11 +54,21 @@ namespace X {
 
             // Helper method for handling flow transitions
             void handleFlowTransitions(
-				X::Value& graph,
+                X::Value& graph,
                 std::stringstream& code,
                 const TensorRunItem& item,
                 std::stack<std::pair<unsigned long long, int>>& activeFlowStack,
-                std::unordered_map<unsigned long long, std::vector<int>>& processedBranches);
+                std::unordered_map<unsigned long long, std::vector<int>>& processedBranches,
+                std::unordered_set<unsigned long long>& openedFlows,
+                const std::unordered_map<unsigned long long, FlowBlock>& flowBlocks);
+            void ensureParentFlowsOpened(
+                X::Value& graph,
+                std::stringstream& code,
+                const TensorRunItem& item,
+                std::stack<std::pair<unsigned long long, int>>& activeFlowStack,
+                std::unordered_map<unsigned long long, std::vector<int>>& processedBranches,
+                std::unordered_set<unsigned long long>& openedFlows,
+                const std::unordered_map<unsigned long long, FlowBlock>& flowBlocks);
 		};
     } // namespace Data
 } // namespace X
