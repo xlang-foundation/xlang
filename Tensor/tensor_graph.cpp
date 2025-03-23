@@ -183,6 +183,7 @@ namespace X
 				GraphBuildAction action = GraphBuildAction::None;
 				BuildGraph(&buildContext, pContext, tensorExp, action);
 			}
+			SortRunItems();
 		}
 		void TensorGraph::PutTensorIntoCache(X::Value& vTensor)
 		{

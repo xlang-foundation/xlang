@@ -20,7 +20,10 @@ limitations under the License.
 #include "code_generator.h"
 #include <unordered_map>
 #include <string>
-#include "code_generator.h"
+#include <algorithm>
+#include <numeric>
+#include <cstddef>
+#include <cstring> 
 
 namespace X
 {
@@ -90,6 +93,41 @@ namespace X
 				XObj* pPackage, int opIndex);
 
 			unsigned long long GetOrCreateFlowBlock(X::AST::If* pIfStmt, unsigned long long parentFlowId = 0, int parentBranchId = -1);
+
+			// Helper function to swap two TensorRunItem objects using memcpy.
+			inline void memcpySwap(TensorRunItem& a, TensorRunItem& b) {
+				unsigned char temp[sizeof(TensorRunItem)];
+				memcpy(temp, &a, sizeof(TensorRunItem));
+				memcpy(&a, &b, sizeof(TensorRunItem));
+				memcpy(&b, temp, sizeof(TensorRunItem));
+			}
+
+			void SortRunItems() {
+				// Helper lambda: treat branch == -1 as a very high value so that it sorts last.
+				auto effectiveBranch = [](int branch) -> int {
+					return (branch == -1) ? 1000000 : branch;
+					};
+
+				size_t n = m_runItems.size();
+				// Loop over all items.
+				for (size_t i = 0; i < n; ++i) {
+					// Skip items with flowId 0 (keep their order unchanged)
+					if (m_runItems[i].flowId == 0)
+						continue;
+					// For items with nonzero flowId, check all later items.
+					for (size_t j = i + 1; j < n; ++j) {
+						// Only consider items with the same flowId.
+						if (m_runItems[j].flowId == m_runItems[i].flowId) {
+							// If a later item has an effective branch lower than the current one,
+							// swap them using memcpySwap.
+							if (effectiveBranch(m_runItems[j].branchId) < effectiveBranch(m_runItems[i].branchId)) {
+								memcpySwap(m_runItems[i], m_runItems[j]);
+							}
+						}
+					}
+				}
+			}
+
 
 		public:
 			static bool IsInIfStatement(X::AST::Expression* expr, X::AST::If** ppIfStmt, int* pBranchId);
