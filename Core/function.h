@@ -54,6 +54,15 @@ namespace X
 			{
 				return m_func->GetFuncName();
 			}
+			virtual X::Value GetCode(bool includehead) override
+			{
+				std::string code;
+				if (m_func)
+				{
+					code = m_func->getcode(includehead);
+				}
+				return X::Value(code);
+			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 			{
 				AST::Expression exp;

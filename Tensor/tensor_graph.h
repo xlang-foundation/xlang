@@ -79,6 +79,7 @@ namespace X
 				MeetBinaryOp,
 			};
 			CodeGenerator m_gen;
+			std::string m_codeGenerated;
 			int m_LastInstructionId = 0;
 			void BuildGraph(void* pBuildContext,
 				XObj* pContext, TensorExpression* pTensor, GraphBuildAction& retAction);
@@ -143,11 +144,15 @@ namespace X
 			{
 				return m_flowBlocks[flowId].branches[branchId].condition;
 			}
+			virtual X::Value GetCodeGenerated() override
+			{
+				return m_codeGenerated;
+			}
 			virtual void Create(XObj* pContext,X::ARGS& params, X::KWARGS& kwParams) override;
 			virtual void PutTensorIntoCache(X::Value& vTensor) override;
 			virtual void RemoveTensorFromCache(X::Value& vTensor) override;
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
-			bool Run(X::ARGS& params, X::KWARGS& kwParams);
+			virtual bool Run(X::ARGS& params, X::KWARGS& kwParams) override;
 			virtual const char* ToString(bool WithFormat = false) override;
 		};
 	}

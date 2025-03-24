@@ -42,7 +42,9 @@ namespace X {
             void setBranchEndHandler(Tensor_OperatorHandler handler) { m_branchEndHandler = handler; }
 
             // Generate the complete code
-            std::string generate(X::Value& graph,
+            std::string generate(
+                X::ARGS& params, X::KWARGS& kwParams,
+                X::Value& graph,
                 const std::vector<TensorRunItem>& runItems,
                 const std::unordered_map<unsigned long long, FlowBlock>& flowBlocks);
         private:
