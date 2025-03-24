@@ -501,6 +501,8 @@ namespace X
 		virtual void Create(XObj* pContext,X::ARGS& params, X::KWARGS& kwParams) = 0;
 		virtual void PutTensorIntoCache(X::Value& vTensor) = 0;
 		virtual void RemoveTensorFromCache(X::Value& vTensor) = 0;
+		virtual bool Run(X::ARGS& params, X::KWARGS& kwParams) = 0;
+		virtual X::Value GetCodeGenerated() = 0;
 	};
 	class XComplex :
 		virtual public XObj
@@ -546,6 +548,7 @@ namespace X
 	{
 	public:
 		virtual X::Value GetName() = 0;
+		virtual X::Value GetCode(bool includehead) = 0;
 		virtual X::Value GetParameterNameList() = 0;
 		virtual void ChangeStatmentsIntoTranslateMode(
 			bool changeIfStatment,bool changeLoopStatment) = 0;

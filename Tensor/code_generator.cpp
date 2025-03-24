@@ -23,16 +23,30 @@ namespace X
 {
 	namespace Data
 	{
-        std::string CodeGenerator::generate(X::Value& graph,
+        std::string CodeGenerator::generate(
+            X::ARGS& params, X::KWARGS& kwParams,
+            X::Value& graph,
             const std::vector<TensorRunItem>& runItems,
             const std::unordered_map<unsigned long long, FlowBlock>& flowBlocks)
         {
             std::stringstream code;
 
             // Generate header
-            X::ARGS emptyArgs;
+            X::ARGS args(params.size() + 1);
+            X::Value varFunc;
             X::Value headerValue;
-            m_headerHandler(graph, emptyArgs, headerValue);
+            auto itFunc = kwParams.find("Func");
+            if (itFunc)
+            {
+                varFunc = itFunc->val;
+            }
+            //first one is func,and then call parameters
+            args.push_back(varFunc);
+            for (auto& it : params)
+            {
+                args.push_back(it);
+            }
+            m_headerHandler(graph, args, headerValue);
             code << headerValue.ToString();
 
             // Track flow state
@@ -70,6 +84,7 @@ namespace X
 
             // Generate trailer
             X::Value trailerValue;
+            X::ARGS emptyArgs;
             m_trailerHandler(graph, emptyArgs, trailerValue);
             code << trailerValue.ToString();
 

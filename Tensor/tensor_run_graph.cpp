@@ -41,7 +41,8 @@ namespace X
 		bool TensorGraph::Run(X::ARGS& params, X::KWARGS& kwParams)
 		{
 			X::Value graph(this);
-			std::string code = m_gen.generate(graph,m_runItems, m_flowBlocks);
+			std::string code = m_gen.generate(params, kwParams,graph,m_runItems, m_flowBlocks);
+			m_codeGenerated = code;
 			return true;
 		}
 	} //namespace Data
