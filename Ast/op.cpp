@@ -158,6 +158,40 @@ namespace AST
 		}
 		return bOK;
 	}
+	bool Assign::VarListAssign(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+	{
+		Value v_r;
+		if (!ExpExec(R, rt, action, pContext, v_r))
+		{
+			v = Value(false);
+			return false;
+		}
+		BinaryOp* pPairOp = dynamic_cast<BinaryOp*>(L);
+		auto* pR = pPairOp->GetR();
+		bool bSetOK = true;
+		if (pR->m_type == X::AST::ObType::List)
+		{
+			List* varList = dynamic_cast<List*>(pR);
+			auto& varListItems = varList->GetList();
+			int size = (int)varListItems.size();
+			for (int i=0;i<size;i++)
+			{
+				auto* exp = varListItems[i];
+				exp->SetIsLeftValue(true);
+				X::Value varToSet;
+				if (v_r.IsList())
+				{
+					varToSet = v_r[(i>= v_r.size())?(v_r.size()-1):i];
+				}
+				else
+				{
+					varToSet = v_r;
+				}
+				bSetOK &= ExpSet(exp, rt, pContext, varToSet);
+			}
+		}
+		return bSetOK;
+	}
 	bool Operator::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
 	{
 		std::vector<X::Value> vecParam;
