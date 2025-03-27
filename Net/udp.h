@@ -106,17 +106,21 @@ namespace X
 					if (!ec && bytes_recvd > 0) {
 						std::string packet(recv_buffer_.data(), bytes_recvd);
 						{
-
 							std::lock_guard<std::mutex> lock(callback_mutex_);
 							if (receive_callback_) {
 								// Wrap the received packet into an X::Bin/X::Value.
 								X::Bin bin((char*)nullptr, packet.size(), true);
 								memccpy(bin->Data(), packet.data(), 1, packet.size());
 								X::Value value(bin);
-								// Invoke the callback. (Assuming X::Value is callable.)
-								receive_callback_(value);
+								// Get the sender's IP and port.
+								std::string sender_ip = sender_endpoint_.address().to_string();
+								int sender_port = sender_endpoint_.port();
+								// Invoke the callback with three parameters:
+								// 1. The binary data (X::Value),
+								// 2. The sender's IP address (std::string),
+								// 3. The sender's port (int).
+								receive_callback_(value, sender_ip, sender_port);
 							}
-
 						}
 					}
 					else if (ec) {
@@ -125,6 +129,7 @@ namespace X
 					start_receive();
 				});
 		}
+
 
 		boost::asio::io_context io_context_;
 		boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard_;

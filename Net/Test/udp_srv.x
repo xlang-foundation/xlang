@@ -2,7 +2,7 @@
 from xlang_net import Net
 
 # Define the callback function that will be called when a packet is received.
-def on_receive(packet):
+def on_receive(packet,send_ip,port):
     msg = fromBytes(packet)
     print("Server received:", msg)
 
