@@ -16,35 +16,53 @@ limitations under the License.
 #pragma once
 
 #include "PyFunc.h"
+#include <mutex>
 
-class MGil
-{
-	int m_gstate = -1;
+class MGil {
+    bool m_needsRelease;
+    PyGILState_STATE m_state;
+    // A static mutex to protect the critical section.
+    static std::mutex s_mutex;
 public:
-	inline MGil(bool autoLock = true)
-	{
-		if (autoLock)
-		{
-			m_gstate = (int)PyGILState_Ensure();
-		}
-	}
-	inline ~MGil()
-	{
-		if (m_gstate != -1)
-		{
-			PyGILState_Release((PyGILState_STATE)m_gstate);
-		}
-	}
-	inline void Lock()
-	{
-		m_gstate = (int)PyGILState_Ensure();
-	}
-	inline void Unlock()
-	{
-		if (m_gstate != -1)
-		{
-			PyGILState_Release((PyGILState_STATE)m_gstate);
-			m_gstate = -1;
-		}
-	}
+    // Constructor optionally auto-locks the GIL.
+    inline MGil(bool autoLock = true)
+        : m_needsRelease(false), m_state(PyGILState_UNLOCKED)
+    {
+        if (autoLock) {
+            Lock();
+        }
+    }
+
+    // Destructor releases the GIL if it was acquired.
+    inline ~MGil()
+    {
+        if (m_needsRelease) {
+            std::lock_guard<std::mutex> lock(s_mutex);
+            PyGILState_Release(m_state);
+        }
+    }
+
+    // Lock the GIL if it is not already held by this thread.
+    inline void Lock()
+    {
+        if (!m_needsRelease) {
+            std::lock_guard<std::mutex> lock(s_mutex);
+            // Now the check and ensure are atomic with respect to other threads using MGil.
+            if (!PyGILState_Check()) {
+                m_state = PyGILState_Ensure();
+                m_needsRelease = true;
+            }
+        }
+    }
+
+    // Unlock the GIL if this instance acquired it.
+    inline void Unlock()
+    {
+        if (m_needsRelease) {
+            std::lock_guard<std::mutex> lock(s_mutex);
+            PyGILState_Release(m_state);
+            m_needsRelease = false;
+        }
+    }
 };
+

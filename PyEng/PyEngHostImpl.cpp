@@ -55,6 +55,8 @@ static void LoadNumpy()
 #define SURE_NUMPY_API() LoadNumpy()
 
 
+std::mutex MGil::s_mutex;
+
 GrusPyEngHost::GrusPyEngHost():
 	m_pyTaskPool(3)
 {
