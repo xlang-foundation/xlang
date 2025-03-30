@@ -109,7 +109,7 @@ namespace X
 							std::lock_guard<std::mutex> lock(callback_mutex_);
 							if (receive_callback_) {
 								// Wrap the received packet into an X::Bin/X::Value.
-								X::Bin bin((char*)nullptr, packet.size(), true);
+								X::Bin bin((int)packet.size(), true);
 								memccpy(bin->Data(), packet.data(), 1, packet.size());
 								X::Value value(bin);
 								// Get the sender's IP and port.
