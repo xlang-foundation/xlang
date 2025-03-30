@@ -56,6 +56,7 @@ static void LoadNumpy()
 
 
 std::mutex MGil::s_mutex;
+thread_local int MGil::s_lockCounter = 0;
 
 GrusPyEngHost::GrusPyEngHost():
 	m_pyTaskPool(3)
