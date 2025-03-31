@@ -24,6 +24,8 @@ Crafted specifically for **AI** and **IoT** applications, **XLang™** delivers 
 
 ## **Contributing**
 
+-Zack Gaylord: Using github for Systems Engineering class in college. Have used it in the past for html web design work. 
+
 If you're interested in contributing to the **XLang™** project, we would love to hear from you. Whether you're a developer, tester, or simply passionate about advancing this technology, please reach out. For more information or to get involved, send us an email at [**info@xlangfoundation.org**](mailto:info@xlangfoundation.org) and we'll provide the necessary details.
 
 **XLang™** has been thoroughly tested on **Linux** and **Windows** platforms—including successful deployments on **Raspberry Pi** boards and the **Raspberry Pi Pico**. If you need specific build instructions or have any questions regarding the **Raspberry Pi Pico** setup, please contact us at the same email address. We're here to support you and ensure your **XLang™** experience is smooth and rewarding.
