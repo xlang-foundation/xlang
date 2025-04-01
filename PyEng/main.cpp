@@ -141,7 +141,7 @@ extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
 
 extern "C"  X_EXPORT void Unload()
 {
-	PyEval_RestoreThread(GrusPyEngHost::I().GetPyThreadState());
+	//PyEval_RestoreThread(GrusPyEngHost::I().GetPyThreadState());
 	X::g_pXHost = nullptr;
 	Py_FinalizeEx();
 #if !(WIN32)
