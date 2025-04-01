@@ -22,4 +22,18 @@ print("fetching done:",s)
 client.get("/us/definition/english/enormously?q=enormously")
 s2 = client.body
 print("fetching done-2:",s2	)
-print("end")
+
+
+
+# Define the portal server URL (using Postman Echo for testing)
+portal_server_url = "https://postman-echo.com"
+
+# Create an HTTP client instance with the base URL
+http_client2 = http.Client(portal_server_url)
+
+body = '{"username": "johndoe", "email": "john@example.com", "action": "verify"}'
+
+http_client2.post("/post", "application/json", body)
+
+print("Response Body:", http_client2.body)
+print("Done")
