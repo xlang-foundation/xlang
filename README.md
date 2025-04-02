@@ -1,6 +1,8 @@
 
 ---
+Davenche Sydney
 
+GitHub and this Repository is quite confusing
 # **XLang™**
 
 **XLang™** is a **high-performance glue language** designed to seamlessly integrate system components and application subsystems. It also serves as an excellent **embedding language** that can be easily integrated with application and game systems, thanks to its **lightweight stack**, **complete syntax**, and **robust runtime** for application integration. Moreover, **XLang™** features a syntax that is similar to **Python**, making it familiar and easy to adopt for developers.
