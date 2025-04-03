@@ -871,3 +871,29 @@ void GrusPyEngHost::SubmitPythonTask(const std::function<void()>& task)
 {
 	m_pyTaskPool.submit(task);
 }
+
+void GrusPyEngHost::AddImportPaths(const char* path)
+{
+	MGil gil;
+	// Get the sys.path list (borrowed reference)
+	PyObject* sysPath = PySys_GetObject("path");
+	if (sysPath == nullptr) {
+		// Handle error: sys.path not available
+		return;
+	}
+
+	// Create a Python string for the new path
+	PyObject* pathObj = PyUnicode_FromString(path);
+	if (pathObj == nullptr) {
+		// Handle error: unable to create a Python string
+		return;
+	}
+
+	// Append the new path to sys.path list
+	if (PyList_Append(sysPath, pathObj) != 0) {
+		// Handle error: unable to append path
+	}
+
+	// Decrement reference count for the path object
+	Py_DECREF(pathObj);
+}

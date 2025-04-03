@@ -809,6 +809,28 @@ return nullptr;
 		auto* pProxyObj = new Data::PyProxyObject(pyObj);
 		return  Value(pProxyObj);
 	}
+	bool XHost_Impl::PyAddImportPaths(X::Value& paths)
+	{
+		if (g_pPyHost == nullptr)
+		{
+			return false;
+		}
+		if (paths.IsString())
+		{
+			std::string p = paths.ToString();
+			g_pPyHost->AddImportPaths(p.c_str());
+		}
+		else if (paths.IsList())
+		{
+			X::List list(paths);
+			for (auto it : *list)
+			{
+				std::string p = it.ToString();
+				g_pPyHost->AddImportPaths(p.c_str());
+			}
+		}
+		return true;
+	}
 	bool XHost_Impl::PyRun(const char* code, X::ARGS& args)
 	{
 		if (g_pPyHost)

@@ -141,7 +141,11 @@ extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
 
 extern "C"  X_EXPORT void Unload()
 {
-	PyEval_RestoreThread(GrusPyEngHost::I().GetPyThreadState());
+	//Direct Finalization : 
+	// If you do not plan to re - enter Python after initialization, 
+	// you might consider calling Py_FinalizeEx() 
+	// directly without restoring the thread state.
+	// so we don't need to call:PyEval_RestoreThread(GrusPyEngHost::I().GetPyThreadState());
 	X::g_pXHost = nullptr;
 	Py_FinalizeEx();
 #if !(WIN32)
