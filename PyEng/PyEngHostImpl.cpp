@@ -897,3 +897,86 @@ void GrusPyEngHost::AddImportPaths(const char* path)
 	// Decrement reference count for the path object
 	Py_DECREF(pathObj);
 }
+
+//Don't call MGil here
+bool PyObjectXLangConverter::IsNumpyArray(PyObject* obj)
+{
+	SURE_NUMPY_API();
+	return PyArray_Check(obj);
+}
+
+X::TensorDataType PyObjectXLangConverter::NumpyTypeToXTensorDataType(int npType) {
+	switch (npType) {
+	case NPY_BOOL:       return X::TensorDataType::BOOL;
+	case NPY_BYTE:       return X::TensorDataType::BYTE;
+	case NPY_UBYTE:      return X::TensorDataType::UBYTE;
+	case NPY_SHORT:      return X::TensorDataType::SHORT;
+	case NPY_USHORT:     return X::TensorDataType::USHORT;
+	case NPY_INT:
+	case NPY_INT32:      return X::TensorDataType::INT32;
+	case NPY_UINT:
+	case NPY_UINT32:     return X::TensorDataType::UINT32;
+	case NPY_LONGLONG:      return X::TensorDataType::LONGLONG;
+	case NPY_ULONGLONG:     return X::TensorDataType::UINT64;
+#ifdef NPY_BFLOAT16
+	case NPY_BFLOAT16:   return X::TensorDataType::BFLOAT16;
+#endif
+	case NPY_FLOAT16:    return X::TensorDataType::FLOAT16;
+	case NPY_FLOAT:    return X::TensorDataType::FLOAT32;
+	case NPY_DOUBLE:    return X::TensorDataType::DOUBLE;
+	case NPY_CFLOAT:return X::TensorDataType::CFLOAT;
+	case NPY_CDOUBLE:return X::TensorDataType::CDOUBLE;
+	default:             return X::TensorDataType::UNKNOWN;
+	}
+}
+X::Value PyObjectXLangConverter::ConvertNumpyArrayToXValue(PyObject* obj) {
+	MGil gil;
+	SURE_NUMPY_API();
+	if (!PyArray_Check(obj)) {
+		return X::Value();
+	}
+	PyArrayObject* npArr = reinterpret_cast<PyArrayObject*>(obj);
+
+	// Retrieve array properties.
+	int ndim = PyArray_NDIM(npArr);
+	npy_intp* dims = PyArray_DIMS(npArr);
+	int npType = PyArray_TYPE(npArr);
+
+	// Map NumPy type to XLang TensorDataType.
+	X::TensorDataType xDataType = NumpyTypeToXTensorDataType(npType);
+	if (xDataType == X::TensorDataType::UNKNOWN) {
+		return X::Value(); // Unsupported type.
+	}
+
+	// Compute total element count and build the shape vector.
+	long long totalCount = 1;
+	X::Port::vector<int> shapeVec(ndim);
+	for (int i = 0; i < ndim; ++i) {
+		totalCount *= dims[i];
+		shapeVec.push_back(static_cast<int>(dims[i]));
+	}
+
+	// Create a new XLang tensor.
+	X::Tensor xTensor = X::g_pXHost->CreateTensor();
+	if (!xTensor) {
+		return X::Value();
+	}
+
+	// Set tensor data type and shape.
+	xTensor->SetDataType(xDataType);
+	xTensor->SetShape(shapeVec);
+
+	// Allocate tensor memory.
+	X::Value initData;
+	if (!xTensor->Create(initData)) {
+		return X::Value();
+	}
+
+	// Copy data from the NumPy array.
+	char* dataPtr = static_cast<char*>(PyArray_DATA(npArr));
+	long long elementSize = PyArray_DESCR(npArr)->elsize;
+	xTensor->SetData(dataPtr, totalCount * elementSize);
+
+	// Return the XLang tensor wrapped as an X::Value.
+	return X::Value(xTensor);
+}
