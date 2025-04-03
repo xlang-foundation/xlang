@@ -105,6 +105,7 @@ public:
 	virtual int GilLock() = 0;
 	virtual void GilUnlock(int state) = 0;
 	virtual void SubmitPythonTask(const std::function<void()>& task) = 0;
+	virtual void AddImportPaths(const char* path) = 0;
 };
 
 extern PyEngHost* g_pPyHost;

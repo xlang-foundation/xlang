@@ -117,6 +117,7 @@ public:
 	virtual int GilLock() override;
 	virtual void GilUnlock(int state) override;
 	virtual void SubmitPythonTask(const std::function<void()>& task) override;
+	virtual void AddImportPaths(const char* path) override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 
