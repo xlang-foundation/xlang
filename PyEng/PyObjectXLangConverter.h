@@ -42,6 +42,10 @@ public:
             gil.Unlock();
             return ConvertDictToXValue(obj);
         }
+        else if (IsNumpyArray(obj)) {
+            gil.Unlock();
+            return ConvertNumpyArrayToXValue(obj);
+        }
         else {
             gil.Unlock();
             X::Value valObj = CheckXlangObjectAndConvert(obj);
@@ -51,6 +55,7 @@ public:
             return valObj;
         }
     }
+    static bool IsNumpyArray(PyObject* obj);
 
     static PyObject* ConvertToPyObject(X::Value& value) {
         if (value.IsLong()) {
@@ -166,6 +171,9 @@ public:
     }
 
 private:
+    static X::TensorDataType NumpyTypeToXTensorDataType(int npType);
+    static X::Value ConvertNumpyArrayToXValue(PyObject* obj);
+
     static X::Value ConvertListToXValue(PyObject* obj) {
         MGil gil;
         X::List list;
