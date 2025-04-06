@@ -912,10 +912,8 @@ X::TensorDataType PyObjectXLangConverter::NumpyTypeToXTensorDataType(int npType)
 	case NPY_UBYTE:      return X::TensorDataType::UBYTE;
 	case NPY_SHORT:      return X::TensorDataType::SHORT;
 	case NPY_USHORT:     return X::TensorDataType::USHORT;
-	case NPY_INT:
-	case NPY_INT32:      return X::TensorDataType::INT32;
-	case NPY_UINT:
-	case NPY_UINT32:     return X::TensorDataType::UINT32;
+	case NPY_INT:      return X::TensorDataType::INT32;
+	case NPY_UINT:     return X::TensorDataType::UINT32;
 	case NPY_LONGLONG:      return X::TensorDataType::LONGLONG;
 	case NPY_ULONGLONG:     return X::TensorDataType::UINT64;
 #ifdef NPY_BFLOAT16

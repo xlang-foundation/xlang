@@ -172,7 +172,7 @@ public:
 
 private:
     static X::TensorDataType NumpyTypeToXTensorDataType(int npType);
-    static X::Value PyObjectXLangConverter::ConvertNumpyArrayToXValue(PyObject* obj);
+    static X::Value ConvertNumpyArrayToXValue(PyObject* obj);
 
     static X::Value ConvertListToXValue(PyObject* obj) {
         MGil gil;
