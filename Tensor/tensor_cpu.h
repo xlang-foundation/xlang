@@ -829,8 +829,7 @@ namespace X
 					int n = pTensor1->GetDims()[1].size; //columns of matrix
 					int v = pTensor2->GetDims()[0].size; //vector
 					if (n!=v)  //To do, error handling
-						return X::Value();
-
+						return;
 
 					std::vector<int> dims;
 					dims.push_back(m);
