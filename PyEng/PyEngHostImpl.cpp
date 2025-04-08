@@ -972,7 +972,12 @@ X::Value PyObjectXLangConverter::ConvertNumpyArrayToXValue(PyObject* obj) {
 
 	// Copy data from the NumPy array.
 	char* dataPtr = static_cast<char*>(PyArray_DATA(npArr));
-	long long elementSize = PyArray_DESCR(npArr)->elsize;
+	long long elementSize;
+#if NPY_ABI_VERSION >= 0x02000000
+	elementSize = PyDataType_ELSIZE(PyArray_DESCR(npArr));
+#else
+	elementSize = PyArray_DESCR(npArr)->elsize;;
+#endif
 	xTensor->SetData(dataPtr, totalCount * elementSize);
 
 	// Return the XLang tensor wrapped as an X::Value.
