@@ -377,6 +377,11 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 
 	//Check if it is X module
 	std::string curPath = rt->M()->GetModulePath();
+	//TODO: check here
+	if (curPath.empty())
+	{
+		curPath = g_pXload->GetConfig().appPath;
+	}
 	Module* pSubModule = nullptr;
 	bool bOK = FindAndLoadXModule(rt, curPath, im.name, params, kwParams,&pSubModule);
 	if (bOK && pSubModule != nullptr)
