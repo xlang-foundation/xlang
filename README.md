@@ -1,4 +1,5 @@
-
+## Contributors
+- Chloe Marconi
 ---
 
 # **XLang™**
