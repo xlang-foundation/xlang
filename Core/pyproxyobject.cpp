@@ -119,6 +119,14 @@ namespace X
 				std::string strFileName = GetPyModuleFileName();
 				PyObjectCache::I().RemoveModule(strFileName);
 			}
+			if (m_pMyScope)
+			{ 
+				delete m_pMyScope;
+			}
+			if (m_pMyScopeProxy)
+			{
+				delete m_pMyScopeProxy;
+			}
 		}
 		X::Value PyProxyObject::ToXlang()
 		{

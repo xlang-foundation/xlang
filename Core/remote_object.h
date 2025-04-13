@@ -101,6 +101,7 @@ namespace X
 			}
 			m_proxyLock.Unlock();
 			delete m_stackFrame;
+			delete m_pMyScope;
 		}
 		std::string& GetObjName()
 		{

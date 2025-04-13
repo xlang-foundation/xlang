@@ -66,6 +66,8 @@ namespace X
 				ARGS& params, KWARGS& kwParams,
 				X::Value& retValue)
 		{
+			if(!m_Connected)
+				return;
 			std::string strAction;
 			auto it0 = kwParams.find("action");
 			if (it0)

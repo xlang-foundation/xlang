@@ -196,6 +196,7 @@ namespace X
 			}
 			void operator= (const vector<T>& v)
 			{
+				clear();
 				m_size = v.m_size;
 				if (m_size > 0)
 				{
