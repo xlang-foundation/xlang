@@ -686,6 +686,8 @@ return nullptr;
 		{
 			objPackage.GetObj()->SetContext(rt, nullptr);
 		}
+		//TODO: check here @shawn 4/12/2025
+		delete pImp;
 		return bOK;
 	}
 	bool XHost_Impl::CreateScopeWrapper(XCustomScope* pScope)

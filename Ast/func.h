@@ -250,6 +250,10 @@ public:
 	FORCE_INLINE X::Value GetParameterNameList()
 	{
 		X::List names;
+		if (Params == nullptr)
+		{
+			return names;
+		}
 		auto& list = Params->GetList();
 		for (auto& l : list)
 		{

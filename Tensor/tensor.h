@@ -569,6 +569,15 @@ namespace X
 			{
 				return m_dataType;
 			}
+			virtual bool GetIndexValue(int idx, Value& v) override
+			{
+				if (idx < 0 || idx >= m_dataSize)
+					return false;
+				long long addr = idx * GetItemSize();
+				v = GetDataWithOffset(addr);
+				return true;
+			}
+
 			virtual bool Multiply(const X::Value& r, X::Value& retVal) override;
 			virtual bool Divide(const X::Value& r, X::Value& retVal) override;
 			virtual bool Divided(const X::Value& leftValue, X::Value& retVal) override;
