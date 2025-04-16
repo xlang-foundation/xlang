@@ -1081,7 +1081,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Package':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'Package(Size:' + v.Size.toString() + ")";
+				dapVariable.value = 'Package(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Package";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
@@ -1089,7 +1089,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'RemoteObject':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'RemoteObject(Size:' + v.Size.toString() + ")";
+				dapVariable.value = 'RemoteObject(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "RemoteObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
@@ -1097,7 +1097,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Class':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'Class(Size:' + v.Size.toString() + ")";
+				dapVariable.value = 'Class(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Class";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
@@ -1105,7 +1105,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Dict':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'Dict(Size:' + v.Size.toString() + ")";
+				dapVariable.value = 'Dict(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Dict";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
@@ -1121,7 +1121,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'List':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'List(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'List(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "List";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1129,7 +1129,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Tensor':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Tensor(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Tensor(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "Tensor";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1137,7 +1137,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Prop':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Prop(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Prop(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "Prop";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1145,7 +1145,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'TableRow':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'TableRow(ColNum:' + v.Size.toString() + ")";
+				dapVariable.value = 'TableRow(ColNum:' + v.Size?.toString() + ")";
 				dapVariable.type = "TableRow";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1153,7 +1153,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Table':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'Table(RowNum:' + v.Size.toString() + ")";
+				dapVariable.value = 'Table(RowNum:' + v.Size?.toString() + ")";
 				dapVariable.type = "Table";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1161,7 +1161,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'PyObject':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Python Object(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Python Object(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "PyObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1169,14 +1169,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'DeferredObject':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Deferred Object(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Deferred Object(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "DeferredObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;
 			case 'Binary':
 				v.reference = this._runtime.createScopeRef(v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Binary(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Binary(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "Binary";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
