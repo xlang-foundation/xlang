@@ -127,6 +127,10 @@ namespace X
 			{
 				delete m_pMyScopeProxy;
 			}
+			if (m_variableFrame)
+			{
+				delete m_variableFrame;
+			}
 		}
 		X::Value PyProxyObject::ToXlang()
 		{
