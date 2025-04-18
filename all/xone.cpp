@@ -257,7 +257,13 @@ namespace X
 		XLangInternalInit();
 		if (config.enablePython)
 		{
-			LoadPythonEngine();
+			if (!LoadPythonEngine())
+			{
+				config.enablePython = false;
+				std::cout << "\033[31m" << "Python engine not found, disable python engine" << "\033[0m" << std::endl;
+			}
+			else
+				std::cout << "\033[32m" << "Python engine loaded" << "\033[0m" << std::endl;
 		}
 		Builtin::I().RegisterInternals();
 		BuildOps();

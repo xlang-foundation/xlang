@@ -264,7 +264,13 @@ void XLangRun()
 	XLangInternalInit();
 	if (g_pXload->GetConfig().enablePython)
 	{
-		LoadPythonEngine();
+		if (!LoadPythonEngine())
+		{
+			g_pXload->GetConfig().enablePython = false;
+			LOG7 << LOG_RED << "Python engine not found, disable python engine" << LOG_RESET << LINE_END;
+		}
+		else
+			LOG7 << LOG_GREEN << "Python engine loaded" << LOG_RESET << LINE_END;
 	}
 	Builtin::I().RegisterInternals();
 	BuildOps();

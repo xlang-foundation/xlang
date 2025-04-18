@@ -886,8 +886,13 @@ return nullptr;
 		{
 			if (g_pXload && !g_pXload->GetConfig().enablePython)
 			{
-				LoadPythonEngine();
-				g_pXload->GetConfig().enablePython = true;
+				if (!LoadPythonEngine())
+					LOG7 << LOG_RED << "Python engine not found" << LOG_RESET << LINE_END;
+				else
+				{
+					g_pXload->GetConfig().enablePython = true;
+					LOG7 << LOG_GREEN << "Python engine loaded, enable python engine" << LOG_RESET << LINE_END;
+				}
 			}
 		}
 	}
