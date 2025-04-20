@@ -27,6 +27,7 @@ limitations under the License.
 #include "await.h"
 #include "namespace_var.h"
 #include "jitblock.h"
+#include "refop.h"
 
 namespace X
 {
@@ -156,6 +157,9 @@ namespace X
 				break;
 			case X::AST::ObType::NamespaceVar:
 				bOK = static_cast<NamespaceVar*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::RefOp:
+				bOK = static_cast<RefOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;
 			default:
 				break;

@@ -360,13 +360,24 @@ public:
 		}
 		return bOK;
 	}
+	void ObjectSetName(XlangRuntime* rt, XObj* pContext, XObj* pRightObj);
 	bool ObjectAssign(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& v, Value& v_r, LValue& lValue_L);
+	bool VarListAssign(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue);
 	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		if (!L || !R)
 		{
 			v = Value(false);
 			return false;
+		}
+		if (opId == X::OP_ID::Equ && L->m_type == X::AST::ObType::Pair)
+		{
+			//deal with this case (x,y,z) =(10+100,20+k,30-k)
+			BinaryOp* pPairOp = dynamic_cast<BinaryOp*>(L);
+			if (pPairOp->GetL() == nullptr && pPairOp->GetR()!= nullptr)
+			{
+				return VarListAssign(rt, action, pContext, v, lValue);
+			}
 		}
 		Value v_l;
 		LValue lValue_L = nullptr;
@@ -378,6 +389,10 @@ public:
 			return false;
 		}
 		bool bOK = true;
+		if (v_r.IsObject() && v_r.GetObj()->CanSetObjectName())
+		{
+			ObjectSetName(rt, pContext, v_r.GetObj());
+		}
 		if (v_l.IsObject())
 		{
 			auto* pObj = v_l.GetObj();
@@ -387,6 +402,7 @@ public:
 				return bOK;
 			}
 		}
+
 		//move bOK to true to avoid error
 		bOK = true;
 		if (lValue_L)

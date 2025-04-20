@@ -196,6 +196,33 @@ void Func::FindMyModule()
 	m_myModule = myModule;
 }
 
+void Func::ChangeStatmentsIntoTranslateMode(
+	bool changeIfStatment, 
+	bool changeLoopStatment)
+{
+	auto bodySize = Body.size();
+	if (bodySize == 0)
+	{
+		return;
+	}
+	for (size_t idx = 0; idx < bodySize; idx++)
+	{
+		auto& i = Body[idx];
+		if (changeIfStatment)
+		{
+			if (i->m_type == ObType::If)
+			{
+				If* pIf = dynamic_cast<If*>(i);
+				if (pIf)
+				{
+					pIf->SetTranslateMode(true);
+				}
+			}
+		}
+		//TODO: if need add loop statment such for/while etc
+	}
+}
+
 //Shawn@12/8/2023, if rt0 is nullptr,called from non-main thread,
 //need to get rt from the module
 //also check if in this is in-trace or not,

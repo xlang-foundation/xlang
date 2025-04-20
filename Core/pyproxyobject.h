@@ -204,7 +204,7 @@ namespace X
 			static bool PyObjectToBin(PyEng::Object& pyObj, X::Value& valBin);
 
 			virtual bool SupportAssign() override { return true; }
-			virtual void Assign(const X::Value& val) override
+			virtual bool Assign(const X::Value& val) override
 			{
 				PyEng::Object newObj((X::Value&)val);
 				if (m_parent_obj.ref() != nullptr)
@@ -212,6 +212,7 @@ namespace X
 					m_parent_obj[m_name.c_str()] = newObj;
 				}
 				m_obj = newObj;
+				return true;
 			}
 			FORCE_INLINE virtual void CloseIterator(Iterator_Pos pos) override
 			{
@@ -350,6 +351,7 @@ namespace X
 				if (m_path.empty()) return m_name + ".py";
 				else return m_path + "/" + m_name + ".py";
 			}
+			virtual X::Value ToXlang() override;
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Scope*> & callables) override; 
 

@@ -107,7 +107,7 @@ bool PairOp::GetItemFromDict(XlangRuntime* rt, XObj* pContext,
 	if (bOK)
 	{
 		//for assign like d["key1"] = value
-		if (r->IsLeftValue())
+		if (IsLeftValue() || r->IsLeftValue())
 		{
 			bOK = pDataDict->GetLValueToAssign(key,v);
 		}

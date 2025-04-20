@@ -345,7 +345,7 @@ public:
 	void ReleaseObject(XObj* p);
 	FORCE_INLINE Value Negative() const
 	{
-		Value newV = this;
+		Value newV = *this;
 		switch (t)
 		{
 		case ValueType::Int64:
@@ -503,6 +503,7 @@ public:
 	bool IsList() const;
 	bool IsDict() const;
 	bool IsBin() const;
+	bool IsTensor() const;
 	bool IsString() const;
 	FORCE_INLINE bool IsTrue()
 	{
@@ -659,6 +660,9 @@ public:
 		Port::vector<X::Value> params(0);
 		return ObjCall(params);
 	}
+	FORCE_INLINE Value first() { return (*this)[0]; }
+	FORCE_INLINE Value second() { return (*this)[1]; }
+
 	bool SetPropValue(const char* propName, X::Value value);
 	Value GetItemValue(long long idx);
 	Value GetObjectValue(Port::vector<X::Value>& IdxAry);
@@ -678,10 +682,18 @@ public:
 	{
 		return GetItemValue(index);
 	}
-	FORCE_INLINE Value operator[](const char* key)
+	template <
+		typename T,
+		typename = std::enable_if_t<
+		std::is_pointer<T>::value&&
+		std::is_same<std::remove_cv_t<std::remove_pointer_t<T>>, char>::value
+		>
+	>
+	FORCE_INLINE Value operator[](T key)
 	{
 		return QueryMember(key);
 	}
+
 	FORCE_INLINE double ToDouble()
 	{
 		return double(*this);

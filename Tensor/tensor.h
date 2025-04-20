@@ -70,8 +70,45 @@ namespace X
 			char* m_data=nullptr;
 			int m_startItemOffet = 0;// unit is sizeof data type
 			std::vector<TensorDim> m_dims;
-			TensorDataType m_dataType;
+			TensorDataType m_dataType = TensorDataType::UNKNOWN;
+			X::Value m_desc;//used to hold extra info
+			X::AST::Expression* m_currentLine = nullptr;
+
+			FORCE_INLINE virtual X::Value GetDesc() override
+			{
+				return m_desc;
+			}
+			FORCE_INLINE virtual void SetDesc(X::Value& v) override
+			{
+				m_desc = v;
+			}
+			X::AST::Expression* GetCurrentExecContext();
 		public:
+			virtual void SetCurrentLine(X::AST::Expression* line)
+			{
+				m_currentLine = line;
+			}
+			FORCE_INLINE X::AST::Expression* GetCurrentLine()
+			{
+				return m_currentLine;
+			}
+			FORCE_INLINE virtual bool CanSetObjectName() override { return true; }
+			FORCE_INLINE virtual void SetObjectName(std::string& name)
+			{
+				m_name = name;
+			}
+			FORCE_INLINE std::string& GetTensorName()
+			{
+				return m_name;
+			}
+			FORCE_INLINE virtual void SetName(X::Value& name) override
+			{
+				m_name = name.ToString();
+			}
+			FORCE_INLINE virtual X::Value GetName() override
+			{
+				return m_name;
+			}
 			virtual long long GetItemSize() override
 			{
 				long long size = 1;
@@ -111,12 +148,27 @@ namespace X
 				case X::TensorDataType::CDOUBLE:
 					size = 16;
 					break;
+				case X::TensorDataType::FLOAT8_E4M3FN:
+				case X::TensorDataType::FLOAT8_E4M3FNUZ:
+				case X::TensorDataType::FLOAT8_E5M2:
+				case X::TensorDataType::FLOAT8_E5M2FNUZ:
+					size = 1;
+					break;
 				default:
 					break;
 				}
 				return size;
 			}
-			long long GetCount()
+			virtual X::Value Shapes() override
+			{
+				X::List shapes;
+				for (auto& d : m_dims)
+				{
+					shapes += d.size;
+				}
+				return shapes;
+			}
+			virtual long long GetCount() override
 			{
 				long long itemCnt = 1;
 				for (auto& d : m_dims)
@@ -172,7 +224,6 @@ namespace X
 			{
 				m_name = n;
 			}
-			FORCE_INLINE std::string& GetName() { return m_name; }
 			//this function only return first dim's size
 			//because debug will use it as first level
 			virtual long long Size() override
@@ -192,7 +243,7 @@ namespace X
 			}
 			virtual char* GetData() override
 			{
-				return m_data;
+				return m_data+ m_startItemOffet* GetItemSize();
 			}
 			virtual void SetData(char* data, long long size) override
 			{
@@ -225,7 +276,7 @@ namespace X
 				return m_dims[dimIdx].size;
 			}
 			
-			virtual void SetShape(Port::vector<int> shapes) override
+			virtual void SetShape(Port::vector<int>& shapes) override
 			{
 				m_dims.clear();
 				for (auto i : shapes)
@@ -360,6 +411,47 @@ namespace X
 			X::Value GetDataWithIndices(std::vector<long long>& indices);
 			X::Value GetDataWithOffset(long long addr);
 
+			virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
+				IterateProc proc, ARGS& params, KWARGS& kwParams,
+				X::Value& retValue) override
+			{
+				AutoLock autoLock(m_lock);
+
+				long long size = GetDimSize(0);
+				std::vector<Data::TensorIndex> idxAry(1);
+				for (long long i=0;i<size;i++)
+				{
+					idxAry[0].i = i;
+					idxAry[0].j = i;
+					Get(idxAry, retValue);
+				}
+				return true;
+			}
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos,
+				std::vector<Value>& vals, bool getOnly) override
+			{
+				AutoLock autoLock(m_lock);
+
+				long long size = GetDimSize(0);
+				long long offset = (long long)pos;
+				if (offset >= size)
+				{
+					return false;
+				}
+				std::vector<Data::TensorIndex> idxAry(1);
+				idxAry[0].i = offset;
+				idxAry[0].j = offset;
+				X::Value retValue;
+				Get(idxAry, retValue);
+
+				vals.push_back(retValue);
+				vals.push_back(offset);
+				if (!getOnly)
+				{
+					pos = Iterator_Pos(offset + 1);
+				}
+				return true;
+			}
 			//keep use same memory
 			FORCE_INLINE X::Value reshape(X::Value& listOfShape)
 			{
@@ -518,6 +610,15 @@ namespace X
 			{
 				return m_dataType;
 			}
+			virtual bool GetIndexValue(int idx, Value& v) override
+			{
+				if (idx < 0 || idx >= m_dataSize)
+					return false;
+				long long addr = idx * GetItemSize();
+				v = GetDataWithOffset(addr);
+				return true;
+			}
+
 			virtual bool Multiply(const X::Value& r, X::Value& retVal) override;
 			virtual bool Divide(const X::Value& r, X::Value& retVal) override;
 			virtual bool Divided(const X::Value& leftValue, X::Value& retVal) override;
@@ -592,6 +693,7 @@ namespace X
 					case X::TensorDataType::ULONGLONG:
 						snprintf((char *)v, sizeof(v), "%lld",(unsigned long long)val.GetLongLong());
 						break;
+					case X::TensorDataType::BFLOAT16:
 					case X::TensorDataType::FLOAT:
 						snprintf((char *)v, sizeof(v), "%f",(float)val.GetDouble());
 						break;
@@ -687,5 +789,6 @@ namespace X
 			}
 
 		};
+
 	}
 }

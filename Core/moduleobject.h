@@ -49,6 +49,10 @@ namespace X
 				std::string str =  m_pModule ? m_pModule->GetModuleName() : "";
 				return GetABIString(str);
 			}
+			virtual X::XRuntime* GetRT() override
+			{
+				return m_pModule ? (X::XRuntime*)m_pModule->GetRT() : nullptr;
+			}
 			virtual const char* GetPath() override
 			{
 				std::string str = m_pModule ? m_pModule->GetModulePath() : "";

@@ -129,6 +129,9 @@ extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
 	PreloadPythonToSolveGlobaleExportTable();
 #endif
 	Py_Initialize();
+	PyEval_InitThreads();
+	PyThreadState* mainThreadState = PyEval_SaveThread();
+	GrusPyEngHost::I().SetPyThreadState(mainThreadState);
 	g_pPyHost = &GrusPyEngHost::I();
 	*ppHost = (void*)g_pPyHost;
 	//todo: add lines below back for Python debug?
@@ -138,6 +141,11 @@ extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
 
 extern "C"  X_EXPORT void Unload()
 {
+	//Direct Finalization : 
+	// If you do not plan to re - enter Python after initialization, 
+	// you might consider calling Py_FinalizeEx() 
+	// directly without restoring the thread state.
+	// so we don't need to call:PyEval_RestoreThread(GrusPyEngHost::I().GetPyThreadState());
 	X::g_pXHost = nullptr;
 	Py_FinalizeEx();
 #if !(WIN32)

@@ -36,6 +36,12 @@ namespace X
 			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
+			virtual X::Value GetParameterNameList() override
+			{
+				return m_func->GetParameterNameList();
+			}
+			virtual void ChangeStatmentsIntoTranslateMode(
+				bool changeIfStatment, bool changeLoopStatment) override;
 			virtual XObj* Clone() override
 			{
 				Function* pNewFunc = new Function();
@@ -47,6 +53,15 @@ namespace X
 			virtual X::Value GetName() override
 			{
 				return m_func->GetFuncName();
+			}
+			virtual X::Value GetCode(bool includehead) override
+			{
+				std::string code;
+				if (m_func)
+				{
+					code = m_func->getcode(includehead);
+				}
+				return X::Value(code);
 			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 			{

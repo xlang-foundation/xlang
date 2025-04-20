@@ -97,14 +97,25 @@ namespace Data {
 			std::vector<Value> vals;
 			Iterator_Pos myPos = (Iterator_Pos)pos;
 			bool bOK = GetAndUpdatePos(myPos, vals, true);
-			if (bOK && vals.size() > 1)
+			if (bOK || vals.size() == 0)
 			{
-				return vals[0];
+				//the vals will return with at least one value and one pos at last
+				//for dict will return two values( key, value) and Pos
+				if (vals.size() <= 2)
+				{
+					return vals[0];
+				}
+				else if (vals.size() > 2) //for dict case
+				{
+					X::List list;
+					for (int i=0;i<vals.size()-1;i++)
+					{
+						list += vals[i];
+					}
+					return list;
+				}
 			}
-			else
-			{
-				return X::Value();
-			}
+			return X::Value();
 		}
 		FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, std::vector<Value>& vals,bool getOnly)
 		{
@@ -314,6 +325,8 @@ namespace Data {
 		}
 		virtual bool Get(long long idx, X::Value& val) { return false; }
 		virtual bool Set(long long idx, X::Value& val) { return false; }
+		virtual bool CanSetObjectName() override { return false; }
+		virtual void SetObjectName(std::string& name) {}
 	};
 
 	class Expr

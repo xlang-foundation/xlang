@@ -259,7 +259,7 @@ namespace X
 					}
 					if (!bOk)
 					{
-						LOG <<LOG_RED<< "Error Occurs in "<<rt->GetName()<< ",line:" << line <<LOG_RESET<< LINE_END;
+						LOG <<LOG_RED<< "Error Occurs in Module: "<<rt->GetName()<< ":" << line <<LOG_RESET<< LINE_END;
 						auto code = i->GetCode();
 						LOG << LOG_RED << "*** " << code <<LOG_RESET<<LINE_END;
 					}
@@ -315,8 +315,15 @@ namespace X
 		class If :
 			public Block
 		{
+			//Translate Mode means other program will translate
+			//If with its blocks into another code like cuda or c++
+			//so if m_translateMode is true, need to run Translate 
+			//instead to run Exec
+
+			bool m_translateMode = false;
 			bool m_isIf = false;//if it is 'if', this flag is true, if it is 'elif', 'else' will be false
 			If* m_next = nil;//elif  or else
+			If* m_prev = nil;//just record it, don't need to delete
 		public:
 			If() :
 				Block()
@@ -329,11 +336,36 @@ namespace X
 				m_type = ObType::If;
 				NeedParam = needParam;
 			}
-			void SetFlag(bool b)
+			inline If* GetNext() { return m_next; }
+			inline If* GetPrev() { return m_prev; }
+			inline void SetTranslateMode(bool bMode)
+			{
+				m_translateMode = bMode;
+
+				auto bodySize = Body.size();
+				for (size_t idx = 0; idx < bodySize; idx++)
+				{
+					auto& i = Body[idx];
+					if (i->m_type == ObType::If)
+					{
+						If* pIf = dynamic_cast<If*>(i);
+						if (pIf)
+						{
+							pIf->SetTranslateMode(bMode);
+						}
+					}
+				}
+				if (m_next)
+				{
+					m_next->SetTranslateMode(bMode);
+				}
+			}
+			bool Translate(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue);
+			inline void SetFlag(bool b)
 			{
 				m_isIf = b;
 			}
-			bool IsIf() { return m_isIf; }
+			inline bool IsIf() { return m_isIf; }
 			~If()
 			{
 				if (m_next) delete m_next;
@@ -348,6 +380,10 @@ namespace X
 			{
 				Block::FromBytes(stream);
 				m_next = BuildFromStream<If>(stream);
+				if (m_next)
+				{
+					m_next->m_prev = this;
+				}
 				return true;
 			}
 			virtual bool EatMe(Expression* other) override;

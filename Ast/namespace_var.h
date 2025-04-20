@@ -121,6 +121,7 @@ namespace X
 			void AddHhierarchy(Expression* item);
 			virtual void Add(Expression* item) override;
 			virtual void ScopeLayout() override;
+			std::string GetLeftmostVarName(Expression* obj);
 			virtual bool OpWithOperands(
 				std::stack<AST::Expression*>& operands, int LeftTokenIndex)
 			{

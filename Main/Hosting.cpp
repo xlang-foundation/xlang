@@ -185,7 +185,7 @@ namespace X
 		{
 			modulePath = std::filesystem::absolute(modulePath);
 		}
-		std::string strModuleName = modulePath.string();
+		std::string strModuleName = modulePath.generic_string();
 		parser.SetModuleName(strModuleName);
 		pTopModule->SetModuleName(strModuleName);
 		pTopModule->SetMd5(md5);
@@ -562,7 +562,12 @@ namespace X
 		kwParams.Add("action", valAction);
 		const int online_len = 1000;
 		char strBuf[online_len];
+#ifdef _WIN32
+		std::string pathU8 = systemCpToUtf8(path);
+		SPRINTF(strBuf, online_len, "[{\"ModuleLoaded\":\"%s\", \"md5\":\"%s\"}]", pathU8.c_str(), md5.c_str());
+#else
 		SPRINTF(strBuf, online_len, "[{\"ModuleLoaded\":\"%s\", \"md5\":\"%s\"}]", path.c_str(), md5.c_str());
+#endif
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
 		std::string evtName("devops.dbg");

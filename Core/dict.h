@@ -74,7 +74,7 @@ namespace X
 			{
 				return mMap[key];
 			}
-			virtual bool Set(Value valIdx, X::Value& val) override
+			virtual bool Set(X::Value valIdx, X::Value& val) override
 			{
 				auto it = mMap.find(valIdx);
 				if (it != mMap.end())
@@ -142,6 +142,11 @@ namespace X
 					}
 				}
 				return *this;
+			}
+			virtual bool Has(const X::Value& key) override
+			{
+				auto it = mMap.find(key);
+				return it != mMap.end();
 			}
 			bool Has(X::Value& key)
 			{

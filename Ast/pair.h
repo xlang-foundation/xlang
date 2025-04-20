@@ -81,6 +81,7 @@ namespace AST
 		}
 		FORCE_INLINE virtual void SetIsLeftValue(bool b) override
 		{
+			m_isLeftValue = b;//set itself first
 			if (R && R->m_type == AST::ObType::List)
 			{
 				auto* pList = dynamic_cast<AST::List*>(R);

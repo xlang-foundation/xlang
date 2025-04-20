@@ -25,12 +25,21 @@ class GrusPyEngHost :
 {
 	Xlang_CallFunc m_xlang_call_func = nullptr;
 	PythonThreadPool m_pyTaskPool;
+	PyThreadState* m_mainThreadState = nullptr;
 public:
 	GrusPyEngHost();
 	~GrusPyEngHost();
 	FORCE_INLINE Xlang_CallFunc GetXlangCallFunc()
 	{
 		return m_xlang_call_func;
+	}
+	FORCE_INLINE void SetPyThreadState(PyThreadState* s)
+	{
+		m_mainThreadState = s;
+	}
+	FORCE_INLINE PyThreadState* GetPyThreadState()
+	{
+		return m_mainThreadState;
 	}
 	// Inherited via PyEngHost
 	virtual void SetXlangCallFunc(Xlang_CallFunc xlangCall) override
@@ -108,6 +117,7 @@ public:
 	virtual int GilLock() override;
 	virtual void GilUnlock(int state) override;
 	virtual void SubmitPythonTask(const std::function<void()>& task) override;
+	virtual void AddImportPaths(const char* path) override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 

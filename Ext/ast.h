@@ -49,6 +49,8 @@ namespace X
 					[](auto* pThis) {return pThis->m_pNode->GetCharEnd(); });
 				APISET().AddPropL("OffsetInLine", [](auto* pThis, X::Value v) {},
 					[](auto* pThis) {return pThis->m_pNode->GetCharPos(); });
+				APISET().AddPropL("OperatorType", [](auto* pThis, X::Value v) {},
+					[](auto* pThis) {return pThis->get_operator_type(); });
 			END_PACKAGE
 		public:
 			AstNode()
@@ -68,6 +70,7 @@ namespace X
 			X::Value get_name();
 			X::Value get_value();
 			X::Value get_type();
+			X::Value get_operator_type();
 			X::Value get_children()
 			{
 				return getNodeChildren(m_pNode);

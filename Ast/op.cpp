@@ -64,6 +64,42 @@ namespace AST
 		return bOK;
 	}
 
+	void Assign::ObjectSetName(XlangRuntime* rt, XObj* pContext, XObj* pRightObj)
+	{
+		auto* pRightObject = dynamic_cast<X::Data::Object*>(pRightObj);
+		switch (L->m_type)
+		{
+		case ObType::Var:
+		{
+			Var* pVar = dynamic_cast<Var*>(L);
+			std::string name = pVar->GetNameString();
+			pRightObject->SetObjectName(name);
+		}
+			break;
+		case ObType::Pair:
+		{
+			PairOp* pPair = dynamic_cast<PairOp*>(L);
+			if (pPair->GetR())
+			{
+				auto* r = pPair->GetR();
+				if (r->m_type == ObType::Str)
+				{
+					ExecAction act00;
+					X::Value rVal;
+					if (r->Exec(rt, act00, pContext, rVal))
+					{
+						std::string name = rVal.ToString();
+						pRightObject->SetObjectName(name);
+					}
+				}
+			}
+		}
+			break;
+		case ObType::Dot:
+			break;
+		}
+	}
+
 	bool Assign::ObjectAssign(XlangRuntime* rt, XObj* pContext,XObj* pObj, Value& v, Value& v_r, LValue& lValue_L)
 	{
 		bool bOK = true;
@@ -121,6 +157,40 @@ namespace AST
 			break;
 		}
 		return bOK;
+	}
+	bool Assign::VarListAssign(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+	{
+		Value v_r;
+		if (!ExpExec(R, rt, action, pContext, v_r))
+		{
+			v = Value(false);
+			return false;
+		}
+		BinaryOp* pPairOp = dynamic_cast<BinaryOp*>(L);
+		auto* pR = pPairOp->GetR();
+		bool bSetOK = true;
+		if (pR->m_type == X::AST::ObType::List)
+		{
+			List* varList = dynamic_cast<List*>(pR);
+			auto& varListItems = varList->GetList();
+			int size = (int)varListItems.size();
+			for (int i=0;i<size;i++)
+			{
+				auto* exp = varListItems[i];
+				exp->SetIsLeftValue(true);
+				X::Value varToSet;
+				if (v_r.IsList())
+				{
+					varToSet = v_r[(i>= v_r.size())?(v_r.size()-1):i];
+				}
+				else
+				{
+					varToSet = v_r;
+				}
+				bSetOK &= ExpSet(exp, rt, pContext, varToSet);
+			}
+		}
+		return bSetOK;
 	}
 	bool Operator::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
 	{

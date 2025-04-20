@@ -28,15 +28,26 @@ import { XLangRuntime, IRuntimeBreakpoint,RuntimeVariable, timeout, IRuntimeVari
 import { Subject } from 'await-notify';
 import * as base64 from 'base64-js';
 import * as vscode from 'vscode';
-import * as path from 'path';
+//import * as path from 'path';
 import * as net from 'net';
-import * as cp from 'child_process';
+//import * as cp from 'child_process';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as crypto from 'crypto';
 
 const ipPortRegex = /^((localhost)|((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)):([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/i
 const ipRegex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})$/;
 const ipHostPortRegex = /^(?:(?:\d{1,3}\.){3}\d{1,3}|\[(?:[a-fA-F0-9:]+)\]|(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+|\w+):\d{1,5}$/;
+
+function isPathMatchOs(path: string): boolean {
+    const platform = os.platform();
+    if (platform === 'win32') {
+        return /^[a-zA-Z]:[\\\/].*/.test(path);
+    } else if (platform === 'linux' || platform === 'darwin') {
+        return /^[\/].*/.test(path);
+    }
+    return false;
+}
 
 /**
  * This interface describes the xLang specific launch attributes
@@ -109,8 +120,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 	private _mapSrcMd5 = new Map<string, string>();
 	private _mapMd5Src = new Map<string, string>();
 
-	private _xlangProcess;
-
+	//private _xlangProcess;
+	private _serverEnded : boolean = false;
 	public getRuntime(){
 		return this._runtime;
 	}
@@ -180,6 +191,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this.sendEvent(e);
 		});
 		this._runtime.on('end', () => {
+			this._serverEnded = true;
 			this.sendEvent(new TerminatedEvent());
 		});
 		this._runtime.on('breakpointState', (md5, line, actualLine) => {
@@ -190,7 +202,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			}
 		});
 		this._runtime.on('moduleLoaded', (path, md5) => {
-			this._runtime.addOutput(`module(has breakpoints) loaded: "${md5}"   "${path}"`);
+			this._runtime.addOutput(`module(file has breakpoints) loaded: "${md5}"   "${path}"`);
 		});
 		this._runtime.on('xlangStarted', (started) => {
 			this._xlangStarted.notifyValue = started;
@@ -310,13 +322,18 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
 		console.log(`disconnectRequest suspend: ${args.suspendDebuggee}, terminate: ${args.terminateDebuggee}`);
-		if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart))
-		{
+		if (this._serverEnded)
 			this._runtime.close(true);
-		}
 		else
 		{
-			this._runtime.close(false);
+			if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart))
+			{
+				this._runtime.close(true);
+			}
+			else
+			{
+				this._runtime.close(false);
+			}
 		}
 		
 		this.sendResponse(response);
@@ -328,6 +345,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async attachRequest(response: DebugProtocol.AttachResponse, args: IAttachRequestArguments) {
+		this._runtime.addOutput("--------------------------------------------------");
 		this._isLaunch = false;
 		this._runtime.runMode = 'attach';
 		this._runtime.serverAddress = args.dbgIp;
@@ -336,6 +354,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 	}
 
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
+		this._runtime.addOutput("--------------------------------------------------");
 		let port = await this.getValidPort();
 		let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
 		// launch xlang in vscode's terminal
@@ -365,11 +384,12 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this.sendEvent(new TerminatedEvent());
 			return;
 		}
+		this._serverEnded = false;
 		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
 		this._mapSrcMd5.set(this._srcEntryPath, md5);
 		this._mapMd5Src.set(md5, this._srcEntryPath);
-		this._runtime.addOutput(`load source file: "${md5}"   "${this._srcEntryPath}"`);
+		this._runtime.addOutput(`load entry source file on server: "${md5}"   "${this._srcEntryPath}"`);
 		let retVal = await this._runtime.loadSource(this._srcEntryPath);
 		if (retVal == -1) // is run file
 		{
@@ -455,9 +475,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 			if (bNew)
 			{
 				if (bModuleLoaded === false)
-					this._runtime.addOutput(`breakpoint source file: "${md5}"   "${path}" not loaded`);
+					this._runtime.addOutput(`source file has breakpoints: "${md5}"   "${path}" is not loaded on server`);
 				else
-					this._runtime.addOutput(`breakpoint source file: "${md5}"   "${path}" loaded`);
+					this._runtime.addOutput(`source file has breakpoints: "${md5}"   "${path}" has loaded on server`);
 			}
 			response.body = {
 				breakpoints: actualBreakpoints
@@ -565,7 +585,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			response.body = {
 				stackFrames: stk.frames.map((f, ix) => {
 					this._mapFrameIdThreadId.set(f.id, threadId);
-					const sf: DebugProtocol.StackFrame = new StackFrame(f.id, f.name, this.createSourceMd5(f.md5), this.convertDebuggerLineToClient(f.line));
+					const sf: DebugProtocol.StackFrame = new StackFrame(f.id, f.name, this.createSourceMd5(f.md5, f.file), this.convertDebuggerLineToClient(f.line));
 					if (typeof f.column === 'number') {
 						sf.column = this.convertDebuggerColumnToClient(f.column);
 					}
@@ -1061,7 +1081,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Package':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'Package(Size:' + v.Size.toString() + ")";
+				dapVariable.value = 'Package(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Package";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
@@ -1069,7 +1089,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'RemoteObject':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'RemoteObject(Size:' + v.Size.toString() + ")";
+				dapVariable.value = 'RemoteObject(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "RemoteObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
@@ -1077,7 +1097,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Class':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'Class(Size:' + v.Size.toString() + ")";
+				dapVariable.value = 'Class(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Class";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
@@ -1085,7 +1105,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Dict':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'Dict(Size:' + v.Size.toString() + ")";
+				dapVariable.value = 'Dict(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Dict";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
@@ -1101,7 +1121,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'List':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'List(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'List(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "List";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1109,7 +1129,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Tensor':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Tensor(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Tensor(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "Tensor";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1117,7 +1137,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Prop':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Prop(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Prop(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "Prop";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1125,7 +1145,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'TableRow':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'TableRow(ColNum:' + v.Size.toString() + ")";
+				dapVariable.value = 'TableRow(ColNum:' + v.Size?.toString() + ")";
 				dapVariable.type = "TableRow";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1133,7 +1153,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Table':
 				v.reference = this._runtime.createScopeRef(
 					v.Type, v.FrameId, v.Val,v.Id);
-				dapVariable.value = 'Table(RowNum:' + v.Size.toString() + ")";
+				dapVariable.value = 'Table(RowNum:' + v.Size?.toString() + ")";
 				dapVariable.type = "Table";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1141,7 +1161,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'PyObject':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Python Object(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Python Object(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "PyObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1149,14 +1169,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'DeferredObject':
 				v.reference = this._runtime.createScopeRef(
 					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Deferred Object(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Deferred Object(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "DeferredObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;
 			case 'Binary':
 				v.reference = this._runtime.createScopeRef(v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Binary(Size:'+v.Size.toString()+")";
+				dapVariable.value = 'Binary(Size:'+v.Size?.toString()+")";
 				dapVariable.type = "Binary";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
@@ -1180,12 +1200,37 @@ export class XLangDebugSession extends LoggingDebugSession {
 		return new Source(basename(filePath), this.convertDebuggerPathToClient(filePath), undefined, undefined, 'xLang-adapter-data');
 	}
 
-	private createSourceMd5(md5: string): Source {
+	private createSourceMd5(md5: string, src_path: string): Source {
 		let path = "";
 		if (this._mapMd5Src.has(md5))
 			path = this._mapMd5Src.get(md5) || "";
 		if (path === "")
-			this._runtime.addOutput(`no source file with md5: "${md5}"`);
+		{
+			if (isPathMatchOs(src_path))
+			{
+				if (this._mapSrcMd5.has(src_path))
+				{
+					let local_md5 = this._mapSrcMd5.get(src_path);
+					this._runtime.addOutput(`source file "${src_path}" on server md5 not match, local: "${local_md5}", server: "${md5}"`);
+				}
+				else
+				{
+					let exists = fs.existsSync(src_path);
+					if (exists)
+					{
+						let local_md5 = calFileMD5(src_path);
+						if (local_md5 === md5)
+							path = src_path;
+						else
+							this._runtime.addOutput(`source file "${src_path}" on server md5 not match, local: "${local_md5}", server: "${md5}"`);
+					}
+					else
+						this._runtime.addOutput(`source file "${src_path}" on server not exists on local`);
+				}
+			}
+			else
+				this._runtime.addOutput(`Current os is not same with server, please open source file accroding to "${src_path}" and add breakpoints first`);		
+		}
 		return new Source(basename(path), this.convertDebuggerPathToClient(path), undefined, undefined, 'xLang-adapter-data');
 	}
 

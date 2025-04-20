@@ -52,8 +52,10 @@ namespace X
 	typedef void* (*PackageGetEmbededParentObject)(void* pContextObj);
 
 
-	using PackageAccessor = X::Port::Function <X::Value(X::XRuntime* rt, 
+	using PackageAccessor = X::Port::Function <X::Value(XRuntime* rt, 
 		X::XObj* pContext,X::Port::vector<X::Value>& IdxAry)>;
+
+
 	typedef XProxy* (*XProxyCreator)(const char* url);
 	typedef bool (*XProxyFilter)(const char* url);
 	typedef X::Port::vector<X::Value> ARGS;
@@ -70,7 +72,7 @@ namespace X
 	using EventHandler = X::Port::Function<void(XRuntime* rt, XObj* pContext,
 		ARGS& params,KWARGS& kwParams, Value& retValue)>;
 	using OnEventHandlerChanged = X::Port::Function<void(bool AddOrRemove,int handlerCnt)>;
-	using Tensor_OperatorHandler = X::Port::Function<void(X::ARGS& inputs, X::Value& retVal)>;
+	using Tensor_OperatorHandler = X::Port::Function<X::Value(X::Value& graph,X::ARGS& inputs, X::Value& retVal)>;
 
 	typedef bool (*UI_THREAD_RUN_HANDLER) (X::Value& callable,void* pContext);
 
@@ -147,7 +149,10 @@ namespace X
 		virtual UI_THREAD_RUN_HANDLER GetUIThreadRunHandler() = 0;
 		virtual void* GetUIThreadRunContext() =0;
 		virtual X::Value CreateNdarray(int nd, unsigned long long* dims, int itemDataType, void* data) = 0;
+		virtual bool PyAddImportPaths(X::Value& paths) = 0;
 		virtual bool PyRun(const char* code, X::ARGS& args) = 0;
+		virtual bool PyImport(XRuntime* rt, const char* moduleName,
+			const char* from, const char* currentPath,X::Value& pyObj) = 0;
 		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) = 0;
 		virtual void SetPyEngHost(void* pHost) = 0;
 		virtual void SetDebugMode(bool bDebug) = 0;

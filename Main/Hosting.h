@@ -56,6 +56,7 @@ namespace X
 			{
 				if (*it  == p)
 				{
+					delete *it;
 					m_Modules.erase(it);
 					break;
 				}

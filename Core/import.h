@@ -220,6 +220,7 @@ public:
 class From :
 	public UnaryOp
 {
+	bool m_pathHasQuotation = false;
 	std::string m_path;
 public:
 	From() :
@@ -236,6 +237,10 @@ public:
 	{
 		return m_path;
 	}
+	bool PathHasQuotation()
+	{
+		return m_pathHasQuotation;
+	}
 	bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		Value& v, LValue* lValue) override
 	{
@@ -247,6 +252,7 @@ public:
 			{
 				Str* pStr = dynamic_cast<Str*>(R);
 				m_path = std::string(pStr->GetChars(), pStr->Size());
+				m_pathHasQuotation = true;
 			}
 			else if (R->m_type == ObType::Var)
 			{
@@ -358,6 +364,7 @@ class Import :
 	//from path import moudule_lists
 	//only put one path after term: from
 	std::string m_path;
+	bool m_pathHasQuotation = false;
 	std::string m_thruUrl;
 	std::vector<ImportInfo> m_importInfos;
 	bool FindAndLoadExtensions(XlangRuntime* rt,

@@ -140,8 +140,7 @@ namespace X
 			{
 				FuncInfo funcInfo;
 				std::string funcName = pBlock->GetName();
-				auto* params = pBlock->GetParams();
-				auto& paramList = params->GetList();
+
 				auto& strRetType = pBlock->GetRetType();
 
 				funcInfo.langType = LangType::cpp;//TODO:
@@ -150,39 +149,45 @@ namespace X
 				funcInfo.jitBlock = pBlock;
 
 				funcInfo.code = pBlock->GetCode();
-				for (auto* i : paramList)
+
+				auto* params = pBlock->GetParams();
+				if (params)
 				{
-					std::string strVarName;
-					std::string strVarType;
-					Value defaultValue;
-					switch (i->m_type)
+					auto& paramList = params->GetList();
+					for (auto* i : paramList)
 					{
-					case AST::ObType::Var:
-					{
-						auto* varName = dynamic_cast<AST::Var*>(i);
-						String& szName = varName->GetName();
-						strVarName = std::string(szName.s, szName.size);
+						std::string strVarName;
+						std::string strVarType;
+						Value defaultValue;
+						switch (i->m_type)
+						{
+						case AST::ObType::Var:
+						{
+							auto* varName = dynamic_cast<AST::Var*>(i);
+							String& szName = varName->GetName();
+							strVarName = std::string(szName.s, szName.size);
+						}
+						break;
+						case AST::ObType::Assign:
+						{
+							auto* assign = dynamic_cast<AST::Assign*>(i);
+							auto* varName = dynamic_cast<AST::Var*>(assign->GetL());
+							String& szName = varName->GetName();
+							strVarName = std::string(szName.s, szName.size);
+							AST::Expression* defVal = assign->GetR();
+							auto* pExprForDefVal = new Data::Expr(defVal);
+							defaultValue = Value(pExprForDefVal);
+						}
+						break;
+						case AST::ObType::Param:
+						{
+							auto* param = dynamic_cast<AST::Param*>(i);
+							param->Parse(strVarName, strVarType, defaultValue);
+						}
+						break;
+						}
+						funcInfo.params.push_back({ strVarName ,strVarType,defaultValue });
 					}
-					break;
-					case AST::ObType::Assign:
-					{
-						auto* assign = dynamic_cast<AST::Assign*>(i);
-						auto* varName = dynamic_cast<AST::Var*>(assign->GetL());
-						String& szName = varName->GetName();
-						strVarName = std::string(szName.s, szName.size);
-						AST::Expression* defVal = assign->GetR();
-						auto* pExprForDefVal = new Data::Expr(defVal);
-						defaultValue = Value(pExprForDefVal);
-					}
-					break;
-					case AST::ObType::Param:
-					{
-						auto* param = dynamic_cast<AST::Param*>(i);
-						param->Parse(strVarName, strVarType, defaultValue);
-					}
-					break;
-					}
-					funcInfo.params.push_back({ strVarName ,strVarType,defaultValue });
 				}
 				m_funcs.push_back(funcInfo);
 				return true;

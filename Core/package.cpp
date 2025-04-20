@@ -212,20 +212,28 @@ namespace X
 				{
 					X::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
-					long long objSize = 0;
 					if (val.GetObj()->GetType() == X::ObjType::Prop)
 					{
 						auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
 						X::Value v0;
 						pPropObj->GetPropValue(rt, this, v0);
-						objSize = v0.Size();
+						long long objSize = v0.Size();
+						X::Value valSize(objSize);
+						dict->Set("Size", valSize);
 					}
 					else
 					{
-						objSize = val.Size();
+						X::Value valShape = val.GetObj()->Shapes();
+						if (valShape.IsList())
+						{
+							dict->Set("Size", valShape);
+						}
+						else
+						{
+							X::Value valSize(val.GetObj()->Size());
+							dict->Set("Size", valSize);
+						}
 					}
-					X::Value valSize(objSize);
-					dict->Set("Size", valSize);
 				}
 				X::Value valDict(dict);
 				pOutList->Add(rt, valDict);
@@ -379,6 +387,16 @@ namespace X
 			}
 			return bOK;
 		}
+		bool PackageProxy::Call(XRuntime* rt, XObj* pContext, 
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
+		{
+			auto func = m_pPackage->GetCall();
+			if(func)
+			{
+				return func(rt,this, pContext, params, kwParams, retValue);
+			}
+			return true;
+		}
 		X::Data::List* PackageProxy::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdList, int id_offset,
 			long long startIndex, long long count)
@@ -475,20 +493,28 @@ namespace X
 				{
 					X::Value objId((unsigned long long)val.GetObj());
 					dict->Set("Value", objId);
-					long long objSize = 0;
 					if (val.GetObj()->GetType() == X::ObjType::Prop)
 					{
 						auto* pPropObj = dynamic_cast<X::Data::PropObject*>(val.GetObj());
 						X::Value v0;
 						pPropObj->GetPropValue(rt, this, v0);
-						objSize = v0.Size();
+						long long objSize = v0.Size();
+						X::Value valSize(objSize);
+						dict->Set("Size", valSize);
 					}
 					else
 					{
-						objSize = val.Size();
+						X::Value valShape = val.GetObj()->Shapes();
+						if (valShape.IsList())
+						{
+							dict->Set("Size", valShape);
+						}
+						else
+						{
+							X::Value valSize(val.GetObj()->Size());
+							dict->Set("Size", valSize);
+						}
 					}
-					X::Value valSize(objSize);
-					dict->Set("Size", valSize);
 				}
 				X::Value valDict(dict);
 				pOutList->Add(rt, valDict);

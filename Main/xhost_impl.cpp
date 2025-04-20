@@ -686,6 +686,8 @@ return nullptr;
 		{
 			objPackage.GetObj()->SetContext(rt, nullptr);
 		}
+		//TODO: check here @shawn 4/12/2025
+		delete pImp;
 		return bOK;
 	}
 	bool XHost_Impl::CreateScopeWrapper(XCustomScope* pScope)
@@ -809,6 +811,28 @@ return nullptr;
 		auto* pProxyObj = new Data::PyProxyObject(pyObj);
 		return  Value(pProxyObj);
 	}
+	bool XHost_Impl::PyAddImportPaths(X::Value& paths)
+	{
+		if (g_pPyHost == nullptr)
+		{
+			return false;
+		}
+		if (paths.IsString())
+		{
+			std::string p = paths.ToString();
+			g_pPyHost->AddImportPaths(p.c_str());
+		}
+		else if (paths.IsList())
+		{
+			X::List list(paths);
+			for (auto it : *list)
+			{
+				std::string p = it.ToString();
+				g_pPyHost->AddImportPaths(p.c_str());
+			}
+		}
+		return true;
+	}
 	bool XHost_Impl::PyRun(const char* code, X::ARGS& args)
 	{
 		if (g_pPyHost)
@@ -819,7 +843,26 @@ return nullptr;
 		}
 		return false;
 	}
-
+	bool XHost_Impl::PyImport(XRuntime * rt, const char* moduleName,
+		const char* from, const char* currentPath,X::Value& pyObj)
+	{
+		std::string strModuleName(moduleName);
+		std::string strFrom;
+		if (from)
+		{
+			strFrom = from;
+		}
+		std::string strCurrentPath;
+		if (currentPath)
+		{
+			strCurrentPath = currentPath;
+		}
+		XlangRuntime* pRT = dynamic_cast<XlangRuntime*>(rt);
+		X::Data::PyProxyObject* pProxyObj = new X::Data::PyProxyObject(pRT,
+			nullptr, strModuleName, strFrom, strCurrentPath);
+		pyObj = X::Value(pProxyObj);
+		return true;
+	}
 	bool XHost_Impl::PyObjToValue(void* pyObj, X::Value& valObject)
 	{
 		if (g_pPyHost)

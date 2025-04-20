@@ -54,46 +54,7 @@ namespace X
 			bases.push_back(_tensorGraphScope.GetMyScope());
 		}
 
-		class GraphBuildContext
-		{
-			//match with Tensor_Operator in tensor.h
-			std::vector<Tensor_OperatorHandler> m_Handlers;
-			std::unordered_map<TensorExpression*, bool> m_BeCalledMap;
-		public:
-			GraphBuildContext()
-			{
-				Tensor_OperatorHandler dummy;
-				for (int i = 0; i < (int)Tensor_Operator::Count; i++)
-				{
-					m_Handlers.push_back(dummy);
-				}
-			}
-			Tensor_OperatorHandler QueryHandler(int idx)
-			{
-				return m_Handlers[idx];
-			}
-			void SetHandler(int idx, Tensor_OperatorHandler handler)
-			{
-				m_Handlers[idx] = handler;
-			}
-			bool IsCalledBuild(TensorExpression* exp)
-			{
-				auto it = m_BeCalledMap.find(exp);
-				if (it != m_BeCalledMap.end())
-				{
-					return it->second;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			void SetBuildCalled(TensorExpression* exp)
-			{
-				m_BeCalledMap.emplace(std::make_pair(exp, true));
-			}
-		};
-
+	
 		Tensor_OperatorHandler TensorGraph::QueryRegisteredOpHandler(void* pBuildContext,
 			XObj* pPackage, int opIndex)
 		{
@@ -111,6 +72,18 @@ namespace X
 				switch ((Tensor_Operator)opIndex)
 				{
 				case X::Data::Tensor_Operator::None:
+					break;
+				case X::Data::Tensor_Operator::Header:
+					strName = "header";
+					break;
+				case X::Data::Tensor_Operator::Trailer:
+					strName = "trailer";
+					break;
+				case X::Data::Tensor_Operator::BranchBegin:
+					strName = "branchBegin";
+					break;
+				case X::Data::Tensor_Operator::BranchEnd:
+					strName = "branchEnd";
 					break;
 				case X::Data::Tensor_Operator::Add:
 					strName = "add";
@@ -155,7 +128,7 @@ namespace X
 			}
 			return handler;
 		}
-		static std::string GetNameWithOp(Tensor_Operator op)
+		std::string GetNameWithOp(Tensor_Operator op)
 		{
 			std::string strName;
 			switch (op)
@@ -179,118 +152,25 @@ namespace X
 			}
 			return strName;
 		}
-		void TensorGraph::BuildGraph(void* pBuildContext,
-			XObj* pContext, TensorExpression* pTensor, GraphBuildAction& retAction)
-		{
-			GraphBuildContext* pGraphBuildContext = (GraphBuildContext*)pBuildContext;
-			GraphBuildAction thiLevel_Action = GraphBuildAction::None;
-			Tensor_Operator op = pTensor->GetOp();
-			X::Value leftValue = pTensor->GetLeftValue();
-			//check if left is a tensor expresion, if it is, then call BuildGraph
-			//Check if this Tensor Expresion is already build graph or not
-			if (leftValue.IsObject() && leftValue.GetObj()->GetType() == ObjType::TensorExpression)
-			{
-				TensorExpression* pLeft = dynamic_cast<TensorExpression*>(leftValue.GetObj());
-				if (pLeft)
-				{
-					if (!pGraphBuildContext->IsCalledBuild(pLeft))
-					{
-						pGraphBuildContext->SetBuildCalled(pLeft);
-						BuildGraph(pBuildContext, pContext, pLeft, thiLevel_Action);
-					}
-				}
-			}
-			X::Value rightValue = pTensor->GetRightValue();
-			if (rightValue.IsObject())
-			{
-				XObj* pXObj = rightValue.GetObj();
-				if (pXObj->GetType() == ObjType::Tensor || pXObj->GetType() == ObjType::TensorExpression)
-				{
-					if (pXObj->GetType() == ObjType::TensorExpression)
-					{
-						TensorExpression* pRight = dynamic_cast<TensorExpression*>(pXObj);
-						GraphBuildAction action0 = GraphBuildAction::None;
-						if (!pGraphBuildContext->IsCalledBuild(pRight))
-						{
-							pGraphBuildContext->SetBuildCalled(pRight);
-							BuildGraph(pBuildContext, pContext, pRight, action0);//action0 should be None with return
-						}
-					}
-					if (thiLevel_Action != GraphBuildAction::MeetBinaryOp)
-					{
-						//check if the op is registered
-						auto opHandler = QueryRegisteredOpHandler(pBuildContext, pContext, (int)op);
-						if (opHandler)
-						{
-							X::ARGS inputs(2);
-							inputs.push_back(leftValue);
-							inputs.push_back(rightValue);
-							X::Value retValue(pTensor);
-							std::string strName = GetNameWithOp(op);
-							//put this handler into runlist
-							m_runItems.push_back({ strName,opHandler,inputs, retValue });
-						}
-					}
-				}
-				else if (pXObj->GetType() == ObjType::TensorOperator)
-				{
-					TensorOperator* pOp = dynamic_cast<TensorOperator*>(rightValue.GetObj());
-					if (pOp)
-					{
-						if (pOp->IsUnaryOp())
-						{
-							auto opHandler = pOp->GetOpHandler();
-							X::ARGS inputs(1);
-							inputs.push_back(leftValue);
-							X::Value retValue(pTensor);
-							//put this handler into runlist
-							m_runItems.push_back({ pOp->GetName(),opHandler,inputs, retValue });
-							//opHandler(inputs, retValue);
-						}
-						else
-						{//Binary Op,nned to use up level's right Value as right value
-							retAction = GraphBuildAction::MeetBinaryOp;
-						}
-					}
-				}
-			}
-			else
-			{//scala such as int64/double
-				auto opHandler = QueryRegisteredOpHandler(pBuildContext, pContext, (int)op);
-				if (opHandler)
-				{
-					X::ARGS inputs(2);
-					inputs.push_back(leftValue);
-					inputs.push_back(rightValue);
-					X::Value retValue(pTensor);
-					std::string strName = GetNameWithOp(op);
-					//put this handler into runlist
-					m_runItems.push_back({ strName,opHandler,inputs, retValue });
-				}
-			}
-			if (thiLevel_Action == GraphBuildAction::MeetBinaryOp)
-			{
-				//in this case, left must be TensorExpression
-				TensorExpression* pLeft = dynamic_cast<TensorExpression*>(leftValue.GetObj());
-				X::Value leftValue_LowLevel = pLeft->GetLeftValue();
-				X::Value opValue = pLeft->GetRightValue();
-				if (opValue.IsObject())
-				{
-					TensorOperator* pOp = dynamic_cast<TensorOperator*>(opValue.GetObj());
-					auto opHandler = pOp->GetOpHandler();
-					X::ARGS inputs(2);
-					inputs.push_back(leftValue_LowLevel);
-					inputs.push_back(rightValue);
-					X::Value retValue(pTensor);
-					//add into list
-					m_runItems.push_back({ pOp->GetName(),opHandler,inputs, retValue });
-					//opHandler(inputs, retValue);
-				}
-			}
-		}
+
 		void TensorGraph::Create(XObj* pContext, X::ARGS& params, X::KWARGS& kwParams)
 		{
+			m_runner = X::Value(pContext);
+
 			GraphBuildContext buildContext;
+			m_gen.setHeaderHandler(
+				QueryRegisteredOpHandler(&buildContext, pContext,
+					(int)Tensor_Operator::Header));
+			m_gen.setTrailerHandler(
+				QueryRegisteredOpHandler(&buildContext, pContext,
+					(int)Tensor_Operator::Trailer));
+			m_gen.setBranchBeginHandler(
+				QueryRegisteredOpHandler(&buildContext, pContext,
+					(int)Tensor_Operator::BranchBegin));
+			m_gen.setBranchEndHandler(
+				QueryRegisteredOpHandler(&buildContext, pContext,
+					(int)Tensor_Operator::BranchEnd));
+
 			//check tensor's m_op, if the tensor package(pContext) has
 			//this operator impl., replace with that
 			for (auto& p : params)
@@ -303,25 +183,38 @@ namespace X
 				GraphBuildAction action = GraphBuildAction::None;
 				BuildGraph(&buildContext, pContext, tensorExp, action);
 			}
+			SortRunItems();
 		}
-		bool TensorGraph::Run(X::ARGS& params, X::KWARGS& kwParams)
+		void TensorGraph::PutTensorIntoCache(X::Value& vTensor)
 		{
-			int steps = (int)m_runItems.size();
-			for (int i = 0; i < steps; i++)
-			{
-				auto& item = m_runItems[i];
-				item.handler(item.inputs, item.output);
-			}
-			return true;
+			// Store tensor in cache using its ID as key
+			m_TensorCache.emplace(vTensor.GetObj()->GetID(), vTensor);
 		}
+		void TensorGraph::RemoveTensorFromCache(X::Value& vTensor)
+		{
+			// Remove tensor from cache using its ID
+			m_TensorCache.erase(vTensor.GetObj()->GetID());	
+		}
+		// Add this enhanced ToString method to display control flow structure
+
 		const char* TensorGraph::ToString(bool WithFormat)
 		{
-			std::string outStr;
-			int steps = (int)m_runItems.size();
-			for (int i = 0; i < steps; i++)
+			std::stringstream outStr;
+
+			// First part: Show regular run items
+			outStr << "Run Items:\n";
+			for (size_t i = 0; i < m_runItems.size(); i++)
 			{
 				auto& item = m_runItems[i];
 				std::string lineOut = item.name;
+
+				// Add flow information if present
+				if (item.flowId >= 0) {
+					lineOut += " [flow=" + std::to_string(item.flowId) +
+						", branch=" + std::to_string(item.branchId) + "]";
+				}
+
+				// Add inputs
 				for (auto& in : item.inputs)
 				{
 					std::string inputName;
@@ -332,7 +225,7 @@ namespace X
 							Tensor* pTensor = dynamic_cast<Tensor*>(in.GetObj());
 							if (pTensor)
 							{
-								inputName = pTensor->GetName();
+								inputName = pTensor->GetTensorName();
 							}
 						}
 						else if (in.GetObj()->GetType() == ObjType::TensorExpression)
@@ -340,16 +233,18 @@ namespace X
 							TensorExpression* pTensorExp = dynamic_cast<TensorExpression*>(in.GetObj());
 							if (pTensorExp)
 							{
-								inputName = pTensorExp->GetName();
+								inputName = pTensorExp->GetTensorName();
 							}
 						}
 					}
 					else
 					{
-						inputName = "_"; //for scalar 
+						inputName = in.ToString(); // For scalar 
 					}
 					lineOut += " " + inputName;
 				}
+
+				// Add output
 				if (item.output.IsObject())
 				{
 					std::string outputName;
@@ -358,7 +253,7 @@ namespace X
 						Tensor* pTensor = dynamic_cast<Tensor*>(item.output.GetObj());
 						if (pTensor)
 						{
-							outputName = pTensor->GetName();
+							outputName = pTensor->GetTensorName();
 						}
 					}
 					else if (item.output.GetObj()->GetType() == ObjType::TensorExpression)
@@ -366,14 +261,73 @@ namespace X
 						TensorExpression* pTensorExp = dynamic_cast<TensorExpression*>(item.output.GetObj());
 						if (pTensorExp)
 						{
-							outputName = pTensorExp->GetName();
+							outputName = pTensorExp->GetTensorName();
 						}
 					}
 					lineOut += " -> " + outputName;
 				}
-				outStr += lineOut + "\r\n";
+				outStr << i << ": " << lineOut << "\n";
 			}
-			return GetABIString(outStr);
+
+			// Second part: Show flow blocks structure
+			if (!m_flowBlocks.empty()) {
+				outStr << "\nControl Flow Structure:\n";
+
+				// First show top-level blocks
+				for (const auto& pair : m_flowBlocks) {
+					const FlowBlock& block = pair.second;
+					if (block.parentId < 0) {
+						outStr << "Flow Block " << block.id << ":\n";
+
+						// Show branches
+						for (const FlowBranch& branch : block.branches) {
+							if (branch.id == 0) {
+								outStr << "  if: ";
+							}
+							else if (branch.id > 0) {
+								outStr << "  elif " << branch.id << ": ";
+							}
+							else {
+								outStr << "  else: ";
+							}
+
+							// Count operations in this branch
+							int opCount = 0;
+							for (const auto& item : m_runItems) {
+								if (item.flowId == block.id && item.branchId == branch.id) {
+									opCount++;
+								}
+							}
+							outStr << opCount << " operations\n";
+
+							// Show operations in this branch
+							for (size_t i = 0; i < m_runItems.size(); i++) {
+								const auto& item = m_runItems[i];
+								if (item.flowId == block.id && item.branchId == branch.id) {
+									outStr << "    " << i << ": " << item.name << "\n";
+								}
+							}
+
+							// Show nested blocks in this branch
+							bool hasNested = false;
+							for (const auto& nestedPair : m_flowBlocks) {
+								const FlowBlock& nestedBlock = nestedPair.second;
+								if (nestedBlock.parentId == block.id && nestedBlock.parentBranchId == branch.id) {
+									if (!hasNested) {
+										outStr << "    Nested blocks:\n";
+										hasNested = true;
+									}
+									outStr << "      Flow Block " << nestedBlock.id << "\n";
+								}
+							}
+						}
+
+						outStr << "\n";
+					}
+				}
+			}
+			std::string str = outStr.str();
+			return GetABIString(str);
 		}
 	}
 }

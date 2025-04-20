@@ -898,15 +898,26 @@ bool U_GetLength(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
+	X::Value obj;
 	if (params.size() == 0)
 	{
-		retValue = X::Value(0);
-		return true;
+		if (pContext)
+		{
+			obj = pContext;
+		}
+		else
+		{
+			retValue = X::Value();
+			return false;
+		}
 	}
-	X::Value p = params[0];
-	if (p.IsObject())
+	else
 	{
-		retValue = X::Value(p.GetObj()->Size());
+		obj = params[0];
+	}
+	if (obj.IsObject())
+	{
+		retValue = X::Value(obj.GetObj()->Size());
 		return true;
 	}
 	else
@@ -1431,14 +1442,25 @@ bool U_To_XObj(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
+	bool bOK = false;
+	X::Value obj;
 	if (params.size() == 0)
 	{
-		retValue = X::Value(false);
-		return false;
+		if(pContext)
+		{
+			obj = pContext;
+		}
+		else
+		{
+			retValue = X::Value();
+			return false;
+		}
 	}
-	bool bOK = false;
+	else
+	{
+		obj = params[0];
+	}
 	//check if it is PyObject
-	auto& obj = params[0];
 	if (obj.IsObject() 
 		&& obj.GetObj()->GetType() == ObjType::PyProxyObject)
 	{
@@ -1546,6 +1568,50 @@ bool U_CreateErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	retValue = X::Value(pObj);
 	return true;
 }
+
+bool U_Hash(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		retValue = params[0].Hash();
+		return true;
+	}
+	else if (pContext)
+	{
+		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
+		retValue = pObj->Hash();
+		return true;
+	}
+	return false;
+}
+
+bool U_MD5(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	std::string str;
+	if (params.size() == 1)
+	{
+		auto& v = params[0];
+		str = v.ToString();
+	}
+	else if (pContext)
+	{
+		auto* pObj = dynamic_cast<X::Data::Object*>(pContext);
+		if (pObj)
+		{
+			str = pObj->ToString();
+		}
+	}
+	std::string md5_code = md5(str);
+	retValue = md5_code;
+	return true;
+}
+
 bool U_IsErrorObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1998,7 +2064,8 @@ bool Builtin::RegisterInternals()
 	Register("float", (X::U_FUNC)U_ToFloat, params);
 	Register("str", (X::U_FUNC)U_ToString, params);
 	Register("type", (X::U_FUNC)U_GetType, params);
-	Register("len", (X::U_FUNC)U_GetLength, params);
+	Register("len", (X::U_FUNC)U_GetLength, params,"len(obj) or obj.len()",true);
+	Register("size", (X::U_FUNC)U_GetLength, params, "size(obj) or obj.size()", true);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
 	Register("error", (X::U_FUNC)U_CreateErrorObject, params);
 	Register("is_error", (X::U_FUNC)U_IsErrorObject, params, "is_error", true);
@@ -2014,6 +2081,8 @@ bool Builtin::RegisterInternals()
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 #endif
 	Register("isinstance", (X::U_FUNC)U_IsInstance, params);
+	Register("hash", (X::U_FUNC)U_Hash, params, "hash(obj) or obj.hash()", true);
+	Register("md5", (X::U_FUNC)U_MD5, params, "md5(obj) or obj.md5()", true);
 	return true;
 }
 

@@ -243,7 +243,14 @@ namespace X
 	template<>
 	void V<XTensor>::Create()
 	{
-		SetObj(g_pXHost->CreateTensor());
+		auto* t = g_pXHost->CreateTensor();
+		SetObj(t);
+	}
+	template<>
+	void V<XTensorGraph>::Create()
+	{
+		auto* t = g_pXHost->CreateTensorGraph();
+		SetObj(t);
 	}
 	template<>
 	void V<XComplex>::Create()
@@ -445,7 +452,7 @@ namespace X
 	Value Value::ObjCall(Port::vector<X::Value>& params)
 	{
 		auto* pObj = GetObj();
-		if (pObj == nullptr || pObj->RT() == nullptr)
+		if (pObj == nullptr)
 		{
 			return Value();
 		}
@@ -747,8 +754,7 @@ namespace X
 	{
 		if (x.obj->SupportAssign())
 		{
-			x.obj->Assign(v);
-			return true;
+			return x.obj->Assign(v);
 		}
 		return false;
 	}
@@ -787,6 +793,12 @@ namespace X
 	{
 		return (t == ValueType::Object)
 			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Binary);
+	}
+	bool Value::IsTensor() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && (x.obj->GetType() == ObjType::Tensor ||
+				x.obj->GetType() == ObjType::TensorExpression));
 	}
 	bool Value::IsString() const
 	{ 
@@ -832,5 +844,27 @@ namespace X
 			}
 		}
 		return false;
+	}
+	template<>
+	void V<XRef>::Create()
+	{
+		//SetObj(g_pXHost->CreateRef());
+	}
+
+	template<>
+	template<>
+	void V<XPyObject>::Create(Runtime rt, const char* moduleName,
+		const char* from,const char* currentPath)
+	{
+		Value v0;
+		if (g_pXHost->PyImport(rt, moduleName, from, currentPath, v0))
+		{
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
+		}
 	}
 }

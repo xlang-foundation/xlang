@@ -247,6 +247,27 @@ public:
 	{
 		return std::string(m_Name.s, m_Name.size);
 	}
+	FORCE_INLINE X::Value GetParameterNameList()
+	{
+		X::List names;
+		if (Params == nullptr)
+		{
+			return names;
+		}
+		auto& list = Params->GetList();
+		for (auto& l : list)
+		{
+			if (l->m_type == AST::ObType::Var)
+			{
+				Var* pVar = dynamic_cast<Var*>(l);
+				if (pVar)
+				{
+					names += pVar->GetNameString();
+				}
+			}
+		}
+		return names;
+	}
 	virtual std::string GetFuncName()
 	{
 		return GetNameString();
@@ -317,6 +338,9 @@ public:
 	{
 		return Params;
 	}
+	void ChangeStatmentsIntoTranslateMode(
+		bool changeIfStatment,
+		bool changeLoopStatment);
 	virtual bool Call(XRuntime* rt, XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,

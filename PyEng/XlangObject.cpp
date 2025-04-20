@@ -20,7 +20,7 @@ limitations under the License.
 #include "xlang.h"
 #include "xhost.h"
 #include "PyObjectXLangConverter.h"
-
+#include "PyGILState.h"
 
 enum class PyProxyType
 {
@@ -42,6 +42,7 @@ PyXlangObject* NewXlangObject(X::Value& realObj, PyProxyType type);
 static PyObject*
 XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 {
+	MGil gil;
 	PyXlangObject* pWrapFunc = (PyXlangObject*)self;
 	Py_ssize_t size = PyTuple_Size(args);
 	X::Value pyFuncObj;
@@ -55,15 +56,20 @@ XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 	}
 	//open multi-threads to call the real function
 	X::Value retVal;
-	Py_BEGIN_ALLOW_THREADS
-	retVal = pWrapFunc->realObj.ObjCall(pWrapFunc->args, pWrapFunc->kwArgs);
-	Py_END_ALLOW_THREADS
+	{
+		gil.Unlock();
+		Py_BEGIN_ALLOW_THREADS
+		retVal = pWrapFunc->realObj.ObjCall(pWrapFunc->args, pWrapFunc->kwArgs);
+		Py_END_ALLOW_THREADS
+		gil.Lock();
+	}
 	PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
 	return retObj;
 }
 static PyObject*
 XlangDecoratorPythonWrapper(PyObject* self, PyObject* args, PyObject* kwArgs)
 {
+	MGil gil;
 	PyXlangObject* pDecorator = (PyXlangObject*)self;
 	PyObjectXLangConverter::ConvertArgs(args, pDecorator->args);
 	PyObjectXLangConverter::ConvertKwargs(kwArgs, pDecorator->kwArgs);
@@ -81,6 +87,7 @@ XlangDecoratorPythonWrapper(PyObject* self, PyObject* args, PyObject* kwArgs)
 
 PyObject* CreateXlangFuncWrapper(X::Value& realFunc)
 {
+	MGil gil;
 	PyXlangObject* pWrapFunc = NewXlangObject(realFunc, PyProxyType::Decorator);
 	PyObject* retFunc = nullptr;
 	static PyMethodDef def{ "XlangDecoratorPythonWrapper",
@@ -91,6 +98,7 @@ PyObject* CreateXlangFuncWrapper(X::Value& realFunc)
 }
 
 static PyObject* XlangObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+	MGil gil;
 	PyXlangObject* self = (PyXlangObject*)type->tp_alloc(type, 0);
 	if (self != nullptr) {
 		//add init here
@@ -103,17 +111,22 @@ static int XlangObject_init(PyXlangObject* self, PyObject* args, PyObject* kwds)
 }
 
 static void XlangObject_dealloc(PyXlangObject* self) {
-
+	MGil gil;
 	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject* XlangObject_getattr(PyXlangObject* self, PyObject* name) {
+	MGil gil;
 	const char* attr_name = PyUnicode_AsUTF8(name);
 	//open multi-threads to call the real function
 	X::Value newObj;
-	Py_BEGIN_ALLOW_THREADS
-		newObj = self->realObj[attr_name];
-	Py_END_ALLOW_THREADS
+	{
+		gil.Unlock();
+		Py_BEGIN_ALLOW_THREADS
+			newObj = self->realObj[attr_name];
+		Py_END_ALLOW_THREADS
+		gil.Lock();
+	}
 	if (newObj.IsInvalid())
 	{
 		Py_IncRef(Py_None);
@@ -141,22 +154,26 @@ static PyObject* XlangObject_getattr(PyXlangObject* self, PyObject* name) {
 }
 
 static int XlangObject_setattr(PyXlangObject* self, PyObject* name, PyObject* value) {
+	MGil gil;
 	const char* attr_name = PyUnicode_AsUTF8(name);
 	return 0;
 }
 
 static PyObject* XlangObject_getitem(PyXlangObject* self, PyObject* key) {
+	MGil gil;
 	const char* key_str = PyUnicode_AsUTF8(key);
 	PyErr_SetString(PyExc_KeyError, "Key not found");
 	return nullptr;
 }
 
 static int XlangObject_setitem(PyXlangObject* self, PyObject* key, PyObject* value) {
+	MGil gil;
 	const char* key_str = PyUnicode_AsUTF8(key);
 	return 0;
 }
 
 static PyObject* XlangObject_call(PyObject* self, PyObject* args, PyObject* kwargs) {
+	MGil gil;
 	PyXlangObject* pXlangObject = (PyXlangObject*)self;
 	X::Value realObj = pXlangObject->realObj;
 	if (realObj.IsObject())
@@ -172,9 +189,13 @@ static PyObject* XlangObject_call(PyObject* self, PyObject* args, PyObject* kwar
 			PyObjectXLangConverter::ConvertKwargs(kwargs, x_kwargs);
 		}
 		X::Value retVal;
-		Py_BEGIN_ALLOW_THREADS
-		retVal = realObj.ObjCall(x_args, x_kwargs);
-		Py_END_ALLOW_THREADS
+		{
+			gil.Unlock();
+			Py_BEGIN_ALLOW_THREADS
+				retVal = realObj.ObjCall(x_args, x_kwargs);
+			Py_END_ALLOW_THREADS
+			gil.Lock();
+		}
 		PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
 		return retObj;
 	}
@@ -188,15 +209,20 @@ static PyMappingMethods XlangObject_as_mapping = {
 };
 
 static PyObject* XlangObject_iadd(PyObject* self, PyObject* other) {
+	MGil gil;
 	PyXlangObject* pXlangObject = (PyXlangObject*)self;
 	X::Value realObj = pXlangObject->realObj;
 	if (realObj.IsObject())
 	{
 		X::Value valOther = PyObjectXLangConverter::ConvertToXValue(other);
 		X::Value retVal;
-		Py_BEGIN_ALLOW_THREADS
-			retVal = realObj.AddObj(valOther);
-		Py_END_ALLOW_THREADS
+		{
+			gil.Unlock();
+			Py_BEGIN_ALLOW_THREADS
+				retVal = realObj.AddObj(valOther);
+			Py_END_ALLOW_THREADS
+			gil.Lock();
+		}
 		//PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
 		pXlangObject->realObj = retVal;
 	}
@@ -296,11 +322,13 @@ static PyTypeObject XlangObjectType = {
 
 static bool __XlangObjectType_Prepared = false;
 void PrepareXlangObjectType() {
+	MGil gil;
 	PyType_Ready(&XlangObjectType);
 	__XlangObjectType_Prepared = true;
 }
 
 PyXlangObject* NewXlangObject(X::Value& realObj, PyProxyType type) {
+	MGil gil;
 	if (!__XlangObjectType_Prepared) {
 		PrepareXlangObjectType();
 	}
@@ -311,11 +339,13 @@ PyXlangObject* NewXlangObject(X::Value& realObj, PyProxyType type) {
 }
 
 void DestroyXlangObject(PyXlangObject* self) {
+	MGil gil;
 	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 X::Value CheckXlangObjectAndConvert(PyObject* obj)
 {
+	MGil gil;
 	if (PyObject_TypeCheck(obj, &XlangObjectType))
 	{
 		PyXlangObject* pXlangObject = (PyXlangObject*)obj;
@@ -328,6 +358,7 @@ X::Value CheckXlangObjectAndConvert(PyObject* obj)
 }
 
 PyObject* CreateXlangObjectWrapper(X::Value& realObj) {
+	MGil gil;
 	PyXlangObject* pXlangObject = NewXlangObject(realObj, PyProxyType::Object);
 	return (PyObject*)pXlangObject;
 }

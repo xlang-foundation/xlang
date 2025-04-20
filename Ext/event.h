@@ -231,20 +231,26 @@ namespace X
 		{
 			SetFire();
 			m_lockHandlers.Lock();
-			for (auto& it : m_handlers)
+			int iCnt = m_handlers.size();
+			for (int i = 0; i < iCnt && i < m_handlers.size(); ++i)
 			{
+				auto& it = m_handlers[i];
 				//if (ownerThreadId ==-1 || it.OwnerThreadId == ownerThreadId)
 				{
 					IncRef();
 					if (it.Handler)
 					{
-						Value retVal;
+						Value retVal; 
+						m_lockHandlers.Unlock();
 						it.Handler(rt, pContext, params, kwargs, retVal);
+						m_lockHandlers.Lock();
 					}
 					else if (it.ObjectHandler)
 					{
 						Value retVal;
+						m_lockHandlers.Unlock();
 						it.ObjectHandler->Call(rt, pContext, params, kwargs, retVal);
+						m_lockHandlers.Lock();
 					}
 					DecRef();
 				}
