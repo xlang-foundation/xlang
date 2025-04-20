@@ -243,7 +243,7 @@ namespace X
 			}
 			virtual char* GetData() override
 			{
-				return m_data;
+				return m_data+ m_startItemOffet* GetItemSize();
 			}
 			virtual void SetData(char* data, long long size) override
 			{
@@ -411,6 +411,47 @@ namespace X
 			X::Value GetDataWithIndices(std::vector<long long>& indices);
 			X::Value GetDataWithOffset(long long addr);
 
+			virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
+				IterateProc proc, ARGS& params, KWARGS& kwParams,
+				X::Value& retValue) override
+			{
+				AutoLock autoLock(m_lock);
+
+				long long size = GetDimSize(0);
+				std::vector<Data::TensorIndex> idxAry(1);
+				for (long long i=0;i<size;i++)
+				{
+					idxAry[0].i = i;
+					idxAry[0].j = i;
+					Get(idxAry, retValue);
+				}
+				return true;
+			}
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos,
+				std::vector<Value>& vals, bool getOnly) override
+			{
+				AutoLock autoLock(m_lock);
+
+				long long size = GetDimSize(0);
+				long long offset = (long long)pos;
+				if (offset >= size)
+				{
+					return false;
+				}
+				std::vector<Data::TensorIndex> idxAry(1);
+				idxAry[0].i = offset;
+				idxAry[0].j = offset;
+				X::Value retValue;
+				Get(idxAry, retValue);
+
+				vals.push_back(retValue);
+				vals.push_back(offset);
+				if (!getOnly)
+				{
+					pos = Iterator_Pos(offset + 1);
+				}
+				return true;
+			}
 			//keep use same memory
 			FORCE_INLINE X::Value reshape(X::Value& listOfShape)
 			{

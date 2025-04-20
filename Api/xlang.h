@@ -331,6 +331,7 @@ namespace X
 	public:
 		virtual const char* GetFileName() = 0;
 		virtual const char* GetPath() = 0;
+		virtual XRuntime* GetRT() = 0;
 	};
 	class XConstExpr :
 		virtual public XObj

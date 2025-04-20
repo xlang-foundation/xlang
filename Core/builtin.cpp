@@ -898,15 +898,26 @@ bool U_GetLength(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
+	X::Value obj;
 	if (params.size() == 0)
 	{
-		retValue = X::Value(0);
-		return true;
+		if (pContext)
+		{
+			obj = pContext;
+		}
+		else
+		{
+			retValue = X::Value();
+			return false;
+		}
 	}
-	X::Value p = params[0];
-	if (p.IsObject())
+	else
 	{
-		retValue = X::Value(p.GetObj()->Size());
+		obj = params[0];
+	}
+	if (obj.IsObject())
+	{
+		retValue = X::Value(obj.GetObj()->Size());
 		return true;
 	}
 	else
@@ -1431,14 +1442,25 @@ bool U_To_XObj(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
+	bool bOK = false;
+	X::Value obj;
 	if (params.size() == 0)
 	{
-		retValue = X::Value(false);
-		return false;
+		if(pContext)
+		{
+			obj = pContext;
+		}
+		else
+		{
+			retValue = X::Value();
+			return false;
+		}
 	}
-	bool bOK = false;
+	else
+	{
+		obj = params[0];
+	}
 	//check if it is PyObject
-	auto& obj = params[0];
 	if (obj.IsObject() 
 		&& obj.GetObj()->GetType() == ObjType::PyProxyObject)
 	{
@@ -2042,7 +2064,8 @@ bool Builtin::RegisterInternals()
 	Register("float", (X::U_FUNC)U_ToFloat, params);
 	Register("str", (X::U_FUNC)U_ToString, params);
 	Register("type", (X::U_FUNC)U_GetType, params);
-	Register("len", (X::U_FUNC)U_GetLength, params);
+	Register("len", (X::U_FUNC)U_GetLength, params,"len(obj) or obj.len()",true);
+	Register("size", (X::U_FUNC)U_GetLength, params, "size(obj) or obj.size()", true);
 	Register("object", (X::U_FUNC)U_CreateBaseObject, params);
 	Register("error", (X::U_FUNC)U_CreateErrorObject, params);
 	Register("is_error", (X::U_FUNC)U_IsErrorObject, params, "is_error", true);
