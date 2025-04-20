@@ -110,12 +110,13 @@ namespace X {
                     mSharedMemLock.Unlock();
                     return false;
                 }
-
+                m_beginRead = true;
                 RESETEVENT(mReadEvent);                       // reset for next read
                 return true;
             }
 
             FORCE_INLINE void EndRead() {
+				m_beginRead = false;
                 SETEVENT(mWriteEvent);                        // signal writer
                 mSharedMemLock.Unlock();                      // release mapping
             }
@@ -137,7 +138,9 @@ namespace X {
                 SETEVENT(mWriteEvent);
                 SETEVENT(mReadEvent);
             }
-
+			FORCE_INLINE bool IsBeginRead() {
+				return m_beginRead;
+			}
             // --- Cleanup ---
             void Close() {
                 if (mClosed) return;
@@ -204,6 +207,7 @@ namespace X {
             Locker        mSharedMemLock;
             char* mShmPtr;
             int           m_BufferSize;
+			bool m_beginRead = false;
 #if !(WIN32)
             std::string   mShmName;
             std::string   mWriteEventName;
