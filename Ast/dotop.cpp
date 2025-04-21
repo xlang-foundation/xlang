@@ -340,8 +340,9 @@ bool DotOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v, LV
 	return true;
 }
 bool DotOp::CalcCallables(XlangRuntime* rt, XObj* pContext,
-	std::vector<Scope*>& callables)
+	std::vector<AST::Expression*>& callables)
 {
+	//TODO: check if really need call ExpExec, Shawn@4/19/2025
 	Value val;
 	ExecAction action;
 	bool bOK = ExpExec(this,rt, action,pContext, val);

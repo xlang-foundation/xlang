@@ -353,7 +353,7 @@ namespace X
 			}
 			virtual X::Value ToXlang() override;
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-				std::vector<AST::Scope*> & callables) override; 
+				std::vector<AST::Expression*> & callables) override; 
 
 			// Inherited via DynamicScope
 			virtual int AddOrGet(const char* name, bool bGetOnly) override;

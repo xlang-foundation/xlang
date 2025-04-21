@@ -73,7 +73,7 @@ public:
 		return true;
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<AST::Scope*>& callables) override
+		std::vector<AST::Expression*>& callables) override
 	{
 		bool bHave = false;
 		for (auto& it : m_list)

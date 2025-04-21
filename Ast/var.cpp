@@ -269,7 +269,7 @@ namespace X
 			return bOK;
 		}
 		bool Var::CalcCallables(XlangRuntime* rt, XObj* pContext,
-			std::vector<Scope*>& callables)
+			std::vector<AST::Expression*>& callables)
 		{
 			Value val;
 			ExecAction action;
