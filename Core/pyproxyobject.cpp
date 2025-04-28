@@ -246,19 +246,31 @@ namespace X
 		int PyProxyObject::AddOrGet(const char* name, bool bGetOnly)
 		{
 			std::string strName(name);
-			//if not exist, add it, so set as false for AddOrGet
-			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, false);
+			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strName, bGetOnly);
 			auto obj0 = (PyEng::Object)m_obj[name];
-			//check obj0 is a function or not
+			if (bGetOnly && idx < 0)
+			{
+				if (obj0.ref() == nullptr || obj0.IsNull())
+				{
+					//if get only, and also python no this member, we don't add
+					//return idx (less than 0)
+					return idx;//if Get Only, not adding
+				}
+				else
+				{
+					//if python does have it, we call again to add it
+					SCOPE_FAST_CALL_AddOrGet0_NoDef(idx, m_pMyScope, strName, false);
+				}
+			}
 			PyProxyObject* pProxyObj = new PyProxyObject(m_obj,obj0, strName);
 			X::Value v(pProxyObj);
 			m_variableFrame->Set(idx, v);
 			return idx;
 		}
 		bool PyProxyObject::CalcCallables(XlangRuntime* rt, XObj* pContext,
-			std::vector<AST::Scope*>& callables)
+			std::vector<AST::Expression*>& callables)
 		{
-			callables.push_back(m_pMyScope);
+			callables.push_back(this);
 			return true;
 		}
 		bool PyProxyObject::Call(XRuntime* rt, XObj* pContext,

@@ -68,7 +68,7 @@ public:
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 	virtual void ScopeLayout() override;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<Scope*>& callables) override;
+		std::vector<AST::Expression*>& callables) override;
 
 	FORCE_INLINE bool Expanding(X::Exp::ExpresionStack& stack)
 	{

@@ -273,13 +273,13 @@ public:
 		return GetNameString();
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<Scope*>& callables) override
+		std::vector<AST::Expression*>& callables) override
 	{
 		if (Params)
 		{
 			Params->CalcCallables(rt,pContext,callables);
 		}
-		callables.push_back(m_pMyScope);
+		callables.push_back(this);
 		return true;
 	}
 

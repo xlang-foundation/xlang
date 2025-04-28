@@ -825,6 +825,10 @@ bool GrusPyEngHost::Exec(const char* code, PyEngObjectPtr args)
 
 X::Value GrusPyEngHost::to_xvalue(PyEngObjectPtr pVar)
 {
+	if (pVar == nullptr)
+	{
+		return X::Value();
+	}
 	//Gil aquuire inside function below
 	return PyObjectXLangConverter::ConvertToXValue((PyObject*)pVar);
 }

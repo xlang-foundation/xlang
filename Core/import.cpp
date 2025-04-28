@@ -35,10 +35,11 @@ namespace X
 }
 
 bool X::AST::Import::CalcCallables(XlangRuntime* rt, XObj* pContext,
-	std::vector<Scope*>& callables)
+	std::vector<AST::Expression*>& callables)
 {
-	ScopeProxy* pProxy = new ScopeProxy();
-	callables.push_back(pProxy);
+	//TODO: need to check here shawn @4/19/2025
+	//ScopeProxy* pProxy = new ScopeProxy();
+	callables.push_back(this);
 	return true;
 }
 bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,

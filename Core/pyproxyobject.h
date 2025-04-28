@@ -154,6 +154,11 @@ namespace X
 			PyProxyObject(XlangRuntime* rt, XObj* pContext,
 				std::string name,std::string fromPath,
 				std::string curPath);
+			FORCE_INLINE virtual bool VerifyNameIndex(const char* name, int idx)
+			{
+				//TODO: check here
+				return true;
+			}
 			virtual bool GetObj(void** ppObjPtr) override
 			{
 				*ppObjPtr = (PyEngObjectPtr)m_obj;
@@ -353,7 +358,7 @@ namespace X
 			}
 			virtual X::Value ToXlang() override;
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-				std::vector<AST::Scope*> & callables) override; 
+				std::vector<AST::Expression*> & callables) override; 
 
 			// Inherited via DynamicScope
 			virtual int AddOrGet(const char* name, bool bGetOnly) override;

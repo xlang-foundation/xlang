@@ -144,7 +144,7 @@ public:
 		KWARGS& kwParams,
 		Value& retValue);
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<Scope*>& callables) override
+		std::vector<AST::Expression*>& callables) override
 	{
 		bool bHave = false;
 		if (m_constructor)
