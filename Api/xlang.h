@@ -607,6 +607,7 @@ namespace X
 		virtual int AddOrGet(const char* name, bool bGetOnly) = 0;
 		virtual bool Get(int idx, X::Value& v, void* lValue = nullptr) = 0;
 		virtual bool Set(int idx, X::Value& v) = 0;
+		virtual bool VerifyNameIndex(const char* name, int idx) = 0;
 	};
 	class XPackage:
 		virtual public XObj

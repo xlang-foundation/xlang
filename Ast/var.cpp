@@ -290,8 +290,18 @@ namespace X
 				{
 					if (it == m_scope)
 					{
-						matched = true;
-						break;
+						std::string name(Name.s, Name.size);
+						bool isSame = m_scope->VerifyNameIndex(name, Index);
+						if (isSame)
+						{
+							matched = true;
+							break;
+						}
+						else
+						{
+							Index = -1;
+							m_scope = nullptr;
+						}
 					}
 				}
 			}

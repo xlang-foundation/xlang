@@ -41,6 +41,18 @@ namespace X
 		//for remote object's members cache
 		std::unordered_map <std::string, int> m_NameToIndex;
 
+		FORCE_INLINE virtual bool VerifyNameIndex(const char* name, int idx) override
+		{
+			auto it = m_NameToIndex.find(name);
+			if (it != m_NameToIndex.end())
+			{
+				return idx == it->second;
+			}
+			else
+			{
+				return false;
+			}
+		}
 		FORCE_INLINE virtual int GetMemberFlags() override
 		{
 			return m_memberFlags;
