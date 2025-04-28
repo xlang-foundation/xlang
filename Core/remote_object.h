@@ -314,7 +314,7 @@ namespace X
 					idx = NameToIndex(strName, false);
 
 					Value memberValue;
-					ROBJ_ID objId;
+					ROBJ_ID objId = {0, nullptr};
 					RemoteObject* r_obj = nullptr;
 					m_proxyLock.Lock();
 					if (m_proxy)
