@@ -201,7 +201,7 @@ namespace Data {
 			return true;
 		}
 		virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-			std::vector<AST::Scope*>& callables)
+			std::vector<AST::Expression*>& callables)
 		{
 			return false;
 		}

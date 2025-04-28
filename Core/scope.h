@@ -269,6 +269,17 @@ public:
 			return false;
 		}
 	}
+	FORCE_INLINE bool VerifyNameIndex(std::string& name,int idx)
+	{
+		if (m_pDynScope)
+		{
+			return m_pDynScope->VerifyNameIndex(name.c_str(),idx);
+		}
+		else
+		{
+			return true;
+		}
+	}
 	FORCE_INLINE void Get(XlangRuntime* rt, XObj* pContext,int idx, X::Value& v, LValue* lValue = nullptr)
 	{
 		//TODO: check performance here

@@ -156,7 +156,7 @@ namespace X {
 				std::vector<std::string>& IdList, int id_offset,
 				long long startIndex, long long count) override;
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-				std::vector<AST::Scope*>& callables) override
+				std::vector<AST::Expression*>& callables) override
 			{
 				return m_obj ? m_obj->CalcCallables(rt, pContext, callables) : false;
 			}

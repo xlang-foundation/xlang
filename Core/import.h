@@ -552,7 +552,7 @@ public:
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext,
 		Value& v, LValue* lValue = nullptr) override;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<Scope*>& callables) override;
+		std::vector<AST::Expression*>& callables) override;
 	bool ExpRun(XlangRuntime* rt, X::XObj* pContext, X::Exp::ValueStack& valueStack, X::Value& retValue);
 };
 }

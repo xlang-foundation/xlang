@@ -117,7 +117,7 @@ public:
 		if (R) R->SetScope(p);
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<Scope*>& callables) override
+		std::vector<AST::Expression*>& callables) override
 	{
 		bool bHave = false;
 		if (L)
