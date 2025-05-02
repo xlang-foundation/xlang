@@ -213,6 +213,10 @@ namespace X
 				//std::cout << "Client:Host exited" << std::endl;
 				CallHandler::Quit();
 				mCallCounter.WaitForZero();
+				while (RefCount() > 1)
+				{
+					MS_SLEEP(100);
+				}
 				CallHandler::Close();
 				if (m_ExitOnHostExit)
 				{

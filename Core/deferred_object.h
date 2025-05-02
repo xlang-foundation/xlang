@@ -168,6 +168,11 @@ namespace X
 				m_stackFrame->Get(idx, v,(X::LValue*)lValue);
 				return true;
 			}
+			FORCE_INLINE virtual bool VerifyNameIndex(const char* name, int idx)
+			{
+				//TODO: check here
+				return true;
+			}
 		};
 	}
 }

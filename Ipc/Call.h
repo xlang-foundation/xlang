@@ -305,6 +305,10 @@ namespace X
 					}
 					//wait for read finishing before next read
 					mFinishReadWait.Wait(-1);
+					if (mRBuffer->IsBeginRead())
+					{
+						mRBuffer->EndRead();
+					}
 				}
 				Release();
 			}

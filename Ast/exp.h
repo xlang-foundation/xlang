@@ -268,7 +268,7 @@ public:
 		return m_parent;
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<Scope*>& callables)
+		std::vector<AST::Expression*>& callables)
 	{
 		return false;
 	}
@@ -618,7 +618,7 @@ public:
 		return true;
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<Scope*>& callables) override
+		std::vector<AST::Expression*>& callables) override
 	{
 		bool bHave = false;
 		for (auto it : list)
@@ -733,7 +733,7 @@ public:
 		Value& defaultValue);
 	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr);
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-		std::vector<Scope*>& callables) override
+		std::vector<AST::Expression*>& callables) override
 	{
 		bool bHave = Name ? Name->CalcCallables(rt, pContext, callables) : false;
 		bHave |= Type ? Type->CalcCallables(rt, pContext, callables) : false;

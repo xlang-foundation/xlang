@@ -41,6 +41,18 @@ namespace X
 		//for remote object's members cache
 		std::unordered_map <std::string, int> m_NameToIndex;
 
+		FORCE_INLINE virtual bool VerifyNameIndex(const char* name, int idx) override
+		{
+			auto it = m_NameToIndex.find(name);
+			if (it != m_NameToIndex.end())
+			{
+				return idx == it->second;
+			}
+			else
+			{
+				return false;
+			}
+		}
 		FORCE_INLINE virtual int GetMemberFlags() override
 		{
 			return m_memberFlags;
@@ -175,7 +187,7 @@ namespace X
 			m_remote_Obj_id = {pid,objid};
 		}
 		virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
-			std::vector<AST::Scope*>& callables)
+			std::vector<AST::Expression*>& callables)
 		{
 			return false;
 		}
@@ -314,7 +326,7 @@ namespace X
 					idx = NameToIndex(strName, false);
 
 					Value memberValue;
-					ROBJ_ID objId;
+					ROBJ_ID objId = {0, nullptr};
 					RemoteObject* r_obj = nullptr;
 					m_proxyLock.Lock();
 					if (m_proxy)
