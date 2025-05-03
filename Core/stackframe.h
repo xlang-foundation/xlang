@@ -191,7 +191,7 @@ public:
 	FORCE_INLINE void Get(int idx, X::Value& v, X::LValue* lValue = nullptr)
 	{
 		if (m_bShared) m_lock.Lock();
-		if ((idx < 0 && idx >= m_varCnt) || !m_Values)
+		if ((idx < 0 || idx >= m_varCnt) || !m_Values)
 		{
 			if (m_bShared) m_lock.Unlock();
 				return;
