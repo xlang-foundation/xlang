@@ -18,6 +18,8 @@ limitations under the License.
 #include "xlang.h"
 #if (WIN32)
 #include <Windows.h>
+#include <Rpc.h>        // ensures UuidCreate is declared even with WIN32_LEAN_AND_MEAN
+#include <Objbase.h>    // declares CoCreateGuid
 #else
 #include <uuid/uuid.h>
 #endif
