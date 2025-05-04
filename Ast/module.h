@@ -158,7 +158,10 @@ public:
 	}
 	~Module()
 	{
-		
+		if (m_pRuntime && m_pRuntime->M() == this)
+		{
+			m_pRuntime->SetM(nullptr);
+		}
 		delete m_stackFrame;
 		if (!m_bMyScopeIsRef)
 		{

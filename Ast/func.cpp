@@ -288,7 +288,7 @@ bool Func::Call(XRuntime* rt0,
 	rt->PopFrame();
 	retValue = pCurFrame->GetReturnValue();
 	delete pCurFrame;
-	if (G::I().GetTrace())
+	if (G::I().GetTrace() && rt->M())
 	{
 		rt->M()->RemoveDbgScope(m_pMyScope);
 	}
