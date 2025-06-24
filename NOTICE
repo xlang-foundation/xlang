@@ -1,0 +1,67 @@
+# XLang – NOTICE File
+
+This NOTICE file is provided as a courtesy to comply with Section 4 d of the Apache License, Version 2.0.  It **is not a license itself**, but a record of important attributions and required legal notices that must accompany every distribution of XLang.
+
+---
+
+## 1. Copyright
+
+Copyright © 2019‑2025 XLang Foundation and Shawn Xiong. 
+
+> This product includes software developed by the **XLang Foundation**.
+
+---
+
+## 2. License
+
+XLang is licensed under the **Apache License, Version 2.0** (the “License”);
+you may not use this file except in compliance with the License.
+
+You may obtain a copy of the License at:
+
+> [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an **“AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND**, either express or implied.  See the License for the specific language governing permissions and limitations under the License.
+
+---
+
+## 3. Trademarks
+
+“**XLang**”,  the XLang logo, and related marks are **trademarks of the XLang Foundation**.  Use of these marks is subject to the XLang Foundation’s trademark policy.  Apache®, Apache Software Foundation™, and the feather logo are trademarks of the Apache Software Foundation; their use does not imply endorsement by ASF.
+
+---
+
+## 4. Third‑Party Software and Licenses
+
+This distribution bundles or depends on certain third‑party components.  Each component is provided under its own license, which may differ from the Apache License.  The required attributions are collected in **`THIRD_PARTY_NOTICES`**.
+
+Examples (non‑exhaustive):
+
+| Component          | License                        | Extended Notice Requirement                 |
+| ------------------ | ------------------------------ | ------------------------------------------- |
+| LLVM/Clang headers | Apache‑2.0 with LLVM Exception | ‑                                           |
+| PyBind11           | BSD 3‑Clause                   | Must retain copyright notice in source form |
+| libfmt             | MIT                            | –                                           |
+
+If you distribute a modified version of XLang, **you must update the THIRD\_PARTY\_NOTICES file** to reflect any added/removed dependencies and ensure that all applicable license terms are satisfied.
+
+---
+
+## 5. Documentation & Policies
+
+The documentation set, including the **Contributor Guide** and **Code of Conduct**, is provided under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license, unless otherwise noted.
+
+When redistributing substantial portions of the docs, please attribute as follows:
+
+> “Portions reproduced from the *XLang Project Documentation*, © XLang Foundation, licensed CC BY 4.0.”
+
+---
+
+## 6. Modifications
+
+If you have **modified XLang source files** or this NOTICE itself, you **must add a statement** describing the nature and date of the modification here.
+
+---
+
+## 7. End of NOTICE File
