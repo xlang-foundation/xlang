@@ -201,7 +201,7 @@ namespace X
 				_listScope.AddFunc("copy", "copy()", f);
 			}
 
-			// Sort function
+			// Sort function with custom comparator support
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
 					X::ARGS& params,
@@ -210,25 +210,70 @@ namespace X
 					{
 						List* pObj = dynamic_cast<List*>(pContext);
 						bool ascending = true;  // Default sort order is ascending
+						X::Value customSortFunc;
+						bool hasCustomFunc = false;
+
+						// Check for custom sort function in kwargs
+						auto it = kwParams.find("sortfunc");
+						if (it) {
+							customSortFunc = it->val;
+							hasCustomFunc = true;
+						}
+
+						// Check for ascending parameter
 						if (params.size() > 0 && params[0].IsBool()) {
 							ascending = (bool)params[0];
 						}
 
-						// Selection sort implementation
+						// Selection sort implementation with custom comparator support
 						for (long long i = 0; i < pObj->Size() - 1; ++i) {
 							long long min_index = i;
 							for (long long j = i + 1; j < pObj->Size(); ++j) {
-								if (ascending ? pObj->Get(j) < 
-									pObj->Get(min_index) : pObj->Get(j) > pObj->Get(min_index)) 
-								{
+								bool shouldSwap = false;
+
+								if (hasCustomFunc) {
+									// Use custom comparison function
+									X::ARGS compareArgs;
+									compareArgs.push_back(pObj->Get(j));
+									compareArgs.push_back(pObj->Get(min_index));
+									X::KWARGS compareKwArgs;
+									X::Value compareResult;
+
+									// Call the custom comparison function
+									// Assuming the custom function returns a boolean or comparable value
+									if (customSortFunc.IsObject()) {
+										XObj* funcObj = customSortFunc.GetObj();
+										if (funcObj && funcObj->Call(rt, pThis, compareArgs, 
+											compareKwArgs, compareResult)) {
+											if (compareResult.IsBool()) {
+												shouldSwap = (bool)compareResult;
+											}
+											else if (compareResult.IsNumber()) {
+												// If function returns number, negative means first < second
+												shouldSwap = ascending ? 
+													(compareResult.ToInt() < 0) : 
+													(compareResult.ToInt() > 0);
+											}
+										}
+									}
+								}
+								else {
+									// Use default comparison
+									shouldSwap = ascending ? 
+										pObj->Get(j) < pObj->Get(min_index) : 
+										pObj->Get(j) > pObj->Get(min_index);
+								}
+
+								if (shouldSwap) {
 									min_index = j;
 								}
 							}
-							if (min_index != i) 
-							{
+
+							// Swap elements if needed
+							if (min_index != i) {
 								X::Value temp = pObj->Get(min_index);
 								X::Value temp2 = pObj->Get(i);
-								pObj->Set(min_index,temp2);  // Set is assumed to replace the item at index
+								pObj->Set(min_index, temp2);
 								pObj->Set(i, temp);
 							}
 						}
@@ -236,7 +281,7 @@ namespace X
 						retValue = Value(true);
 						return true;
 					};
-				_listScope.AddFunc("sort", "sort([ascending])", f);
+				_listScope.AddFunc("sort", "sort([ascending], sortfunc=function)", f);
 			}
 
 			// Extend function
