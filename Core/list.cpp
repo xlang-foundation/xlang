@@ -233,7 +233,7 @@ namespace X
 
 								if (hasCustomFunc) {
 									// Use custom comparison function
-									X::ARGS compareArgs;
+									X::ARGS compareArgs(2);
 									compareArgs.push_back(pObj->Get(j));
 									compareArgs.push_back(pObj->Get(min_index));
 									X::KWARGS compareKwArgs;
