@@ -401,8 +401,13 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 	{
 		if (!g_pXload->GetConfig().enablePython)
 		{
-			g_pXload->GetConfig().enablePython = true;
-			LoadPythonEngine();
+			if (!LoadPythonEngine())
+				LOG7 << LOG_RED << "Python engine not found" << LOG_RESET << LINE_END;
+			else
+			{
+				g_pXload->GetConfig().enablePython = true;
+				LOG7 << LOG_GREEN << "Python engine loaded, enable python engine" << LOG_RESET << LINE_END;
+			}
 		}
 		moduleName = "builtins";
 		varNameForChange = "python";
