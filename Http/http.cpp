@@ -930,5 +930,62 @@ namespace X
 	{
 		return m_body;
 	}
+	bool HttpClient::MakeHeadersFromString(X::Value& headers)
+	{
+		std::string strHeaders = headers.ToString();
+		X::Dict dict;
+
+		// Split the headers string by semicolon (;)
+		std::istringstream headerStream(strHeaders);
+		std::string headerPair;
+
+		while (std::getline(headerStream, headerPair, ';'))
+		{
+			// Trim whitespace from the header pair
+			size_t start = headerPair.find_first_not_of(" \t\r\n");
+			size_t end = headerPair.find_last_not_of(" \t\r\n");
+
+			if (start == std::string::npos || end == std::string::npos)
+				continue; // Skip empty or whitespace-only segments
+
+			headerPair = headerPair.substr(start, end - start + 1);
+
+			// Find the colon separator
+			size_t colonPos = headerPair.find(':');
+			if (colonPos != std::string::npos && colonPos > 0 && colonPos < headerPair.length() - 1)
+			{
+				// Extract key and value
+				std::string key = headerPair.substr(0, colonPos);
+				std::string value = headerPair.substr(colonPos + 1);
+
+				// Trim whitespace from key and value
+				start = key.find_first_not_of(" \t\r\n");
+				end = key.find_last_not_of(" \t\r\n");
+				if (start != std::string::npos && end != std::string::npos)
+				{
+					key = key.substr(start, end - start + 1);
+				}
+
+				start = value.find_first_not_of(" \t\r\n");
+				end = value.find_last_not_of(" \t\r\n");
+				if (start != std::string::npos && end != std::string::npos)
+				{
+					value = value.substr(start, end - start + 1);
+				}
+
+				// Add to dictionary if both key and value are not empty
+				if (!key.empty() && !value.empty())
+				{
+					X::Str xKey(key.c_str(), (int)key.size());
+					X::Str xValue(value.c_str(), (int)value.size());
+					dict->Set(xKey, xValue);
+				}
+			}
+		}
+
+		// Set the parsed headers dictionary to m_headers
+		m_headers = dict;
+		return true;
+	}
 }
 

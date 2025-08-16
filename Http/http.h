@@ -185,6 +185,7 @@ namespace X
 		X::Value m_response_headers;
 		std::string m_path;
 		void set_enable_server_certificate_verification(bool b);
+		bool MakeHeadersFromString(X::Value& headers);
 	public:
 		BEGIN_PACKAGE(HttpClient)
 			APISET().AddFunc<1>("get", &HttpClient::Get);
@@ -212,7 +213,14 @@ namespace X
 		X::Value GetResponseHeaders() { return m_response_headers; }
 		void SetHeaders(X::Value& headers)
 		{
-			m_headers = headers;
+			if (headers.IsDict())
+			{
+				m_headers = headers;
+			}
+			else if (headers.IsString())
+			{
+				MakeHeadersFromString(headers);
+			}
 		}
 	};
 	class Http:

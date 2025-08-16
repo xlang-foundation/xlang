@@ -522,5 +522,28 @@ namespace X
 
 			return pOutList;
 		}
+		bool PackageProxy::Set(Value valIdx, X::Value& val)
+		{
+			bool bOk = false;
+			std::string itemName = valIdx.ToString();
+			SCOPE_FAST_CALL_AddOrGet0(index, m_pPackage->GetMyScope(), itemName, true);
+			if (index > 0)
+			{
+				X::Value valMember;
+				GetIndexValue(index, valMember);
+				//only change Prop's value
+				if (valMember.IsObject() &&
+					valMember.GetObj()->GetType() == X::ObjType::Prop)
+				{
+					auto* pPropObj = dynamic_cast<Data::PropObject*>(valMember.GetObj());
+					if (pPropObj)
+					{
+						bOk = pPropObj->SetPropValue(G::I().GetCurrentRuntime(), this, val);
+					}
+				}
+			}
+			return bOk;
+		}
 	}
+
 }
