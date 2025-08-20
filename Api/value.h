@@ -702,6 +702,10 @@ public:
 	{
 		return int(*this);
 	}
+	FORCE_INLINE long ToLong()
+	{
+		return long(*this);
+	}
 	FORCE_INLINE long long ToLongLong()
 	{
 		return (long long)(*this);
