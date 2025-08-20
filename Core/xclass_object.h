@@ -151,6 +151,19 @@ namespace X {
 						pRealObj->GetBaseScopes(bases);
 					}
 				}
+				//and also this instance's m_bases, shawn@8/19/2025
+				//for case remote class instance,we need this
+				if (cls_bases.size() == 0)
+				{
+					for (auto& v : m_bases)
+					{
+						if (v.IsObject())
+						{
+							Data::Object* pRealObj = dynamic_cast<Data::Object*>(v.GetObj());
+							pRealObj->GetBaseScopes(bases);
+						}
+					}
+				}
 			}
 			virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 				std::vector<std::string>& IdList, int id_offset,
