@@ -191,8 +191,11 @@ public:
 	}
 
 	FORCE_INLINE bool isString() { return IsString(); }
+	FORCE_INLINE bool isString() const { return const_cast<Value*>(this)->IsString(); }
 	FORCE_INLINE bool isBool()   { return IsBool(); }
+	FORCE_INLINE bool isBool() const  { return const_cast<Value*>(this)->IsBool(); }
 	FORCE_INLINE bool isNumber() { return IsNumber(); }
+	FORCE_INLINE bool isNumber() const  { return const_cast<Value*>(this)->IsNumber(); }
 
 	// Conversions (lowercase)
 	FORCE_INLINE std::string asString() const
@@ -234,6 +237,10 @@ public:
 		return const_cast<Value*>(this)->IsTrue();
 	}
 
+	FORCE_INLINE bool asBool() const
+	{
+		return const_cast<Value*>(this)->asBool();
+	}
 	FORCE_INLINE double asNumber()
 	{
 		if (t == ValueType::Double) return x.d;
@@ -250,7 +257,10 @@ public:
 		// For None/Object/Invalid: 0.0 by convention
 		return 0.0;
 	}
-
+	FORCE_INLINE double asNumber() const
+	{
+		return const_cast<Value*>(this)->asNumber();
+	}
 
 	FORCE_INLINE ~Value()
 	{
@@ -296,6 +306,7 @@ public:
 		flags |= (int)ValueSubType::BOOL;
 		x.l = x.l>0?1 : 0;
 	}
+
 	FORCE_INLINE Value(char c)
 	{
 		t = ValueType::Int64;
