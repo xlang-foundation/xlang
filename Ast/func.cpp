@@ -235,7 +235,8 @@ bool Func::Call(XRuntime* rt0,
 {
 	auto* rt_from = (XlangRuntime*)rt0;
 	std::string name = GetNameString();
-	XlangRuntime* rt = G::I().Threading(name,rt_from);
+	bool newCreatedRuntime = false;
+	XlangRuntime* rt = G::I().Threading(name,rt_from,newCreatedRuntime);
 	auto oldModule = rt->M();
 
 	if (!rt->M())
@@ -291,6 +292,10 @@ bool Func::Call(XRuntime* rt0,
 	if (G::I().GetTrace() && rt->M())
 	{
 		rt->M()->RemoveDbgScope(m_pMyScope);
+	}
+	if (newCreatedRuntime)
+	{
+		delete rt;
 	}
 	return true;
 }

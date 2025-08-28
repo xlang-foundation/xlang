@@ -189,7 +189,7 @@ bool X::AST::Import::FindAndLoadXModule(XlangRuntime* rt,
 				return false;
 			};
 		bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
-		if (!bHaveX)
+		if (!bHaveX && rt->M())
 		{
 			rt->M()->GetSearchPaths(searchPaths);
 			bHaveX = search(loadingModuleName, searchPaths, loadXModuleFileName, prefixPath);
@@ -377,9 +377,12 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 	}
 
 	//Check if it is X module
-	std::string curPath = rt->M()->GetModulePath();
-	//TODO: check here
-	if (curPath.empty())
+	std::string curPath;
+	if (rt && rt->M())
+	{
+		curPath = rt->M()->GetModulePath();
+	}
+	if (curPath.empty() && m_path.empty())
 	{
 		curPath = g_pXload->GetConfig().appPath;
 	}

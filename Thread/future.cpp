@@ -174,12 +174,17 @@ namespace X
 				}
 				//TODO: which name we should use?
 				std::string name("future");
-				XlangRuntime* rt = X::G::I().Threading(name,nullptr);
+				bool newCreatedRT = false;
+				XlangRuntime* rt = X::G::I().Threading(name,nullptr, newCreatedRT);
 				X::ARGS params(1);
 				X::KWARGS kwargs;
 				X::Value retValue;
 				params.push_back(v);
 				proc.GetObj()->Call(rt, this, params, kwargs, retValue);
+				if (newCreatedRT)
+				{
+					delete rt;
+				}
 			}
 		}
 		bool Future::GetResult(X::Value& retVal,int timeout)

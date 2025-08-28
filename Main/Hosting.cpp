@@ -273,7 +273,8 @@ namespace X
 	{
 		pTopModule->SetArgs(passInParams);
 		std::string name("main");
-		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(),nullptr);
+		bool newCreatedRuntime = false;
+		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(),nullptr, newCreatedRuntime);
 		if (noDebug)
 		{
 			pRuntime->SetNoDbg(true);
@@ -318,7 +319,7 @@ namespace X
 			{
 				pRuntime->SetM(pOldModule);
 			}
-			else
+			else if(newCreatedRuntime)
 			{
 				delete pRuntime;
 			}
@@ -337,7 +338,8 @@ namespace X
 			pTopModule->AddModuleVariable(name, it.val);
 		}
 		std::string name("main");
-		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(), nullptr);
+		bool newCreatedRuntime = false;
+		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(), nullptr, newCreatedRuntime);
 		if (noDebug)
 		{
 			pRuntime->SetNoDbg(true);
@@ -382,7 +384,7 @@ namespace X
 			{
 				pRuntime->SetM(pOldModule);
 			}
-			else
+			else if(newCreatedRuntime)
 			{
 				delete pRuntime;
 			}
