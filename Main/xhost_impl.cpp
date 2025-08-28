@@ -678,7 +678,7 @@ return nullptr;
 	bool XHost_Impl::Import(XRuntime* rt, const char* moduleName, 
 		const char* from, const char* thru, X::Value& objPackage)
 	{
-		AST::Import* pImp = new AST::Import(moduleName, from, thru);
+			AST::Import* pImp = new AST::Import(moduleName, from, thru);
 		//todo: CHECK here if pImp will be released by out of scope
 		AST::ExecAction action;
 		bool bOK = ExpExec(pImp,(XlangRuntime*)rt,action,nullptr, objPackage);

@@ -1028,33 +1028,35 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		}
 	}
 	X::Data::List* pFutureList = nil;
-	X::Data::Future* pFuture = nil;
-	auto buildtask = [&](X::Value& valFunc)
+	X::Value retFuture;
+	auto buildtask = [&](X::Value& valFunc) 
 	{
 		X::Task* tsk = new X::Task();
 		tsk->SetTaskPool(taskPool);
-		//tsk will be released by Future
+
+		// Create Future and immediately wrap it in X::Value
 		X::Data::Future* f = new X::Data::Future(tsk);
-		X::Value varF(f);
-		tsk->SetFuture(varF);
-		if (pFuture || pFutureList)
+		X::Value vFuture(f);        // strong ref #1 (local)
+		tsk->SetFuture(vFuture);    // strong ref #2 (task)
+
+		if (pFutureList) 
 		{
-			if (pFutureList == nil)
-			{
-				pFutureList = new Data::List();
-				X::Value vTask(pFuture);
-				pFutureList->Add((X::XlangRuntime*)rt, vTask);
-				pFuture = nil;
-			}
-			X::Value vTask(f);
-			pFutureList->Add((X::XlangRuntime*)rt, vTask);
+			pFutureList->Add((X::XlangRuntime*)rt, vFuture);
 		}
-		else
+		else if (retFuture.IsInvalid()) 
 		{
-			pFuture = f;
+			retFuture = vFuture;     // keep single-future case without a list
 		}
-		bool bRet = tsk->Call(valFunc, (X::XlangRuntime*)rt, pContext, params0, kwParams);
-		return bRet;
+		else 
+		{
+			// We already had one future; promote to a list and add both
+			pFutureList = new X::Data::List();
+			pFutureList->Add((X::XlangRuntime*)rt, retFuture);
+			pFutureList->Add((X::XlangRuntime*)rt, vFuture);
+			retFuture = X::Value(); // optional: clear single holder; list owns refs now
+		}
+
+		return tsk->Call(valFunc, (X::XlangRuntime*)rt, pContext, params0, kwParams);
 	};
 	bool bOK = true;
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
@@ -1077,9 +1079,9 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		retValue = X::Value(pFutureList);
 	}
-	else if(pFuture)
+	else if (retFuture.IsObject()) 
 	{
-		retValue = X::Value(pFuture);
+		retValue = retFuture; // return the strong-ref’d Future
 	}
 	return bOK;
 #else

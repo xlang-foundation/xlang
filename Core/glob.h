@@ -40,7 +40,7 @@ namespace X {
 		};
 		std::unordered_map<long long, XlangRuntime*> m_rtMap;//for multiple threads
 		void* m_lockRTMap = nullptr;
-		XlangRuntime* MakeThreadRuntime(std::string& name,long long curTId, XlangRuntime* rt);
+		XlangRuntime* MakeThreadRuntime(std::string& name,long long curTId, XlangRuntime* rt,bool& newCreatedRT);
 		std::unordered_map<Data::Object*, ObjInfo> Objects;
 		void* m_lock = nullptr;
 		OpRegistry* m_reg = nullptr;
@@ -105,18 +105,20 @@ namespace X {
 			((Locker*)m_lockRTMap)->Unlock();
 			if (pRet == nullptr)
 			{
-				//TODO:
+				//TODO: how to deal with newCreatedRT return true
 				std::string defName;
-				pRet =  MakeThreadRuntime(defName, tid,baseRt?dynamic_cast<XlangRuntime*>(baseRt):nullptr);
+				bool newCreatedRT = false;
+				pRet =  MakeThreadRuntime(defName, tid,baseRt?dynamic_cast<XlangRuntime*>(baseRt):nullptr,
+					newCreatedRT);
 			}
 			return pRet;
 		}
-		FORCE_INLINE XlangRuntime* Threading(std::string& name,XlangRuntime* fromRt)
+		FORCE_INLINE XlangRuntime* Threading(std::string& name,XlangRuntime* fromRt,bool& newCreated)
 		{
 			long long curTId = GetThreadID();
 			if (fromRt == nullptr || fromRt->GetThreadId() != curTId)
 			{
-				fromRt = MakeThreadRuntime(name,curTId, fromRt);
+				fromRt = MakeThreadRuntime(name,curTId, fromRt, newCreated);
 			}
 			return fromRt;
 		}
