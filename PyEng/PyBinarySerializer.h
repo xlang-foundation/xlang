@@ -1,3 +1,4 @@
+// cloudpickle-style variant: function-global overrides supported (added by ChatGPT)
 #pragma once
 #include "PyGILState.h"
 #include <string>
