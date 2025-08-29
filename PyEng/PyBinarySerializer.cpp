@@ -340,12 +340,40 @@ bool PyBinarySerializer::dump_object(PyObject* o, DumpState& S) {
         }
     }
 
+    // Decide class rebuild strategy without importing anything:
+    // Try sys.modules[module].__file__ and check base_dir
+    RebuildStrategy classStrat = RBY_IMPORT;
+    std::string srcText;
+
+    {
+        std::string base = S.opt.base_dir.empty() ? get_default_base_dir() : S.opt.base_dir;
+
+        PyObject* modules = PyImport_GetModuleDict(); // borrowed
+        PyObject* mod = modules ? PyDict_GetItemString(modules, module.c_str()) : nullptr; // borrowed
+        if (mod) {
+            std::string file_path;
+            if (get_module_file(mod, file_path) && is_path_under_base(file_path, base)) {
+                if (read_text_file(file_path, srcText)) {
+                    classStrat = RBY_SOURCE;
+                }
+            }
+        }
+        // If module not present or has no __file__, leave as RBY_IMPORT
+    }
+
+    // Emit header
     S.w.writeTag(TAG_OBJECT);
     S.w.writeVarU(id);
     S.w.writeString(module);
     S.w.writeString(qualname);
 
-    // Strategy selection
+    // New (v2): class rebuild strategy + optional source
+    S.w.writeByte((uint8_t)classStrat);
+    if (classStrat == RBY_SOURCE) {
+        S.w.writeString(srcText);
+    }
+
+    // ---- Existing instance state strategy selection ----
     PyObject* state = nullptr;
     if (S.opt.allow_getstate && try_getstate(o, &state)) {
         S.w.writeByte((uint8_t)OBJ_STATE_GETSTATE);
@@ -367,9 +395,11 @@ bool PyBinarySerializer::dump_object(PyObject* o, DumpState& S) {
         Py_XDECREF(d);
         return ok;
     }
+
     S.w.writeByte((uint8_t)OBJ_STATE_EMPTY);
     return true;
 }
+
 
 // ================= Dump: FUNCTION/MODULE/TYPE =================
 bool PyBinarySerializer::get_module_name_qual(PyObject* obj, std::string& module, std::string& qual) {
@@ -851,11 +881,32 @@ PyObject* PyBinarySerializer::load_object(LoadState& L) {
     uint64_t id = L.r.readVarU();
     std::string module = L.r.readString();
     std::string qual = L.r.readString();
+
+    // New (v2): how to obtain the class
+    RebuildStrategy classStrat = static_cast<RebuildStrategy>(L.r.readByte());
+    std::string src;
+    if (classStrat == RBY_SOURCE) {
+        src = L.r.readString();
+    }
+
+    // Existing: object state strategy follows
     ObjStrategy strat = static_cast<ObjStrategy>(L.r.readByte());
 
-    PyObject* cls = import_qualified(module, qual);
+    // Materialize the class according to classStrat
+    PyObject* cls = nullptr;
+    if (classStrat == RBY_SOURCE) {
+        PyObject* mod = ensure_module_built_from_source(module, src);
+        if (!mod) return nullptr;
+        Py_DECREF(mod);
+        cls = import_qualified(module, qual); // now it resolves within the just-built module
+    }
+    else {
+        // RBY_IMPORT: normal path (this may import if not already loaded)
+        cls = import_qualified(module, qual);
+    }
     if (!cls) return nullptr;
 
+    // If __reduce__ payload is used, construct via reduce callable (which may return a ready instance)
     if (strat == OBJ_STATE_REDUCE) {
         PyObject* tpl = load_value(L);
         if (!tpl) { Py_DECREF(cls); return nullptr; }
@@ -867,6 +918,7 @@ PyObject* PyBinarySerializer::load_object(LoadState& L) {
         return inst;
     }
 
+    // Otherwise, allocate a blank instance, then apply state
     PyObject* inst = new_without_init(cls);
     if (!inst) { Py_DECREF(cls); return nullptr; }
     L.track(id, inst);
