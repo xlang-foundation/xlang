@@ -11,7 +11,7 @@ struct PySerOptions {
     // Limits to avoid pathological inputs
     size_t max_depth = 1'000;
     size_t max_nodes = 10'000'000;
-    size_t max_bytes_out = std::numeric_limits<size_t>::max();
+    size_t max_bytes_out = (size_t)-1;
     bool   allow_reduce = true;   // allow __reduce__/__reduce_ex__
     bool   allow_getstate = true;   // allow __getstate__/__setstate__
     bool   snapshot_dict = true;   // allow fallback snapshot of __dict__

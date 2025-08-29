@@ -44,6 +44,7 @@ extern "C"
 #include "numpy/arrayobject.h"
 }
 
+#include "PyBinarySerializer.h"
 
 static void LoadNumpy()
 {
@@ -900,6 +901,34 @@ void GrusPyEngHost::AddImportPaths(const char* path)
 
 	// Decrement reference count for the path object
 	Py_DECREF(pathObj);
+}
+
+bool GrusPyEngHost::PySerialize(PyEngObjectPtr input, X::Value& output)
+{
+	PyObject* pOb = (PyObject*)input;
+	std::string outBytes;
+	if (!PyBinarySerializer::Dump(pOb, outBytes, PySerOptions())) {
+		// PyBinarySerializer sets a Python exception on failure.
+		return false;
+	}
+	X::Bin binObj((unsigned long long)outBytes.size(), true);
+	std::memcpy(binObj->Data(), outBytes.data(), outBytes.size());
+	output = CreateXlangObjectWrapper(binObj);
+	return true;
+}
+bool GrusPyEngHost::PyDeserialize(X::Value& input, X::Value& output)
+{
+	X::Bin binObj(input);
+	if (!binObj.IsValid())
+	{
+		return false;
+	}
+	const char* data_ptr = reinterpret_cast<const char*>(binObj->Data());
+	size_t      data_len = static_cast<size_t>(binObj->Size());
+
+	PyObject* restored = PyBinarySerializer::Load(data_ptr, data_len, PyDeserOptions());
+	output = CheckXlangObjectAndConvert(restored);
+	return true;
 }
 
 //Don't call MGil here
