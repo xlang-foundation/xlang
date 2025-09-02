@@ -595,6 +595,68 @@ static bool assign_via_mapping(PyObject* inst, PyObject* mapping) {
     return true;
 }
 
+
+// ===== cloudpickle-like helpers to collect function globals overrides =====
+static PyObject* _get_builtins_dict() {
+    PyObject* b = PyEval_GetBuiltins(); // borrowed
+    if (!b) { PyErr_Clear(); return nullptr; }
+    Py_INCREF(b);
+    return b; // NEW
+}
+static PyObject* _collect_used_globals(PyObject* func, const std::string& owner_module_name) {
+    // Returns NEW ref dict[name] = value for globals referenced by code, excluding builtins
+    // and excluding values identical to module's globals of same name (to keep payload small).
+    PyObject* result = PyDict_New();
+    if (!result) return nullptr;
+
+    PyObject* code = PyObject_GetAttrString(func, "__code__");
+    PyObject* names = code ? PyObject_GetAttrString(code, "co_names") : nullptr;
+    PyObject* fglobals = PyObject_GetAttrString(func, "__globals__");
+    PyObject* builtins = _get_builtins_dict();
+
+    PyObject* moddict = nullptr;
+    PyObject* mod_for_compare = PyImport_ImportModule(owner_module_name.c_str());
+    if (mod_for_compare) {
+        moddict = PyModule_GetDict(mod_for_compare); // borrowed
+    }
+
+    if (names && PyTuple_Check(names) && fglobals && PyDict_Check(fglobals)) {
+        Py_ssize_t n = PyTuple_GET_SIZE(names);
+        for (Py_ssize_t i = 0; i < n; ++i) {
+            PyObject* pyname = PyTuple_GET_ITEM(names, i); // borrowed
+            if (!PyUnicode_Check(pyname)) continue;
+            const char* cname = PyUnicode_AsUTF8(pyname);
+            if (!cname) continue;
+
+            PyObject* val = PyDict_GetItemString(fglobals, cname); // borrowed
+            if (!val) continue;
+
+            // Skip builtins with same binding
+            bool skip = false;
+            if (builtins && PyDict_Check(builtins)) {
+                PyObject* bval = PyDict_GetItemString(builtins, cname); // borrowed
+                if (bval && bval == val) skip = true;
+            }
+            // Skip if module has same object bound under the same name
+            if (!skip && moddict && PyDict_Check(moddict)) {
+                PyObject* mval = PyDict_GetItemString(moddict, cname); // borrowed
+                if (mval && mval == val) skip = true;
+            }
+            if (skip) continue;
+
+            // Keep override (shallow reference; will be serialized later via dump_value)
+            if (PyDict_SetItemString(result, cname, val) < 0) { PyErr_Clear(); }
+        }
+    }
+
+    Py_XDECREF(names);
+    Py_XDECREF(code);
+    Py_XDECREF(fglobals);
+    Py_XDECREF(builtins);
+    Py_XDECREF(mod_for_compare);
+    return result; // NEW
+}
+
 // ================= Callable/Module/Type DUMP =================
 bool PyBinarySerializer::dump_function(PyObject* func, DumpState& S) {
     bool is_new = false; uint64_t id = ensure_id(func, S, is_new);
@@ -669,6 +731,20 @@ bool PyBinarySerializer::dump_function(PyObject* func, DumpState& S) {
     else {
         S.w.writeByte(0);
     }
+    // overrides: capture function's referenced globals beyond module/builtins
+    {
+        PyObject* overrides = _collect_used_globals(func, module);
+        if (overrides && PyDict_Check(overrides) && PyDict_Size(overrides) > 0) {
+            S.w.writeByte(1);
+            ok = dump_value(overrides, S);
+            Py_DECREF(overrides);
+            if (!ok) return false;
+        } else {
+            S.w.writeByte(0);
+            Py_XDECREF(overrides);
+        }
+    }
+
 
     // defaults
     if (defs) { S.w.writeByte(1); ok = dump_value(defs, S); Py_DECREF(defs); if (!ok) return false; }
@@ -1058,6 +1134,14 @@ PyObject* PyBinarySerializer::load_function(LoadState& L) {
     std::string src;
     if (has_source) { src = L.r.readString(); }
 
+    // Read overrides dict if present
+    uint8_t has_overrides = L.r.readByte();
+    PyObject* overrides_dict = nullptr;
+    if (has_overrides) {
+        overrides_dict = load_value(L);
+        if (!overrides_dict) return nullptr;
+    }
+
     // defaults
     PyObject* defaults_tuple = nullptr;
     if (L.r.readByte()) {
@@ -1097,6 +1181,12 @@ PyObject* PyBinarySerializer::load_function(LoadState& L) {
         if (!globals_mod) { Py_XDECREF(defaults_tuple); Py_XDECREF(kwdefaults_dict); Py_XDECREF(closure_tuple); return nullptr; }
     }
     PyObject* globals_dict = PyModule_GetDict(globals_mod); // borrowed
+
+    // Merge overrides into globals (cloudpickle-like semantics)
+    if (overrides_dict) {
+        if (PyDict_Update(globals_dict, overrides_dict) < 0) { Py_DECREF(globals_mod); Py_DECREF(overrides_dict); Py_XDECREF(defaults_tuple); Py_XDECREF(kwdefaults_dict); Py_XDECREF(closure_tuple); return nullptr; }
+        Py_DECREF(overrides_dict);
+    }
 
     // Unmarshal code
     PyObject* code_obj = unmarshal_code_object(code_bytes);
