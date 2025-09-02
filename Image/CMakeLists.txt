@@ -1,6 +1,6 @@
 # A Package to wrap all Image APIs
 
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.10)
 
 project ("xlang_image")
 

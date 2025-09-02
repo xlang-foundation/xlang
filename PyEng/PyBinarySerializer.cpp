@@ -1,4 +1,4 @@
-#include "PyBinarySerializer.h"
+﻿#include "PyBinarySerializer.h"
 #include <cstring>
 #include <cassert>
 #include <sstream>
@@ -834,14 +834,47 @@ PyObject* PyBinarySerializer::load_tuple(LoadState& L) {
     }
     return tup;
 }
+
+static void print_pyobj_to_stderr(const std::string& indent, PyObject* obj)
+{
+    PyObject* repr = PyObject_Repr(obj);
+    if (!repr) return;                     // repr failed – nothing to print
+
+    const char* s = PyUnicode_AsUTF8(repr);
+    if (s) {
+        fprintf(stderr, "%s%s\n", indent.c_str(), s);
+    }
+    Py_DECREF(repr);
+}
+
+
 PyObject* PyBinarySerializer::load_dict(LoadState& L) {
     uint64_t id = L.r.readVarU();
     uint64_t n = L.r.readVarU();
     PyObject* d = PyDict_New();
     if (!d) throw std::runtime_error("oom");
     L.track(id, d);
+
+    /* --- indentation based on current depth --------------------------------- */
+    std::string indent(L.depth, '\t');          // one tab per depth level
+    /* ------------------------------------------------------------------------ */
+
     for (uint64_t i = 0; i < n; ++i) {
         PyObject* k = load_value(L);
+        /* ---------- DEBUG: print the key ---------- */
+        if (k) {
+            if (PyUnicode_Check(k)) {
+                const char* s = PyUnicode_AsUTF8(k);
+                if (s) {
+                    fprintf(stderr, "%s  key[%zu]: %s\n", indent.c_str(), i, s);
+                }
+            }
+            else {
+                // Non‑string key – fallback to repr
+                print_pyobj_to_stderr(indent + "  key[", k);
+            }
+        }
+        /* ------------------------------------------- */
         PyObject* v = load_value(L);
         if (PyDict_SetItem(d, k, v) < 0) { Py_DECREF(k); Py_DECREF(v); throw std::runtime_error("dict set"); }
         Py_DECREF(k); Py_DECREF(v);

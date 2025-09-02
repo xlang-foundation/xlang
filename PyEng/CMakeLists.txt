@@ -1,6 +1,6 @@
 ﻿# CMakeList.txt : CMake project for Grus, include source and define
 #Import python into X
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 
 set(PROJECT_NAME "pyeng")
 project (${PROJECT_NAME})

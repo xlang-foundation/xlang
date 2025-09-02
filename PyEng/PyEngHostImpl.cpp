@@ -21,6 +21,7 @@ limitations under the License.
 #include "port.h"
 #include "PyObjectXLangConverter.h"
 #include "PyGILState.h"
+#include <cstring>
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG

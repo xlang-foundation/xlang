@@ -21,6 +21,9 @@ limitations under the License.
 #include "xhost.h"
 #include "PyObjectXLangConverter.h"
 #include "PyGILState.h"
+#include "PyHelpFuncs.h"
+#include "PyBinarySerializer.h"
+#include <cstring>
 
 enum class PyProxyType
 {
@@ -48,9 +51,22 @@ XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 	X::Value pyFuncObj;
 	for (Py_ssize_t i = 0; i < size; ++i) {
 		PyObject* pyRealFunc = PyTuple_GetItem(args, i);
-		pyFuncObj = PyObjectXLangConverter::ConvertToXValue(pyRealFunc);
+		std::string src = get_function_source(pyRealFunc);
+
+		std::string outBytes;
+		if (!PyBinarySerializer::Dump(pyRealFunc, outBytes, PySerOptions()))
+		{
+			return nullptr;
+		}
+		X::Bin binObj((unsigned long long)outBytes.size(), true);
+		std::memcpy(binObj->Data(), outBytes.data(), outBytes.size());
 		pWrapFunc->args.resize((int)pWrapFunc->args.size() + 1);
-		pWrapFunc->args.push_back(pyFuncObj);
+		//pyFuncObj = PyObjectXLangConverter::ConvertToXValue(pyRealFunc);
+		//pWrapFunc->args.push_back(pyFuncObj);
+		X::Value fromPython(true);
+		binObj.setattr("FromPython", fromPython);
+
+		pWrapFunc->args.push_back(binObj);
 		//only one need to support for python decorator
 		break;
 	}
