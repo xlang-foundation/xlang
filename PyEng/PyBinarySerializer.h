@@ -1,3 +1,4 @@
+// cloudpickle-style variant: function-global overrides supported (added by ChatGPT)
 #pragma once
 #include "PyGILState.h"
 #include <string>
@@ -7,23 +8,31 @@
 #include <limits>
 #include <stdexcept>
 
+// ================== Options ==================
 struct PySerOptions {
     // Limits to avoid pathological inputs
     size_t max_depth = 1'000;
     size_t max_nodes = 10'000'000;
-    size_t max_bytes_out = std::numeric_limits<size_t>::max();
-    bool   allow_reduce = true;   // allow __reduce__/__reduce_ex__
+    size_t max_bytes_out = (size_t)-1;
+
+    bool   allow_reduce = true;     // allow __reduce__/__reduce_ex__
     bool   allow_getstate = true;   // allow __getstate__/__setstate__
-    bool   snapshot_dict = true;   // allow fallback snapshot of __dict__
+    bool   snapshot_dict = true;    // allow fallback snapshot of __dict__
+
+    // Project root used to decide whether a module/type/function is "local".
+    // If empty, current working directory will be used.
+    std::string base_dir;
 };
 
 struct PyDeserOptions {
     size_t max_depth = 1'000;
     size_t max_nodes = 10'000'000;
-    bool   allow_reduce = true;   // allow executing reduce callables
-    bool   prefer_setstate = true; // prefer __setstate__ if present
+
+    bool   allow_reduce = true;      // allow executing reduce callables
+    bool   prefer_setstate = true;   // prefer __setstate__ if present
 };
 
+// ================== API ==================
 class PyBinarySerializer {
 public:
     // Serialize: returns true on success; on failure sets a Python exception and returns false.
@@ -33,22 +42,28 @@ public:
     static PyObject* Load(const char* data, size_t n, const PyDeserOptions& opt = {});
 
 private:
+    // ============= Wire Tags (format v1) =============
     enum Tag : uint8_t {
         TAG_NONE = 0x00,
         TAG_FALSE = 0x01,
         TAG_TRUE = 0x02,
-        TAG_INT = 0x03,   // zig-zag varint 64
-        TAG_BIGINT = 0x04,   // 2's complement byte array
-        TAG_FLOAT = 0x05,   // IEEE754 little-endian double
-        TAG_STR = 0x06,   // UTF-8 bytes
-        TAG_BYTES = 0x07,   // raw bytes
-        TAG_LIST = 0x08,   // id + count + items
-        TAG_TUPLE = 0x09,   // id + count + items
-        TAG_DICT = 0x0A,   // id + count + (key,val)*
-        TAG_SET = 0x0B,   // id + count + items
-        TAG_FROZENSET = 0x0C,   // count + items (non-ref)
-        TAG_REF = 0x0D,   // obj_id
-        TAG_OBJECT = 0x0E    // id + module + qualname + strategy + payload
+        TAG_INT = 0x03,        // zig-zag varint 64
+        TAG_BIGINT = 0x04,     // decimal utf-8
+        TAG_FLOAT = 0x05,      // IEEE754 little-endian double
+        TAG_STR = 0x06,        // UTF-8 bytes
+        TAG_BYTES = 0x07,      // raw bytes
+        TAG_LIST = 0x08,       // id + count + items
+        TAG_TUPLE = 0x09,      // id + count + items
+        TAG_DICT = 0x0A,       // id + count + (key,val)*
+        TAG_SET = 0x0B,        // id + count + items
+        TAG_FROZENSET = 0x0C,  // count + items (non-ref)
+        TAG_REF = 0x0D,        // obj_id
+        TAG_OBJECT = 0x0E,     // generic instance (id + module + qualname + strategy + payload)
+
+        // New in this revision:
+        TAG_FUNCTION = 0x0F,   // function (local code or import-by-name)
+        TAG_MODULE = 0x10,   // module (embedded source or import-by-name)
+        TAG_TYPE = 0x11    // class/type (module source or import-by-name)
     };
 
     enum ObjStrategy : uint8_t {
@@ -56,6 +71,12 @@ private:
         OBJ_STATE_GETSTATE = 1,
         OBJ_STATE_REDUCE = 2,
         OBJ_STATE_DICT = 3
+    };
+
+    enum RebuildStrategy : uint8_t {
+        RBY_IMPORT = 0,     // module + qualname then import
+        RBY_SOURCE = 1,     // module source shipped, exec, then qualname
+        RBY_CODE = 2      // for functions: code object + captured state (defaults/closure), with globals from source/import
     };
 
     // -------- Writer / Reader --------
@@ -68,8 +89,8 @@ private:
         void writeDouble(double d);
         void writeBytes(const void* p, size_t n);
         void writeString(const char* s, size_t n);
+        void writeString(const std::string& s) { writeString(s.data(), s.size()); }
         void writeTag(Tag t);
-
         size_t size() const { return buf.size(); }
         std::string& buffer() { return buf; }
     private:
@@ -85,10 +106,9 @@ private:
         uint64_t readVarU();
         int64_t  readVarI(); // zig-zag
         double   readDouble();
-        void     readBytes(void* dst, size_t n);
+        void     readBytes(void* dst, size_t n); // reads length prefix and n bytes if dst!=nullptr; skips if dst==nullptr
         std::string readString();
         Tag      readTag();
-
     private:
         const char* cur;
         const char* end;
@@ -101,19 +121,19 @@ private:
         const PySerOptions& opt;
         size_t depth = 0;
         uint64_t next_id = 1;
-        std::unordered_map<PyObject*, uint64_t> memo; // borrowed keys; identity
+        std::unordered_map<PyObject*, uint64_t> memo; // identity-based
     };
 
     struct LoadState {
         Reader& r;
         const PyDeserOptions& opt;
         size_t depth = 0;
-        std::unordered_map<uint64_t, PyObject*> id_to_obj; // NEW REFs stored
-        ~LoadState(); // decref everything on failure unwind
-        void track(uint64_t id, PyObject* o); // steals a NEW ref into table
+        std::unordered_map<uint64_t, PyObject*> id_to_obj; // NEW REFs
+        ~LoadState();
+        void track(uint64_t id, PyObject* o); // steals NEW ref into table
     };
 
-    // -------- Dump helpers --------
+    // -------- Dump helpers (primitives/containers/objects) --------
     static bool dump_value(PyObject* o, DumpState& S);
     static bool dump_none(DumpState& S);
     static bool dump_bool(bool v, DumpState& S);
@@ -127,6 +147,11 @@ private:
     static bool dump_set(PyObject* o, DumpState& S);
     static bool dump_frozenset(PyObject* o, DumpState& S);
     static bool dump_object(PyObject* o, DumpState& S);
+
+    // New callable/module/type dumping
+    static bool dump_function(PyObject* func, DumpState& S);
+    static bool dump_module(PyObject* mod, DumpState& S);
+    static bool dump_type(PyObject* type, DumpState& S);
 
     static bool is_referenceable(PyObject* o);
     static uint64_t ensure_id(PyObject* o, DumpState& S, bool& is_new);
@@ -145,12 +170,42 @@ private:
     static PyObject* load_frozenset(LoadState& L);
     static PyObject* load_object(LoadState& L);
 
-    // Object reconstruction
+    // New callable/module/type loading
+    static PyObject* load_function(LoadState& L);
+    static PyObject* load_module(LoadState& L);
+    static PyObject* load_type(LoadState& L);
+
+    // -------- Reconstruction utils --------
     static PyObject* import_qualified(const std::string& module, const std::string& qualname);
     static PyObject* new_without_init(PyObject* cls);
     static bool set_via_setstate(PyObject* inst, PyObject* state);
     static bool assign_via_dict(PyObject* inst, PyObject* d);
     static PyObject* apply_reduce_tuple(PyObject* tpl, const PyDeserOptions& opt);
+
+    // For modules & local/global decisions
+    static bool get_module_name_qual(PyObject* obj, std::string& module, std::string& qual);
+    static bool get_module_file(PyObject* mod, std::string& file_path);
+    static bool is_path_under_base(const std::string& path, const std::string& base_dir);
+    static std::string get_default_base_dir(); // cwd if available
+
+    static bool read_text_file(const std::string& path, std::string& out_text);
+
+    // For function (de)serialization
+    static bool marshal_code_object(PyObject* code, std::string& out_bytes);
+    static PyObject* unmarshal_code_object(const std::string& bytes);
+    static bool is_local_entity(PyObject* owner_module, const PySerOptions& opt);
+
+    static PyObject* ensure_module_built_from_source(const std::string& module_name,
+        const std::string& source_text);
+
+    static PyObject* build_function_from_bits(PyObject* code_obj,
+        PyObject* globals_dict,
+        const std::string& name,
+        PyObject* defaults_tuple,      // may be NULL
+        PyObject* kwdefaults_dict,     // may be NULL
+        PyObject* closure_tuple);      // may be NULL
+
+    static PyObject* get_types_FunctionType();
 
     // Utilities
     static inline uint64_t zigzag(int64_t v);

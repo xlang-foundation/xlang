@@ -1823,6 +1823,47 @@ bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	}
 	return true;
 }
+bool U_PySerialize(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+{
+	X::Value obj;
+	if (params.size() > 0)
+	{
+		obj = params[0].ToString();
+	}
+	else
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	if (g_pPyHost)
+	{
+		PyEng::Object obj(obj);
+		g_pPyHost->PySerialize(obj, retValue);
+	}
+	return true;
+}
+bool U_PyDeserialize(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+
+	X::Value binData = params[0];
+	if (g_pPyHost)
+	{
+		return g_pPyHost->PyDeserialize(binData, retValue);
+	}
+	else
+	{
+		retValue = X::Value(false);
+	}
+	return true;
+}
+
 bool U_CreateList(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -2079,6 +2120,8 @@ bool Builtin::RegisterInternals()
 	Register("list", (X::U_FUNC)U_CreateList, params, "l = list()|list(vars)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");
+	Register("py_serialize", (X::U_FUNC)U_PySerialize, params, "xlangBin = py_serialize(pyObj)");
+	Register("py_deserialize", (X::U_FUNC)U_PyDeserialize, params, "pyObj =py_deserialize(xlangBin)");
 #if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 #endif

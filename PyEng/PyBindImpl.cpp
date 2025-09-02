@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "xlang.h"
 #include "xhost.h"
+#include <cstring>
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG

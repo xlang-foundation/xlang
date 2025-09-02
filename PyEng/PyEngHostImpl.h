@@ -118,6 +118,8 @@ public:
 	virtual void GilUnlock(int state) override;
 	virtual void SubmitPythonTask(const std::function<void()>& task) override;
 	virtual void AddImportPaths(const char* path) override;
+	virtual bool PySerialize(PyEngObjectPtr input, X::Value& output) override;
+	virtual bool PyDeserialize(X::Value& input, X::Value& output) override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 
