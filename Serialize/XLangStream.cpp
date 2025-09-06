@@ -129,6 +129,7 @@ namespace X
 					return false;
 				}
 			}
+			curBlock = GetBlockInfo(curPos.blockIndex);
 			curPos.offset = 0;
 		}
 		*(curBlock.buf + curPos.offset) = c;

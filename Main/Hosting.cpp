@@ -502,9 +502,9 @@ namespace X
 		X::AST::ExecAction action;
 		bool bOK = ExpExec(pTopModule, pRuntime, action, nullptr, retVal);
 		pRuntime->PopFrame();
-		delete pRuntime;
 
 		Unload(pTopModule);
+		delete pRuntime;
 		return bOK;
 	}
 	bool Hosting::Run(unsigned long long moduleKey, X::KWARGS& kwParams,
