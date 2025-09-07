@@ -375,7 +375,7 @@ namespace X
 	{
 		if (str)
 		{
-			delete str;
+			delete[] str;
 		}
 	}
 	XBin* XHost_Impl::CreateBin(char* data, size_t size, bool bOwnData)

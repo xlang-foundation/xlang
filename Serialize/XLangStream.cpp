@@ -118,8 +118,8 @@ namespace X
 				return false;
 			}
 		}
-		blockInfo& curBlock = GetBlockInfo(curPos.blockIndex);
-		if (curPos.offset == curBlock.block_size)
+		blockInfo* curBlock = &GetBlockInfo(curPos.blockIndex);
+		if (curPos.offset == curBlock->block_size)
 		{
 			curPos.blockIndex++;
 			if (curPos.blockIndex >= blkNum)
@@ -128,15 +128,15 @@ namespace X
 				{
 					return false;
 				}
-				curBlock = GetBlockInfo(curPos.blockIndex);
+				curBlock = &GetBlockInfo(curPos.blockIndex);
 			}
 			curPos.offset = 0;
 		}
-		*(curBlock.buf + curPos.offset) = c;
+		*(curBlock->buf + curPos.offset) = c;
 		curPos.offset++;
 		if (!m_InOverrideMode)
 		{
-			curBlock.data_size++;
+			curBlock->data_size++;
 			m_size++;
 		}
 		return true;
