@@ -13,12 +13,13 @@
 #include <unistd.h>
 #endif
 
+
 // ---------- forward helpers used only here ----------
 static bool assign_via_mapping(PyObject* inst, PyObject* mapping);
 
 // ================= Writer =================
-PyBinarySerializer::Writer::Writer(std::string& out, const PySerOptions& opt)
-    : buf(out), opt(opt) {
+PyBinarySerializer::Writer::Writer(PyBinarySerializer* parent,std::string& out, const PySerOptions& opt)
+    : buf(out), opt(opt), m_parent(parent) {
     const char magic[4] = { 'P','Y','B',1 }; // format v1
     buf.append(magic, 4);
 }
@@ -34,7 +35,10 @@ void PyBinarySerializer::Writer::writeVarU(uint64_t v) {
         else { writeByte(byte); break; }
     }
 }
-void PyBinarySerializer::Writer::writeVarI(int64_t v) { writeVarU(PyBinarySerializer::zigzag(v)); }
+void PyBinarySerializer::Writer::writeVarI(int64_t v) 
+{ 
+    writeVarU(m_parent->zigzag(v)); 
+}
 void PyBinarySerializer::Writer::writeDouble(double d) {
     uint64_t u;
     static_assert(sizeof(double) == 8, "double size");
@@ -51,8 +55,8 @@ void PyBinarySerializer::Writer::writeString(const char* s, size_t n) { writeByt
 void PyBinarySerializer::Writer::writeTag(Tag t) { writeByte(static_cast<uint8_t>(t)); }
 
 // ================= Reader =================
-PyBinarySerializer::Reader::Reader(const char* p, size_t n, const PyDeserOptions& opt)
-    : cur(p), end(p + n), opt(opt) {
+PyBinarySerializer::Reader::Reader(PyBinarySerializer* parent,const char* p, size_t n, const PyDeserOptions& opt)
+    : cur(p), end(p + n), opt(opt),m_parent(parent) {
     if (n < 4 || cur[0] != 'P' || cur[1] != 'Y' || cur[2] != 'B' || static_cast<uint8_t>(cur[3]) != 1) {
         PyErr_SetString(PyExc_ValueError, "Invalid header/magic");
         throw std::runtime_error("bad header");
@@ -74,7 +78,10 @@ uint64_t PyBinarySerializer::Reader::readVarU() {
     PyErr_SetString(PyExc_ValueError, "Varint too long");
     throw std::runtime_error("varint");
 }
-int64_t PyBinarySerializer::Reader::readVarI() { return PyBinarySerializer::unzigzag(readVarU()); }
+int64_t PyBinarySerializer::Reader::readVarI() 
+{ 
+    return m_parent->unzigzag(readVarU()); 
+}
 double PyBinarySerializer::Reader::readDouble() {
     uint64_t u = 0;
     for (int i = 0; i < 8; ++i) u |= static_cast<uint64_t>(readByte()) << (8 * i);
@@ -122,7 +129,7 @@ void PyBinarySerializer::LoadState::track(uint64_t id, PyObject* o) { id_to_obj.
 bool PyBinarySerializer::Dump(PyObject* obj, std::string& out, const PySerOptions& opt) {
     MGil gil;
     try {
-        Writer w(out, opt);
+        Writer w(this,out, opt);
         DumpState S{ w, opt };
         if (!dump_value(obj, S)) return false;
         return true;
@@ -135,7 +142,7 @@ bool PyBinarySerializer::Dump(PyObject* obj, std::string& out, const PySerOption
 PyObject* PyBinarySerializer::Load(const char* data, size_t n, const PyDeserOptions& opt) {
     MGil gil;
     try {
-        Reader r(data, n, opt);
+        Reader r(this,data, n, opt);
         LoadState L{ r, opt };
         PyObject* v = load_value(L);
         return v;
@@ -439,9 +446,16 @@ bool PyBinarySerializer::is_path_under_base(const std::string& path, const std::
     return p.rfind(b, 0) == 0; // starts with
 }
 std::string PyBinarySerializer::get_default_base_dir() {
-    char buf[4096];
-    if (getcwd(buf, sizeof(buf))) return std::string(buf);
-    return std::string();
+    if (m_basePath.empty())
+    {
+        char buf[4096];
+        if (getcwd(buf, sizeof(buf))) return std::string(buf);
+        return std::string();
+    }
+    else
+    {
+        return m_basePath;
+    }
 }
 bool PyBinarySerializer::read_text_file(const std::string& path, std::string& out_text) {
 #ifdef _MSC_VER
@@ -492,7 +506,22 @@ PyObject* PyBinarySerializer::ensure_module_built_from_source(const std::string&
     if (!modules) { Py_DECREF(sys); return nullptr; }
 
     PyObject* existing = PyDict_GetItemString(modules, module_name.c_str()); // borrowed
-    if (existing) { Py_INCREF(existing); Py_DECREF(modules); Py_DECREF(sys); return existing; }
+    //if (existing) { Py_INCREF(existing); Py_DECREF(modules); Py_DECREF(sys); return existing; }
+    if (existing) {
+        // Re-exec source into the existing module’s dict (works for __main__ too)
+        PyObject* dict = PyModule_GetDict(existing); // borrowed
+        PyObject* code = Py_CompileStringExFlags(source_text.c_str(),
+            module_name.c_str(),
+            Py_file_input, nullptr, -1);
+        if (!code) { Py_DECREF(modules); Py_DECREF(sys); Py_INCREF(existing); return existing; } // propagate PyErr
+        PyObject* r = PyEval_EvalCode((PyObject*)code, dict, dict);
+        Py_DECREF(code);
+        if (!r) { Py_DECREF(modules); Py_DECREF(sys); Py_INCREF(existing); return existing; }   // propagate PyErr
+        Py_DECREF(r);
+        Py_INCREF(existing);
+        Py_DECREF(modules); Py_DECREF(sys);
+        return existing;
+    }
 
     PyObject* mod = PyModule_New(module_name.c_str());
     if (!mod) { Py_DECREF(modules); Py_DECREF(sys); return nullptr; }
@@ -603,7 +632,56 @@ static PyObject* _get_builtins_dict() {
     Py_INCREF(b);
     return b; // NEW
 }
-static PyObject* _collect_used_globals(PyObject* func, const std::string& owner_module_name) {
+// cloudpickle-like: collect only the globals this function's code references.
+// NEW: we no longer skip names that match the owner module's binding.
+//      (We still skip builtins to avoid noise.)
+static PyObject* _collect_used_globals(PyObject* func, const std::string& /*owner_module_name*/) {
+    // Returns NEW ref dict[name] = value for globals referenced by code, excluding builtins.
+    PyObject* result = PyDict_New();
+    if (!result) return nullptr;
+
+    PyObject* code = PyObject_GetAttrString(func, "__code__");
+    PyObject* names = code ? PyObject_GetAttrString(code, "co_names") : nullptr;
+    PyObject* fglobals = PyObject_GetAttrString(func, "__globals__");
+    PyObject* builtins = _get_builtins_dict(); // NEW ref or nullptr
+
+    if (names && PyTuple_Check(names) && fglobals && PyDict_Check(fglobals)) {
+        Py_ssize_t n = PyTuple_GET_SIZE(names);
+        for (Py_ssize_t i = 0; i < n; ++i) {
+            PyObject* pyname = PyTuple_GET_ITEM(names, i); // borrowed
+            if (!PyUnicode_Check(pyname)) continue;
+            const char* cname = PyUnicode_AsUTF8(pyname);
+            if (!cname) continue;
+
+            // Only consider names that actually exist in the function's globals
+            PyObject* val = PyDict_GetItemString(fglobals, cname); // borrowed
+            if (!val) continue;
+
+            // Skip if this resolves to a builtin under the same name
+            bool skip = false;
+            if (builtins && PyDict_Check(builtins)) {
+                PyObject* bval = PyDict_GetItemString(builtins, cname); // borrowed
+                if (bval && bval == val) skip = true;
+            }
+            if (skip) continue;
+
+            // Keep override (shallow reference; dump_value will serialize it properly,
+            // including modules via TAG_MODULE).
+            if (PyDict_SetItemString(result, cname, val) < 0) {
+                // Non-fatal: clear and continue collecting others
+                PyErr_Clear();
+            }
+        }
+    }
+
+    Py_XDECREF(names);
+    Py_XDECREF(code);
+    Py_XDECREF(fglobals);
+    Py_XDECREF(builtins);
+    return result; // NEW
+}
+
+static PyObject* _collect_used_globals2(PyObject* func, const std::string& owner_module_name) {
     // Returns NEW ref dict[name] = value for globals referenced by code, excluding builtins
     // and excluding values identical to module's globals of same name (to keep payload small).
     PyObject* result = PyDict_New();
@@ -1114,6 +1192,167 @@ PyObject* PyBinarySerializer::load_type(LoadState& L) {
 }
 
 PyObject* PyBinarySerializer::load_function(LoadState& L) {
+    uint64_t id = L.r.readVarU();
+    std::string module = L.r.readString();
+    std::string qual = L.r.readString();
+    RebuildStrategy strat = (RebuildStrategy)L.r.readByte();
+
+    // Import-by-name path (unchanged)
+    if (strat == RBY_IMPORT) {
+        PyObject* f = import_qualified(module, qual);
+        if (!f) return nullptr;
+        L.track(id, f);
+        return f;
+    }
+
+    // ---- RBY_CODE ----
+    // payload: name, code_bytes, has_source?, source_text, overrides?, defaults?, kwdefaults?, closure?
+    std::string name = L.r.readString();
+    std::string code_bytes = L.r.readString();
+
+    // read (and ignore) shipped source text
+    uint8_t has_source = L.r.readByte();
+    if (has_source) {
+        std::string src = L.r.readString(); // not used (no module re-exec)
+        (void)src;
+    }
+
+    // overrides (dict) — modules like "os" should arrive here and get imported by load_value->load_module
+    uint8_t has_overrides = L.r.readByte();
+    PyObject* overrides_dict = nullptr;
+    if (has_overrides) {
+        overrides_dict = load_value(L);
+        if (!overrides_dict) return nullptr;
+    }
+
+    // defaults
+    PyObject* defaults_tuple = nullptr;
+    if (L.r.readByte()) {
+        defaults_tuple = load_value(L);             // expects tuple or None (as written by dump)
+        if (!defaults_tuple) {
+            Py_XDECREF(overrides_dict);
+            return nullptr;
+        }
+    }
+
+    // kwdefaults
+    PyObject* kwdefaults_dict = nullptr;
+    if (L.r.readByte()) {
+        kwdefaults_dict = load_value(L);            // expects dict or None
+        if (!kwdefaults_dict) {
+            Py_XDECREF(defaults_tuple);
+            Py_XDECREF(overrides_dict);
+            return nullptr;
+        }
+    }
+
+    // closure (tuple of cells reconstructed from serialized cell contents)
+    PyObject* closure_tuple = nullptr;
+    if (L.r.readByte()) {
+        uint64_t n = L.r.readVarU();
+        closure_tuple = PyTuple_New((Py_ssize_t)n);
+        if (!closure_tuple) {
+            Py_XDECREF(defaults_tuple);
+            Py_XDECREF(kwdefaults_dict);
+            Py_XDECREF(overrides_dict);
+            return nullptr;
+        }
+        for (uint64_t i = 0; i < n; ++i) {
+            PyObject* val = load_value(L);
+            if (!val) {
+                Py_DECREF(closure_tuple);
+                Py_XDECREF(defaults_tuple);
+                Py_XDECREF(kwdefaults_dict);
+                Py_XDECREF(overrides_dict);
+                return nullptr;
+            }
+            PyObject* cell = PyCell_New(val);
+            Py_DECREF(val);
+            if (!cell) {
+                Py_DECREF(closure_tuple);
+                Py_XDECREF(defaults_tuple);
+                Py_XDECREF(kwdefaults_dict);
+                Py_XDECREF(overrides_dict);
+                return nullptr;
+            }
+            PyTuple_SET_ITEM(closure_tuple, (Py_ssize_t)i, cell); // steals
+        }
+    }
+
+    // ---- isolated globals dict (no module re-exec) ----
+    PyObject* globals_dict = PyDict_New();
+    if (!globals_dict) {
+        Py_XDECREF(closure_tuple);
+        Py_XDECREF(defaults_tuple);
+        Py_XDECREF(kwdefaults_dict);
+        Py_XDECREF(overrides_dict);
+        return nullptr;
+    }
+    // __builtins__
+    {
+        PyObject* builtins = PyEval_GetBuiltins(); // borrowed
+        if (!builtins || PyDict_SetItemString(globals_dict, "__builtins__", builtins) < 0) {
+            Py_DECREF(globals_dict);
+            Py_XDECREF(closure_tuple);
+            Py_XDECREF(defaults_tuple);
+            Py_XDECREF(kwdefaults_dict);
+            Py_XDECREF(overrides_dict);
+            return nullptr;
+        }
+    }
+    // __name__
+    {
+        PyObject* pyname = PyUnicode_FromString(module.c_str());
+        if (!pyname || PyDict_SetItemString(globals_dict, "__name__", pyname) < 0) {
+            Py_XDECREF(pyname);
+            Py_DECREF(globals_dict);
+            Py_XDECREF(closure_tuple);
+            Py_XDECREF(defaults_tuple);
+            Py_XDECREF(kwdefaults_dict);
+            Py_XDECREF(overrides_dict);
+            return nullptr;
+        }
+        Py_DECREF(pyname);
+    }
+    // merge overrides into isolated globals
+    if (overrides_dict) {
+        if (PyDict_Update(globals_dict, overrides_dict) < 0) {
+            Py_DECREF(globals_dict);
+            Py_DECREF(overrides_dict);
+            Py_XDECREF(closure_tuple);
+            Py_XDECREF(defaults_tuple);
+            Py_XDECREF(kwdefaults_dict);
+            return nullptr;
+        }
+        Py_DECREF(overrides_dict);
+    }
+
+    // code -> function
+    PyObject* code_obj = unmarshal_code_object(code_bytes);
+    if (!code_obj) {
+        Py_DECREF(globals_dict);
+        Py_XDECREF(closure_tuple);
+        Py_XDECREF(defaults_tuple);
+        Py_XDECREF(kwdefaults_dict);
+        return nullptr;
+    }
+
+    PyObject* func = build_function_from_bits(
+        code_obj, globals_dict, name, defaults_tuple, kwdefaults_dict, closure_tuple);
+
+    Py_DECREF(code_obj);
+    Py_DECREF(globals_dict);
+    Py_XDECREF(closure_tuple);
+    Py_XDECREF(defaults_tuple);
+    Py_XDECREF(kwdefaults_dict);
+
+    if (!func) return nullptr;
+
+    L.track(id, func);
+    return func;
+}
+
+PyObject* PyBinarySerializer::load_function0(LoadState& L) {
     uint64_t id = L.r.readVarU();
     std::string module = L.r.readString();
     std::string qual = L.r.readString();

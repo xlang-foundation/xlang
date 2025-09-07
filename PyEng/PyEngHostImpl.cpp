@@ -376,6 +376,29 @@ void EnablePdbInThread() {
 	}
 }
 
+std::string GetPythonErrorString() {
+	PyObject* ptype, * pvalue, * ptraceback;
+	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+	PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+	PyErr_Clear();
+
+	std::string errStr;
+
+	if (pvalue) {
+		PyObject* pStr = PyObject_Str(pvalue);
+		if (pStr) {
+			errStr = PyUnicode_AsUTF8(pStr);
+			Py_DECREF(pStr);
+		}
+	}
+
+	if (ptype) Py_DECREF(ptype);
+	if (pvalue) Py_DECREF(pvalue);
+	if (ptraceback) Py_DECREF(ptraceback);
+
+	return errStr.empty() ? "Unknown Python error" : errStr;
+}
+
 PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEngObjectPtr kwargs)
 {
 	MGil gil;
@@ -389,7 +412,12 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEn
 	// Trigger pdb.set_trace() to enter Python's interactive debugger
 	//PyRun_SimpleString("import pdb; pdb.set_trace()");
 	//EnablePdbInThread();
-	pRetOb = PyObject_Call(pCallOb,(PyObject*)args, (PyObject*)kwargs);
+	pRetOb = PyObject_Call(pCallOb, (PyObject*)args, (PyObject*)kwargs);
+	if (pRetOb == nullptr)
+	{
+		std::string err = GetPythonErrorString();
+		std::cout <<"GrusPyEngHost::Call, errors:" << err << std::endl;
+	}
 	return (PyEngObjectPtr)pRetOb;
 }
 PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, int argNum, PyEngObjectPtr* args, PyEngObjectPtr kwargs)
@@ -908,7 +936,8 @@ bool GrusPyEngHost::PySerialize(PyEngObjectPtr input, X::Value& output)
 {
 	PyObject* pOb = (PyObject*)input;
 	std::string outBytes;
-	if (!PyBinarySerializer::Dump(pOb, outBytes, PySerOptions())) {
+	PyBinarySerializer pb;
+	if (!pb.Dump(pOb, outBytes, PySerOptions())) {
 		// PyBinarySerializer sets a Python exception on failure.
 		return false;
 	}
@@ -927,9 +956,9 @@ bool GrusPyEngHost::PyDeserialize(X::Value& input, X::Value& output)
 	const char* data_ptr = reinterpret_cast<const char*>(binObj->Data());
 	size_t      data_len = static_cast<size_t>(binObj->Size());
 
-	PyObject* restored = PyBinarySerializer::Load(data_ptr, data_len, PyDeserOptions());
-	output = CheckXlangObjectAndConvert(restored);
-	return true;
+	PyBinarySerializer pb;
+	PyObject* restored = pb.Load(data_ptr, data_len, PyDeserOptions());
+	return X::g_pXHost->PyObjToValue(restored, output);
 }
 
 //Don't call MGil here

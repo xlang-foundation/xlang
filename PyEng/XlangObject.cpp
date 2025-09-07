@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,8 @@ limitations under the License.
 #include "PyHelpFuncs.h"
 #include "PyBinarySerializer.h"
 #include <cstring>
+#include <filesystem>
+
 
 enum class PyProxyType
 {
@@ -42,6 +44,31 @@ typedef struct {
 PyXlangObject* NewXlangObject(X::Value& realObj, PyProxyType type);
 
 
+static bool get_callable_source_path(PyObject* obj, std::string& out_path) 
+{
+	if (!obj) return false;
+
+	// 1) Pure Python function: use code object's co_filename
+	if (PyFunction_Check(obj)) 
+	{
+		PyObject* code = PyFunction_GetCode(obj); // borrowed
+		if (code && PyCode_Check(code)) 
+		{
+			PyObject* filename = ((PyCodeObject*)code)->co_filename; // borrowed
+			if (filename && PyUnicode_Check(filename)) 
+			{
+				const char* fn = PyUnicode_AsUTF8(filename);
+				if (fn && *fn) 
+				{ 
+					out_path = fn; 
+					return true; 
+				}
+			}
+		}
+		// fall through if weird
+	}
+	return false;
+}
 static PyObject*
 XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 {
@@ -51,10 +78,16 @@ XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 	X::Value pyFuncObj;
 	for (Py_ssize_t i = 0; i < size; ++i) {
 		PyObject* pyRealFunc = PyTuple_GetItem(args, i);
+		std::string funcPath;
+		get_callable_source_path(pyRealFunc, funcPath);
+		std::filesystem::path p(funcPath);
+		std::string folderPath = p.parent_path().string();
 		std::string src = get_function_source(pyRealFunc);
 
 		std::string outBytes;
-		if (!PyBinarySerializer::Dump(pyRealFunc, outBytes, PySerOptions()))
+		PyBinarySerializer pb;
+		pb.SetBasePath(folderPath);
+		if (!pb.Dump(pyRealFunc, outBytes, PySerOptions()))
 		{
 			return nullptr;
 		}
@@ -63,8 +96,6 @@ XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 		pWrapFunc->args.resize((int)pWrapFunc->args.size() + 1);
 		//pyFuncObj = PyObjectXLangConverter::ConvertToXValue(pyRealFunc);
 		//pWrapFunc->args.push_back(pyFuncObj);
-		X::Value fromPython(true);
-		binObj.setattr("FromPython", fromPython);
 
 		pWrapFunc->args.push_back(binObj);
 		//only one need to support for python decorator
@@ -75,11 +106,43 @@ XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 	{
 		gil.Unlock();
 		Py_BEGIN_ALLOW_THREADS
-		retVal = pWrapFunc->realObj.ObjCall(pWrapFunc->args, pWrapFunc->kwArgs);
+			retVal = pWrapFunc->realObj.ObjCall(pWrapFunc->args, pWrapFunc->kwArgs);
 		Py_END_ALLOW_THREADS
-		gil.Lock();
+			gil.Lock();
+	}
+
+	if (PyErr_Occurred()) {
+		// Fetch error type, value, and traceback
+		PyObject* ptype, * pvalue, * ptraceback;
+		PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+		PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+
+		// Convert the error value to string
+		std::string errStr;
+		if (pvalue) {
+			PyObject* pStr = PyObject_Str(pvalue);
+			if (pStr) {
+				errStr = PyUnicode_AsUTF8(pStr);
+				Py_DECREF(pStr);
+			}
+		}
+
+		// Optionally log or store the string
+		fprintf(stderr, "Python error: %s\n", errStr.c_str());
+
+		// Clean up
+		Py_XDECREF(ptype);
+		Py_XDECREF(pvalue);
+		Py_XDECREF(ptraceback);
+
+		return nullptr;  // must return NULL to Python
 	}
 	PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
+	if (PyErr_Occurred()) 
+	{
+		Py_DECREF(retObj);  // if you already built a result
+		return nullptr;
+	}
 	return retObj;
 }
 static PyObject*
@@ -141,7 +204,7 @@ static PyObject* XlangObject_getattr(PyXlangObject* self, PyObject* name) {
 		Py_BEGIN_ALLOW_THREADS
 			newObj = self->realObj[attr_name];
 		Py_END_ALLOW_THREADS
-		gil.Lock();
+			gil.Lock();
 	}
 	if (newObj.IsInvalid())
 	{
@@ -210,7 +273,7 @@ static PyObject* XlangObject_call(PyObject* self, PyObject* args, PyObject* kwar
 			Py_BEGIN_ALLOW_THREADS
 				retVal = realObj.ObjCall(x_args, x_kwargs);
 			Py_END_ALLOW_THREADS
-			gil.Lock();
+				gil.Lock();
 		}
 		PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
 		return retObj;
@@ -237,7 +300,7 @@ static PyObject* XlangObject_iadd(PyObject* self, PyObject* other) {
 			Py_BEGIN_ALLOW_THREADS
 				retVal = realObj.AddObj(valOther);
 			Py_END_ALLOW_THREADS
-			gil.Lock();
+				gil.Lock();
 		}
 		//PyObject* retObj = PyObjectXLangConverter::ConvertToPyObject(retVal);
 		pXlangObject->realObj = retVal;

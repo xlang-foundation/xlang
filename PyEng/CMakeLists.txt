@@ -1,91 +1,168 @@
-﻿# CMakeList.txt : CMake project for Grus, include source and define
-#Import python into X
-cmake_minimum_required(VERSION 3.10)
+﻿cmake_minimum_required(VERSION 3.16)
+project(pyeng_multi LANGUAGES C CXX)
 
-set(PROJECT_NAME "pyeng")
-project (${PROJECT_NAME})
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION")
 
-find_package (Python3 COMPONENTS Interpreter Development NumPy)
 
-string(REPLACE "numpy/core/include" "" Python3_SITELIB "${Python3_NumPy_INCLUDE_DIRS}")
+file(GLOB SRC *.cpp)
+file(GLOB Out_SRC ../utils/utility.cpp)
+file(GLOB Xlang_Api_SRC "../Api/*.cpp")
 
-message(STATUS
-    "Python: version=${Python3_VERSION} interpreter=${Python3_EXECUTABLE}")
-if(NOT Python3_FOUND OR NOT Python3_Development_FOUND OR NOT Python3_NumPy_INCLUDE_DIRS)
-    #   find_package() will not abort the build if anything's missing.
-    string(JOIN "\n" errmsg
-        "  Python3 and/or development libs not found."
-        "  - Python3_FOUND=${Python3_FOUND}"
-        "  - Python3_Development_FOUND=${Python3_Development_FOUND}"
-        "  - Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS}"
+# -------------------------------
+# Function to build for one Python
+# -------------------------------
+function(add_pyeng_target target_name py_root py_tag abi_tag)
+    if(WIN32)
+        set(python_exec "${py_root}/python.exe")
+    else()
+        set(python_exec "${py_root}/bin/python${py_tag}")
+    endif()
+
+    # Ask Python for include and numpy
+    execute_process(
+        COMMAND ${python_exec} -c "import sysconfig; print(sysconfig.get_paths()['include'])"
+        OUTPUT_VARIABLE py_include
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    message(WARNING  ${errmsg})
-else()
-    string(JOIN "\n" infoMsg
-        "  - Python3_FOUND=${Python3_FOUND}"
-        "  - Python3_Development_FOUND=${Python3_Development_FOUND}"
-        "  - Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS}"
-        "  - Python3_NumPy_INCLUDE_DIRS=${Python3_NumPy_INCLUDE_DIRS}"
-        "  - Python3_LIBRARY_DIRS=${Python3_LIBRARY_DIRS}"
-        "  - Python3_LIBRARIES=${Python3_LIBRARIES}"
-        "  - Python3_SITELIB=${Python3_SITELIB}"
-        "  - Python3_RUNTIME_LIBRARY_DIRS=${Python3_RUNTIME_LIBRARY_DIRS}"
-        "  - _Python3_LIBRARY_DEBUG=${_Python3_LIBRARY_DEBUG}"
+    execute_process(
+        COMMAND ${python_exec} -c "import numpy; print(numpy.get_include())"
+        OUTPUT_VARIABLE numpy_include
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    message(STATUS ${infoMsg})
 
-    set(REL_TAG "optimized")
-    set(DBG_TAG "debug")
+    if(WIN32)
+        # Query LIBDIR and LIBRARY
+        execute_process(
+            COMMAND ${python_exec} -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
+            OUTPUT_VARIABLE py_libdir
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        execute_process(
+            COMMAND ${python_exec} -c "import sysconfig; print(sysconfig.get_config_var('LIBRARY'))"
+            OUTPUT_VARIABLE py_library
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
 
-    string(FIND "${Python3_LIBRARIES}" "${REL_TAG}" pos_1)
+        # Fix: fall back if Python doesn’t report anything
+        if("${py_libdir}" STREQUAL "None" OR "${py_libdir}" STREQUAL "")
+            set(py_libdir "${py_root}/libs")
+        endif()
+        if("${py_library}" STREQUAL "None" OR "${py_library}" STREQUAL "")
+            set(py_library "python${py_tag}.lib")
+        endif()
 
-    string(LENGTH "${REL_TAG}" len_1)
-    string(FIND "${Python3_LIBRARIES}" "${DBG_TAG}" pos_2)
-    MATH(EXPR len ${pos_2}-${len_1}) 
-    IF(${pos_1} GREATER_EQUAL 0)
-        string(SUBSTRING "${Python3_LIBRARIES}" ${len_1} ${len} Python3_LIBRARIES)
-        message(STATUS ${pos_1} " " ${pos_2} " " ${Python3_LIBRARIES})
-    ENDIF()
+        # set(py_lib "${py_libdir}/${py_library}")
+        set(py_lib "${py_root}/libs/python${py_tag}.lib")
+        set(ext ".dll")
+        set(extra_libs Ws2_32)
+    else()
+        execute_process(
+            COMMAND ${python_exec} -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
+            OUTPUT_VARIABLE py_libdir
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        execute_process(
+            COMMAND ${python_exec} -c "import sysconfig; print(sysconfig.get_config_var('LDLIBRARY'))"
+            OUTPUT_VARIABLE py_ldlibrary
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        set(py_lib "${py_libdir}/${py_ldlibrary}")
+        set(ext ".so")
+        set(extra_libs "")
+    endif()
 
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION")
+    message(STATUS "---- ${target_name} ----")
+    message(STATUS "Python exec : ${python_exec}")
+    message(STATUS "Include dir : ${py_include}")
+    message(STATUS "NumPy inc   : ${numpy_include}")
+    message(STATUS "Library     : ${py_lib}")
 
-    #set(_Python3_LIBRARY_DEBUG,${_Python3_LIBRARY_RELEASE})
-    #set(Python3_LIBRARIES,"${_Python3_LIBRARY_RELEASE})
-    FILE(GLOB SRC *.cpp)
-    FILE(GLOB Out_SRC ../utils/utility.cpp)
-    file(GLOB Xlang_Api_SRC "../Api/*.cpp")
-
-    add_library(${PROJECT_NAME} 
-	    SHARED
+    add_library(${target_name} SHARED
+        ${SRC}
         ${Out_SRC}
         ${Xlang_Api_SRC}
-	    ${SRC})
+    )
 
-    target_include_directories(${PROJECT_NAME} 
-	    PUBLIC
+    set_target_properties(${target_name} PROPERTIES
+        PREFIX ""
+        SUFFIX ${ext}
+        OUTPUT_NAME "pyeng.${abi_tag}"
+    )
+
+    target_include_directories(${target_name} PUBLIC
         "../Inc"
         "../utils"
-	    "${Python3_INCLUDE_DIRS}"
-	    "${Python3_NumPy_INCLUDE_DIRS}"
-	    )
-    target_link_directories(${PROJECT_NAME} PUBLIC 
-	    "\"${Python3_LIBRARY_DIRS}\""
-	    )
+        ${py_include}
+        ${numpy_include}
+    )
 
-    if (WIN32)
-    target_link_libraries(${PROJECT_NAME} PUBLIC 
-        "${Python3_LIBRARIES}" Ws2_32
-	    )
+    target_link_libraries(${target_name} PUBLIC ${py_lib} ${extra_libs})
+endfunction()
 
-    configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.bat" "${CMAKE_BINARY_DIR}/bin/install_py_xlang.bat")
 
-    else()
-    configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.sh" "${CMAKE_BINARY_DIR}/bin/install_py_xlang.sh")
-    target_link_libraries(${PROJECT_NAME} PUBLIC 
-        "${Python3_LIBRARIES}"
-	    )
-    endif()
+# -------------------------------
+# Build for each Python version
+# -------------------------------
+
+set(useDefaultPython TRUE)
+
+# Python 3.12
+if(DEFINED ENV{PY312_ROOT})
+    add_pyeng_target(pyeng312
+        "$ENV{PY312_ROOT}"
+        "312"
+        "cp312"
+    )
+    set(useDefaultPython FALSE)
 endif()
 
+# Python 3.13
+if(DEFINED ENV{PY313_ROOT})
+    add_pyeng_target(pyeng313
+        "$ENV{PY313_ROOT}"
+        "313"
+        "cp313"
+    )
+    set(useDefaultPython FALSE)
+endif()
+
+# Default Python (system one)
+if(useDefaultPython)
+    set(target_name "pyeng")
+    find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+
+    string(REPLACE "numpy/core/include" "" Python3_SITELIB "${Python3_NumPy_INCLUDE_DIRS}")
+
+    message(STATUS "Python: version=${Python3_VERSION} interpreter=${Python3_EXECUTABLE}")
+    message(STATUS "  - Python3_FOUND=${Python3_FOUND}")
+    message(STATUS "  - Python3_Development_FOUND=${Python3_Development_FOUND}")
+    message(STATUS "  - Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS}")
+    message(STATUS "  - Python3_NumPy_INCLUDE_DIRS=${Python3_NumPy_INCLUDE_DIRS}")
+    message(STATUS "  - Python3_LIBRARIES=${Python3_LIBRARIES}")
+
+    add_library(${target_name} SHARED
+        ${SRC}
+        ${Out_SRC}
+        ${Xlang_Api_SRC}
+    )
+
+    target_include_directories(${target_name} PUBLIC
+        "../Inc"
+        "../utils"
+        "${Python3_INCLUDE_DIRS}"
+        "${Python3_NumPy_INCLUDE_DIRS}"
+    )
+
+    target_link_libraries(${target_name} PUBLIC "${Python3_LIBRARIES}")
+
+    if(WIN32)
+        target_link_libraries(${target_name} PUBLIC Ws2_32)
+        configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.bat"
+                       "${CMAKE_BINARY_DIR}/bin/install_py_xlang.bat")
+    else()
+        configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.sh"
+                       "${CMAKE_BINARY_DIR}/bin/install_py_xlang.sh")
+    endif()
+endif()
