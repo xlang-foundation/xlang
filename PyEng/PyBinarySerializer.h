@@ -34,12 +34,17 @@ struct PyDeserOptions {
 
 // ================== API ==================
 class PyBinarySerializer {
+    std::string m_basePath;
 public:
+    inline void SetBasePath(std::string& path)
+    {
+        m_basePath = path;
+    }
     // Serialize: returns true on success; on failure sets a Python exception and returns false.
-    static bool Dump(PyObject* obj, std::string& out, const PySerOptions& opt = {});
+    bool Dump(PyObject* obj, std::string& out, const PySerOptions& opt = {});
 
     // Deserialize: returns NEW REF PyObject* on success; NULL on failure with Python exception set.
-    static PyObject* Load(const char* data, size_t n, const PyDeserOptions& opt = {});
+    PyObject* Load(const char* data, size_t n, const PyDeserOptions& opt = {});
 
 private:
     // ============= Wire Tags (format v1) =============
@@ -81,8 +86,9 @@ private:
 
     // -------- Writer / Reader --------
     class Writer {
+        PyBinarySerializer* m_parent;
     public:
-        explicit Writer(std::string& out, const PySerOptions& opt);
+        explicit Writer(PyBinarySerializer* parent,std::string& out, const PySerOptions& opt);
         void writeByte(uint8_t b);
         void writeVarU(uint64_t v);
         void writeVarI(int64_t v); // zig-zag
@@ -99,8 +105,9 @@ private:
     };
 
     class Reader {
+        PyBinarySerializer* m_parent;
     public:
-        Reader(const char* p, size_t n, const PyDeserOptions& opt);
+        Reader(PyBinarySerializer* parent,const char* p, size_t n, const PyDeserOptions& opt);
         bool eof() const { return cur >= end; }
         uint8_t  readByte();
         uint64_t readVarU();
@@ -134,81 +141,82 @@ private:
     };
 
     // -------- Dump helpers (primitives/containers/objects) --------
-    static bool dump_value(PyObject* o, DumpState& S);
-    static bool dump_none(DumpState& S);
-    static bool dump_bool(bool v, DumpState& S);
-    static bool dump_int(PyObject* o, DumpState& S);
-    static bool dump_float(PyObject* o, DumpState& S);
-    static bool dump_str(PyObject* o, DumpState& S);
-    static bool dump_bytes_like(PyObject* o, DumpState& S);
-    static bool dump_list(PyObject* o, DumpState& S);
-    static bool dump_tuple(PyObject* o, DumpState& S);
-    static bool dump_dict(PyObject* o, DumpState& S);
-    static bool dump_set(PyObject* o, DumpState& S);
-    static bool dump_frozenset(PyObject* o, DumpState& S);
-    static bool dump_object(PyObject* o, DumpState& S);
+    bool dump_value(PyObject* o, DumpState& S);
+    bool dump_none(DumpState& S);
+    bool dump_bool(bool v, DumpState& S);
+    bool dump_int(PyObject* o, DumpState& S);
+    bool dump_float(PyObject* o, DumpState& S);
+    bool dump_str(PyObject* o, DumpState& S);
+    bool dump_bytes_like(PyObject* o, DumpState& S);
+    bool dump_list(PyObject* o, DumpState& S);
+    bool dump_tuple(PyObject* o, DumpState& S);
+    bool dump_dict(PyObject* o, DumpState& S);
+    bool dump_set(PyObject* o, DumpState& S);
+    bool dump_frozenset(PyObject* o, DumpState& S);
+    bool dump_object(PyObject* o, DumpState& S);
 
     // New callable/module/type dumping
-    static bool dump_function(PyObject* func, DumpState& S);
-    static bool dump_module(PyObject* mod, DumpState& S);
-    static bool dump_type(PyObject* type, DumpState& S);
+    bool dump_function(PyObject* func, DumpState& S);
+    bool dump_module(PyObject* mod, DumpState& S);
+    bool dump_type(PyObject* type, DumpState& S);
 
-    static bool is_referenceable(PyObject* o);
-    static uint64_t ensure_id(PyObject* o, DumpState& S, bool& is_new);
+    bool is_referenceable(PyObject* o);
+    uint64_t ensure_id(PyObject* o, DumpState& S, bool& is_new);
 
     // Object strategy selection
-    static bool try_getstate(PyObject* o, PyObject** out_state);
-    static bool try_reduce(PyObject* o, PyObject** out_reduce_tuple);
-    static bool try_dict_snapshot(PyObject* o, PyObject** out_dict);
+    bool try_getstate(PyObject* o, PyObject** out_state);
+    bool try_reduce(PyObject* o, PyObject** out_reduce_tuple);
+    bool try_dict_snapshot(PyObject* o, PyObject** out_dict);
 
     // -------- Load helpers --------
-    static PyObject* load_value(LoadState& L);
-    static PyObject* load_list(LoadState& L);
-    static PyObject* load_tuple(LoadState& L);
-    static PyObject* load_dict(LoadState& L);
-    static PyObject* load_set(LoadState& L);
-    static PyObject* load_frozenset(LoadState& L);
-    static PyObject* load_object(LoadState& L);
+    PyObject* load_value(LoadState& L);
+    PyObject* load_list(LoadState& L);
+    PyObject* load_tuple(LoadState& L);
+    PyObject* load_dict(LoadState& L);
+    PyObject* load_set(LoadState& L);
+    PyObject* load_frozenset(LoadState& L);
+    PyObject* load_object(LoadState& L);
 
     // New callable/module/type loading
-    static PyObject* load_function(LoadState& L);
-    static PyObject* load_module(LoadState& L);
-    static PyObject* load_type(LoadState& L);
+    PyObject* load_function(LoadState& L);
+    PyObject* load_function0(LoadState& L);
+    PyObject* load_module(LoadState& L);
+    PyObject* load_type(LoadState& L);
 
     // -------- Reconstruction utils --------
-    static PyObject* import_qualified(const std::string& module, const std::string& qualname);
-    static PyObject* new_without_init(PyObject* cls);
-    static bool set_via_setstate(PyObject* inst, PyObject* state);
-    static bool assign_via_dict(PyObject* inst, PyObject* d);
-    static PyObject* apply_reduce_tuple(PyObject* tpl, const PyDeserOptions& opt);
+    PyObject* import_qualified(const std::string& module, const std::string& qualname);
+    PyObject* new_without_init(PyObject* cls);
+    bool set_via_setstate(PyObject* inst, PyObject* state);
+    bool assign_via_dict(PyObject* inst, PyObject* d);
+    PyObject* apply_reduce_tuple(PyObject* tpl, const PyDeserOptions& opt);
 
     // For modules & local/global decisions
-    static bool get_module_name_qual(PyObject* obj, std::string& module, std::string& qual);
-    static bool get_module_file(PyObject* mod, std::string& file_path);
-    static bool is_path_under_base(const std::string& path, const std::string& base_dir);
-    static std::string get_default_base_dir(); // cwd if available
+    bool get_module_name_qual(PyObject* obj, std::string& module, std::string& qual);
+    bool get_module_file(PyObject* mod, std::string& file_path);
+    bool is_path_under_base(const std::string& path, const std::string& base_dir);
+    std::string get_default_base_dir(); // cwd if available
 
-    static bool read_text_file(const std::string& path, std::string& out_text);
+    bool read_text_file(const std::string& path, std::string& out_text);
 
     // For function (de)serialization
-    static bool marshal_code_object(PyObject* code, std::string& out_bytes);
-    static PyObject* unmarshal_code_object(const std::string& bytes);
-    static bool is_local_entity(PyObject* owner_module, const PySerOptions& opt);
+    bool marshal_code_object(PyObject* code, std::string& out_bytes);
+    PyObject* unmarshal_code_object(const std::string& bytes);
+    bool is_local_entity(PyObject* owner_module, const PySerOptions& opt);
 
-    static PyObject* ensure_module_built_from_source(const std::string& module_name,
+    PyObject* ensure_module_built_from_source(const std::string& module_name,
         const std::string& source_text);
 
-    static PyObject* build_function_from_bits(PyObject* code_obj,
+    PyObject* build_function_from_bits(PyObject* code_obj,
         PyObject* globals_dict,
         const std::string& name,
         PyObject* defaults_tuple,      // may be NULL
         PyObject* kwdefaults_dict,     // may be NULL
         PyObject* closure_tuple);      // may be NULL
 
-    static PyObject* get_types_FunctionType();
+    PyObject* get_types_FunctionType();
 
     // Utilities
-    static inline uint64_t zigzag(int64_t v);
-    static inline int64_t unzigzag(uint64_t u);
-    static bool py_is_true(PyObject* o);
+    inline uint64_t zigzag(int64_t v);
+    inline int64_t unzigzag(uint64_t u);
+    bool py_is_true(PyObject* o);
 };

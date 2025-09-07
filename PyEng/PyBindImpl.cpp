@@ -110,7 +110,8 @@ Xlang_Dump(PyObject* self, PyObject* args, PyObject* kwargs)
     PyObject* item = PyTuple_GetItem(args, 0); // borrowed
 
     std::string outBytes;
-    if (!PyBinarySerializer::Dump(item, outBytes, PySerOptions())) {
+	PyBinarySerializer pb;
+    if (!pb.Dump(item, outBytes, PySerOptions())) {
         // PyBinarySerializer sets a Python exception on failure.
         return nullptr;
     }
@@ -153,7 +154,8 @@ Xlang_Load(PyObject* self, PyObject* args, PyObject* kwargs)
     }
 
     // Now decode the binary blob into a Python object (NEW ref or NULL with exception set).
-    PyObject* restored = PyBinarySerializer::Load(data_ptr, data_len, PyDeserOptions());
+	PyBinarySerializer pb;
+	PyObject* restored = pb.Load(data_ptr, data_len, PyDeserOptions());
     return restored;
 }
 
