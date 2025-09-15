@@ -137,37 +137,66 @@ bool install_into_sitepackages(const std::string& modulePath) {
     }
 }
 
-// --- Resolve path with cache file ---
+// helper: convert file_time_type → time_t
+inline std::time_t to_time_t(std::filesystem::file_time_type ftime) {
+    using namespace std::chrono;
+    auto sctp = time_point_cast<system_clock::duration>(
+        ftime - std::filesystem::file_time_type::clock::now()
+        + system_clock::now()
+    );
+    return system_clock::to_time_t(sctp);
+}
+
+// --- Resolve path with cache file (extended) ---
 std::string resolve_pyeng_path(const std::string& folder) {
     fs::path cacheFile = fs::path(folder) / "pyeng.cache.txt";
 
+    std::string module;
+    bool copied = false;
+    std::time_t cachedTime = 0;
+    uintmax_t cachedSize = 0;
+
     if (fs::exists(cacheFile)) {
         std::ifstream fin(cacheFile);
-        std::string savedPath;
-        bool copied = false;
-        fin >> savedPath >> copied;
+        fin >> module >> copied >> cachedTime >> cachedSize;
         fin.close();
 
-        if (!savedPath.empty() && fs::exists(savedPath)) {
-            std::cout << "Loaded cached path: " << savedPath
-                << " (already copied=" << copied << ")\n";
-            return savedPath;
+        if (!module.empty() && fs::exists(module)) {
+            auto ftime = fs::last_write_time(module);
+            std::time_t modTime = to_time_t(ftime);
+            uintmax_t size = fs::file_size(module);
+
+            if (modTime == cachedTime && size == cachedSize) {
+                std::cout << "Loaded cached path: " << module
+                    << " (already copied=" << copied << ")\n";
+                return module;
+            }
+            else {
+                std::cout << "Module changed, will re-copy.\n";
+            }
         }
     }
 
-    // Not cached → detect
-    std::string module = find_pyeng_module(folder);
+    // Not cached or changed → detect
+    module = find_pyeng_module(folder);
     if (module.empty()) {
         std::cerr << "No pyeng module found in: " << folder << "\n";
         return {};
     }
 
-    bool copied = install_into_sitepackages(module);
+    copied = install_into_sitepackages(module);
 
-    // Save cache
+    // Collect new metadata
+    auto ftime = fs::last_write_time(module);
+    std::time_t modTime = to_time_t(ftime);
+    uintmax_t size = fs::file_size(module);
+
+    // Save cache with metadata
     std::ofstream fout(cacheFile);
-    fout << module << " " << copied;
+    fout << module << " " << copied << " " << modTime << " " << size;
     fout.close();
 
     return module;
 }
+
+
