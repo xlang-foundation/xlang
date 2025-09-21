@@ -49,7 +49,9 @@ limitations under the License.
 #include "RemotingProxy.h"
 #include "error_obj.h"
 #include "log.h"
+#if (WIN32)
 #include "PyLoad.h"
+#endif
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -164,10 +166,46 @@ PyEngObjectPtr Xlang_CallFunc_Impl(
 bool LoadPythonEngine()
 {
 	typedef void (*LOAD)(void* pHost,void** ppHost);
-
+#if (WIN32)
 	std::string folder(g_pXload->GetConfig().appPath);
 	std::string loadDllName = resolve_pyeng_path(folder);
-
+#else
+	std::string loadDllName;
+	bool bHaveDll = false;
+	std::vector<std::string> candiateFiles;
+	std::string engName("pyeng");
+	bool bRet = file_search(g_pXload->GetConfig().appPath,
+		LibPrefix + engName + ShareLibExt, candiateFiles);
+	if (bRet && candiateFiles.size() > 0)
+	{
+		loadDllName = candiateFiles[0];
+		bHaveDll = true;
+	}
+	else if (g_pXload->GetConfig().dllSearchPath)
+	{
+		std::string strPaths(g_pXload->GetConfig().dllSearchPath);
+		std::vector<std::string> otherSearchPaths = split(strPaths, '\n');
+		for (auto& pa : otherSearchPaths)
+		{
+			bRet = file_search(pa,
+				LibPrefix + engName + ShareLibExt, candiateFiles);
+			if (bRet && candiateFiles.size() > 0)
+			{
+				loadDllName = candiateFiles[0];
+				bHaveDll = true;
+				//break;
+			}
+		}
+	}
+	if (!bHaveDll)
+	{
+		return false;
+	}
+	if (!bHaveDll)
+	{
+		return false;
+	}
+#endif
 	void* libHandle = LOADLIB(loadDllName.c_str());
 	if (libHandle)
 	{
