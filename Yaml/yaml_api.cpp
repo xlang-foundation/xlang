@@ -84,23 +84,19 @@ namespace X
 
 		std::string rawStr = scalarNode.Scalar();
 
-		// --- NEW: handle quoted strings explicitly ---
-		if (scalarNode.Tag() == "!" ||
-			(rawStr.size() > 1 &&
-				((rawStr.front() == '"' && rawStr.back() == '"') ||
-					(rawStr.front() == '\'' && rawStr.back() == '\''))))
-		{
-			return X::Value(rawStr.substr(1, rawStr.size() - 2));
+		// --- Explicit string tags in YAML ---
+		if (scalarNode.Tag() == "!!str" || scalarNode.Tag() == "!") {
+			return X::Value(rawStr);
 		}
 
-		// --- NEW: if it's all digits but too long, keep as string ---
+		// --- If it's all digits but too long, keep as string ---
 		if (std::regex_match(rawStr, std::regex("^[-+]?[0-9]+$")) &&
-			rawStr.size() > 15) // arbitrary cutoff to avoid precision loss
+			rawStr.size() > 15) // prevent overflow/precision loss
 		{
 			return X::Value(rawStr);
 		}
 
-		// Integer
+		// --- Integer ---
 		if (std::regex_match(rawStr, std::regex("^[-+]?[0-9]+$"))) {
 			try {
 				int value = std::stoi(rawStr);
@@ -115,7 +111,7 @@ namespace X
 			}
 		}
 
-		// Floating-point
+		// --- Floating-point ---
 		if (std::regex_match(rawStr, std::regex("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$"))) {
 			try {
 				double value = std::stod(rawStr);
@@ -124,7 +120,7 @@ namespace X
 			catch (...) {}
 		}
 
-		// Boolean
+		// --- Boolean ---
 		if (rawStr == "true" || rawStr == "True" || rawStr == "TRUE" ||
 			rawStr == "yes" || rawStr == "Yes" || rawStr == "YES" ||
 			rawStr == "on" || rawStr == "On" || rawStr == "ON") {
@@ -137,7 +133,7 @@ namespace X
 			return X::Value(false);
 		}
 
-		// Default: string
+		// --- Default: string ---
 		return X::Value(rawStr);
 	}
 
