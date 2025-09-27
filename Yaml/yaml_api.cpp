@@ -78,14 +78,29 @@ namespace X
 
 	X::Value ConvertYamlScalarToXValue(const YAML::Node& scalarNode)
 	{
-		// Defensively check the node type to avoid exceptions
 		if (!scalarNode.IsScalar()) {
 			return X::Value(std::string(""));
 		}
 
 		std::string rawStr = scalarNode.Scalar();
 
-		// Check for integer format: optional sign followed by digits only
+		// --- NEW: handle quoted strings explicitly ---
+		if (scalarNode.Tag() == "!" ||
+			(rawStr.size() > 1 &&
+				((rawStr.front() == '"' && rawStr.back() == '"') ||
+					(rawStr.front() == '\'' && rawStr.back() == '\''))))
+		{
+			return X::Value(rawStr.substr(1, rawStr.size() - 2));
+		}
+
+		// --- NEW: if it's all digits but too long, keep as string ---
+		if (std::regex_match(rawStr, std::regex("^[-+]?[0-9]+$")) &&
+			rawStr.size() > 15) // arbitrary cutoff to avoid precision loss
+		{
+			return X::Value(rawStr);
+		}
+
+		// Integer
 		if (std::regex_match(rawStr, std::regex("^[-+]?[0-9]+$"))) {
 			try {
 				int value = std::stoi(rawStr);
@@ -100,7 +115,7 @@ namespace X
 			}
 		}
 
-		// Check for floating point format
+		// Floating-point
 		if (std::regex_match(rawStr, std::regex("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$"))) {
 			try {
 				double value = std::stod(rawStr);
@@ -109,7 +124,7 @@ namespace X
 			catch (...) {}
 		}
 
-		// Check for boolean values
+		// Boolean
 		if (rawStr == "true" || rawStr == "True" || rawStr == "TRUE" ||
 			rawStr == "yes" || rawStr == "Yes" || rawStr == "YES" ||
 			rawStr == "on" || rawStr == "On" || rawStr == "ON") {
@@ -122,7 +137,7 @@ namespace X
 			return X::Value(false);
 		}
 
-		// If no other type matches, return as string
+		// Default: string
 		return X::Value(rawStr);
 	}
 
