@@ -14,6 +14,9 @@
 # <END>
 
 from xlang_yaml import yaml
+# Test Json Loading
+json_obj = yaml.load('test.json')
+device_id = json_obj.get("device_id")
 x1 = yaml.load('no_file.yml')
 if x1.is_error():
 	print("Error: ",x1.getInfo())
