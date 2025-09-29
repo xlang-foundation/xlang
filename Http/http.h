@@ -91,6 +91,7 @@ namespace X
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
 			APISET().AddVarFuncEx("route", &HttpServer::Route);
+			APISET().AddFunc<2>("add_route", &HttpServer::AddRoute);
 			APISET().AddFunc<1>("getMimeType", &HttpServer::GetMimeType);
 			END_PACKAGE
 	public:
@@ -126,6 +127,7 @@ namespace X
 		bool Listen(std::string srvName, int port);
 		bool Stop();
 		bool Get(std::string pattern, X::Value& valHandler);
+		bool AddRoute(std::string urlPattern, X::Value& func);
 		bool Route(X::XRuntime* rt, X::XObj* pThis,X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams,
 			X::Value& trailer, X::Value& retValue);
