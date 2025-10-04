@@ -678,7 +678,14 @@ namespace X
 				else
 				{
 					X::XPackage* pPack = dynamic_cast<X::XPackage*>(v.GetObj());
-					m_obj = (T*)pPack->GetEmbedObj();
+					if (pPack)
+					{
+						m_obj = (T*)pPack->GetEmbedObj();
+					}
+					else
+					{
+						m_obj = nullptr;
+					}
 				}
 			}
 		}
