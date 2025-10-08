@@ -35,7 +35,7 @@ enum class PyProxyType
 };
 typedef struct {
 	PyObject_HEAD
-		X::Value realObj;
+	X::Value realObj;
 	X::ARGS args;
 	X::KWARGS kwArgs;
 	PyProxyType type;
@@ -191,6 +191,10 @@ static int XlangObject_init(PyXlangObject* self, PyObject* args, PyObject* kwds)
 
 static void XlangObject_dealloc(PyXlangObject* self) {
 	MGil gil;
+	// Call C++ destructors explicitly
+	self->realObj.Clear();
+	self->args.clear();
+	self->kwArgs.clear();
 	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
