@@ -229,7 +229,7 @@ namespace X {
 				KWARGS& kwParams,
 				X::Value& retValue)
 			{
-				return m_obj->Call((XlangRuntime*)rt, this,
+				return m_obj->Call((XlangRuntime*)rt, this,this,
 					params, kwParams, retValue);
 			}
 		};

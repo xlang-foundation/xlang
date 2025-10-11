@@ -19,6 +19,7 @@ limitations under the License.
 #include <string>
 #include "glob.h"
 #include "xclass_object.h"
+#include "attribute.h"
 
 namespace X
 {
@@ -38,8 +39,9 @@ void Func::ScopeLayout()
 	{
 		std::string strName(m_Name.s, m_Name.size);
 		SCOPE_FAST_CALL_AddOrGet0_NoDef(m_Index,pMyScope,strName, false);
-		//TODO: debug here
-		if (m_parent->m_type == ObType::Class)
+		//Shawn 10/10/2025, for function we also want to support this
+		//so comment out class check
+		//if (m_parent->m_type == ObType::Class)
 		{//it is class's member
 			//add into myscope not parent class's scope
 			SCOPE_FAST_CALL_AddOrGet0_NoDef(m_IndexOfThis,GetMyScope(), thisKey, false);
@@ -154,7 +156,21 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 		ExpExec(*it,rt, action,pPassContext, retVal);
 		if (retVal.IsObject())
 		{
-			pPassContext = retVal.GetObj();
+			auto* pWrapper = dynamic_cast<X::Data::Object*>(retVal.GetObj());
+			if (pWrapper && pPassContext)
+			{
+				// Explicitly link the decorator chain
+				auto* aBag = pWrapper->GetAttrBag();
+				if (aBag)
+				{
+					// Set "origin" attribute for the decorator wrapper
+					X::Value passIn(pPassContext);
+					aBag->Set("origin", passIn);
+					//aBag->Set("origin", v0);
+				}
+			}
+
+			pPassContext = pWrapper;
 			v0 = retVal;
 		}
 	}
@@ -168,14 +184,16 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 //this function seems just called from Decorator::Exec
 //but maybe have some problems with remoting
 //todo: need to check out
-bool Func::CallEx(XRuntime* rt, XObj* pContext,
+bool Func::CallEx(XRuntime* rt, 
+	XObj* pThis,
+	XObj* pContext,
 	ARGS& params,
 	KWARGS& kwParams,
 	X::Value& trailer,
 	X::Value& retValue)
 {
 	kwParams.Add("origin", trailer);
-	return Call(rt,pContext,params,kwParams,retValue);
+	return Call(rt,pThis,pContext,params,kwParams,retValue);
 }
 void Func::FindMyModule()
 {
@@ -228,6 +246,7 @@ void Func::ChangeStatmentsIntoTranslateMode(
 //also check if in this is in-trace or not,
 //if in trace, need to add Scope into trace list
 bool Func::Call(XRuntime* rt0,
+	XObj* pThis,
 	XObj* pContext,
 	ARGS& params,
 	KWARGS& kwParams,
@@ -258,10 +277,12 @@ bool Func::Call(XRuntime* rt0,
 	}
 	rt->PushFrame(pCurFrame,m_pMyScope->GetVarNum());
 	//for Class,Add this if This is not null
-	if (m_IndexOfThis >=0 &&
-		pContextObj && pContextObj->GetType() == X::ObjType::XClassObject)
+	//Shawn 10/10/2025, for function we also want to support this
+	//so comment out the check of pContextObj->GetType() == X::ObjType::XClassObject
+	if (m_IndexOfThis >=0 && pThis
+		/* && pContextObj->GetType() == X::ObjType::XClassObject*/)
 	{
-		Value v0(dynamic_cast<Data::Object*>(pContext));
+		Value v0(dynamic_cast<Data::Object*>(pThis));
 		pCurFrame->Set(m_IndexOfThis, v0);
 	}
 	int num = (int)params.size();
