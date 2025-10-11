@@ -50,7 +50,7 @@ namespace X
 					param.push_back(v);
 					KWARGS kwParam;
 					Value retVal;
-					bOK = m_setter->Call(rt0, pContext, param, kwParam, retVal);
+					bOK = m_setter->Call(rt0, this,pContext, param, kwParam, retVal);
 				}
 				return bOK;
 			}
@@ -74,7 +74,7 @@ namespace X
 				{
 					ARGS param(0);
 					KWARGS kwParam;
-					bOK = m_getter->Call(rt0, pContext, param, kwParam, v);
+					bOK = m_getter->Call(rt0, this,pContext, param, kwParam, v);
 				}
 				return bOK;
 			}

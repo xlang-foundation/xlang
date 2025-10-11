@@ -505,10 +505,10 @@ public:
 	{
 		//for tuple, the release will auto release its children
 		//'s refcount
-		g_pPyHost->Release(m_p);
 		//todo: check 
 		//make sure to call Object's deconstructor
 		//g_pPyHost->CallReleaseForTupleItems(m_p);
+		g_pPyHost->Release(m_p);
 	}
 	Tuple(long long size) :
 		Object()
@@ -522,7 +522,10 @@ public:
 		for (unsigned long long i = 0; i < li.size(); i++)
 		{
 			Object obj(li[i]);
-			//don't keep refcount in tuple, will not call release according Python ref count rules
+			//obj will be incease by the operator Object(PyEngObjectPtr p)
+			//so even when this block ends, the obj will release one refcount
+			//but the tuple will have one ( by the operator PyEngObjectPtr
+			//when tuple is released, it will release all its items' refcount)
 			g_pPyHost->Set(m_p, (int)i, obj);
 		}
 	}

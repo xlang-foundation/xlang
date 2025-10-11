@@ -171,7 +171,9 @@ namespace X
 				//only accept once
 				NeedParam = false;
 			}
-			FORCE_INLINE virtual bool Call(XRuntime* rt, XObj* pContext,
+			FORCE_INLINE virtual bool Call(XRuntime* rt, 
+				XObj* pThis,
+				XObj* pContext,
 				ARGS& params,
 				KWARGS& kwParams,
 				Value& retValue) override final

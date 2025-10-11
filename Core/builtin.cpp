@@ -1345,7 +1345,7 @@ bool U_Each(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		{
 			params_to_cb.push_back(params[i]);
 		}
-		pFunc->Call(rt, pContext, params_to_cb, kwParams, retVal);
+		pFunc->Call(rt, pFuncObj,pContext, params_to_cb, kwParams, retVal);
 		return retVal;
 	};
 	ARGS params_proc(params.size());

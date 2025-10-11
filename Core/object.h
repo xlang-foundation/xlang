@@ -391,7 +391,7 @@ namespace Data {
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return m_func->Call(rt, nullptr,
+			return m_func->Call(rt, this,nullptr,
 				params, kwParams, retValue);
 		}
 	};
