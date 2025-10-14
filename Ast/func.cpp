@@ -21,6 +21,7 @@ limitations under the License.
 #include "xclass_object.h"
 #include "attribute.h"
 
+
 namespace X
 {
 namespace AST
@@ -39,12 +40,14 @@ void Func::ScopeLayout()
 	{
 		std::string strName(m_Name.s, m_Name.size);
 		SCOPE_FAST_CALL_AddOrGet0_NoDef(m_Index,pMyScope,strName, false);
-		//Shawn 10/10/2025, for function we also want to support this
-		//so comment out class check
-		//if (m_parent->m_type == ObType::Class)
-		{//it is class's member
-			//add into myscope not parent class's scope
-			SCOPE_FAST_CALL_AddOrGet0_NoDef(m_IndexOfThis,GetMyScope(), thisKey, false);
+		//if m_parent is calss
+		// with check m_parent->m_type == ObType::Class
+		// add this into myscope with index m_IndexOfThis
+		//but if function is not belong to class, also add thin index
+		//but it point to function itself
+		if (m_parent->m_type == ObType::Class)
+		{
+			SCOPE_FAST_CALL_AddOrGet0_NoDef(m_IndexOfThis, GetMyScope(), thisKey, false);
 		}
 	}
 	//process parameters' default values
@@ -278,13 +281,26 @@ bool Func::Call(XRuntime* rt0,
 	rt->PushFrame(pCurFrame,m_pMyScope->GetVarNum());
 	//for Class,Add this if This is not null
 	//Shawn 10/10/2025, for function we also want to support this
+	//TODO: this may have some problem, so comment out for function
+	// for function,we are going to add closure support
 	//so comment out the check of pContextObj->GetType() == X::ObjType::XClassObject
-	if (m_IndexOfThis >=0 && pThis
-		/* && pContextObj->GetType() == X::ObjType::XClassObject*/)
+	if (m_IndexOfThis >=0)
 	{
-		Value v0(dynamic_cast<Data::Object*>(pThis));
-		pCurFrame->Set(m_IndexOfThis, v0);
+		Value varThis;
+		if (pContextObj && pContextObj->GetType() == X::ObjType::XClassObject)
+		{
+			//for class's function,this always point to class instance
+			varThis = X::Value(pContextObj);
+		}
+#if 0
+		else if(pThis)
+		{
+			varThis = X::Value(dynamic_cast<Data::Object*>(pThis));
+		}
+#endif
+		pCurFrame->Set(m_IndexOfThis, varThis);
 	}
+
 	int num = (int)params.size();
 	int indexNum = (int)m_IndexofParamList.size();
 	if (num > indexNum)
