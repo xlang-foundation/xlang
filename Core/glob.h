@@ -68,6 +68,35 @@ namespace X {
 			((Locker*)m_lockRTMap)->Unlock();
 			return  ret; 
 		}
+		FORCE_INLINE void SetAllRuntimesDebug(bool bDebug)
+		{
+			((Locker*)m_lockRTMap)->Lock();
+			for (auto& item : m_rtMap)
+			{
+				item.second->SetNoDbg(!bDebug);
+				if (!bDebug && item.second->m_bStoped)
+				{
+					CommandInfo* pCmdInfo = new CommandInfo();
+					pCmdInfo->dbgType = dbg::Continue;
+					item.second->AddCommand(pCmdInfo, false);
+				}
+			}
+			((Locker*)m_lockRTMap)->Unlock();
+		}
+		FORCE_INLINE void DebugPauseAllThread(bool bPause, int breakThread)
+		{
+			((Locker*)m_lockRTMap)->Lock();
+			for (auto& item : m_rtMap)
+			{
+				if (item.first != breakThread && !item.second->m_bNoDbg)
+				{
+					CommandInfo* pCmdInfo = new CommandInfo();
+					pCmdInfo->dbgType = bPause ? dbg::Step : dbg::Continue;
+					item.second->AddCommand(pCmdInfo, false);
+				}
+			}
+			((Locker*)m_lockRTMap)->Unlock();
+		}
 		FORCE_INLINE AST::Module* QueryModuleByThreadId(int threadId)
 		{
 			AST::Module* ret = nullptr;

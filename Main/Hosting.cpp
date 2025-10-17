@@ -67,22 +67,9 @@ namespace X
 
 	void Hosting::SetDebugMode(bool bDebug)
 	{
-		if (bDebug)
-			G::I().SetTrace(Dbg::xTraceFunc);
-		else
-		{
-			G::I().SetTrace(nullptr);
-			std::unordered_map<long long, XlangRuntime*> rtMap = G::I().GetThreadRuntimeIdMap();
-			for (auto& item : rtMap)
-			{
-				if (item.second->m_bStoped)
-				{
-					CommandInfo* pCmdInfo = new CommandInfo();
-					pCmdInfo->dbgType = dbg::Continue;
-					item.second->AddCommand(pCmdInfo, false);
-				}
-			}
-		}
+		LOG << LOG_GREEN << "XLang set debug mode: " << (bDebug ? "true" : "false") << LOG_RESET << LINE_END;
+		G::I().SetTrace(bDebug ? Dbg::xTraceFunc : nullptr);
+		G::I().SetAllRuntimesDebug(bDebug);
 	}
 
 	unsigned long long  Hosting::RunAsBackend(std::string& moduleName, std::string& code, std::vector<X::Value>& args)

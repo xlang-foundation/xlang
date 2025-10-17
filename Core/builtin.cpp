@@ -239,7 +239,7 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	std::vector<X::AST::Module*> findModules;
 	if (!runMode.empty())
 	{
-		X::G::I().SetTrace(X::Dbg::xTraceFunc);// enable debug
+		X::g_pXHost->SetDebugMode(true);// enable debug
 		if (!codeMd5.empty())
 			findModules = X::Hosting::I().QueryModulesByMd5(codeMd5);
 		else
@@ -249,6 +249,7 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		findModules = X::Hosting::I().QueryModulesByPath(fileName);
 
 	unsigned long long moduleKey = 0;
+	X::List retList;
 	if (findModules.size() == 0)
 	{
 		if (loadFromFile)
@@ -258,12 +259,18 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			moduleFile.close();
 		}
 		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey, md5(code));
-		retValue = X::Value(moduleKey);
+		retList += 1; // previous not loaded
+		retList += moduleKey;
+		retValue = retList;
 	}
 	else
 	{
-		if (!runMode.empty())
-			retValue = X::Value(0); // to vscode, module is loaded previously
+		if (!runMode.empty()) // to vscode
+		{
+			retList += 0; // module is loaded previously
+			retList += (unsigned long long)findModules[0];
+			retValue = retList;
+		}
 		else
 			retValue = X::Value((unsigned long long)findModules[0]);
 	}

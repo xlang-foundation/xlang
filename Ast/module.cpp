@@ -125,6 +125,7 @@ bool Module::HitBreakpoint(XlangRuntime* rt,int line)
 		const int online_len = 1000;
 		char strBuf[online_len];
 		int thread = GetThreadID();
+		//X::G().DebugPauseAllThread(true, thread); // stop all thread
 		SPRINTF(strBuf, online_len, "[{\"HitBreakpoint\":%d, \"threadId\":%d}]", line, thread);
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
