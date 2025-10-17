@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16)
 project(pyeng_multi LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -131,6 +131,8 @@ endif()
 # Default Python (system one)
 if(useDefaultPython)
     set(target_name "pyeng")
+    # Prefer shared libpython to avoid linking static .a into a shared object
+    set(Python3_USE_STATIC_LIBS OFF)
     find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 
     string(REPLACE "numpy/core/include" "" Python3_SITELIB "${Python3_NumPy_INCLUDE_DIRS}")
@@ -147,6 +149,8 @@ if(useDefaultPython)
         ${Out_SRC}
         ${Xlang_Api_SRC}
     )
+    # Ensure position-independent code for all objects used in the shared library
+    set_property(TARGET ${target_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
     target_include_directories(${target_name} PUBLIC
         "../Inc"
@@ -155,7 +159,8 @@ if(useDefaultPython)
         "${Python3_NumPy_INCLUDE_DIRS}"
     )
 
-    target_link_libraries(${target_name} PUBLIC "${Python3_LIBRARIES}")
+    # Link against the imported target to prefer the shared Python library
+    target_link_libraries(${target_name} PUBLIC Python3::Python)
 
     if(WIN32)
         target_link_libraries(${target_name} PUBLIC Ws2_32)

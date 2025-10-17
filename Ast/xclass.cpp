@@ -24,6 +24,7 @@ namespace X
 namespace AST
 {
 bool XClass::Call(XlangRuntime* rt,
+	XObj* pThis,
 	XObj* pContext,
 	ARGS& params, 
 	KWARGS& kwParams,
@@ -34,7 +35,7 @@ bool XClass::Call(XlangRuntime* rt,
 	obj->IncRef();
 	if (m_constructor)
 	{
-		m_constructor->Call(rt,obj,params, kwParams,retValue);
+		m_constructor->Call(rt,obj,obj,params, kwParams,retValue);
 	}
 	retValue = Value(obj);
 	obj->DecRef();

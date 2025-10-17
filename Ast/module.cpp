@@ -129,7 +129,7 @@ bool Module::HitBreakpoint(XlangRuntime* rt,int line)
 		SPRINTF(strBuf, online_len, "[{\"HitBreakpoint\":%d, \"threadId\":%d}]", line, thread);
 		X::Value valParam(strBuf);
 		kwParams.Add("param", valParam);
-		std::cout << "HitBreakpoint in file: " << m_moduleName.substr(m_moduleName.rfind("/") + 1) << "   line: " << line << "   threadId: " << thread << std::endl;
+		//std::cout << "HitBreakpoint in file: " << m_moduleName.substr(m_moduleName.rfind("/") + 1) << "   line: " << line << "   threadId: " << thread << std::endl;
 		std::string evtName("devops.dbg");
 		ARGS params(0);
 		X::EventSystem::I().Fire(nullptr,nullptr,evtName,params,kwParams);
@@ -148,7 +148,7 @@ void Module::StopOn(const char* stopType)
 	SPRINTF(strBuf, online_len, "[{\"%s\":%d}]", stopType, thread);
 	X::Value valParam(strBuf);
 	kwParams.Add("param", valParam);
-	std::cout << stopType << " threadId:" << thread << std::endl;
+	//std::cout << stopType << " threadId:" << thread << std::endl;
 	std::string evtName("devops.dbg");
 	ARGS params(0);
 	X::EventSystem::I().Fire(nullptr, nullptr, evtName, params, kwParams);

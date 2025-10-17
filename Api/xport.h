@@ -362,6 +362,18 @@ namespace X
 				}
 				m_curPos = m_size;//move to end to make add as append
 			}
+			void clear()
+			{
+				if (m_data)
+				{
+					for (int i = 0; i < m_size; i++)
+					{
+						auto& item = m_data[i];
+						item.Free();
+					}
+					delete[] m_data;
+				}
+			}
 			~StringMap()
 			{
 				if (m_data)

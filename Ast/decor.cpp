@@ -118,7 +118,7 @@ namespace X
 					if (obj)
 					{
 						X::Value valTrailer(pContext);
-						bOK = obj->CallEx(rt, pContext, params, kwParams, valTrailer,v);
+						bOK = obj->CallEx(rt,pContext, params, kwParams, valTrailer,v);
 					}
 				}
 			}
