@@ -264,25 +264,136 @@ namespace X
 	// Function to get the MIME type and binary/text indicator based on the file extension
 	std::tuple<std::string, bool> getMimeTypeAndBinaryFlag(const std::string& extension) {
 		// Mapping of file extensions to MIME types and binary/text flag
-		std::map<std::string, std::tuple<std::string, bool>> mimeTypeMap =
+		static std::map<std::string, std::tuple<std::string, bool>> mimeTypeMap =
 		{
-			{"txt",		{"text/plain", false}},
-			{"html",	{"text/html", false}},
-			{"css",		{"text/css", false}},
-			{"js",		{"application/javascript", false}},
-			{"json",	{"application/json", false}},
-			{"csh",		{"application/x-csh", false}},
-			{"sh",		{"application/x-sh", false}},
-			{"php",		{"application/x-httpd-php", false}},
-			{"xml",		{"application/xml", false}},
-			{"xhtml",	{"application/xhtml+xml", false}},
-			{"jpg",		{"image/jpeg", true}},
-			{"jpeg",	{"image/jpeg", true}},
-			{"png",		{"image/png", true}},
-			{"gif",		{"image/gif", true}},
-			{"svg",		{"image/svg+xml", true}},
-			{"pdf",		{"application/pdf", true}},
-			// Add more mappings as needed
+			// Text files
+			{"txt",     {"text/plain", false}},
+			{"html",    {"text/html", false}},
+			{"htm",     {"text/html", false}},
+			{"css",     {"text/css", false}},
+			{"csv",     {"text/csv", false}},
+			{"xml",     {"application/xml", false}},
+			{"xhtml",   {"application/xhtml+xml", false}},
+			{"md",      {"text/markdown", false}},
+			{"markdown",{"text/markdown", false}},
+
+			// JavaScript
+			{"js",      {"application/javascript", false}},
+			{"mjs",     {"application/javascript", false}},
+			{"json",    {"application/json", false}},
+			{"ts",      {"text/typescript", false}},
+			{"tsx",     {"text/typescript", false}},
+
+			// Programming Languages - C/C++
+			{"c",       {"text/x-c", false}},
+			{"h",       {"text/x-c", false}},
+			{"cpp",     {"text/x-c++", false}},
+			{"cc",      {"text/x-c++", false}},
+			{"cxx",     {"text/x-c++", false}},
+			{"c++",     {"text/x-c++", false}},
+			{"hpp",     {"text/x-c++", false}},
+			{"hh",      {"text/x-c++", false}},
+			{"hxx",     {"text/x-c++", false}},
+			{"h++",     {"text/x-c++", false}},
+
+			// Programming Languages - Other
+			{"py",      {"text/x-python", false}},
+			{"java",    {"text/x-java", false}},
+			{"cs",      {"text/x-csharp", false}},
+			{"go",      {"text/x-go", false}},
+			{"rs",      {"text/x-rust", false}},
+			{"rb",      {"text/x-ruby", false}},
+			{"swift",   {"text/x-swift", false}},
+			{"kt",      {"text/x-kotlin", false}},
+			{"scala",   {"text/x-scala", false}},
+			{"r",       {"text/x-r", false}},
+			{"m",       {"text/x-objectivec", false}},
+			{"mm",      {"text/x-objectivec", false}},
+
+			// Web Assembly & Low Level
+			{"wasm",    {"application/wasm", true}},
+			{"asm",     {"text/x-asm", false}},
+			{"s",       {"text/x-asm", false}},
+
+			// Shell & Scripts
+			{"csh",     {"application/x-csh", false}},
+			{"sh",      {"application/x-sh", false}},
+			{"bash",    {"application/x-sh", false}},
+			{"php",     {"application/x-httpd-php", false}},
+			{"pl",      {"text/x-perl", false}},
+			{"lua",     {"text/x-lua", false}},
+
+			// Config & Data Files
+			{"yml",     {"text/yaml", false}},
+			{"yaml",    {"text/yaml", false}},
+			{"toml",    {"text/toml", false}},
+			{"ini",     {"text/plain", false}},
+			{"conf",    {"text/plain", false}},
+			{"cfg",     {"text/plain", false}},
+
+			// Build & Project Files
+			{"cmake",   {"text/x-cmake", false}},
+			{"make",    {"text/x-makefile", false}},
+			{"gradle",  {"text/x-gradle", false}},
+
+			// Images
+			{"jpg",     {"image/jpeg", true}},
+			{"jpeg",    {"image/jpeg", true}},
+			{"png",     {"image/png", true}},
+			{"gif",     {"image/gif", true}},
+			{"svg",     {"image/svg+xml", true}},
+			{"webp",    {"image/webp", true}},
+			{"ico",     {"image/x-icon", true}},
+			{"bmp",     {"image/bmp", true}},
+			{"tiff",    {"image/tiff", true}},
+			{"tif",     {"image/tiff", true}},
+
+			// Audio
+			{"mp3",     {"audio/mpeg", true}},
+			{"wav",     {"audio/wav", true}},
+			{"ogg",     {"audio/ogg", true}},
+			{"m4a",     {"audio/mp4", true}},
+			{"aac",     {"audio/aac", true}},
+			{"weba",    {"audio/webm", true}},
+
+			// Video
+			{"mp4",     {"video/mp4", true}},
+			{"mpeg",    {"video/mpeg", true}},
+			{"webm",    {"video/webm", true}},
+			{"avi",     {"video/x-msvideo", true}},
+			{"mov",     {"video/quicktime", true}},
+			{"wmv",     {"video/x-ms-wmv", true}},
+
+			// Documents
+			{"pdf",     {"application/pdf", true}},
+			{"doc",     {"application/msword", true}},
+			{"docx",    {"application/vnd.openxmlformats-officedocument.wordprocessingml.document", true}},
+			{"xls",     {"application/vnd.ms-excel", true}},
+			{"xlsx",    {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", true}},
+			{"ppt",     {"application/vnd.ms-powerpoint", true}},
+			{"pptx",    {"application/vnd.openxmlformats-officedocument.presentationml.presentation", true}},
+			{"odt",     {"application/vnd.oasis.opendocument.text", true}},
+			{"ods",     {"application/vnd.oasis.opendocument.spreadsheet", true}},
+			{"odp",     {"application/vnd.oasis.opendocument.presentation", true}},
+
+			// Archives
+			{"zip",     {"application/zip", true}},
+			{"tar",     {"application/x-tar", true}},
+			{"gz",      {"application/gzip", true}},
+			{"7z",      {"application/x-7z-compressed", true}},
+			{"rar",     {"application/vnd.rar", true}},
+
+			// Fonts
+			{"ttf",     {"font/ttf", true}},
+			{"otf",     {"font/otf", true}},
+			{"woff",    {"font/woff", true}},
+			{"woff2",   {"font/woff2", true}},
+
+			// Other common types
+			{"bin",     {"application/octet-stream", true}},
+			{"exe",     {"application/octet-stream", true}},
+			{"rtf",     {"application/rtf", true}},
+			{"swf",     {"application/x-shockwave-flash", true}},
 		};
 
 		// Find the MIME type and binary/text flag based on the extension
@@ -542,6 +653,166 @@ namespace X
 		}
 		return true;
 	}
+
+	#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+	bool HttpResponse::StreamFile(std::string filePath, 
+		long long start, long long end, std::string contentType)
+	{
+		auto* pResp = (httplib::Response*)m_pResponse;
+
+		std::cout << "Streaming file: " << filePath << " from " << start << " to " << end << std::endl;
+		FILE* file = fopen(filePath.c_str(), "rb");
+		if (!file) return false;
+
+		fseek(file, 0, SEEK_END);
+		long long file_size = ftell(file);
+		if (end < 0 || end >= file_size) end = file_size - 1;
+
+		long long content_length = end - start + 1;
+		const size_t CHUNK_SIZE = 256 * 1024;
+
+		pResp->set_content_provider(
+			content_length,
+			contentType.c_str(),
+
+			// This callback is called ONCE but YOU loop inside to send chunks
+			[file, start, end, CHUNK_SIZE](size_t offset, size_t length, 
+				httplib::DataSink& sink) {
+				// Seek to start position
+				long long file_position = start + offset;
+				fseek(file, file_position, SEEK_SET);
+
+				size_t remaining = length;
+
+				std::cout << "Starting to stream " << length << " bytes from position " << file_position << std::endl;
+				// Loop through and send in chunks
+				while (remaining > 0) {
+					size_t chunk_to_read = MIN(remaining, CHUNK_SIZE);
+
+					std::vector<char> buffer(chunk_to_read);
+					size_t bytes_read = fread(buffer.data(), 1, chunk_to_read, file);
+
+					if (bytes_read == 0) {
+						break;  // EOF or error
+					}
+
+					// Write chunk - if client disconnects, this returns false
+					if (!sink.write(buffer.data(), bytes_read)) {
+						return false;  // Client disconnected, stop!
+					}
+
+					remaining -= bytes_read;
+
+					// Check if client still connected
+					if (!sink.is_writable()) {
+						return false;  // Stop if client disconnected
+					}
+				}
+				std::cout << "Finished streaming requested data." << std::endl;
+				return remaining == 0;  // Success if sent all requested data
+			},
+
+			[file](bool success) {
+				fclose(file);
+			}
+		);
+
+		return true;
+	}
+
+	// ============================================================================
+	// ALTERNATIVE: Stream with Progress Callback (Optional)
+	// ============================================================================
+
+	// If you want to track progress or handle errors better:
+
+	struct FileStreamContext {
+		FILE* file;
+		long long start;
+		long long total_sent;
+		long long content_length;
+		std::string file_path;
+	};
+
+	bool HttpResponse::StreamFileWithCallback(std::string filePath, 
+		long long start, long long end,
+		std::string contentType, X::Value progressCallback)
+	{
+		auto* pResp = (httplib::Response*)m_pResponse;
+
+		// Validate and setup (same as above)
+		FILE* temp_file = fopen(filePath.c_str(), "rb");
+		if (!temp_file) return false;
+
+		fseek(temp_file, 0, SEEK_END);
+		long long file_size = ftell(temp_file);
+		fclose(temp_file);
+
+		if (end < 0 || end >= file_size) {
+			end = file_size - 1;
+		}
+
+		if (start < 0 || start > end) {
+			return false;
+		}
+
+		long long content_length = end - start + 1;
+
+		FILE* file = fopen(filePath.c_str(), "rb");
+		if (!file) return false;
+
+		// Create context
+		auto* ctx = new FileStreamContext{
+			file,
+			start,
+			0,
+			content_length,
+			filePath
+		};
+
+		pResp->set_content_provider(
+			content_length,
+			contentType.c_str(),
+
+			[ctx, progressCallback](size_t offset, size_t length, httplib::DataSink& sink) -> bool {
+				long long file_position = ctx->start + offset;
+
+				if (fseek(ctx->file, file_position, SEEK_SET) != 0) {
+					return false;
+				}
+
+				std::vector<char> buffer(length);
+				size_t bytes_read = fread(buffer.data(), 1, length, ctx->file);
+
+				if (bytes_read > 0) {
+					sink.write(buffer.data(), bytes_read);
+					ctx->total_sent += bytes_read;
+
+					// Optional: Call progress callback
+					if (progressCallback.IsObject()) {
+						X::ARGS args(2);
+						args.push_back((long long)ctx->total_sent);
+						args.push_back((long long)ctx->content_length);
+						X::KWARGS kwargs;
+						X::Value ret;
+						progressCallback.GetObj()->Call(nullptr, nullptr, args, kwargs, ret);
+					}
+				}
+
+				return bytes_read > 0;
+			},
+
+			[ctx](bool success) {
+				fclose(ctx->file);
+				delete ctx;
+			}
+		);
+
+		return true;
+	}
+
+
 	X::Value HttpRequest::GetMethod()
 	{
 		auto* pReq = (httplib::Request*)m_pRequest;
