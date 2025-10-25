@@ -139,7 +139,9 @@ namespace X
 	public:
 		BEGIN_PACKAGE(HttpRequest)
 			APISET().AddProp("params", &HttpRequest::GetParams);
+			APISET().AddProp("args", &HttpRequest::GetParams);
 			APISET().AddProp("all_headers", &HttpRequest::GetAllHeaders);
+			APISET().AddProp("headers", &HttpRequest::GetAllHeaders);
 			APISET().AddProp("body", &HttpRequest::GetBody);
 			APISET().AddProp("method", &HttpRequest::GetMethod);
 			APISET().AddProp("path", &HttpRequest::GetPath);
@@ -166,7 +168,9 @@ namespace X
 		BEGIN_PACKAGE(HttpResponse)
 			APISET().AddFunc<2>("set_content", &HttpResponse::SetContent);
 			APISET().AddFunc<2>("add_header", &HttpResponse::AddHeader);
-		END_PACKAGE
+			APISET().AddFunc<4>("stream_file", &HttpResponse::StreamFile);
+			APISET().AddFunc<5>("stream_file_with_cb", &HttpResponse::StreamFileWithCallback);
+			END_PACKAGE
 		HttpResponse()
 		{
 		}
@@ -176,6 +180,10 @@ namespace X
 		}
 		bool SetContent(X::Value& valContent, std::string contentType);
 		bool AddHeader(std::string headName,X::Value& headValue);
+		bool StreamFile(std::string filePath, long long start,
+			long long end, std::string contentType);
+		bool StreamFileWithCallback(std::string filePath, long long start, long long end,
+			std::string contentType, X::Value progressCallback);
 	};
 	class HttpClient
 	{
