@@ -271,6 +271,20 @@ namespace X
 			loop();
 		}
 	}
+	void XLoad::QuitEventLoop()
+	{
+		if (xlangLibHandler == nullptr)
+		{
+			return;
+		}
+		typedef void (*QuitEventLoop)();
+		QuitEventLoop quit_loop = (QuitEventLoop)GetProc(xlangLibHandler, "QuitEventLoop");
+		if (quit_loop)
+		{
+			quit_loop();
+		}
+	}
+	//QuitEventLoop
 	int XLoad::Run()
 	{
 		if (xlangLibHandler == nullptr)

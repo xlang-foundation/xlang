@@ -91,6 +91,7 @@ namespace X
 		void Unload();
 		int Run();
 		void EventLoop();
+		void QuitEventLoop();
 		FORCE_INLINE void SetXLangLibHandler(void* handle) { xlangLibHandler = handle; }
 		FORCE_INLINE void SetPythonLibHandler(void* handle) { pythonLibHandle = handle; }
 		FORCE_INLINE void SetDevopsLibHandler(void* handle) { devopsLibHandler = handle; }
