@@ -497,6 +497,10 @@ extern "C"  X_EXPORT void EventLoop()
 {
 	X::EventSystem::I().Loop();
 }
+extern "C"  X_EXPORT void QuitEventLoop()
+{
+	X::EventSystem::I().Shutdown();
+}
 extern "C"  X_EXPORT void Unload()
 {
 	X::XLangUnload();
