@@ -70,7 +70,7 @@ namespace X
 						memcpy(newData + m_size, pBin->Data(), pBin->Size());
 						if (m_OwnData)
 						{
-							delete m_data;
+							delete[] m_data;
 						}
 						m_data = newData;
 						m_size = newSize;
@@ -90,7 +90,7 @@ namespace X
 				stream >> m_size;
 				if (m_data)
 				{
-					delete m_data;
+					delete[] m_data;
 				}
 				m_data = new char[m_size];
 				m_OwnData = true;
@@ -101,7 +101,7 @@ namespace X
 			{
 				if (m_data)
 				{
-					delete m_data;
+					delete[] m_data;
 				}
 				auto size = strlen(strCoded);
 				if (size > 2 && strCoded[0] == 'b' && strCoded[1] == '\'')
@@ -183,7 +183,7 @@ namespace X
 			{
 				if (m_OwnData && m_data!=nullptr)
 				{
-					delete m_data;
+					delete[] m_data;
 				}
 			}
 			virtual bool Call(XRuntime* rt, XObj* pContext,
