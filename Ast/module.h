@@ -166,6 +166,7 @@ public:
 		if (!m_bMyScopeIsRef)
 		{
 			delete m_pMyScope;
+			m_pMyScope = nullptr;
 		}
 
 		for (auto it : m_inlineComments)
