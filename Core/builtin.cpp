@@ -39,7 +39,6 @@ limitations under the License.
 #include "bin.h"
 #include "BlockStream.h"
 #include "json.h"
-#include "yaml.h"
 #include "html.h"
 #include "metascope.h"
 #include "attribute.h"
@@ -729,19 +728,16 @@ bool U_ToString(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
-	if (params.size() != 1)
-	{
-		retValue = X::Value(false);
-		return false;
-	}
-	bool bFmt = false;
-	auto it = kwParams.find("format");
-	if (it)
-	{
-		bFmt = it->val.IsTrue();
-	}
-	auto retStr = params[0].ToString(bFmt);
-	retValue = X::Value(retStr);
+	JsonWrapper jw;
+	return jw.SaveToString(rt,pContext, params, kwParams, retValue);
+}
+
+bool U_FromJson(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	JsonWrapper jw;
+	jw.LoadFromString(rt,pContext, params, kwParams, retValue);
 	return true;
 }
 
@@ -2055,7 +2051,6 @@ bool Builtin::RegisterInternals()
 #if not defined(BARE_METAL)
 	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
 	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
-	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml0");
 	X::RegisterPackage<X::HtmlWrapper>(m_libName.c_str(), "html");
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
@@ -2093,6 +2088,8 @@ bool Builtin::RegisterInternals()
 	Register("addpath", (X::U_FUNC)U_AddPath, params);
 	Register("removepath", (X::U_FUNC)U_RemovePath, params);
 	Register("tostring", (X::U_FUNC)U_ToString, params);
+	Register("to_json", (X::U_FUNC)U_ToString, params);
+	Register("from_json", (X::U_FUNC)U_FromJson, params);
 	Register("bytes", (X::U_FUNC)U_ToBytes, params, "bytes([size])|bytes([list,item in [0,256)])|bytes(others,[Serialization=true])");
 	Register("fromBytes", (X::U_FUNC)U_FromBytes, params);
 	Register("setattr", (X::U_FUNC)U_SetAttribute, params, "", true);

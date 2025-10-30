@@ -6,6 +6,7 @@ project ("xone")
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories("..")
+include_directories("../ThirdParty")
 include_directories("../Api")
 include_directories("../Inc")
 include_directories("../Main")
