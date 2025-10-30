@@ -275,7 +275,7 @@ namespace X
 				{
 					if (ownKey && key)
 					{
-						delete key;
+						delete[] key;
 					}
 				}
 				bool Match(const char* key2)

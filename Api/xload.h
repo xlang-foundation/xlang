@@ -62,13 +62,13 @@ namespace X
 		int dbgPort = 3142;
 		~Config()
 		{
-			if (inlineCode) delete inlineCode;
-			if (fileName) delete fileName;
-			if (passInParams) delete passInParams;
-			if (appPath) delete appPath;
-			if (appFullName) delete appFullName;
-			if (xlangEnginePath) delete xlangEnginePath;
-			if (dllSearchPath) delete dllSearchPath;
+			if (inlineCode) delete[] inlineCode;
+			if (fileName) delete[] fileName;
+			if (passInParams) delete[] passInParams;
+			if (appPath) delete[] appPath;
+			if (appFullName) delete[] appFullName;
+			if (xlangEnginePath) delete[] xlangEnginePath;
+			if (dllSearchPath) delete[] dllSearchPath;
 		}
 	};
 //review 4/10/2023

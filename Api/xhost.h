@@ -79,6 +79,7 @@ namespace X
 	class XHost
 	{
 	public:
+		virtual ~XHost() = default;
 		virtual void AddSysCleanupFunc(CLEANUP f) = 0;
 		virtual XRuntime* CreateRuntime(bool bAddTopModule = false) = 0;
 		virtual XRuntime* GetCurrentRuntime() = 0;
