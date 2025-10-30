@@ -49,12 +49,21 @@ namespace X
 					delete m_variableFrame;
 					m_variableFrame = nullptr;
 				}
+				if (m_pMyScope)
+				{
+					delete m_pMyScope;
+					m_pMyScope = nullptr;
+				}
 			}
 			~MetaScope()
 			{
 				if (m_variableFrame)
 				{
 					delete m_variableFrame;
+				}
+				if (m_pMyScope)
+				{
+					delete m_pMyScope;
 				}
 			}
 		};
