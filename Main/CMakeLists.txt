@@ -8,6 +8,7 @@ project ("xlang_eng")
 # add_compile_definitions(XLANG_ENG_DBG=1)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
+include_directories("../ThirdParty")
 include_directories("../Api")
 include_directories("../Inc")
 include_directories("../utils")
