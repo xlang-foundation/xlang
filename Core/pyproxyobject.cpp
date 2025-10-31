@@ -122,6 +122,7 @@ namespace X
 			if (m_pMyScope)
 			{ 
 				delete m_pMyScope;
+				m_pMyScope = nullptr;
 			}
 			if (m_pMyScopeProxy)
 			{

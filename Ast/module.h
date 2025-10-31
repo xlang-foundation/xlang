@@ -151,6 +151,7 @@ public:
 		if (!m_bMyScopeIsRef)
 		{
 			delete m_pMyScope;
+			m_pMyScope = nullptr;
 		}
 		m_pMyScope = pNewMyScope;
 		m_bMyScopeIsRef = true;

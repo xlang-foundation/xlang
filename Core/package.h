@@ -95,6 +95,7 @@ public:
 			Cleanup(m_pObject);
 		}
 		delete m_pMyScope;
+		m_pMyScope = nullptr;
 	}
 	virtual void SetAPISet(void* pApiSet) override
 	{
@@ -386,6 +387,7 @@ public:
 		//m_pPackage->Unlock();
 
 		delete m_pMyScope;
+		m_pMyScope = nullptr;
 	}
 	FORCE_INLINE virtual int GetPackageName(char* buffer, int bufferSize) override
 	{

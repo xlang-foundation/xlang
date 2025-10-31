@@ -44,6 +44,7 @@ namespace X
 			~NamespaceVarObject()
 			{
 				delete m_pMyScope;
+				m_pMyScope = nullptr;
 				delete m_variableFrame;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases);
