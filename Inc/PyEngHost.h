@@ -106,6 +106,9 @@ public:
 	virtual void GilUnlock(int state) = 0;
 	virtual void SubmitPythonTask(const std::function<void()>& task) = 0;
 	virtual void AddImportPaths(const char* path) = 0;
+	virtual bool PySerialize(PyEngObjectPtr input,X::Value& output) = 0;
+	virtual bool PyDeserialize(X::Value& input,X::Value& output) = 0;
+
 };
 
 extern PyEngHost* g_pPyHost;

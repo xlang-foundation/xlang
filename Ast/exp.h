@@ -210,7 +210,7 @@ public:
 	{
 		m_isLeftValue = b;
 	}
-	virtual ~Expression(){}
+	virtual ~Expression();
 	FORCE_INLINE Scope* GetMyScope()
 	{
 		return m_pMyScope;

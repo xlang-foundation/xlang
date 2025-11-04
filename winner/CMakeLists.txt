@@ -1,6 +1,6 @@
 # A Package to wrap all windows APIs
 
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.10)
 
 project ("xlang_win")
 

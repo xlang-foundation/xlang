@@ -42,7 +42,7 @@ namespace X
 		{
 			if (p.needReleasBuf)
 			{
-				delete p.buf;
+				delete[] p.buf;
 			}
 		}
 		m_blocks.clear();

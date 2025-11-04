@@ -341,11 +341,14 @@ public:
 	void ChangeStatmentsIntoTranslateMode(
 		bool changeIfStatment,
 		bool changeLoopStatment);
-	virtual bool Call(XRuntime* rt, XObj* pContext,
+	virtual bool Call(XRuntime* rt, 
+		XObj* pThis,//own object
+		XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		Value& retValue);
 	virtual bool CallEx(XRuntime* rt, XObj* pContext,
+		XObj* pThis,//own object
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& trailer,
@@ -420,7 +423,9 @@ public:
 		stream >> m_funcName;
 		return true;
 	}
-	FORCE_INLINE virtual bool CallEx(XRuntime* rt, XObj* pContext,
+	FORCE_INLINE virtual bool CallEx(XRuntime* rt, 
+		XObj* pThis,//own object
+		XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		X::Value& trailer,
@@ -444,7 +449,9 @@ public:
 		}
 	}
 	XObj* GetRightContextForClass(XObj* pContext);
-	FORCE_INLINE virtual bool Call(XRuntime* rt, XObj* pContext,
+	FORCE_INLINE virtual bool Call(XRuntime* rt, 
+		XObj* pThis,//own object
+		XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,
 		Value& retValue) override

@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "xlang.h"
 #include "xhost.h"
+#include <cstring>
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -31,6 +32,8 @@ extern "C"
 }
 #endif
 
+#include "PyBinarySerializer.h"
+#include "PyObjectXLangConverter.h"
 
 extern PyObject* CreateXlangObjectWrapper(X::Value& realObj);
 
@@ -46,7 +49,7 @@ Xlang_import(PyObject* self, PyObject* args, PyObject* kwargs)
 	const char* moduleName = nullptr;
 	const char* from = nullptr;
 	const char* thru = nullptr;
-	static char* kwlist[] = { "moduleName", "from", "thru", nullptr };
+	static char* kwlist[] = { "moduleName", "fromPath", "thru", nullptr };
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ss", kwlist, &moduleName, &from, &thru))
 	{
@@ -85,6 +88,78 @@ Xlang_Class(PyObject* self, PyObject* args, PyObject* kwargs)
 }
 
 
+// NOTE: adjust these helpers if your X::Bin API differs.
+static bool ExtractBytesFromXLangBin(const X::Value& v, const char*& data, size_t& size) {
+    // Expect v to be an X::Bin. Pattern follows how Dict is wrapped in PyObjectXLangConverter.h:
+    //     X::Dict dict(value); dict->Enum(...)
+    X::Bin bin(v);                  // construct a typed view over v
+    if (!bin.IsValid()) return false;
+    // These method names are typical; if your X::Bin differs, swap to your API:
+    data = reinterpret_cast<const char*>(bin->Data());   // pointer to raw bytes
+    size = static_cast<size_t>(bin->Size());             // byte length
+    return (data != nullptr);
+}
+
+static PyObject*
+Xlang_Dump(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    if (PyTuple_Size(args) < 1) {
+        PyErr_SetString(PyExc_TypeError, "Xlang_Dump expects 1 argument");
+        return nullptr;
+    }
+    PyObject* item = PyTuple_GetItem(args, 0); // borrowed
+
+    std::string outBytes;
+	PyBinarySerializer pb;
+    if (!pb.Dump(item, outBytes, PySerOptions())) {
+        // PyBinarySerializer sets a Python exception on failure.
+        return nullptr;
+    }
+	X::Bin binObj((unsigned long long)outBytes.size(), true);
+	std::memcpy(binObj->Data(), outBytes.data(), outBytes.size());
+    return CreateXlangObjectWrapper(binObj);
+}
+
+static PyObject*
+Xlang_Load(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    if (PyTuple_Size(args) < 1) {
+        PyErr_SetString(PyExc_TypeError, "Xlang_Load expects 1 argument");
+        return nullptr;
+    }
+
+    PyObject* src = PyTuple_GetItem(args, 0); // borrowed
+
+    // Path A: bytes-like directly from Python.
+    const char* data_ptr = nullptr;
+    size_t      data_len = 0;
+
+    if (PyBytes_Check(src)) {
+        char* p = nullptr; Py_ssize_t n = 0;
+        if (PyBytes_AsStringAndSize(src, &p, &n) < 0) return nullptr;
+        data_ptr = p;
+        data_len = static_cast<size_t>(n);
+    }
+    else if (PyByteArray_Check(src)) {
+        data_ptr = PyByteArray_AsString(src);
+        if (!data_ptr) return nullptr;
+        data_len = static_cast<size_t>(PyByteArray_Size(src));
+    }
+    else {
+		X::Value xval = CheckXlangObjectAndConvert(src);
+        if (!ExtractBytesFromXLangBin(xval, data_ptr, data_len)) {
+            PyErr_SetString(PyExc_TypeError, "Xlang_Load expects an X::Bin or bytes-like object");
+            return nullptr;
+        }
+    }
+
+    // Now decode the binary blob into a Python object (NEW ref or NULL with exception set).
+	PyBinarySerializer pb;
+	PyObject* restored = pb.Load(data_ptr, data_len, PyDeserOptions());
+    return restored;
+}
+
+
 PyMethodDef RootMethods[] =
 {
 	{	"main",
@@ -101,6 +176,16 @@ PyMethodDef RootMethods[] =
 		(PyCFunction)Xlang_import,
 		METH_VARARGS | METH_KEYWORDS,
 		"Syntax: wrapper = xlang.importModule(*args,**kwargs)"
+	},
+	{	"Dump",
+		(PyCFunction)Xlang_Dump,
+		METH_VARARGS | METH_KEYWORDS,
+		"Syntax: bytes = xlang.dump(*args,**kwargs)"
+	},
+	{	"Load",
+		(PyCFunction)Xlang_Load,
+		METH_VARARGS | METH_KEYWORDS,
+		"Syntax: object = xlang.load(*args,**kwargs)"
 	},
 	{	"object",
 		(PyCFunction)Xlang_Class,

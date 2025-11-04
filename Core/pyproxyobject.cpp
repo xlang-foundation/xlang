@@ -122,6 +122,7 @@ namespace X
 			if (m_pMyScope)
 			{ 
 				delete m_pMyScope;
+				m_pMyScope = nullptr;
 			}
 			if (m_pMyScopeProxy)
 			{
@@ -280,7 +281,7 @@ namespace X
 			std::vector<X::Value> aryValues(params.Data(), params.Data() + params.size());
 			PyEng::Tuple objParams(aryValues);
 			PyEng::Object objKwParams(kwParams);
-			auto obj0 = (PyEng::Object)m_obj.Call(objParams, objKwParams);
+			auto obj0 = (PyEng::Object)m_obj.Call(objParams.ref(), objKwParams.ref());
 			PyProxyObject* pProxyObj = new PyProxyObject(obj0);
 			retValue = X::Value(pProxyObj);
 			return true;

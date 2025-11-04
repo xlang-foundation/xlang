@@ -62,13 +62,13 @@ namespace X
 		int dbgPort = 3142;
 		~Config()
 		{
-			if (inlineCode) delete inlineCode;
-			if (fileName) delete fileName;
-			if (passInParams) delete passInParams;
-			if (appPath) delete appPath;
-			if (appFullName) delete appFullName;
-			if (xlangEnginePath) delete xlangEnginePath;
-			if (dllSearchPath) delete dllSearchPath;
+			if (inlineCode) delete[] inlineCode;
+			if (fileName) delete[] fileName;
+			if (passInParams) delete[] passInParams;
+			if (appPath) delete[] appPath;
+			if (appFullName) delete[] appFullName;
+			if (xlangEnginePath) delete[] xlangEnginePath;
+			if (dllSearchPath) delete[] dllSearchPath;
 		}
 	};
 //review 4/10/2023
@@ -91,6 +91,7 @@ namespace X
 		void Unload();
 		int Run();
 		void EventLoop();
+		void QuitEventLoop();
 		FORCE_INLINE void SetXLangLibHandler(void* handle) { xlangLibHandler = handle; }
 		FORCE_INLINE void SetPythonLibHandler(void* handle) { pythonLibHandle = handle; }
 		FORCE_INLINE void SetDevopsLibHandler(void* handle) { devopsLibHandler = handle; }

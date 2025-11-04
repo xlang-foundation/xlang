@@ -57,6 +57,7 @@ namespace X
 				if (m_pMyScope)
 				{
 					delete m_pMyScope;
+					m_pMyScope = nullptr;
 				}
 			}
 			FORCE_INLINE void Fire(int evtIndex,

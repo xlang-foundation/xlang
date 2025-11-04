@@ -91,6 +91,7 @@ namespace X
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
 			APISET().AddVarFuncEx("route", &HttpServer::Route);
+			APISET().AddFunc<2>("add_route", &HttpServer::AddRoute);
 			APISET().AddFunc<1>("getMimeType", &HttpServer::GetMimeType);
 			END_PACKAGE
 	public:
@@ -126,6 +127,7 @@ namespace X
 		bool Listen(std::string srvName, int port);
 		bool Stop();
 		bool Get(std::string pattern, X::Value& valHandler);
+		bool AddRoute(std::string urlPattern, X::Value& func);
 		bool Route(X::XRuntime* rt, X::XObj* pThis,X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams,
 			X::Value& trailer, X::Value& retValue);
@@ -137,7 +139,9 @@ namespace X
 	public:
 		BEGIN_PACKAGE(HttpRequest)
 			APISET().AddProp("params", &HttpRequest::GetParams);
+			APISET().AddProp("args", &HttpRequest::GetParams);
 			APISET().AddProp("all_headers", &HttpRequest::GetAllHeaders);
+			APISET().AddProp("headers", &HttpRequest::GetAllHeaders);
 			APISET().AddProp("body", &HttpRequest::GetBody);
 			APISET().AddProp("method", &HttpRequest::GetMethod);
 			APISET().AddProp("path", &HttpRequest::GetPath);
@@ -164,7 +168,9 @@ namespace X
 		BEGIN_PACKAGE(HttpResponse)
 			APISET().AddFunc<2>("set_content", &HttpResponse::SetContent);
 			APISET().AddFunc<2>("add_header", &HttpResponse::AddHeader);
-		END_PACKAGE
+			APISET().AddFunc<4>("stream_file", &HttpResponse::StreamFile);
+			APISET().AddFunc<5>("stream_file_with_cb", &HttpResponse::StreamFileWithCallback);
+			END_PACKAGE
 		HttpResponse()
 		{
 		}
@@ -174,6 +180,10 @@ namespace X
 		}
 		bool SetContent(X::Value& valContent, std::string contentType);
 		bool AddHeader(std::string headName,X::Value& headValue);
+		bool StreamFile(std::string filePath, long long start,
+			long long end, std::string contentType);
+		bool StreamFileWithCallback(std::string filePath, long long start, long long end,
+			std::string contentType, X::Value progressCallback);
 	};
 	class HttpClient
 	{
@@ -185,6 +195,7 @@ namespace X
 		X::Value m_response_headers;
 		std::string m_path;
 		void set_enable_server_certificate_verification(bool b);
+		bool MakeHeadersFromString(X::Value& headers);
 	public:
 		BEGIN_PACKAGE(HttpClient)
 			APISET().AddFunc<1>("get", &HttpClient::Get);
@@ -212,7 +223,14 @@ namespace X
 		X::Value GetResponseHeaders() { return m_response_headers; }
 		void SetHeaders(X::Value& headers)
 		{
-			m_headers = headers;
+			if (headers.IsDict())
+			{
+				m_headers = headers;
+			}
+			else if (headers.IsString())
+			{
+				MakeHeadersFromString(headers);
+			}
 		}
 	};
 	class Http:

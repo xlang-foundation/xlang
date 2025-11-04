@@ -189,6 +189,79 @@ public:
 	{
 		return (t != ValueType::Invalid);
 	}
+
+	FORCE_INLINE bool isString() { return IsString(); }
+	FORCE_INLINE bool isString() const { return const_cast<Value*>(this)->IsString(); }
+	FORCE_INLINE bool isBool()   { return IsBool(); }
+	FORCE_INLINE bool isBool() const  { return const_cast<Value*>(this)->IsBool(); }
+	FORCE_INLINE bool isNumber() { return IsNumber(); }
+	FORCE_INLINE bool isNumber() const  { return const_cast<Value*>(this)->IsNumber(); }
+
+	// Conversions (lowercase)
+	FORCE_INLINE std::string asString() const
+	{
+		// Use existing string quickly when it's already a Str
+		if (t == ValueType::Str) {
+			return ToStr(x.str, flags);
+		}
+		// Defer to your existing formatter for non-strings
+		return const_cast<Value*>(this)->ToString(false);
+	}
+
+	FORCE_INLINE bool asBool()
+	{
+		if (IsBool()) {
+			return x.l != 0;
+		}
+		if (t == ValueType::Int64) {
+			return x.l != 0;
+		}
+		if (t == ValueType::Double) {
+			return x.d != 0.0;
+		}
+		if (t == ValueType::Str) {
+			// simple, permissive parse for common truthy/falsey strings
+			std::string s = ToStr(x.str, flags);
+			// trim leading/trailing spaces
+			size_t b = s.find_first_not_of(" \t\r\n");
+			size_t e = s.find_last_not_of(" \t\r\n");
+			s = (b == std::string::npos) ? std::string() : s.substr(b, e - b + 1);
+			// lowercase
+			for (auto& c : s) c = (char)std::tolower((unsigned char)c);
+			if (s == "true" || s == "1" || s == "yes" || s == "y") return true;
+			if (s == "false" || s == "0" || s == "no" || s == "n") return false;
+			// fallthrough: non-empty string considered true
+			return !s.empty();
+		}
+		// Objects/None -> use existing truthiness
+		return const_cast<Value*>(this)->IsTrue();
+	}
+
+	FORCE_INLINE bool asBool() const
+	{
+		return const_cast<Value*>(this)->asBool();
+	}
+	FORCE_INLINE double asNumber()
+	{
+		if (t == ValueType::Double) return x.d;
+		if (t == ValueType::Int64)  return (double)x.l;
+		if (t == ValueType::Str) {
+			// Try to parse number from string; on failure return 0.0
+			try {
+				return std::stod(ToStr(x.str, flags));
+			}
+			catch (...) {
+				return 0.0;
+			}
+		}
+		// For None/Object/Invalid: 0.0 by convention
+		return 0.0;
+	}
+	FORCE_INLINE double asNumber() const
+	{
+		return const_cast<Value*>(this)->asNumber();
+	}
+
 	FORCE_INLINE ~Value()
 	{
 		switch (t)
@@ -233,6 +306,7 @@ public:
 		flags |= (int)ValueSubType::BOOL;
 		x.l = x.l>0?1 : 0;
 	}
+
 	FORCE_INLINE Value(char c)
 	{
 		t = ValueType::Int64;
@@ -701,6 +775,10 @@ public:
 	FORCE_INLINE int ToInt()
 	{
 		return int(*this);
+	}
+	FORCE_INLINE long ToLong()
+	{
+		return long(*this);
 	}
 	FORCE_INLINE long long ToLongLong()
 	{

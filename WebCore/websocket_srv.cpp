@@ -179,8 +179,15 @@ namespace X
                         X::KWARGS kwargs;
                         //Fire is sync call in xlang
                         //so still in this stack frame
-                        mServer->GetServer()->Fire(1, args, kwargs);//OnSessionReceive
+                        try
+                        {
+                            mServer->GetServer()->Fire(1, args, kwargs);//OnSessionReceive
+                        }
+                        catch (const std::exception& e)
+                        {
+                            std::cout << "WebSocket Fire OnSessionReceive, Error:" << e.what() << std::endl;
 
+                        }
                     }
                 }
                 catch (const std::exception& e)

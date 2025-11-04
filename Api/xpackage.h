@@ -17,6 +17,7 @@ limitations under the License.
 #include "xlang.h"
 #include "xhost.h"
 #include <vector>
+#include <cstddef>
 #include <typeinfo>
 #include <utility>
 #include <assert.h> 
@@ -137,7 +138,9 @@ namespace X
 		template<std::size_t N, class class_T, typename T, typename Indices = std::make_index_sequence<N>>
 		FORCE_INLINE auto NewClass(T& a)
 		{
-			return NewClass_impl<class_T>(a, Indices{});
+			// Only expand the first N indices (user decides how many args to supply)
+			return NewClass_impl<class_T>(a, std::make_index_sequence<N>{});
+			//return NewClass_impl<class_T>(a, Indices{});
 		}
 		template<typename FirstT, class class_T, typename Array, std::size_t... I>
 		FORCE_INLINE auto NewClass_impl(FirstT first, Array& a, std::index_sequence<I...>)
