@@ -184,6 +184,7 @@ Under the `test` folder, you'll find numerous **XLang** and **Python** code exam
 
 > **Note:** Debugging in **VS Code** has not been tested on **macOS**.
 
+personal update: jack fitzgerald
 ---
 
 Happy coding with **XLang™**!  
