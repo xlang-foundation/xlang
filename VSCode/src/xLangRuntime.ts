@@ -129,6 +129,8 @@ export class XLangRuntime extends EventEmitter {
 	private _outputChannel : vscode.OutputChannel;
 	private _sourceFile: string = '';
 	private _moduleKey: number = 0;
+	private _runModule: boolean = false;
+	private _breakPointThreadId: number = 0;
 	private _sessionRunning: boolean = false;
 	private _srvaddress:string ="localhost";
 	private _srvPort:number =3142;
@@ -268,7 +270,7 @@ export class XLangRuntime extends EventEmitter {
 		let retVal;
 		if (bIsX)
 		{
-			retVal = await loadRet as number;
+			retVal = JSON.parse(await loadRet as string);
 		}
 		else
 		{
@@ -280,8 +282,9 @@ export class XLangRuntime extends EventEmitter {
 			return -1; // return -1 for run file
 		}
 		this._sourceFile = file;
-		this._moduleKey = retVal; // if 0, module is previous loaded, do not run it again
-		return retVal;
+		this._runModule = retVal[0] === 1;
+		this._moduleKey = retVal[1];
+		return retVal[0]; // if 0, module is previous loaded, do not run it again
 	}
 	private tryTimes = 1;
 	private tryCount = 5;
@@ -381,7 +384,8 @@ export class XLangRuntime extends EventEmitter {
 						for (let n in notis) {
 							let kv = notis[n];
 								if(kv.hasOwnProperty("HitBreakpoint")){
-									this.sendEvent('stopOnBreakpoint', kv["threadId"]);
+									this._breakPointThreadId = kv["threadId"]
+									this.sendEvent('stopOnBreakpoint', this._breakPointThreadId);
 								}
 								else if(kv.hasOwnProperty("StopOnEntry")){
 									this.sendEvent('stopOnEntry', kv["StopOnEntry"]);
@@ -442,7 +446,7 @@ export class XLangRuntime extends EventEmitter {
 	public async start(stopOnEntry: boolean, debug: boolean): Promise<void> {
 		this._sessionRunning = true;
 		this.fetchNotify();
-		if (this._moduleKey!=0) // new created module, run it
+		if (this._runModule) // new created module, run it
 		{
 			this.addOutput(`entry source file is new loaded, run it: "${this._sourceFile}"`);	
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
@@ -760,8 +764,9 @@ export class XLangRuntime extends EventEmitter {
 		});
 	}
 	public getObject(threadId, frameId,varType,objId,start,count, cb) {
-		let code = "import xdb\nreturn xdb.command(" + threadId.toString() +
-			",frameId=" + frameId.toString()
+		let code = "import xdb\nreturn xdb.command(" + (threadId ? threadId.toString() : this._breakPointThreadId.toString()) 
+		    + ",frameId=" + frameId.toString()
+			+ ",moduleKey=" + this._moduleKey.toString()
 			+ ",cmd='Object'"
 			+ ",param=['"+varType+"'"
 			+",'" + objId+"'"

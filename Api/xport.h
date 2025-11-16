@@ -275,7 +275,7 @@ namespace X
 				{
 					if (ownKey && key)
 					{
-						delete key;
+						delete[] key;
 					}
 				}
 				bool Match(const char* key2)
@@ -361,6 +361,18 @@ namespace X
 					}
 				}
 				m_curPos = m_size;//move to end to make add as append
+			}
+			void clear()
+			{
+				if (m_data)
+				{
+					for (int i = 0; i < m_size; i++)
+					{
+						auto& item = m_data[i];
+						item.Free();
+					}
+					delete[] m_data;
+				}
 			}
 			~StringMap()
 			{

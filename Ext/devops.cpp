@@ -120,11 +120,12 @@ namespace X
 				{
 					dict->Set("Size", valShape);
 				}
-				else if(valShape.IsObject())
+				else
 				{
 					X::Value valSize(val.GetObj()->Size());
 					dict->Set("Size", valSize);
 				}
+
 			}
 			return true;
 		}
@@ -538,19 +539,41 @@ namespace X
 			//now change to threadId
 			unsigned long long threadId = params[0].GetLongLong();
 			//AST::Module* pModule = X::G::I().QueryModuleByThreadId(threadId);
-			XlangRuntime* threadRt = (XlangRuntime*)X::G::I().QueryRuntimeForThreadId(threadId);
-			if (threadRt == nullptr)
+			XlangRuntime* threadRt = nullptr;
+			if (threadId != 0)
 			{
-				retValue = X::Value(false);
-				return true;
+				threadRt = (XlangRuntime*)X::G::I().QueryRuntimeForThreadId(threadId);
+				if (threadRt == nullptr)
+				{
+					retValue = X::Value(false);
+					return true;
+				}
+
+				AST::Module* pModule = threadRt->M();
+				if (!pModule)
+				{
+					retValue = X::Value(false);
+					return true;
+				}
+			}
+			else
+			{
+				auto it = kwParams.find("moduleKey");
+				if (it)
+				{
+					unsigned long long moduleKey = it->val.GetLongLong();
+					AST::Module* pModule = nullptr;
+					if (pModule = Hosting::I().QueryModule(moduleKey))
+						threadRt = pModule->GetRT();
+					else
+						threadRt = (XlangRuntime*)X::G::I().GetCurrentRuntime();
+				}
+				else
+					threadRt = (XlangRuntime*)X::G::I().GetCurrentRuntime();
 			}
 			
-			AST::Module* pModule;
-			if (!(pModule = threadRt->M()))
-			{
-				retValue = X::Value(false);
-				return true;
-			}
+			
+
 			std::string strCmd;
 			auto it = kwParams.find("cmd");
 			if (it)

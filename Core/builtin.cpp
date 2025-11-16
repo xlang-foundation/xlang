@@ -39,7 +39,6 @@ limitations under the License.
 #include "bin.h"
 #include "BlockStream.h"
 #include "json.h"
-#include "yaml.h"
 #include "html.h"
 #include "metascope.h"
 #include "attribute.h"
@@ -239,7 +238,7 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	std::vector<X::AST::Module*> findModules;
 	if (!runMode.empty())
 	{
-		X::G::I().SetTrace(X::Dbg::xTraceFunc);// enable debug
+		X::g_pXHost->SetDebugMode(true);// enable debug
 		if (!codeMd5.empty())
 			findModules = X::Hosting::I().QueryModulesByMd5(codeMd5);
 		else
@@ -249,6 +248,7 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		findModules = X::Hosting::I().QueryModulesByPath(fileName);
 
 	unsigned long long moduleKey = 0;
+	X::List retList;
 	if (findModules.size() == 0)
 	{
 		if (loadFromFile)
@@ -258,12 +258,18 @@ bool U_Load(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			moduleFile.close();
 		}
 		X::Hosting::I().Load(fileName.c_str(), code.c_str(), (int)code.size(), moduleKey, md5(code));
-		retValue = X::Value(moduleKey);
+		retList += 1; // previous not loaded
+		retList += moduleKey;
+		retValue = retList;
 	}
 	else
 	{
-		if (!runMode.empty())
-			retValue = X::Value(0); // to vscode, module is loaded previously
+		if (!runMode.empty()) // to vscode
+		{
+			retList += 0; // module is loaded previously
+			retList += (unsigned long long)findModules[0];
+			retValue = retList;
+		}
 		else
 			retValue = X::Value((unsigned long long)findModules[0]);
 	}
@@ -722,19 +728,16 @@ bool U_ToString(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
-	if (params.size() != 1)
-	{
-		retValue = X::Value(false);
-		return false;
-	}
-	bool bFmt = false;
-	auto it = kwParams.find("format");
-	if (it)
-	{
-		bFmt = it->val.IsTrue();
-	}
-	auto retStr = params[0].ToString(bFmt);
-	retValue = X::Value(retStr);
+	JsonWrapper jw;
+	return jw.SaveToString(rt,pContext, params, kwParams, retValue);
+}
+
+bool U_FromJson(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	JsonWrapper jw;
+	jw.LoadFromString(rt,pContext, params, kwParams, retValue);
 	return true;
 }
 
@@ -1028,33 +1031,35 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		}
 	}
 	X::Data::List* pFutureList = nil;
-	X::Data::Future* pFuture = nil;
-	auto buildtask = [&](X::Value& valFunc)
+	X::Value retFuture;
+	auto buildtask = [&](X::Value& valFunc) 
 	{
 		X::Task* tsk = new X::Task();
 		tsk->SetTaskPool(taskPool);
-		//tsk will be released by Future
+
+		// Create Future and immediately wrap it in X::Value
 		X::Data::Future* f = new X::Data::Future(tsk);
-		X::Value varF(f);
-		tsk->SetFuture(varF);
-		if (pFuture || pFutureList)
+		X::Value vFuture(f);        // strong ref #1 (local)
+		tsk->SetFuture(vFuture);    // strong ref #2 (task)
+
+		if (pFutureList) 
 		{
-			if (pFutureList == nil)
-			{
-				pFutureList = new Data::List();
-				X::Value vTask(pFuture);
-				pFutureList->Add((X::XlangRuntime*)rt, vTask);
-				pFuture = nil;
-			}
-			X::Value vTask(f);
-			pFutureList->Add((X::XlangRuntime*)rt, vTask);
+			pFutureList->Add((X::XlangRuntime*)rt, vFuture);
 		}
-		else
+		else if (retFuture.IsInvalid()) 
 		{
-			pFuture = f;
+			retFuture = vFuture;     // keep single-future case without a list
 		}
-		bool bRet = tsk->Call(valFunc, (X::XlangRuntime*)rt, pContext, params0, kwParams);
-		return bRet;
+		else 
+		{
+			// We already had one future; promote to a list and add both
+			pFutureList = new X::Data::List();
+			pFutureList->Add((X::XlangRuntime*)rt, retFuture);
+			pFutureList->Add((X::XlangRuntime*)rt, vFuture);
+			retFuture = X::Value(); // optional: clear single holder; list owns refs now
+		}
+
+		return tsk->Call(valFunc, (X::XlangRuntime*)rt, pContext, params0, kwParams);
 	};
 	bool bOK = true;
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
@@ -1077,9 +1082,9 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		retValue = X::Value(pFutureList);
 	}
-	else if(pFuture)
+	else if (retFuture.IsObject()) 
 	{
-		retValue = X::Value(pFuture);
+		retValue = retFuture; // return the strong-ref’d Future
 	}
 	return bOK;
 #else
@@ -1343,7 +1348,7 @@ bool U_Each(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		{
 			params_to_cb.push_back(params[i]);
 		}
-		pFunc->Call(rt, pContext, params_to_cb, kwParams, retVal);
+		pFunc->Call(rt, pFuncObj,pContext, params_to_cb, kwParams, retVal);
 		return retVal;
 	};
 	ARGS params_proc(params.size());
@@ -1821,6 +1826,47 @@ bool U_PythonRun(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	}
 	return true;
 }
+bool U_PySerialize(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,X::KWARGS& kwParams,X::Value& retValue)
+{
+	X::Value obj;
+	if (params.size() > 0)
+	{
+		obj = params[0].ToString();
+	}
+	else
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+	if (g_pPyHost)
+	{
+		PyEng::Object obj(obj);
+		g_pPyHost->PySerialize(obj, retValue);
+	}
+	return true;
+}
+bool U_PyDeserialize(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+
+	X::Value binData = params[0];
+	if (g_pPyHost)
+	{
+		return g_pPyHost->PyDeserialize(binData, retValue);
+	}
+	else
+	{
+		retValue = X::Value(false);
+	}
+	return true;
+}
+
 bool U_CreateList(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -2005,7 +2051,6 @@ bool Builtin::RegisterInternals()
 #if not defined(BARE_METAL)
 	X::RegisterPackage<X::JsonWrapper>(m_libName.c_str(), "json");
 	X::RegisterPackage<X::AST::AstWrapper>(m_libName.c_str(),"ast");
-	X::RegisterPackage<X::YamlWrapper>(m_libName.c_str(),"yaml0");
 	X::RegisterPackage<X::HtmlWrapper>(m_libName.c_str(), "html");
 	X::RegisterPackage<X::DevOps::DebugService>(m_libName.c_str(),"xdb");
 	X::RegisterPackage<X::CpuTensor>(m_libName.c_str(),"CpuTensor");
@@ -2043,6 +2088,8 @@ bool Builtin::RegisterInternals()
 	Register("addpath", (X::U_FUNC)U_AddPath, params);
 	Register("removepath", (X::U_FUNC)U_RemovePath, params);
 	Register("tostring", (X::U_FUNC)U_ToString, params);
+	Register("to_json", (X::U_FUNC)U_ToString, params);
+	Register("from_json", (X::U_FUNC)U_FromJson, params);
 	Register("bytes", (X::U_FUNC)U_ToBytes, params, "bytes([size])|bytes([list,item in [0,256)])|bytes(others,[Serialization=true])");
 	Register("fromBytes", (X::U_FUNC)U_FromBytes, params);
 	Register("setattr", (X::U_FUNC)U_SetAttribute, params, "", true);
@@ -2077,6 +2124,8 @@ bool Builtin::RegisterInternals()
 	Register("list", (X::U_FUNC)U_CreateList, params, "l = list()|list(vars)");
 	Register("dict", (X::U_FUNC)U_CreateDict, params,"d = dict()|dict({key:value...})");
 	Register("pyrun", (X::U_FUNC)U_PythonRun, params, "pyrun(code)");
+	Register("py_serialize", (X::U_FUNC)U_PySerialize, params, "xlangBin = py_serialize(pyObj)");
+	Register("py_deserialize", (X::U_FUNC)U_PyDeserialize, params, "pyObj =py_deserialize(xlangBin)");
 #if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 #endif

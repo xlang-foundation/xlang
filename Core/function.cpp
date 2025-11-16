@@ -126,12 +126,12 @@ namespace X
 			KWARGS& kwParams,
 			X::Value& retValue)
 		{
-			return m_func->Call(rt, pContext, params, kwParams, retValue);
+			return m_func->Call(rt, this,pContext, params, kwParams, retValue);
 		}
 		bool Function::CallEx(XRuntime* rt, XObj* pContext, 
 			ARGS& params, KWARGS& kwParams, X::Value& trailer, X::Value& retValue)
 		{
-			return m_func->CallEx(rt, pContext, params, kwParams, trailer,retValue);
+			return m_func->CallEx(rt, this,pContext, params, kwParams, trailer,retValue);
 		}
 	}
 }

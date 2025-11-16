@@ -109,7 +109,7 @@ namespace X {
 		if (bEvent)
 			notityThread("ThreadExited", curTId);
 	}
-	XlangRuntime* G::MakeThreadRuntime(std::string& name,long long curTId, XlangRuntime* rt)
+	XlangRuntime* G::MakeThreadRuntime(std::string& name,long long curTId, XlangRuntime* rt, bool& newCreatedRT)
 	{
 		bool bEvent = false;
 		XlangRuntime* pRet = nullptr;
@@ -129,6 +129,7 @@ namespace X {
 			m_rtMap.emplace(std::make_pair(curTId, pRuntime));
 			pRet = pRuntime;
 			bEvent = G::I().GetTrace() && !pRuntime->m_bNoDbg;
+			newCreatedRT = true;
 		}
 		else
 		{

@@ -139,6 +139,7 @@ public:
 	virtual void ScopeLayout() override;
 	virtual void Add(Expression* item) override;
 	virtual bool Call(XlangRuntime* rt,
+		XObj* pThis,//own object
 		XObj* pContext,
 		ARGS& params,
 		KWARGS& kwParams,

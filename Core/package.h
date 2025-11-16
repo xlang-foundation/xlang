@@ -19,6 +19,7 @@ limitations under the License.
 #include "stackframe.h"
 #include <functional>
 #include "Locker.h"
+#include "glob.h"
 
 namespace X
 {
@@ -69,6 +70,10 @@ class Package :
 		Package* pPackage = dynamic_cast<Package*>(pPack);
 		return (pPackage->m_apiset == m_apiset);
 	}
+	virtual bool Set(Value valIdx, X::Value& val)
+	{
+		return false;
+	}
 	std::vector<AST::Module*> m_loadedModules;//for adding xlang code
 	void UnloadAddedModules();
 	Locker m_lock;
@@ -90,6 +95,7 @@ public:
 			Cleanup(m_pObject);
 		}
 		delete m_pMyScope;
+		m_pMyScope = nullptr;
 	}
 	virtual void SetAPISet(void* pApiSet) override
 	{
@@ -381,6 +387,7 @@ public:
 		//m_pPackage->Unlock();
 
 		delete m_pMyScope;
+		m_pMyScope = nullptr;
 	}
 	FORCE_INLINE virtual int GetPackageName(char* buffer, int bufferSize) override
 	{
@@ -467,6 +474,7 @@ public:
 		m_variableFrame->Get(idx, v);
 		return true;
 	}
+	virtual bool Set(Value valIdx, X::Value& val);
 	FORCE_INLINE virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 	{
 		//add myself whihc is instance of Package Scope

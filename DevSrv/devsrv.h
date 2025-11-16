@@ -33,6 +33,11 @@ namespace X
 
 		// Inherited via GThread
 		virtual void run() override;
+		virtual void Stop() override
+		{
+			m_srv.stop();
+			GThread::Stop();
+		}
 	private:
 		std::condition_variable m_cvConnect;
 		std::mutex m_mtxConnect;

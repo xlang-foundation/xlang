@@ -70,6 +70,13 @@ namespace X
 				X::Value& retValue) override;
 			void CancelAll();
 			bool CancelTask(Task* pTask);
+			virtual long long Size() 
+			{ 
+				m_lock.Lock();
+				long long size = m_tasks.size();
+				m_lock.Unlock();
+				return size;
+			}
 			Task* GetTaskToRun();
 			bool RunTaskInUIThread(Task* pTask);
 			bool RunTask(Task* pTask);

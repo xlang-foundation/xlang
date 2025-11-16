@@ -291,9 +291,13 @@ public:
 		{
 			m_varFrame->Get(idx, v, lValue);
 		}
-		else
+		else if(rt)
 		{
 			rt->Get(this,pContext, idx, v, lValue);
+		}
+		else
+		{
+			assert(false);
 		}
 	}
 };

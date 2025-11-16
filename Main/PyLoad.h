@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,26 +14,6 @@ limitations under the License.
 */
 
 #pragma once
+#include <string>
 
-#include "token.h"
-#include "def.h"
-
-namespace X
-{
-	namespace Text
-	{
-		class Json
-		{
-			Token* mToken = nullptr;
-			static std::vector<OpInfo> OPList;
-			static std::vector<short> kwTree;
-			static std::vector<OpAction> OpActions;
-		public:
-			Json();
-			~Json();
-			bool Init();
-			bool LoadFromString(char* code, int size);
-			bool Parse();
-		};
-	}
-}
+std::string resolve_pyeng_path(const std::string& folder);

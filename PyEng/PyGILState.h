@@ -14,7 +14,7 @@ limitations under the License.
 #include "PyFunc.h"
 #include <mutex>
 
-class MGil {
+class MGil2 {
     bool m_needsRelease;
     PyGILState_STATE m_state;
 
@@ -26,7 +26,7 @@ class MGil {
 
 public:
     // Constructor optionally auto-locks the GIL
-    inline MGil(bool autoLock = true)
+    inline MGil2(bool autoLock = true)
         : m_needsRelease(false), m_state(PyGILState_UNLOCKED)
     {
         if (autoLock) {
@@ -35,7 +35,7 @@ public:
     }
 
     // Destructor releases the GIL if this instance acquired it
-    inline ~MGil()
+    inline ~MGil2()
     {
         Unlock();
     }
@@ -69,6 +69,49 @@ public:
             if (s_lockCounter == 0) {
                 PyGILState_Release(m_state);
                 m_needsRelease = false;
+            }
+        }
+    }
+};
+
+class MGil {
+    bool m_acquired = false;
+    PyGILState_STATE m_state = PyGILState_UNLOCKED;
+
+    static std::mutex s_mutex;
+    static thread_local int s_lockCounter;
+
+public:
+    inline MGil(bool autoLock = true)
+    {
+        if (autoLock) Lock();
+    }
+
+    inline ~MGil()
+    {
+        Unlock();
+    }
+
+    inline void Lock()
+    {
+        std::lock_guard<std::mutex> lock(s_mutex);
+
+        if (s_lockCounter == 0) {
+            m_state = PyGILState_Ensure();
+            m_acquired = true;
+        }
+        s_lockCounter++;
+    }
+
+    inline void Unlock()
+    {
+        std::lock_guard<std::mutex> lock(s_mutex);
+
+        if (s_lockCounter > 0) {
+            s_lockCounter--;
+            if (s_lockCounter == 0 && m_acquired) {
+                PyGILState_Release(m_state);
+                m_acquired = false;
             }
         }
     }

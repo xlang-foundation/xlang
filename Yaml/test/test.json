@@ -1,0 +1,18 @@
+﻿{
+  "id": "1",
+  "point_id": "17",
+  "device_type": "device_type:camera",
+  "ip_address": "10.8.1.25",
+  "port": 5060,
+  "device_name": "GB28181-34111020000001320000055",
+  "model_code": "iDS-2D111F7C445IXR-A",
+  "serial_number": null,
+  "mac_address": null,
+  "firmware_version": "V5.8.0",
+  "vendor_code": "sssss",
+  "status_code": null,
+  "online_status": 1,
+  "last_heartbeat": "2025-09-27 12:45:34",
+  "register_time": "2025-09-27 12:40:29",
+  "device_id": "34020000001320000055"
+}

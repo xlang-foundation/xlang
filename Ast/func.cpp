@@ -19,6 +19,8 @@ limitations under the License.
 #include <string>
 #include "glob.h"
 #include "xclass_object.h"
+#include "attribute.h"
+
 
 namespace X
 {
@@ -38,11 +40,14 @@ void Func::ScopeLayout()
 	{
 		std::string strName(m_Name.s, m_Name.size);
 		SCOPE_FAST_CALL_AddOrGet0_NoDef(m_Index,pMyScope,strName, false);
-		//TODO: debug here
+		//if m_parent is calss
+		// with check m_parent->m_type == ObType::Class
+		// add this into myscope with index m_IndexOfThis
+		//but if function is not belong to class, also add thin index
+		//but it point to function itself
 		if (m_parent->m_type == ObType::Class)
-		{//it is class's member
-			//add into myscope not parent class's scope
-			SCOPE_FAST_CALL_AddOrGet0_NoDef(m_IndexOfThis,GetMyScope(), thisKey, false);
+		{
+			SCOPE_FAST_CALL_AddOrGet0_NoDef(m_IndexOfThis, GetMyScope(), thisKey, false);
 		}
 	}
 	//process parameters' default values
@@ -154,7 +159,21 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 		ExpExec(*it,rt, action,pPassContext, retVal);
 		if (retVal.IsObject())
 		{
-			pPassContext = retVal.GetObj();
+			auto* pWrapper = dynamic_cast<X::Data::Object*>(retVal.GetObj());
+			if (pWrapper && pPassContext)
+			{
+				// Explicitly link the decorator chain
+				auto* aBag = pWrapper->GetAttrBag();
+				if (aBag)
+				{
+					// Set "origin" attribute for the decorator wrapper
+					X::Value passIn(pPassContext);
+					aBag->Set("origin", passIn);
+					//aBag->Set("origin", v0);
+				}
+			}
+
+			pPassContext = pWrapper;
 			v0 = retVal;
 		}
 	}
@@ -168,14 +187,16 @@ bool Func::Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, L
 //this function seems just called from Decorator::Exec
 //but maybe have some problems with remoting
 //todo: need to check out
-bool Func::CallEx(XRuntime* rt, XObj* pContext,
+bool Func::CallEx(XRuntime* rt, 
+	XObj* pThis,
+	XObj* pContext,
 	ARGS& params,
 	KWARGS& kwParams,
 	X::Value& trailer,
 	X::Value& retValue)
 {
 	kwParams.Add("origin", trailer);
-	return Call(rt,pContext,params,kwParams,retValue);
+	return Call(rt,pThis,pContext,params,kwParams,retValue);
 }
 void Func::FindMyModule()
 {
@@ -228,6 +249,7 @@ void Func::ChangeStatmentsIntoTranslateMode(
 //also check if in this is in-trace or not,
 //if in trace, need to add Scope into trace list
 bool Func::Call(XRuntime* rt0,
+	XObj* pThis,
 	XObj* pContext,
 	ARGS& params,
 	KWARGS& kwParams,
@@ -235,7 +257,8 @@ bool Func::Call(XRuntime* rt0,
 {
 	auto* rt_from = (XlangRuntime*)rt0;
 	std::string name = GetNameString();
-	XlangRuntime* rt = G::I().Threading(name,rt_from);
+	bool newCreatedRuntime = false;
+	XlangRuntime* rt = G::I().Threading(name,rt_from,newCreatedRuntime);
 	auto oldModule = rt->M();
 
 	if (!rt->M())
@@ -257,12 +280,27 @@ bool Func::Call(XRuntime* rt0,
 	}
 	rt->PushFrame(pCurFrame,m_pMyScope->GetVarNum());
 	//for Class,Add this if This is not null
-	if (m_IndexOfThis >=0 &&
-		pContextObj && pContextObj->GetType() == X::ObjType::XClassObject)
+	//Shawn 10/10/2025, for function we also want to support this
+	//TODO: this may have some problem, so comment out for function
+	// for function,we are going to add closure support
+	//so comment out the check of pContextObj->GetType() == X::ObjType::XClassObject
+	if (m_IndexOfThis >=0)
 	{
-		Value v0(dynamic_cast<Data::Object*>(pContext));
-		pCurFrame->Set(m_IndexOfThis, v0);
+		Value varThis;
+		if (pContextObj && pContextObj->GetType() == X::ObjType::XClassObject)
+		{
+			//for class's function,this always point to class instance
+			varThis = X::Value(pContextObj);
+		}
+#if 0
+		else if(pThis)
+		{
+			varThis = X::Value(dynamic_cast<Data::Object*>(pThis));
+		}
+#endif
+		pCurFrame->Set(m_IndexOfThis, varThis);
 	}
+
 	int num = (int)params.size();
 	int indexNum = (int)m_IndexofParamList.size();
 	if (num > indexNum)
@@ -291,6 +329,10 @@ bool Func::Call(XRuntime* rt0,
 	if (G::I().GetTrace() && rt->M())
 	{
 		rt->M()->RemoveDbgScope(m_pMyScope);
+	}
+	if (newCreatedRuntime)
+	{
+		delete rt;
 	}
 	return true;
 }

@@ -36,6 +36,7 @@ namespace X
 		bool m_IsWrite = false;
 	public:
 		BEGIN_PACKAGE(File)
+			APISET().AddFunc<2>("seek", &File::seek);
 			APISET().AddFunc<1>("read", &File::read);
 			APISET().AddFunc<1>("write", &File::write);
 			APISET().AddFunc<0>("close", &File::close);
@@ -55,6 +56,43 @@ namespace X
 			{
 				m_wstream.close();
 			}
+		}
+		bool seek(long long offset, int origin)
+		{
+			// origin: 0 = begin (SEEK_SET), 1 = current (SEEK_CUR), 2 = end (SEEK_END)
+			std::ios_base::seekdir dir;
+			switch (origin)
+			{
+			case 0:
+				dir = std::ios_base::beg;
+				break;
+			case 1:
+				dir = std::ios_base::cur;
+				break;
+			case 2:
+				dir = std::ios_base::end;
+				break;
+			default:
+				return false;
+			}
+
+			if (m_IsWrite)
+			{
+				if (m_wstream.is_open())
+				{
+					m_wstream.seekp(offset, dir);
+					return !m_wstream.fail();
+				}
+			}
+			else
+			{
+				if (m_stream.is_open())
+				{
+					m_stream.seekg(offset, dir);
+					return !m_stream.fail();
+				}
+			}
+			return false;
 		}
 		X::Value read(long long size)
 		{

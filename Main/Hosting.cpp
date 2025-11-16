@@ -67,22 +67,9 @@ namespace X
 
 	void Hosting::SetDebugMode(bool bDebug)
 	{
-		if (bDebug)
-			G::I().SetTrace(Dbg::xTraceFunc);
-		else
-		{
-			G::I().SetTrace(nullptr);
-			std::unordered_map<long long, XlangRuntime*> rtMap = G::I().GetThreadRuntimeIdMap();
-			for (auto& item : rtMap)
-			{
-				if (item.second->m_bStoped)
-				{
-					CommandInfo* pCmdInfo = new CommandInfo();
-					pCmdInfo->dbgType = dbg::Continue;
-					item.second->AddCommand(pCmdInfo, false);
-				}
-			}
-		}
+		LOG << LOG_GREEN << "XLang set debug mode: " << (bDebug ? "true" : "false") << LOG_RESET << LINE_END;
+		G::I().SetTrace(bDebug ? Dbg::xTraceFunc : nullptr);
+		G::I().SetAllRuntimesDebug(bDebug);
 	}
 
 	unsigned long long  Hosting::RunAsBackend(std::string& moduleName, std::string& code, std::vector<X::Value>& args)
@@ -273,7 +260,8 @@ namespace X
 	{
 		pTopModule->SetArgs(passInParams);
 		std::string name("main");
-		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(),nullptr);
+		bool newCreatedRuntime = false;
+		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(),nullptr, newCreatedRuntime);
 		if (noDebug)
 		{
 			pRuntime->SetNoDbg(true);
@@ -318,7 +306,7 @@ namespace X
 			{
 				pRuntime->SetM(pOldModule);
 			}
-			else
+			else if(newCreatedRuntime)
 			{
 				delete pRuntime;
 			}
@@ -337,7 +325,8 @@ namespace X
 			pTopModule->AddModuleVariable(name, it.val);
 		}
 		std::string name("main");
-		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(), nullptr);
+		bool newCreatedRuntime = false;
+		XlangRuntime* pRuntime = G::I().Threading(pTopModule->GetModuleName(), nullptr, newCreatedRuntime);
 		if (noDebug)
 		{
 			pRuntime->SetNoDbg(true);
@@ -382,7 +371,7 @@ namespace X
 			{
 				pRuntime->SetM(pOldModule);
 			}
-			else
+			else if(newCreatedRuntime)
 			{
 				delete pRuntime;
 			}
@@ -500,9 +489,9 @@ namespace X
 		X::AST::ExecAction action;
 		bool bOK = ExpExec(pTopModule, pRuntime, action, nullptr, retVal);
 		pRuntime->PopFrame();
-		delete pRuntime;
 
 		Unload(pTopModule);
+		delete pRuntime;
 		return bOK;
 	}
 	bool Hosting::Run(unsigned long long moduleKey, X::KWARGS& kwParams,

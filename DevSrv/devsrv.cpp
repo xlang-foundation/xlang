@@ -308,8 +308,6 @@ namespace X
 		{
 			LOG << LOG_RED << "Devops server has an error..." << LOG_RESET << LINE_END;
 		}
-		LOG << LOG_GREEN << "DevServer set debug mode: true" << LOG_RESET << LINE_END;
-		X::g_pXHost->SetDebugMode(true);
 		LOG << LOG_GREEN << "DevServer listens on port:" << m_port << LOG_RESET << LINE_END;
 		if (!m_srv.listen("::", m_port))
 		{

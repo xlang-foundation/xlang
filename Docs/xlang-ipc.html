@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>xlang-ipc.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="xlang-ipc-a-transparent-high%E2%80%91throughput-inter%E2%80%91process-communication-model-for-ai--iot">XLang IPC: A Transparent, High‑Throughput Inter‑Process Communication Model for AI &amp; IoT</h1>
+<p><strong>Keywords —</strong> inter‑process communication (IPC), shared memory, zero‑copy, Arrow IPC, multiprocessing, dataflow graphs, LRCP, remote object proxy</p>
+<p><strong>Author</strong> — Shawn Xiong</p>
+<hr>
+<h2 id="abstract">Abstract</h2>
+<p>We present the design, implementation, and benchmarking methodology of <strong>XLang’s IPC</strong>—a transparent, shared‑memory–first communication model that lets developers import and use <strong>remote objects exactly like local ones</strong>. XLang’s IPC aligns with the language’s core philosophy: programs are compiled into <strong>mathematical expression sets</strong> that preserve a <strong>dataflow graph</strong> for optimization across heterogeneous executors (GPU, edge, cloud). The IPC layer mirrors this philosophy by separating <strong>control</strong> (object introspection, method calls, events) from <strong>data</strong> (bulk payloads via zero‑copy shared memory), yielding low latency and high throughput while keeping code simple:</p>
+<pre class="hljs"><code><div>import ipc_srv thru 'lrpc:9089' as srv
+y = srv.model.predict(x)   # same syntax as local use
+</div></code></pre>
+<p>We detail architecture and algorithms, provide a reproducible benchmark (XLang vs Python Multiprocessing vs Arrow IPC-on-shared-file), and outline how to evaluate throughput, latency, and CPU overhead. Our results discussion is methodological (to keep the paper tool‑ and hardware‑agnostic), but the suite is turnkey and ready to run.</p>
+<hr>
+<h2 id="1-background-objectives-features-and-design-philosophy">1. Background: Objectives, Features, and Design Philosophy</h2>
+<p><strong>XLang™</strong> is a dynamic, high‑performance language for AI and IoT. It is ~99% Python‑syntax compatible yet designed to run significantly faster in AI workloads. <strong>Code in XLang is compiled into a set of mathematical expressions</strong>, preserving a <strong>dataflow graph</strong> that the runtime can optimize and schedule on CPUs, GPUs, or other parallel backends. Core features include <strong>natural distributed computing</strong>, <strong>seamless interop</strong> (C/C++/Python/JS), and <strong>transparent cross‑process object access</strong>—all with an emphasis on performance and ease of use.</p>
+<hr>
+<h2 id="2-motivation-to-design-a-new-ipc-method-in-xlang">2. Motivation to Design a New IPC Method in XLang</h2>
+<p>Existing high‑level IPCs (e.g., Python MP, ZeroMQ, RPC stacks) are effective but <strong>not language‑native</strong> and often <strong>not transparent</strong>: developers must write different code for remote vs local objects. They also introduce serialization overhead that limits throughput for large AI tensors. XLang’s IPC therefore targets:</p>
+<ul>
+<li><strong>Transparency:</strong> treat <strong>remote objects</strong> (properties/methods) <strong>like local</strong> ones—same syntax, same semantics.</li>
+<li><strong>Speed:</strong> bulk data via <strong>shared memory</strong> with <strong>zero‑copy</strong> reads/writes whenever possible.</li>
+<li><strong>Binary serialization:</strong> compact, schemaed payloads to reduce bytes on the wire/control channel.</li>
+<li><strong>Events &amp; backpressure:</strong> <strong>event‑driven notifications</strong> for readiness/ack to avoid polling and to maintain flow control.</li>
+</ul>
+<hr>
+<h2 id="3-programming-model">3. Programming Model</h2>
+<ul>
+<li><strong>Importing remote modules:</strong>
+<code>import anotherword thru 'lrpc:PORT' as m</code> creates a <strong>proxy</strong> for the remote module/object <code>anotherword</code> exported by the peer process listening on <code>PORT</code>.</li>
+<li><strong>Uniform object semantics:</strong> <code>m.var</code>, <code>m.method(a,b)</code> behave as if <code>m</code> were local. Under the hood, the runtime performs remote introspection, marshals arguments, and routes data through shared memory if large.</li>
+<li><strong>Events:</strong> processes can <strong>signal</strong> each other when data is ready or when a method finishes. Clients block (or await) on events rather than spinning.</li>
+</ul>
+<hr>
+<h2 id="4-architecture">4. Architecture</h2>
+<p><strong>Control Plane (LRPC).</strong> Lightweight RPC (“<strong>LRPC</strong>”) carries:</p>
+<ul>
+<li><strong>Object schema:</strong> names, attributes, methods, signatures.</li>
+<li><strong>Invocations:</strong> compact binary envelopes describing target object, method id, and small arguments.</li>
+<li><strong>Signals:</strong> event notifications (ready, ack, closed).</li>
+</ul>
+<p><strong>Data Plane (Shared Memory).</strong></p>
+<ul>
+<li><strong>Large payloads</strong> (e.g., tensors, byte buffers) are exchanged via <strong>memory‑mapped regions</strong> (Windows: <code>CreateFileMapping</code>/<code>MapViewOfFile</code>; Linux: <code>shm_open</code>/<code>mmap</code>).</li>
+<li>A <strong>slice protocol</strong> divides large buffers into <strong>fixed‑size chunks</strong> (e.g., 1 MiB). Each chunk publish is accompanied by an <strong>event</strong>; the receiver acks to apply <strong>backpressure</strong>.</li>
+</ul>
+<p><strong>Serialization.</strong></p>
+<ul>
+<li><strong>Metadata/control</strong>: compact binary (fixed headers + varints for sizes).</li>
+<li><strong>Bulk data</strong>: zero‑copy views where safe (e.g., native numeric tensors) or <strong>binary blocks</strong> with minimal framing when copy is unavoidable.</li>
+</ul>
+<p><strong>Safety &amp; Lifetimes.</strong></p>
+<ul>
+<li><strong>Proxy references</strong> hold a cross‑process <strong>object token</strong>. The server pins the object until all proxies release.</li>
+<li><strong>Region leases</strong> (read/write) ensure no writer tears while a reader is active.</li>
+<li><strong>Time‑bounded waits</strong> + failure paths (timeout/cancel) for robustness.</li>
+</ul>
+<hr>
+<h2 id="5-algorithms">5. Algorithms</h2>
+<h3 id="algorithm-1--server-preparedatalength-slicelen">Algorithm 1 — Server: <code>PrepareData(length, sliceLen)</code></h3>
+<pre class="hljs"><code><div>Input: length L, slice size S
+State: data buffer B (shared), write index p = 0
+1: Allocate/resize shared region |B| &gt;= L; fill B with fast pattern or generated data
+2: Set p ← 0; publish {L, S} in control plane
+3: Signal “ready”
+</div></code></pre>
+<h3 id="algorithm-2--server-getdata">Algorithm 2 — Server: <code>GetData()</code></h3>
+<pre class="hljs"><code><div>State: current position p, total L, slice size S
+1: if p ≥ L: return NULL
+2: end ← min(p + S, L)
+3: Return a read-only view B[p:end]
+4: p ← end
+</div></code></pre>
+<h3 id="algorithm-3--client-fetch-loop">Algorithm 3 — Client: Fetch Loop</h3>
+<pre class="hljs"><code><div>Input: Total length L, slice size S (from server)
+State: received = 0
+1: t0 ← now()
+2: while received &lt; L:
+3:     D ← remote.GetData()
+4:     if D == NULL: break
+5:     process(D)         # e.g., checksum, sum bytes, hash
+6:     received += |D|
+7: t1 ← now(); report Δ = t1 - t0, throughput = L / Δ
+</div></code></pre>
+<hr>
+<h2 id="6-implementation">6. Implementation</h2>
+<h3 id="61-xlang-reference-benchmark-one-file-serverclient-via-args">6.1 XLang Reference Benchmark (one file; server/client via args)</h3>
+<pre class="hljs"><code><div># xlang_ipc_benchmark.x
+import time
+
+# Globals
+data = None
+data_len = 0
+slice_len = 0
+current_position = 0
+
+def PrepareData(length, slice_length):
+    global data, data_len, slice_len, current_position
+    data_len = length
+    slice_len = slice_length
+    # Fast generator: bytes(total_len, low_char, high_char, GenData=True)
+    data = bytes(data_len, 48, 122, GenData = True)
+    current_position = 0
+    print(&quot;Data prepared with length ${data_len} and slice length ${slice_len}&quot;)
+
+def GetData():
+    global current_position
+    if current_position &gt;= data_len:
+        return None
+    end_position = current_position + slice_len
+    if end_position &gt; data_len:
+        end_position = data_len
+    part = data[current_position:end_position]
+    current_position = end_position
+    return part
+
+def close():
+    global data, data_len, slice_len, current_position
+    data = None; data_len = 0; slice_len = 0; current_position = 0
+    print(&quot;Data closed and resources released&quot;)
+
+def main():
+    args = get_args()
+    mode = args[0] if args.size() &gt; 0 else 'client'
+    port = 9089
+
+    if mode == 'server':
+        register_remote_object(&quot;ipc_srv&quot;)
+        PrepareData(1024*1024*1024, 1024*1024)   # 1 GiB, 1 MiB slices
+        print(&quot;Starting as server...&quot;)
+        lrpc_listen(port, True)
+
+    elif mode == 'client':
+        import ipc_srv thru 'lrpc:9089' as server
+        print(&quot;Starting as client...&quot;)
+        t0 = time.time()
+        while True:
+            chunk = server.GetData()
+            if chunk == None:
+                break
+            # optional: compute checksum / accumulate
+        t1 = time.time()
+        print(&quot;Time taken: ${t1 - t0} seconds&quot;)
+        server.close()
+    else:
+        print(&quot;Unknown mode: ${mode}&quot;)
+
+main()
+</div></code></pre>
+<p><strong>How to run</strong></p>
+<pre class="hljs"><code><div>xlang xlang_ipc_benchmark.x server
+xlang xlang_ipc_benchmark.x client
+</div></code></pre>
+<h3 id="62-python-baseline-a--multiprocessing-queue">6.2 Python Baseline A — Multiprocessing (Queue)</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># ipc_benchmark_mp.py</span>
+<span class="hljs-keyword">import</span> multiprocessing <span class="hljs-keyword">as</span> mp, time, sys
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">server</span><span class="hljs-params">(q_cmd, q_data)</span>:</span>
+    data_len = <span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>
+    slice_len = <span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">gen_slice</span><span class="hljs-params">(n)</span>:</span>  <span class="hljs-comment"># cheap deterministic bytes</span>
+        <span class="hljs-keyword">return</span> bytes((<span class="hljs-number">48</span> + (i % <span class="hljs-number">75</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(n)))
+    <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:
+        msg = q_cmd.get()
+        <span class="hljs-keyword">if</span> msg[<span class="hljs-number">0</span>] == <span class="hljs-string">"prepare"</span>:
+            _, L, S = msg; data_sent = <span class="hljs-number">0</span>
+            <span class="hljs-keyword">while</span> data_sent &lt; L:
+                sz = min(S, L - data_sent)
+                q_data.put(gen_slice(sz))
+                data_sent += sz
+            q_data.put(<span class="hljs-literal">None</span>)
+        <span class="hljs-keyword">elif</span> msg[<span class="hljs-number">0</span>] == <span class="hljs-string">"close"</span>:
+            <span class="hljs-keyword">break</span>
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">client</span><span class="hljs-params">(q_cmd, q_data, L=<span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>, S=<span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>)</span>:</span>
+    q_cmd.put((<span class="hljs-string">"prepare"</span>, L, S))
+    t0 = time.time(); rcv = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:
+        part = q_data.get()
+        <span class="hljs-keyword">if</span> part <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>: <span class="hljs-keyword">break</span>
+        rcv += len(part)
+    t1 = time.time()
+    print(<span class="hljs-string">f"MP: bytes=<span class="hljs-subst">{rcv}</span> time=<span class="hljs-subst">{t1-t0:<span class="hljs-number">.3</span>f}</span>s throughput=<span class="hljs-subst">{rcv/<span class="hljs-number">1e6</span>/(t1-t0):<span class="hljs-number">.1</span>f}</span> MB/s"</span>)
+    q_cmd.put((<span class="hljs-string">"close"</span>,))
+
+<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">"__main__"</span>:
+    mode = sys.argv[<span class="hljs-number">1</span>] <span class="hljs-keyword">if</span> len(sys.argv) &gt; <span class="hljs-number">1</span> <span class="hljs-keyword">else</span> <span class="hljs-string">"all"</span>
+    q_cmd, q_data = mp.Queue(), mp.Queue()
+    <span class="hljs-keyword">if</span> mode <span class="hljs-keyword">in</span> (<span class="hljs-string">"server"</span>,<span class="hljs-string">"all"</span>):
+        p = mp.Process(target=server, args=(q_cmd,q_data)); p.start()
+    <span class="hljs-keyword">if</span> mode <span class="hljs-keyword">in</span> (<span class="hljs-string">"client"</span>,<span class="hljs-string">"all"</span>):
+        client(q_cmd, q_data)
+</div></code></pre>
+<h3 id="63-python-baseline-b--arrow-ipc-on-a-shared-file-slice-stream">6.3 Python Baseline B — Arrow IPC on a Shared File (slice stream)</h3>
+<p>This baseline <strong>does not serialize 1 GiB at once</strong>. The server writes an <strong>Arrow IPC stream of 1 MiB record batches</strong> (each batch is a <code>uint8</code> column) to a file; the client memory‑maps the file and reads the stream sequentially. This models per‑slice Arrow serialization overhead.</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># ipc_benchmark_arrow_ipc.py</span>
+<span class="hljs-keyword">import</span> pyarrow <span class="hljs-keyword">as</span> pa, pyarrow.ipc <span class="hljs-keyword">as</span> ipc
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np, time, sys, os
+
+FILE = <span class="hljs-string">"shared.arrow"</span>
+SIG  = <span class="hljs-string">"ready.signal"</span>
+L    = <span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>
+S    = <span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">gen_slice</span><span class="hljs-params">(n)</span>:</span>
+    <span class="hljs-comment"># vectorized: values in [48,122)</span>
+    <span class="hljs-keyword">return</span> np.fromfunction(<span class="hljs-keyword">lambda</span> i: <span class="hljs-number">48</span> + (i % <span class="hljs-number">74</span>), (n,), dtype=np.uint8)
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">server</span><span class="hljs-params">()</span>:</span>
+    schema = pa.schema([(<span class="hljs-string">"b"</span>, pa.uint8())])
+    <span class="hljs-keyword">with</span> pa.output_stream(FILE) <span class="hljs-keyword">as</span> sink, ipc.new_stream(sink, schema) <span class="hljs-keyword">as</span> w:
+        remain = L
+        <span class="hljs-keyword">while</span> remain &gt; <span class="hljs-number">0</span>:
+            sz = min(S, remain)
+            arr = pa.array(gen_slice(sz))
+            w.write_batch(pa.record_batch([arr], schema=schema))
+            remain -= sz
+    open(SIG, <span class="hljs-string">"w"</span>).close()
+    print(<span class="hljs-string">"Arrow stream ready."</span>)
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">client</span><span class="hljs-params">()</span>:</span>
+    <span class="hljs-keyword">while</span> <span class="hljs-keyword">not</span> os.path.exists(SIG):
+        time.sleep(<span class="hljs-number">0.05</span>)
+    t0 = time.time()
+    total = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">with</span> pa.memory_map(FILE, <span class="hljs-string">"r"</span>) <span class="hljs-keyword">as</span> src, ipc.open_stream(src) <span class="hljs-keyword">as</span> r:
+        <span class="hljs-keyword">for</span> batch <span class="hljs-keyword">in</span> r:
+            total += batch.num_rows
+    t1 = time.time()
+    print(<span class="hljs-string">f"Arrow IPC: bytes=<span class="hljs-subst">{total}</span> time=<span class="hljs-subst">{t1-t0:<span class="hljs-number">.3</span>f}</span>s "</span>
+          <span class="hljs-string">f"throughput=<span class="hljs-subst">{total/<span class="hljs-number">1e6</span>/(t1-t0):<span class="hljs-number">.1</span>f}</span> MB/s"</span>)
+
+<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">"__main__"</span>:
+    mode = sys.argv[<span class="hljs-number">1</span>] <span class="hljs-keyword">if</span> len(sys.argv) &gt; <span class="hljs-number">1</span> <span class="hljs-keyword">else</span> <span class="hljs-string">"client"</span>
+    <span class="hljs-keyword">if</span> mode == <span class="hljs-string">"server"</span>: server()
+    <span class="hljs-keyword">elif</span> mode == <span class="hljs-string">"client"</span>: client()
+</div></code></pre>
+<blockquote>
+<p><strong>Note</strong>: This Arrow baseline uses a shared file (mmap‑capable) and <strong>Arrow IPC stream</strong> per slice; it is portable (Windows/Linux/macOS) and keeps memory bounded.</p>
+</blockquote>
+<hr>
+<h2 id="7-benchmark-methodology">7. Benchmark Methodology</h2>
+<h3 id="71-metrics">7.1 Metrics</h3>
+<ul>
+<li><strong>Throughput (MB/s):</strong> <code>total_bytes_transferred / elapsed_seconds / 1e6</code></li>
+<li><strong>End‑to‑end latency:</strong> client wall‑clock time from first request to last byte.</li>
+<li><strong>CPU utilization:</strong> per process (optional).</li>
+<li><strong>Copy count:</strong> estimated number of user‑space copies per slice (qualitative).</li>
+</ul>
+<h3 id="72-workloads">7.2 Workloads</h3>
+<ul>
+<li><strong>W1 (bytes):</strong> 1 GiB of byte data in 1 MiB slices (as shown).</li>
+<li><strong>W2 (tensors):</strong> replace bytes with <code>float32</code>/<code>int8</code> tensors to test zero‑copy paths.</li>
+<li><strong>W3 (mixed):</strong> control‑heavy sequences (many small calls) + occasional large slices.</li>
+</ul>
+<h3 id="73-procedure">7.3 Procedure</h3>
+<ol>
+<li><strong>Warm up</strong> once per mode to stabilize caches.</li>
+<li>Run <strong>at least 5 trials</strong> per configuration; report mean and standard deviation.</li>
+<li>Pin server/client to separate cores if possible to reduce scheduler noise.</li>
+<li>Disable background tasks; use release builds.</li>
+</ol>
+<h3 id="74-what-to-expect-qualitative">7.4 What to Expect (Qualitative)</h3>
+<ul>
+<li><strong>XLang IPC (shared memory + events):</strong> minimal copy paths and transparent object semantics should deliver the <strong>highest throughput</strong> and <strong>lowest CPU</strong> for large slices.</li>
+<li><strong>Python MP (Queue/Pipe):</strong> convenient but incurs pickling/copy overheads—<strong>lower throughput</strong>, higher CPU.</li>
+<li><strong>Arrow IPC (slice stream):</strong> efficient columnar encoding, but <strong>per‑slice serialization framing</strong> adds overhead compared to XLang’s raw binary slices; throughput is typically <strong>between</strong> the other two depending on slice size and disk/mmap performance.</li>
+</ul>
+<p><em>(Provide your actual numbers in a table once you run on your target hardware.)</em></p>
+<hr>
+<h2 id="8-analysis--discussion">8. Analysis &amp; Discussion</h2>
+<ul>
+<li><strong>Transparency vs ceremony.</strong> XLang hides remote/local differences. Baselines require explicit server scafolding (MP) or format generation (Arrow).</li>
+<li><strong>Copy budget.</strong> XLang’s design aims for <strong>zero extra copies</strong> in the data plane; MP and Arrow both copy/encode per slice.</li>
+<li><strong>Backpressure.</strong> XLang’s event‑driven acks reduce buffering and tail latency; MP Queues can build pressure; Arrow’s stream reader keeps state but not end‑to‑end flow control.</li>
+<li><strong>Executor affinity.</strong> Because XLang preserves a <strong>dataflow graph</strong> of expressions, IPC can be <strong>fused</strong> with compute (e.g., GPU pre/post‑processing near the producer or consumer), cutting bytes‑on‑the‑wire—beyond what generic IPC stacks offer.</li>
+</ul>
+<hr>
+<h2 id="9-limitations--future-work">9. Limitations &amp; Future Work</h2>
+<ul>
+<li><strong>Cross‑host transport.</strong> The shared‑memory fast path is local‑only; XLang falls back to network transports for remote hosts. Future work: RDMA/GPUDirect paths.</li>
+<li><strong>Security/isolation.</strong> Named shared memory requires ACLs; future: per‑session keys and encrypted control plane.</li>
+<li><strong>Schema evolution.</strong> Today’s binary envelopes are compact; richer schemas (e.g., Arrow schema negotiation) could improve cross‑language interop when needed.</li>
+<li><strong>Zero‑copy Arrow interop.</strong> Map Arrow arrays directly onto shared regions to eliminate slice serialization in mixed stacks.</li>
+</ul>
+<hr>
+<h2 id="10-related-work">10. Related Work</h2>
+<ul>
+<li><strong>Python Multiprocessing:</strong> high‑level, batteries‑included IPC; simplicity at the cost of overhead for large payloads.</li>
+<li><strong>Apache Arrow IPC/Flight:</strong> standardized columnar interchange; excellent tool for analytics pipelines; Flight (gRPC) is network‑centric, while file IPC streams fit local use.</li>
+<li><strong>ZeroMQ/gRPC:</strong> powerful messaging/RPC stacks, but not language‑transparent for local/remote object unification.</li>
+</ul>
+<hr>
+<h2 id="11-conclusion">11. Conclusion</h2>
+<p>XLang’s IPC delivers <strong>transparent remote object access</strong> and <strong>shared‑memory performance</strong> aligned with the language’s expression‑graph design. By cleanly separating control (LRPC) and data (zero‑copy slices + events), it achieves high throughput with minimal code changes. The provided benchmarks and baselines make it straightforward to reproduce results and to quantify gains on your hardware.</p>
+<hr>
+<h2 id="appendix-a--how-to-run">Appendix A — How to Run</h2>
+<p><strong>XLang</strong></p>
+<pre class="hljs"><code><div>xlang xlang_ipc_benchmark.x server
+xlang xlang_ipc_benchmark.x client
+</div></code></pre>
+<p><strong>Python MP</strong></p>
+<pre class="hljs"><code><div>python ipc_benchmark_mp.py all        # spawns server + runs client in one process
+# or in two terminals:
+python ipc_benchmark_mp.py server
+python ipc_benchmark_mp.py client
+</div></code></pre>
+<p><strong>Python Arrow IPC</strong></p>
+<pre class="hljs"><code><div>pip install pyarrow
+python ipc_benchmark_arrow_ipc.py server
+python ipc_benchmark_arrow_ipc.py client
+</div></code></pre>
+<hr>
+<h2 id="appendix-b--result-table-template">Appendix B — Result Table Template</h2>
+<table>
+<thead>
+<tr>
+<th>Workload</th>
+<th>Method</th>
+<th>Bytes (GiB)</th>
+<th>Slice (MiB)</th>
+<th>Time (s)</th>
+<th>Throughput (MB/s)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>W1</td>
+<td>XLang IPC</td>
+<td>1.0</td>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>W1</td>
+<td>Python MP (Queue)</td>
+<td>1.0</td>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>W1</td>
+<td>Arrow IPC (Stream)</td>
+<td>1.0</td>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><em>(Fill after running; include CPU% if you measure it.)</em></p>
+<hr>
+<h3 id="acknowledgments">Acknowledgments</h3>
+<p>Thanks to the XLang Foundation and community for the APIs (<code>import ... thru 'lrpc:PORT'</code>, <code>register_remote_object</code>, <code>lrpc_listen</code>) and the shared‑memory primitives that make this design possible.</p>
+
+</body>
+</html>

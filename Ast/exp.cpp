@@ -56,7 +56,15 @@ std::string Expression::GetCode()
 		return "";
 	}
 }
-Expression* Expression::CreateByType(ObType t)
+Expression::~Expression()
+{
+	if(m_pMyScope)
+	{
+		delete m_pMyScope;
+		m_pMyScope = nullptr;
+	}
+}
+Expression *Expression::CreateByType(ObType t)
 {
 	Expression* pExp = nullptr;
 	switch (t)

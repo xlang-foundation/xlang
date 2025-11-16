@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,101 +45,101 @@ namespace X
 		auto ProcessRequestUrl = [this, pCurPack](std::string url,
 			const httplib::Request& req,
 			httplib::Response& res)
-		{
-			bool bHandled = false;
-
-			HttpRequest* pHttpReq = new HttpRequest((void*)&req);
-			X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq));
-
-			HttpResponse* pHttpResp = new HttpResponse(&res);
-			X::Value valResp(pHttpResp->APISET().GetProxy(pHttpResp));
-
-			for (auto& pat : m_patters)
 			{
-				std::smatch matches;
-				if (std::regex_search(url, matches, pat.rule))
+				bool bHandled = false;
+
+				HttpRequest* pHttpReq = new HttpRequest((void*)&req);
+				X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq));
+
+				HttpResponse* pHttpResp = new HttpResponse(&res);
+				X::Value valResp(pHttpResp->APISET().GetProxy(pHttpResp));
+
+				for (auto& pat : m_patters)
 				{
-					X::ARGS params(matches.size()-1+ pat.params.size());
-					for (size_t i = 1; i < matches.size(); ++i)
+					std::smatch matches;
+					if (std::regex_search(url, matches, pat.rule))
 					{
-						std::cout << i << ": '" << matches[i].str() << "'\n";
-						std::string strParam(matches[i].str());
-						params.push_back(strParam);
-					}
-					for (X::Value& param : pat.params)
-					{
-						params.push_back(param);
-					}
-					X::KWARGS kwargs(pat.kwParams.size()+2);
-					kwargs.Add("req", valReq);
-					kwargs.Add("res", valResp);
-					for (auto& it : pat.kwParams)
-					{
-						kwargs.Add(it);
-					}
-					X::Value retValue;
-					bool bCallOK = pat.handler.GetObj()->Call(nullptr,
-						pCurPack, params,kwargs, retValue);
-					if (bCallOK)
-					{
-						bHandled = bCallOK;
-					}
-					//if get return value, will set content,
-					//but only the last set will be valid for respouse
-					if (retValue.IsValid())
-					{
-						if (retValue.IsList()) //[ content,mime]
+						X::ARGS params(matches.size() - 1 + pat.params.size());
+						for (size_t i = 1; i < matches.size(); ++i)
 						{
-							XList* pList = dynamic_cast<XList*>(retValue.GetObj());
-							if (pList->Size() >= 2)
+							std::cout << i << ": '" << matches[i].str() << "'\n";
+							std::string strParam(matches[i].str());
+							params.push_back(strParam);
+						}
+						for (X::Value& param : pat.params)
+						{
+							params.push_back(param);
+						}
+						X::KWARGS kwargs(pat.kwParams.size() + 2);
+						kwargs.Add("req", valReq);
+						kwargs.Add("res", valResp);
+						for (auto& it : pat.kwParams)
+						{
+							kwargs.Add(it);
+						}
+						X::Value retValue;
+						bool bCallOK = pat.handler.GetObj()->Call(nullptr,
+							pCurPack, params, kwargs, retValue);
+						if (bCallOK)
+						{
+							bHandled = bCallOK;
+						}
+						//if get return value, will set content,
+						//but only the last set will be valid for respouse
+						if (retValue.IsValid())
+						{
+							if (retValue.IsList()) //[ content,mime]
 							{
-								X::Value v0 = pList->Get(0);
-								pHttpResp->SetContent(v0,pList->Get(1).ToString());
+								XList* pList = dynamic_cast<XList*>(retValue.GetObj());
+								if (pList->Size() >= 2)
+								{
+									X::Value v0 = pList->Get(0);
+									pHttpResp->SetContent(v0, pList->Get(1).ToString());
+								}
+							}
+							else
+							{
+								pHttpResp->SetContent(retValue, "text/html");
 							}
 						}
-						else
-						{
-							pHttpResp->SetContent(retValue,"text/html");
-						}
+						break;
 					}
-					break;
 				}
+				if (!bHandled)
+				{
+					//if not handled, check if this server support static files
+					bHandled = HandleStaticFile(url, (void*)&req, (void*)&res);
 				}
-			if (!bHandled)
-			{ 
-				//if not handled, check if this server support static files
-				bHandled = HandleStaticFile(url, (void*)&req, (void*)&res);
-			}
-			if (!bHandled)
-			{
-				res.status = 404;
-				res.set_content("Not Found", "text/plain");
-				bHandled = true;
-			}
-			return bHandled;
-		};
+				if (!bHandled)
+				{
+					res.status = 404;
+					res.set_content("Not Found", "text/plain");
+					bHandled = true;
+				}
+				return bHandled;
+			};
 
 		auto routing_handler_ = [this, ProcessRequestUrl](
 			const httplib::Request& req,
 			httplib::Response& res)
-		{
-			auto retCode = httplib::Server::HandlerResponse::Unhandled;
-			bool bHandled = ProcessRequestUrl(req.path, req,res);
-			if (bHandled)
 			{
-				retCode = httplib::Server::HandlerResponse::Handled;
-			}
-			return retCode;
-		};
+				auto retCode = httplib::Server::HandlerResponse::Unhandled;
+				bool bHandled = ProcessRequestUrl(req.path, req, res);
+				if (bHandled)
+				{
+					retCode = httplib::Server::HandlerResponse::Handled;
+				}
+				return retCode;
+			};
 		if (asHttps)
 		{
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 			httplib::SSLServer* pSrv = new httplib::SSLServer(
-				m_cert_path =="" ? nullptr:m_cert_path.c_str(),
-				m_private_key_path =="" ? nullptr:m_private_key_path.c_str(),
-				m_client_ca_cert_file_path =="" ?nullptr:m_client_ca_cert_file_path.c_str(),
-				m_client_ca_cert_dir_path == ""?nullptr: m_client_ca_cert_dir_path.c_str(),
-				m_private_key_password ==""?nullptr: m_private_key_password.c_str());
+				m_cert_path == "" ? nullptr : m_cert_path.c_str(),
+				m_private_key_path == "" ? nullptr : m_private_key_path.c_str(),
+				m_client_ca_cert_file_path == "" ? nullptr : m_client_ca_cert_file_path.c_str(),
+				m_client_ca_cert_dir_path == "" ? nullptr : m_client_ca_cert_dir_path.c_str(),
+				m_private_key_password == "" ? nullptr : m_private_key_password.c_str());
 			if (!pSrv->is_valid())
 			{
 				printf("server has an error...\n");
@@ -176,7 +176,7 @@ namespace X
 		list += isBinary;
 		return list;
 	}
-	bool HttpServer::Listen(std::string srvName,int port)
+	bool HttpServer::Listen(std::string srvName, int port)
 	{
 		httplib::Server* pSrv = (httplib::Server*)m_pSrv;
 
@@ -190,7 +190,7 @@ namespace X
 		((httplib::Server*)m_pSrv)->stop();
 		return true;
 	}
-	bool HttpServer::Get(std::string pattern,X::Value& valHandler)
+	bool HttpServer::Get(std::string pattern, X::Value& valHandler)
 	{
 		XFunc* pHandler = nullptr;
 		if (valHandler.IsObject())
@@ -219,9 +219,9 @@ namespace X
 
 					KWARGS kwParams0;
 					X::Value retValue0;
-					try 
+					try
 					{
-						pHandler->Call(nullptr,pCurPack,params0, kwParams0,retValue0);
+						pHandler->Call(nullptr, pCurPack, params0, kwParams0, retValue0);
 					}
 					catch (int e)
 					{
@@ -229,7 +229,7 @@ namespace X
 					}
 					catch (...)
 					{
-						std::cout << "An exception occurred."<< '\n';
+						std::cout << "An exception occurred." << '\n';
 					}
 				}
 			});
@@ -251,10 +251,10 @@ namespace X
 	}
 
 	// Function to extract the file extension from a file path
-	std::string getFileExtension(const std::string& filePath) 
+	std::string getFileExtension(const std::string& filePath)
 	{
 		size_t dotPos = filePath.find_last_of('.');
-		if (dotPos == std::string::npos) 
+		if (dotPos == std::string::npos)
 		{
 			return ""; // No extension found
 		}
@@ -264,30 +264,141 @@ namespace X
 	// Function to get the MIME type and binary/text indicator based on the file extension
 	std::tuple<std::string, bool> getMimeTypeAndBinaryFlag(const std::string& extension) {
 		// Mapping of file extensions to MIME types and binary/text flag
-		std::map<std::string, std::tuple<std::string, bool>> mimeTypeMap = 
+		static std::map<std::string, std::tuple<std::string, bool>> mimeTypeMap =
 		{
-			{"txt",		{"text/plain", false}},
-			{"html",	{"text/html", false}},
-			{"css",		{"text/css", false}},
-			{"js",		{"application/javascript", false}},
-			{"json",	{"application/json", false}},
-			{"csh",		{"application/x-csh", false}},
-			{"sh",		{"application/x-sh", false}},
-			{"php",		{"application/x-httpd-php", false}},
-			{"xml",		{"application/xml", false}},
-			{"xhtml",	{"application/xhtml+xml", false}},
-			{"jpg",		{"image/jpeg", true}},
-			{"jpeg",	{"image/jpeg", true}},
-			{"png",		{"image/png", true}},
-			{"gif",		{"image/gif", true}},
-			{"svg",		{"image/svg+xml", true}},
-			{"pdf",		{"application/pdf", true}},
-			// Add more mappings as needed
+			// Text files
+			{"txt",     {"text/plain", false}},
+			{"html",    {"text/html", false}},
+			{"htm",     {"text/html", false}},
+			{"css",     {"text/css", false}},
+			{"csv",     {"text/csv", false}},
+			{"xml",     {"application/xml", false}},
+			{"xhtml",   {"application/xhtml+xml", false}},
+			{"md",      {"text/markdown", false}},
+			{"markdown",{"text/markdown", false}},
+
+			// JavaScript
+			{"js",      {"application/javascript", false}},
+			{"mjs",     {"application/javascript", false}},
+			{"json",    {"application/json", false}},
+			{"ts",      {"text/typescript", false}},
+			{"tsx",     {"text/typescript", false}},
+
+			// Programming Languages - C/C++
+			{"c",       {"text/x-c", false}},
+			{"h",       {"text/x-c", false}},
+			{"cpp",     {"text/x-c++", false}},
+			{"cc",      {"text/x-c++", false}},
+			{"cxx",     {"text/x-c++", false}},
+			{"c++",     {"text/x-c++", false}},
+			{"hpp",     {"text/x-c++", false}},
+			{"hh",      {"text/x-c++", false}},
+			{"hxx",     {"text/x-c++", false}},
+			{"h++",     {"text/x-c++", false}},
+
+			// Programming Languages - Other
+			{"py",      {"text/x-python", false}},
+			{"java",    {"text/x-java", false}},
+			{"cs",      {"text/x-csharp", false}},
+			{"go",      {"text/x-go", false}},
+			{"rs",      {"text/x-rust", false}},
+			{"rb",      {"text/x-ruby", false}},
+			{"swift",   {"text/x-swift", false}},
+			{"kt",      {"text/x-kotlin", false}},
+			{"scala",   {"text/x-scala", false}},
+			{"r",       {"text/x-r", false}},
+			{"m",       {"text/x-objectivec", false}},
+			{"mm",      {"text/x-objectivec", false}},
+
+			// Web Assembly & Low Level
+			{"wasm",    {"application/wasm", true}},
+			{"asm",     {"text/x-asm", false}},
+			{"s",       {"text/x-asm", false}},
+
+			// Shell & Scripts
+			{"csh",     {"application/x-csh", false}},
+			{"sh",      {"application/x-sh", false}},
+			{"bash",    {"application/x-sh", false}},
+			{"php",     {"application/x-httpd-php", false}},
+			{"pl",      {"text/x-perl", false}},
+			{"lua",     {"text/x-lua", false}},
+
+			// Config & Data Files
+			{"yml",     {"text/yaml", false}},
+			{"yaml",    {"text/yaml", false}},
+			{"toml",    {"text/toml", false}},
+			{"ini",     {"text/plain", false}},
+			{"conf",    {"text/plain", false}},
+			{"cfg",     {"text/plain", false}},
+
+			// Build & Project Files
+			{"cmake",   {"text/x-cmake", false}},
+			{"make",    {"text/x-makefile", false}},
+			{"gradle",  {"text/x-gradle", false}},
+
+			// Images
+			{"jpg",     {"image/jpeg", true}},
+			{"jpeg",    {"image/jpeg", true}},
+			{"png",     {"image/png", true}},
+			{"gif",     {"image/gif", true}},
+			{"svg",     {"image/svg+xml", true}},
+			{"webp",    {"image/webp", true}},
+			{"ico",     {"image/x-icon", true}},
+			{"bmp",     {"image/bmp", true}},
+			{"tiff",    {"image/tiff", true}},
+			{"tif",     {"image/tiff", true}},
+
+			// Audio
+			{"mp3",     {"audio/mpeg", true}},
+			{"wav",     {"audio/wav", true}},
+			{"ogg",     {"audio/ogg", true}},
+			{"m4a",     {"audio/mp4", true}},
+			{"aac",     {"audio/aac", true}},
+			{"weba",    {"audio/webm", true}},
+
+			// Video
+			{"mp4",     {"video/mp4", true}},
+			{"mpeg",    {"video/mpeg", true}},
+			{"webm",    {"video/webm", true}},
+			{"avi",     {"video/x-msvideo", true}},
+			{"mov",     {"video/quicktime", true}},
+			{"wmv",     {"video/x-ms-wmv", true}},
+
+			// Documents
+			{"pdf",     {"application/pdf", true}},
+			{"doc",     {"application/msword", true}},
+			{"docx",    {"application/vnd.openxmlformats-officedocument.wordprocessingml.document", true}},
+			{"xls",     {"application/vnd.ms-excel", true}},
+			{"xlsx",    {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", true}},
+			{"ppt",     {"application/vnd.ms-powerpoint", true}},
+			{"pptx",    {"application/vnd.openxmlformats-officedocument.presentationml.presentation", true}},
+			{"odt",     {"application/vnd.oasis.opendocument.text", true}},
+			{"ods",     {"application/vnd.oasis.opendocument.spreadsheet", true}},
+			{"odp",     {"application/vnd.oasis.opendocument.presentation", true}},
+
+			// Archives
+			{"zip",     {"application/zip", true}},
+			{"tar",     {"application/x-tar", true}},
+			{"gz",      {"application/gzip", true}},
+			{"7z",      {"application/x-7z-compressed", true}},
+			{"rar",     {"application/vnd.rar", true}},
+
+			// Fonts
+			{"ttf",     {"font/ttf", true}},
+			{"otf",     {"font/otf", true}},
+			{"woff",    {"font/woff", true}},
+			{"woff2",   {"font/woff2", true}},
+
+			// Other common types
+			{"bin",     {"application/octet-stream", true}},
+			{"exe",     {"application/octet-stream", true}},
+			{"rtf",     {"application/rtf", true}},
+			{"swf",     {"application/x-shockwave-flash", true}},
 		};
 
 		// Find the MIME type and binary/text flag based on the extension
 		auto it = mimeTypeMap.find(extension);
-		if (it != mimeTypeMap.end()) 
+		if (it != mimeTypeMap.end())
 		{
 			return it->second;
 		}
@@ -296,11 +407,11 @@ namespace X
 		return { "application/octet-stream", true };
 	}
 	// Function to read the entire contents of a binary file
-	std::vector<char> BinReadAll(const std::string& filePath) 
+	std::vector<char> BinReadAll(const std::string& filePath)
 	{
 		std::filesystem::path fsPath = std::filesystem::u8path(filePath);
 		std::ifstream file(fsPath, std::ios::binary | std::ios::ate);
-		if (!file) 
+		if (!file)
 		{
 			throw std::runtime_error("Could not open file for reading: " + filePath);
 		}
@@ -308,7 +419,7 @@ namespace X
 		file.seekg(0, std::ios::beg);
 
 		std::vector<char> buffer(size);
-		if (!file.read(buffer.data(), size)) 
+		if (!file.read(buffer.data(), size))
 		{
 			throw std::runtime_error("Could not read file: " + filePath);
 		}
@@ -316,11 +427,11 @@ namespace X
 	}
 
 	// Function to read the entire contents of a text file
-	std::string TextReadAll(const std::string& filePath) 
+	std::string TextReadAll(const std::string& filePath)
 	{
 		std::filesystem::path fsPath = std::filesystem::u8path(filePath);
 		std::ifstream file(fsPath);
-		if (!file) 
+		if (!file)
 		{
 			throw std::runtime_error("Could not open file for reading: " + filePath);
 		}
@@ -329,7 +440,7 @@ namespace X
 		return content;
 	}
 
-	bool HttpServer::HandleStaticFile(std::string path, void* pReq, void* pResp) 
+	bool HttpServer::HandleStaticFile(std::string path, void* pReq, void* pResp)
 	{
 		if (!m_SupportStaticFiles)
 		{
@@ -357,7 +468,7 @@ namespace X
 				((httplib::Response*)pResp)->set_content("Error reading file: " + std::string(e.what()), "text/plain");
 				return false;
 			}
-		};
+			};
 
 		if (path == "/")
 		{
@@ -379,7 +490,7 @@ namespace X
 			}
 		}
 		//then Moudle Path
-		std::string& root = X::Http::I().GetHttpModulePath(); 
+		std::string& root = X::Http::I().GetHttpModulePath();
 		fs::path fullPath = fs::path(root) / path;
 		if (fs::exists(fullPath)) {
 			std::u8string u8Str = fullPath.u8string();
@@ -435,8 +546,16 @@ namespace X
 		}
 		return fullPath.string();
 	}
+	bool HttpServer::AddRoute(std::string urlPattern, X::Value& func)
+	{
+		X::ARGS extraParams;
+		X::KWARGS extraKw;
 
-	bool HttpServer::Route(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+		auto url_reg = TranslateUrlToReqex(urlPattern);
+		m_patters.push_back(UrlPattern{ urlPattern, std::regex(url_reg), extraParams, extraKw, func });
+		return true;
+	}
+	bool HttpServer::Route(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 		X::ARGS& params, X::KWARGS& kwParams,
 		X::Value& trailer, X::Value& retValue)
 	{
@@ -460,7 +579,7 @@ namespace X
 			{
 				url = p0.ToString();
 			}
-			int p_size = (int)params.size()-1;
+			int p_size = (int)params.size() - 1;
 			X::ARGS params1(p_size);
 			for (int i = 1; i < p_size; i++)
 			{
@@ -492,10 +611,10 @@ namespace X
 	bool HttpResponse::AddHeader(std::string headName, X::Value& headValue)
 	{
 		auto* pResp = (httplib::Response*)m_pResponse;
-		pResp->headers.emplace(std::make_pair(headName,headValue.ToString()));
+		pResp->headers.emplace(std::make_pair(headName, headValue.ToString()));
 		return true;
 	}
-	bool HttpResponse::SetContent(X::Value& valContent,std::string contentType)
+	bool HttpResponse::SetContent(X::Value& valContent, std::string contentType)
 	{
 		auto* pResp = (httplib::Response*)m_pResponse;
 		if (valContent.IsObject())
@@ -508,18 +627,18 @@ namespace X
 				pResp->set_content_provider(
 					pBinContent->Size(), // Content length
 					contentType.c_str(), // Content type
-					[pBinContent](size_t offset, size_t length, 
-						httplib::DataSink& sink) 
+					[pBinContent](size_t offset, size_t length,
+						httplib::DataSink& sink)
 					{
 						char* data = pBinContent->Data();
-						sink.write(data+offset,length);
+						sink.write(data + offset, length);
 						return true;
 					},
-					[pBinContent](bool success) 
-					{ 
+					[pBinContent](bool success)
+					{
 						pBinContent->DecRef();
 					}
-					);
+				);
 			}
 			else
 			{
@@ -534,14 +653,174 @@ namespace X
 		}
 		return true;
 	}
+
+	#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+	bool HttpResponse::StreamFile(std::string filePath, 
+		long long start, long long end, std::string contentType)
+	{
+		auto* pResp = (httplib::Response*)m_pResponse;
+
+		std::cout << "Streaming file: " << filePath << " from " << start << " to " << end << std::endl;
+		FILE* file = fopen(filePath.c_str(), "rb");
+		if (!file) return false;
+
+		fseek(file, 0, SEEK_END);
+		long long file_size = ftell(file);
+		if (end < 0 || end >= file_size) end = file_size - 1;
+
+		long long content_length = end - start + 1;
+		const size_t CHUNK_SIZE = 256 * 1024;
+
+		pResp->set_content_provider(
+			content_length,
+			contentType.c_str(),
+
+			// This callback is called ONCE but YOU loop inside to send chunks
+			[file, start, end, CHUNK_SIZE](size_t offset, size_t length, 
+				httplib::DataSink& sink) {
+				// Seek to start position
+				long long file_position = start + offset;
+				fseek(file, file_position, SEEK_SET);
+
+				size_t remaining = length;
+
+				std::cout << "Starting to stream " << length << " bytes from position " << file_position << std::endl;
+				// Loop through and send in chunks
+				while (remaining > 0) {
+					size_t chunk_to_read = MIN(remaining, CHUNK_SIZE);
+
+					std::vector<char> buffer(chunk_to_read);
+					size_t bytes_read = fread(buffer.data(), 1, chunk_to_read, file);
+
+					if (bytes_read == 0) {
+						break;  // EOF or error
+					}
+
+					// Write chunk - if client disconnects, this returns false
+					if (!sink.write(buffer.data(), bytes_read)) {
+						return false;  // Client disconnected, stop!
+					}
+
+					remaining -= bytes_read;
+
+					// Check if client still connected
+					if (!sink.is_writable()) {
+						return false;  // Stop if client disconnected
+					}
+				}
+				std::cout << "Finished streaming requested data." << std::endl;
+				return remaining == 0;  // Success if sent all requested data
+			},
+
+			[file](bool success) {
+				fclose(file);
+			}
+		);
+
+		return true;
+	}
+
+	// ============================================================================
+	// ALTERNATIVE: Stream with Progress Callback (Optional)
+	// ============================================================================
+
+	// If you want to track progress or handle errors better:
+
+	struct FileStreamContext {
+		FILE* file;
+		long long start;
+		long long total_sent;
+		long long content_length;
+		std::string file_path;
+	};
+
+	bool HttpResponse::StreamFileWithCallback(std::string filePath, 
+		long long start, long long end,
+		std::string contentType, X::Value progressCallback)
+	{
+		auto* pResp = (httplib::Response*)m_pResponse;
+
+		// Validate and setup (same as above)
+		FILE* temp_file = fopen(filePath.c_str(), "rb");
+		if (!temp_file) return false;
+
+		fseek(temp_file, 0, SEEK_END);
+		long long file_size = ftell(temp_file);
+		fclose(temp_file);
+
+		if (end < 0 || end >= file_size) {
+			end = file_size - 1;
+		}
+
+		if (start < 0 || start > end) {
+			return false;
+		}
+
+		long long content_length = end - start + 1;
+
+		FILE* file = fopen(filePath.c_str(), "rb");
+		if (!file) return false;
+
+		// Create context
+		auto* ctx = new FileStreamContext{
+			file,
+			start,
+			0,
+			content_length,
+			filePath
+		};
+
+		pResp->set_content_provider(
+			content_length,
+			contentType.c_str(),
+
+			[ctx, progressCallback](size_t offset, size_t length, httplib::DataSink& sink) -> bool {
+				long long file_position = ctx->start + offset;
+
+				if (fseek(ctx->file, file_position, SEEK_SET) != 0) {
+					return false;
+				}
+
+				std::vector<char> buffer(length);
+				size_t bytes_read = fread(buffer.data(), 1, length, ctx->file);
+
+				if (bytes_read > 0) {
+					sink.write(buffer.data(), bytes_read);
+					ctx->total_sent += bytes_read;
+
+					// Optional: Call progress callback
+					if (progressCallback.IsObject()) {
+						X::ARGS args(2);
+						args.push_back((long long)ctx->total_sent);
+						args.push_back((long long)ctx->content_length);
+						X::KWARGS kwargs;
+						X::Value ret;
+						progressCallback.GetObj()->Call(nullptr, nullptr, args, kwargs, ret);
+					}
+				}
+
+				return bytes_read > 0;
+			},
+
+			[ctx](bool success) {
+				fclose(ctx->file);
+				delete ctx;
+			}
+		);
+
+		return true;
+	}
+
+
 	X::Value HttpRequest::GetMethod()
 	{
-		auto* pReq = (httplib::Request*)m_pRequest; 
+		auto* pReq = (httplib::Request*)m_pRequest;
 		return X::Value(pReq->method);
 	}
 
 	// Function to determine if the MIME type is binary or textual
-	inline bool isBinaryContentType(const std::string& content_type) 
+	inline bool isBinaryContentType(const std::string& content_type)
 	{
 		// Set of known textual MIME types (extend as needed)
 		static const std::unordered_set<std::string> textMimeTypes = {
@@ -570,10 +849,10 @@ namespace X
 		// Default fallback for unknown content types
 		return true; // Assume it's binary if unknown
 	}
-	inline std::optional<std::string> getContentType(auto& headers) 
+	inline std::optional<std::string> getContentType(auto& headers)
 	{
 		auto it = headers.find("Content-Type");
-		if (it != headers.end()) 
+		if (it != headers.end())
 		{
 			return it->second; // Return the content type value
 		}
@@ -596,8 +875,8 @@ namespace X
 				bool isBin = isBinaryContentType(value.content_type);
 				if (isBin)
 				{
-					X::Bin binContent((char*)nullptr, 
-						(unsigned long long)value.content.size(), 
+					X::Bin binContent((char*)nullptr,
+						(unsigned long long)value.content.size(),
 						static_cast<bool>(true));
 					memcpy(binContent->Data(), value.content.data(), value.content.size());
 					dataMap->Set("content", binContent);
@@ -623,7 +902,7 @@ namespace X
 			}
 			if (isBin)
 			{
-				X::Bin binContent((char*)nullptr, 
+				X::Bin binContent((char*)nullptr,
 					(unsigned long long)strVal.size(),
 					static_cast<bool>(true));
 				memcpy(binContent->Data(), strVal.data(), strVal.size());
@@ -695,7 +974,7 @@ namespace X
 		std::regex url_regex(R"(^(http|https)://([^/:]+)(?::(\d+))?(/.*)?$)");
 		std::smatch url_match_result;
 
-		if (std::regex_match(url, url_match_result, url_regex)) 
+		if (std::regex_match(url, url_match_result, url_regex))
 		{
 			// Extract protocol, host, port, and path
 			std::string protocol = url_match_result[1];
@@ -883,7 +1162,7 @@ namespace X
 
 	bool HttpClient::Post(std::string path, std::string content_type, std::string body)
 	{
-		if (m_pClient) 
+		if (m_pClient)
 		{
 			std::string full_path = m_path + path;
 			httplib::Headers headers;
@@ -902,12 +1181,12 @@ namespace X
 				{
 					return ((httplib::Client*)m_pClient)->Post(full_path, headers, body, content_type);
 				}
-			};
+				};
 			httplib::Result res = callPost();
-			if (res) 
+			if (res)
 			{
 				m_status = res->status;
-				m_body = X::Value(res->body); 
+				m_body = X::Value(res->body);
 				X::Dict dict;
 				//dump response headers
 				for (auto& kv : res->headers)
@@ -929,6 +1208,63 @@ namespace X
 	X::Value HttpClient::GetBody()
 	{
 		return m_body;
+	}
+	bool HttpClient::MakeHeadersFromString(X::Value& headers)
+	{
+		std::string strHeaders = headers.ToString();
+		X::Dict dict;
+
+		// Split the headers string by semicolon (;)
+		std::istringstream headerStream(strHeaders);
+		std::string headerPair;
+
+		while (std::getline(headerStream, headerPair, ';'))
+		{
+			// Trim whitespace from the header pair
+			size_t start = headerPair.find_first_not_of(" \t\r\n");
+			size_t end = headerPair.find_last_not_of(" \t\r\n");
+
+			if (start == std::string::npos || end == std::string::npos)
+				continue; // Skip empty or whitespace-only segments
+
+			headerPair = headerPair.substr(start, end - start + 1);
+
+			// Find the colon separator
+			size_t colonPos = headerPair.find(':');
+			if (colonPos != std::string::npos && colonPos > 0 && colonPos < headerPair.length() - 1)
+			{
+				// Extract key and value
+				std::string key = headerPair.substr(0, colonPos);
+				std::string value = headerPair.substr(colonPos + 1);
+
+				// Trim whitespace from key and value
+				start = key.find_first_not_of(" \t\r\n");
+				end = key.find_last_not_of(" \t\r\n");
+				if (start != std::string::npos && end != std::string::npos)
+				{
+					key = key.substr(start, end - start + 1);
+				}
+
+				start = value.find_first_not_of(" \t\r\n");
+				end = value.find_last_not_of(" \t\r\n");
+				if (start != std::string::npos && end != std::string::npos)
+				{
+					value = value.substr(start, end - start + 1);
+				}
+
+				// Add to dictionary if both key and value are not empty
+				if (!key.empty() && !value.empty())
+				{
+					X::Str xKey(key.c_str(), (int)key.size());
+					X::Str xValue(value.c_str(), (int)value.size());
+					dict->Set(xKey, xValue);
+				}
+			}
+		}
+
+		// Set the parsed headers dictionary to m_headers
+		m_headers = dict;
+		return true;
 	}
 }
 

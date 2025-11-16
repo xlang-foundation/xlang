@@ -48,7 +48,7 @@ limitations under the License.
 #include <filesystem>
 #include "log.h"
 
-namespace X 
+namespace X
 {
 	X::XHost* g_pXHost = nullptr;
 	extern XLoad* g_pXload;
@@ -99,7 +99,7 @@ namespace X
 	}
 	XStr* XHost_Impl::CreateStr(const char* data, int size)
 	{
-		Data::Str* pStrObj = data== nullptr? new Data::Str(size):new Data::Str(data, size);
+		Data::Str* pStrObj = data == nullptr ? new Data::Str(size) : new Data::Str(data, size);
 		pStrObj->IncRef();
 		return dynamic_cast<XStr*>(pStrObj);
 	}
@@ -110,13 +110,13 @@ namespace X
 		pErroObj->IncRef();
 		return dynamic_cast<XError*>(pErroObj);
 	}
-	bool XHost_Impl::RegisterPackage(const char* name,PackageCreator creator, void* pContext)
+	bool XHost_Impl::RegisterPackage(const char* name, PackageCreator creator, void* pContext)
 	{
-		return X::Manager::I().Register(name,creator, pContext);
+		return X::Manager::I().Register(name, creator, pContext);
 	}
-	bool XHost_Impl::RegisterPackage(const char* name,Value& objPackage)
+	bool XHost_Impl::RegisterPackage(const char* name, Value& objPackage)
 	{
-		return X::Manager::I().Register(name,objPackage);
+		return X::Manager::I().Register(name, objPackage);
 	}
 	Value XHost_Impl::QueryMember(XRuntime* rt, XObj* pObj, const char* name)
 	{
@@ -130,7 +130,7 @@ namespace X
 		if (pScope)
 		{
 			std::string strName(name);
-			SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
+			SCOPE_FAST_CALL_AddOrGet0(idx, pScope, strName, true);
 			if (idx >= 0)
 			{
 				pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);
@@ -143,7 +143,7 @@ namespace X
 			for (auto* pScope : scopes)
 			{
 				std::string strName(name);
-				SCOPE_FAST_CALL_AddOrGet0(idx,pScope,strName, true);
+				SCOPE_FAST_CALL_AddOrGet0(idx, pScope, strName, true);
 				if (idx >= 0)
 				{
 					pScope->Get((XlangRuntime*)rt, pRealObj, idx, retValue);
@@ -156,10 +156,10 @@ namespace X
 	bool XHost_Impl::QueryPackage(XRuntime* rt, const char* name, Value& objPackage)
 	{
 		std::string strName(name);
-		return X::Manager::I().QueryAndCreatePackage((XlangRuntime*)rt,strName, objPackage);
+		return X::Manager::I().QueryAndCreatePackage((XlangRuntime*)rt, strName, objPackage);
 	}
 
-	X::Value ConvertToValue(std::string& str) 
+	X::Value ConvertToValue(std::string& str)
 	{
 		std::istringstream ss(str);
 		int r0;
@@ -169,7 +169,7 @@ namespace X
 		{
 			return X::Value(r0);
 		}
-		else if( ss>>r1)
+		else if (ss >> r1)
 		{
 			return X::Value(r1);
 		}
@@ -215,7 +215,7 @@ namespace X
 						{
 							unsigned long long ullId = 0;
 							SCANF(item_list[2].c_str(), "%llu", &ullId);
-							X::Data::Object* pPackObj = (X::Data::Object *)pXStream->ScopeSpace().Query(ullId);
+							X::Data::Object* pPackObj = (X::Data::Object*)pXStream->ScopeSpace().Query(ullId);
 							if (pPackObj)
 							{
 								varPackage = X::Value(pPackObj);
@@ -242,7 +242,7 @@ namespace X
 						varPackage = varPackage[item.c_str()]();
 					}
 				}
-				else 
+				else
 				{
 					varPackage = varPackage[item.c_str()]();
 				}
@@ -258,7 +258,7 @@ namespace X
 	}
 	XPackage* XHost_Impl::CreatePackageProxy(XPackage* pPackage, void* pRealObj)
 	{
-		auto* pPack = new AST::PackageProxy(dynamic_cast<AST::Package*>(pPackage),pRealObj);
+		auto* pPack = new AST::PackageProxy(dynamic_cast<AST::Package*>(pPackage), pRealObj);
 		pPack->IncRef();
 		return dynamic_cast<XPackage*>(pPack);
 	}
@@ -269,11 +269,11 @@ namespace X
 		pEvt->IncRef();
 		return dynamic_cast<XEvent*>(pEvt);
 	}
-	XFunc* XHost_Impl::CreateFunction(const char* name,U_FUNC& func, X::XObj* pContext)
+	XFunc* XHost_Impl::CreateFunction(const char* name, U_FUNC& func, X::XObj* pContext)
 	{
 		std::string strName(name);
-		AST::ExternFunc* extFunc = new AST::ExternFunc(strName,"",func, pContext);
-		auto* pFuncObj = new X::Data::Function(extFunc,true);
+		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, "", func, pContext);
+		auto* pFuncObj = new X::Data::Function(extFunc, true);
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
@@ -281,7 +281,7 @@ namespace X
 	{
 		std::string strName(name);
 		AST::ExternFunc* extFunc = new AST::ExternFunc(strName, func, pContext);
-		auto* pFuncObj = new X::Data::Function(extFunc,true);
+		auto* pFuncObj = new X::Data::Function(extFunc, true);
 		pFuncObj->IncRef();
 		return dynamic_cast<XFunc*>(pFuncObj);
 	}
@@ -291,8 +291,8 @@ namespace X
 		std::string strSetName = "set_" + strName;
 		std::string strGetName = "get_" + strName;
 
-		AST::ExternFunc* extFunc_set = new AST::ExternFunc(strSetName,"", setter,pContext);
-		AST::ExternFunc* extFunc_get = new AST::ExternFunc(strGetName,"", getter, pContext);
+		AST::ExternFunc* extFunc_set = new AST::ExternFunc(strSetName, "", setter, pContext);
+		AST::ExternFunc* extFunc_get = new AST::ExternFunc(strGetName, "", getter, pContext);
 		auto* pPropObj = new X::Data::PropObject(extFunc_set, extFunc_get);
 		pPropObj->IncRef();
 		return dynamic_cast<XProp*>(pPropObj);
@@ -319,12 +319,12 @@ namespace X
 		pTensor->IncRef();
 		return pTensor;
 #else
-return nullptr;
+		return nullptr;
 #endif
 	}
-	XStruct* XHost_Impl::CreateStruct(char* data,int size, bool asRef)
+	XStruct* XHost_Impl::CreateStruct(char* data, int size, bool asRef)
 	{
-		auto* pStruct = new X::Data::XlangStruct(data,size,asRef);
+		auto* pStruct = new X::Data::XlangStruct(data, size, asRef);
 		pStruct->IncRef();
 		return pStruct;
 	}
@@ -341,31 +341,31 @@ return nullptr;
 		pTensorGraph->IncRef();
 		return pTensorGraph;
 #else
-return nullptr;
+		return nullptr;
 #endif
 	}
-	
+
 	XDict* XHost_Impl::CreateDict()
 	{
-		auto* pDict =  new X::Data::Dict();
+		auto* pDict = new X::Data::Dict();
 		pDict->IncRef();
 		return pDict;
 	}
 	XSet* XHost_Impl::CreateSet()
 	{
-		auto* pSet =  new X::Data::mSet();
+		auto* pSet = new X::Data::mSet();
 		pSet->IncRef();
 		return pSet;
 	}
 	XComplex* XHost_Impl::CreateComplex()
 	{
-		auto* pComplex =  new X::Data::Complex();
+		auto* pComplex = new X::Data::Complex();
 		pComplex->IncRef();
 		return pComplex;
 	}
 	const char* XHost_Impl::StringifyString(const char* str)
 	{
-		std::string outStr =  ::StringifyString(str);
+		std::string outStr = ::StringifyString(str);
 		auto len = outStr.size() + 1;
 		char* pNewStr = new char[len];//must use ReleaseString to delete it
 		memcpy(pNewStr, outStr.data(), len);
@@ -375,7 +375,7 @@ return nullptr;
 	{
 		if (str)
 		{
-			delete str;
+			delete[] str;
 		}
 	}
 	XBin* XHost_Impl::CreateBin(char* data, size_t size, bool bOwnData)
@@ -393,12 +393,12 @@ return nullptr;
 		}
 		else
 		{
-			pStream = new X::BlockStream((char*)buf,size,false);
+			pStream = new X::BlockStream((char*)buf, size, false);
 		}
 		return dynamic_cast<X::XLStream*>(pStream);
 	}
-	X::XLStream* XHost_Impl::CreateStreamWithSameScopeSpace(X::XLStream* pRefStream, 
-		const char* buf,long long size)
+	X::XLStream* XHost_Impl::CreateStreamWithSameScopeSpace(X::XLStream* pRefStream,
+		const char* buf, long long size)
 	{
 		X::XLangStream* pRefXlangStream = dynamic_cast<X::XLangStream*>(pRefStream);
 		X::BlockStream* pStream = nullptr;
@@ -434,7 +434,7 @@ return nullptr;
 		auto size = stream.Size();
 		char* pData = new char[size];
 		stream.FullCopyTo(pData, size);
-		X::Data::Binary* pBinOut = new X::Data::Binary(pData, size,true);
+		X::Data::Binary* pBinOut = new X::Data::Binary(pData, size, true);
 		output = X::Value(pBinOut);
 		return true;
 	}
@@ -445,7 +445,7 @@ return nullptr;
 			return false;
 		}
 		Data::Binary* pBin = dynamic_cast<Data::Binary*>(input.GetObj());
-		X::BlockStream stream(pBin->Data(), pBin->Size(),false);
+		X::BlockStream stream(pBin->Data(), pBin->Size(), false);
 		stream.ScopeSpace().SetContext((XlangRuntime*)pBin->RT(), pBin->Parent());
 		stream >> output;
 		return true;
@@ -480,7 +480,7 @@ return nullptr;
 	{
 		X::XLangStream stream;
 		stream.SetProvider(pStream);
-		return stream.append(data,size);
+		return stream.append(data, size);
 	}
 	bool XHost_Impl::ReadFromStream(char* buffer, long long size, X::XLStream* pStream)
 	{
@@ -488,20 +488,20 @@ return nullptr;
 		stream.SetProvider(pStream);
 		return stream.CopyTo(buffer, size);
 	}
-	bool XHost_Impl::RunCode(const char* moduleName, const char* code, 
-		int codeSize,X::Value& retVal)
-	{
-		std::vector<X::Value> passInParams;
-		return X::Hosting::I().Run(moduleName, code,
-			codeSize, passInParams,retVal);
-	}
-	bool XHost_Impl::RunCodeInNonDebug(const char* moduleName, const char* code, 
+	bool XHost_Impl::RunCode(const char* moduleName, const char* code,
 		int codeSize, X::Value& retVal)
 	{
 		std::vector<X::Value> passInParams;
-		return X::Hosting::I().Run(moduleName, code,codeSize, passInParams, retVal,true);
+		return X::Hosting::I().Run(moduleName, code,
+			codeSize, passInParams, retVal);
 	}
-	bool XHost_Impl::RunCodeWithParam(const char* moduleName, 
+	bool XHost_Impl::RunCodeInNonDebug(const char* moduleName, const char* code,
+		int codeSize, X::Value& retVal)
+	{
+		std::vector<X::Value> passInParams;
+		return X::Hosting::I().Run(moduleName, code, codeSize, passInParams, retVal, true);
+	}
+	bool XHost_Impl::RunCodeWithParam(const char* moduleName,
 		const char* code, int codeSize, X::ARGS& args, X::Value& retVal)
 	{
 		std::vector<X::Value> passInParams;
@@ -512,7 +512,7 @@ return nullptr;
 		return X::Hosting::I().Run(moduleName, code,
 			codeSize, passInParams, retVal);
 	}
-	bool XHost_Impl::LoadModule(const char* moduleName, 
+	bool XHost_Impl::LoadModule(const char* moduleName,
 		const char* code, int codeSize, X::Value& objModule)
 	{
 		std::filesystem::path pathModuleName(moduleName);
@@ -542,7 +542,7 @@ return nullptr;
 		std::string strPackageName(packageName);
 		return X::Manager::I().UnloadPackage(strPackageName);
 	}
-	bool XHost_Impl::RunModule(X::Value objModule, X::ARGS& args,X::Value& retVal, bool keepModuleWithRuntime)
+	bool XHost_Impl::RunModule(X::Value objModule, X::ARGS& args, X::Value& retVal, bool keepModuleWithRuntime)
 	{
 		if (objModule.IsObject() && objModule.GetObj()->GetType() == X::ObjType::ModuleObject)
 		{
@@ -552,7 +552,7 @@ return nullptr;
 			{
 				passInParams.push_back(arg);
 			}
-			return X::Hosting::I().Run(pModuleObj->M(), retVal, passInParams,false,keepModuleWithRuntime);
+			return X::Hosting::I().Run(pModuleObj->M(), retVal, passInParams, false, keepModuleWithRuntime);
 		}
 		return false;
 	}
@@ -568,9 +568,9 @@ return nullptr;
 		}
 		return X::Hosting::I().RunAsBackend(strModuleName, strCode, passinParams);
 	}
-	bool XHost_Impl::RunCodeLine(const char* codeLine,int codeSize,X::Value& retVal)
+	bool XHost_Impl::RunCodeLine(const char* codeLine, int codeSize, X::Value& retVal)
 	{
-		return X::Hosting::I().RunCodeLine(codeLine,codeSize, retVal);
+		return X::Hosting::I().RunCodeLine(codeLine, codeSize, retVal);
 	}
 
 	bool XHost_Impl::RunFragmentInModule(X::Value moduleObj, const char* code, int size, X::Value& retVal, int exeNum /*= -1*/)
@@ -644,7 +644,7 @@ return nullptr;
 				auto* pBag = pObj->GetAttrBag();
 				if (pBag)
 				{
-					pBag->Set(attrName,attrVal);
+					pBag->Set(attrName, attrVal);
 				}
 			}
 		}
@@ -675,13 +675,13 @@ return nullptr;
 #endif
 		return bOK;
 	}
-	bool XHost_Impl::Import(XRuntime* rt, const char* moduleName, 
+	bool XHost_Impl::Import(XRuntime* rt, const char* moduleName,
 		const char* from, const char* thru, X::Value& objPackage)
 	{
 		AST::Import* pImp = new AST::Import(moduleName, from, thru);
 		//todo: CHECK here if pImp will be released by out of scope
 		AST::ExecAction action;
-		bool bOK = ExpExec(pImp,(XlangRuntime*)rt,action,nullptr, objPackage);
+		bool bOK = ExpExec(pImp, (XlangRuntime*)rt, action, nullptr, objPackage);
 		if (objPackage.IsObject())
 		{
 			objPackage.GetObj()->SetContext(rt, nullptr);
@@ -743,7 +743,7 @@ return nullptr;
 			return false;
 		}
 		AST::ExecAction action;
-		bool bOK = ExpExec(pExpr,nullptr,action,nullptr, result);
+		bool bOK = ExpExec(pExpr, nullptr, action, nullptr, result);
 		return bOK;
 	}
 	bool XHost_Impl::CompileExpression(const char* code, int codeSize, X::Value& expr)
@@ -795,7 +795,7 @@ return nullptr;
 	{
 		return m_uiThreadRunContext;
 	}
-	X::Value XHost_Impl::CreateNdarray(int nd, 
+	X::Value XHost_Impl::CreateNdarray(int nd,
 		unsigned long long* dims, int itemDataType, void* data)
 	{
 		if (g_pPyHost == nullptr)
@@ -843,8 +843,8 @@ return nullptr;
 		}
 		return false;
 	}
-	bool XHost_Impl::PyImport(XRuntime * rt, const char* moduleName,
-		const char* from, const char* currentPath,X::Value& pyObj)
+	bool XHost_Impl::PyImport(XRuntime* rt, const char* moduleName,
+		const char* from, const char* currentPath, X::Value& pyObj)
 	{
 		std::string strModuleName(moduleName);
 		std::string strFrom;
@@ -862,6 +862,22 @@ return nullptr;
 			nullptr, strModuleName, strFrom, strCurrentPath);
 		pyObj = X::Value(pProxyObj);
 		return true;
+	}
+	bool XHost_Impl::PySerialize(X::Value& input, X::Value& output)
+	{
+		PyEng::Object obj(input);
+		return g_pPyHost->PySerialize(obj, output);
+	}
+	bool XHost_Impl::PyDeserialize(X::Value& input, X::Value& output)
+	{
+		if (g_pPyHost)
+		{
+			return g_pPyHost->PyDeserialize(input, output);
+		}
+		else
+		{
+			return false;
+		}
 	}
 	bool XHost_Impl::PyObjToValue(void* pyObj, X::Value& valObject)
 	{

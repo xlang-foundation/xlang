@@ -49,6 +49,9 @@ limitations under the License.
 #include "RemotingProxy.h"
 #include "error_obj.h"
 #include "log.h"
+#if (WIN32)
+#include "PyLoad.h"
+#endif
 
 PyEngHost* g_pPyHost = nullptr;
 
@@ -159,16 +162,20 @@ PyEngObjectPtr Xlang_CallFunc_Impl(
 	PyEng::Object retObj(retVal);
 	return retObj;
 }
+
 bool LoadPythonEngine()
 {
 	typedef void (*LOAD)(void* pHost,void** ppHost);
-
+#if (WIN32)
+	std::string folder(g_pXload->GetConfig().appPath);
+	std::string loadDllName = resolve_pyeng_path(folder);
+#else
 	std::string loadDllName;
 	bool bHaveDll = false;
 	std::vector<std::string> candiateFiles;
 	std::string engName("pyeng");
 	bool bRet = file_search(g_pXload->GetConfig().appPath,
-		LibPrefix+engName + ShareLibExt, candiateFiles);
+		LibPrefix + engName + ShareLibExt, candiateFiles);
 	if (bRet && candiateFiles.size() > 0)
 	{
 		loadDllName = candiateFiles[0];
@@ -181,7 +188,7 @@ bool LoadPythonEngine()
 		for (auto& pa : otherSearchPaths)
 		{
 			bRet = file_search(pa,
-				LibPrefix+engName + ShareLibExt, candiateFiles);
+				LibPrefix + engName + ShareLibExt, candiateFiles);
 			if (bRet && candiateFiles.size() > 0)
 			{
 				loadDllName = candiateFiles[0];
@@ -198,6 +205,7 @@ bool LoadPythonEngine()
 	{
 		return false;
 	}
+#endif
 	void* libHandle = LOADLIB(loadDllName.c_str());
 	if (libHandle)
 	{
@@ -488,6 +496,10 @@ extern "C"  X_EXPORT void Run()
 extern "C"  X_EXPORT void EventLoop()
 {
 	X::EventSystem::I().Loop();
+}
+extern "C"  X_EXPORT void QuitEventLoop()
+{
+	X::EventSystem::I().Shutdown();
 }
 extern "C"  X_EXPORT void Unload()
 {

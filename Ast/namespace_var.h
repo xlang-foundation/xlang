@@ -48,6 +48,7 @@ namespace X
 			~NamespaceVar()
 			{
 				delete m_pMyScope;
+				m_pMyScope = nullptr;
 			}
 			FORCE_INLINE virtual bool Set(XlangRuntime* rt, XObj* pContext,
 				int idx, X::Value& v)
