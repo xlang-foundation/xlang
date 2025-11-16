@@ -75,20 +75,39 @@ namespace X
 			}
 			else if (fromPath.empty())
 			{
-				std::string strFileName = GetPyModuleFileName();
-				PyObjectCache::I().AddModule(strFileName, this);
-				bool bRemovePath = false;
-				PyEng::Object sys;
-				if (IsAbsPath(strFileName))
+				if (!m_path.empty())
 				{
-					sys = PyEng::Object::Import("sys");
-					sys["path.insert"](0, m_path);
-					bRemovePath = true;
+					std::string strFileName = GetPyModuleFileName();
+					PyObjectCache::I().AddModule(strFileName, this);
+					bool bRemovePath = false;
+					PyEng::Object sys;
+					if (IsAbsPath(strFileName))
+					{
+						sys = PyEng::Object::Import("sys");
+						sys["path.insert"](0, m_path);
+						bRemovePath = true;
+					}
+					m_obj = g_pPyHost->Import(name.c_str());
+					//TODO (shawn 11/15/2025)
+					//can't remove path just after import,for some module
+					//like module A import module B inside, we need to keep the path
+					//so change to use ImportFromFullPath
+					if (bRemovePath)
+					{
+						sys["path.remove"](m_path);
+					}
 				}
-				m_obj = g_pPyHost->Import(name.c_str());
-				if (bRemovePath)
+				else
 				{
-					sys["path.remove"](m_path);
+					PyObjectCache::I().AddModule(name, this);
+
+					X::Port::vector<const char*> fromList;
+					X::Port::vector<PyEngObjectPtr> subs(1);
+					bool bOK = g_pPyHost->ImportFromFullPath(name.c_str(), fromList, subs);
+					if (bOK)
+					{
+						m_obj = subs[0];
+					}
 				}
 			}
 			else if (fromPath == preloadTag)
@@ -118,6 +137,7 @@ namespace X
 			{
 				std::string strFileName = GetPyModuleFileName();
 				PyObjectCache::I().RemoveModule(strFileName);
+				g_pPyHost->RemovePathForImportWhenModuleUnload(strFileName.c_str());
 			}
 			if (m_pMyScope)
 			{ 

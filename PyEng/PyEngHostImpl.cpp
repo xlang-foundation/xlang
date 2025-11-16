@@ -22,6 +22,9 @@ limitations under the License.
 #include "PyObjectXLangConverter.h"
 #include "PyGILState.h"
 #include <cstring>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -46,6 +49,8 @@ extern "C"
 }
 
 #include "PyBinarySerializer.h"
+#include "PythonModulePathManager.h"
+
 
 static void LoadNumpy()
 {
@@ -603,6 +608,86 @@ bool GrusPyEngHost::ImportWithFromList(
 	}
 	Py_DecRef(pModule);
 	return bOK;
+}
+
+
+bool GrusPyEngHost::ImportFromFullPath(
+	const char* moduleFullFileName,
+	X::Port::vector<const char*>& fromList,
+	X::Port::vector<PyEngObjectPtr>& subs)
+{
+	MGil gil;
+
+	fs::path p(moduleFullFileName);
+
+	// -------------------------------------------------------
+	// 1. Validate file exists
+	// -------------------------------------------------------
+	if (!fs::exists(p) || !fs::is_regular_file(p))
+	{
+		return false;
+	}
+
+	// Normalize paths
+	fs::path absPath = fs::absolute(p);
+	fs::path folder = absPath.parent_path();
+	std::string moduleName = absPath.stem().string();   // filename without .py
+
+	// -------------------------------------------------------
+	// 2. Add folder to sys.path with refcount
+	// -------------------------------------------------------
+	PythonModulePathManager::I().AddPath(folder);
+
+	// -------------------------------------------------------
+	// 3. Import module using standard Python import system
+	//    This supports relative imports and package imports
+	// -------------------------------------------------------
+	PyObject* module = PyImport_ImportModule(moduleName.c_str());
+	if (!module)
+	{
+		PyErr_Print();
+		// Important: remove path refcount even on failure
+		PythonModulePathManager::I().RemovePath(folder);
+		return false;
+	}
+
+	// -------------------------------------------------------
+	// 4. No from-list? Return module directly
+	// -------------------------------------------------------
+	if (fromList.size() == 0)
+	{
+		subs.push_back(module);  // caller takes ownership
+		// caller must call RemovePath(folder) when module is destroyed
+		return true;
+	}
+
+	// -------------------------------------------------------
+	// 5. Extract attributes listed in fromList
+	// -------------------------------------------------------
+	bool ok = true;
+
+	for (auto& fromName : fromList)
+	{
+		PyObject* attr = PyObject_GetAttrString(module, fromName);
+		subs.push_back(attr);  // even if NULL, consistent with your API
+
+		if (!attr)
+		{
+			PyErr_Print();
+			ok = false;
+		}
+	}
+
+	Py_DECREF(module);
+	return ok;
+}
+
+void GrusPyEngHost::RemovePathForImportWhenModuleUnload(const char* moduleFullName)
+{
+	fs::path p(moduleFullName);
+	fs::path absPath = fs::absolute(p);
+	fs::path folder = absPath.parent_path();
+	PythonModulePathManager::I().RemovePath(folder);
 }
 
 void GrusPyEngHost::Release(PyEngObjectPtr obj)
