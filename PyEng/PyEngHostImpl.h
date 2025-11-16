@@ -84,6 +84,9 @@ public:
 	virtual bool ImportWithFromList(const char* moduleName,
 		X::Port::vector<const char*>& fromList, 
 		X::Port::vector<PyEngObjectPtr>& subs) override;
+	virtual bool ImportFromFullPath(const char* moduleFullFileName,
+		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) override;
+	virtual void RemovePathForImportWhenModuleUnload(const char* moduleFullName) override;
 	virtual void Release(PyEngObjectPtr obj) override;
 
 	virtual int AddRef(PyEngObjectPtr obj) override;
@@ -121,6 +124,7 @@ public:
 	virtual void AddImportPaths(const char* path) override;
 	virtual bool PySerialize(PyEngObjectPtr input, X::Value& output) override;
 	virtual bool PyDeserialize(X::Value& input, X::Value& output) override;
+
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 

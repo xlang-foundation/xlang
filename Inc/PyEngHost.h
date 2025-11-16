@@ -78,6 +78,8 @@ public:
 	virtual PyEngObjectPtr ImportWithPreloadRequired(const char* key) = 0;
 	virtual bool ImportWithFromList(const char* moduleName,
 		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) = 0;
+	virtual bool ImportFromFullPath(const char* moduleFullFileName,
+		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) = 0;
 	virtual bool IsNone(PyEngObjectPtr obj) = 0;
 	virtual bool IsBool(PyEngObjectPtr obj) = 0;
 	virtual bool IsLong(PyEngObjectPtr obj) = 0;
@@ -108,6 +110,7 @@ public:
 	virtual void AddImportPaths(const char* path) = 0;
 	virtual bool PySerialize(PyEngObjectPtr input,X::Value& output) = 0;
 	virtual bool PyDeserialize(X::Value& input,X::Value& output) = 0;
+	virtual void RemovePathForImportWhenModuleUnload(const char* moduleFullName) = 0;
 
 };
 
