@@ -289,6 +289,11 @@ namespace X
 					{
 						continue;
 					}
+					if (!m_running)
+					{
+						//if not exit, will get last dirty block
+						break;
+					}
 					PayloadFrameHead& head = mRBuffer->GetHead();
 					//callIndex is in my side's range, should be my call's return
 					if (head.callIndex >= mMinReqId && head.callIndex <= mMaxReqId)

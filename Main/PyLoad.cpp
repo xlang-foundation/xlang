@@ -107,7 +107,8 @@ std::string find_pyeng_module(const std::string& folder) {
 }
 
 // --- Copy module into site-packages as xlang ---
-bool install_into_sitepackages(const std::string& modulePath) {
+bool install_into_sitepackages(const std::string& modulePath)
+{
     std::string site = run_python_cmd(
         "import sysconfig; print(sysconfig.get_paths()['purelib'])"
     );
@@ -121,14 +122,35 @@ bool install_into_sitepackages(const std::string& modulePath) {
     fs::path dst;
 
 #ifdef _WIN32
-    dst = dstDir / "xlang.pyd"; // copy DLL as .pyd
+    dst = dstDir / "xlang.pyd";
 #else
     dst = dstDir / "xlang.so";
 #endif
 
     try {
+        fs::create_directories(dstDir);
+
         fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
         std::cout << "Installed plugin into: " << dst << "\n";
+
+        // -------------------------------------------------------------
+        //  Write engine path record: xlang_engine_path.txt
+        // -------------------------------------------------------------
+        fs::path recordFile = dstDir / "xlang_engine_path.txt";
+
+        // We only want the FOLDER of modulePath
+        fs::path moduleFolder = fs::absolute(src).parent_path();
+
+        std::ofstream ofs(recordFile.string(), std::ios::trunc);
+        if (!ofs) {
+            std::cerr << "Failed to write record file: " << recordFile << "\n";
+        }
+        else {
+            ofs << moduleFolder.string();
+            ofs.close();
+            std::cout << "Recorded engine path: " << moduleFolder << "\n";
+        }
+
         return true;
     }
     catch (const std::exception& e) {
@@ -136,6 +158,7 @@ bool install_into_sitepackages(const std::string& modulePath) {
         return false;
     }
 }
+
 
 // helper: convert file_time_type → time_t
 inline std::time_t to_time_t(std::filesystem::file_time_type ftime) {
