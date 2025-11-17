@@ -1046,6 +1046,94 @@ bool GrusPyEngHost::PyDeserialize(X::Value& input, X::Value& output)
 	return X::g_pXHost->PyObjToValue(restored, output);
 }
 
+void GrusPyEngHost::ActivePythonVEnv(const char* venvPath)
+{
+	fs::path venv(venvPath);
+	fs::path site;
+
+#ifdef _WIN32
+	// Example: C:\proj\.venv\Lib\site-packages
+	site = venv / "Lib" / "site-packages";
+#else
+	// Linux/Mac: /proj/.venv/lib/python3.X/site-packages
+	fs::path lib = venv / "lib";
+	bool found = false;
+
+	for (auto& entry : fs::directory_iterator(lib))
+	{
+		if (entry.is_directory())
+		{
+			auto name = entry.path().filename().string();
+			// match: python3.8, python3.10, python3.12, etc.
+			if (name.rfind("python3", 0) == 0)
+			{
+				site = entry.path() / "site-packages";
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (!found)
+	{
+		printf("ActivePythonVEnv: Cannot locate pythonX.Y directory in: %s\n", venvPath);
+		return;
+	}
+#endif
+
+	if (!fs::exists(site))
+	{
+		printf("ActivePythonVEnv: site-packages not found: %s\n",
+			site.string().c_str());
+		return;
+	}
+
+	// Insert site-packages at *front* of sys.path with refcounting
+	PythonModulePathManager::I().AddPath(site);
+}
+
+void GrusPyEngHost::DeactivePythonVEnv(const char* venvPath)
+{
+	fs::path venv(venvPath);
+	fs::path site;
+
+#ifdef _WIN32
+	site = venv / "Lib" / "site-packages";
+#else
+	fs::path lib = venv / "lib";
+	bool found = false;
+
+	for (auto& entry : fs::directory_iterator(lib))
+	{
+		if (entry.is_directory())
+		{
+			auto name = entry.path().filename().string();
+			if (name.rfind("python3", 0) == 0)
+			{
+				site = entry.path() / "site-packages";
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (!found)
+	{
+		printf("DeactivePythonVEnv: Cannot locate pythonX.Y directory in: %s\n", venvPath);
+		return;
+	}
+#endif
+
+	if (!fs::exists(site))
+	{
+		return; // Already removed or invalid
+	}
+
+	// Remove path using refcounting
+	PythonModulePathManager::I().RemovePath(site);
+}
+
+
 //Don't call MGil here
 bool PyObjectXLangConverter::IsNumpyArray(PyObject* obj)
 {

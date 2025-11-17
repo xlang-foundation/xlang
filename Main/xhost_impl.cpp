@@ -929,6 +929,14 @@ namespace X
 	{
 		return (void*)&X::log;
 	}
+	void XHost_Impl::ActivePythonVEnv(const char* venvPath)
+	{
+		g_pPyHost->ActivePythonVEnv(venvPath);
+	}
+	void XHost_Impl::DeactivePythonVEnv(const char* venvPath)
+	{
+		g_pPyHost->ActivePythonVEnv(venvPath);
+	}
 	bool XHost_Impl::IsModuleLoadedMd5(const char* md5)
 	{
 		return X::Hosting::I().QueryModulesByMd5(md5).size() > 0;

@@ -91,8 +91,52 @@ public:
     {
         Unlock();
     }
-
     inline void Lock()
+    {
+        bool needAcquire = false;
+
+        {
+            // Phase 1: adjust counter safely
+            std::lock_guard<std::mutex> lock(s_mutex);
+            if (s_lockCounter == 0) {
+                needAcquire = true;  // but DO NOT call Ensure() inside mutex
+            }
+            s_lockCounter++;
+        }
+
+        // Phase 2: acquire GIL outside mutex
+        if (needAcquire) {
+            m_state = PyGILState_Ensure();
+            m_acquired = true;
+        }
+    }
+
+    inline void Unlock()
+    {
+        bool needRelease = false;
+        PyGILState_STATE st = m_state;
+
+        {
+            // Phase 1: decrement safely
+            std::lock_guard<std::mutex> lock(s_mutex);
+
+            if (s_lockCounter > 0) {
+                s_lockCounter--;
+
+                if (s_lockCounter == 0 && m_acquired) {
+                    needRelease = true;  // release GIL outside mutex
+                    m_acquired = false;
+                }
+            }
+        }
+
+        // Phase 2: release GIL outside mutex
+        if (needRelease) {
+            PyGILState_Release(st);
+        }
+    }
+
+    inline void Lock_backup()
     {
         std::lock_guard<std::mutex> lock(s_mutex);
 
@@ -103,7 +147,7 @@ public:
         s_lockCounter++;
     }
 
-    inline void Unlock()
+    inline void Unlock_backup()
     {
         std::lock_guard<std::mutex> lock(s_mutex);
 

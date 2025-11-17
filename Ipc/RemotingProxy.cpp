@@ -182,7 +182,7 @@ namespace X
 				semaphore = OPEN_SEMAPHORE(semaphoreName.c_str());
 				if (semaphore == nullptr)
 				{
-					std::cout << "Host semaphore" << semaphoreName << "is gone,host exited" << std::endl;
+					std::cout << "Host semaphore " << semaphoreName << " is gone,host exited" << std::endl;
 					break;
 				}
 

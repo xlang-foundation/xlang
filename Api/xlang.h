@@ -409,6 +409,17 @@ namespace X
 			const char* name,const char* type, bool isPointer = false, int bits = 0) = 0;
 		virtual bool Build() = 0;
 		virtual char* Data() = 0;
+		template<typename T>
+		T* As()
+		{
+			return reinterpret_cast<T*>(Data());
+		}
+
+		template<typename T>
+		const T* As() const
+		{
+			return reinterpret_cast<const T*>(Data());
+		}
 	};
 
 	enum class TensorDataType 
@@ -655,6 +666,7 @@ namespace X
 				delete m_obj;
 			}
 		}
+
 		XPackageValue(T* p) //only used in Android 
 		{
 			m_obj = p;
@@ -689,6 +701,20 @@ namespace X
 				}
 			}
 		}
+		//first parameter can't be X::Value or T*
+		template<typename First, typename... Rest,
+			typename = std::enable_if_t<
+			!std::is_same_v<std::decay_t<First>, X::Value> &&
+			!std::is_same_v<std::decay_t<First>, T*> &&
+			!std::is_same_v<std::decay_t<First>, XPackageValue<T>>
+			>
+		>
+		explicit XPackageValue(First&& first, Rest&&... rest)
+		{
+			m_obj = new T(std::forward<First>(first),
+				std::forward<Rest>(rest)...);
+			m_ownObj = true;
+		}
 		operator Value()
 		{
 			if (m_obj)
@@ -722,8 +748,17 @@ namespace X
 		{
 			return *m_obj; 
 		}
+		T* operator->() { return m_obj; }
+		const T* operator->() const { return m_obj; }
+
 		T* GetRealObj() { return m_obj; }
 	};
+	template<typename T>
+	XPackageValue<T> Fetch(X::Value& v)
+	{
+		return XPackageValue<T>(v);
+	}
+
 	class XLangException
 		: public std::exception
 	{

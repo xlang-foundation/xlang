@@ -124,7 +124,8 @@ public:
 	virtual void AddImportPaths(const char* path) override;
 	virtual bool PySerialize(PyEngObjectPtr input, X::Value& output) override;
 	virtual bool PyDeserialize(X::Value& input, X::Value& output) override;
-
+	virtual void ActivePythonVEnv(const char* venvPath) override;
+	virtual void DeactivePythonVEnv(const char* venvPath) override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 

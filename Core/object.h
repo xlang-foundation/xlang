@@ -321,6 +321,19 @@ namespace Data {
 			{
 				return 1;//object is nor None,
 			}
+			if (r->IsObject())
+			{
+				Object* pRObj = dynamic_cast<Object*>(r->GetObj());
+				if(pRObj == this)
+				{
+					return 0;
+
+				}
+				else
+				{
+					return 1;
+				}
+			}
 			return 0;
 		}
 		virtual bool Get(long long idx, X::Value& val) { return false; }

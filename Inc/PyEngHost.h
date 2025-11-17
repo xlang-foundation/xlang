@@ -111,7 +111,8 @@ public:
 	virtual bool PySerialize(PyEngObjectPtr input,X::Value& output) = 0;
 	virtual bool PyDeserialize(X::Value& input,X::Value& output) = 0;
 	virtual void RemovePathForImportWhenModuleUnload(const char* moduleFullName) = 0;
-
+	virtual void ActivePythonVEnv(const char* venvPath) = 0;
+	virtual void DeactivePythonVEnv(const char* venvPath) = 0;
 };
 
 extern PyEngHost* g_pPyHost;

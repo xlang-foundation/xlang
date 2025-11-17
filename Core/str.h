@@ -207,10 +207,12 @@ namespace Data
 			vals.push_back(X::Value(nPos));
 			return true;
 		}
-		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
+		FORCE_INLINE virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
+			//just in case we use str() as function call
+			retValue = m_s;
 			return true;
 		}
 		FORCE_INLINE virtual bool Get(long long idx, X::Value& val) override

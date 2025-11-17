@@ -112,6 +112,8 @@ namespace X
 		virtual void EnalbePython(bool bEnable, bool bEnablePythonDebug) override;
 		virtual void EnableDebug(bool bEnable, int port=3142) override;
 		virtual void* GetLogger() override;
+		virtual void ActivePythonVEnv(const char* venvPath) override;
+		virtual void DeactivePythonVEnv(const char* venvPath) override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();
