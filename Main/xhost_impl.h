@@ -104,6 +104,8 @@ namespace X
 		virtual bool PyRun(const char* code, X::ARGS& args) override;
 		virtual bool PyImport(XRuntime* rt, const char* moduleName,
 			const char* from, const char* currentPath,X::Value& pyObj) override;
+		virtual bool PyImportWithGlobals(XRuntime* rt, const char* moduleName,
+			const char* from, const char* currentPath, X::KWARGS& globals, X::Value& pyObj) override;
 		virtual bool PySerialize(X::Value& input, X::Value& output) override;
 		virtual bool PyDeserialize(X::Value& input, X::Value& output) override;
 		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) override;

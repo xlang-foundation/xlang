@@ -73,8 +73,42 @@ public:
         }
     }
 };
-
 class MGil {
+public:
+    MGil(bool autoLock = true) {
+        if (autoLock) Lock();
+    }
+
+    ~MGil() {
+        Unlock();
+    }
+
+    void Lock() {
+        // If thread already has the GIL, do nothing
+        if (PyGILState_Check()) {
+            m_holdsGil = false;
+            return;
+        }
+
+        // Thread does NOT own GIL → acquire it
+        m_state = PyGILState_Ensure();
+        m_holdsGil = true;
+    }
+
+    void Unlock() {
+        // Only release GIL if we acquired it
+        if (m_holdsGil) {
+            PyGILState_Release(m_state);
+            m_holdsGil = false;
+        }
+    }
+
+private:
+    PyGILState_STATE m_state;
+    bool m_holdsGil = false;
+};
+
+class MGil3 {
     bool m_acquired = false;
     PyGILState_STATE m_state = PyGILState_UNLOCKED;
 
@@ -82,12 +116,12 @@ class MGil {
     static thread_local int s_lockCounter;
 
 public:
-    inline MGil(bool autoLock = true)
+    inline MGil3(bool autoLock = true)
     {
         if (autoLock) Lock();
     }
 
-    inline ~MGil()
+    inline ~MGil3()
     {
         Unlock();
     }

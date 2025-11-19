@@ -128,6 +128,18 @@ namespace X
 		{
 			return m_func->Call(rt, this,pContext, params, kwParams, retValue);
 		}
+		bool Function::IsFuncEx()
+		{
+			if(m_func->IsBuiltinFunc())
+			{
+				X::AST::ExternFunc* pExtFunc = dynamic_cast<X::AST::ExternFunc*>(m_func);
+				if (pExtFunc)
+				{
+					return pExtFunc->IsFuncEx();
+				}
+			}
+			return false;
+		}
 		bool Function::CallEx(XRuntime* rt, XObj* pContext, 
 			ARGS& params, KWARGS& kwParams, X::Value& trailer, X::Value& retValue)
 		{

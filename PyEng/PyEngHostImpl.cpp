@@ -62,8 +62,8 @@ static void LoadNumpy()
 #define SURE_NUMPY_API() LoadNumpy()
 
 
-std::mutex MGil::s_mutex;
-thread_local int MGil::s_lockCounter = 0;
+std::mutex MGil3::s_mutex;
+thread_local int MGil3::s_lockCounter = 0;
 
 GrusPyEngHost::GrusPyEngHost():
 	m_pyTaskPool(3)
@@ -610,6 +610,108 @@ bool GrusPyEngHost::ImportWithFromList(
 	return bOK;
 }
 
+bool GrusPyEngHost::ImportFromFullPathWithGlobals(
+	const char* moduleFullFileName,
+	X::KWARGS& globals,
+	X::Port::vector<const char*>& fromList,
+	X::Port::vector<PyEngObjectPtr>& subs)
+{
+	MGil gil;
+
+	fs::path p(moduleFullFileName);
+	if (!fs::exists(p) || !fs::is_regular_file(p))
+		return false;
+
+	fs::path absPath = fs::absolute(p);
+	fs::path folder = absPath.parent_path();
+	std::string moduleName = absPath.stem().string();
+
+	// -----------------------------------------
+	// Add path into Python sys.path (refcounted)
+	// -----------------------------------------
+	PythonModulePathManager::I().AddPath(folder);
+
+	// -----------------------------------------
+	// Prepare globals dict for module execution
+	// -----------------------------------------
+	PyObject* pyGlobals = PyDict_New();
+	if (!pyGlobals)
+		return false;
+
+	// __name__ is REQUIRED for module execution
+	PyDict_SetItemString(pyGlobals, "__name__", PyUnicode_FromString(moduleName.c_str()));
+
+	// ----------------------------------------------------------
+	// Inject custom globals BEFORE any Python code runs
+	// globals: vector of pair<char*, X::Value>
+	// ----------------------------------------------------------
+	for (auto& kv : globals)
+	{
+		const char* key = kv.key;
+		X::Value val = kv.val;
+
+		PyObject* pyVal = PyObjectXLangConverter::ConvertToPyObject(val);
+		if (!pyVal)
+		{
+			// still continue, but mark error
+			PyErr_Print();
+			continue;
+		}
+
+		if (PyDict_SetItemString(pyGlobals, key, pyVal) != 0)
+		{
+			PyErr_Print();
+		}
+
+		Py_DECREF(pyVal);
+	}
+
+	// -----------------------------------------
+	// Import & EXEC module using our globals
+	// -----------------------------------------
+	PyObject* module = PyImport_ImportModuleEx(
+		moduleName.c_str(),
+		pyGlobals,   // globals
+		pyGlobals,   // locals = globals
+		nullptr      // fromlist
+	);
+	Py_DECREF(pyGlobals);
+
+	if (!module)
+	{
+		PyErr_Print();
+		PythonModulePathManager::I().RemovePath(folder);
+		return false;
+	}
+
+	// -----------------------------------------
+	// No from-list? return the module itself
+	// -----------------------------------------
+	if (fromList.size() == 0)
+	{
+		subs.push_back(module);
+		return true;
+	}
+
+	// -----------------------------------------
+	// Extract attributes requested in fromList
+	// -----------------------------------------
+	bool ok = true;
+	for (auto& fromKey : fromList)
+	{
+		PyObject* attr = PyObject_GetAttrString(module, fromKey);
+		subs.push_back(attr);
+
+		if (!attr)
+		{
+			PyErr_Print();
+			ok = false;
+		}
+	}
+
+	Py_DECREF(module);
+	return ok;
+}
 
 bool GrusPyEngHost::ImportFromFullPath(
 	const char* moduleFullFileName,
@@ -680,6 +782,65 @@ bool GrusPyEngHost::ImportFromFullPath(
 
 	Py_DECREF(module);
 	return ok;
+}
+
+bool GrusPyEngHost::ForceUnloadModule(PyEngObjectPtr moduleObj)
+{
+	if (!moduleObj || !PyModule_Check(moduleObj))
+		return false;
+
+	PyObject* pModuleObj = (PyObject*)moduleObj;
+	MGil gil;
+
+	const char* modName = PyModule_GetName(pModuleObj);
+	if (!modName)
+		return false;
+
+	// 1. Remove from sys.modules
+	PyObject* sysModules = PyImport_GetModuleDict();
+	PyDict_DelItemString(sysModules, modName);
+
+	// 2. Break all references inside module dict
+	PyObject* dict = PyModule_GetDict(pModuleObj);
+	if (dict)
+	{
+		PyDict_Clear(dict);
+	}
+
+	// 3. Clear Python exception state
+	PyErr_Clear();
+	PyRun_SimpleString("import sys; sys.exc_info = lambda: (None, None, None)");
+
+	// 4. Force garbage collection repeatedly
+	PyRun_SimpleString(
+		"import gc\n"
+		"gc.collect()\n"
+		"gc.collect()\n"
+		"gc.collect()\n"
+	);
+
+	return true;
+}
+
+bool GrusPyEngHost::UnloadModuleFromCache(const char* moduleNameOrPath)
+{
+	MGil gil;  // Ensure GIL is held
+
+	if (!moduleNameOrPath || moduleNameOrPath[0] == 0)
+		return false;
+
+	PyObject* sysModules = PyImport_GetModuleDict();
+	if (!sysModules)
+		return false;
+
+	// Try remove by key (name or full path)
+	int ret = PyDict_DelItemString(sysModules, moduleNameOrPath);
+
+	// ret == 0 → removed
+	// ret < 0 → not found or error, but safe to ignore
+	PyErr_Clear();   // clear possible KeyError
+
+	return (ret == 0);
 }
 
 void GrusPyEngHost::RemovePathForImportWhenModuleUnload(const char* moduleFullName)

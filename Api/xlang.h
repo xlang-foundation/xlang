@@ -564,6 +564,7 @@ namespace X
 		virtual X::Value GetParameterNameList() = 0;
 		virtual void ChangeStatmentsIntoTranslateMode(
 			bool changeIfStatment,bool changeLoopStatment) = 0;
+		virtual bool IsFuncEx() = 0;
 	};
 	class XLangClass :
 		virtual public XObj

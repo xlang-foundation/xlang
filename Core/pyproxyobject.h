@@ -22,6 +22,7 @@ limitations under the License.
 #include "stackframe.h"
 #include "singleton.h"
 #include <iostream>
+#include <filesystem>
 namespace X
 {
 	namespace Data
@@ -154,6 +155,10 @@ namespace X
 			PyProxyObject(XlangRuntime* rt, XObj* pContext,
 				std::string name,std::string fromPath,
 				std::string curPath);
+
+			PyProxyObject(XlangRuntime* rt, XObj* pContext,
+				std::string name, std::string fromPath,
+				std::string curPath, X::KWARGS& globals);
 			FORCE_INLINE virtual bool VerifyNameIndex(const char* name, int idx)
 			{
 				//TODO: check here
@@ -353,9 +358,21 @@ namespace X
 			}
 			std::string GetPyModuleFileName()
 			{
-				if (m_path.empty()) return m_name + ".py";
-				else return m_path + "/" + m_name + ".py";
+				namespace fs = std::filesystem;
+
+				fs::path base = m_path.empty() ? fs::path(m_name) : fs::path(m_path);
+
+				if (base.extension() == ".py")
+					return fs::absolute(base).string();
+
+				fs::path mod = m_name;
+				if (mod.extension() != ".py")
+					mod.replace_extension(".py");
+
+				return fs::absolute(base / mod).string();
 			}
+
+
 			virtual X::Value ToXlang() override;
 			virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 				std::vector<AST::Expression*> & callables) override; 

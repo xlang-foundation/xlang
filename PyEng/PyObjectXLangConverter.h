@@ -25,7 +25,10 @@ class PyObjectXLangConverter {
 public:
     static X::Value ConvertToXValue(PyObject* obj) {
         MGil gil;
-        if (PyLong_Check(obj)) {
+        if (obj == Py_None) {
+			return X::Value();
+        }
+        else if (PyLong_Check(obj)) {
             return X::Value(PyLong_AsLongLong(obj));
         }
         else if (PyFloat_Check(obj)) {
