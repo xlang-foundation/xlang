@@ -86,6 +86,9 @@ public:
 		X::Port::vector<PyEngObjectPtr>& subs) override;
 	virtual bool ImportFromFullPath(const char* moduleFullFileName,
 		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) override;
+	virtual bool ImportFromFullPathWithGlobals(const char* moduleFullFileName, X::KWARGS& globals,
+		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) override;
+	bool UnloadModuleFromCache(const char* moduleNameOrPath) override;
 	virtual void RemovePathForImportWhenModuleUnload(const char* moduleFullName) override;
 	virtual void Release(PyEngObjectPtr obj) override;
 
@@ -126,6 +129,7 @@ public:
 	virtual bool PyDeserialize(X::Value& input, X::Value& output) override;
 	virtual void ActivePythonVEnv(const char* venvPath) override;
 	virtual void DeactivePythonVEnv(const char* venvPath) override;
+	bool ForceUnloadModule(PyEngObjectPtr moduleObj) override;
 private:
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 

@@ -50,6 +50,8 @@ namespace X
 				pNewFunc->IncRef();
 				return dynamic_cast<XObj*>(pNewFunc);
 			}
+			bool IsFuncEx() override;
+
 			virtual X::Value GetName() override
 			{
 				return m_func->GetFuncName();

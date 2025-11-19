@@ -131,13 +131,103 @@ namespace X
 				}
 			}
 		}
+		PyProxyObject::PyProxyObject(
+			XlangRuntime* rt, XObj* pContext,
+			std::string name, std::string fromPath,
+			std::string curPath, X::KWARGS& globals)
+			:PyProxyObject()
+		{
+			static std::string preloadTag(PRELOAD_TAG);
+			m_proxyType = PyProxyType::Module;
+			m_name = name;
+			m_path = curPath;
+			//need to addRef()??
+			//changed to IncRef for lock?? 2/2/2023
+			Object::IncRef();
+			if (G::I().GetTrace())
+			{
+				G::I().GetTrace()(rt, pContext, rt->GetCurrentStack(),
+					TraceEvent::Call, m_pMyScope, this);
+			}
+			if (name == "sys")//for sys module, import directly
+			{
+				m_obj = PyEng::Object::Import("sys");
+			}
+			else if (fromPath.empty())
+			{
+				if (!m_path.empty())
+				{
+					std::string strFileName = GetPyModuleFileName();
+					PyObjectCache::I().AddModule(strFileName, this);
+					bool bRemovePath = false;
+					PyEng::Object sys;
+					if (IsAbsPath(strFileName))
+					{
+						sys = PyEng::Object::Import("sys");
+						sys["path.insert"](0, m_path);
+						bRemovePath = true;
+					}
+					m_obj = g_pPyHost->Import(name.c_str());
+					//TODO (shawn 11/15/2025)
+					//can't remove path just after import,for some module
+					//like module A import module B inside, we need to keep the path
+					//so change to use ImportFromFullPath
+					if (bRemovePath)
+					{
+						sys["path.remove"](m_path);
+					}
+				}
+				else
+				{
+					PyObjectCache::I().AddModule(name, this);
+
+					X::Port::vector<const char*> fromList;
+					X::Port::vector<PyEngObjectPtr> subs(1);
+					bool bOK = g_pPyHost->ImportFromFullPathWithGlobals(name.c_str(), globals,fromList, subs);
+					if (bOK)
+					{
+						m_obj = subs[0];
+					}
+				}
+			}
+			else if (fromPath == preloadTag)
+			{
+				m_obj = g_pPyHost->ImportWithPreloadRequired(name.c_str());
+			}
+			else
+			{
+				//here we need to change
+				//for python: from module_name_here import sub1, sub2...
+				//from part is the module, and import parts are subs inside
+				//this module
+				X::Port::vector<PyEngObjectPtr> subs(1);
+				X::Port::vector<const char*> fromList(1);
+				fromList.push_back(name.c_str());
+				bool bOK = g_pPyHost->ImportWithFromList(fromPath.c_str(),
+					fromList, subs);
+				if (bOK && subs.size() > 0)
+				{
+					m_obj = subs[0];
+				}
+			}
+		}
 		PyProxyObject::~PyProxyObject()
 		{
 			if (m_proxyType == PyProxyType::Module)
 			{
+				auto ptr = m_obj.ref();
+				m_obj.Empty();
 				std::string strFileName = GetPyModuleFileName();
+				std::filesystem::path p(m_name);
+				std::string modName = p.stem().string();
 				PyObjectCache::I().RemoveModule(strFileName);
+
+				// Try unload using both keys
+				g_pPyHost->UnloadModuleFromCache(modName.c_str());
+				g_pPyHost->UnloadModuleFromCache(strFileName.c_str());
+
 				g_pPyHost->RemovePathForImportWhenModuleUnload(strFileName.c_str());
+				g_pPyHost->ForceUnloadModule(ptr);
 			}
 			if (m_pMyScope)
 			{ 
@@ -302,8 +392,7 @@ namespace X
 			PyEng::Tuple objParams(aryValues);
 			PyEng::Object objKwParams(kwParams);
 			auto obj0 = (PyEng::Object)m_obj.Call(objParams.ref(), objKwParams.ref());
-			PyProxyObject* pProxyObj = new PyProxyObject(obj0);
-			retValue = X::Value(pProxyObj);
+			retValue = g_pPyHost->to_xvalue(obj0);
 			return true;
 		}
 		long long PyProxyObject::Size()

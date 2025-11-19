@@ -869,10 +869,41 @@ namespace X
 	}
 	template<>
 	template<>
+	void V<XPyObject>::Create(Runtime rt, X::KWARGS& globals,const char* moduleName,
+		const char* from, const char* currentPath)
+	{
+		Value v0;
+		if (g_pXHost->PyImportWithGlobals(rt, moduleName, from, currentPath, globals,v0))
+		{
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
+		}
+	}
+	template<>
+	template<>
 	void V<XPyObject>::Create(Runtime rt, const char* moduleFullName)
 	{
 		Value v0;
 		if (g_pXHost->PyImport(rt, moduleFullName, nullptr, nullptr, v0))
+		{
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
+		}
+	}
+	template<>
+	template<>
+	void V<XPyObject>::Create(Runtime rt, X::KWARGS* globals,const char* moduleFullName)
+	{
+		Value v0;
+		if (g_pXHost->PyImportWithGlobals(rt, moduleFullName, nullptr, nullptr, *globals,v0))
 		{
 			auto* pObj = v0.GetObj();
 			if (pObj)

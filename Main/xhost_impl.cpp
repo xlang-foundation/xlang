@@ -860,6 +860,27 @@ namespace X
 		XlangRuntime* pRT = dynamic_cast<XlangRuntime*>(rt);
 		X::Data::PyProxyObject* pProxyObj = new X::Data::PyProxyObject(pRT,
 			nullptr, strModuleName, strFrom, strCurrentPath);
+		//pProxyObj already add one ref in constructor
+		pyObj = X::Value(pProxyObj,false);
+		return true;
+	}
+	bool XHost_Impl::PyImportWithGlobals(XRuntime* rt, const char* moduleName,
+		const char* from, const char* currentPath, X::KWARGS& globals, X::Value& pyObj)
+	{
+		std::string strModuleName(moduleName);
+		std::string strFrom;
+		if (from)
+		{
+			strFrom = from;
+		}
+		std::string strCurrentPath;
+		if (currentPath)
+		{
+			strCurrentPath = currentPath;
+		}
+		XlangRuntime* pRT = dynamic_cast<XlangRuntime*>(rt);
+		X::Data::PyProxyObject* pProxyObj = new X::Data::PyProxyObject(pRT,
+			nullptr, strModuleName, strFrom, strCurrentPath, globals);
 		pyObj = X::Value(pProxyObj);
 		return true;
 	}

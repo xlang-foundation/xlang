@@ -80,6 +80,8 @@ public:
 		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) = 0;
 	virtual bool ImportFromFullPath(const char* moduleFullFileName,
 		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) = 0;
+	virtual bool ImportFromFullPathWithGlobals(const char* moduleFullFileName,X::KWARGS& globals,
+		X::Port::vector<const char*>& fromList, X::Port::vector<PyEngObjectPtr>& subs) = 0;
 	virtual bool IsNone(PyEngObjectPtr obj) = 0;
 	virtual bool IsBool(PyEngObjectPtr obj) = 0;
 	virtual bool IsLong(PyEngObjectPtr obj) = 0;
@@ -111,8 +113,10 @@ public:
 	virtual bool PySerialize(PyEngObjectPtr input,X::Value& output) = 0;
 	virtual bool PyDeserialize(X::Value& input,X::Value& output) = 0;
 	virtual void RemovePathForImportWhenModuleUnload(const char* moduleFullName) = 0;
+	virtual bool UnloadModuleFromCache(const char* moduleNameOrPath) = 0;
 	virtual void ActivePythonVEnv(const char* venvPath) = 0;
 	virtual void DeactivePythonVEnv(const char* venvPath) = 0;
+	virtual bool ForceUnloadModule(PyEngObjectPtr moduleObj) = 0;
 };
 
 extern PyEngHost* g_pPyHost;
