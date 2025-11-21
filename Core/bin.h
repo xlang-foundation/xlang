@@ -41,6 +41,7 @@ namespace X
 			//if bOwnData is true,means the data passed in
 			// will be keep in this object, and will be deleted in destructor
 			//but this data must alloced in same heap
+			//bOwnData means this object own the data, otherwise just reference it
 			Binary(char* data, size_t size,bool bOwnData):
 				XBin(0)
 			{//new copy
@@ -49,6 +50,12 @@ namespace X
 				if (data == nullptr && size>0)
 				{
 					m_data = new char[size];
+					m_OwnData = true;
+				}
+				else if (data != nullptr && bOwnData)
+				{
+					m_data = new char[size];
+					memcpy(m_data, data, size);
 					m_OwnData = true;
 				}
 				else

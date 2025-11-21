@@ -41,6 +41,10 @@ public:
             gil.Unlock();
             return ConvertListToXValue(obj);
         }
+        else if (PyTuple_Check(obj)) {
+            gil.Unlock();
+            return ConvertTupleToXValue(obj);
+        }
         else if (PyDict_Check(obj)) {
             gil.Unlock();
             return ConvertDictToXValue(obj);
@@ -187,6 +191,20 @@ private:
             list += ConvertToXValue(item);
 			gil.Lock();
         }
+        return static_cast<X::Value>(list);
+    }
+    static X::Value ConvertTupleToXValue(PyObject* obj) {
+        MGil gil;
+        X::List list;
+
+        Py_ssize_t size = PyTuple_Size(obj);
+        for (Py_ssize_t i = 0; i < size; ++i) {
+            PyObject* item = PyTuple_GetItem(obj, i); // borrowed reference
+            gil.Unlock();
+            list += ConvertToXValue(item);
+            gil.Lock();
+        }
+
         return static_cast<X::Value>(list);
     }
 

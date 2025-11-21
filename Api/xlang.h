@@ -400,15 +400,19 @@ namespace X
 	public:
 		Internal_Reserve(XSet)
 	};
-	class XStruct :
-		virtual public XObj
+	class XStruct : virtual public XObj
 	{
 	public:
 		Internal_Reserve(XStruct)
-		virtual void addField(
-			const char* name,const char* type, bool isPointer = false, int bits = 0) = 0;
+
+			virtual void addField(
+				const char* name, const char* type,
+				bool isPointer = false, int bits = 0) = 0;
+
 		virtual bool Build() = 0;
+
 		virtual char* Data() = 0;
+
 		template<typename T>
 		T* As()
 		{
@@ -418,9 +422,11 @@ namespace X
 		template<typename T>
 		const T* As() const
 		{
-			return reinterpret_cast<const T*>(Data());
+			auto* self = const_cast<XStruct*>(this);
+			return reinterpret_cast<const T*>(self->Data());
 		}
 	};
+
 
 	enum class TensorDataType 
 	{
