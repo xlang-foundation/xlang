@@ -212,6 +212,14 @@ namespace X
 			bool isExtern = (Index != -1)
 				&& (m_scope != stream.ScopeSpace().GetCurrentScope())
 				&& (m_scope != stream.ScopeSpace().GetCurrentClassScope());
+			if (isExtern)
+			{
+				//to some custom scope, may not need serialize extern var
+				if (m_scope && !m_scope->NeedSerializeExternVars())
+				{
+					isExtern = false;
+				}
+			}
 			stream << isExtern;
 			//check the value if it is external
 			if (isExtern)
