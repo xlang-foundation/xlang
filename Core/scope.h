@@ -133,6 +133,10 @@ public:
 	{
 		m_pNamespaceScope = pScope;
 	}
+	FORCE_INLINE bool NeedSerializeExternVars()
+	{
+		return m_pDynScope ? m_pDynScope->SupportExternVars() : true;
+	}
 	FORCE_INLINE Scope* GetNamespaceScope()
 	{
 		return m_pNamespaceScope;

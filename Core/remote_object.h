@@ -83,6 +83,10 @@ namespace X
 		{
 			return (int)m_NameToIndex.size();
 		}
+		bool SupportExternVars() override
+		{
+			return true;
+		}
 	public:
 		//if XProxy is null, means this process just keep this RemoteObject
 		//will not convert to native object because this RemoteObject is not

@@ -210,16 +210,17 @@ namespace X
 			//will happen in decor function
 			//just treat as local var
 			bool isExtern = (Index != -1)
-#if __TODO_SCOPE__
-				&& (dynamic_cast<X::Data::ExpressionScope*>(m_scope) == nullptr)
-#endif
 				&& (m_scope != stream.ScopeSpace().GetCurrentScope())
 				&& (m_scope != stream.ScopeSpace().GetCurrentClassScope());
 			stream << isExtern;
 			//check the value if it is external
 			if (isExtern)
 			{
-				EncodeExtern(rt, pContext, stream);
+				//to some custom scope, may not need serialize extern var
+				if (m_scope == nullptr || m_scope->NeedSerializeExternVars())
+				{
+					EncodeExtern(rt, pContext, stream);
+				}
 			}
 			return true;
 		}

@@ -164,6 +164,12 @@ namespace X
 				//TODO: check here
 				return true;
 			}
+			//TODO: check if we need to return false to don't let xlang serializer
+			//to do extern vars check
+			bool SupportExternVars() override
+			{
+				return true;
+			}
 			virtual bool GetObj(void** ppObjPtr) override
 			{
 				*ppObjPtr = (PyEngObjectPtr)m_obj;
