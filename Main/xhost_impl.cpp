@@ -958,6 +958,10 @@ namespace X
 	{
 		g_pPyHost->ActivePythonVEnv(venvPath);
 	}
+	unsigned long long XHost_Impl::GetObjectCount()
+	{
+		return G::I().Check();
+	}
 	bool XHost_Impl::IsModuleLoadedMd5(const char* md5)
 	{
 		return X::Hosting::I().QueryModulesByMd5(md5).size() > 0;

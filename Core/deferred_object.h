@@ -100,6 +100,10 @@ namespace X
 				stream.ScopeSpace().SetContext(pPrevContext);
 				return true;
 			}
+			bool SupportExternVars() override
+			{
+				return true;
+			}
 		public:
 			static void Init();
 			static void cleanup();

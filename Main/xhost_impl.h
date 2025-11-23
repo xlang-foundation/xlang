@@ -116,6 +116,7 @@ namespace X
 		virtual void* GetLogger() override;
 		virtual void ActivePythonVEnv(const char* venvPath) override;
 		virtual void DeactivePythonVEnv(const char* venvPath) override;
+		virtual unsigned long long GetObjectCount() override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

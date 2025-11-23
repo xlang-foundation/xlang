@@ -166,6 +166,7 @@ namespace X
 		virtual void* GetLogger() = 0;
 		virtual void ActivePythonVEnv(const char* venvPath) = 0;
 		virtual void DeactivePythonVEnv(const char* venvPath) = 0;
+		virtual unsigned long long GetObjectCount() = 0;
 	};
 	extern XHost* g_pXHost;
 }
