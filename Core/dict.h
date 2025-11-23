@@ -53,6 +53,15 @@ namespace X
 			{
 				return mMap.size();
 			}
+			virtual X::Value Get(const X::Value& key, const X::Value& defaultValue) override
+			{
+				auto it = mMap.find(key);
+				if (it != mMap.end())
+				{
+					return it->second;
+				}
+				return defaultValue;
+			}
 			virtual X::Value Get(const X::Value& key) override
 			{
 				return mMap[key];

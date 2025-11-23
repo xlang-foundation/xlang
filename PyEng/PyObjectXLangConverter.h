@@ -77,6 +77,14 @@ public:
             MGil gil;
             return PyUnicode_FromString(value.ToString().c_str());
         }
+        else if (value.IsBin()) {
+            MGil gil;
+            X::Bin binValue(value);
+            return PyBytes_FromStringAndSize(
+                static_cast<const char*>(binValue->Data()),
+                binValue->Size()
+            );
+        }
         else if (value.IsList()) {
             return ConvertListToPyObject(value);
         }
