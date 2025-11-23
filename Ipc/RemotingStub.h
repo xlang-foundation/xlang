@@ -427,26 +427,34 @@ namespace X
 					//so we directly get the value of prop
 					//but if it is a false, means it is left side value( l-value)
 					//directly return PropObject
-					if (bGetOnly && valObj.IsObject() 
-						&& valObj.GetObj()->GetType() == X::ObjType::Prop)
+					if (bGetOnly)
 					{
-						//need to fetch the value for non-object or string object
-						auto* pProp = dynamic_cast<X::Data::PropObject*>(valObj.GetObj());
-						if (pProp)
+						if (valObj.IsObject()
+							&& valObj.GetObj()->GetType() == X::ObjType::Prop)
 						{
-							pProp->GetPropValue((XlangRuntime*)m_rt, pXObj, valObj);
-							if (!valObj.IsObject() || 
-								(valObj.IsObject() && valObj.GetObj()->GetType() == X::ObjType::Str))
+							//need to fetch the value for non-object or string object
+							auto* pProp = dynamic_cast<X::Data::PropObject*>(valObj.GetObj());
+							if (pProp)
 							{
-								returnWithValue = true;
+								pProp->GetPropValue((XlangRuntime*)m_rt, pXObj, valObj);
+								if (!valObj.IsObject() ||
+									(valObj.IsObject() && valObj.GetObj()->GetType() == X::ObjType::Str))
+								{
+									returnWithValue = true;
+								}
 							}
+						}
+						else if (!valObj.IsObject())
+						{
+							//for some const object, we directly return value
+							returnWithValue = true;
 						}
 					}
 					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
 					if (bOK)
 					{
 						wStream << returnWithValue;
-						if (returnWithValue)
+						if (returnWithValue || !valObj.IsObject())
 						{
 							wStream << valObj;
 						}
