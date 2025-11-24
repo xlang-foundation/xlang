@@ -49,6 +49,17 @@ public:
             gil.Unlock();
             return ConvertDictToXValue(obj);
         }
+        else if (PyBytes_Check(obj)) {
+            char* buf = nullptr;
+            Py_ssize_t len = 0;
+            PyBytes_AsStringAndSize(obj, &buf, &len);
+
+            // Make an X::Bin (or however your system stores raw data)
+            X::Bin bin((unsigned long long)len, true);
+            memcpy(bin->Data(), buf, len);
+
+            return X::Value(bin);
+        }
         else if (IsNumpyArray(obj)) {
             gil.Unlock();
             return ConvertNumpyArrayToXValue(obj);
