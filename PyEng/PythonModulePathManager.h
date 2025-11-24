@@ -5,7 +5,7 @@
 #include <mutex>
 #include <filesystem>
 
-#include "Pyfunc.h"
+#include "PyFunc.h"
 
 class PythonModulePathManager:
 	public Singleton<PythonModulePathManager>
@@ -32,5 +32,5 @@ private:
 
 private:
     std::mutex m_lock;
-    std::unordered_map<std::string, int> m_refCount; // UTF-8 folder ¡ú count
+    std::unordered_map<std::string, int> m_refCount; // UTF-8 folder ï¿½ï¿½ count
 };
