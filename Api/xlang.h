@@ -379,6 +379,7 @@ namespace X
 		Internal_Reserve(XDict)
 		virtual void Set(const X::Value& key, const X::Value& val) = 0;
 		virtual X::Value Get(const X::Value& key) = 0;
+		virtual X::Value Get(const X::Value& key,const X::Value& defaultValue) = 0;
 		virtual bool Has(const X::Value& key) = 0;
 		virtual void Enum(Dict_Enum proc) = 0;
 		virtual bool Compare(X::Value& dict) = 0;
@@ -626,6 +627,7 @@ namespace X
 		virtual bool Get(int idx, X::Value& v, void* lValue = nullptr) = 0;
 		virtual bool Set(int idx, X::Value& v) = 0;
 		virtual bool VerifyNameIndex(const char* name, int idx) = 0;
+		virtual bool SupportExternVars() = 0;
 	};
 	class XPackage:
 		virtual public XObj
