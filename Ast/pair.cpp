@@ -711,19 +711,34 @@ bool PairOp::Set(XlangRuntime* rt, XObj* pContext, Value& v)
 {
 	Value leftObj;
 	ExecAction action;
-	bool bOK = ExpExec(L,rt, action, pContext, leftObj);
-	if (!bOK || !leftObj.IsObject())
+	bool bOK = true;
+	if (L)
 	{
-		return false;
+		bOK = ExpExec(L, rt, action, pContext, leftObj);
+		if (!bOK || !leftObj.IsObject())
+		{
+			return false;
+		}
 	}
 	Value varIdx;
-	bOK = ExpExec(R,rt, action, pContext, varIdx);
-	if (!bOK)
+	if (R)
 	{
-		return false;
+		bOK = ExpExec(R, rt, action, pContext, varIdx);
+		if (!bOK)
+		{
+			return false;
+		}
 	}
-	X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(leftObj.GetObj());
-	pObj->Set(varIdx, v);
+	if (leftObj.IsObject())
+	{
+		X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(leftObj.GetObj());
+		pObj->Set(varIdx, v);
+	}
+	else
+	{
+		//just like ( idx & (-1) )
+		v = varIdx;
+	}
 	return true;
 }
 bool PairOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
