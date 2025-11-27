@@ -207,7 +207,9 @@ private:
         for (Py_ssize_t i = 0; i < size; ++i) {
             PyObject* item = PyList_GetItem(obj, i);
 			gil.Unlock();
-            list += ConvertToXValue(item);
+            X::Value varItem = ConvertToXValue(item);
+            //don't use += will flat the list
+            list->AddItem(varItem);
 			gil.Lock();
         }
         return static_cast<X::Value>(list);

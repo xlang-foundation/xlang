@@ -240,7 +240,16 @@ namespace X
 
 			return fullPath.string();
 		}
-
+		bool CheckAndMakeFolder(std::string folderPath)
+		{
+			// Check if the folder already exists
+			if (!std::filesystem::exists(folderPath))
+			{
+				// Create the folder
+				return std::filesystem::create_directories(folderPath);
+			}
+			return true;
+		}
 		std::string ReadAllTexts(std::string fileName)
 		{
 			auto fullPath = ConvertReletivePathToFullPath(fileName);
@@ -277,6 +286,7 @@ namespace X
 			APISET().AddClass<2, File>("File");
 			APISET().AddClass<1, Folder>("Folder");
 			APISET().AddFunc<1>("ReadAllTexts", &FileSystem::ReadAllTexts);
+			APISET().AddFunc<1>("CheckAndMakeFolder", &FileSystem::CheckAndMakeFolder);
 		END_PACKAGE
 	};
 }

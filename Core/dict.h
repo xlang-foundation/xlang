@@ -291,6 +291,7 @@ namespace X
 				KWARGS& kwParams,
 				X::Value& retValue) override
 			{
+				retValue = X::Value(this);
 				return true;
 			}
 			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, 

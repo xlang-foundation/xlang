@@ -42,8 +42,6 @@ void RegisterOps(OpRegistry* reg)
 		return true;
 	})
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op,X::Value& L, X::Value& R, X::Value& v) {
-		//v = L;
-		//v.Clone();
 		v = L+R;
 		return true;
 	});
@@ -68,6 +66,17 @@ void RegisterOps(OpRegistry* reg)
 		v = L - R;
 		return true;
 	});
+	RegOP("&")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L.ToLongLong() & R.ToLongLong();
+		return true;
+			});
+	RegOP("|")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L.ToLongLong() | R.ToLongLong();
+		return true;
+	});
+
 #if __not_tensor__
 	RegOP("*")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
@@ -150,6 +159,27 @@ void RegisterOps(OpRegistry* reg)
 		X::Value& R, X::Value& v) {
 		rt->SetReturn(R);
 		v = R;
+		return true;
+	});
+	RegOP("&")
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L.ToLongLong() & R.ToLongLong();
+		return true;
+	});
+	RegOP("|")
+	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L.ToLongLong() | R.ToLongLong();
+		return true;
+	});
+	RegOP("~")
+	.SetUnaryop([](XlangRuntime* rt, AST::UnaryOp* op, X::Value& R, X::Value& v) {
+		v = ~R.ToLongLong();
+		return true;
+	});
+
+	RegOP("!")
+	.SetUnaryop([](XlangRuntime* rt, AST::UnaryOp* op, X::Value& R, X::Value& v) {
+		v = R.IsTrue() ? X::Value(false) : X::Value(true);
 		return true;
 	});
 }
@@ -351,12 +381,14 @@ void Register(OpRegistry* reg)
 				auto op = new AST::RetTypeOp(opIndex);
 				return (AST::Operator*)op;
 			});
+#if WE_NEED_BITWISE
 	RegOP("|")
 		.SetProcess([](Parser* p, short opIndex)
 			{
 				auto op = new AST::PipeOp(opIndex);
 				return (AST::Operator*)op;
 			});
+#endif
 	RegOP("~", "not")
 		.SetProcess([](Parser* p, short opIndex){
 			AST::Operator* op = nil;
