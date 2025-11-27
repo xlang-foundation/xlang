@@ -301,6 +301,14 @@ PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, const char* key)
 			else
 			{
 				pRetOb = PyObject_GetAttrString(pOb, key);//New reference
+				if (!pRetOb) 
+				{
+					//we have to do here if not, the up layer if query 
+					// non-existing attribute will cause Python error
+					// and then python code will not run correctly
+					// Attribute is missing → clear Python error
+					PyErr_Clear();
+				}
 			}
 		}
 		else
@@ -418,6 +426,12 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEn
 	//PyRun_SimpleString("import pdb; pdb.set_trace()");
 	//EnablePdbInThread();
 	pRetOb = PyObject_Call(pCallOb, (PyObject*)args, (PyObject*)kwargs);
+	// *** IMPORTANT: detect if Python raised an exception ***
+	if (PyErr_Occurred()) {
+
+		// print underlying Python traceback
+		PyErr_Print();
+	}
 	if (pRetOb == nullptr)
 	{
 		std::string err = GetPythonErrorString();
