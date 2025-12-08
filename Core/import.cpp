@@ -355,7 +355,7 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 	else
 	{
 		std::string curPath;
-		if (rt->M())
+		if (rt && rt->M())
 		{
 			curPath = rt->M()->GetModulePath();
 		}
