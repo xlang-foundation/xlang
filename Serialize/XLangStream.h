@@ -147,6 +147,10 @@ namespace X
         bool fetchchar(char& c);
         bool fetchstring(std::string& str);
         bool append(char* data, STREAM_SIZE size);
+
+        bool MarshalToBytes(X::Value& v);
+        bool MarshalFromBytes(X::Value& v, X::XProxy* proxy);
+
         FORCE_INLINE bool Skip(STREAM_SIZE size)
         {
             return CopyTo(nullptr, size);

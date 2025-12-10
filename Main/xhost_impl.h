@@ -62,6 +62,8 @@ namespace X
 		virtual bool FromBytes(X::Value& input, X::Value& output) override;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
+		virtual bool MarshalToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
+		virtual bool MarshalFromBytes(X::Value& v, X::XLStream* pStream, X::XProxy* proxy) override;
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) override;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) override;
 		virtual bool RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal) override;

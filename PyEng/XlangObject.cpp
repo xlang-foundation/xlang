@@ -143,6 +143,10 @@ XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 		}
 		else
 		{
+			std::string funcPath;
+			get_callable_source_path(pyRealFunc, funcPath);
+			X::Value varFilePath(funcPath);
+			pWrapFunc->kwArgs.Add("__file__", varFilePath);
 			X::Value firstParam = PyObjectXLangConverter::ConvertToXValue(pyRealFunc);
 			pWrapFunc->args.push_back(firstParam);
 		}

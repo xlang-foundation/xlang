@@ -758,10 +758,15 @@ bool GrusPyEngHost::ImportFromFullPath(
 	// 3. Import module using standard Python import system
 	//    This supports relative imports and package imports
 	// -------------------------------------------------------
+	if (PyErr_Occurred()) {
+		PyErr_Print();
+		PyErr_Clear();
+	}
 	PyObject* module = PyImport_ImportModule(moduleName.c_str());
 	if (!module)
 	{
 		PyErr_Print();
+		PyErr_Clear();
 		// Important: remove path refcount even on failure
 		PythonModulePathManager::I().RemovePath(folder);
 		return false;

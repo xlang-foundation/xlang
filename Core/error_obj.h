@@ -30,6 +30,12 @@ namespace X
 		public:
 			static void Init();
 			static void cleanup();
+			Error()
+			{
+				m_t = ObjType::Error;
+				m_s = "Unknown error";
+				m_code = -1;
+			}
 			Error(int code, std::string& str)
 			{
 				m_t = ObjType::Error;

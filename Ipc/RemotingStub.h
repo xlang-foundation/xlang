@@ -497,6 +497,7 @@ namespace X
 
 		bool RemotingStub::RCall(void* pCallContext, SwapBufferStream& stream, RemotingProc* pProc)
 		{
+			auto* pProxy = dynamic_cast<X::XProxy*>(pProc);
 			CallInfo* pCallInfo = new CallInfo();
 			X::ROBJ_MEMBER_ID memId;
 			int argNum = 0;
@@ -508,13 +509,7 @@ namespace X
 			for (int i = 0; i < argNum; i++)
 			{
 				X::Value v;
-				v.FromBytes(&stream);
-				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteObject)
-				{
-					auto* pRemoteClientObj = dynamic_cast<X::RemoteObject*>(v.GetObj());
-					auto* pProxy = dynamic_cast<X::XProxy*>(pProc);
-					pRemoteClientObj->SetProxy(pProxy);
-				}
+				g_pXHost->MarshalFromBytes(v, &stream, pProxy);
 				pCallInfo->params.push_back(v);
 			}
 			int kwNum = 0;
@@ -525,13 +520,7 @@ namespace X
 				std::string key;
 				stream >> key;
 				X::Value v;
-				v.FromBytes(&stream);
-				if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::RemoteObject)
-				{
-					auto* pRemoteClientObj = dynamic_cast<X::RemoteObject*>(v.GetObj());
-					auto* pProxy = dynamic_cast<X::XProxy*>(pProc);
-					pRemoteClientObj->SetProxy(pProxy);
-				}
+				g_pXHost->MarshalFromBytes(v, &stream, pProxy);
 				pCallInfo->kwParams.Add(key.c_str(), v, true);
 			}
 			stream >> pCallInfo->haveTrailer;
@@ -573,36 +562,7 @@ namespace X
 					auto& wStream = pProc->BeginWriteReturn((void*)&callContext, bOK);
 					if (bOK)
 					{
-						X::ROBJ_ID retId = { GetPID(),0 };
-						if (valRet.IsObject())
-						{
-							auto tp = valRet.GetObj()->GetType();
-							if (tp == ObjType::List && valRet.Size() > LIST_PASS_PROCESS_SIZE)
-							{
-								auto pRetObj = valRet.GetObj();
-								retId = ConvertXObjToId(pRetObj);
-							}//for str ,dict,etc., directly put into stream
-							else if (tp != ObjType::Str
-								&& tp != ObjType::Dict
-								&& tp != ObjType::Binary 
-								&& tp != ObjType::Set
-								&& tp != ObjType::Complex
-								&& tp != ObjType::Struct
-								&& tp != ObjType::Error
-								&& tp != ObjType::Range
-								&& tp != ObjType::Tensor
-								&& tp != ObjType::Table
-								&& tp != ObjType::List)
-							{
-								auto pRetObj = valRet.GetObj();
-								retId = ConvertXObjToId(pRetObj);
-							}
-						}
-						wStream << retId;
-						if (retId.objId == 0)
-						{//if not XPackage, return as value
-							valRet.ToBytes(&wStream);
-						}
+						g_pXHost->MarshalToBytes(valRet,&wStream);
 					}
 					pProc->EndWriteReturn((void*)&callContext, bOK);
 					pProc->Release();

@@ -287,6 +287,7 @@ namespace X
 	{
 		return m_pProvider ? m_pProvider->MoveToNextBlock() : false;
 	}
+
 	XLangStream& XLangStream::operator<<(X::Value v)
 	{
 		auto t = v.GetType();
