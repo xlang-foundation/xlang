@@ -113,9 +113,11 @@ namespace X
 		virtual void ReleaseStream(X::XLStream* pStream) = 0;
 		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) = 0;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream=nullptr) = 0;
+		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
+		virtual bool MarshalToBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
+		virtual bool MarshalFromBytes(X::Value& v, X::XLStream* pStream,X::XProxy* proxy) = 0;
 		virtual bool ToBytes(X::Value& input, X::Value& output) = 0;
 		virtual bool FromBytes(X::Value& input, X::Value& output) = 0;
-		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) = 0;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) = 0;
 		virtual bool RunCode(const char* moduleName,const char* code, int codeSize,X::Value& retVal) = 0;

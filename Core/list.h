@@ -220,6 +220,10 @@ public:
 		AutoLock autoLock(m_lock);
 		return m_useLValue ? m_ptrs.size() : m_data.size();
 	}
+	void RemoveAll() override
+	{
+		Clear();
+	}
 	FORCE_INLINE void Clear()
 	{
 		AutoLock autoLock(m_lock);

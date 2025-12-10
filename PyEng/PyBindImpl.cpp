@@ -43,6 +43,132 @@ Xlang_main(PyObject* self, PyObject* args, PyObject* kwargs)
 	printf("inside Xlang_main\r\n");
 	return PyLong_FromLong(0);
 }
+//#include <Windows.h>
+static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    PyObject* eventSource = nullptr;
+    if (!PyArg_ParseTuple(args, "O", &eventSource)) {
+        Py_RETURN_FALSE;
+    }
+
+    if (!eventSource) {
+        PyErr_SetString(PyExc_TypeError, "eventSource cannot be None");
+        Py_RETURN_FALSE;
+    }
+
+    // Get __file__ from the calling frame
+    const char* callingFile = nullptr;
+    PyFrameObject* frame = PyEval_GetFrame();
+    if (frame) {
+#if PY_VERSION_HEX >= 0x030B0000  // Python 3.11+
+        PyObject* globals = PyFrame_GetGlobals(frame);
+        if (globals) {
+            PyObject* fileObj = PyDict_GetItemString(globals, "__file__");
+            if (fileObj && PyUnicode_Check(fileObj)) {
+                callingFile = PyUnicode_AsUTF8(fileObj);
+            }
+            Py_DECREF(globals);
+        }
+#else  // Python 3.9, 3.10
+        PyObject* globals = frame->f_globals;  // Borrowed reference
+        if (globals) {
+            PyObject* fileObj = PyDict_GetItemString(globals, "__file__");
+            if (fileObj && PyUnicode_Check(fileObj)) {
+                callingFile = PyUnicode_AsUTF8(fileObj);
+            }
+        }
+#endif
+    }
+
+    // Convert eventSource to X::Value
+    X::Value varEventSource = PyObjectXLangConverter::ConvertToXValue(eventSource);
+
+    // Get sys.argv and convert to X::Value
+    PyObject* sysModule = PyImport_ImportModule("sys");
+    PyObject* sysArgv = nullptr;
+    if (sysModule) {
+        sysArgv = PyObject_GetAttrString(sysModule, "argv");
+        Py_DECREF(sysModule);
+    }
+    if (!sysArgv) {
+        PyErr_Clear();
+        sysArgv = PyList_New(0);
+    }
+    X::Value varSysArgs = PyObjectXLangConverter::ConvertToXValue(sysArgv);
+    Py_DECREF(sysArgv);
+	X::Value varFileName(callingFile ? callingFile : "");
+    X::ARGS varArgs(1);
+	varArgs.push_back(varSysArgs);
+
+	X::KWARGS varKwargs;
+	varKwargs.Add("__file__", varFileName);
+
+    bool running = true;
+    while (running) {
+        // Allow Python to handle signals and other threads
+        if (PyErr_CheckSignals() != 0) {
+            // Ctrl+C or other signal received
+            break;
+        }
+
+        // Call varEventSource["PullEvents"](varArgs)
+        X::Value eventsList = varEventSource["PullEvents"].ObjCall(varArgs,varKwargs);
+
+        // Check for None/Invalid (signal to exit loop)
+        if (eventsList.IsNone() || !eventsList.IsValid()) {
+            break;
+        }
+
+        if (eventsList.IsList()) {
+            X::List outerList(eventsList);
+            long long listSize = outerList.Size();
+
+            // Iterate through each [func, param] pair
+            for (long long i = 0; i < listSize; i++) {
+                X::Value itemVal = outerList[i];
+
+                if (itemVal.IsList()) {
+                    X::List eventPair(itemVal);
+                    if (eventPair.Size() >= 2) {
+                        X::Value funcVal = eventPair[0];
+                        X::Value paramVal = eventPair[1];
+
+                        if (paramVal.IsList())
+                        {
+                            X::List paramList(paramVal);
+							int argsNum = (int)paramList.Size();
+                            if (argsNum >= 1)
+                            {
+                                X::ARGS args(argsNum);
+                                for (long long j = 0; j < paramList.Size(); j++)
+                                {
+                                    args.push_back(paramList[j]);
+                                }
+                                funcVal.ObjCall(args);
+                            }
+                            else
+                            {
+                                X::ARGS args(1);
+								args.push_back(paramVal);
+                                funcVal.ObjCall(args);
+                            }
+                        }
+                        else
+                        {
+                            X::ARGS args(1);
+                            args.push_back(paramVal);
+                            funcVal.ObjCall(args);
+                        }
+	
+                    }
+                }
+            }
+        }
+    }
+
+    Py_RETURN_TRUE;
+}
+
 static PyObject*
 Xlang_import(PyObject* self, PyObject* args, PyObject* kwargs)
 {
@@ -167,6 +293,11 @@ PyMethodDef RootMethods[] =
 		METH_VARARGS | METH_KEYWORDS,
 		"Syntax xlang.main(*args,**kwargs)"
 	},
+    {	"MainEventLoop",
+        (PyCFunction)MainEventLoop,
+        METH_VARARGS | METH_KEYWORDS,
+        "Syntax xlang.MainEventLoop(*args,**kwargs)"
+    },
 	{	"func", 
 		(PyCFunction)Xlang_Function,
 		METH_VARARGS|METH_KEYWORDS,

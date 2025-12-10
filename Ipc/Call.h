@@ -569,11 +569,11 @@ namespace X
 					if (bNeedConvert)
 					{
 						auto&& rcParam = ConvertXObjToRemoteClientObject(param.GetObj());
-						rcParam.ToBytes(&stream);
+						g_pXHost->MarshalToBytes(rcParam, &stream);
 					}
 					else
 					{
-						param.ToBytes(&stream);
+						g_pXHost->MarshalToBytes(param, &stream);
 					}
 				}
 				stream << (int)kwParams.size();
@@ -597,43 +597,24 @@ namespace X
 					{
 						//convert to remote client object
 						auto&& rcParam = ConvertXObjToRemoteClientObject(kw.val.GetObj());
-						rcParam.ToBytes(&stream);
+						g_pXHost->MarshalToBytes(rcParam, &stream);
 					}
 					else
 					{
-						kw.val.ToBytes(&stream);
+						g_pXHost->MarshalToBytes(kw.val, &stream);
 					}
 				}
 				//set flag to show if there is a trailer
 				stream << trailer.IsValid();
 				if (trailer.IsValid())
 				{
-					stream << trailer;
+					g_pXHost->MarshalToBytes(trailer, &stream);
 				}
 				long long returnCode = 0;
 				auto& stream2 = CommitCall(callContext, returnCode);
 				if (returnCode > 0)
 				{
-					X::ROBJ_ID retId = { 0,0 };
-					stream2 >> retId;
-					if (retId.objId == 0)
-					{//value
-						retValue.FromBytes(&stream2);
-					}
-					else if (retId.pid == GetPID())
-					{
-						//need to use function to do convertion and check
-						auto pRetObj = (X::XObj*)retId.objId;
-						retValue = (X::XObj*)pRetObj;
-					}
-					else
-					{
-						X::XRemoteObject* pRetObj =
-							X::g_pXHost->CreateRemoteObject(this);
-						pRetObj->SetObjID((unsigned long)retId.pid, retId.objId);
-						retValue = (X::XObj*)pRetObj;
-						pRetObj->DecRef();
-					}
+					g_pXHost->MarshalFromBytes(retValue, &stream2,this);
 				}
 				FinishCall();
 				return (returnCode > 0);

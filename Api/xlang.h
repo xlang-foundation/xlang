@@ -366,6 +366,7 @@ namespace X
 		Internal_Reserve(XList)
 		virtual Value Get(long long idx) = 0;
 		virtual void AddItem(X::Value& v) = 0;
+		virtual void RemoveAll() = 0;
 		FORCE_INLINE void append(X::Value& v)
 		{
 			AddItem(v);
