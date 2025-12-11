@@ -114,11 +114,6 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
         // Call varEventSource["PullEvents"](varArgs)
         X::Value eventsList = varEventSource["PullEvents"].ObjCall(varArgs,varKwargs);
 
-        // Check for None/Invalid (signal to exit loop)
-        if (eventsList.IsNone() || !eventsList.IsValid()) {
-            break;
-        }
-
         if (eventsList.IsList()) {
             X::List outerList(eventsList);
             long long listSize = outerList.Size();
