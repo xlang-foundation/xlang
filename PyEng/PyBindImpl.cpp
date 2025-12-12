@@ -70,13 +70,6 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
             Py_DECREF(globals);
         }
 #else  // Python 3.9, 3.10
-        //PyObject* globals = frame->f_globals;  // Borrowed reference
-        //if (globals) {
-        //    PyObject* fileObj = PyDict_GetItemString(globals, "__file__");
-        //    if (fileObj && PyUnicode_Check(fileObj)) {
-        //        callingFile = PyUnicode_AsUTF8(fileObj);
-        //    }
-        //}
         PyObject* globals = NULL;
 #if PY_VERSION_HEX >= 0x03090000
         globals = PyModule_GetDict(PyImport_AddModule("__main__"));
