@@ -55,33 +55,40 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
         PyErr_SetString(PyExc_TypeError, "eventSource cannot be None");
         Py_RETURN_FALSE;
     }
-
-    // Get __file__ from the calling frame
+    // Check if __file__ is passed in kwargs first
     const char* callingFile = nullptr;
-    PyFrameObject* frame = PyEval_GetFrame();
-    if (frame) {
-#if PY_VERSION_HEX >= 0x030B0000  // Python 3.11+
-        PyObject* globals = PyFrame_GetGlobals(frame);
-        if (globals) {
-            PyObject* fileObj = PyDict_GetItemString(globals, "__file__");
-            if (fileObj && PyUnicode_Check(fileObj)) {
-                callingFile = PyUnicode_AsUTF8(fileObj);
-            }
-            Py_DECREF(globals);
+    if (kwargs) {
+        PyObject* fileKwarg = PyDict_GetItemString(kwargs, "__file__");
+        if (fileKwarg && PyUnicode_Check(fileKwarg)) {
+            callingFile = PyUnicode_AsUTF8(fileKwarg);
         }
-#else  // Python 3.9, 3.10
-        PyObject* globals = NULL;
-#if PY_VERSION_HEX >= 0x03090000
-        globals = PyModule_GetDict(PyImport_AddModule("__main__"));
-#else
-        if (frame != NULL) {
-            globals = frame->f_globals;
-            Py_INCREF(globals);
-        }
-#endif
-#endif
     }
-
+    // Get __file__ from the calling frame
+    if (!callingFile) {
+        PyFrameObject* frame = PyEval_GetFrame();
+        if (frame) {
+#if PY_VERSION_HEX >= 0x030B0000  // Python 3.11+
+            PyObject* globals = PyFrame_GetGlobals(frame);
+            if (globals) {
+                PyObject* fileObj = PyDict_GetItemString(globals, "__file__");
+                if (fileObj && PyUnicode_Check(fileObj)) {
+                    callingFile = PyUnicode_AsUTF8(fileObj);
+                }
+                Py_DECREF(globals);
+            }
+#else  // Python 3.9, 3.10
+            PyObject* globals = NULL;
+#if PY_VERSION_HEX >= 0x03090000
+            globals = PyModule_GetDict(PyImport_AddModule("__main__"));
+#else
+            if (frame != NULL) {
+                globals = frame->f_globals;
+                Py_INCREF(globals);
+            }
+#endif
+#endif
+        }
+    }
     // Convert eventSource to X::Value
     X::Value varEventSource = PyObjectXLangConverter::ConvertToXValue(eventSource);
 
