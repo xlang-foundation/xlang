@@ -941,7 +941,7 @@ bool U_GetType(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	retValue = X::Value(pTypeObj);
 	return true;
 }
-bool U_ToInt(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+bool U_ToInt(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	ARGS& params, KWARGS& kwParams,
 	X::Value& retValue)
 {
@@ -949,18 +949,59 @@ bool U_ToInt(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	{
 		auto& v = params[0];
 		auto t = v.GetType();
-		if (t == X::ValueType::Str || 
-			(t == X::ValueType::Object 
-			&& v.GetObj()->GetType() == X::ObjType::Str))
+		if (t == X::ValueType::Str ||
+			(t == X::ValueType::Object
+				&& v.GetObj()->GetType() == X::ObjType::Str))
 		{
 			std::string strVal = v.ToString();
-			int nVal = 0;
-			SCANF(strVal.c_str(), "%d", &nVal);
+			long long nVal = 0;
+			SCANF(strVal.c_str(), "%lld", &nVal);
 			retValue = X::Value(nVal);
 		}
 		else
 		{
-			retValue = X::Value((int)v);
+			retValue = X::Value((long long)v);
+		}
+		return true;
+	}
+	else
+	{
+		retValue = X::Value(false);
+		return false;
+	}
+}
+bool U_ToUInt(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	ARGS& params, KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 1)
+	{
+		auto& v = params[0];
+		auto t = v.GetType();
+		if (t == X::ValueType::Str ||
+			(t == X::ValueType::Object
+				&& v.GetObj()->GetType() == X::ObjType::Str))
+		{
+			std::string strVal = v.ToString();
+			// Check for unsigned (no negative sign, or explicit 0x prefix for hex)
+			bool isUnsigned = !strVal.empty() && strVal[0] != '-';
+
+			if (isUnsigned)
+			{
+				unsigned long long nVal = 0;
+				SCANF(strVal.c_str(), "%llu", &nVal);
+				retValue = X::Value(nVal);
+			}
+			else
+			{
+				long long nVal = 0;
+				SCANF(strVal.c_str(), "%lld", &nVal);
+				retValue = X::Value(nVal);
+			}
+		}
+		else
+		{
+			retValue = X::Value((long long)v);
 		}
 		return true;
 	}
@@ -2108,6 +2149,7 @@ bool Builtin::RegisterInternals()
 	Register("get_modulebykey", (X::U_FUNC)U_GetModuleFromKey, params);
 	Register("run_new_instance", (X::U_FUNC)U_RunNewInstance, params);
 	Register("int", (X::U_FUNC)U_ToInt, params);
+	Register("uint", (X::U_FUNC)U_ToUInt, params);
 	Register("float", (X::U_FUNC)U_ToFloat, params);
 	Register("str", (X::U_FUNC)U_ToString, params);
 	Register("type", (X::U_FUNC)U_GetType, params);
