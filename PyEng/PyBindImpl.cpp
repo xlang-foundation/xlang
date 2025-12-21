@@ -135,6 +135,14 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
                     X::List eventPair(itemVal);
                     if (eventPair.Size() >= 2) {
                         X::Value funcVal = eventPair[0];
+                        if (funcVal.isString()) {
+                            //Check if it is Stop, or Exit or Bye
+                            std::string strSigal = funcVal.ToString();
+                            if (strSigal == "Stop" || strSigal == "Exit" || strSigal == "Bye") {
+                                running = false;
+                                break;
+                            }
+                        }
                         X::Value paramVal = eventPair[1];
 
                         if (paramVal.IsList())
