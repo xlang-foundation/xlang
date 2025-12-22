@@ -499,6 +499,7 @@ namespace X
 		virtual void SetDesc(X::Value& v) = 0;
 		virtual X::Value GetName() = 0;
 		virtual void SetName(X::Value& name) = 0;
+		virtual X::Value ToType(TensorDataType type) = 0;
 	};
 	class XTensorExpression :
 		virtual public XObj
