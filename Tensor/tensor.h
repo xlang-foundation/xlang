@@ -168,6 +168,14 @@ namespace X
 				}
 				return shapes;
 			}
+			X::Value ToType(TensorDataType type) override
+			{
+				if (type != m_dataType)
+				{
+					return asType((int)type);
+				}
+				return X::Value(this);
+			}
 			virtual long long GetCount() override
 			{
 				long long itemCnt = 1;
