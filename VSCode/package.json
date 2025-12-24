@@ -1,7 +1,7 @@
 {
   "name": "xlang",
   "displayName": "xlang",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "publisher": "cantorai",
   "description": "XLang's debugger and more",
   "author": {
@@ -104,7 +104,7 @@
     "grammars": [
       {
         "language": "xlang",
-        "scopeName": "source.x",
+        "scopeName": "source.xlang",
         "path": "./syntaxes/MagicPython.tmLanguage.json"
       },
       {
