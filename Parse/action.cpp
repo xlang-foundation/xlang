@@ -171,6 +171,21 @@ void RegisterOps(OpRegistry* reg)
 		v = L.ToLongLong() | R.ToLongLong();
 		return true;
 	});
+	RegOP("^")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L.ToLongLong() ^ R.ToLongLong();
+		return true;
+			});
+	RegOP("<<")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L.ToLongLong() << R.ToLongLong();
+		return true;
+	});
+	RegOP(">>")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L.ToLongLong() >> R.ToLongLong();
+		return true;
+			});
 	RegOP("~")
 	.SetUnaryop([](XlangRuntime* rt, AST::UnaryOp* op, X::Value& R, X::Value& v) {
 		v = ~R.ToLongLong();
