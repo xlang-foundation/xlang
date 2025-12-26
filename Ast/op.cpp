@@ -55,11 +55,19 @@ namespace AST
 		if (containerObj.IsObject())
 		{
 			auto* pObj = dynamic_cast<X::Data::Object*>(containerObj.GetObj());
-			v = pObj->IsContain(valLeft);
+			bool bIn = pObj->IsContain(valLeft);
+			if (m_bIsNot)
+			{
+				v = !bIn;
+			}
+			else
+			{
+				v = bIn;
+			}
 		}
 		else
 		{
-			v = Value(false);
+			v = Value(m_bIsNot ? true : false);
 		}
 		return bOK;
 	}
