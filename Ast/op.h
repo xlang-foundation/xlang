@@ -633,7 +633,7 @@ public:
 class InOp :
 	public BinaryOp
 {
-
+	bool m_bIsNot = false;
 public:
 	InOp() :
 		BinaryOp()
@@ -645,6 +645,7 @@ public:
 	{
 		m_type = ObType::In;
 	}
+	FORCEINLINE void SetIsNot(bool b) { m_bIsNot = b; }
 	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 };
 class ExternDecl :

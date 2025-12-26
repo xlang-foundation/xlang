@@ -48,6 +48,8 @@ enum class OP_ID
 	Break,Continue,Pass,
 	ReturnType,
 	ReturnOp,//return operator
+	InOp,
+	NotOp,
 	Count
 };
 

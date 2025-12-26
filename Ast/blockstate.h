@@ -88,7 +88,7 @@ public:
 	{
 		m_ops.pop();
 	}
-	FORCE_INLINE void ProcessPrecedenceOp(short lastToken,
+	FORCE_INLINE void ProcessPrecedenceOp2(short lastToken,
 		AST::Operator* curOp)
 	{
 		while (!m_ops.empty())
@@ -106,6 +106,55 @@ public:
 			if (/*lastToken != top->getOp()
 				&& */top->m_type != AST::ObType::Pair
 				//&& topAct.precedence > cur_opAct.precedence)
+				&& topAct.precedence >= cur_opAct.precedence)
+			{
+				DoOpTop();
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	FORCE_INLINE void ProcessPrecedenceOp(short lastToken, AST::Operator* curOp)
+	{
+		// Handle compound operators: "not is" and "not in"
+		if (!m_ops.empty())
+		{
+			auto top = m_ops.top();
+			if (top->GetId() == OP_ID::NotOp)
+			{
+				OP_ID incomingId = curOp->GetId();
+
+				if (incomingId == OP_ID::Equal)  // "is" operator
+				{
+					// Combine "not" + "is" -> convert to NotEqual
+					m_ops.pop();
+					curOp->SetId(OP_ID::NotEqual);
+					delete top;
+				}
+				else if (incomingId == OP_ID::InOp)
+				{
+					// Combine "not" + "in" -> set flag on InOp
+					m_ops.pop();
+					AST::InOp* pInOp = dynamic_cast<AST::InOp*>(curOp);
+					if (pInOp)
+					{
+						pInOp->SetIsNot(true);
+					}
+					delete top;
+				}
+			}
+		}
+
+		// Normal precedence processing
+		while (!m_ops.empty())
+		{
+			auto top = m_ops.top();
+			OpAction topAct = OpAct(top->getOp());
+			OpAction cur_opAct = OpAct(curOp->getOp());
+
+			if (top->m_type != AST::ObType::Pair
 				&& topAct.precedence >= cur_opAct.precedence)
 			{
 				DoOpTop();

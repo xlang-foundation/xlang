@@ -114,6 +114,18 @@ void RegisterOps(OpRegistry* reg)
 		v = X::Value(L == R);
 		return true;
 	});
+	RegOP("is")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		if (op->GetId() == OP_ID::NotEqual)
+		{
+			v = X::Value(L != R);
+		}
+		else
+		{
+			v = X::Value(L == R);
+		}
+		return true;
+			});
 	RegOP("!=")
 	.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
 		v = X::Value(L != R);
@@ -350,16 +362,20 @@ void Register(OpRegistry* reg)
 			});
 	RegOP(
 		//Python Comparison Operators --index range[55,60]
-		"==", "!=", ">", "<", ">=", "<=",
+		"==","is", "!=", ">", "<", ">=", "<=",
 		//Python Logical  Operators
 		"and", "or")
 		.SetProcess([](Parser* p, short opIndex){
 			auto op = new AST::BinaryOp(opIndex);
 			return (AST::Operator*)op;
 		});
-	RegOP("==", "!=", ">", "<", ">=", "<=","and","or").SetIds(reg,
-		{ OP_ID::Equal,OP_ID::NotEqual,OP_ID::Great,OP_ID::Less,
-		OP_ID::GreatAndEqual,OP_ID::LessAndEqual,OP_ID::And,OP_ID::Or});
+	RegOP("==","is", "!=", ">", "<", 
+		">=", "<=", "and", "or",
+		"in","not").SetIds(reg,
+		{ OP_ID::Equal,OP_ID::Equal,OP_ID::NotEqual,OP_ID::Great,OP_ID::Less,
+		OP_ID::GreatAndEqual,OP_ID::LessAndEqual,OP_ID::And,OP_ID::Or,
+		OP_ID::InOp,OP_ID::NotOp});
+
 	//for sql statment
 #if ADD_SQL
 	RegOP("SELECT")
@@ -404,7 +420,7 @@ void Register(OpRegistry* reg)
 				return (AST::Operator*)op;
 			});
 #endif
-	RegOP("~", "not")
+	RegOP("~"/*, "not"*/)
 		.SetProcess([](Parser* p, short opIndex){
 			AST::Operator* op = nil;
 			if (p->PreTokenIsOp())
@@ -417,7 +433,11 @@ void Register(OpRegistry* reg)
 			}
 			return op;
 		});
-
+	RegOP("not")
+		.SetProcess([](Parser* p, short opIndex) {
+		AST::Operator* op = new AST::UnaryOp(opIndex);
+		return op;
+			});
 	RegOP("(", "[", "{","<|")
 		.SetProcess([](Parser* p, short opIndex){
 			return p->PairLeft(opIndex);
