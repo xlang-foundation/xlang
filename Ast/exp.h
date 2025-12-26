@@ -543,6 +543,11 @@ public:
 		stream >> m_val;
 		return true;
 	}
+	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	{
+		v = m_val;
+		return true;
+	}
 	FORCE_INLINE double GetVal() { return m_val; }
 };
 //Only the imaginary  part for Complex
