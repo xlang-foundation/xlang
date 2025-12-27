@@ -509,7 +509,7 @@ void Register(OpRegistry* reg)
 			auto op = new AST::Operator(opIndex);
 			return op;
 		});
-
+	//Assign OP IDs for operators, not all ops need an OP_ID
 	RegOP("(").SetId(reg,OP_ID::Parenthesis_L);
 	RegOP("<|").SetId(reg, OP_ID::TableBracket_L);
 	RegOP("[").SetId(reg, OP_ID::Brackets_L);
@@ -527,72 +527,16 @@ void Register(OpRegistry* reg)
 	//for example: def Add_Two(m:int,n:int)->int:
 	RegOP("->").SetId(reg, OP_ID::ReturnType);
 
+
 	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(reg,
 		{ OP_ID::Equ,OP_ID::AddEqu,OP_ID::MinusEqu,OP_ID::MulEqu,
-		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu })
-		.SetPrecedence(Precedence_Reqular-1);;
-	RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
-		{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
-		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu })
-		.SetPrecedence(Precedence_Reqular-1);
+		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu });
+		RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
+			{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
+			OP_ID::RightShiftEqu,OP_ID::LeftShitEqu });
 
-	//For jitblock
-	RegOP("->")
-		.SetPrecedence(Precedence_Reqular);
-
-	//Calculation from left to right if same Precedence
-	//so leading op such as if while for need to 
-	//have lower Precedence as >,== etc.
-	//todo: check other op also,
-	RegOP("if","elif","else","while","for")
-		.SetPrecedence(Precedence_Reqular-2);
-	RegOP("and", "or")
-		.SetPrecedence(Precedence_Reqular-1);
-	//for example for in range(num), in needs have 
-	//less Precedence than range which takes Precedence_Reqular
-	RegOP("in")
-		.SetPrecedence(Precedence_Reqular - 1);
-	//
-	RegOP("[", "]", "{", "}", "(",")")
-		.SetPrecedence(Precedence_High);
-	RegOP(".", "..", "...")
-		.SetPrecedence(Precedence_High1);
-	RegOP("const", "var","namespace", "|-")
-		.SetPrecedence(Precedence_Reqular + 1);
-	RegOP("*", "/", "%", "**", "//")
-		.SetPrecedence(Precedence_Reqular + 1);
-	RegOP("as")
-		.SetPrecedence(Precedence_LOW2+1);
-	RegOP("deferred")
-		.SetPrecedence(Precedence_LOW2 + 1);
-	RegOP("thru")
-		.SetPrecedence(Precedence_LOW2-1);
-	//comma set to Precedence_VERYLOW, 
-	//for case import galaxy as t, earth as e
-	//we need to make import has lower Precedence than comma
-	RegOP("import")
-		.SetPrecedence(Precedence_VERYLOW - 1);
-
-	RegOP("extern", "nonlocal", "global")
-		.SetPrecedence(Precedence_LOW2);
-
-	RegOP("ref")
-		.SetPrecedence(Precedence_Reqular);
-#if ADD_SQL
-	RegOP("SELECT")
-		.SetPrecedence(Precedence_LOW1-1);
-#endif
-	//12/9/2022 todo: it was RegOP("\n",",",":")
-	//but for def func1(x:int,y:double) case
-	//need to make : at least has same Precedence as ','
-	RegOP("\n",",")
-		.SetPrecedence(Precedence_VERYLOW);
-	RegOP("await")
-		.SetPrecedence(Precedence_VERYVERYLOW);
-	//for this case: t2 = t1[-20:120,-1:-3]
-	//minus needs to be cacluated before :, so let : is below regular which minus op has that Precedence
-	RegOP(":")
-		.SetPrecedence(Precedence_VERYLOW+1);
+	// Call precedence registration from precedence.cpp
+	RegisterPrecedence(reg);
 }
 
 std::vector<OpInfo> RegOP::OPList;

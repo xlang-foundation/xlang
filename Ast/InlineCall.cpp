@@ -28,6 +28,7 @@ limitations under the License.
 #include "namespace_var.h"
 #include "jitblock.h"
 #include "refop.h"
+#include "inline_expr.h"
 
 namespace X
 {
@@ -160,6 +161,21 @@ namespace X
 				break;
 			case X::AST::ObType::RefOp:
 				bOK = static_cast<RefOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::TernaryOp:
+				bOK = static_cast<TernaryOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::ListComprehension:
+				bOK = static_cast<ListComprehension*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::DictComprehension:
+				bOK = static_cast<DictComprehension*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::InlineIfOp:
+				bOK = static_cast<InlineIfOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::InlineElseOp:
+				bOK = static_cast<InlineElseOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;
 			default:
 				break;

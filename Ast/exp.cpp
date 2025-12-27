@@ -29,7 +29,7 @@ limitations under the License.
 #include "module.h"
 #include "complex.h"
 #include "list.h"
-
+#include "inline_expr.h"
 namespace X 
 {
 namespace AST 
@@ -167,6 +167,21 @@ Expression *Expression::CreateByType(ObType t)
 		break;
 	case ObType::Import:
 		pExp = new Import();
+		break;
+	case ObType::TernaryOp:
+		pExp = new TernaryOp();
+		break;
+	case ObType::ListComprehension:
+		pExp = new ListComprehension();
+		break;
+	case ObType::DictComprehension:
+		pExp = new DictComprehension();
+		break;
+	case ObType::InlineIfOp:
+		pExp = new InlineIfOp();
+		break;
+	case ObType::InlineElseOp:
+		pExp = new InlineElseOp();
 		break;
 	default:
 		break;

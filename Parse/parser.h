@@ -64,11 +64,13 @@ class Parser
 	}
 	FORCE_INLINE void push_preceding_token(short idx)
 	{
+#if __TODO__
 		if (m_preceding_token_indexstack.size() > 3)
 		{
 			m_preceding_token_indexstack.erase(
 				m_preceding_token_indexstack.begin());
 		}
+#endif
 		m_preceding_token_indexstack.push_back(idx);
 	}
 	FORCE_INLINE short get_last_token()
@@ -182,6 +184,17 @@ public:
 	{
 		return G::I().R().OpAct(idx);
 	}
+	// Check if 'if' should be inline (ternary) or block
+	// Returns true if operand stack is non-empty and not at line start
+	bool ShouldBeInlineIf();
+
+	// Check if 'else' should be inline (completing a ternary)
+	// Returns true if there's a pending InlineIfOp or partial TernaryOp
+	bool ShouldBeInlineElse();
+
+	// Check if 'for' should be inline (list/dict comprehension)
+	// Returns true if inside brackets [] or braces {}
+	bool ShouldBeInlineFor();
 public:
 	Parser();
 	~Parser();

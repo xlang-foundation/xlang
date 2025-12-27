@@ -50,6 +50,9 @@ enum class OP_ID
 	ReturnOp,//return operator
 	InOp,
 	NotOp,
+	InlineIf,      // 'if' in expression context
+	InlineElse,    // 'else' in expression context
+	InlineFor,      // 'for' in comprehension context
 	Count
 };
 

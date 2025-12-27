@@ -74,6 +74,11 @@ enum class ObType
 	Import,
 	NamespaceVar,
 	RefOp,
+	TernaryOp,           // For inline if-else: x if cond else y
+	ListComprehension,   // For [expr for x in iter]
+	DictComprehension,   // For {k:v for x in iter}
+	InlineIfOp,          // Parser helper for inline if
+	InlineElseOp,        // Parser helper for inline else
 };
 enum class ExecActionType
 {

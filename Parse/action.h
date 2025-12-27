@@ -86,4 +86,5 @@ namespace X
 		}
 	};
 	void BuildOps();
+	void RegisterPrecedence(OpRegistry* reg);
 }
