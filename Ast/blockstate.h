@@ -159,7 +159,8 @@ public:
 	// === NEW: Handle inline for in comprehension context ===
 	// Returns ListComprehension or DictComprehension, or nullptr for block for
 	AST::Expression* HandleForToken(short tokenOp, int tokenIndex);
-	
+	bool HasInlineForOp() const;
+	AST::Expression* CollectAndBuildComprehension(OP_ID pairType);
 	// === NEW: Build list comprehension from parsed components ===
 	AST::ListComprehension* BuildListComprehension(
 		AST::Expression* outputExpr,
@@ -181,36 +182,7 @@ public:
 		AST::Expression* condition,
 		AST::Expression* falseExpr);
 
-	// Existing methods - keep FORCE_INLINE for performance critical ones
-	FORCE_INLINE void ProcessPrecedenceOp2(short lastToken,
-		AST::Operator* curOp)
-	{
-		while (!m_ops.empty())
-		{
-			auto top = m_ops.top();
-			OpAction topAct = OpAct(top->getOp());
-			OpAction cur_opAct = OpAct(curOp->getOp());
-			//check this case .[test1,test2](....)
-			//after . it is a ops,not var
-			//todo: 3/20/2023, for tensor, want to process left first if same precedence
-			//so change here,
 
-			//todo: 3/23/2023 shawn,comment 'lastToken != top->getOp()' out for cause:t1[:,:2]
-			//check if some other impacts
-			if (/*lastToken != top->getOp()
-				&& */top->m_type != AST::ObType::Pair
-				//&& topAct.precedence > cur_opAct.precedence)
-				&& topAct.precedence >= cur_opAct.precedence)
-			{
-				DoOpTop();
-			}
-			else
-			{
-				break;
-			}
-		}
-	}
-	
 	// Move complex implementation to cpp file
 	void ProcessPrecedenceOp(short lastToken, AST::Operator* curOp);
 	

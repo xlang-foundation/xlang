@@ -27,6 +27,8 @@ struct String
 	int size;
 };
 
+// Updated OP_ID enum - add these new entries for fast dispatch
+
 enum class OP_ID
 {
 	None,
@@ -38,21 +40,54 @@ enum class OP_ID
 	Colon,
 	Comma,
 	Tab,
+
+	//=== Assignment Operators ===
 	//	"=", "+=", "-=", "*=", "/=", "%=", "//=",
-	Equ,AddEqu,MinusEqu,MulEqu,DivEqu,ModEqu,FloorDivEqu,
+	Equ, AddEqu, MinusEqu, MulEqu, DivEqu, ModEqu, FloorDivEqu,
 	//	"**=", "&=", "|=", "^=", ">>=", "<<="
-	PowerEqu,AndEqu,OrEqu,NotEqu,RightShiftEqu,LeftShitEqu,
+	PowerEqu, AndEqu, OrEqu, NotEqu, RightShiftEqu, LeftShitEqu,
+
+	//=== Comparison Operators ===
 	//"==", "!=", ">", "<", ">=", "<="
-	Equal,NotEqual,Great,Less, GreatAndEqual,LessAndEqual,
-	And,Or,
-	Break,Continue,Pass,
+	Equal, IsEqual, NotEqual, Great, Less, GreatAndEqual, LessAndEqual,
+
+	//=== Logical Operators ===
+	And, Or,
+
+	//=== Control Flow ===
+	Break, Continue, Pass,
 	ReturnType,
-	ReturnOp,//return operator
+	ReturnOp,  // return operator
 	InOp,
 	NotOp,
+
+	//=== Inline Expression Operators ===
 	InlineIf,      // 'if' in expression context
 	InlineElse,    // 'else' in expression context
-	InlineFor,      // 'for' in comprehension context
+	InlineFor,     // 'for' in comprehension context
+
+	//=== NEW: Arithmetic Operators (for fast dispatch) ===
+	Add,           // +
+	Sub,           // -
+	Mul,           // *
+	Div,           // /
+	Mod,           // %
+	FloorDiv,      // //
+	Power,         // **
+
+	//=== NEW: Bitwise Operators (for fast dispatch) ===
+	BitAnd,        // &
+	BitOr,         // |
+	BitXor,        // ^
+	BitNot,        // ~
+	LeftShift,     // <<
+	RightShift,    // >>
+
+	//=== NEW: Unary Operators ===
+	UnaryPlus,     // +x
+	UnaryMinus,    // -x
+	LogicalNot,    // !
+
 	Count
 };
 

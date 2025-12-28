@@ -22,6 +22,7 @@ limitations under the License.
 #include "InlineCall.h"
 #include "exp_exec.h"
 #include "var.h"
+#include "fast_ops.h"
 
 namespace X
 {
@@ -233,7 +234,36 @@ public:
 		auto func = G::I().R().OpAct(Op).binaryop;
 		return func ? func(rt, this, leftValue.v, rightValue.v, retVal) : false;
 	}
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	FORCE_INLINE bool Exec_D(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr)
+	{
+#if CHECK_IF_INLINE
+		// Debug: Print once to check if inlined
+		static int count = 0;
+		if (count < 10)
+		{
+			void* retAddr = _ReturnAddress();
+			std::cout << "BinaryOp Exec_D call #" << count << " return addr: " << retAddr << std::endl;
+			count++;
+		}
+#endif
+
+		if (!L || !R)
+		{
+			return false;
+		}
+		Value v_l;
+		if (!ExpExec(L, rt, action, pContext, v_l))
+		{
+			return false;
+		}
+		Value v_r;
+		if (!ExpExec(R, rt, action, pContext, v_r))
+		{
+			return false;
+		}
+		return FastBinaryOpWithFallback(opId, Op, rt, this, v_l, v_r, v);
+	}
+	bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
 	{
 		if (!L || !R)
 		{
@@ -624,6 +654,21 @@ public:
 	}
 	FORCE_INLINE Expression* GetR() { return R; }
 
+	FORCE_INLINE bool Exec_D(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr)
+	{
+		//for case: return without value
+		if (opId == OP_ID::ReturnOp && R == nullptr)
+		{
+			action.type = ExecActionType::Return;
+			return true;
+		}
+		Value v_r;
+		if (!ExpExec(R, rt, action, pContext, v_r))
+		{
+			return false;
+		}
+		return FastUnaryOpWithFallback(opId, Op, rt, this, v_r, v);
+	}
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
 };
 
@@ -646,7 +691,7 @@ public:
 		m_type = ObType::In;
 	}
 	FORCEINLINE void SetIsNot(bool b) { m_bIsNot = b; }
-	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
+	FORCEINLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 };
 class ExternDecl :
 	public UnaryOp

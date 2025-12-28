@@ -31,7 +31,7 @@ namespace X
 {
 namespace AST
 {
-	bool InOp::Exec(XlangRuntime* rt, ExecAction& action, 
+	FORCEINLINE bool InOp::Exec(XlangRuntime* rt, ExecAction& action,
 		XObj* pContext, Value& v, LValue* lValue)
 	{
 		bool bOK = true;

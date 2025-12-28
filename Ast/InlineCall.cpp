@@ -34,13 +34,23 @@ namespace X
 {
 	namespace AST
 	{
-		extern FORCE_INLINE_EXP bool ExpExec(Expression* pExp,
+		FORCE_INLINE_EXP bool ExpExec(Expression* pExp,
 			XlangRuntime* rt,
 			ExecAction& action,
 			XObj* pContext,
 			Value& v,
 			LValue* lValue)
 		{
+#if CHECK_IF_INLINE
+			// Debug: Print once to check if inlined
+			static int count = 0;
+			if (count < 10)
+			{
+				void* retAddr = _ReturnAddress();
+				std::cout << "ExpExec call #" << count << " return addr: " << retAddr << std::endl;
+				count++;
+			}
+#endif
 			bool bOK = false;
 			auto expType =  pExp->m_type;
 			switch (expType)
@@ -52,10 +62,10 @@ namespace X
 				bOK = static_cast<Assign*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;
 			case X::AST::ObType::BinaryOp:
-				bOK = static_cast<BinaryOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				bOK = static_cast<BinaryOp*>(pExp)->Exec_D(rt, action, pContext, v, lValue);
 				break;
 			case X::AST::ObType::UnaryOp:
-				bOK = static_cast<UnaryOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				bOK = static_cast<UnaryOp*>(pExp)->Exec_D(rt, action, pContext, v, lValue);
 				break;
 			case X::AST::ObType::PipeOp:
 				bOK = static_cast<PipeOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
@@ -170,12 +180,6 @@ namespace X
 				break;
 			case X::AST::ObType::DictComprehension:
 				bOK = static_cast<DictComprehension*>(pExp)->Exec(rt, action, pContext, v, lValue);
-				break;
-			case X::AST::ObType::InlineIfOp:
-				bOK = static_cast<InlineIfOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
-				break;
-			case X::AST::ObType::InlineElseOp:
-				bOK = static_cast<InlineElseOp*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;
 			default:
 				break;

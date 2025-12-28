@@ -33,6 +33,9 @@ namespace X
 			{
 				m_t = ObjType::Range;
 			}
+			long long GetStart() { return m_start; }
+			long long GetStop() { return m_stop; }
+			long long GetStep() { return m_step; }
 			Range(long long start, long long stop, long long step = 1)
 				:Object(),
 				m_start(start), m_stop(stop), m_step(step)
@@ -44,6 +47,10 @@ namespace X
 			{
 				return true;
 			}
+			FORCE_INLINE bool IsInRange(long long cur)
+			{
+				return cur >= m_start && cur < m_stop;
+			}
 			virtual bool IsContain(X::Value& val) override
 			{
 				if (val.GetType() != ValueType::Int64)
@@ -54,7 +61,7 @@ namespace X
 				return v >= m_start && v < m_stop;
 			}
 			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos,
-				std::vector<Value>& vals, bool getOnly) override
+				std::vector<Value>& vals, bool getOnly) override final
 			{
 				long long it = (long long)pos;
 				long long nPos = it;

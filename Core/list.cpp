@@ -323,7 +323,7 @@ namespace X
 			m_t = ObjType::List;
 			m_bases.push_back(_listScope.GetMyScope());
 		}
-		bool List::Call(XRuntime* rt, XObj* pContext,
+		FORCE_INLINE bool List::Call(XRuntime* rt, XObj* pContext,
 			ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue)

@@ -19,47 +19,135 @@ limitations under the License.
 #include "dict.h"
 #include "iterator.h"
 #include "exp_exec.h"
+#include "range.h"
 
 namespace X
 {
     namespace AST
     {
-
         //=============================================================================
-        // TernaryOp::Exec
-        // Evaluates: value_if_true if condition else value_if_false
+        // Fast path for Range - no virtual calls, no vector, no lock
         //=============================================================================
-        bool TernaryOp::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
-            Value& v, LValue* lValue)
+        FORCE_INLINE bool ExecRangeFastPath(XlangRuntime* rt, ExecAction& action,
+            XObj* pContext, Value& v, Data::Range* pRange,
+            Expression* filterCond,Expression* loopVar,
+            Expression* outputExpr)
         {
-            if (m_condition == nullptr || m_trueExpr == nullptr || m_falseExpr == nullptr)
+            // Get range parameters once - no virtual calls in loop
+            const long long start = pRange->GetStart();
+            const long long stop = pRange->GetStop();
+            const long long step = pRange->GetStep();
+
+            // Pre-allocate output list
+            long long estimatedSize = (stop - start) / step;
+            if (filterCond) estimatedSize /= 2;  // Rough estimate with filter
+
+            X::Data::List* pOutList = new X::Data::List();
+ 
+            // Get loop variable's LValue once - avoid repeated lookups
+            Value varValue;
+            LValue varLValue = nullptr;
+            loopVar->Exec(rt, action, pContext, varValue, &varLValue);
+
+            auto loopStart = std::chrono::high_resolution_clock::now();
+
+            // Native for loop - no virtual calls, no vector, no lock!
+            for (long long i = start; i < stop; i += step)
             {
-                return false;
+                // Direct assignment to loop variable
+                if (varLValue)
+                {
+                    *varLValue = Value(i);
+                }
+                else
+                {
+                    // Fallback: use SetArry
+                    std::vector<Value> vals = { Value(i), Value(i) };
+                    loopVar->SetArry(rt, pContext, vals);
+                }
+
+                // Filter condition
+                if (filterCond)
+                {
+                    Value filterValue;
+                    ExecAction filterAction;
+                    if (!ExpExec(filterCond, rt, filterAction, pContext, filterValue))
+                    {
+                        delete pOutList;
+                        return false;
+                    }
+                    if (!filterValue.IsTrue())
+                    {
+                        continue;
+                    }
+                }
+
+                // Output expression
+                Value outValue;
+                ExecAction outAction;
+                if (ExpExec(outputExpr, rt, outAction, pContext, outValue))
+                {
+                    pOutList->FastAdd(outValue);
+                }
             }
 
-            // First evaluate the condition
-            Value condValue;
-            ExecAction condAction;
-            bool bOK = ExpExec(m_condition, rt, condAction, pContext, condValue);
-            if (!bOK)
-            {
-                return false;
-            }
+            auto loopEnd = std::chrono::high_resolution_clock::now();
+            double loopTime = std::chrono::duration<double, std::milli>(loopEnd - loopStart).count();
+            std::cout << "Range fast path time: " << loopTime << " ms" << std::endl;
 
-            // Based on condition, evaluate either true or false expression
-            ExecAction exprAction;
-            if (condValue.IsTrue())
-            {
-                bOK = ExpExec(m_trueExpr, rt, exprAction, pContext, v, lValue);
-            }
-            else
-            {
-                bOK = ExpExec(m_falseExpr, rt, exprAction, pContext, v, lValue);
-            }
-
-            return bOK;
+            v = X::Value(pOutList);
+            return true;
         }
 
+        //=============================================================================
+        // Generic path for other iterables (list, dict, etc.)
+        //=============================================================================
+        FORCE_INLINE bool ExecGenericPath(XlangRuntime* rt, ExecAction& action,
+            XObj* pContext, Value& v, Data::Object* pDataObj,
+            Expression* filterCond, Expression* loopVar,
+            Expression* outputExpr)
+        {
+            X::Data::List* pOutList = new X::Data::List();
+            X::Data::Iterator_Pos curPos = nullptr;
+            std::vector<Value> vals;
+
+            auto loopStart = std::chrono::high_resolution_clock::now();
+
+            while (pDataObj->GetAndUpdatePos(curPos, vals, false))
+            {
+                loopVar->SetArry(rt, pContext, vals);
+                vals.clear();
+
+                if (filterCond)
+                {
+                    Value filterValue;
+                    ExecAction filterAction;
+                    if (!ExpExec(filterCond, rt, filterAction, pContext, filterValue))
+                    {
+                        delete pOutList;
+                        return false;
+                    }
+                    if (!filterValue.IsTrue())
+                    {
+                        continue;
+                    }
+                }
+
+                Value outValue;
+                ExecAction outAction;
+                if (ExpExec(outputExpr, rt, outAction, pContext, outValue))
+                {
+                    pOutList->Add(rt, outValue);
+                }
+            }
+
+            auto loopEnd = std::chrono::high_resolution_clock::now();
+            double loopTime = std::chrono::duration<double, std::milli>(loopEnd - loopStart).count();
+            std::cout << "Generic path time: " << loopTime << " ms" << std::endl;
+
+            v = X::Value(pOutList);
+            return true;
+        }
         //=============================================================================
         // ListComprehension::Exec
         // Evaluates: [expr for var in iterable] or [expr for var in iterable if cond]
@@ -88,50 +176,19 @@ namespace X
                 return false;
             }
 
-            // Create output list
-            X::Data::List* pOutList = new X::Data::List();
-
-            // Iterate through the iterable
-            X::Data::Iterator_Pos curPos = nullptr;
-            std::vector<Value> vals;
-
-            while (pDataObj->GetAndUpdatePos(curPos, vals, false))
+            // Check if it's a Range - use fast path
+            if (pDataObj->GetType() == X::ObjType::Range)
             {
-                // Assign loop variable(s)
-                m_loopVar->SetArry(dynamic_cast<XlangRuntime*>(rt), pContext, vals);
-                vals.clear();
-
-                // If there's a filter condition, check it
-                if (m_filterCond)
-                {
-                    Value filterValue;
-                    ExecAction filterAction;
-                    bOK = ExpExec(m_filterCond, rt, filterAction, pContext, filterValue);
-                    if (!bOK)
-                    {
-                        delete pOutList;
-                        return false;
-                    }
-                    // Skip this iteration if filter is false
-                    if (!filterValue.IsTrue())
-                    {
-                        continue;
-                    }
-                }
-
-                // Evaluate the output expression
-                Value outValue;
-                ExecAction outAction;
-                bOK = ExpExec(m_outputExpr, rt, outAction, pContext, outValue);
-                if (bOK)
-                {
-                    pOutList->Add(rt, outValue);
-                }
+                return ExecRangeFastPath(rt, action, pContext, v,
+                    dynamic_cast<Data::Range*>(pDataObj), m_filterCond, m_loopVar,
+                    m_outputExpr);
             }
 
-            v = X::Value(pOutList);
-            return true;
+            // Generic path for other iterables
+            return ExecGenericPath(rt, action, pContext, v, pDataObj, m_filterCond,
+                m_loopVar, m_outputExpr);
         }
+
 
         //=============================================================================
         // DictComprehension::Exec
@@ -252,7 +309,24 @@ namespace X
             ternary->SetTrueExpr(trueExpr);
             ternary->SetCondition(condition);
             // falseExpr remains nullptr
-
+            int maxTokenIndex = -1;
+            if (trueExpr)
+            {
+                ternary->ReCalcHint(trueExpr);
+                if (maxTokenIndex < trueExpr->GetTokenIndex())
+                {
+                    maxTokenIndex = trueExpr->GetTokenIndex();
+                }
+            }
+            if (condition)
+            {
+                ternary->ReCalcHint(condition);
+                if (maxTokenIndex < condition->GetTokenIndex())
+                {
+                    maxTokenIndex = condition->GetTokenIndex();
+                }
+            }
+            ternary->SetTokenIndex(maxTokenIndex);
             // Push partial ternary back
             operands.push(ternary);
             return true;
@@ -294,11 +368,26 @@ namespace X
 
             TernaryOp* ternary = dynamic_cast<TernaryOp*>(top);
             ternary->SetFalseExpr(falseExpr);
+            if (falseExpr)
+            {
+                ternary->ReCalcHint(falseExpr);
+                if (ternary->GetTokenIndex() < falseExpr->GetTokenIndex())
+                {
+                    ternary->SetTokenIndex(falseExpr->GetTokenIndex());
+                }
+            }
 
             // Push completed TernaryOp - this is now a single value
             operands.push(ternary);
             return true;
         }
 
-    } // namespace AST
+        bool InlineForOp::OpWithOperands(
+            std::stack<AST::Expression*>& operands, 
+            int LeftTokenIndex)
+        {
+            return false;
+        }
+
+} // namespace AST
 } // namespace X

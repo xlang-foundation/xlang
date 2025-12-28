@@ -151,9 +151,50 @@ public:
         m_falseExpr = BuildFromStream<Expression>(stream);
         return true;
     }
+    //=============================================================================
+    // TernaryOp::Exec
+    // Evaluates: value_if_true if condition else value_if_false
+    //=============================================================================
+    FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
+        Value& v, LValue* lValue) override final
+    {
+        if (m_condition == nullptr || m_trueExpr == nullptr)
+        {
+            return false;
+        }
 
-    virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext,
-        Value& v, LValue* lValue = nullptr) override;
+        // First evaluate the condition
+        Value condValue;
+        ExecAction condAction;
+        bool bOK = ExpExec(m_condition, rt, condAction, pContext, condValue);
+        if (!bOK)
+        {
+            //also return true to avoid this treats as error
+            //x = 10
+            //r1 = "yes" if x > 500  
+            return true;
+        }
+
+        // Based on condition, evaluate either true or false expression
+        ExecAction exprAction;
+        if (condValue.IsTrue())
+        {
+            bOK = ExpExec(m_trueExpr, rt, exprAction, pContext, v, lValue);
+        }
+        else
+        {
+            if (m_falseExpr)
+            {
+                bOK = ExpExec(m_falseExpr, rt, exprAction, pContext, v, lValue);
+            }
+            else
+            {
+                bOK = true;//no error for this case
+            }
+        }
+
+        return bOK;
+    }
 };
 
 //=============================================================================
@@ -167,6 +208,7 @@ class ListComprehension :
     public Expression
 {
 protected:
+	bool m_isSet = false;// Whether to create a set instead of a list
     Expression* m_outputExpr = nullptr;   // The expression to evaluate for each item
     Expression* m_loopVar = nullptr;      // Loop variable(s)
     Expression* m_iterable = nullptr;     // The iterable to loop over
@@ -196,7 +238,7 @@ public:
         if (m_iterable) delete m_iterable;
         if (m_filterCond) delete m_filterCond;
     }
-
+	inline void SetIsSet(bool b) { m_isSet = b; }
     // Setters with parent linkage
     void SetOutputExpr(Expression* expr)
     {
@@ -503,6 +545,23 @@ public:
     InlineIfOp(short op) : Operator(op)
     {
         m_type = ObType::InlineIfOp;
+    }
+
+    virtual bool OpWithOperands(
+        std::stack<AST::Expression*>& operands, int LeftTokenIndex) override;
+};
+class InlineForOp :
+    public Operator
+{
+public:
+    InlineForOp() : Operator()
+    {
+        m_type = ObType::InlineForOp;
+    }
+
+    InlineForOp(short op) : Operator(op)
+    {
+        m_type = ObType::InlineForOp;
     }
 
     virtual bool OpWithOperands(

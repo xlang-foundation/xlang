@@ -283,6 +283,48 @@ bool Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 }
 void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
+	//check ops if it has inlinefor op
+	if (m_curBlkState->HasInlineForOp())
+	{
+		auto* pExpr = m_curBlkState->CollectAndBuildComprehension(leftOpToMeetAsEnd);
+
+		// Pop pair info
+		PairInfo pairInfo = m_curBlkState->StackPair().top();
+		m_curBlkState->StackPair().pop();
+
+		// Find and pop the PairOp from ops stack
+		short pairLeftToken = m_reg->GetOpId(leftOpToMeetAsEnd);
+		AST::PairOp* pPair = nullptr;
+		while (!m_curBlkState->IsOpStackEmpty())
+		{
+			auto top = m_curBlkState->OpTop();
+			if (top->getOp() == pairLeftToken)
+			{
+				pPair = dynamic_cast<AST::PairOp*>(top);
+				m_curBlkState->OpPop();
+				break;
+			}
+			else
+			{
+				m_curBlkState->DoOpTop();
+			}
+		}
+
+		// Set comprehension as R of PairOp
+		if (pPair)
+		{
+			pPair->SetR(pExpr);
+			m_curBlkState->PushExp(pPair);
+		}
+		else if (pExpr)
+		{
+			// Fallback: just push the expression
+			m_curBlkState->PushExp(pExpr);
+		}
+
+		push_preceding_token(TokenID);
+		return;
+	}
 	PairInfo pairInfo = m_curBlkState->StackPair().top();
 	m_curBlkState->StackPair().pop();
 	if (leftOpToMeetAsEnd == OP_ID::Curlybracket_L)

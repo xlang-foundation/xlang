@@ -234,7 +234,7 @@ bool Block::RunLast(XRuntime* rt0, XObj* pContext, Value& v, LValue* lValue)
 	}
 	return bOk;
 }
-bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
+FORCE_INLINE bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	if (R == nil)
 	{
