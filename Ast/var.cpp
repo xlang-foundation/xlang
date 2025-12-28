@@ -256,7 +256,7 @@ namespace X
 			}
 			return true;
 		}
-		bool Var::GetPropValue(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& val)
+		FORCE_INLINE bool Var::GetPropValue(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& val)
 		{
 			bool bOK = false;
 			if (pObj->GetType() == ObjType::StructField)
@@ -277,7 +277,7 @@ namespace X
 			}
 			return bOK;
 		}
-		bool Var::CalcCallables(XlangRuntime* rt, XObj* pContext,
+		FORCE_INLINE bool Var::CalcCallables(XlangRuntime* rt, XObj* pContext,
 			std::vector<AST::Expression*>& callables)
 		{
 			Value val;
@@ -290,7 +290,7 @@ namespace X
 			}
 			return bOK;
 		}
-		void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
+		FORCE_INLINE void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 		{
 			bool matched = false;
 			if (m_scope && Index != -1)
@@ -340,7 +340,7 @@ namespace X
 		// so here we check if it is inside a Pair
 		//TODO(Shawn) 6/15/2023: check lambda function with { } some var define, if it is still correct
 
-		void Var::ScopeLayout()
+		FORCE_INLINE void Var::ScopeLayout()
 		{
 			Scope* pMyScope = GetScope();
 			int idx = -1;

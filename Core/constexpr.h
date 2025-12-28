@@ -58,6 +58,7 @@ namespace X
 					switch (one.op)
 					{
 					case OP_ID::Equal:
+					case OP_ID::IsEqual:
 						curRetVal = (itemVal == one.val);
 						break;
 					case OP_ID::NotEqual:

@@ -29,7 +29,7 @@ limitations under the License.
 #include "module.h"
 #include "complex.h"
 #include "list.h"
-
+#include "inline_expr.h"
 namespace X 
 {
 namespace AST 
@@ -168,6 +168,21 @@ Expression *Expression::CreateByType(ObType t)
 	case ObType::Import:
 		pExp = new Import();
 		break;
+	case ObType::TernaryOp:
+		pExp = new TernaryOp();
+		break;
+	case ObType::ListComprehension:
+		pExp = new ListComprehension();
+		break;
+	case ObType::DictComprehension:
+		pExp = new DictComprehension();
+		break;
+	case ObType::InlineIfOp:
+		pExp = new InlineIfOp();
+		break;
+	case ObType::InlineElseOp:
+		pExp = new InlineElseOp();
+		break;
 	default:
 		break;
 	}
@@ -209,7 +224,7 @@ bool Expression::FromBytes(X::XLangStream& stream)
 	stream >> m_charPos;
 	return true;
 }
-bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+FORCE_INLINE bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = true;
 	if (Name)
@@ -251,7 +266,7 @@ bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v,
 	}
 	return bOK;
 }
-bool Param::Parse(std::string& strVarName, 
+FORCE_INLINE bool Param::Parse(std::string& strVarName, 
 	std::string& strVarType, Value& defaultValue)
 {
 	//two types: 1) name:type=val 2) name:type
@@ -283,7 +298,7 @@ bool Param::Parse(std::string& strVarName,
 	}
 	return true;
 }
-bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
+FORCE_INLINE bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 	const char* s_in, int size,std::string& outStr,bool UseBindMode,
 	std::vector<X::Value>& bind_data_list)
 {
@@ -542,7 +557,7 @@ bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v)
 	}
 	return bOK;
 }
-bool List::Exec(XlangRuntime* rt, ExecAction& action,
+FORCE_INLINE bool List::Exec(XlangRuntime* rt, ExecAction& action,
 	XObj* pContext, Value& v, LValue* lValue)
 {
 	X::Data::List* pOutList = new X::Data::List();

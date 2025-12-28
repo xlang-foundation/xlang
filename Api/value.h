@@ -161,9 +161,9 @@ class Value
 {
 	//from high->low, second and third byte are digits number , mask is 0x00FFFF00 and shift >>8
 	//last 4 bits as subtype, mask is 0x0F
-	int flags = 0;
+	int flags;
 
-	ValueType t= ValueType::Invalid;
+	ValueType t;
 	union
 	{
 		long long l;
@@ -648,8 +648,8 @@ public:
 			break;
 		}
 	}
-	Value operator* (const Value& right);
-	Value operator / (const Value& right);
+	FORCE_INLINE Value operator* (const Value& right);
+	FORCE_INLINE Value operator / (const Value& right);
 
 	Value AddObj(const Value& right);
 	FORCE_INLINE Value operator + (const Value& right)
@@ -665,7 +665,7 @@ public:
 			return AddObj(right);
 		}
 	}
-	Value operator - (const Value& right);
+	FORCE_INLINE Value operator - (const Value& right);
 	void ObjectAssignAndAdd(const Value& v);
 	FORCE_INLINE void operator += (const Value& v)
 	{
@@ -704,7 +704,7 @@ public:
 			}
 		}
 	}
-	void operator -= (const Value& v);
+	FORCE_INLINE void operator -= (const Value& v);
 
 	Value ObjCall(Port::vector<X::Value>& params);
 	Value ObjCall(Port::vector<X::Value>& params,Port::StringMap<X::Value>& kwParams);
@@ -782,7 +782,7 @@ public:
 	}
 	FORCE_INLINE long long ToLongLong()
 	{
-		return (long long)(*this);
+		return (t == ValueType::Int64) ? x.l : (long long)x.d;
 	}
 	FORCE_INLINE bool ToBool()
 	{

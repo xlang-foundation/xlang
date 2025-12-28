@@ -536,6 +536,8 @@ namespace X
                     // Comparison operators
                 case OP_ID::Equal:
                     return X::Value("==");
+                case OP_ID::IsEqual:
+                    return X::Value("is");
                 case OP_ID::NotEqual:
                     return X::Value("!=");
                 case OP_ID::Great:

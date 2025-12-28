@@ -31,6 +31,7 @@ limitations under the License.
 #include "await.h"
 #include "jitblock.h"
 #include "refop.h"
+#include "inline_expr.h"
 
 namespace X {
 
@@ -76,6 +77,11 @@ void RegisterOps(OpRegistry* reg)
 		v = L.ToLongLong() | R.ToLongLong();
 		return true;
 	});
+	RegOP("%")
+		.SetBinaryop([](XlangRuntime* rt, AST::BinaryOp* op, X::Value& L, X::Value& R, X::Value& v) {
+		v = L.ToLongLong() % R.ToLongLong();
+		return true;
+			});
 
 #if __not_tensor__
 	RegOP("*")
@@ -252,8 +258,14 @@ void Register(OpRegistry* reg)
 			});
 	RegOP("for")
 		.SetProcess([](Parser* p, short opIndex){
+		if (p->ShouldBeInlineFor()) {
+			auto op = new AST::InlineForOp(opIndex);
+			return (AST::Operator*)op;
+		}
+		else {
 			auto op = new AST::For(opIndex);
 			return (AST::Operator*)op;
+		}
 		});
 	RegOP("await")
 		.SetProcess([](Parser* p, short opIndex) {
@@ -267,9 +279,16 @@ void Register(OpRegistry* reg)
 		});
 	RegOP("if")
 		.SetProcess([](Parser* p, short opIndex) {
+		if (p->ShouldBeInlineIf()) {
+			auto op = new AST::InlineIfOp(opIndex);
+			return (AST::Operator*)op;
+		}
+		else {
 			auto op = new AST::If(opIndex);
 			op->SetFlag(true);
 			return (AST::Operator*)op;
+		}
+		
 			});
 	RegOP("elif")
 		.SetProcess([](Parser* p, short opIndex){
@@ -279,9 +298,15 @@ void Register(OpRegistry* reg)
 		});
 	RegOP("else")
 		.SetProcess([](Parser* p, short opIndex) {
-			auto op = new AST::If(opIndex,false);
+		if (p->ShouldBeInlineElse()) {
+			auto op = new AST::InlineElseOp(opIndex);
+			return (AST::Operator*)op;
+		}
+		else {
+			auto op = new AST::If(opIndex, false);
 			op->SetFlag(false);
 			return (AST::Operator*)op;
+		}
 			});
 	RegOP("in")
 		.SetProcess([](Parser* p,short opIndex){
@@ -369,13 +394,6 @@ void Register(OpRegistry* reg)
 			auto op = new AST::BinaryOp(opIndex);
 			return (AST::Operator*)op;
 		});
-	RegOP("==","is", "!=", ">", "<", 
-		">=", "<=", "and", "or",
-		"in","not").SetIds(reg,
-		{ OP_ID::Equal,OP_ID::Equal,OP_ID::NotEqual,OP_ID::Great,OP_ID::Less,
-		OP_ID::GreatAndEqual,OP_ID::LessAndEqual,OP_ID::And,OP_ID::Or,
-		OP_ID::InOp,OP_ID::NotOp});
-
 	//for sql statment
 #if ADD_SQL
 	RegOP("SELECT")
@@ -420,7 +438,7 @@ void Register(OpRegistry* reg)
 				return (AST::Operator*)op;
 			});
 #endif
-	RegOP("~"/*, "not"*/)
+	RegOP("~")
 		.SetProcess([](Parser* p, short opIndex){
 			AST::Operator* op = nil;
 			if (p->PreTokenIsOp())
@@ -509,6 +527,16 @@ void Register(OpRegistry* reg)
 			auto op = new AST::Operator(opIndex);
 			return op;
 		});
+	//don't call SetIds too early, need all ops registered first
+	//Assign OP IDs for operators, not all ops need an OP_ID
+	RegOP("==").SetId(reg, OP_ID::Equal);
+	RegOP("is").SetId(reg, OP_ID::IsEqual);
+	RegOP("!=", ">", "<",
+		">=", "<=", "and", "or",
+		"in", "not").SetIds(reg,
+			{ OP_ID::NotEqual,OP_ID::Great,OP_ID::Less,
+			OP_ID::GreatAndEqual,OP_ID::LessAndEqual,OP_ID::And,OP_ID::Or,
+			OP_ID::InOp,OP_ID::NotOp });
 
 	RegOP("(").SetId(reg,OP_ID::Parenthesis_L);
 	RegOP("<|").SetId(reg, OP_ID::TableBracket_L);
@@ -523,76 +551,29 @@ void Register(OpRegistry* reg)
 	RegOP("continue").SetId(reg, OP_ID::Continue);
 	RegOP("pass").SetId(reg, OP_ID::Pass);
 
+	// Add after existing SetIds calls:
+	RegOP("+", "-", "*", "/", "%", "//", "**").SetIds(reg,
+		{ OP_ID::Add, OP_ID::Sub, OP_ID::Mul, OP_ID::Div,
+		  OP_ID::Mod, OP_ID::FloorDiv, OP_ID::Power });
+
+	RegOP("&", "|", "^", "~", "<<", ">>").SetIds(reg,
+		{ OP_ID::BitAnd, OP_ID::BitOr, OP_ID::BitXor,
+		  OP_ID::BitNot, OP_ID::LeftShift, OP_ID::RightShift });
+
 	//for Jit Func return type
 	//for example: def Add_Two(m:int,n:int)->int:
 	RegOP("->").SetId(reg, OP_ID::ReturnType);
 
+
 	RegOP("=", "+=", "-=", "*=", "/=", "%=", "//=").SetIds(reg,
 		{ OP_ID::Equ,OP_ID::AddEqu,OP_ID::MinusEqu,OP_ID::MulEqu,
-		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu })
-		.SetPrecedence(Precedence_Reqular-1);;
-	RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
-		{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
-		OP_ID::RightShiftEqu,OP_ID::LeftShitEqu })
-		.SetPrecedence(Precedence_Reqular-1);
+		OP_ID::DivEqu,OP_ID::ModEqu,OP_ID::FloorDivEqu });
+		RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
+			{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
+			OP_ID::RightShiftEqu,OP_ID::LeftShitEqu });
 
-	//For jitblock
-	RegOP("->")
-		.SetPrecedence(Precedence_Reqular);
-
-	//Calculation from left to right if same Precedence
-	//so leading op such as if while for need to 
-	//have lower Precedence as >,== etc.
-	//todo: check other op also,
-	RegOP("if","elif","else","while","for")
-		.SetPrecedence(Precedence_Reqular-2);
-	RegOP("and", "or")
-		.SetPrecedence(Precedence_Reqular-1);
-	//for example for in range(num), in needs have 
-	//less Precedence than range which takes Precedence_Reqular
-	RegOP("in")
-		.SetPrecedence(Precedence_Reqular - 1);
-	//
-	RegOP("[", "]", "{", "}", "(",")")
-		.SetPrecedence(Precedence_High);
-	RegOP(".", "..", "...")
-		.SetPrecedence(Precedence_High1);
-	RegOP("const", "var","namespace", "|-")
-		.SetPrecedence(Precedence_Reqular + 1);
-	RegOP("*", "/", "%", "**", "//")
-		.SetPrecedence(Precedence_Reqular + 1);
-	RegOP("as")
-		.SetPrecedence(Precedence_LOW2+1);
-	RegOP("deferred")
-		.SetPrecedence(Precedence_LOW2 + 1);
-	RegOP("thru")
-		.SetPrecedence(Precedence_LOW2-1);
-	//comma set to Precedence_VERYLOW, 
-	//for case import galaxy as t, earth as e
-	//we need to make import has lower Precedence than comma
-	RegOP("import")
-		.SetPrecedence(Precedence_VERYLOW - 1);
-
-	RegOP("extern", "nonlocal", "global")
-		.SetPrecedence(Precedence_LOW2);
-
-	RegOP("ref")
-		.SetPrecedence(Precedence_Reqular);
-#if ADD_SQL
-	RegOP("SELECT")
-		.SetPrecedence(Precedence_LOW1-1);
-#endif
-	//12/9/2022 todo: it was RegOP("\n",",",":")
-	//but for def func1(x:int,y:double) case
-	//need to make : at least has same Precedence as ','
-	RegOP("\n",",")
-		.SetPrecedence(Precedence_VERYLOW);
-	RegOP("await")
-		.SetPrecedence(Precedence_VERYVERYLOW);
-	//for this case: t2 = t1[-20:120,-1:-3]
-	//minus needs to be cacluated before :, so let : is below regular which minus op has that Precedence
-	RegOP(":")
-		.SetPrecedence(Precedence_VERYLOW+1);
+	// Call precedence registration from precedence.cpp
+	RegisterPrecedence(reg);
 }
 
 std::vector<OpInfo> RegOP::OPList;

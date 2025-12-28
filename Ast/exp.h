@@ -74,6 +74,12 @@ enum class ObType
 	Import,
 	NamespaceVar,
 	RefOp,
+	TernaryOp,           // For inline if-else: x if cond else y
+	ListComprehension,   // For [expr for x in iter]
+	DictComprehension,   // For {k:v for x in iter}
+	InlineForOp,		 // Parser helper for inline for
+	InlineIfOp,          // Parser helper for inline if
+	InlineElseOp,        // Parser helper for inline else
 };
 enum class ExecActionType
 {
@@ -305,7 +311,7 @@ public:
 			}
 		}
 	}
-	bool RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
+	FORCE_INLINE bool RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 		const char* s_in,int size,std::string& outStr,bool UseBindMode,
 		std::vector<X::Value>& bind_data_list);
 	ObType m_type = ObType::Base;
@@ -391,7 +397,7 @@ public:
 	}
 	bool RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v);
 
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
+	FORCE_INLINE bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override final
 	{
 		if (m_haveFormat)
 		{
@@ -488,18 +494,17 @@ public:
 	}
 	FORCE_INLINE long long GetVal() { return m_val; }
 	FORCE_INLINE int GetDigiNum() { return m_digiNum; }
-	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
-	{
-		Value v0(m_val);
+	FORCE_INLINE bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override final
+	{ 
+		v = m_val;
 		if (m_isBool)
 		{
-			v0.AsBool();
+			v.AsBool();
 		}
 		else
 		{
-			v0.SetDigitNum(m_digiNum);
+			v.SetDigitNum(m_digiNum);
 		}
-		v = v0;
 		return true;
 	}
 	FORCE_INLINE X::Value GetValue()
@@ -543,7 +548,7 @@ public:
 		stream >> m_val;
 		return true;
 	}
-	FORCE_INLINE virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override
+	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		v = m_val;
 		return true;
@@ -598,8 +603,8 @@ public:
 			delete e;
 		}
 	}
-	virtual bool Exec(XlangRuntime* rt, ExecAction& action,
-		XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action,
+		XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt,pContext,stream);
@@ -733,10 +738,10 @@ public:
 	}
 	FORCE_INLINE Expression* GetName() { return Name; }
 	FORCE_INLINE Expression* GetType() { return Type; }
-	bool Parse(std::string& strVarName,
+	FORCE_INLINE bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
-	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr);
+	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<AST::Expression*>& callables) override
 	{

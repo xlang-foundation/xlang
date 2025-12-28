@@ -26,6 +26,7 @@ limitations under the License.
 #include "jitblock.h"
 #include "jitlib.h"
 #include "xlog.h"
+#include "inline_expr.h"
 
 namespace X
 {
@@ -282,6 +283,48 @@ bool Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 }
 void Parser::PairRight(OP_ID leftOpToMeetAsEnd)
 {
+	//check ops if it has inlinefor op
+	if (m_curBlkState->HasInlineForOp())
+	{
+		auto* pExpr = m_curBlkState->CollectAndBuildComprehension(leftOpToMeetAsEnd);
+
+		// Pop pair info
+		PairInfo pairInfo = m_curBlkState->StackPair().top();
+		m_curBlkState->StackPair().pop();
+
+		// Find and pop the PairOp from ops stack
+		short pairLeftToken = m_reg->GetOpId(leftOpToMeetAsEnd);
+		AST::PairOp* pPair = nullptr;
+		while (!m_curBlkState->IsOpStackEmpty())
+		{
+			auto top = m_curBlkState->OpTop();
+			if (top->getOp() == pairLeftToken)
+			{
+				pPair = dynamic_cast<AST::PairOp*>(top);
+				m_curBlkState->OpPop();
+				break;
+			}
+			else
+			{
+				m_curBlkState->DoOpTop();
+			}
+		}
+
+		// Set comprehension as R of PairOp
+		if (pPair)
+		{
+			pPair->SetR(pExpr);
+			m_curBlkState->PushExp(pPair);
+		}
+		else if (pExpr)
+		{
+			// Fallback: just push the expression
+			m_curBlkState->PushExp(pExpr);
+		}
+
+		push_preceding_token(TokenID);
+		return;
+	}
 	PairInfo pairInfo = m_curBlkState->StackPair().top();
 	m_curBlkState->StackPair().pop();
 	if (leftOpToMeetAsEnd == OP_ID::Curlybracket_L)
@@ -694,6 +737,78 @@ AST::Module* Parser::GetModule()
 		pTopModule = dynamic_cast<AST::Module*>(pBlockState->Block());
 	}
 	return pTopModule;
+}
+bool Parser::ShouldBeInlineIf()
+{
+	// Get the current block state
+	BlockState* state = GetCurBlockState(); // or however you access it
+	if (state == nullptr)
+	{
+		return false;
+	}
+
+	// If there are operands on the stack and we're not at a new line start,
+	// this 'if' is part of a ternary expression
+	// Example: x = 10 if condition else 20
+	//          ^^^^ operand exists before 'if'
+	return !state->IsOperandStackEmpty() && !state->m_NewLine_WillStart;
+}
+
+bool Parser::ShouldBeInlineElse()
+{
+	BlockState* state = GetCurBlockState();
+	if (state == nullptr)
+	{
+		return false;
+	}
+
+	// Check if there's a pending TernaryOp (partial) on operand stack
+	if (!state->IsOperandStackEmpty())
+	{
+		AST::Expression* top = state->OperandTop();
+		if (top && top->m_type == AST::ObType::TernaryOp)
+		{
+			// Check if it's missing the false expression
+			AST::TernaryOp* ternary = dynamic_cast<AST::TernaryOp*>(top);
+			if (ternary && ternary->GetFalseExpr() == nullptr)
+			{
+				return true;
+			}
+		}
+	}
+
+	// Also check operator stack for InlineIfOp
+	if (!state->IsOpStackEmpty())
+	{
+		AST::Operator* topOp = state->OpTop();
+		if (topOp && topOp->m_type == AST::ObType::InlineIfOp)
+		{
+			return true;
+		}
+	}
+
+	// If we're not at line start and have operands, likely inline
+	return !state->IsOperandStackEmpty() && !state->m_NewLine_WillStart;
+}
+
+bool Parser::ShouldBeInlineFor()
+{
+	BlockState* state = GetCurBlockState();
+	if (state == nullptr)
+	{
+		return false;
+	}
+
+	// Check if we're inside brackets or braces (comprehension context)
+	std::stack<PairInfo>& pairs = state->StackPair();
+	if (!pairs.empty())
+	{
+		const PairInfo& top = pairs.top();
+		// If inside [...] or {...}, this is a comprehension
+		return (top.opId == OP_ID::Brackets_L || top.opId == OP_ID::Curlybracket_L);
+	}
+
+	return false;
 }
 
 }
