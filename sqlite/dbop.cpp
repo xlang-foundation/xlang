@@ -219,7 +219,8 @@ namespace X
 
 		bool DBStatement::reset()
 		{
-			return SQLITE_OK == sqlite3_reset(stmt);
+			statecode = sqlite3_reset(stmt);
+			return SQLITE_OK == statecode;
 		}
 		bool DBStatement::getValue(int idx, X::Value& val)
 		{//SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, or SQLITE_NULL
