@@ -667,6 +667,10 @@ public:
 		{
 			return false;
 		}
+		if (opId == OP_ID::ReturnOp)
+		{
+			action.type = ExecActionType::Return;
+		}
 		return FastUnaryOpWithFallback(opId, Op, rt, this, v_r, v);
 	}
 	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override;
