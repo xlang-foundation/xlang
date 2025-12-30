@@ -37,7 +37,13 @@ stmt = db.statement("SELECT * FROM company");
 while sqlite.ROW == stmt.step():
 	x = stmt.get(1)
 	print(x)
+stmt.reset()
+all = stmt.fetchall()
+stmt.reset()
+allD = stmt.fetchallDict()
 stmt.close()
+
+
 %DROP TABLE company;
 
 popWritepad()

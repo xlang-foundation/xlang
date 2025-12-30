@@ -74,7 +74,14 @@ namespace X
 			std::string m_sql;
 			BEGIN_PACKAGE(Cursor)
 				APISET().AddFunc<0>("fetch",&Cursor::fetch);
+				APISET().AddFunc<0>("step", &Cursor::Step);
+				APISET().AddVarFunc("fetchall", &Cursor::fetchall);
+				APISET().AddVarFunc("fetchallDict", &Cursor::fetchallDict);
 				APISET().AddProp("cols", &Cursor::GetCols);
+				APISET().AddFunc<0>("reset", &Cursor::reset);
+				APISET().AddFunc<0>("close", &Cursor::Close);
+				APISET().AddFunc<0>("colnum", &Cursor::getcolnum);
+				APISET().AddFunc<1>("colname", &Cursor::getColName);
 			END_PACKAGE
 		bool Open();
 		public:
@@ -94,13 +101,21 @@ namespace X
 			{
 				m_db = db;
 			}
+			int Step();
+			int getcolnum();
+			bool reset();
+			bool Close();
+			std::string getColName(int idx);
 			void SetBindings(X::Value& bindings)
 			{
 				m_BindingDataList = bindings;
 			}
 			X::Value fetch();
 			X::Value  GetCols();
-
+			bool fetchall(X::XRuntime* rt, X::XObj* pContext,
+				X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+			bool fetchallDict(X::XRuntime* rt, X::XObj* pContext,
+				X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
 		};
 
 		class Manager :

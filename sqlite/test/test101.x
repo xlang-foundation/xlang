@@ -35,6 +35,8 @@ pushWritepad(sqlite)
 %INSERT INTO company VALUES(2,'CantorAI',1,${cantor_addr},99.9);
 % company_list = SELECT * FROM company;
 re =company_list.fetch()
+company_list.reset()
+re2 =company_list.fetchall()
 %DROP TABLE company;
 
 popWritepad()
