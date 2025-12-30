@@ -550,10 +550,12 @@ namespace X
 	}
 	Value::Value(std::string& s)
 	{
+		flags = 0;
 		SetString(s);
 	}
 	Value::Value(std::string&& s)
 	{
+		flags = 0;
 		SetString(s);
 	}
 

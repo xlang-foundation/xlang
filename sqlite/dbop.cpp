@@ -328,6 +328,209 @@ namespace X
 		{
 			return sqlite3_column_type(stmt, idx) == SQLITE_NULL;
 		}
+		bool DBStatement::fetchall(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+		{
+			int limit = -1;
+			if (params.size() >= 1)
+			{
+				X::Value vLimit = params[0];
+				if (vLimit.IsLong())
+				{
+					limit = (int)(long long)vLimit;
+				}
+			}
+			else
+			{
+				auto it = kwParams.find("limit");
+				if (it)
+				{
+					X::Value vLimit = it->val;
+					if (vLimit.IsLong())
+					{
+						limit = (int)(long long)vLimit;
+					}
+				}
+			}
+			X::List resultList;
+			if (stmt == nullptr)
+			{
+				return false;
+			}
+
+			int colCount = getcolnum();
+			int rowCount = 0;
+
+			while (true)
+			{
+				// Check limit
+				if (limit > 0 && rowCount >= limit)
+				{
+					break;
+				}
+
+				DBState state = step();
+				if (state != DBState::Row)
+				{
+					break;
+				}
+
+				// Create a list for this row
+				X::List rowList;
+				for (int i = 0; i < colCount; i++)
+				{
+					X::Value val;
+					getValue(i, val);
+					rowList += val;
+				}
+
+				resultList->append(rowList);
+				rowCount++;
+			}
+			retValue = resultList;
+			return true;
+		}
+
+		bool DBStatement::fetchallDict(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+		{
+			int limit = -1;
+			if (params.size() >= 1)
+			{
+				X::Value vLimit = params[0];
+				if (vLimit.IsLong())
+				{
+					limit = (int)(long long)vLimit;
+				}
+			}
+			else
+			{
+				auto it = kwParams.find("limit");
+				if (it)
+				{
+					X::Value vLimit = it->val;
+					if (vLimit.IsLong())
+					{
+						limit = (int)(long long)vLimit;
+					}
+				}
+			}
+
+			X::List resultList;
+			if (stmt == nullptr)
+			{
+				return false;
+			}
+
+			int colCount = getcolnum();
+			if (colCount == 0)
+			{
+				return true;
+			}
+
+			// Build column names with duplicate handling
+			// Step 1: Get raw column names and extract base names (remove table prefix like "o.")
+			std::vector<std::string> rawNames(colCount);
+			std::vector<std::string> baseNames(colCount);
+
+			for (int i = 0; i < colCount; i++)
+			{
+				rawNames[i] = getColName(i);
+				std::string baseName = rawNames[i];
+
+				// Remove table prefix (e.g., "o.colname" -> "colname")
+				size_t dotPos = baseName.find('.');
+				if (dotPos != std::string::npos)
+				{
+					baseName = baseName.substr(dotPos + 1);
+				}
+				baseNames[i] = baseName;
+			}
+
+			// Step 2: Count occurrences of each base name to detect duplicates
+			std::unordered_map<std::string, int> nameCount;
+			for (int i = 0; i < colCount; i++)
+			{
+				nameCount[baseNames[i]]++;
+			}
+
+			// Step 3: Build final column names
+			// If base name is unique, use it directly
+			// If base name has duplicates, use prefix_colname format (replace . with _)
+			std::vector<std::string> finalNames(colCount);
+			std::unordered_map<std::string, int> usedNames; // Track used names for additional disambiguation
+
+			for (int i = 0; i < colCount; i++)
+			{
+				std::string finalName;
+
+				if (nameCount[baseNames[i]] > 1)
+				{
+					// Duplicate base name - use full name with . replaced by _
+					finalName = rawNames[i];
+					// Replace all dots with underscores
+					for (size_t j = 0; j < finalName.length(); j++)
+					{
+						if (finalName[j] == '.')
+						{
+							finalName[j] = '_';
+						}
+					}
+				}
+				else
+				{
+					// Unique base name
+					finalName = baseNames[i];
+				}
+
+				// Handle edge case: if the transformed name still conflicts
+				if (usedNames.find(finalName) != usedNames.end())
+				{
+					// Append index to make it unique
+					usedNames[finalName]++;
+					finalName = finalName + "_" + std::to_string(usedNames[finalName]);
+				}
+				else
+				{
+					usedNames[finalName] = 0;
+				}
+
+				finalNames[i] = finalName;
+			}
+
+			// Step 4: Fetch rows and build dictionaries
+			int rowCount = 0;
+
+			while (true)
+			{
+				// Check limit
+				if (limit > 0 && rowCount >= limit)
+				{
+					break;
+				}
+
+				DBState state = step();
+				if (state != DBState::Row)
+				{
+					break;
+				}
+
+				// Create a dict for this row
+				X::Dict rowDict;
+				for (int i = 0; i < colCount; i++)
+				{
+					X::Value val;
+					getValue(i, val);
+					rowDict->Set(finalNames[i], val);
+				}
+
+				resultList->append(rowDict);
+				rowCount++;
+			}
+
+			retValue = resultList;
+			return true;
+		}
 
 	}
 }

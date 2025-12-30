@@ -39,6 +39,8 @@ namespace X
 				APISET().AddFunc<2>("bind", &DBStatement::bind);
 				APISET().AddFunc<0>("step", &DBStatement::Step);
 				APISET().AddFunc<1>("get", &DBStatement::GetValue);
+				APISET().AddVarFunc("fetchall", &DBStatement::fetchall);
+				APISET().AddVarFunc("fetchallDict", &DBStatement::fetchallDict);
 				APISET().AddFunc<0>("reset", &DBStatement::reset);
 				APISET().AddFunc<0>("close", &DBStatement::Close);
 				APISET().AddFunc<0>("colnum", &DBStatement::getcolnum);
@@ -80,6 +82,10 @@ namespace X
 			{
 				return statecode;
 			}
+			bool fetchall(X::XRuntime* rt, X::XObj* pContext,
+				X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+			bool fetchallDict(X::XRuntime* rt, X::XObj* pContext,
+				X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
 		private:
 			sqlite3_stmt* stmt = NULL;
 			int statecode = 0;

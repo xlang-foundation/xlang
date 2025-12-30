@@ -49,7 +49,7 @@ namespace X
             LValue varLValue = nullptr;
             loopVar->Exec(rt, action, pContext, varValue, &varLValue);
 
-            auto loopStart = std::chrono::high_resolution_clock::now();
+            //auto loopStart = std::chrono::high_resolution_clock::now();
 
             // Native for loop - no virtual calls, no vector, no lock!
             for (long long i = start; i < stop; i += step)
@@ -91,9 +91,9 @@ namespace X
                 }
             }
 
-            auto loopEnd = std::chrono::high_resolution_clock::now();
-            double loopTime = std::chrono::duration<double, std::milli>(loopEnd - loopStart).count();
-            std::cout << "Range fast path time: " << loopTime << " ms" << std::endl;
+            //auto loopEnd = std::chrono::high_resolution_clock::now();
+            //double loopTime = std::chrono::duration<double, std::milli>(loopEnd - loopStart).count();
+            //std::cout << "Range fast path time: " << loopTime << " ms" << std::endl;
 
             v = X::Value(pOutList);
             return true;
@@ -111,7 +111,7 @@ namespace X
             X::Data::Iterator_Pos curPos = nullptr;
             std::vector<Value> vals;
 
-            auto loopStart = std::chrono::high_resolution_clock::now();
+            //auto loopStart = std::chrono::high_resolution_clock::now();
 
             while (pDataObj->GetAndUpdatePos(curPos, vals, false))
             {
@@ -141,9 +141,9 @@ namespace X
                 }
             }
 
-            auto loopEnd = std::chrono::high_resolution_clock::now();
-            double loopTime = std::chrono::duration<double, std::milli>(loopEnd - loopStart).count();
-            std::cout << "Generic path time: " << loopTime << " ms" << std::endl;
+            //auto loopEnd = std::chrono::high_resolution_clock::now();
+            //double loopTime = std::chrono::duration<double, std::milli>(loopEnd - loopStart).count();
+            //std::cout << "Generic path time: " << loopTime << " ms" << std::endl;
 
             v = X::Value(pOutList);
             return true;
