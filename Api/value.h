@@ -173,19 +173,19 @@ class Value
 	}x;
 	Value QueryMember(const char* key);
 public:
-	FORCE_INLINE bool IsLong() { return t == ValueType::Int64; }
-	FORCE_INLINE bool IsDouble() { return t == ValueType::Double; }
-	FORCE_INLINE bool IsNumber() { return IsLong() || IsDouble();}
-	FORCE_INLINE bool IsBool() { return IsLong() && (flags & (int)ValueSubType::BOOL); }
-	FORCE_INLINE bool IsInvalid()
+	FORCE_INLINE bool IsLong() const { return t == ValueType::Int64; }
+	FORCE_INLINE bool IsDouble()  const  { return t == ValueType::Double; }
+	FORCE_INLINE bool IsNumber() const  { return IsLong() || IsDouble();}
+	FORCE_INLINE bool IsBool() const  { return IsLong() && (flags & (int)ValueSubType::BOOL); }
+	FORCE_INLINE bool IsInvalid() const
 	{
 		return (t == ValueType::Invalid);
 	}
-	FORCE_INLINE bool IsNone()
+	FORCE_INLINE bool IsNone() const
 	{
 		return (t == ValueType::None);
 	}
-	FORCE_INLINE bool IsValid()
+	FORCE_INLINE bool IsValid() const
 	{
 		return (t != ValueType::Invalid);
 	}
