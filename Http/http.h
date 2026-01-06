@@ -37,6 +37,9 @@ namespace X
 	{
 		std::vector<UrlPattern> m_patters;
 
+		X::Value m_auth_callback;
+		X::Value m_auth_parameters;
+
 		void* m_pSrv = nullptr;
 		bool m_bAsHttps = false;
 		std::string m_cert_path;
@@ -92,7 +95,9 @@ namespace X
 			APISET().AddFunc<2>("get", &HttpServer::Get);
 			APISET().AddVarFuncEx("route", &HttpServer::Route);
 			APISET().AddFunc<2>("add_route", &HttpServer::AddRoute);
+			APISET().AddFunc<0>("get_routes", &HttpServer::GetRoutes);
 			APISET().AddFunc<1>("getMimeType", &HttpServer::GetMimeType);
+			APISET().AddFunc<2>("set_authentication_callback", &HttpServer::SetAuthenticationCallback);
 			END_PACKAGE
 	public:
 
@@ -131,6 +136,8 @@ namespace X
 		bool Route(X::XRuntime* rt, X::XObj* pThis,X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams,
 			X::Value& trailer, X::Value& retValue);
+		X::Value GetRoutes();
+		bool SetAuthenticationCallback(X::Value callback, X::Value parameters);
 	};
 	class HttpRequest
 	{

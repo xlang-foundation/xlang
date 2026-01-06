@@ -339,6 +339,13 @@ namespace X
 	public:
 		Internal_Reserve(XConstExpr)
 	};
+	class XExpr :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XExpr)
+		virtual X::Value ToKV() = 0;
+	};
 	class XStr :
 		virtual public XObj
 	{
