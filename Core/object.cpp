@@ -44,5 +44,74 @@ namespace X
 				m_aBag = nullptr;
 			}
 		}
+		X::Value Expr::ToKV()
+		{
+			if (m_expr == nullptr)
+			{
+				return X::Value();
+			}
+			X::Value retVal;
+			auto expType = m_expr->m_type;
+			switch (expType)
+			{
+			case X::AST::ObType::Assign:
+			{
+				std::string name;
+				X::Value val;
+				AST::Assign* pAssign = static_cast<AST::Assign*>(m_expr);
+				if (pAssign->GetL())
+				{
+					auto* l = pAssign->GetL();
+					if (l->m_type == X::AST::ObType::Var)
+					{
+						auto* pVar  = static_cast<AST::Var*>(l);
+						name = pVar->GetNameString();
+					}
+				}
+				if (pAssign->GetR())
+				{
+					AST::ExecAction action;		
+					ExpExec(pAssign->GetR(), (XlangRuntime*)m_rt, action, this, val);
+				}
+				if (!name.empty())
+				{
+					X::Dict dict;
+					dict->Set(name, val);
+					retVal = dict;
+				}
+			}
+				break;
+			case X::AST::ObType::Param:
+			{
+				std::string name;
+				X::Value val;
+				AST::Param* pParam = static_cast<AST::Param*>(m_expr);
+				if (pParam->GetName())
+				{
+					auto* l = pParam->GetName();
+					if (l->m_type == X::AST::ObType::Var)
+					{
+						auto* pVar = static_cast<AST::Var*>(l);
+						name = pVar->GetNameString();
+					}
+				}
+				if (pParam->GetType())
+				{
+					AST::ExecAction action;
+					ExpExec(pParam->GetType(), (XlangRuntime*)&m_rt, action, this, val);
+				}
+				if (!name.empty())
+				{
+					X::Dict dict;
+					dict->Set(name, val);
+					retVal = dict;
+				}
+			}
+				break;
+			default:
+				break;
+			}
+			return retVal;
+		}
 	}
 }

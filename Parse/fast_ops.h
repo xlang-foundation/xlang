@@ -162,7 +162,7 @@ namespace X {
                 return true;
 
             case OP_ID::NotOp:
-                v = X::Value(R.IsZero());
+                v = X::Value(!R.IsTrue());
                 return true;
 
             case OP_ID::BitNot:

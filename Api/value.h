@@ -594,7 +594,26 @@ public:
 	bool IsString() const;
 	FORCE_INLINE bool IsTrue()
 	{
-		return !IsZero();
+		bool bRet = false;
+		switch (t)
+		{
+		case ValueType::Invalid:
+		case ValueType::None:
+			bRet = false;
+			break;
+		case ValueType::Int64:
+			bRet = (x.l != 0);
+			break;
+		case ValueType::Double:
+			bRet = (x.d != 0);
+			break;
+		case ValueType::Object:
+			bRet = (x.obj != nullptr);
+			break;
+		default:
+			break;
+		}
+		return bRet;
 	}
 	FORCE_INLINE bool IsZero()
 	{
