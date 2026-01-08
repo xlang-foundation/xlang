@@ -298,7 +298,7 @@ namespace X
 				std::vector<Value>& vals, bool getOnly) override
 			{
 				long long offset = (long long)pos;
-				if (offset >= mMap.size())
+				if (offset >= (long long)mMap.size())
 				{
 					return false;
 				}

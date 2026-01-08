@@ -140,7 +140,11 @@ class XlangRuntime:
 	XWait m_commandWait;
 	Locker m_lockCommands;
 	std::vector<CommandInfo*> m_commands;
+	X::Value m_exception;
 public:
+	FORCE_INLINE void SetException(X::Value& e) { m_exception = e; }
+	FORCE_INLINE X::Value& GetException() { return m_exception; }
+	FORCE_INLINE void ClearException() { m_exception = X::Value(); }
 	XlangRuntime()
 	{
 		m_threadId = GetThreadID();

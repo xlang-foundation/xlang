@@ -68,7 +68,7 @@ def run_tests():
                     if expected_lines:
                         log.write(f"Expected Lines: {len(expected_lines)}\n")
 
-                if "Compile Error" in output or "Error:" in output:
+                if "Compile Error" in output or "Error:" in output or "(cp-error)" in output:
                      status = "FAIL (Compile/Runtime Error)"
                 else:
                     if found_header:

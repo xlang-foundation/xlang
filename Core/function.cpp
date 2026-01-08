@@ -99,9 +99,9 @@ namespace X
 		{
 			return _function_op?_function_op->QueryMethod(name):-1;
 		}
-		bool Function::GetIndexValue(int idx, Value& v)
+		bool Function::GetIndexValue(long long idx, Value& v)
 		{
-			return _function_op?_function_op->Get(nullptr, nullptr, idx, v):false;
+			return _function_op?_function_op->Get(nullptr, nullptr, (int)idx, v):false;
 		}
 		Function::Function(AST::Func* p, bool bOwnIt):Object()
 		{

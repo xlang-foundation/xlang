@@ -662,6 +662,17 @@ public:
 			action.type = ExecActionType::Return;
 			return true;
 		}
+		if (opId == OP_ID::Raise)
+		{
+			Value v_r;
+			if (R)
+			{
+				if (!ExpExec(R, rt, action, pContext, v_r)) return false;
+			}
+			action.type = ExecActionType::Throw;
+			action.exceptionValue = v_r;
+			return true;
+		}
 		Value v_r;
 		if (!ExpExec(R, rt, action, pContext, v_r))
 		{

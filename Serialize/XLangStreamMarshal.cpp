@@ -273,7 +273,7 @@ namespace X
 						for (long long i = 0; i < count; i++)
 						{
 							X::Value item;
-							pStruct->GetIndexValue((int)i, item);
+							pStruct->GetIndexValue(i, item);
 							MarshalToBytes(item); // Recursive call
 						}
 					}

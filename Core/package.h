@@ -252,9 +252,9 @@ public:
 		m_variableFrame->Set(idx, v);
 		return true;
 	}
-	virtual bool GetIndexValue(int idx, Value& v)
+	virtual bool GetIndexValue(long long idx, Value& v)
 	{
-		m_variableFrame->Get(idx,v);
+		m_variableFrame->Get((int)idx,v);
 		return true;
 	}
 	bool Get(XlangRuntime* rt, XObj* pContext, int idx, Value& v,
@@ -469,9 +469,9 @@ public:
 		m_variableFrame->Set(idx, v);
 		return true;
 	}
-	virtual bool GetIndexValue(int idx, Value& v)
+	virtual bool GetIndexValue(long long idx, Value& v)
 	{
-		m_variableFrame->Get(idx, v);
+		m_variableFrame->Get((int)idx, v);
 		return true;
 	}
 	virtual bool Set(Value valIdx, X::Value& val);

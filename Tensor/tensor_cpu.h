@@ -145,6 +145,7 @@ namespace X
 				pNewTensor->SetDataWithIndices(indices, val);
 			};
 			pNewTensor->IterateAll(it_proc);
+			return X::Value();
 		}//permute
 
 		bool IsNum(X::Value input) 

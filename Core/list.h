@@ -80,7 +80,7 @@ public:
 		}
 		return outs;
 	}
-	FORCE_INLINE virtual bool GetIndexValue(int idx, Value& v) override
+	FORCE_INLINE virtual bool GetIndexValue(long long idx, Value& v) override
 	{
 		return Get(idx, v);
 	}

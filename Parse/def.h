@@ -86,7 +86,11 @@ enum class OP_ID
 	//=== NEW: Unary Operators ===
 	UnaryPlus,     // +x
 	UnaryMinus,    // -x
+
 	LogicalNot,    // !
+
+	//=== Exception Handling ===
+	Try, Except, Finally, Raise,
 
 	Count
 };

@@ -2206,7 +2206,7 @@ bool Builtin::SetIndexValue(int idx, Value& v)
 {
 	return false;
 }
-bool Builtin::GetIndexValue(int idx, Value& v)
+bool Builtin::GetIndexValue(long long idx, Value& v)
 {
 	AutoLock autoLock(m_lock);
 	v = X::Value(m_Funcs[idx].funcObj);

@@ -176,7 +176,7 @@ namespace X
 		FORCE_INLINE virtual bool SupportAssign() { return false; }
 		FORCE_INLINE virtual bool Assign(const X::Value& val) { return false; }
 		virtual int QueryMethod(const char* name, int* pFlags = nullptr) { return -1; };
-		virtual bool GetIndexValue(int idx, Value& v) { return false; };
+		virtual bool GetIndexValue(long long idx, Value& v) { return false; };
 		virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry, X::Value& val) { return false; }
 		virtual bool Set(Value valIdx, X::Value& val) { return false; }
 		virtual int IncRef() { return 0; }

@@ -242,6 +242,10 @@ namespace X
 				}
 				return true;  // Return true on successful assignment
 			}
+			virtual bool GetIndexValue(long long idx, Value& v) override
+			{
+				return GetFieldValue((int)idx, v);
+			}
 
 			void SetFieldValue(int fieldIndex, Value& v) {
 				auto& field = m_fields[fieldIndex];  // Use the correct field vector

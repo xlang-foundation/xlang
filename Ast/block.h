@@ -265,6 +265,12 @@ namespace X
 					rt->GetCurrentStack()->SetCurExp(i);
 					ExecAction action0;
 					bOk = ExpExec(i, rt, action0, pContext, v0, lValue);
+					if (rt->GetException().IsValid())
+					{
+						action0.type = ExecActionType::Throw;
+						action0.exceptionValue = rt->GetException();
+						rt->ClearException();
+					}
 					//if break or cotinue action passed back
 					//break this loop,and pass back to caller
 					if (action0.type == ExecActionType::Break ||
@@ -283,7 +289,7 @@ namespace X
 					{
 						v = v0;
 					}
-					if (action0.type == ExecActionType::Return)
+					if (action0.type == ExecActionType::Return || action0.type == ExecActionType::Throw)
 					{
 						action = action0;
 						break;
@@ -403,6 +409,100 @@ namespace X
 				return true;
 			}
 			virtual bool EatMe(Expression* other) override;
+			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+		};
+
+		class Except : public Block
+		{
+			Expression* m_var = nullptr; // For 'except Exception as e' -> e
+		public:
+			Except() : Block() { m_type = ObType::Except; }
+			Except(short op) : Block(op) { m_type = ObType::Except; }
+			~Except() { if (m_var) delete m_var; }
+			void SetVar(Expression* v) {
+				m_var = v;
+				if (m_var) m_var->SetParent(this);
+			}
+			Expression* GetVar() { return m_var; }
+			virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+			{
+				Block::ToBytes(rt, pContext, stream);
+				SaveToStream(rt, pContext, m_var, stream);
+				return true;
+			}
+			virtual bool FromBytes(X::XLangStream& stream) override
+			{
+				Block::FromBytes(stream);
+				m_var = BuildFromStream<Expression>(stream);
+				return true;
+			}
+			virtual void SetR(Expression* r) override 
+			{
+				m_var = r;
+				if (m_var) 
+				{
+					m_var->SetParent(this);
+					m_var->SetIsLeftValue(true);
+				}
+			}
+			Expression* GetR() { return m_var; }
+			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+			virtual void ScopeLayout() override;
+		};
+
+		class Finally : public Block
+		{
+		public:
+			Finally() : Block() { m_type = ObType::Finally; }
+			Finally(short op) : Block(op) { m_type = ObType::Finally; }
+			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+		};
+
+		class Try : public Block
+		{
+			std::vector<Except*> m_excepts;
+			Finally* m_finally = nullptr;
+		public:
+			Try() : Block() { m_type = ObType::Try; }
+			Try(short op) : Block(op) { m_type = ObType::Try; }
+			~Try() {
+				// Don't delete expressions here if they are not owned, but AST typically owns children.
+				// However, if they are not in Body vector, we need to delete them?
+				// Block::Body owns statements. m_excepts and m_finally are children but not in Body.
+				// So yes, we delete them.
+				for (auto* e : m_excepts) delete e;
+				if (m_finally) delete m_finally;
+			}
+			void AddExcept(Except* e) {
+				m_excepts.push_back(e);
+				e->SetParent(this);
+			}
+			void SetFinally(Finally* f) {
+				m_finally = f;
+				f->SetParent(this);
+			}
+			virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
+			{
+				Block::ToBytes(rt, pContext, stream);
+				stream << (int)m_excepts.size();
+				for (auto* e : m_excepts) SaveToStream(rt, pContext, e, stream);
+				SaveToStream(rt, pContext, m_finally, stream);
+				return true;
+			}
+			virtual bool FromBytes(X::XLangStream& stream) override
+			{
+				Block::FromBytes(stream);
+				int size = 0;
+				stream >> size;
+				for (int i = 0; i < size; i++) {
+					auto* e = BuildFromStream<Except>(stream);
+					if (e) m_excepts.push_back(e);
+				}
+				m_finally = BuildFromStream<Finally>(stream);
+				return true;
+			}
+			virtual bool EatMe(Expression* other) override;
+			virtual void ScopeLayout() override;
 			virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
 		};
 	}
