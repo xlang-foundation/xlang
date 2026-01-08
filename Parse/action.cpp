@@ -264,6 +264,7 @@ void Register(OpRegistry* reg)
 		}
 		else {
 			auto op = new AST::For(opIndex);
+			p->SetLastComingBlock(op);
 			return (AST::Operator*)op;
 		}
 		});
@@ -275,6 +276,7 @@ void Register(OpRegistry* reg)
 	RegOP("while")
 		.SetProcess([](Parser* p,short opIndex){
 			auto op = new AST::While(opIndex);
+			p->SetLastComingBlock(op);
 			return (AST::Operator*)op;
 		});
 	RegOP("if")
@@ -286,6 +288,7 @@ void Register(OpRegistry* reg)
 		else {
 			auto op = new AST::If(opIndex);
 			op->SetFlag(true);
+			p->SetLastComingBlock(op);
 			return (AST::Operator*)op;
 		}
 		
@@ -294,6 +297,7 @@ void Register(OpRegistry* reg)
 		.SetProcess([](Parser* p, short opIndex){
 			auto op = new AST::If(opIndex);
 			op->SetFlag(false);
+			p->SetLastComingBlock(op);
 		return (AST::Operator*)op;
 		});
 	RegOP("else")
@@ -305,6 +309,7 @@ void Register(OpRegistry* reg)
 		else {
 			auto op = new AST::If(opIndex, false);
 			op->SetFlag(false);
+			p->SetLastComingBlock(op);
 			return (AST::Operator*)op;
 		}
 			});
@@ -324,6 +329,7 @@ void Register(OpRegistry* reg)
 		else
 		{
 			auto func = new AST::Func();
+			p->SetLastComingBlock(func);
 			return (AST::Operator*)func;
 		}
 		});
@@ -343,6 +349,7 @@ void Register(OpRegistry* reg)
 		else
 		{
 			auto cls = new AST::XClass();
+			p->SetLastComingBlock(cls);
 			return (AST::Operator*)cls;
 		}
 		});
@@ -500,6 +507,26 @@ void Register(OpRegistry* reg)
 	RegOP(":").SetProcess([](Parser* p, short opIndex)
 		{
 			auto op = new AST::ColonOP(opIndex);
+			AST::Block* listComingBlock = p->GetLastComingBlock();
+			if (listComingBlock)
+			{
+				X::OneToken one;
+				short nextToken = p->PeekToken(one);
+				if (nextToken != X::TokenEOS && nextToken != X::TokenFeedOp 
+					&& nextToken != X::TokenLineComment)
+				{
+					std::string strNextToken(one.id.s, one.id.size);
+					if (strNextToken != "\n" && strNextToken != "\r\n" && strNextToken != "\r")
+					{
+						if (!p->PreTokenIsOp() && p->GetCurBlockState()->StackPair().empty())
+						{
+							p->EnterBlock(listComingBlock, true);
+							p->ResetLastComingBlock();
+							return (AST::Operator*)nullptr;
+						}
+					}
+				}
+			}
 			return (AST::Operator*)op;
 		});
 	RegOP(",").SetProcess([](Parser* p, short opIndex)

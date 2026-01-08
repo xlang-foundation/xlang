@@ -1,0 +1,19 @@
+XLang Test Report
+=================
+
+class\1_class.x: PASS
+func\1_functions.x: PASS
+general\1_vars.x: PASS
+general\2_def_typehint.x: PASS
+general\3_indent.x: PASS
+general\fstring.x: PASS
+general\fstring_advanced.x: PASS
+if\1_inline_basic.x: PASS
+if\2_block_basic.x: PASS
+if\3_elif_chain.x: PASS
+if\4_nested.x: PASS
+if\5_complex_flow.x: PASS
+list\1_list.x: PASS
+loops\1_loops.x: PASS
+loops\2_inline_loops.x: PASS
+ops\1_arithmetic_logic.x: PASS

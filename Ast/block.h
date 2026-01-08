@@ -58,6 +58,16 @@ namespace X
 					((tab_cnt <= other.tab_cnt && space_cnt < other.space_cnt)
 						|| (tab_cnt < other.tab_cnt && space_cnt <= other.space_cnt));
 			}
+			bool operator<=(const Indent& other)
+			{
+				bool bLess = (charPos <= other.charPos) &&
+					((tab_cnt <= other.tab_cnt && space_cnt < other.space_cnt)
+						|| (tab_cnt < other.tab_cnt && space_cnt <= other.space_cnt));
+				if (bLess) return true;
+				return (charPos == other.charPos)
+					&& (tab_cnt == other.tab_cnt)
+					&& (space_cnt == other.space_cnt);
+			}
 		};
 
 		class ActionOperator :
@@ -182,6 +192,12 @@ namespace X
 			{
 				NoIndentCheck = b;
 			}
+			//Flag to indicate if this block acts as Inline Block
+			//so it will be closed after NewLine
+			bool m_bStopAtNewLine = false;
+			FORCE_INLINE bool IsStopAtNewLine() { return m_bStopAtNewLine; }
+			FORCE_INLINE void SetStopAtNewLine(bool b) { m_bStopAtNewLine = b; }
+
 			virtual void Add(Expression* item);
 			FORCE_INLINE Indent GetIndentCount() { return IndentCount; }
 			FORCE_INLINE Indent GetChildIndentCount() { return ChildIndentCount; }

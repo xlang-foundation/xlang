@@ -113,6 +113,11 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		Value v0;
 		ExecAction action0;
 		bOk = ExpExec(i, rt, action0, pContext, v0, lValue);
+		if (!bOk)
+		{
+			LOG << "DEBUG: ExpExec returned false for type: " << (int)i->m_type 
+				<< " Code: " << i->GetCode() << LINE_END;
+		}
 		//if break or cotinue action passed back
 		//break this loop,and pass back to caller
 		if (action0.type == ExecActionType::Break ||
