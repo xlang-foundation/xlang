@@ -231,8 +231,8 @@ namespace X
 		{
 			SetFire();
 			m_lockHandlers.Lock();
-			int iCnt = m_handlers.size();
-			for (int i = 0; i < iCnt && i < m_handlers.size(); ++i)
+			int iCnt = (int)m_handlers.size();
+			for (int i = 0; i < iCnt && i < (int)m_handlers.size(); ++i)
 			{
 				auto& it = m_handlers[i];
 				//if (ownerThreadId ==-1 || it.OwnerThreadId == ownerThreadId)

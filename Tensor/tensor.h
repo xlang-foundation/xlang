@@ -331,7 +331,7 @@ namespace X
 					return true;
 				}
 				Port::vector<int> port_shapes(0);
-				int shape_size = shapes.size();
+				int shape_size = (int)shapes.size();
 				port_shapes.resize(shape_size);
 				for (int i = 0; i < shape_size; i++)
 					port_shapes.push_back(shapes[i]);
@@ -524,7 +524,7 @@ namespace X
 			//indices array needs to have all left side indices + (rightDimCount)
 			FORCE_INLINE void IterateRight(TensorIterateProc proc, std::vector<long long>& indices,int rightDimCount)
 			{
-				int dimSize = m_dims.size();
+				int dimSize = (int)m_dims.size();
 				int startDim = dimSize - rightDimCount;
 				std::vector<int> dimList;
 				for (int i = startDim; i < dimSize; i++)
@@ -547,7 +547,7 @@ namespace X
 			FORCE_INLINE void IterateAll(TensorIterateProc proc)
 			{
 				std::vector<long long> indices;
-				int dimSize = m_dims.size();
+				int dimSize = (int)m_dims.size();
 				if (dimSize == 0)
 					return;
 				indices.resize(dimSize);
@@ -618,7 +618,7 @@ namespace X
 			{
 				return m_dataType;
 			}
-			virtual bool GetIndexValue(int idx, Value& v) override
+			virtual bool GetIndexValue(long long idx, Value& v) override
 			{
 				if (idx < 0 || idx >= m_dataSize)
 					return false;

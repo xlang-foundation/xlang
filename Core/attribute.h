@@ -38,7 +38,7 @@ namespace X
 			}
 			void CovertToDict(KWARGS& kwargs)
 			{
-				kwargs.resize(m_attrs.size());
+				kwargs.resize((int)m_attrs.size());
 				for (auto& it : m_attrs)
 				{
 					kwargs.Add(it.first.c_str(), it.second, true);

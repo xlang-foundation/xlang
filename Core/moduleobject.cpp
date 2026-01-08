@@ -172,7 +172,7 @@ namespace X
 				return retIdx;
 			}
 		}
-		bool ModuleObject::GetIndexValue(int idx, Value& v)
+		bool ModuleObject::GetIndexValue(long long idx, Value& v)
 		{
 			if (idx <= -2)
 			{

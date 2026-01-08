@@ -217,7 +217,7 @@ namespace Data
 		}
 		FORCE_INLINE virtual bool Get(long long idx, X::Value& val) override
 		{
-			if (idx >=0 && m_s.size() >= idx)
+			if (idx >=0 && (long long)m_s.size() >= idx)
 			{
 				val = X::Value((long long)m_s[idx]);
 				return true;
@@ -227,9 +227,13 @@ namespace Data
 				return false;
 			}
 		}
+		FORCE_INLINE virtual bool GetIndexValue(long long idx, Value& v) override
+		{
+			return Get(idx, v);
+		}
 		FORCE_INLINE virtual bool Set(long long idx, X::Value& val) override
 		{
-			if (idx >= 0 && m_s.size() >= idx)
+			if (idx >= 0 && (long long)m_s.size() >= idx)
 			{
 				m_s[idx] = (char)val.GetLongLong();
 				return true;

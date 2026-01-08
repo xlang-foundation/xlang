@@ -258,7 +258,7 @@ namespace X
 		}
 		bool PyProxyObject::GetItem(long long index, X::Value& val)
 		{
-			PyEng::Object subObj = m_obj[index];
+			PyEng::Object subObj = m_obj[(int)index];
 			PyProxyObject* pProxyObj = new PyProxyObject(subObj);
 			//todo: when to call release
 			pProxyObj->Object::IncRef();

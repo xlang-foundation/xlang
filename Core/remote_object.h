@@ -70,7 +70,7 @@ namespace X
 				m_NameToIndex.emplace(std::make_pair(name, idx));
 				if (m_stackFrame)
 				{
-					m_stackFrame->SetVarCount(m_NameToIndex.size());
+					m_stackFrame->SetVarCount((int)m_NameToIndex.size());
 				}
 				return idx;
 			}
