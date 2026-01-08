@@ -38,12 +38,11 @@ def run_tests():
                 output = result.stdout + "\n" + result.stderr
                 output_lines = [line.strip() for line in output.splitlines() if line.strip()]
                 
-                # Checkpoint Verification Logic
+                # Verification Logic
                 status = "PASS"
-                missing_cps = []
-                declared_cps = []
                 
-                # Search for Checkpoint Declaration
+                # 1. Search for Checkpoint Declaration Header (Legacy)
+                declared_cps = []
                 found_header = False
                 for line in output_lines:
                     if line.startswith("CHECKPOINTS:"):
@@ -53,41 +52,57 @@ def run_tests():
                         found_header = True
                         break
                 
+                # 2. Search for EXPECT lines in source file (New)
+                expected_lines = []
+                with open(test_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if "# EXPECT:" in line:
+                            exp = line.split("# EXPECT:", 1)[1].strip()
+                            expected_lines.append(exp)
+
                 with open(log_path, "w") as log:
                     log.write(output)
                     log.write("\n\n--- VERIFICATION ---\n")
                     if found_header:
                         log.write(f"Declared Checkpoints: {declared_cps}\n")
-                    else:
-                        log.write("No CHECKPOINTS header found.\n")
+                    if expected_lines:
+                        log.write(f"Expected Lines: {len(expected_lines)}\n")
 
                 if "Compile Error" in output or "Error:" in output:
                      status = "FAIL (Compile/Runtime Error)"
-                elif not found_header:
-                     # Fallback to simple explicit PASS marker if no checkpoints declared
-                     # But strictly, user wants checkpoint verification.
-                     # We will mark separate status if no checkpoints found.
-                     status = "WARN (No CHECKPOINTS header)"
                 else:
-                    # Verified each declared checkpoint exists in output as "(cpN)"
-                    for cp in declared_cps:
-                        cp_marker = f"({cp})"
-                        found_cp = False
-                        for line in output_lines:
-                            if cp_marker in line:
-                                found_cp = True
-                                break
-                        if not found_cp:
-                            missing_cps.append(cp)
+                    if found_header:
+                        # Logic for Checkpoints
+                        missing_cps = []
+                        for cp in declared_cps:
+                            cp_marker = f"({cp})"
+                            found_cp = False
+                            for line in output_lines:
+                                if cp_marker in line:
+                                    found_cp = True
+                                    break
+                            if not found_cp:
+                                missing_cps.append(cp)
+                        
+                        if missing_cps:
+                            status = f"FAIL (Missing Checkpoints: {missing_cps})"
                     
-                    if missing_cps:
-                        status = f"FAIL (Missing Checkpoints: {missing_cps})"
+                    elif expected_lines:
+                         # Logic for EXPECT
+                         missing_expects = []
+                         for exp in expected_lines:
+                             if exp not in output_lines:
+                                 missing_expects.append(exp)
+                         
+                         if missing_expects:
+                             status = f"FAIL (Missing Expected Output: {missing_expects})"
+                    
+                    else:
+                         status = "WARN (No Verification Found)"
 
                 print(f" {status}")
                 results.append((rel_path, status))
                 report.write(f"{rel_path}: {status}\n")
-                if missing_cps:
-                     report.write(f"  Missing: {missing_cps}\n")
                 
             except subprocess.TimeoutExpired as e:
                  print(" TIMEOUT")

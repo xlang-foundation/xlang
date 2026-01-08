@@ -630,6 +630,7 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 		case TokenComment:
 		case TokenStr:
 		case TokenStrWithFormat:
+		case TokenStrFmt:
 		case TokenCharSequence:
 			{
 				m_curBlkState->m_NewLine_WillStart = false;
@@ -640,7 +641,16 @@ bool Parser::Compile(AST::Module* pModule,char* code, int size)
 				}
 				else
 				{
-					v = new AST::Str(s.s, s.size, idx == TokenStrWithFormat);
+					char* code = s.s;
+					int size = s.size;
+					if (idx == TokenStrFmt)
+					{
+						//TokenStrFmt s.s already points to content (stripped f and quotes)
+						//So no need to adjust code or size
+					}
+					v = new AST::Str(code, size,
+						idx == TokenStrWithFormat || idx == TokenStrFmt,
+						idx == TokenStrFmt);
 				}
 				v->SetTokenIndex(m_tokenIndex++);
 				v->SetCharFlag(idx == TokenCharSequence);

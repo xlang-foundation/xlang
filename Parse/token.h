@@ -79,6 +79,7 @@ namespace X {
 		TokenStr = -12,
 		TokenStrWithFormat = -121,
 		TokenCharSequence = -122,
+		TokenStrFmt = -123,
 		TokenEOS = -13,
 		TokenLineComment = -20,
 		TokenComment = -21,
@@ -134,6 +135,7 @@ namespace X {
 		bool InLineComment = false;
 		bool InFeedOp = false;//for %
 		bool InMatching = false;
+		bool InFString = false;
 
 		int begin_quoteCnt = 0;
 		int end_quoteCnt = 0;
@@ -327,6 +329,11 @@ namespace X {
 				{
 					one.id.s += 1;//skip " or '
 					one.id.size -= 2; //last " or '
+				}
+				else if (retIdx == TokenStrFmt)
+				{
+					one.id.s += 2;//skip f" or f' (case insensitive)
+					one.id.size -= 3; //last " or '
 				}
 				m_tokens.erase(m_tokens.begin());
 				return retIdx;

@@ -311,8 +311,8 @@ public:
 			}
 		}
 	}
-	FORCE_INLINE bool RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
-		const char* s_in,int size,std::string& outStr,bool UseBindMode,
+	bool RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
+		const char* s_in,int size,std::string& outStr,bool isFString, bool UseBindMode,
 		std::vector<X::Value>& bind_data_list);
 	ObType m_type = ObType::Base;
 };
@@ -339,6 +339,7 @@ class Str :
 	public Expression
 {
 	bool m_haveFormat = false;
+	bool m_isFString = false;
 	char* m_s = nil;
 	bool m_needRelease = false;//m_s is created by this Str,then = true
 	int m_size = 0;
@@ -348,10 +349,11 @@ public:
 	{
 		m_type = ObType::Str;
 	}
-	Str(char* s, int size,bool haveFormat)
+	Str(char* s, int size,bool haveFormat, bool isFString = false)
 	{
 		m_type = ObType::Str;
 		m_haveFormat = haveFormat;
+		m_isFString = isFString;
 		m_s = s;
 		m_needRelease = false;
 		m_size = size;
@@ -397,26 +399,8 @@ public:
 	}
 	bool RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v);
 
-	FORCE_INLINE bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override final
-	{
-		if (m_haveFormat)
-		{
-			return RunWithFormat(rt, pContext, v);
-		}
-		else if (m_isCharSequence && m_size == 1)
-		{//for case: 'A', 'a'...., return a long long as its value
-		 //todo: check if it can be accept as +='s right value for example:
-		// str_x +='A'
-			long long lv = m_s[0];
-			v = Value(lv);
-			return true;
-		}
-		else
-		{
-			v = Value(m_s, m_size);
-			return true;
-		}
-	}
+	//Moved to cpp
+	bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override final;
 };
 
 //deal with built-in constants such as None

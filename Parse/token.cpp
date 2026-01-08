@@ -14,6 +14,7 @@ limitations under the License.
 */
 
 #include "token.h"
+#include "token.h"
 #include <iostream>
 #include <string>
 
@@ -294,6 +295,49 @@ namespace X {
 				else if (!InLineComment && !InFeedOp)
 				{
 					ifnotstart_token_start();
+					bool bCheckFString = !InMatching;
+					if (InMatching)
+					{
+						// If matching, check if it's the start of token OR previous is OP
+						long long termLen = (long long)(_context.spos - _context.token_start);
+						if (termLen <= 1 || InStr(*_context.token_start, OPS))
+						{
+							bCheckFString = true;
+						}
+					}
+					if (bCheckFString && (c == 'f' || c == 'F'))
+					{
+						char nextC = *_context.spos; //spos has been advanced by GetChar
+						if (nextC == '"' || nextC == '\'')
+						{
+							if (InSpace)
+							{
+								InSpace = false;
+								ClearToken();
+							}
+							if (InMatching)
+							{
+								token_out(GetLastMatchedNodeIndex());
+								InMatching = false;
+								ResetToRoot();
+							}
+							_context.leadingSpaceCount = 0;
+							//Force set token start to current 'f'
+							//because ifnotstart_token_start might be confused by above token_out
+							_context.token_start = _context.spos - 1;
+							
+							InFString = true;
+							NotCharSequnce = true;
+							InQuote = true;
+							quoteBeginChar = nextC;
+							begin_quoteCnt = 1;
+							end_quoteCnt = 0;
+							//current token start is already set by ifnotstart_token_start()
+							//and it points to 'f'
+							GetChar();//consume quote
+							return;
+						}
+					}
 					if (InMatching)
 					{
 						if (!MatchInTree(c))
@@ -600,10 +644,11 @@ namespace X {
 							if (c == quoteBeginChar)
 							{//meet end char
 								token_out((meetDollar || meetSlash || haveEscapeCode)
-									? TokenStrWithFormat :
-									(NotCharSequnce ? TokenStr : TokenCharSequence), 0);
+									? (InFString ? TokenStrFmt : TokenStrWithFormat) :
+									(NotCharSequnce ? (InFString ? TokenStrFmt : TokenStr) : TokenCharSequence), 0);
 								NotCharSequnce = false;
 								InQuote = false;
+								InFString = false;
 								//also reset lines below for string
 								meetDollar = false;
 								meetSlash = false;
