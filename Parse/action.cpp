@@ -401,6 +401,30 @@ void Register(OpRegistry* reg)
 			auto op = new AST::BinaryOp(opIndex);
 			return (AST::Operator*)op;
 		});
+	RegOP("try")
+		.SetProcess([](Parser* p, short opIndex) {
+			auto op = new AST::Try(opIndex);
+			p->SetLastComingBlock(op);
+			return (AST::Operator*)op;
+		});
+	RegOP("except")
+		.SetProcess([](Parser* p, short opIndex) {
+			auto op = new AST::Except(opIndex);
+			p->SetLastComingBlock(op);
+			return (AST::Operator*)op;
+		});
+	RegOP("finally")
+		.SetProcess([](Parser* p, short opIndex) {
+			auto op = new AST::Finally(opIndex);
+			p->SetLastComingBlock(op);
+			return (AST::Operator*)op;
+		});
+	RegOP("raise")
+		.SetProcess([](Parser* p, short opIndex) {
+			auto op = new AST::UnaryOp(opIndex);
+			return (AST::Operator*)op;
+		});
+
 	//for sql statment
 #if ADD_SQL
 	RegOP("SELECT")
@@ -598,6 +622,11 @@ void Register(OpRegistry* reg)
 		RegOP("**=", "&=", "|=", "^=", ">>=", "<<=").SetIds(reg,
 			{ OP_ID::PowerEqu,OP_ID::AndEqu,OP_ID::OrEqu,OP_ID::NotEqu,
 			OP_ID::RightShiftEqu,OP_ID::LeftShitEqu });
+
+	RegOP("try").SetId(reg, OP_ID::Try);
+	RegOP("except").SetId(reg, OP_ID::Except);
+	RegOP("finally").SetId(reg, OP_ID::Finally);
+	RegOP("raise").SetId(reg, OP_ID::Raise);
 
 	// Call precedence registration from precedence.cpp
 	RegisterPrecedence(reg);

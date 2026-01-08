@@ -80,6 +80,9 @@ enum class ObType
 	InlineForOp,		 // Parser helper for inline for
 	InlineIfOp,          // Parser helper for inline if
 	InlineElseOp,        // Parser helper for inline else
+	Try,
+	Except,
+	Finally,
 };
 enum class ExecActionType
 {
@@ -87,11 +90,13 @@ enum class ExecActionType
 	Break,
 	Continue,
 	Return,
+	Throw,
 };
 
 struct ExecAction
 {
 	ExecActionType type = ExecActionType::None;
+	Value exceptionValue;
 };
 class Func;
 class Scope;

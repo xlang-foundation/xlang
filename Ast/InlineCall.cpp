@@ -181,6 +181,15 @@ namespace X
 			case X::AST::ObType::DictComprehension:
 				bOK = static_cast<DictComprehension*>(pExp)->Exec(rt, action, pContext, v, lValue);
 				break;
+			case X::AST::ObType::Try:
+				bOK = static_cast<Try*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::Except:
+				bOK = static_cast<Except*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
+			case X::AST::ObType::Finally:
+				bOK = static_cast<Finally*>(pExp)->Exec(rt, action, pContext, v, lValue);
+				break;
 			default:
 				break;
 			}

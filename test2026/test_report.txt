@@ -2,6 +2,8 @@ XLang Test Report
 =================
 
 class\1_class.x: PASS
+exception\1_basic_try.x: PASS
+exception\2_early_return.x: PASS
 func\1_functions.x: PASS
 general\1_vars.x: PASS
 general\2_def_typehint.x: PASS
