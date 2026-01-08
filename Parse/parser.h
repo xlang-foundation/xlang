@@ -195,6 +195,14 @@ public:
 	// Check if 'for' should be inline (list/dict comprehension)
 	// Returns true if inside brackets [] or braces {}
 	bool ShouldBeInlineFor();
+	AST::Block* GetLastComingBlock() { return m_lastComingBlock; }
+	void SetLastComingBlock(AST::Block* block) { m_lastComingBlock = block; }
+	short PeekToken(OneToken& one)
+	{
+		return mToken->Peek(one);
+	}
+	void EnterBlock(AST::Block* pBlock, bool isInline = false);
+	void ResetLastComingBlock() { m_lastComingBlock = nullptr; }
 public:
 	Parser();
 	~Parser();

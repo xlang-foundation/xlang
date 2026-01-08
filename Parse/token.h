@@ -336,6 +336,32 @@ namespace X {
 				return TokenEOS;
 			}
 		}
+		short Peek(OneToken& one)
+		{
+			if (m_tokens.size() == 0)
+			{
+				Scan();
+			}
+			if (m_tokens.size() > 0)
+			{
+				one = m_tokens[0];
+				short retIdx = one.index;
+				//don't change id content, because we just peek
+				//if (retIdx == TokenStr
+				//	|| retIdx == TokenStrWithFormat
+				//	|| retIdx == TokenCharSequence)
+				//{
+				//	one.id.s += 1;//skip " or '
+				//	one.id.size -= 2; //last " or '
+				//}
+				//m_tokens.erase(m_tokens.begin());
+				return retIdx;
+			}
+			else
+			{
+				return TokenEOS;
+			}
+		}
 		void Test();
 	};
 }

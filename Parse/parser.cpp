@@ -95,6 +95,17 @@ bool Parser::LineOpFeedIntoBlock(AST::Expression* line,
 			curBlock->GetChildIndentCount();
 		if (child_indent_CurBlock.Equal(nullIndent))
 		{
+			// For the first child line, it MUST be indented more than the block itself
+			if (!curBlock->IsNoIndentCheck() && lineIndent <= indentCnt_CurBlock)
+			{
+			if (lineIndent <= indentCnt_CurBlock)
+			{
+					LOG << LOG_RED << "Module: " << m_strModuleName << ":" << line->GetStartLine()
+						<< ",Compile Error: line indent not match, expect greater than block indent"
+						<< LOG_RESET << LINE_END;
+					return false;
+			}
+			}
 			curBlock->SetChildIndentCount(lineIndent);
 			curBlock->Add(line);
 			pCurBlockState->HaveNewLine(line);
@@ -264,11 +275,39 @@ bool Parser::NewLine(bool meetLineFeed_n,bool checkIfIsLambdaOrPair)
 		{
 			return false;
 		}
+		if (m_curBlkState)
+		{
+			//block like if True: print("True")
+			//after print("True") which is a line, then we need to pop this block
+			auto* pBlock = m_curBlkState->Block();
+			if (meetLineFeed_n && pBlock && pBlock->IsStopAtNewLine())
+			{
+				if (!m_stackBlocks.empty())
+				{
+					auto top = m_stackBlocks.top();
+					m_stackBlocks.pop();
+					delete top;
+				}
+				if(!m_stackBlocks.empty())
+				{
+					m_curBlkState = m_stackBlocks.top();
+					//Process the line for parent block
+					while (!m_curBlkState->IsOpStackEmpty())
+					{
+						m_curBlkState->DoOpTop();
+					}
+					return NewLine(meetLineFeed_n, checkIfIsLambdaOrPair);
+				}
+			}
+		}
 		if(m_lastComingBlock)
 		{
 			auto pOpBlock = m_lastComingBlock;
 			m_lastComingBlock = nullptr;
 			pOpBlock->SetIndentCount(lineIndent);
+			// Reset Child Indent Count for the new block to ensure it accepts the next line
+			static AST::Indent nullIndent{ 0, -1, -1 };
+			pOpBlock->SetChildIndentCount(nullIndent);
 			BlockState* pBlockState = new BlockState(pOpBlock);
 			m_stackBlocks.push(pBlockState);
 			m_curBlkState = pBlockState;
@@ -811,4 +850,25 @@ bool Parser::ShouldBeInlineFor()
 	return false;
 }
 
+
+void Parser::EnterBlock(AST::Block* pBlock, bool isInline)
+{
+	if (m_curBlkState)
+	{
+		AST::Indent lineIndent = { 0,
+			m_curBlkState->m_TabCountAtLineBegin,
+			m_curBlkState->m_LeadingSpaceCountAtLineBegin };
+		pBlock->SetIndentCount(lineIndent);
+		if (isInline)
+		{
+			//For Inline Block, we set NoIndentCheck to true
+			//So that we can put code in the same line
+			pBlock->SetNoIndentCheck(true);
+			pBlock->SetStopAtNewLine(true);
+		}
+	}
+	BlockState* pBlockState = new BlockState(pBlock);
+	m_stackBlocks.push(pBlockState);
+	m_curBlkState = pBlockState;
+}
 }
