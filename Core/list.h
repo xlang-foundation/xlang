@@ -528,7 +528,7 @@ public:
 		{
 			if (idx < 0)
 			{
-				idx = (long long)m_ptrs.size() + idx;
+				idx = (long long)m_data.size() + idx;
 			}
 			if (idx < 0)
 			{

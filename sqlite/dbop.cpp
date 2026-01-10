@@ -54,6 +54,10 @@ namespace X
 			}
 			return true;
 		}
+		bool DBStatement::bindNull(int idx)
+		{
+			return sqlite3_bind_null(stmt, idx) == SQLITE_OK;
+		}
 		bool DBStatement::bind(int idx, X::Value& val)
 		{
 			bool bOK = true;
@@ -61,8 +65,10 @@ namespace X
 			switch (t)
 			{
 			case X::ValueType::Invalid:
+				bOK = bindNull(idx);
 				break;
 			case X::ValueType::None:
+				bOK = bindNull(idx);
 				break;
 			case X::ValueType::Int64:
 				bOK = bindint64(idx, (long long)val);
