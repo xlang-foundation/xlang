@@ -57,6 +57,8 @@ namespace X
 			bool bindint(int idx, int val);
 			bool binddouble(int idx, double val);
 			bool bindint64(int idx, long long val);
+			bool bindNull(int idx);
+
 			int getcolnum();
 			FORCE_INLINE int Step() { return (int)step(); }
 			DBState step();
