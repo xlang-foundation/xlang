@@ -598,9 +598,25 @@ namespace X
 			}
 			else
 			{
-				//sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
+				char* err = nullptr;
+
+				sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, &err);
+				if (err) 
+				{ 
+					sqlite3_free(err); 
+				}
+
+				sqlite3_exec(db, "PRAGMA synchronous=NORMAL;", nullptr, nullptr, &err);
+				if (err) 
+				{ 
+					sqlite3_free(err); 
+				}
+
+				sqlite3_busy_timeout(db, 1000);  // 1000 ms
 				mdb = db;
 			}
+
+
 			return true;
 		}
 
