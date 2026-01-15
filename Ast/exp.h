@@ -23,6 +23,21 @@ limitations under the License.
 #include "token.h"
 #include "XLangStream.h"
 
+#if !defined(FORCE_INLINE)
+#if defined(_MSC_VER)
+// Microsoft Visual C++ Compiler
+#define FORCE_INLINE __forceinline
+#elif defined(BARE_METAL)
+#define FORCE_INLINE inline
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang Compiler
+#define FORCE_INLINE __attribute__((always_inline)) inline
+#else
+// Fallback for other compilers
+#define FORCE_INLINE inline
+#endif
+#endif
+
 namespace X 
 {
 class XlangRuntime;
