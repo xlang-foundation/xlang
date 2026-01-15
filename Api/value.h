@@ -19,6 +19,21 @@ limitations under the License.
 #include <string>
 #include "xport.h"
 
+#if !defined(FORCE_INLINE)
+#if defined(_MSC_VER)
+// Microsoft Visual C++ Compiler
+#define FORCE_INLINE __forceinline
+#elif defined(BARE_METAL)
+#define FORCE_INLINE inline
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang Compiler - use just inline for compatibility
+#define FORCE_INLINE inline
+#else
+// Fallback for other compilers
+#define FORCE_INLINE inline
+#endif
+#endif
+
 namespace X 
 {
 class XObj;
@@ -680,8 +695,8 @@ public:
 			break;
 		}
 	}
-	FORCE_INLINE Value operator* (const Value& right);
-	FORCE_INLINE Value operator / (const Value& right);
+	Value operator* (const Value& right);
+	Value operator / (const Value& right);
 
 	Value AddObj(const Value& right);
 	FORCE_INLINE Value operator + (const Value& right)
@@ -697,7 +712,7 @@ public:
 			return AddObj(right);
 		}
 	}
-	FORCE_INLINE Value operator - (const Value& right);
+	Value operator - (const Value& right);
 	void ObjectAssignAndAdd(const Value& v);
 	FORCE_INLINE void operator += (const Value& v)
 	{
@@ -736,7 +751,7 @@ public:
 			}
 		}
 	}
-	FORCE_INLINE void operator -= (const Value& v);
+	void operator -= (const Value& v);
 
 	Value ObjCall(Port::vector<X::Value>& params);
 	Value ObjCall(Port::vector<X::Value>& params,Port::StringMap<X::Value>& kwParams);
