@@ -146,9 +146,7 @@ namespace X
 		return ret;
 	}
 
-#if defined(_MSC_VER)
 	FORCE_INLINE
-#endif
 	void Value::operator -= (const Value& v)
 	{
 		if (t == ValueType::Invalid || v.t == ValueType::Invalid)
@@ -185,7 +183,7 @@ namespace X
 				ChangeToStrObject();
 				break;
 			default:
-				*this -= v;
+				// Unreachable - all value types covered above
 				break;
 			}
 		}
