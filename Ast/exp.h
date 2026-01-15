@@ -23,21 +23,6 @@ limitations under the License.
 #include "token.h"
 #include "XLangStream.h"
 
-#if !defined(FORCE_INLINE)
-#if defined(_MSC_VER)
-// Microsoft Visual C++ Compiler
-#define FORCE_INLINE __forceinline
-#elif defined(BARE_METAL)
-#define FORCE_INLINE inline
-#elif defined(__GNUC__) || defined(__clang__)
-// GCC or Clang Compiler
-#define FORCE_INLINE __attribute__((always_inline)) inline
-#else
-// Fallback for other compilers
-#define FORCE_INLINE inline
-#endif
-#endif
-
 namespace X 
 {
 class XlangRuntime;
@@ -607,7 +592,7 @@ public:
 			delete e;
 		}
 	}
-	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action,
+	bool Exec(XlangRuntime* rt, ExecAction& action,
 		XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
@@ -742,10 +727,10 @@ public:
 	}
 	FORCE_INLINE Expression* GetName() { return Name; }
 	FORCE_INLINE Expression* GetType() { return Type; }
-	FORCE_INLINE bool Parse(std::string& strVarName,
+	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
-	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
+	bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<AST::Expression*>& callables) override
 	{
