@@ -39,6 +39,9 @@ namespace X
 		pObj->GetIndexValue(idx, retVal);
 		return retVal;
 	}
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
 	Value Value::operator* (const Value& right)
 	{
 		Value ret;
@@ -60,6 +63,9 @@ namespace X
 		}
 		return ret;
 	}
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
 	Value Value::operator/ (const Value& right)
 	{
 		Value ret;
@@ -103,6 +109,9 @@ namespace X
 		}
 		return ret;
 	}
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
 	Value Value::operator- (const Value& right)
 	{
 		if (t == ValueType::Invalid || right.t == ValueType::Invalid)
@@ -137,6 +146,9 @@ namespace X
 		return ret;
 	}
 
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
 	void Value::operator -= (const Value& v)
 	{
 		if (t == ValueType::Invalid || v.t == ValueType::Invalid)
