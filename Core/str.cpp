@@ -248,6 +248,7 @@ namespace X
 					return true;
 				};
 				_strScope.AddFunc("toupper", "new_str = toupper()", f);
+				_strScope.AddFunc("upper", "new_str = upper()", f);
 			}
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
@@ -266,6 +267,7 @@ namespace X
 					return true;
 				};
 				_strScope.AddFunc("tolower", "new_str = tolower()", f);
+				_strScope.AddFunc("lower", "new_str = lower()", f);
 			}
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
