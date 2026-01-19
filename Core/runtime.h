@@ -142,9 +142,13 @@ class XlangRuntime:
 	std::vector<CommandInfo*> m_commands;
 	X::Value m_exception;
 public:
-	FORCE_INLINE void SetException(X::Value& e) { m_exception = e; }
-	FORCE_INLINE X::Value& GetException() { return m_exception; }
-	FORCE_INLINE void ClearException() { m_exception = X::Value(); }
+	// XRuntime exception API
+	virtual void SetException(X::Value& e) override { m_exception = e; }
+	virtual X::Value GetException() override { return m_exception; }
+	virtual void ClearException() override { m_exception = X::Value(); }
+
+	// Internal helpers
+	FORCE_INLINE X::Value& GetExceptionRef() { return m_exception; }
 	XlangRuntime()
 	{
 		m_threadId = GetThreadID();

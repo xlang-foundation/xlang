@@ -70,6 +70,7 @@ namespace X
 							retValue = X::Value(true);
 							return true;
 						}
+						return true;
 					};
 				_listScope.AddFunc("runfragment", "runfragment(code)", f);
 			}

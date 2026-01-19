@@ -225,7 +225,7 @@ bool Expression::FromBytes(X::XLangStream& stream)
 	stream >> m_charPos;
 	return true;
 }
-FORCE_INLINE bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
 {
 	bool bOK = true;
 	if (Name)
@@ -267,7 +267,7 @@ FORCE_INLINE bool Param::Exec(XlangRuntime* rt, ExecAction& action, XObj* pConte
 	}
 	return bOK;
 }
-FORCE_INLINE bool Param::Parse(std::string& strVarName, 
+bool Param::Parse(std::string& strVarName, 
 	std::string& strVarType, Value& defaultValue)
 {
 	//two types: 1) name:type=val 2) name:type
@@ -652,7 +652,7 @@ bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v)
 	}
 	return bOK;
 }
-FORCE_INLINE bool List::Exec(XlangRuntime* rt, ExecAction& action,
+bool List::Exec(XlangRuntime* rt, ExecAction& action,
 	XObj* pContext, Value& v, LValue* lValue)
 {
 	X::Data::List* pOutList = new X::Data::List();
