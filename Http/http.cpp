@@ -218,13 +218,11 @@ namespace X
 		list += isBinary;
 		return list;
 	}
-	bool HttpServer::Listen(std::string srvName, int port)
+	bool HttpServer::Listen(std::string srvName, int port, int backlog)
 	{
 		httplib::Server* pSrv = (httplib::Server*)m_pSrv;
-
-		//HandlerWithResponse
-		bool bOK = ((httplib::Server*)m_pSrv)->listen(
-			srvName.c_str(), port);
+		pSrv->set_listen_backlog(backlog);
+		bool bOK = pSrv->listen(srvName.c_str(), port);
 		return bOK;
 	}
 	bool HttpServer::Stop()
