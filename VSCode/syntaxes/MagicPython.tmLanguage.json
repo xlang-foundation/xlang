@@ -54,7 +54,7 @@
     "semicolon": {
       "patterns": [
         {
-          "name": "invalid.deprecated.semicolon.x",
+          "name": "punctuation.terminator.statement.x",
           "match": "\\;$"
         }
       ]
@@ -1601,7 +1601,7 @@
         },
         {
           "comment": "Some color schemas support meta.function-call.generic scope",
-          "name": "meta.function-call.generic.x",
+          "name": "entity.name.function.x",
           "match": "(?x)\n  \\b ([[:alpha:]_]\\w*) \\b\n"
         }
       ]
