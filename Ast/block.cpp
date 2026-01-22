@@ -113,10 +113,10 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		Value v0;
 		ExecAction action0;
 		bOk = ExpExec(i, rt, action0, pContext, v0, lValue);
-		if (rt->GetException().IsValid())
+		if (rt->GetExceptionRef().IsValid())
 		{
 			action0.type = ExecActionType::Throw;
-			action0.exceptionValue = rt->GetException();
+			action0.exceptionValue = rt->GetExceptionRef();
 			rt->ClearException();
 		}
 		if (!bOk)

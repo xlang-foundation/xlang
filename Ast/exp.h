@@ -592,7 +592,7 @@ public:
 			delete e;
 		}
 	}
-	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action,
+	bool Exec(XlangRuntime* rt, ExecAction& action,
 		XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
@@ -727,10 +727,10 @@ public:
 	}
 	FORCE_INLINE Expression* GetName() { return Name; }
 	FORCE_INLINE Expression* GetType() { return Type; }
-	FORCE_INLINE bool Parse(std::string& strVarName,
+	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
-	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
+	bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<AST::Expression*>& callables) override
 	{

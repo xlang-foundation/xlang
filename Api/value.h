@@ -680,8 +680,8 @@ public:
 			break;
 		}
 	}
-	FORCE_INLINE Value operator* (const Value& right);
-	FORCE_INLINE Value operator / (const Value& right);
+	Value operator* (const Value& right);
+	Value operator / (const Value& right);
 
 	Value AddObj(const Value& right);
 	FORCE_INLINE Value operator + (const Value& right)
@@ -697,7 +697,7 @@ public:
 			return AddObj(right);
 		}
 	}
-	FORCE_INLINE Value operator - (const Value& right);
+	Value operator - (const Value& right);
 	void ObjectAssignAndAdd(const Value& v);
 	FORCE_INLINE void operator += (const Value& v)
 	{
@@ -736,7 +736,7 @@ public:
 			}
 		}
 	}
-	FORCE_INLINE void operator -= (const Value& v);
+	void operator -= (const Value& v);
 
 	Value ObjCall(Port::vector<X::Value>& params);
 	Value ObjCall(Port::vector<X::Value>& params,Port::StringMap<X::Value>& kwParams);

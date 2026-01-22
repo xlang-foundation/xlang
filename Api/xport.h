@@ -26,8 +26,8 @@ limitations under the License.
 #elif defined(BARE_METAL)
 #define FORCE_INLINE inline
 #elif defined(__GNUC__) || defined(__clang__)
-// GCC or Clang Compiler
-#define FORCE_INLINE __attribute__((always_inline)) inline
+// GCC or Clang Compiler - use just inline for compatibility with cpp-defined functions
+#define FORCE_INLINE inline
 #else
 // Fallback for other compilers
 #define FORCE_INLINE inline

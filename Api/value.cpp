@@ -39,7 +39,10 @@ namespace X
 		pObj->GetIndexValue(idx, retVal);
 		return retVal;
 	}
-	FORCE_INLINE Value Value::operator* (const Value& right)
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
+	Value Value::operator* (const Value& right)
 	{
 		Value ret;
 		bool done = false;
@@ -60,7 +63,10 @@ namespace X
 		}
 		return ret;
 	}
-	FORCE_INLINE Value Value::operator/ (const Value& right)
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
+	Value Value::operator/ (const Value& right)
 	{
 		Value ret;
 		bool done = false;
@@ -103,7 +109,10 @@ namespace X
 		}
 		return ret;
 	}
-	FORCE_INLINE Value Value::operator- (const Value& right)
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
+	Value Value::operator- (const Value& right)
 	{
 		if (t == ValueType::Invalid || right.t == ValueType::Invalid)
 		{
@@ -137,7 +146,8 @@ namespace X
 		return ret;
 	}
 
-	FORCE_INLINE void Value::operator -= (const Value& v)
+	FORCE_INLINE
+	void Value::operator -= (const Value& v)
 	{
 		if (t == ValueType::Invalid || v.t == ValueType::Invalid)
 		{
@@ -173,7 +183,7 @@ namespace X
 				ChangeToStrObject();
 				break;
 			default:
-				*this -= v;
+				// Unreachable - all value types covered above
 				break;
 			}
 		}

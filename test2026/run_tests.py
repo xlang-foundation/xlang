@@ -4,8 +4,42 @@ import subprocess
 import glob
 
 def run_tests():
-    root_dir = r"d:\CantorAI\xlang\test2026"
-    xlang_exe = r"d:\CantorAI\xlang\out\build\x64-Debug\bin\xlang.exe"
+    # Prefer relative paths (portable), fallback to legacy hardcoded CantorAI paths.
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # --- root_dir selection ---
+    rel_root_dir = script_dir
+    legacy_root_dir = r"d:\\CantorAI\\xlang\\test2026"
+
+    if os.path.exists(rel_root_dir):
+        root_dir = rel_root_dir
+    elif os.path.exists(legacy_root_dir):
+        root_dir = legacy_root_dir
+    else:
+        raise FileNotFoundError(
+            "Test root_dir not found. Tried:\n"
+            f"  - {rel_root_dir}\n"
+            f"  - {legacy_root_dir}\n"
+        )
+
+    # --- xlang_exe selection ---
+    # Relative: <repo_root>\out\build\x64-Debug\bin\xlang.exe
+    rel_repo_root = os.path.abspath(os.path.join(root_dir, '..'))
+    rel_xlang_exe = os.path.join(rel_repo_root, 'out', 'build', 'x64-Debug', 'bin', 'xlang.exe')
+
+    legacy_xlang_exe = r"d:\\CantorAI\\xlang\\out\\build\\x64-Debug\\bin\\xlang.exe"
+
+    if os.path.exists(rel_xlang_exe):
+        xlang_exe = rel_xlang_exe
+    elif os.path.exists(legacy_xlang_exe):
+        xlang_exe = legacy_xlang_exe
+    else:
+        raise FileNotFoundError(
+            "xlang executable not found. Tried:\n"
+            f"  - {rel_xlang_exe}\n"
+            f"  - {legacy_xlang_exe}\n"
+        )
+
     log_dir = os.path.join(root_dir, "testlogs")
     
     if not os.path.exists(log_dir):

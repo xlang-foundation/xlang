@@ -241,7 +241,15 @@ namespace X
 
 				X::XPackageValue<SqliteDB> packDb;
 				SqliteDB* pDb = packDb.GetRealObj();
-				pDb->Open(dbPath);
+				bool ok = pDb->Open(dbPath);
+				if (!ok)
+				{
+					// Raise exception so callers (WritePad / scripts) can catch it.
+					std::string msg = "SQLite open failed for db: " + dbPath;
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(SQLITE_CANTOPEN, msg.c_str()), /*AddRef=*/false);
+					rt->SetException(errVal);
+					return X::Value();
+				}
 				X::Value valDb(packDb);
 				std::lock_guard<std::mutex> lock(m_mutexOpenDbs);
 				X::Dict dictDbs(varDbs);

@@ -44,7 +44,7 @@ namespace X
 	struct Config
 	{
 		bool dbg = false;//-dbg
-		bool enablePython = false;//-enable_python
+		bool enablePython = true;//-enable_python
 		bool enablePythonDebug = false;//-enable_python_debug
 		bool runAsBackend = false;//-run_as_backend
 		bool enterEventLoop = false;//-event_loop

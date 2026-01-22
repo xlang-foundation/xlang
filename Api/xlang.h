@@ -324,6 +324,12 @@ namespace X
 		virtual int GetTopStackCurrentLine() = 0;
 		virtual bool AddVar(const char* name, X::Value& val) = 0;
 		virtual X::Value GetModuleObject() = 0;
+
+		// Exception API: allow any code with only XRuntime* to raise an exception.
+		// The engine will convert it to ExecActionType::Throw at block boundaries.
+		virtual void SetException(X::Value& e) = 0;
+		virtual X::Value GetException() = 0;
+		virtual void ClearException() = 0;
 	};
 	class XModule :
 		virtual public XObj

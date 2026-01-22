@@ -1,4 +1,6 @@
 ﻿/*
+#include "../Core/runtime.h" // for X::XlangRuntime::SetException
+
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,6 +16,7 @@ limitations under the License.
 */
 
 #include "dbmgr.h"
+#include "xhost.h"
 #include "sqlite/sqlite3.h"
 #include "utility.h"
 #include "dbop.h"
@@ -101,6 +104,11 @@ namespace X
 				m_stmt = new DBStatement(m_db, m_sql.c_str());
 				if (m_stmt->SC() != (int)DBState::Ok)
 				{
+					// Raise so callers using Cursor API also get exceptions
+					std::string msg = "SQLite prepare failed (code=" + std::to_string(m_stmt->SC()) + ") SQL: " + m_sql;
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(m_stmt->SC(), msg.c_str()), /*AddRef=*/false);
+					auto* rt = X::g_pXHost->GetCurrentRuntime();
+					if (rt) rt->SetException(errVal);
 					return X::Value(false);
 				}
 				if (m_BindingDataList.IsList())
@@ -450,7 +458,19 @@ namespace X
 			DBStatement dbsmt(pDb, strSql.c_str());
 			if (dbsmt.SC() != (int)DBState::Ok)
 			{
-				std::cout << "Error code:" << dbsmt.SC() << std::endl;
+				// Raise an XLang exception instead of only printing/returning false.
+				// We don't have sqlite3_errmsg() here (db handle is inside SqliteDB),
+				// but we can still provide the sqlite return code + SQL statement.
+				// We cannot include Core/runtime.h cleanly in this sqlite project (include paths).
+				// But we can still raise an Error via the host API.
+				auto* xrt = rt;
+				if (xrt)
+				{
+					std::string msg = "SQLite prepare failed (code=" + std::to_string(dbsmt.SC()) + ") SQL: " + strSql;
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(dbsmt.SC(), msg.c_str()), /*AddRef=*/false);
+					// Raise exception through the public XRuntime API
+					rt->SetException(errVal);
+				}
 				return false;
 			}
 			if (BindingDataList.IsList())
@@ -552,6 +572,11 @@ namespace X
 				std::string dbPath = strSql.substr(pos + 4);
 				dbPath = norm_db_path(rt,dbPath,m_curPath);
 				X::Value valDb = UseDatabase(rt, pContext, dbPath);
+				if (valDb.IsInvalid())
+				{
+					// UseDatabase should have set exception on rt
+					return X::Value(false);
+				}
 				PushThreadDbStack(pad_index,valDb);
 			}
 			else
@@ -594,7 +619,8 @@ namespace X
 			rc = sqlite3_open(dbPath.c_str(), &db);
 			if (rc)
 			{
-				sqlite3_close(db);
+				if (db) sqlite3_close(db);
+				return false;
 			}
 			else
 			{

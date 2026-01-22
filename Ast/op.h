@@ -705,8 +705,8 @@ public:
 	{
 		m_type = ObType::In;
 	}
-	FORCEINLINE void SetIsNot(bool b) { m_bIsNot = b; }
-	FORCEINLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
+	FORCE_INLINE void SetIsNot(bool b) { m_bIsNot = b; }
+	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 };
 class ExternDecl :
 	public UnaryOp

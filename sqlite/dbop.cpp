@@ -17,6 +17,7 @@ limitations under the License.
 #include "dbmgr.h"
 #include "utility.h"
 #include "sqlite/sqlite3.h"
+#include "xhost.h"
 
 namespace X
 {
@@ -143,6 +144,8 @@ namespace X
 		}
 		bool DBStatement::bindtext(int idx, std::wstring str)
 		{
+			// Do not raise just because previous calls set statecode.
+			// Only report error if THIS sqlite3_bind_text call fails.
 			if (statecode != SQLITE_OK)
 			{
 				return false;
@@ -155,11 +158,23 @@ namespace X
 				(int)utf8str.length(),  // length of text
 				SQLITE_TRANSIENT
 			);
+			if (statecode != SQLITE_OK)
+			{
+				auto* rt = X::g_pXHost ? X::g_pXHost->GetCurrentRuntime() : nullptr;
+				if (rt)
+				{
+					std::string msg = "SQLite bind_text failed (code=" + std::to_string(statecode) + ")";
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(statecode, msg.c_str()), /*AddRef=*/false);
+					rt->SetException(errVal);
+				}
+			}
 			return (statecode == SQLITE_OK);
 		}
 
 		bool DBStatement::bindblob(int idx, const char* pData, int nData)
 		{
+			// Do not raise just because previous calls set statecode.
+			// Only report error if THIS sqlite3_bind_blob call fails.
 			if (statecode != SQLITE_OK)
 			{
 				return false;
@@ -170,11 +185,23 @@ namespace X
 				(const void*)pData,
 				nData, SQLITE_TRANSIENT
 			);
+			if (statecode != SQLITE_OK)
+			{
+				auto* rt = X::g_pXHost ? X::g_pXHost->GetCurrentRuntime() : nullptr;
+				if (rt)
+				{
+					std::string msg = "SQLite bind_blob failed (code=" + std::to_string(statecode) + ")";
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(statecode, msg.c_str()), /*AddRef=*/false);
+					rt->SetException(errVal);
+				}
+			}
 			return (statecode == SQLITE_OK);
 		}
 
 		bool DBStatement::bindint(int idx, int val)
 		{
+			// Do not raise just because previous calls set statecode.
+			// Only report error if THIS sqlite3_bind_int call fails.
 			if (statecode != SQLITE_OK)
 			{
 				return false;
@@ -184,10 +211,22 @@ namespace X
 				idx,
 				val
 			);
+			if (statecode != SQLITE_OK)
+			{
+				auto* rt = X::g_pXHost ? X::g_pXHost->GetCurrentRuntime() : nullptr;
+				if (rt)
+				{
+					std::string msg = "SQLite bind_int failed (code=" + std::to_string(statecode) + ")";
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(statecode, msg.c_str()), /*AddRef=*/false);
+					rt->SetException(errVal);
+				}
+			}
 			return (statecode == SQLITE_OK);
 		}
 		bool DBStatement::binddouble(int idx, double val)
 		{
+			// Do not raise just because previous calls set statecode.
+			// Only report error if THIS sqlite3_bind_double call fails.
 			if (statecode != SQLITE_OK)
 			{
 				return false;
@@ -197,10 +236,22 @@ namespace X
 				idx,
 				val
 			);
+			if (statecode != SQLITE_OK)
+			{
+				auto* rt = X::g_pXHost ? X::g_pXHost->GetCurrentRuntime() : nullptr;
+				if (rt)
+				{
+					std::string msg = "SQLite bind_double failed (code=" + std::to_string(statecode) + ")";
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(statecode, msg.c_str()), /*AddRef=*/false);
+					rt->SetException(errVal);
+				}
+			}
 			return (statecode == SQLITE_OK);
 		}
 		bool DBStatement::bindint64(int idx, long long val)
 		{
+			// Do not raise just because previous calls set statecode.
+			// Only report error if THIS sqlite3_bind_int64 call fails.
 			if (statecode != SQLITE_OK)
 			{
 				return false;
@@ -210,6 +261,16 @@ namespace X
 				idx,
 				val
 			);
+			if (statecode != SQLITE_OK)
+			{
+				auto* rt = X::g_pXHost ? X::g_pXHost->GetCurrentRuntime() : nullptr;
+				if (rt)
+				{
+					std::string msg = "SQLite bind_int64 failed (code=" + std::to_string(statecode) + ")";
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(statecode, msg.c_str()), /*AddRef=*/false);
+					rt->SetException(errVal);
+				}
+			}
 			return (statecode == SQLITE_OK);
 		}
 		int DBStatement::getcolnum()
@@ -245,6 +306,13 @@ namespace X
 				retstr = (const char*)sqlite3_column_text(stmt, idx);
 				if (retstr == NULL)
 				{
+					auto* rt = X::g_pXHost ? X::g_pXHost->GetCurrentRuntime() : nullptr;
+					if (rt)
+					{
+						std::string msg = "SQLite column_text returned NULL";
+						X::Value errVal((XObj*)X::g_pXHost->CreateError(SQLITE_MISMATCH, msg.c_str()), /*AddRef=*/false);
+						rt->SetException(errVal);
+					}
 					return false;
 				}
 				val = retstr;
@@ -265,6 +333,13 @@ namespace X
 			retstr = (const char*)sqlite3_column_text(stmt, idx);
 			if (retstr == NULL)
 			{
+				auto* rt = X::g_pXHost ? X::g_pXHost->GetCurrentRuntime() : nullptr;
+				if (rt)
+				{
+					std::string msg = "SQLite column_text returned NULL";
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(SQLITE_MISMATCH, msg.c_str()), /*AddRef=*/false);
+					rt->SetException(errVal);
+				}
 				return false;
 			}
 			std::string txt((const char*)retstr);
