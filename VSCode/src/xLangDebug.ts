@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,13 +18,12 @@ import {
 	LoggingDebugSession,
 	InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
 	ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent,
-	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent,
-	ThreadEvent,
-	DebugSession
+	Thread, StackFrame, Scope, Source, Handles, Breakpoint,
+	ThreadEvent
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { basename } from 'path-browserify';
-import { XLangRuntime, IRuntimeBreakpoint,RuntimeVariable, timeout, IRuntimeVariableType } from './xLangRuntime';
+import { XLangRuntime, IRuntimeBreakpoint, RuntimeVariable, timeout } from './xLangRuntime';
 import { Subject } from 'await-notify';
 import * as base64 from 'base64-js';
 import * as vscode from 'vscode';
@@ -35,18 +34,15 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as crypto from 'crypto';
 
-const ipPortRegex = /^((localhost)|((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)):([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/i
-const ipRegex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})$/;
-const ipHostPortRegex = /^(?:(?:\d{1,3}\.){3}\d{1,3}|\[(?:[a-fA-F0-9:]+)\]|(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+|\w+):\d{1,5}$/;
 
 function isPathMatchOs(path: string): boolean {
-    const platform = os.platform();
-    if (platform === 'win32') {
-        return /^[a-zA-Z]:[\\\/].*/.test(path);
-    } else if (platform === 'linux' || platform === 'darwin') {
-        return /^[\/].*/.test(path);
-    }
-    return false;
+	const platform = os.platform();
+	if (platform === 'win32') {
+		return /^[a-zA-Z]:[\\\/].*/.test(path);
+	} else if (platform === 'linux' || platform === 'darwin') {
+		return /^[\/].*/.test(path);
+	}
+	return false;
 }
 
 /**
@@ -68,23 +64,23 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	compileError?: 'default' | 'show' | 'hide';
 }
 
-interface IAttachRequestArguments extends ILaunchRequestArguments { }
-
-interface SrcRelPath {
-	relPath: string;
-	md5: string;
+interface IAttachRequestArguments extends ILaunchRequestArguments {
+	dbgIp?: string;
+	dbgPort?: number;
 }
 
+
+
 function calMD5(str: string): string {
-    const hash = crypto.createHash('md5');
-    hash.update(str);
-    return hash.digest('hex');
+	const hash = crypto.createHash('md5');
+	hash.update(str);
+	return hash.digest('hex');
 }
 
 function calFileMD5(filePath: string): string {
-    let content = fs.readFileSync(filePath, 'utf-8');
+	let content = fs.readFileSync(filePath, 'utf-8');
 	content = content.replace(/\r\n/g, '\n');
-    return calMD5(content);
+	return calMD5(content);
 }
 
 export class XLangDebugSession extends LoggingDebugSession {
@@ -92,7 +88,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 	// a XLang runtime (or debugger)
 	private _runtime: XLangRuntime;
 
-	private _variableHandles = new Handles<'locals' | 'globals'| RuntimeVariable>();
+	private _variableHandles = new Handles<'locals' | 'globals' | RuntimeVariable>();
 
 	private _configurationDone = new Subject();
 
@@ -112,17 +108,18 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	private _isLaunch = true;
 
-	private _mapFrameIdThreadId : Map<Number, Number> = new Map();
+	private _mapFrameIdThreadId: Map<Number, Number> = new Map();
 
-	private _srcMd5List : string[] = [];
+	private _srcMd5List: string[] = [];
 
-	private _srcEntryPath : string;
+	private _srcEntryPath: string = "";
 	private _mapSrcMd5 = new Map<string, string>();
 	private _mapMd5Src = new Map<string, string>();
 
 	//private _xlangProcess;
-	private _serverEnded : boolean = false;
-	public getRuntime(){
+	private _serverEnded: boolean = false;
+	private _terminal: vscode.Terminal | undefined;
+	public getRuntime() {
 		return this._runtime;
 	}
 	/**
@@ -172,7 +169,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		});
 		this._runtime.on('output', (type, text, filePath, line, column, threadID) => {
 			let category: string;
-			switch(type) {
+			switch (type) {
 				case 'prio': category = 'important'; break;
 				case 'out': category = 'stdout'; break;
 				case 'err': category = 'stderr'; break;
@@ -195,10 +192,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this.sendEvent(new TerminatedEvent());
 		});
 		this._runtime.on('breakpointState', (md5, line, actualLine) => {
-			if (actualLine === -1){ // failed
-				this.sendEvent(new BreakpointEvent('changed', {verified: false, id: this.getBreakpointIdMd5(md5, line, 0)}));
-			}else{
-				this.sendEvent(new BreakpointEvent('changed', {verified: true,  id: this.getBreakpointIdMd5(md5, line, 0), line: actualLine}));
+			if (actualLine === -1) { // failed
+				this.sendEvent(new BreakpointEvent('changed', { verified: false, id: this.getBreakpointIdMd5(md5, line, 0) }));
+			} else {
+				this.sendEvent(new BreakpointEvent('changed', { verified: true, id: this.getBreakpointIdMd5(md5, line, 0), line: actualLine }));
 			}
 		});
 		this._runtime.on('moduleLoaded', (path, md5) => {
@@ -210,8 +207,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		});
 	}
 	// use src md5 index， origin line and column to make a unique id 
-	private getBreakpointIdMd5(md5 :string, line : number, column: number) : number
-	{
+	private getBreakpointIdMd5(md5: string, line: number, column: number): number {
 		let srcIdx = this._srcMd5List.indexOf(md5);
 		return srcIdx * 10000000 + line * 1000 + column;
 	}
@@ -246,7 +242,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 		// make VS Code support completion in REPL
 		response.body.supportsCompletionsRequest = true;
-		response.body.completionTriggerCharacters = [ ".", "[" ];
+		response.body.completionTriggerCharacters = [".", "["];
 
 		// make VS Code send cancel request
 		response.body.supportsCancelRequest = true;
@@ -300,6 +296,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		response.body.supportsFunctionBreakpoints = true;
 		// request all stack frame at once
 		response.body.supportsDelayedStackTraceLoading = false;
+		response.body.supportsEvaluateForHovers = true;
 
 		this.sendResponse(response);
 
@@ -322,25 +319,25 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request): void {
 		console.log(`disconnectRequest suspend: ${args.suspendDebuggee}, terminate: ${args.terminateDebuggee}`);
+		if (this._terminal) {
+			this._terminal.dispose();
+			this._terminal = undefined;
+		}
 		if (this._serverEnded)
 			this._runtime.close(true);
-		else
-		{
-			if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart))
-			{
+		else {
+			if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart)) {
 				this._runtime.close(true);
 			}
-			else
-			{
+			else {
 				this._runtime.close(false);
 			}
 		}
-		
+
 		this.sendResponse(response);
 	}
 
-	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): void
-	{
+	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments, request?: DebugProtocol.Request): void {
 		this.sendResponse(response);
 	}
 
@@ -348,8 +345,8 @@ export class XLangDebugSession extends LoggingDebugSession {
 		this._runtime.addOutput("--------------------------------------------------");
 		this._isLaunch = false;
 		this._runtime.runMode = 'attach';
-		this._runtime.serverAddress = args.dbgIp;
-		this._runtime.serverPort = Number(args.dbgPort);
+		this._runtime.serverAddress = args.dbgIp || "localhost";
+		this._runtime.serverPort = Number(args.dbgPort || 3142);
 		this.startDebug(response, args);
 	}
 
@@ -358,9 +355,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 		let port = await this.getValidPort();
 		let xlangBin = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
 		// launch xlang in vscode's terminal
-		const terminal = vscode.window.createTerminal(`XLang server ${port}`);
-	    terminal.show();
-		terminal.sendText(`${xlangBin} -event_loop -dbg -enable_python -port ${port}`);
+		this._terminal = vscode.window.createTerminal(`XLang server ${port}`);
+		this._terminal.show();
+		this._terminal.sendText(`${xlangBin} -event_loop -dbg -enable_python -port ${port}`);
 
 		this._runtime.serverAddress = "localhost";
 		this._runtime.serverPort = port;
@@ -369,16 +366,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 		this.startDebug(response, args);
 	}
 
-	private async startDebug(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments)
-	{
+	private async startDebug(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
 		this._mapSrcMd5.clear();
 		this._mapMd5Src.clear();
 		this._srcEntryPath = this._runtime.normalizePathAndCasing(args.program);
 		let md5 = calFileMD5(this._srcEntryPath);
 		this._runtime.checkStarted(this._srcEntryPath, md5);
 		await this._xlangStarted.wait();
-		if (!this._xlangStarted.notifyValue)
-		{
+		if (!this._xlangStarted.notifyValue) {
 			await vscode.window.showErrorMessage(`can not connect to a xlang dbg server at ${this._runtime.serverAddress}:${this._runtime.serverPort} debugging stopped`, { modal: true }, "OK");
 			this.sendResponse(response);
 			this.sendEvent(new TerminatedEvent());
@@ -426,54 +421,50 @@ export class XLangDebugSession extends LoggingDebugSession {
 	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
 		const path = this._runtime.normalizePathAndCasing(args.source.path as string);
 		//const clientLines = args.lines || [];
-		const clientLines = args.breakpoints?.map(col => {return col.line;}) || [];
+		const clientLines = args.breakpoints?.map(col => { return col.line; }) || [];
 		let bNew = false
 		let md5 = "";
-		if (!this._mapSrcMd5.has(path))
-		{
+		if (!this._mapSrcMd5.has(path)) {
 			md5 = calFileMD5(path);
 			console.log(path, "  ", md5);
 			this._mapSrcMd5.set(path, md5);
 			this._mapMd5Src.set(md5, path);
 			bNew = true;//this._runtime.addOutput(`breakpoint source file: "${md5}"   "${path}"`);
 		}
-		else
-		{
+		else {
 			md5 = this._mapSrcMd5.get(path) || "";
 		}
 
 		let srcIdx = this._srcMd5List.indexOf(md5);
-		if ( srcIdx < 0){
+		if (srcIdx < 0) {
 			this._srcMd5List.push(md5);
 			srcIdx = this._srcMd5List.length - 1;
 		}
-		
+
 		this._runtime.setBreakPoints(path, md5, clientLines, (lines) => {
 			let actualBreakpoints: Breakpoint[] = [];
-			let bModuleLoaded : boolean = true;
-			for(let i = 0; i < lines.length; i += 2)
-			{
+			let bModuleLoaded: boolean = true;
+			for (let i = 0; i < lines.length; i += 2) {
 				let bp: Breakpoint;
 				let l = lines[i]; // origin line
 				let al = lines[i + 1]; // actual line
 				let id = this.getBreakpointIdMd5(md5, l, 0); // breakpoint id
-				if (al === -2){ //'pending'
+				if (al === -2) { //'pending'
 					bModuleLoaded = false;
 					bp = new Breakpoint(false, l);
 					bp.setId(id);
 				}
-				else if (l === -1){ // 'failed'
+				else if (l === -1) { // 'failed'
 					bp = new Breakpoint(false, l);
 					bp.setId(id);
 				}
-				else{ // 'valid'
+				else { // 'valid'
 					bp = new Breakpoint(true, al);
 					bp.setId(id);
 				}
 				actualBreakpoints.push(bp);
 			}
-			if (bNew)
-			{
+			if (bNew) {
 				if (bModuleLoaded === false)
 					this._runtime.addOutput(`source file has breakpoints: "${md5}"   "${path}" is not loaded on server`);
 				else
@@ -547,9 +538,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 		this.sendResponse(response);
 	}
 
-	protected threadsRequest(response: DebugProtocol.ThreadsResponse){
+	protected threadsRequest(response: DebugProtocol.ThreadsResponse) {
 		this._runtime.getThreads((threads) => {
-			
+
 			let tids: Number[] = [];
 			response.body = {
 				threads: threads.map((t) => {
@@ -557,16 +548,16 @@ export class XLangDebugSession extends LoggingDebugSession {
 					const thread: DebugProtocol.Thread = new Thread(t.id, t.name);
 					return thread;
 				}),
-		};
+			};
 
 			this._mapFrameIdThreadId.forEach((value, key) => {
-				if (!tids.includes(value)){
+				if (!tids.includes(value)) {
 					this._mapFrameIdThreadId.delete(key);
 				}
 			});
 
-		this.sendResponse(response);
-        });
+			this.sendResponse(response);
+		});
 	}
 
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
@@ -576,7 +567,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const endFrame = startFrame + maxLevels;
 
 		this._mapFrameIdThreadId.forEach((value, key) => {
-			if (value === threadId){
+			if (value === threadId) {
 				this._mapFrameIdThreadId.delete(key);
 			}
 		});
@@ -604,14 +595,14 @@ export class XLangDebugSession extends LoggingDebugSession {
 				//totalFrames: endFrame + 20 	// dynamically increases the size with every requested chunk, results in paging
 			};
 			this.sendResponse(response);
-        });
+		});
 	}
 
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
 		response.body = {
 			scopes: [
-				new Scope("Locals", this._runtime.createScopeRef('locals',args.frameId,null,null), false),
-				new Scope("Globals", this._runtime.createScopeRef('globals', args.frameId,null,null), true)
+				new Scope("Locals", this._runtime.createScopeRef('locals', args.frameId, null, null), false),
+				new Scope("Globals", this._runtime.createScopeRef('globals', args.frameId, null, null), true)
 			]
 		};
 		this.sendResponse(response);
@@ -669,13 +660,13 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const objId = v[3];
 		const threadId = this._mapFrameIdThreadId.get(frameId);
 		if (varType === 'locals') {
-			this._runtime.getLocalVariables(threadId, frameId,cb);
+			this._runtime.getLocalVariables(threadId, frameId, cb);
 		} else if (varType === 'globals') {
 			this._runtime.getGlobalVariables(threadId, cb);
 		} else {
-			this._runtime.getObject(threadId, frameId,varType,objId,
-				args.start===undefined?0:args.start,
-				args.count===undefined?-1:args.count,
+			this._runtime.getObject(threadId, frameId, varType, objId,
+				args.start === undefined ? 0 : args.start,
+				args.count === undefined ? -1 : args.count,
 				cb);
 		}
 	}
@@ -690,7 +681,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const frameId = varInfo[1];
 		const objId = varInfo[3];
 		const threadId = this._mapFrameIdThreadId.get(frameId);
-		this._runtime.setObject(threadId, frameId,varType,objId,args.name,args.value,cb);
+		this._runtime.setObject(threadId, frameId, varType, objId, args.name, args.value, cb);
 	}
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
@@ -714,9 +705,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
 		this._runtime.step(args.granularity === 'instruction', true, args.threadId,
-		() => {
-		this.sendResponse(response);
-		});
+			() => {
+				this.sendResponse(response);
+			});
 	}
 
 	protected stepInTargetsRequest(response: DebugProtocol.StepInTargetsResponse, args: DebugProtocol.StepInTargetsArguments) {
@@ -753,7 +744,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				if (matches && matches.length === 2) {
 					const mbp = await this._runtime.setBreakPoint(this._runtime.sourceFile, this.convertClientLineToDebugger(parseInt(matches[1])));
 					const bp = new Breakpoint(mbp.verified, this.convertDebuggerLineToClient(mbp.line), undefined, this.createSource(this._runtime.sourceFile)) as DebugProtocol.Breakpoint;
-					bp.id= mbp.id;
+					bp.id = mbp.id;
 					this.sendEvent(new BreakpointEvent('new', bp));
 					reply = `breakpoint created`;
 				} else {
@@ -762,7 +753,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 						const mbp = this._runtime.clearBreakPoint(this._runtime.sourceFile, this.convertClientLineToDebugger(parseInt(matches[1])));
 						if (mbp) {
 							const bp = new Breakpoint(false) as DebugProtocol.Breakpoint;
-							bp.id= mbp.id;
+							bp.id = mbp.id;
 							this.sendEvent(new BreakpointEvent('removed', bp));
 							reply = `breakpoint deleted`;
 						}
@@ -778,15 +769,57 @@ export class XLangDebugSession extends LoggingDebugSession {
 						}
 					}
 				}
-				// fall through
+			// fall through
 
 			default:
 				if (args.expression.startsWith('$')) {
 					rv = this._runtime.getLocalVariable(args.expression.substr(1));
+					break;
 				} else {
-					rv = new RuntimeVariable('eval', this.convertToRuntime(args.expression));
+					const frameId = args.frameId || 0;
+					this._runtime.evaluate(args.expression, frameId, (v: RuntimeVariable) => {
+						if (v) {
+							const dapVar = this.convertFromRuntime(v);
+							response.body = {
+								result: dapVar.value,
+								type: dapVar.type,
+								variablesReference: dapVar.variablesReference,
+								presentationHint: dapVar.presentationHint
+							};
+							this.sendResponse(response);
+						} else {
+							// fallback: check if it is a local variable
+							const threadId = this._mapFrameIdThreadId.get(frameId);
+							if (threadId !== undefined) {
+								this._runtime.getLocalVariables(threadId, frameId, (vars: RuntimeVariable[]) => {
+									const match = vars ? vars.find(x => x.Name === args.expression) : undefined;
+									if (match) {
+										const dapVar = this.convertFromRuntime(match);
+										response.body = {
+											result: dapVar.value,
+											type: dapVar.type,
+											variablesReference: dapVar.variablesReference,
+											presentationHint: dapVar.presentationHint
+										};
+									} else {
+										response.body = {
+											result: reply ? reply : `not available`,
+											variablesReference: 0
+										};
+									}
+									this.sendResponse(response);
+								});
+							} else {
+								response.body = {
+									result: reply ? reply : `not available`,
+									variablesReference: 0
+								};
+								this.sendResponse(response);
+							}
+						}
+					});
+					return;
 				}
-				break;
 		}
 
 		if (rv) {
@@ -799,7 +832,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			};
 		} else {
 			response.body = {
-				result: reply ? reply : `evaluate(context: '${args.context}', '${args.expression}')`,
+				result: reply ? reply : `not available`,
 				variablesReference: 0
 			};
 		}
@@ -811,7 +844,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		if (args.expression.startsWith('$')) {
 			const rv = this._runtime.getLocalVariable(args.expression.substr(1));
 			if (rv) {
-				rv.value = this.convertToRuntime(args.value);
+				rv.Val = this.convertToRuntime(args.value);
 				response.body = this.convertFromRuntime(rv);
 				this.sendResponse(response);
 			} else {
@@ -865,18 +898,18 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected dataBreakpointInfoRequest(response: DebugProtocol.DataBreakpointInfoResponse, args: DebugProtocol.DataBreakpointInfoArguments): void {
 		response.body = {
-            dataId: null,
-            description: "cannot break on data access",
-            accessTypes: undefined,
-            canPersist: false
-        };
+			dataId: null,
+			description: "cannot break on data access",
+			accessTypes: undefined,
+			canPersist: false
+		};
 
 		if (args.variablesReference && args.name) {
 			const v = this._variableHandles.get(args.variablesReference);
 			if (v === 'globals') {
 				response.body.dataId = args.name;
 				response.body.description = args.name;
-				response.body.accessTypes = [ "write" ];
+				response.body.accessTypes = ["write"];
 				response.body.canPersist = true;
 			} else {
 				response.body.dataId = args.name;
@@ -945,7 +978,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			this._cancellationTokens.set(args.requestId, true);
 		}
 		if (args.progressId) {
-			this._cancelledProgressId= args.progressId;
+			this._cancelledProgressId = args.progressId;
 		}
 	}
 
@@ -955,15 +988,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 		const count = args.instructionCount;
 
 		const isHex = args.memoryReference.startsWith('0x');
-		const pad = isHex ? args.memoryReference.length-2 : args.memoryReference.length;
+		const pad = isHex ? args.memoryReference.length - 2 : args.memoryReference.length;
 
 		const loc = this.createSource(this._runtime.sourceFile);
 
 		let lastLine = -1;
 
-		const instructions = this._runtime.disassemble(baseAddress+offset, count).map(instruction => {
+		const instructions = this._runtime.disassemble(baseAddress + offset, count).map(instruction => {
 			const address = instruction.address.toString(isHex ? 16 : 10).padStart(pad, '0');
-			const instr : DebugProtocol.DisassembledInstruction = {
+			const instr: DebugProtocol.DisassembledInstruction = {
 				address: isHex ? `0x${address}` : `${address}`,
 				instruction: instruction.instruction
 			};
@@ -1003,9 +1036,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any) {
 		if (command === 'toggleFormatting') {
-			this._valuesInHex = ! this._valuesInHex;
+			this._valuesInHex = !this._valuesInHex;
 			if (this._useInvalidatedEvent) {
-				this.sendEvent(new InvalidatedEvent( ['variables'] ));
+				this.sendEvent(new InvalidatedEvent(['variables']));
 			}
 			this.sendResponse(response);
 		} else {
@@ -1015,9 +1048,9 @@ export class XLangDebugSession extends LoggingDebugSession {
 
 	//---- helpers
 
-	private convertToRuntime(value: string): IRuntimeVariableType {
+	private convertToRuntime(value: string): any {
 
-		value= value.trim();
+		value = value.trim();
 
 		if (value === 'true') {
 			return true;
@@ -1026,7 +1059,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 			return false;
 		}
 		if (value[0] === '\'' || value[0] === '"') {
-			return value.substr(1, value.length-2);
+			return value.substr(1, value.length - 2);
 		}
 		const n = parseFloat(value);
 		if (!isNaN(n)) {
@@ -1034,7 +1067,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		}
 		return value;
 	}
-	
+
 	private convertFromRuntime(v: RuntimeVariable): DebugProtocol.Variable {
 
 		let dapVariable: DebugProtocol.Variable = {
@@ -1077,10 +1110,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 			case 'Event':
 				dapVariable.type = 'Event';
 				dapVariable.value = `e ${v.Val}`;
-				break;				
+				break;
 			case 'Package':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val,v.Id);
+					v.Type, v.FrameId, v.Val, v.Id);
 				dapVariable.value = 'Package(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Package";
 				dapVariable.variablesReference = v.reference;
@@ -1088,15 +1121,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'RemoteObject':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val,v.Id);
+					v.Type, v.FrameId, v.Val, v.Id);
 				dapVariable.value = 'RemoteObject(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "RemoteObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.namedVariables = v.Size;
-				break;							
+				break;
 			case 'Class':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val,v.Id);
+					v.Type, v.FrameId, v.Val, v.Id);
 				dapVariable.value = 'Class(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Class";
 				dapVariable.variablesReference = v.reference;
@@ -1104,7 +1137,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'Dict':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val,v.Id);
+					v.Type, v.FrameId, v.Val, v.Id);
 				dapVariable.value = 'Dict(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Dict";
 				dapVariable.variablesReference = v.reference;
@@ -1112,39 +1145,48 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'Scope.Special':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = "("+v.Size.toString()+")";
+					v.Type, v.FrameId, v.Val, v.Id);
+				dapVariable.value = "(" + v.Size.toString() + ")";
 				dapVariable.type = "Scope.Special";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
-				break;				
+				break;
 			case 'List':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'List(Size:'+v.Size?.toString()+")";
+					v.Type, v.FrameId, v.Val, v.Id);
+				dapVariable.value = 'List(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "List";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;
+			case 'Set':
+				v.reference = this._runtime.createScopeRef(
+					v.Type, v.FrameId, v.Val, v.Id);
+				dapVariable.value = 'Set(Size:' + v.Size?.toString() + ")";
+				dapVariable.type = "Set";
+				dapVariable.variablesReference = v.reference;
+				dapVariable.indexedVariables = undefined;
+				dapVariable.namedVariables = v.Size;
+				break;
 			case 'Tensor':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Tensor(Size:'+v.Size?.toString()+")";
+					v.Type, v.FrameId, v.Val, v.Id);
+				dapVariable.value = 'Tensor(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Tensor";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
-				break;		
+				break;
 			case 'Prop':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Prop(Size:'+v.Size?.toString()+")";
+					v.Type, v.FrameId, v.Val, v.Id);
+				dapVariable.value = 'Prop(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Prop";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;
 			case 'TableRow':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val,v.Id);
+					v.Type, v.FrameId, v.Val, v.Id);
 				dapVariable.value = 'TableRow(ColNum:' + v.Size?.toString() + ")";
 				dapVariable.type = "TableRow";
 				dapVariable.variablesReference = v.reference;
@@ -1152,7 +1194,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'Table':
 				v.reference = this._runtime.createScopeRef(
-					v.Type, v.FrameId, v.Val,v.Id);
+					v.Type, v.FrameId, v.Val, v.Id);
 				dapVariable.value = 'Table(RowNum:' + v.Size?.toString() + ")";
 				dapVariable.type = "Table";
 				dapVariable.variablesReference = v.reference;
@@ -1160,27 +1202,28 @@ export class XLangDebugSession extends LoggingDebugSession {
 				break;
 			case 'PyObject':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Python Object(Size:'+v.Size?.toString()+")";
+					v.Type, v.FrameId, v.Val, v.Id);
+				dapVariable.value = 'Python Object(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "PyObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
-				break;	
+				break;
 			case 'DeferredObject':
 				v.reference = this._runtime.createScopeRef(
-					v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Deferred Object(Size:'+v.Size?.toString()+")";
+					v.Type, v.FrameId, v.Val, v.Id);
+				dapVariable.value = 'Deferred Object(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "DeferredObject";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;
 			case 'Binary':
-				v.reference = this._runtime.createScopeRef(v.Type,v.FrameId,v.Val,v.Id);
-				dapVariable.value = 'Binary(Size:'+v.Size?.toString()+")";
+				v.reference = this._runtime.createScopeRef(v.Type, v.FrameId, v.Val, v.Id);
+				dapVariable.value = 'Binary(Size:' + v.Size?.toString() + ")";
 				dapVariable.type = "Binary";
 				dapVariable.variablesReference = v.reference;
 				dapVariable.indexedVariables = v.Size;
 				break;
+
 			default:
 				break;
 		}
@@ -1188,12 +1231,10 @@ export class XLangDebugSession extends LoggingDebugSession {
 		return dapVariable;
 	}
 
+
+
 	private formatAddress(x: number, pad = 8) {
 		return this._addressesInHex ? '0x' + x.toString(16).padStart(8, '0') : x.toString(10);
-	}
-
-	private formatNumber(x: number) {
-		return this._valuesInHex ? '0x' + x.toString(16) : x.toString(10);
 	}
 
 	private createSource(filePath: string): Source {
@@ -1204,20 +1245,15 @@ export class XLangDebugSession extends LoggingDebugSession {
 		let path = "";
 		if (this._mapMd5Src.has(md5))
 			path = this._mapMd5Src.get(md5) || "";
-		if (path === "")
-		{
-			if (isPathMatchOs(src_path))
-			{
-				if (this._mapSrcMd5.has(src_path))
-				{
+		if (path === "") {
+			if (isPathMatchOs(src_path)) {
+				if (this._mapSrcMd5.has(src_path)) {
 					let local_md5 = this._mapSrcMd5.get(src_path);
 					this._runtime.addOutput(`source file "${src_path}" on server md5 not match, local: "${local_md5}", server: "${md5}"`);
 				}
-				else
-				{
+				else {
 					let exists = fs.existsSync(src_path);
-					if (exists)
-					{
+					if (exists) {
 						let local_md5 = calFileMD5(src_path);
 						if (local_md5 === md5)
 							path = src_path;
@@ -1229,38 +1265,36 @@ export class XLangDebugSession extends LoggingDebugSession {
 				}
 			}
 			else
-				this._runtime.addOutput(`Current os is not same with server, please open source file accroding to "${src_path}" and add breakpoints first`);		
+				this._runtime.addOutput(`Current os is not same with server, please open source file accroding to "${src_path}" and add breakpoints first`);
 		}
 		return new Source(basename(path), this.convertDebuggerPathToClient(path), undefined, undefined, 'xLang-adapter-data');
 	}
 
-	private async getValidPort() : Promise<number>
-	{
-		let port : number = 35000;
-		for(let i = 0; i < 1000; ++i)
-		{
+	private async getValidPort(): Promise<number> {
+		let port: number = 35000;
+		for (let i = 0; i < 1000; ++i) {
 			const ret = await this.checkPort(port);
 			if (ret > 0) {
 				return ret;
 			}
-			else{
+			else {
 				port += 1;
 			}
 		}
 		return 0;
 	}
 
-	private async checkPort(port) : Promise<number> {
-        return new Promise((resolve, reject) => {
-            let server = net.createServer().listen(port);
-            server.on('listening', function () {
-                server.close();
-                resolve(port);
-            });
-            server.on('error', function (err) {
+	private async checkPort(port): Promise<number> {
+		return new Promise((resolve, reject) => {
+			let server = net.createServer().listen(port);
+			server.on('listening', function () {
 				server.close();
-                resolve(0);
-            });
-        });
+				resolve(port);
+			});
+			server.on('error', function (err) {
+				server.close();
+				resolve(0);
+			});
+		});
 	}
 }

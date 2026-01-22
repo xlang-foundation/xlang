@@ -87,4 +87,5 @@ if(NOT (BARE_METAL))
 add_subdirectory("BareLink")
 add_subdirectory("Yaml")
 endif()
+add_subdirectory("VSCode")
 

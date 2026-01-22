@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,32 +19,30 @@ import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { XLangDebugSession } from './xLangDebug';
 
-async function SetExePath() : Promise<string | undefined>
-{
-	let exePath : any;
+async function SetExePath(): Promise<string | undefined> {
+	let exePath: any;
 	if (process.platform === "win32") {
 		const ret = await vscode.window.showOpenDialog({
-			openLabel:'choose',
+			openLabel: 'choose',
 			canSelectFiles: true,
 			canSelectMany: false,
-			filters:{'xlang executable file': ['exe']},
+			filters: { 'xlang executable file': ['exe'] },
 			title: 'Select XLang Executable File'
 		});
-		if (ret?.length > 0)
+		if (ret && ret.length > 0)
 			exePath = ret[0].fsPath;
 	} else if (process.platform === "linux" || process.platform === "darwin") {
 		const ret = await vscode.window.showOpenDialog({
-			openLabel:'choose',
+			openLabel: 'choose',
 			canSelectFiles: true,
 			canSelectMany: false,
-			filters:{'xlang executable file': ['*']},
+			filters: { 'xlang executable file': ['*'] },
 			title: 'Select XLang Executable File'
 		});
-		if (ret?.length > 0)
+		if (ret && ret.length > 0)
 			exePath = ret[0].fsPath;
 	}
-	if (exePath)
-	{
+	if (exePath) {
 		await vscode.workspace.getConfiguration('XLangDebugger').update('ExePath', exePath, vscode.ConfigurationTarget.Global);//save to global config
 	}
 	//exePath = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
@@ -54,8 +52,7 @@ async function SetExePath() : Promise<string | undefined>
 export async function activateXLangDebug(context: vscode.ExtensionContext, factory?: vscode.DebugAdapterDescriptorFactory) {
 	// check and set the xlang executable file
 	let exePath = vscode.workspace.getConfiguration('XLangDebugger').get<string>('ExePath');
-	if (!exePath || exePath === '')
-	{
+	if (!exePath || exePath === '') {
 		exePath = await SetExePath();
 	}
 
@@ -140,7 +137,7 @@ export async function activateXLangDebug(context: vscode.ExtensionContext, facto
 	}
 	context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('xlang', factory));
 	if ('dispose' in factory) {
-		context.subscriptions.push(factory);
+		context.subscriptions.push(factory as any);
 	}
 
 	// override VS Code's default implementation of the debug hover
@@ -148,7 +145,7 @@ export async function activateXLangDebug(context: vscode.ExtensionContext, facto
 	context.subscriptions.push(vscode.languages.registerEvaluatableExpressionProvider('xlang', {
 		provideEvaluatableExpression(document: vscode.TextDocument, position: vscode.Position): vscode.ProviderResult<vscode.EvaluatableExpression> {
 
-			const VARIABLE_REGEXP = /\$[a-z][a-z0-9]*/ig;
+			const VARIABLE_REGEXP = /[a-zA-Z_][a-zA-Z0-9_]*/g;
 			const line = document.lineAt(position.line).text;
 
 			let m: RegExpExecArray | null;
@@ -166,7 +163,7 @@ export async function activateXLangDebug(context: vscode.ExtensionContext, facto
 	// override VS Code's default implementation of the "FORCE_INLINE values" feature"
 	context.subscriptions.push(vscode.languages.registerInlineValuesProvider('xlang', {
 
-		provideInlineValues(document: vscode.TextDocument, viewport: vscode.Range, context: vscode.InlineValueContext) : vscode.ProviderResult<vscode.InlineValue[]> {
+		provideInlineValues(document: vscode.TextDocument, viewport: vscode.Range, context: vscode.InlineValueContext): vscode.ProviderResult<vscode.InlineValue[]> {
 
 			const allValues: vscode.InlineValue[] = [];
 
@@ -196,10 +193,9 @@ export async function activateXLangDebug(context: vscode.ExtensionContext, facto
 	}));
 	return factory;
 }
-
-const ipPortRegex = /^((localhost)|((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)):([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/i
-const ipRegex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})$/;
 const ipHostPortRegex = /^(?:(?:\d{1,3}\.){3}\d{1,3}|\[(?:[a-fA-F0-9:]+)\]|(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+|\w+):\d{1,5}$/;
+
+
 
 class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -207,7 +203,7 @@ class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 	 * Massage a debug configuration just before a debug session is being launched,
 	 * e.g. add all missing attributes to the debug configuration.
 	 */
-	async resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+	async resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): Promise<DebugConfiguration | undefined | null> {
 
 		// if launch.json is missing or empty
 		if (!config.type && !config.request && !config.name) {
@@ -219,40 +215,33 @@ class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 					placeHolder: 'launch'
 				};
 				let mode = await vscode.window.showQuickPick(items, options);
-				if (mode)
-				{
+				if (mode) {
 					config.request = mode;
 				}
-				else
-				{
+				else {
 					config.request = 'launch';
 				}
-				if (config.request === 'attach')
-				{
-					let dbgAddr = await vscode.window.showInputBox({value: "localhost:3142", prompt: "input remote xlang dbg address and port", placeHolder: "ip or host name:port"});
-					if (dbgAddr)
-					{
+				if (config.request === 'attach') {
+					let dbgAddr = await vscode.window.showInputBox({ value: "localhost:3142", prompt: "input remote xlang dbg address and port", placeHolder: "ip or host name:port" });
+					if (dbgAddr) {
 						dbgAddr = dbgAddr.replace(/\s/g, '');
-						if(ipHostPortRegex.test(dbgAddr))
-						{
+						if (ipHostPortRegex.test(dbgAddr)) {
 							const strList = dbgAddr.split(":");
 							config.dbgIp = strList[0];
 							config.dbgPort = Number(strList[1]);
 						}
-						else
-						{
+						else {
 							await vscode.window.showErrorMessage("please input valid address and port to attach, debugging stopped", { modal: true }, "ok");
 							return undefined;
 						}
 					}
-					else
-					{
+					else {
 						await vscode.window.showErrorMessage("cancel attach, debugging stopped", { modal: true }, "ok");
 						return undefined;
 
 					}
 				}
-				
+
 				config.type = 'xlang';
 				config.name = 'Dynamic Debug';
 				config.program = '${file}';
@@ -271,8 +260,8 @@ class XLangConfigurationProvider implements vscode.DebugConfigurationProvider {
 }
 
 class InlineDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
-	private _xLangDebugSession:XLangDebugSession = new XLangDebugSession();
-	public getDbgSession(){
+	private _xLangDebugSession: XLangDebugSession = new XLangDebugSession();
+	public getDbgSession() {
 		return this._xLangDebugSession;
 	}
 	createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {

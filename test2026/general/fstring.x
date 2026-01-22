@@ -1,6 +1,8 @@
 x = 10
 y = 20
 
+s = set(1,23)
+print(s)
 print("CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10")
 
 # 1. Basic

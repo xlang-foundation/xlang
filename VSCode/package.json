@@ -7,7 +7,7 @@
   "author": {
     "name": "The XLang Foundation"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "multi-root ready"
   ],
@@ -97,8 +97,12 @@
       },
       {
         "id": "yml",
-        "extensions": [".yml"],
-        "aliases": ["yml"]
+        "extensions": [
+          ".yml"
+        ],
+        "aliases": [
+          "yml"
+        ]
       }
     ],
     "grammars": [

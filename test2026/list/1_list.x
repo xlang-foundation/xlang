@@ -1,6 +1,7 @@
 
 print("CHECKPOINTS: cp1, cp2, cp3, cp4")
 
+s1 = set(1,3,4)
 # Basic List
 l = [1, 2, 3]
 print("(cp1) list:", l) 
