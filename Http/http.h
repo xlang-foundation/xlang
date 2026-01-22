@@ -207,6 +207,7 @@ namespace X
 		BEGIN_PACKAGE(HttpClient)
 			APISET().AddFunc<1>("get", &HttpClient::Get);
 			APISET().AddFunc<3>("post", &HttpClient::Post);
+			APISET().AddFunc<4>("post_with_callback", &HttpClient::PostWithCallback);
 			APISET().AddFunc<1>("setHeaders", &HttpClient::SetHeaders);
 			APISET().AddProp0("headers", &HttpClient::m_headers);
 			APISET().AddPropL("enable_server_certificate_verification", 
@@ -225,6 +226,7 @@ namespace X
 		~HttpClient();
 		bool Get(std::string path);
 		bool Post(std::string path, std::string content_type, std::string body);
+		bool PostWithCallback(std::string path, std::string content_type, std::string body, X::Value callback);
 		X::Value GetStatus();
 		X::Value GetBody();
 		X::Value GetResponseHeaders() { return m_response_headers; }
