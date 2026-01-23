@@ -48,6 +48,75 @@ namespace X
 					auto* pFuncObj = new Data::Function(extFunc, true);
 					m_funcs.push_back(X::Value(pFuncObj));
 				}
+				//API: call
+				{
+					std::string name("call");
+					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+						ARGS& params,
+						KWARGS& kwParams,
+						X::Value& retValue)
+						{
+							bool bOK = false;
+							Function* pFuncObj = dynamic_cast<Function*>(pContext);
+							if (params.size() > 0)
+							{
+								//if one parameter and it is list used as params
+								//or dict, we use it as kwParams
+								//also support first one is list, second is dict
+								if (params.size() >= 1)
+								{
+									X::Value& firstParam = params[0];
+									if (firstParam.IsList())
+									{
+										X::List listArgs(firstParam);
+										X::ARGS newParams(listArgs->Size());
+										for (auto li : *listArgs)
+										{
+											newParams.push_back(li);
+										}
+										X::KWARGS newKwParams;
+										if (params.size() >= 2)
+										{
+											//second param as kwParams
+											X::Value& secondParam = params[1];
+											if (secondParam.IsDict())
+											{
+												X::Dict dictArgs(secondParam);
+												dictArgs->Enum(
+													[&newKwParams](X::Value& key, X::Value& val)
+													{
+														std::string strKey = key.asString();
+														newKwParams.Add(strKey.c_str(), val);
+													});
+											}
+										}
+										bOK = pFuncObj->GetFunc()->Call(rt, pFuncObj,
+											pThis, newParams, newKwParams, retValue);
+									} //End
+									else if(firstParam.IsDict())
+									{
+										X::ARGS newParams;
+										X::Dict dictArgs(firstParam);
+										X::KWARGS newKwParams;
+										dictArgs->Enum(
+											[&newKwParams](X::Value& key, X::Value& val)
+											{
+												std::string strKey = key.asString();
+												newKwParams.Add(strKey.c_str(), val);
+											});
+										bOK = pFuncObj->GetFunc()->Call(rt, pFuncObj,
+											pThis, newParams, newKwParams, retValue);
+									}
+								}
+							}
+
+							return bOK;
+						};
+					X::U_FUNC func(f);
+					AST::ExternFunc* extFunc = new AST::ExternFunc(name, "retVal = func.call(dynamic parameters)", func);
+					auto* pFuncObj = new Data::Function(extFunc, true);
+					m_funcs.push_back(X::Value(pFuncObj));
+				}
 			}
 			int QueryMethod(const char* name)
 			{
