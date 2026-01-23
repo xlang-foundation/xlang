@@ -39,6 +39,7 @@ namespace X
 		protected:
 			std::vector<AST::Scope*> m_bases;
 			Dict_MAP mMap;
+			std::vector<X::Value> mIndex;
 		public:
 			static void Init();
 			static void cleanup();
@@ -47,6 +48,7 @@ namespace X
 			{
 				AutoLock autoLock(m_lock);
 				mMap.clear();
+				mIndex.clear();
 				m_bases.clear();
 			}
 			FORCE_INLINE virtual long long Size() override
@@ -81,6 +83,11 @@ namespace X
 			}
 			virtual Value& operator[](X::Value& key) override
 			{
+				auto it = mMap.find(key);
+				if (it == mMap.end())
+				{
+					mIndex.push_back(key);
+				}
 				return mMap[key];
 			}
 			virtual bool Set(X::Value valIdx, X::Value& val) override
@@ -92,6 +99,7 @@ namespace X
 				}
 				else
 				{
+					mIndex.push_back(valIdx);
 					mMap.emplace(std::make_pair(valIdx, val));
 				}
 				return true;
@@ -105,11 +113,13 @@ namespace X
 				}
 				else
 				{
+					mIndex.push_back(key);
 					mMap.emplace(std::make_pair(key, val));
 				}
 			}
 			void SetKV(X::Value& key,const X::Value& val)
 			{
+				mIndex.push_back(key);
 				mMap.emplace(std::make_pair(key, val));
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
@@ -122,7 +132,9 @@ namespace X
 			}
 			void Set(const char* key, X::Value val)
 			{
-				mMap.emplace(std::make_pair(X::Value(key), val));
+				X::Value k(key);
+				mIndex.push_back(k);
+				mMap.emplace(std::make_pair(k, val));
 			}
 			void AddKeyValue(Value& key, const Value& v)
 			{
@@ -133,6 +145,7 @@ namespace X
 				}
 				else
 				{
+					mIndex.push_back(key);
 					mMap.emplace(std::make_pair(key, v));
 				}
 			}
@@ -144,9 +157,18 @@ namespace X
 					if (pObj->GetType() == ObjType::Dict)
 					{
 						Dict* pDictOther = dynamic_cast<Dict*>(pObj);
-						for (auto& it : pDictOther->mMap)
+						for (auto& key : pDictOther->mIndex)
 						{
-							mMap.emplace(std::make_pair(it.first,it.second));
+							auto it = pDictOther->mMap.find(key);
+							if (it != pDictOther->mMap.end())
+							{
+								auto itMy = mMap.find(key);
+								if (itMy == mMap.end())
+								{
+									mIndex.push_back(key);
+									mMap.emplace(std::make_pair(key, it->second));
+								}
+							}
 						}
 					}
 				}
@@ -207,6 +229,14 @@ namespace X
 				if (it != mMap.end())
 				{
 					mMap.erase(it);
+					for (auto itIdx = mIndex.begin(); itIdx != mIndex.end(); ++itIdx)
+					{
+						if (*itIdx == key)
+						{
+							mIndex.erase(itIdx);
+							break;
+						}
+					}
 					bOK = true;
 				}
 				return bOK;
@@ -237,10 +267,14 @@ namespace X
 				Object::ToBytes(rt,pContext,stream);
 				size_t size = Size();
 				stream << size;
-				for (auto& it : mMap)
+				for (auto& key : mIndex)
 				{
-					stream<<it.first;
-					stream<<it.second;
+					auto it = mMap.find(key);
+					if (it != mMap.end())
+					{
+						stream << key;
+						stream << it->second;
+					}
 				}
 				return true;
 			}
@@ -254,25 +288,30 @@ namespace X
 					X::Value key,val;
 					stream >> key >>val;
 					mMap[key] = val;
+					mIndex.push_back(key);
 				}
 				return true;
 			}
 			virtual const char* ToString(bool WithFormat = false) override
 			{
 				std::string strOut = "{\n";
-				int cnt = (int)mMap.size();
+				int cnt = (int)mIndex.size();
 				int i = 0;
-				for (auto& it: mMap)
+				for (auto& key : mIndex)
 				{
-					X::Value key = it.first;
 					std::string strKey = key.ToString(WithFormat);
-					X::Value Val = it.second;
+					auto it = mMap.find(key);
+					if (it == mMap.end())
+					{
+						continue;
+					}
+					X::Value Val = it->second;
 					std::string strVal = Val.ToString(WithFormat);
 					if (strVal.empty())
 					{
 						strVal = "\"\"";
 					}
-					strOut += "\t" + strKey+ ":"+ strVal;
+					strOut += "\t" + strKey + ":" + strVal;
 					if (i < (cnt - 1))
 					{
 						strOut += ",\n";
@@ -294,18 +333,21 @@ namespace X
 				retValue = X::Value(this);
 				return true;
 			}
-			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos, 
+			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos,
 				std::vector<Value>& vals, bool getOnly) override
 			{
 				long long offset = (long long)pos;
-				if (offset >= (long long)mMap.size())
+				if (offset >= (long long)mIndex.size())
 				{
 					return false;
 				}
-				auto it = mMap.begin();
-				std::advance(it, offset);
-				bool retVal = false;
-				vals.push_back(it->first);
+				X::Value& key = mIndex[offset];
+				auto it = mMap.find(key);
+				if (it == mMap.end())
+				{
+					return false;
+				}
+				vals.push_back(key);
 				vals.push_back(it->second);
 				vals.push_back(offset);
 				if (!getOnly)
@@ -323,12 +365,13 @@ namespace X
 			virtual void Enum(XDict::Dict_Enum proc) override
 			{
 				AutoLock autoLock(m_lock);
-
-				for (auto& it : mMap)
+				for (auto& key : mIndex)
 				{
-					X::Value key(it.first);
-					X::Value val(it.second);
-					proc(key, val);
+					auto it = mMap.find(key);
+					if (it != mMap.end())
+					{
+						proc(key, it->second);
+					}
 				}
 			}
 			virtual bool Iterate(X::XRuntime* rt, XObj* pContext,
@@ -336,12 +379,14 @@ namespace X
 				X::Value& retValue) override
 			{
 				AutoLock autoLock(m_lock);
-				
-				for (auto& it: mMap)
+
+				for (auto& key : mIndex)
 				{
-					X::Value key(it.first);
-					X::Value val(it.second);
-					proc(rt, pContext,key,val, params, kwParams);
+					auto it = mMap.find(key);
+					if (it != mMap.end())
+					{
+						proc(rt, pContext, key, it->second, params, kwParams);
+					}
 				}
 				return true;
 			}

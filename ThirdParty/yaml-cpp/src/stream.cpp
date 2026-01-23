@@ -262,24 +262,7 @@ char Stream::get() {
   AdvanceCurrent();
   m_mark.column++;
 
-  // if line ending symbol is unknown, set it to the first
-  // encountered line ending.
-  // if line ending '\r' set ending symbol to '\r'
-  // other wise set it to '\n'
-  if (!m_lineEndingSymbol) {
-    if (ch == '\n') { // line ending is '\n'
-      m_lineEndingSymbol = '\n';
-    } else if (ch == '\r') {
-      auto ch2 = peek();
-      if (ch2 == '\n') { // line ending is '\r\n'
-        m_lineEndingSymbol = '\n';
-      } else { // line ending is '\r'
-        m_lineEndingSymbol = '\r';
-      }
-    }
-  }
-
-  if (ch == m_lineEndingSymbol) {
+  if (ch == '\n') {
     m_mark.column = 0;
     m_mark.line++;
   }
