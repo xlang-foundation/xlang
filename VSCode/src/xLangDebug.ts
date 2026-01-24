@@ -326,7 +326,7 @@ export class XLangDebugSession extends LoggingDebugSession {
 		if (this._serverEnded)
 			this._runtime.close(true);
 		else {
-			if ((this._isLaunch && args.terminateDebuggee) || (!this._isLaunch && args.terminateDebuggee && !args.restart)) {
+			if (this._isLaunch && args.terminateDebuggee) {
 				this._runtime.close(true);
 			}
 			else {
