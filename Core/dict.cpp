@@ -113,9 +113,9 @@ namespace X
 					{
 						Dict* pObj = dynamic_cast<Dict*>(pContext);
 						X::List list;
-						for (auto& it : pObj->mMap)
+						for (auto& key : pObj->mIndex)
 						{
-							list += it.first;
+							list += key;
 						}
 						retValue = list;
 						return true;
@@ -130,9 +130,10 @@ namespace X
 					{
 						Dict* pObj = dynamic_cast<Dict*>(pContext);
 						X::List list;
-						for (auto& it : pObj->mMap)
+						for (auto& key : pObj->mIndex)
 						{
-							list += it.second;
+							X::Value val = pObj->mMap[key];
+							list += val;
 						}
 						retValue = list;
 						return true;
@@ -186,11 +187,11 @@ namespace X
 			}
 			List* pOutList = new List();
 			pOutList->IncRef();
-			for (auto& it: mMap)
+			for (auto& key: mIndex)
 			{
 				Dict* dict = new Dict();
 				std::string myId;
-				X::Value key = it.first;
+				//X::Value key = it.first;
 				if (!key.IsObject() || (key.IsObject() && 
 					dynamic_cast<Object*>(key.GetObj())->IsStr()))
 				{
@@ -208,7 +209,7 @@ namespace X
 				auto objIds = CombinObjectIds(IdList,myId);
 				dict->Set("Id", objIds);
 
-				X::Value val = it.second;
+				X::Value val = mMap[key];
 				auto valType = val.GetValueType();
 				Data::Str* pStrType = new Data::Str(valType);
 				dict->Set("Type", X::Value(pStrType));

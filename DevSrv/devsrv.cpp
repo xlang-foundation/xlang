@@ -127,6 +127,11 @@ namespace X
 					std::string code, src, md5;
 					const char* data = req.body.data();
 					uint32_t codeLen = ntohl(*reinterpret_cast<const uint32_t*>(data));
+					if (codeLen + 4 > req.body.size())
+					{
+						res.set_content("error: invalid code length", "text/html");
+						return;
+					}
 					data += 4;
 					#ifdef _WIN32
 					code = utf8ToSystemCp(std::string(data, codeLen));
@@ -260,11 +265,15 @@ namespace X
 			}
 		);
 		m_srv.Get("/devops/checkStarted",
-			[this](const httplib::Request& req, httplib::Response& res)
+			[this, &notis, &notiLock](const httplib::Request& req, httplib::Response& res)
 			{
 				std::lock_guard<std::mutex> lock(m_mtxConnect);
 				m_Connected = true;
 				m_cvConnect.notify_one();
+				// clear notis
+				notiLock.Lock();
+				notis.clear();
+				notiLock.Unlock();
 
 				// check if debug need input a path
 				auto& req_params = req.params;
@@ -276,8 +285,13 @@ namespace X
 				{
 					std::string path = itPath->second;
 					std::string platform = itPlatform->second;
-					std::string md5 = itMd5->second;
-					if (X::g_pXHost->IsModuleLoadedMd5(md5.c_str()))
+					std::string md5;
+					if (itMd5 != req_params.end())
+					{
+						md5 = itMd5->second;
+					}
+
+					if (!md5.empty() && X::g_pXHost->IsModuleLoadedMd5(md5.c_str()))
 						res.set_content("not_need_path", "text/html");
 #if defined(_WIN32) 
 					else if (platform == "not_windows") // platfor not match

@@ -1228,6 +1228,57 @@ namespace X
 		return true;
 	}
 
+	bool HttpClient::PostWithCallback(std::string path, std::string content_type, std::string body, X::Value callback)
+	{
+		httplib::Client* client = (httplib::Client*)m_pClient;
+		if (!client) {
+			return false;
+		}
+
+		httplib::Request req;
+		req.method = "POST";
+		req.path = path;
+		
+		m_headers->Enum([&](X::Value& key, X::Value& value){
+			req.headers.emplace(key.ToString(), value.ToString());
+		});
+
+		req.body = body;
+		if (!content_type.empty()) {
+			req.set_header("Content-Type", content_type);
+		}
+
+		req.content_receiver = [callback](const char* data, size_t data_length, uint64_t /*offset*/, uint64_t /*total_length*/) mutable {
+			if (callback.IsObject()) {
+				std::string chunk(data, data_length);
+				X::Value valChunk(chunk);
+				X::ARGS args;
+				args.push_back(valChunk);
+				callback.ObjCall(args);
+				return true; 
+			}
+			return true;
+		};
+
+		auto res = client->send(req);
+		if (res) {
+			m_status = res->status;
+			m_body = res->body;
+
+			X::Dict dict;
+			for (auto& kv : res->headers)
+			{
+				X::Str key(kv.first.c_str(), (int)kv.first.size());
+				X::Str val(kv.second.c_str(), (int)kv.second.size());
+				dict->Set(key, val);
+			}
+			m_response_headers = dict;
+			return true;
+		}
+		
+		return false;
+	}
+
 	bool HttpClient::Post(std::string path, std::string content_type, std::string body)
 	{
 		if (m_pClient)
@@ -1335,4 +1386,5 @@ namespace X
 		return true;
 	}
 }
+
 

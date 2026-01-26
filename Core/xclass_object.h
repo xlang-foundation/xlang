@@ -68,6 +68,17 @@ namespace X {
 				}
 				m_variableFrame->SetVarCount(m_obj->GetMyScope()->GetVarNum());
 			}
+			FORCE_INLINE bool GetIndexValue(long long idx, Value& v) override final
+			{
+				m_variableFrame->Get((int)idx, v);
+				return true;
+			}
+			FORCE_INLINE int QueryMethod(const char* name, int* pFlags = nullptr) override final
+			{
+				std::string strName(name);
+				SCOPE_FAST_CALL_AddOrGet0(idx, m_pMyScope, strName, true);
+				return idx;
+			}
 			~XClassObject()
 			{
 				if (m_variableFrame)

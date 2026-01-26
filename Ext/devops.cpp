@@ -526,7 +526,41 @@ namespace X
 
 			return X::Value(list);
 		}
-		
+		bool EvaluateVar(XlangRuntime* rt,
+			AST::StackFrame* frameId,
+			std::string& varName,
+			X::Value& valVar)
+		{
+			// 1. Search Locals
+			AST::StackFrame* pCurStack = rt->GetCurrentStack();
+			while (pCurStack != nil)
+			{
+				if (pCurStack == frameId) break;
+				pCurStack = pCurStack->Prev();
+			}
+			if (pCurStack)
+			{
+				AST::Scope* pCurScope = pCurStack->GetScope();
+				int idx = -1;
+				idx = pCurScope->AddOrGet(varName, true);
+				if (idx >= 0)
+				{
+					pCurStack->Get(idx, valVar);
+					return true;
+				}
+			}
+
+			// 2. Search Globals
+			AST::Scope* pScope = rt->M()->GetMyScope();
+			int idx = -1;
+			idx = pScope->AddOrGet(varName, true);
+			if (idx >= 0)
+			{
+				pScope->Get(rt, nullptr, idx, valVar);
+				return true;
+			}
+			return false;
+		}
 		bool DebugService::Command(X::XRuntime* rt, XObj* pContext,
 			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
@@ -612,7 +646,8 @@ namespace X
 			else if (strCmd == "Globals"
 				|| strCmd == "Locals"
 				|| strCmd == "Object"
-				|| strCmd == "SetObjectValue")
+				|| strCmd == "SetObjectValue"
+				|| strCmd == "Eval")
 			{
 				AST::StackFrame* frameId = 0;
 				auto it2 = kwParams.find("frameId");
@@ -666,6 +701,25 @@ namespace X
 						pCommandInfo->m_varParam,
 						retVal);
 				};
+				auto evalPack = [](XlangRuntime* rt,
+					XObj* pContextCurrent,
+					CommandInfo* pCommandInfo,
+					X::Value& retVal)
+				{
+					// We need to parse param as string
+					std::string expr = pCommandInfo->m_varParam.ToString();
+					X::Value val;
+					if (EvaluateVar(rt, pCommandInfo->m_frameId, expr, val))
+					{
+						Data::Dict* dict = new Data::Dict();
+						PackValueAsDict(dict, expr, val);
+						retVal = X::Value(dict);
+					}
+					else
+					{
+						retVal = X::Value(false);
+					}
+				};
 				if (strCmd == "Locals")
 				{
 					pCmdInfo->m_process = localPack;
@@ -681,6 +735,10 @@ namespace X
 				else if (strCmd == "SetObjectValue")
 				{
 					pCmdInfo->m_process = objSetValuePack;
+				}
+				else if (strCmd == "Eval")
+				{
+					pCmdInfo->m_process = evalPack;
 				}
 				pCmdInfo->m_varParam = valParam;
 				pCmdInfo->m_callContext = this;

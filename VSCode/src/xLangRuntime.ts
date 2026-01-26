@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,22 +19,21 @@ limitations under the License.
 
 import { EventEmitter } from 'events';
 import * as vscode from 'vscode';
-import * as os from 'os';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 
 function getTimestamp(): string {
 	let date: Date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
 
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+	const hours = String(date.getHours()).padStart(2, '0');
+	const minutes = String(date.getMinutes()).padStart(2, '0');
+	const seconds = String(date.getSeconds()).padStart(2, '0');
+	const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
 
-    return `[${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}] `;
+	return `[${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}] `;
 }
 
 export interface IRuntimeBreakpoint {
@@ -63,15 +62,22 @@ interface RuntimeDisassembledInstruction {
 	instruction: string;
 	line?: number;
 }
+
+interface Word {
+	name: string;
+	line: number;
+	index: number;
+}
 export class RuntimeVariable {
 	private _name: string = "";
 	private _value: any = null;
-	private _id:string = "";
+	private _id: string = "";
 	private _size: number = 0;
 	private _type: string = "";
 	private _frameId: number = 0;
 	private _reference: number = 0;
-	constructor(name: string, value, id, type: string,size:number,frmId:number) {
+	public memory?: Uint8Array;
+	constructor(name: string, value, id, type: string, size: number, frmId: number) {
 		this._name = name;
 		this._type = type;
 		this._value = value;
@@ -86,7 +92,7 @@ export class RuntimeVariable {
 		return this._name;
 	}
 	public set Name(nm) {
-		this._name =nm;
+		this._name = nm;
 	}
 	public get Size() { return this._size; }
 	public get reference() {
@@ -122,18 +128,18 @@ export function timeout(ms: number) {
 export class XLangRuntime extends EventEmitter {
 
 	private _runFile: string = '';
-	public get runFile(){
+	public get runFile() {
 		return this._runFile;
 	}
-	private _needSrvPath : boolean = false;
-	private _outputChannel : vscode.OutputChannel;
+	private _needSrvPath: boolean = false;
+	private _outputChannel: vscode.OutputChannel;
 	private _sourceFile: string = '';
 	private _moduleKey: number = 0;
 	private _runModule: boolean = false;
 	private _breakPointThreadId: number = 0;
 	private _sessionRunning: boolean = false;
-	private _srvaddress:string ="localhost";
-	private _srvPort:number =3142;
+	private _srvaddress: string = "localhost";
+	private _srvPort: number = 3142;
 	public get sourceFile() {
 		return this._sourceFile;
 	}
@@ -143,7 +149,7 @@ export class XLangRuntime extends EventEmitter {
 
 	// This is the next line that will be 'executed'
 	private _currentLine = 0;
-	private get currentLine() {
+	public get currentLine() {
 		return this._currentLine;
 	}
 	public set currentLine(x) {
@@ -151,43 +157,26 @@ export class XLangRuntime extends EventEmitter {
 		this.instruction = this.starts[x];
 	}
 
-	public get serverPort(){
+	public get serverPort() {
 		return this._srvPort;
 	}
 
-	public set serverPort(port){
+	public set serverPort(port) {
 		this._srvPort = port;
 	}
 
-	public get serverAddress(){
+	public get serverAddress() {
 		return this._srvaddress;
 	}
 
-	public set serverAddress(addr){
+	public set serverAddress(addr) {
 		this._srvaddress = addr;
-	}
-
-	private isLocalServer() : boolean
-	{
-		if (this._srvaddress === "127.0.0.1" || this._srvaddress.toLowerCase() === "localhost"){
-			return true;
-		}
-		for (const iface of Object.values(os.networkInterfaces())) {
-			for (const details of iface) {
-				if (details.family === 'IPv4' && !details.internal) {
-					if (this._srvaddress === details.address){
-						return true;
-					}
-				}
-			}
-		}
-		return false;
 	}
 
 	public runMode = "";
 
 	// This is the next instruction that will be 'executed'
-	public instruction= 0;
+	public instruction = 0;
 
 	// all instruction breakpoint addresses
 	private instructionBreakpoints = new Set<number>();
@@ -195,28 +184,23 @@ export class XLangRuntime extends EventEmitter {
 
 	private breakAddresses = new Map<string, string>();
 
-	private namedException: string | undefined;
-	private otherExceptions = false;
-
-
 	constructor() {
 		super();
 		this._outputChannel = vscode.window.createOutputChannel("XLang Output");
-    	this._outputChannel.show(true);
-    	this.addOutput("XLang extension active");
+		this._outputChannel.show(true);
+		this.addOutput("XLang extension active");
 	}
 
-	public addOutput(val : string)
-	{
+	public addOutput(val: string) {
 		this._outputChannel.show(true)
 		this._outputChannel.appendLine(`${getTimestamp()}${val}`);
 	}
 
 	private nextVarRef = 1;
-	private varRefMap = new Map<number,[]>();
-	public createScopeRef(varType, frameId,val,id) {
+	private varRefMap = new Map<number, []>();
+	public createScopeRef(varType, frameId, val, id) {
 		let refId = this.nextVarRef++;
-		this.varRefMap[refId] = [varType, frameId,val,id];
+		this.varRefMap[refId] = [varType, frameId, val, id];
 		return refId;
 	}
 	public getScopeRef(refId) {
@@ -224,10 +208,10 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	public close(closeXlang: boolean) {
-		if (closeXlang){
+		if (closeXlang) {
 			this.terminateXlang();
 		}
-		else{
+		else {
 			this.setDebug(false);
 		}
 		this._sourceFile = '';
@@ -240,25 +224,27 @@ export class XLangRuntime extends EventEmitter {
 		let code;
 		let content;
 		let srcArg = {};
-		if (bIsX)
-		{
+		if (bIsX) {
 			content = fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n');
 			const hash = crypto.createHash('md5');
 			hash.update(content);
 			let md5 = hash.digest('hex');
 			srcArg['src'] = content;
 			srcArg['md5'] = md5;
-			if (this._needSrvPath)
-			{
-				file = await vscode.window.showInputBox({value: file, prompt: "platform not match or file not exists, input remote path of current file to debug", placeHolder: file});
+			if (this._needSrvPath) {
+				const newFile = await vscode.window.showInputBox({ value: file, prompt: "platform not match or file not exists, input remote path of current file to debug", placeHolder: file });
+				if (newFile) {
+					file = newFile;
+				}
 			}
 			code = "m = load('" + file + "','" + this.runMode + "','" + md5 + "')\nreturn m";
 		}
-		else
-		{
-			if (this._needSrvPath)
-			{
-				file = await vscode.window.showInputBox({value: file, prompt: "platform not match or file not exists, input remote path of current file to run", placeHolder: file});
+		else {
+			if (this._needSrvPath) {
+				const newFile = await vscode.window.showInputBox({ value: file, prompt: "platform not match or file not exists, input remote path of current file to run", placeHolder: file });
+				if (newFile) {
+					file = newFile;
+				}
 			}
 			this.addOutput(`run file: "${file}"`);
 			this._runFile = file;
@@ -268,15 +254,12 @@ export class XLangRuntime extends EventEmitter {
 			this.Call(code, srcArg, resolve);
 		});
 		let retVal;
-		if (bIsX)
-		{
+		if (bIsX) {
 			retVal = JSON.parse(await loadRet as string);
 		}
-		else
-		{
+		else {
 			retVal = await loadRet as string;
-			if (retVal.length > 0 && (retVal.startsWith("http:") || retVal.startsWith("https:")))
-			{
+			if (retVal.length > 0 && (retVal.startsWith("http:") || retVal.startsWith("https:"))) {
 				this.addOutput(`output url: "${retVal}"`);
 			}
 			return -1; // return -1 for run file
@@ -288,8 +271,7 @@ export class XLangRuntime extends EventEmitter {
 	}
 	private tryTimes = 1;
 	private tryCount = 5;
-	public async checkStarted(path : string, md5 : string)
-	{
+	public async checkStarted(path: string, md5: string) {
 		vscode.window.showInformationMessage(`try connecting to a xlang dbg server at ${this.serverAddress}:${this.serverPort}, try ${this.tryTimes}`);
 		const https = require('http');
 		const querystring = require('querystring');
@@ -314,18 +296,16 @@ export class XLangRuntime extends EventEmitter {
 			vscode.window.showInformationMessage(`connecting to a xlang dbg server at ${this.serverAddress}:${this.serverPort} successed`);
 			this.tryTimes = 1;
 		});
-	
+
 		req.on('error', error => {
-			if (error.code === 'ECONNREFUSED' && this.tryTimes <= this.tryCount)
-			{
+			if (error.code === 'ECONNREFUSED' && this.tryTimes <= this.tryCount) {
 				var thisObj = this;
-				setTimeout(function() {
+				setTimeout(function () {
 					thisObj.checkStarted(path, md5);
 				}, 2000);
 				++this.tryTimes;
 			}
-			else
-			{
+			else {
 				this.tryTimes = 1;
 				this.sendEvent('xlangStarted', false);
 			}
@@ -334,12 +314,10 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	private reqTerminate;
-	public async terminateXlang()
-	{
-		
+	public async terminateXlang() {
+
 		this.addOutput("terminate xlang server");
-		if (this._runFile.length > 0)
-		{
+		if (this._runFile.length > 0) {
 			let code = "import xdb\nreturn xdb.stop_file(\"" + this._runFile + "\")";
 			let promise = new Promise((resolve, reject) => {
 				this.Call(code, undefined, resolve);
@@ -361,8 +339,7 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	private reqNotify;
-	private async fetchNotify()
-	{
+	private async fetchNotify() {
 		const https = require('http');
 		const options = {
 			hostname: this._srvaddress,
@@ -374,66 +351,62 @@ export class XLangRuntime extends EventEmitter {
 		this.reqNotify = https.request(options, res => {
 			console.log(`fetchNotify->statusCode: ${res.statusCode}`);
 			res.on('data', d => {
-				var strData = new TextDecoder().decode(d);
+				var strData = d.toString('utf8');
 				console.log(strData);
 				let tagNoti = "$notify$";
-				if (strData.startsWith(tagNoti)){
+				if (strData.startsWith(tagNoti)) {
 					var param = strData.substring(tagNoti.length);
 					var notis = JSON.parse(param);
 					if (notis) {
 						for (let n in notis) {
 							let kv = notis[n];
-								if(kv.hasOwnProperty("HitBreakpoint")){
-									this._breakPointThreadId = kv["threadId"]
-									this.sendEvent('stopOnBreakpoint', this._breakPointThreadId);
-								}
-								else if(kv.hasOwnProperty("StopOnEntry")){
-									this.sendEvent('stopOnEntry', kv["StopOnEntry"]);
-								}
-								else if(kv.hasOwnProperty("StopOnStep")){
-									this.sendEvent('stopOnStep', kv["StopOnStep"]);
-								}
-								else if(kv.hasOwnProperty("ThreadStarted")){
-									this.sendEvent('threadStarted', kv["ThreadStarted"]);
-								}
-								else if(kv.hasOwnProperty("ThreadExited")){
-									this.sendEvent('threadExited', kv["ThreadExited"]);
-								}
-								else if(kv.hasOwnProperty("BreakpointMd5")){
-									this.sendEvent('breakpointState', kv["BreakpointMd5"], kv["line"], kv["actualLine"]);
-								}
-								else if(kv.hasOwnProperty("ModuleLoaded")){
-									this.sendEvent('moduleLoaded', kv["ModuleLoaded"], kv["md5"]);
-								}
+							if (kv.hasOwnProperty("HitBreakpoint")) {
+								this._breakPointThreadId = kv["threadId"]
+								this.sendEvent('stopOnBreakpoint', this._breakPointThreadId);
+							}
+							else if (kv.hasOwnProperty("StopOnEntry")) {
+								this.sendEvent('stopOnEntry', kv["StopOnEntry"]);
+							}
+							else if (kv.hasOwnProperty("StopOnStep")) {
+								this.sendEvent('stopOnStep', kv["StopOnStep"]);
+							}
+							else if (kv.hasOwnProperty("ThreadStarted")) {
+								this.sendEvent('threadStarted', kv["ThreadStarted"]);
+							}
+							else if (kv.hasOwnProperty("ThreadExited")) {
+								this.sendEvent('threadExited', kv["ThreadExited"]);
+							}
+							else if (kv.hasOwnProperty("BreakpointMd5")) {
+								this.sendEvent('breakpointState', kv["BreakpointMd5"], kv["line"], kv["actualLine"]);
+							}
+							else if (kv.hasOwnProperty("ModuleLoaded")) {
+								this.sendEvent('moduleLoaded', kv["ModuleLoaded"], kv["md5"]);
+							}
 						}
 					}
 				}
-				else if(strData === "end" || strData === "error")
-				{
+				else if (strData === "end" || strData === "error") {
 					this._sessionRunning = false;
 					this.sendEvent('end');
 				}
 			});
 
-			res.on('end', ()=>{
-				if(this._sessionRunning )
-				{
+			res.on('end', () => {
+				if (this._sessionRunning) {
 					this.fetchNotify();
 				}
 			});
 		});
-	
+
 		this.reqNotify.on('error', error => {
-			console.error("fetchNotify->",error);
-			if ((error?.code === "ECONNRESET" || error?.code === "ECONNREFUSED") && this._sessionRunning )
-			{
+			console.error("fetchNotify->", error);
+			if ((error?.code === "ECONNRESET" || error?.code === "ECONNREFUSED") && this._sessionRunning) {
 				vscode.window.showErrorMessage(`disconnect from xlang dbg server at ${this.serverAddress}:${this.serverPort} debugging stopped`, { modal: true }, "ok");
 				this.sendEvent('end');
 			}
-			else if(this._sessionRunning )
-			{
+			else if (this._sessionRunning) {
 				var thisObj = this;
-				setTimeout(function() {
+				setTimeout(function () {
 					thisObj.fetchNotify();
 				}, 100);
 			}
@@ -448,7 +421,7 @@ export class XLangRuntime extends EventEmitter {
 		this.fetchNotify();
 		if (this._runModule) // new created module, run it
 		{
-			this.addOutput(`entry source file is new loaded, run it: "${this._sourceFile}"`);	
+			this.addOutput(`entry source file is new loaded, run it: "${this._sourceFile}"`);
 			let code = "tid=threadid()\nmainrun(" + this._moduleKey.toString()
 				+ ", onFinish = 'fire(\"devops.dbg\",action=\"end\",tid=${tid})'"
 				+ ",stopOnEntry=True)\nreturn True";
@@ -456,13 +429,11 @@ export class XLangRuntime extends EventEmitter {
 				console.log(ret);
 			});
 		}
-		else
-		{
-			this.addOutput(`entry source file has loaded previously: "${this._sourceFile}"`);	
+		else {
+			this.addOutput(`entry source file has loaded previously: "${this._sourceFile}"`);
 		}
 	}
-	private Call(code, srcArg, cb?)
-	{
+	private Call(code, srcArg, cb?) {
 		const https = require('http');
 		let bufCode = Buffer.from(code);
 		let totalLength = 4 + bufCode.length;
@@ -479,8 +450,7 @@ export class XLangRuntime extends EventEmitter {
 		buffer.writeUInt32BE(bufCode.length, 0);
 		offset += 4
 		bufCode.copy(buffer, offset);
-		if (srcArg !== undefined)
-		{
+		if (srcArg !== undefined) {
 			offset += bufCode.length;
 			buffer.writeUInt32BE(bufSrc.length, offset);
 			offset += 4
@@ -508,11 +478,11 @@ export class XLangRuntime extends EventEmitter {
 				cb?.(allData);
 			});
 			res.on('data', d => {
-				let strData = new TextDecoder().decode(d);
-				allData +=strData;
+				let strData = d.toString('utf8');
+				allData += strData;
 			});
 		});
-	
+
 		req.on('error', error => {
 			console.error(error);
 		});
@@ -524,12 +494,12 @@ export class XLangRuntime extends EventEmitter {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='Continue')";
 		this.Call(code, undefined, (retData) => cb());
 	}
-	public step(instruction: boolean, reverse: boolean, threadId: number, cb:Function) {
+	public step(instruction: boolean, reverse: boolean, threadId: number, cb: Function) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='Step')";
 		this.Call(code, undefined, (retData) => {
 			//this.sendEvent('stopOnStep');
 			cb();
-        });
+		});
 	}
 	public async setBreakPoints(path: string, md5: string, lines: number[], cb: Function) {
 		let path_x = path.replaceAll('\\', '/');
@@ -542,7 +512,7 @@ export class XLangRuntime extends EventEmitter {
 	/**
 	 * "Step into" for XLang debug means: go to next character
 	 */
-	public stepIn(threadId:number, targetId: number | undefined, cb: Function) {
+	public stepIn(threadId: number, targetId: number | undefined, cb: Function) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='StepIn')";
 		this.Call(code, undefined, (retData) => {
 			//this.sendEvent('stopOnStep');
@@ -553,7 +523,7 @@ export class XLangRuntime extends EventEmitter {
 	/**
 	 * "Step out" for XLang debug means: go to previous character
 	 */
-	public stepOut(threadId:number, cb: Function) {
+	public stepOut(threadId: number, cb: Function) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='StepOut')";
 		this.Call(code, undefined, (retData) => {
 			//this.sendEvent('stopOnStep');
@@ -571,7 +541,7 @@ export class XLangRuntime extends EventEmitter {
 			return [];
 		}
 
-		const { name, index  }  = words[frameId];
+		const { name, index } = words[frameId];
 
 		// make every character of the frame a potential "step in" target
 		return name.split('').map((c, ix) => {
@@ -581,22 +551,34 @@ export class XLangRuntime extends EventEmitter {
 			};
 		});
 	}
-	
-	private setDebug(bDebug : boolean)
-	{
+
+	private getWords(currentLine: number, line: string): Word[] {
+		const words: Word[] = [];
+		// simple implementation to split by words
+		const parts = line.split(/(\W+)/);
+		let index = 0;
+		for (const part of parts) {
+			if (part.trim().length > 0 && /\w+/.test(part)) {
+				words.push({ name: part, line: currentLine, index: index });
+			}
+			index += part.length;
+		}
+		return words;
+	}
+
+	private setDebug(bDebug: boolean) {
 		if (bDebug)
 			this.addOutput("enable xlang server debug");
 		else
 			this.addOutput("disable xlang server debug");
-		let code = "import xdb\nreturn xdb.set_debug(" + (bDebug ? '1' : '0') +")";
-		this.Call(code);
+		let code = "import xdb\nreturn xdb.set_debug(" + (bDebug ? '1' : '0') + ")";
+		this.Call(code, undefined);
 	}
 
-	public getThreads(cb: Function)
-	{
+	public getThreads(cb: Function) {
 		let code = "import xdb\nreturn xdb.get_threads()";
 		this.Call(code, undefined, (retVal) => {
-			var retObj = null;
+			var retObj: any = null;
 			try {
 				retObj = JSON.parse(retVal);
 			}
@@ -604,27 +586,27 @@ export class XLangRuntime extends EventEmitter {
 				console.log("Json Parse Error:", err);
 				return;
 			}
-			let threads = [];
+			let threads: any[] = [];
 			for (let i in retObj) {
 				let t = retObj[i];
-				threads.push({id: t["id"], name: t["name"].toString()});
+				threads.push({ id: t["id"], name: t["name"].toString() });
 			}
 			cb(threads);
 		});
 	}
 
-	public stack(threadId: number,startFrame: number, endFrame: number, cb: Function) {
+	public stack(threadId: number, startFrame: number, endFrame: number, cb: Function) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='Stack')";
 		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
-			var retObj = null;
+			var retObj: any = null;
 			try {
 				retObj = JSON.parse(retVal);
 			}
 			catch (err) {
 				console.log("Json Parse Error:", err);
 				return;
-			}	
+			}
 			console.log(retObj);
 			const frames: IRuntimeStackFrame[] = [];
 			// every word of the current line becomes a stack frame.
@@ -647,10 +629,10 @@ export class XLangRuntime extends EventEmitter {
 
 			let stk = {
 				frames: frames,
-				count: retObj.length
+				count: retObj ? retObj.length : 0
 			};
 			cb(stk);
-        });
+		});
 	}
 
 	public setDataBreakpoint(address: string, accessType: 'read' | 'write' | 'readWrite'): boolean {
@@ -673,8 +655,8 @@ export class XLangRuntime extends EventEmitter {
 	}
 
 	public setExceptionsFilters(namedException: string | undefined, otherExceptions: boolean): void {
-		this.namedException = namedException;
-		this.otherExceptions = otherExceptions;
+		// this.namedException = namedException;
+		// this.otherExceptions = otherExceptions;
 	}
 
 	public setInstructionBreakpoint(address: number): boolean {
@@ -686,13 +668,25 @@ export class XLangRuntime extends EventEmitter {
 		this.instructionBreakpoints.clear();
 	}
 
-	public getGlobalVariables(threadId, cb){
-		let code = "import xdb\nreturn xdb.command(" + threadId.toString() +",cmd='Globals')";
+	public getBreakpoints(path: string, line: number): number[] {
+		return [];
+	}
+
+	public setBreakPoint(path: string, line: number): any {
+		return { verified: false, line: line, id: 0 };
+	}
+
+	public clearBreakPoint(path: string, line: number): any {
+		return { id: 0 };
+	}
+
+	public getGlobalVariables(threadId, cb) {
+		let code = "import xdb\nreturn xdb.command(" + threadId.toString() + ",cmd='Globals')";
 		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
 			var retObj = JSON.parse(retVal);
 			console.log(retObj);
-			let vars = Array.from(retObj, (x: Map<string, any>) =>
+			let vars = Array.from(retObj || [], (x: Map<string, any>) =>
 				new RuntimeVariable(
 					x["Name"],
 					x["Value"],
@@ -701,11 +695,11 @@ export class XLangRuntime extends EventEmitter {
 					x["Size"],
 					0));
 			cb(vars);
-        });
+		});
 	}
-	public getLocalVariables(threadId, frameId,cb){
+	public getLocalVariables(threadId, frameId, cb) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() +
-			",frameId=" + frameId.toString()+",cmd='Locals')";
+			",frameId=" + frameId.toString() + ",cmd='Locals')";
 		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
 			var retObj = null;
@@ -715,32 +709,31 @@ export class XLangRuntime extends EventEmitter {
 			catch (err) {
 				console.log("Json Parse Error:", err);
 				return;
-			}				
+			}
 			console.log(retObj);
-			let vars = Array.from(retObj, (x: Map<string, any>) =>
+			let vars = Array.from(retObj || [], (x: Map<string, any>) =>
 				new RuntimeVariable(
 					x["Name"],
 					x["Value"],
-					x["Id"],					
+					x["Id"],
 					x["Type"],
 					x["Size"],
 					frameId));
 			cb(vars);
-        });
+		});
 	}
 	public getLocalVariable(name: string): RuntimeVariable | undefined {
 		//TODO: for Set Varible's value
 		return undefined;
 	}
-	public setObject(threadId, frameId,varType,objId,varName,newVal,cb)
-	{
+	public setObject(threadId, frameId, varType, objId, varName, newVal, cb) {
 		let code = "import xdb\nreturn xdb.command(" + threadId.toString() +
 			",frameId=" + frameId.toString()
 			+ ",cmd='SetObjectValue'"
-			+ ",param=['" + objId+"'"
-			+",'"+varType.toString()+"'"
-			+ ",'" + varName+"'"
-			+ "," + newVal.toString()+ "]"
+			+ ",param=['" + objId + "'"
+			+ ",'" + varType.toString() + "'"
+			+ ",'" + varName + "'"
+			+ "," + newVal.toString() + "]"
 			+ ")";
 		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
@@ -752,26 +745,26 @@ export class XLangRuntime extends EventEmitter {
 				return;
 			}
 			console.log(retObj);
-			let verifiedValue = 
+			let verifiedValue =
 				new RuntimeVariable(
 					varName,
 					retObj["Value"],
-					retObj["Id"],	
+					retObj["Id"],
 					retObj["Type"],
 					retObj["Size"],
 					frameId);
 			cb(verifiedValue);
 		});
 	}
-	public getObject(threadId, frameId,varType,objId,start,count, cb) {
-		let code = "import xdb\nreturn xdb.command(" + (threadId ? threadId.toString() : this._breakPointThreadId.toString()) 
-		    + ",frameId=" + frameId.toString()
+	public getObject(threadId, frameId, varType, objId, start, count, cb) {
+		let code = "import xdb\nreturn xdb.command(" + (threadId ? threadId.toString() : this._breakPointThreadId.toString())
+			+ ",frameId=" + frameId.toString()
 			+ ",moduleKey=" + this._moduleKey.toString()
 			+ ",cmd='Object'"
-			+ ",param=['"+varType+"'"
-			+",'" + objId+"'"
+			+ ",param=['" + varType + "'"
+			+ ",'" + objId + "'"
 			+ "," + start.toString()
-			+ "," + count.toString()+ "]"
+			+ "," + count.toString() + "]"
 			+ ")";
 		this.Call(code, undefined, (retVal) => {
 			console.log(retVal);
@@ -783,15 +776,43 @@ export class XLangRuntime extends EventEmitter {
 				return;
 			}
 			console.log(retObj);
-			let vars = Array.from(retObj, (x: Map<string, any>,idx) =>
+			let vars = Array.from(retObj, (x: Map<string, any>, idx) =>
 				new RuntimeVariable(
-					x["Name"] === undefined ? (start + idx).toString():x["Name"].toString(),
+					x["Name"] === undefined ? (start + idx).toString() : x["Name"].toString(),
 					x["Value"],
-					x["Id"],	
+					x["Id"],
 					x["Type"],
 					x["Size"],
 					frameId));
 			cb(vars);
+		});
+	}
+	public evaluate(expression: string, frameId: number, cb: Function) {
+		let code = "import xdb\nreturn xdb.command(" + (this._breakPointThreadId || 0).toString() +
+			",frameId=" + (frameId || 0).toString() +
+			",cmd='Eval',param='" + expression.replace(/'/g, "\\'") + "')"; // escape single quote
+		this.Call(code, undefined, (retVal) => {
+			console.log(retVal);
+			try {
+				if (retVal === "false" || retVal === "") {
+					cb(undefined);
+					return;
+				}
+				var retObj = JSON.parse(retVal);
+				// retObj is a Dict: Name, Type, Value, etc.
+				let verifiedValue = new RuntimeVariable(
+					retObj["Name"],
+					retObj["Value"],
+					retObj["Id"],
+					retObj["Type"],
+					retObj["Size"],
+					frameId);
+				cb(verifiedValue);
+			}
+			catch (err) {
+				console.log("Json Parse Error:", err);
+				cb(undefined);
+			}
 		});
 	}
 	/**
@@ -825,15 +846,7 @@ export class XLangRuntime extends EventEmitter {
 		//return this.sourceLines[line === undefined ? this.currentLine : line].trim();
 		return "print('todo')";
 	}
-	private async GetStartLine(cb){
-		let code = "import xdb\nreturn xdb.get_startline("+this._moduleKey.toString()+")";
-		this.Call(code, undefined, (retVal) => {
-			let lineNum = parseInt(retVal);
-			cb(lineNum);
-        });
-	}
-
-	private sendEvent(event: string, ... args: any[]): void {
+	private sendEvent(event: string, ...args: any[]): void {
 		setTimeout(() => {
 			this.emit(event, ...args);
 		}, 0);

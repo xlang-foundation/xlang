@@ -189,8 +189,9 @@ namespace X
 			if (pid != id.pid)
 			{
 				//todo:
-				assert(false);
+				//assert(false);
 				//keep as RemoteObject
+				pObjRet = (X::XObj*)id.objId;
 			}
 			else
 			{
