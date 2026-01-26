@@ -85,7 +85,7 @@ namespace X
 						}
 						if (m_auth_callback.IsValid())
 						{
-							X::ARGS params_cb(2);
+							X::ARGS params_cb(3);
 							X::List listParams;
 							for (auto& arg : params)
 							{
@@ -93,6 +93,7 @@ namespace X
 							}
 							params_cb.push_back(listParams);
 							params_cb.push_back(m_auth_parameters);
+							params_cb.push_back(pat.strRule);
 							X::Value canAccess = m_auth_callback.ObjCall(params_cb, kwargs);
 							if (!canAccess.IsTrue())
 							{
