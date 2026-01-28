@@ -55,7 +55,7 @@ FILE(GLOB XOne_SRC "./*.cpp")
 
 #Add xlang os module into this standalone app
 
-FILE(GLOB Os_SRC "../os/fs.cpp" "../os/folder.cpp")
+FILE(GLOB Os_SRC "../os/fs.cpp" "../os/folder.cpp" "../os/file.cpp")
 
 
 add_executable (${PROJECT_NAME}

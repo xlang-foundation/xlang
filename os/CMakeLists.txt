@@ -8,7 +8,8 @@ project ("xlang_os")
 include_directories("../Api")
 include_directories("../Inc")
 FILE(GLOB API_SRC "../Api/value.cpp")
-FILE(GLOB Main_SRC "*.cpp")
+FILE(GLOB Main_SRC "*.cpp") # Trigger re-scan
+
 
 add_library(${PROJECT_NAME} 
 	SHARED
