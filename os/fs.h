@@ -21,130 +21,13 @@ limitations under the License.
 #include <fstream>
 #include <filesystem>
 #include <sys/stat.h>
-
+#include "file.h"
 #include "folder.h"
 
 namespace fs = std::filesystem;
 namespace X
 {
-	class File
-	{
-		std::ifstream m_stream;
-		std::ofstream m_wstream;
-		std::string m_fileName;
-		bool m_IsBinary = true;
-		bool m_IsWrite = false;
-	public:
-		BEGIN_PACKAGE(File)
-			APISET().AddFunc<2>("seek", &File::seek);
-			APISET().AddFunc<1>("read", &File::read);
-			APISET().AddFunc<1>("write", &File::write);
-			APISET().AddFunc<0>("close", &File::close);
-			APISET().AddProp("size", &File::get_size);
-		END_PACKAGE
-		File()
-		{
-		}
-		File(std::string fileName, std::string mode);
-		~File()
-		{
-			if (m_stream.is_open())
-			{
-				m_stream.close();
-			}
-			if (m_wstream.is_open())
-			{
-				m_wstream.close();
-			}
-		}
-		bool seek(long long offset, int origin)
-		{
-			// origin: 0 = begin (SEEK_SET), 1 = current (SEEK_CUR), 2 = end (SEEK_END)
-			std::ios_base::seekdir dir;
-			switch (origin)
-			{
-			case 0:
-				dir = std::ios_base::beg;
-				break;
-			case 1:
-				dir = std::ios_base::cur;
-				break;
-			case 2:
-				dir = std::ios_base::end;
-				break;
-			default:
-				return false;
-			}
-
-			if (m_IsWrite)
-			{
-				if (m_wstream.is_open())
-				{
-					m_wstream.seekp(offset, dir);
-					return !m_wstream.fail();
-				}
-			}
-			else
-			{
-				if (m_stream.is_open())
-				{
-					m_stream.seekg(offset, dir);
-					return !m_stream.fail();
-				}
-			}
-			return false;
-		}
-		X::Value read(long long size)
-		{
-			if (size <= 0)
-			{
-				return X::Value();
-			}
-			if (m_IsBinary)
-			{
-				X::XBin* pBin = g_pXHost->CreateBin(nullptr, size, true);
-				char* data = pBin->Data();
-				m_stream.read(data, size);
-				return X::Value(pBin,false);
-			}
-			else
-			{
-				auto* pStr = g_pXHost->CreateStr(nullptr, (int)size);
-				char* data = pStr->Buffer();
-				m_stream.read(data, size);
-				return X::Value(pStr,false);
-			}
-		}
-		bool write(X::Value p)
-		{
-			if (p.IsObject() && p.GetObj()->GetType() == X::ObjType::Binary)
-			{
-				XBin* pBin = dynamic_cast<XBin*>(p.GetObj());
-				m_wstream.write(pBin->Data(), pBin->Size());
-			}
-			else
-			{
-				std::string str = p.ToString();
-				std::streamsize  len = str.length();
-				m_wstream.write(str.c_str(), len);
-			}
-
-			return true;
-		}
-		bool close()
-		{
-			if (m_stream.is_open())
-			{
-				m_stream.close();
-			}
-			if (m_wstream.is_open())
-			{
-				m_wstream.close();
-			}
-			return true;
-		}
-		X::Value get_size();
-	};
+	// File class has been moved to file.h
 
 	class FileSystem:
 		public Singleton<FileSystem>
