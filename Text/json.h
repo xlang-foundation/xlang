@@ -27,6 +27,7 @@ namespace X
 		BEGIN_PACKAGE(JsonWrapper)
 			APISET().AddVarFunc("loads", &JsonWrapper::LoadFromString);
 		APISET().AddRTFunc<1>("load", &JsonWrapper::LoadFromFile);
+		APISET().AddVarFunc("load_raw", &JsonWrapper::LoadRaw);
 		APISET().AddVarFunc("saves", &JsonWrapper::SaveToString);
 		APISET().AddVarFunc("save", &JsonWrapper::SaveToFile);
 		APISET().AddVarFunc("dumps", &JsonWrapper::SaveToString);
@@ -43,6 +44,8 @@ namespace X
 		X::Value LoadFromString(X::XRuntime* rt, X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
 		X::Value LoadFromFile(X::XRuntime* rt, X::XObj* pContext, std::string fileName);
+		X::Value LoadRaw(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
 
 		// Save functions
 		bool SaveToString(X::XRuntime* rt, X::XObj* pContext,

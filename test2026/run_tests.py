@@ -26,11 +26,17 @@ def run_tests():
     # Relative: <repo_root>\out\build\x64-Debug\bin\xlang.exe
     rel_repo_root = os.path.abspath(os.path.join(root_dir, '..'))
     rel_xlang_exe = os.path.join(rel_repo_root, 'out', 'build', 'x64-Debug', 'bin', 'xlang.exe')
+    
+    # Check parent of repo root as well (d:\CantorAI\out\...)
+    rel_repo_root_parent = os.path.abspath(os.path.join(root_dir, '..', '..'))
+    rel_xlang_exe_2 = os.path.join(rel_repo_root_parent, 'out', 'build', 'x64-Debug', 'bin', 'xlang.exe')
 
     legacy_xlang_exe = r"d:\\CantorAI\\xlang\\out\\build\\x64-Debug\\bin\\xlang.exe"
 
     if os.path.exists(rel_xlang_exe):
         xlang_exe = rel_xlang_exe
+    elif os.path.exists(rel_xlang_exe_2):
+        xlang_exe = rel_xlang_exe_2
     elif os.path.exists(legacy_xlang_exe):
         xlang_exe = legacy_xlang_exe
     else:
