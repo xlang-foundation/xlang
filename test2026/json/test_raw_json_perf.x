@@ -6,8 +6,14 @@ total_records = 10000
 
 print("Calling json.load_raw...")
 try:
-    # Note: escape $ to prevent xlang string interpolation
-    p_init = ".*sub_<<grp>>/.*"
+    p_init = "**/{grp}/**" # or "**/sub_{grp}/**" ? Perf test paths are .../sub_N/file_N.jsonl
+    # User's perf test path structure: root/sub_N/file_N.jsonl
+    # Regex was: .*sub_([a-zA-Z0-9_]+)/.* 
+    # Smart Glob: **/sub_{grp}/** 
+    # match: sub_0 matches sub_{grp} ? 
+    # {grp} = ([^/]+).  sub_([^/]+). Yes.
+    
+    p_init = "**/sub_{grp}/**"
     recs = json.load_raw(root_path, recursive=True, extract_pattern=p_init)
     count = len(recs)
     print("Loaded records: " + str(count))
@@ -17,10 +23,10 @@ try:
     else:
         print("PASS: Count matches")
 
-    p = ".*sub_<<grp>>/.*"
+    p = "**/sub_{grp}/**"
     recs = json.load_raw(root_path, recursive=True, extract_pattern=p)
     # ...
-    p_filter = ".*sub_<<grp>>/.*"
+    p_filter = "**/sub_{grp}/**"
     recs_filtered = json.load_raw(root_path, recursive=True, extract_pattern=p_filter, filter_expr="grp >= 5")
     
     f_count = len(recs_filtered)

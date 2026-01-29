@@ -51,35 +51,54 @@ namespace X
 		size_t pos = 0;
 		while (pos < tpl.size())
 		{
-			if (tpl[pos] == '<' && pos + 1 < tpl.size() && tpl[pos + 1] == '<')
+			char c = tpl[pos];
+			// Check for {key} or {key:N}
+			if (c == '{')
 			{
-				size_t end = tpl.find(">>", pos + 2);
+				size_t end = tpl.find('}', pos + 1);
 				if (end != std::string::npos)
 				{
-					std::string content = tpl.substr(pos + 2, end - (pos + 2));
+					std::string content = tpl.substr(pos + 1, end - (pos + 1));
 					size_t colon = content.find(':');
-					if (colon != std::string::npos) // <<key:N>>
+					if (colon != std::string::npos) // {key:N}
 					{
 						std::string key = content.substr(0, colon);
 						std::string lenStr = content.substr(colon + 1);
 						keys.push_back(key);
-						// [a-zA-Z0-9] support as requested
-						regexStr += "([a-zA-Z0-9]{" + lenStr + "})"; 
+						regexStr += "(.{" + lenStr + "})"; 
 					}
-					else // <<key>>
+					else // {key}
 					{
 						keys.push_back(content);
-						regexStr += "([a-zA-Z0-9_]+)";
+						regexStr += "([^/]+)";
 					}
-					pos = end + 2; // skip >>
+					pos = end + 1;
+					continue;
+				}
+			}
+			// Check for ** (Recursive Wildcard) or * (Segment Wildcard)
+			else if (c == '*')
+			{
+				if (pos + 1 < tpl.size() && tpl[pos + 1] == '*')
+				{
+					regexStr += ".*";
+					pos += 2;
+					continue;
+				}
+				else
+				{
+					regexStr += "[^/]*";
+					pos++;
 					continue;
 				}
 			}
 			
-			// No auto-escaping. User provides regex or literal.
-			// If they want literal '.', they must verify input or we assume they know regex.
-			// Given the test case uses '.*', we must pass through.
-			regexStr += tpl[pos];
+			// Escape regex special chars if they are meant to be literals in the glob
+			if (std::string(".^$|()[]{}+?\\").find(c) != std::string::npos)
+			{
+				regexStr += '\\';
+			}
+			regexStr += c;
 			pos++;
 		}
 	}
@@ -377,14 +396,18 @@ namespace X
 
 		X::List resultList;
 
-		// Normalize Path
-		if (!IsAbsPath(path)) {
+	// Normalize Path separator to '/'
+		std::string normPath = path;
+		std::replace(normPath.begin(), normPath.end(), '\\', '/');
+		
+		if (!IsAbsPath(normPath)) {
 			X::XlangRuntime* pRt = (X::XlangRuntime*)rt;
 			std::string curPath = pRt->M()->GetModulePath();
-			path = curPath + Path_Sep_S + path;
+			std::replace(curPath.begin(), curPath.end(), '\\', '/');
+			normPath = curPath + "/" + normPath;
 		}
 
-		if (!fs::exists(path)) {
+		if (!fs::exists(normPath)) {
 			return resultList;
 		}
 
@@ -394,24 +417,25 @@ namespace X
 			std::string fPath = entry.path().string();
 			std::string fName = entry.path().filename().string();
 			
-			// Pattern Check (Simple glob match - suffix or wildcard)
+			// Normalize file path for matching
+			std::string target = fPath;
+			std::replace(target.begin(), target.end(), '\\', '/');
+			
+			// Pattern Check (Glob match)
+			// Reuse regex engine for simple pattern check logic or strict glob?
+			// Current simple logic:
 			if (pattern != "*") {
-				// Basic implementation: if pattern starts with *, check extension
-				if (pattern[0] == '*') {
+				// Simple suffix check if starts with *
+				if (pattern.size() > 0 && pattern[0] == '*') {
 					std::string ext = pattern.substr(1);
 					if (fName.size() < ext.size() || fName.substr(fName.size() - ext.size()) != ext) return;
 				}
-				// else strict match? Let's just stick to extension/glob for now or use regex if user provided non-*
 			}
 
 			X::Dict meta;
 			
 			// Extraction
 			if (useExtraction) {
-				std::string target = fPath; 
-				// Standardize separators for regex match
-				std::replace(target.begin(), target.end(), '\\', '/'); 
-				
 				std::smatch match;
 				if (std::regex_search(target, match, pathRegex)) {
 					for(size_t i = 0; i < extractKeys.size() && i + 1 < match.size(); i++) {
@@ -465,9 +489,9 @@ namespace X
 		// Scan
 		try {
 			if (recursive) {
-				for (const auto& entry : fs::recursive_directory_iterator(path)) processFile(entry);
+				for (const auto& entry : fs::recursive_directory_iterator(normPath)) processFile(entry);
 			} else {
-				for (const auto& entry : fs::directory_iterator(path)) processFile(entry);
+				for (const auto& entry : fs::directory_iterator(normPath)) processFile(entry);
 			}
 		} catch(std::exception& e) {
 			// std::cout << "[LoadRaw] Scan Exception: " << e.what() << std::endl;

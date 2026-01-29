@@ -47,8 +47,8 @@ f1_check.close()
 files = json.load_raw(root_path, recursive=True)
 print(f"Found {len(files)} records") 
 
-# Test 2: Extraction
-recs = json.load_raw(root_path, extract_pattern=".*<<year:4>>[/\\\\]<<month:2>>[/\\\\].*", pattern="*.jsonl")
+# Test 2: Extraction (New "Smart Glob" Syntax)
+recs = json.load_raw(root_path, extract_pattern="**/{year:4}/{month:2}/**", pattern="*.jsonl")
 matched = 0
 for r in recs:
     meta = r["_meta"]
@@ -60,9 +60,8 @@ if matched == 2:
 # Test 3: Filter Expression
 # filter_expr="year >= 2023"
 # Note: extracted 'year' is string "2023". Filter converts to number if comparing with number.
-# Using 2023 (int) in filter.
 recs2 = json.load_raw(root_path, 
-    extract_pattern=".*<<year:4>>[/\\\\]<<month:2>>[/\\\\].*", 
+    extract_pattern="**/{year:4}/{month:2}/**", 
     filter_expr="year >= 2023") 
 
 filtered_count = len(recs2)
@@ -70,6 +69,52 @@ if filtered_count == 2:
     print("Filter Verified: Only 2023 files")
 else:
     print(f"Filter Failed: Got {filtered_count}")
+
+# Test 4: Partial Segment Matching
+# Path: path1/str1972/11.jsonl
+path_partial = root_folder.BuildPath("path1/str1972")
+fs.Folder(path_partial).makedirs(path_partial)
+
+f3_path = fs.Folder(path_partial).BuildPath("11.jsonl")
+f3 = fs.File(f3_path, "w")
+f3.write('''{"id": 3, "val": "Partial"}''')
+f3.close()
+
+recs3 = json.load_raw(root_folder.BuildPath("path1"), 
+    extract_pattern="**/str{year:4}/**", 
+    pattern="*.jsonl")
+
+if len(recs3) == 1 and recs3[0]["_meta"]["year"] == "1972":
+    print("Partial Segment Match Verified: 1972")
+else:
+    # check valid 
+    print(f"Partial Segment Failed. Len: {len(recs3)}")
+    if len(recs3) > 0:
+        print(f"Meta: {recs3[0]['_meta']}")
+
+# Test 5: Normalization (Mixed Separators)
+# Input path uses backslashes, pattern uses forward slashes
+# This confirms the engine normalizes the input path to '/' before matching.
+path_mixed = root_folder.BuildPath("mixed_test")
+fs.Folder(path_mixed).makedirs(path_mixed)
+
+f4_path = path_mixed + "\\data_mixed.jsonl"
+# Create file manually with backslash path if possible, or just use fs
+f4 = fs.File(f4_path, "w")
+f4.write('''{"id": 4, "val": "Mixed"}''')
+f4.close()
+
+# Pass path with backslashes to load_raw
+root_mixed_bs = root_path.replace("/", "\\") + "\\mixed_test"
+recs4 = json.load_raw(root_mixed_bs, 
+    extract_pattern="**/mixed_test/**", 
+    pattern="*.jsonl")
+
+if len(recs4) == 1:
+    print("Normalization Verified: Backslashes matches forward slash pattern")
+else:
+    print(f"Normalization Failed. Got {len(recs4)}")
+
 
 # Cleanup
 # root_folder.removedirs(root_path)
