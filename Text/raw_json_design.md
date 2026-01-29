@@ -15,21 +15,30 @@ X::Value LoadRaw(
     std::string path,              // Root directory to scan
     std::string pattern = "*",     // File glob pattern (e.g. "*.json")
     bool recursive = true,         // Scan subdirectories
-    std::string extract_pattern = "", // Template: "data/${year:4}/${device}"
+    std::string extract_pattern = "", // Template: "data/**/{year:4}/{device}/*"
     std::string filter_expr = ""   // Expression: "year >= 2023 and device == 'A'"
 );
 ```
 
-## 3. Path Extraction Logic
+## 3. Path Extraction Logic ("Smart Glob")
 
-### 3.1. Template Syntax
-The `extract_pattern` argument defines how to parse the file path for metadata.
-- **`${key}`**: Matches any non-separator identifier. Equivalent to Regex `([^/\\\\]+)`.
-- **`${key:N}`**: Matches exactly N **alphanumeric characters**. Equivalent to Regex `([a-zA-Z0-9]{N})`.
+### 3.1. Syntax
+The `extract_pattern` argument uses a route-like "Smart Glob" syntax that compiles to Regex internally.
+
+| Token | Description | Regex Equivalent |
+| :--- | :--- | :--- |
+| `/` | Path Separator (Normalized) | `/` |
+| `**` | Recursive Wildcard (Matches any directories) | `.*` |
+| `*` | Segment Wildcard (Matches one path segment) | `[^/]*` |
+| `{key}` | **Named Capture**: Matches a full segment | `([^/]+)` |
+| `{key:N}` | **Fixed Width Capture**: Matches N chars | `(.{N})` |
+
+> [!NOTE] 
+> All paths are normalized to use forward slashes (`/`), even on Windows, before matching.
 
 ### 3.2. Example
-**Pattern**: `root/${year:4}/${month:2}/device_${devId}.json`
-**Path**: `d:/root/2023/11/device_cam01.json`
+**Pattern**: `root/**/{year:4}/{month:2}/device_{devId}.json`
+**Path**: `d:/root/logs/archived/2023/11/device_cam01.json`
 
 **Extracted Metadata**:
 ```json
@@ -44,25 +53,53 @@ The `extract_pattern` argument defines how to parse the file path for metadata.
 
 To maximize performance, files are filtered *based on metadata* before the file is opened.
 
-### 4.1. Grammar
-The `filter_expr` supports standard logical operations and comparisons.
+### 4.1. Grammar & Operators
+The `filter_expr` language supports standard SQL-like boolean logic.
 
-- **Logical Operators**: `AND`, `OR` (case-insensitive), Parentheses `(`, `)`
-- **Comparison Operators**: `>`, `>=`, `<`, `<=`, `==` (or `=`), `!=`
-- **Values**:
-    - **Numbers**: `2023`, `10.5`
-    - **Strings**: `'text'`, `"text"` (Quotes required for string literals)
-    - **Identifiers**: `year`, `devId` (Reference extracted metadata keys)
+#### Logical Operators (In Order of Precedence)
+1. `( ... )` : Grouping / Parentheses
+2. `AND` : Logical AND (Case-insensitive)
+3. `OR` : Logical OR (Case-insensitive)
+
+#### Comparison Operators
+| Operator | Description | Example |
+| :--- | :--- | :--- |
+| `==` or `=` | Equality | `status == 'active'` |
+| `!=` | Inequality | `status != 'fail'` |
+| `>` | Greater Than | `year > 2022` |
+| `>=` | Greater or Equal | `val >= 10.5` |
+| `<` | Less Than | `month < 6` |
+| `<=` | Less or Equal | `count <= 100` |
+
+#### Literals
+- **Numbers**: Integer or Float (e.g., `2023`, `10.5`, `-50`)
+- **Strings**: Single or Double quoted (e.g., `'camera'`, `"sensor_01"`)
+- **Identifiers**: Metadata keys (e.g., `year`, `devId`)
 
 ### 4.2. Resolution & Type Casting
-Since all extracted metadata are Strings by default:
-1. **Numeric Comparison**: If the operand is a Number (e.g., `year > 2023`), the metadata value is implicitly cast to a Number for the comparison.
-2. **String Comparison**: If the operand is a String (e.g., `devId == 'cam01'`), a lexical comparison is performed.
+Since all extracted metadata are Strings by default, the engine performs **Automatic Type Coercion**:
 
-### 4.3. Examples
-- **Time Range**: `year > 2022 and (month >= 10 or month == 1)`
-- **Device Filter**: `devId == 'cam01' or devId == 'cam99'`
-- **Complex**: `(year == 2023 and month > 5) and status != 'debug'`
+1. **Numeric Comparison**: If *any* operand in a comparison is a Number, the metadata string is converted to a Number.
+   - `year > 2023` -> `"2025"` becomes `2025.0` -> `true`
+2. **String Comparison**: If both operands are Strings, a lexical comparison is used.
+   - `devId == 'cam01'` -> `"cam01" == "cam01"` -> `true`
+
+### 4.3. Complex Examples
+
+**Scenario 1: Date Range**
+```sql
+year >= 2023 AND (month > 6 OR month == 1)
+```
+
+**Scenario 2: Specific Device Status**
+```sql
+(devId == 'cam01' OR devId == 'cam02') AND status != 'maintenance'
+```
+
+**Scenario 3: Value Thresholds**
+```sql
+voltage > 12.5 AND error_count == 0
+```
 
 ## 5. Return Format
 
