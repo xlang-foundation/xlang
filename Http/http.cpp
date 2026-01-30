@@ -601,6 +601,7 @@ namespace X
 		X::ARGS& params, X::KWARGS& kwParams,
 		X::Value& trailer, X::Value& retValue)
 	{
+		X::Value handler = trailer;
 		//if Route is working in decor mode, trailer will be the orgin function
 		//first parameter is the url
 		if (params.size() > 0)
@@ -623,6 +624,7 @@ namespace X
 			}
 			int p_size = (int)params.size();
 			X::ARGS params1(p_size - 1);
+			bool bGotPyHandler = false;
 			for (int i = 1; i < p_size; i++)
 			{
 				X::Value realVal;
@@ -642,6 +644,17 @@ namespace X
 						realVal = pExpr->ToKV();
 					}
 				}
+				else if (!bGotPyHandler && pi.IsObject())
+				{
+					if (pi.GetObj()->GetType() == X::ObjType::PyProxyObject)
+					{
+						//this case for python decor
+						//it is the handler itself
+						handler = pi;
+						bGotPyHandler = true;
+						realVal = pi;
+					}
+				}
 				else
 				{
 					realVal = pi;
@@ -650,7 +663,16 @@ namespace X
 			}
 			params1.Close();
 			auto url_reg = TranslateUrlToReqex(url);
-			m_patters.push_back(UrlPattern{ url,std::regex(url_reg),params1,kwParams,trailer });
+			if (bGotPyHandler)
+			{
+				X::ARGS dummyArgs;
+				X::KWARGS dummyKwArgs;
+				m_patters.push_back(UrlPattern{ url,std::regex(url_reg),dummyArgs,dummyKwArgs,handler });
+			}
+			else
+			{
+				m_patters.push_back(UrlPattern{ url,std::regex(url_reg),params1,kwParams,handler });
+			}
 
 		}
 		return true;

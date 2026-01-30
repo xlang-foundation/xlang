@@ -206,8 +206,14 @@ XlangDecoratorPythonWrapper(PyObject* self, PyObject* args, PyObject* kwArgs)
 {
 	MGil gil;
 	PyXlangObject* pDecorator = (PyXlangObject*)self;
-	PyObjectXLangConverter::ConvertArgs(args, pDecorator->args);
-	PyObjectXLangConverter::ConvertKwargs(kwArgs, pDecorator->kwArgs);
+	if (args)
+	{
+		PyObjectXLangConverter::ConvertArgs(args, pDecorator->args);
+	}
+	if (kwArgs)
+	{
+		PyObjectXLangConverter::ConvertKwargs(kwArgs, pDecorator->kwArgs);
+	}
 
 	PyXlangObject* pWrapFunc = NewXlangObject(pDecorator->realObj, PyProxyType::Func);
 	pWrapFunc->args = pDecorator->args;
