@@ -37,6 +37,7 @@ extern "C"
 
 #include "XlangLoad.h"
 #include "PyEngHostImpl.h"
+#include <fstream>
 
 extern PyMethodDef RootMethods[];
 
@@ -93,6 +94,8 @@ PyMODINIT_FUNC PyInit_xlang(void)
     X::PyBind::ParamConfig paramCfg;
     paramCfg.appName = "xlang";
 
+    std::string moduleDir;
+
 #if (WIN32)
     HMODULE  hModule = NULL;
     GetModuleHandleEx(
@@ -101,44 +104,63 @@ PyMODINIT_FUNC PyInit_xlang(void)
         &hModule);
     char path[MAX_PATH];
     GetModuleFileName(hModule, path, MAX_PATH);
-    std::string strPath(path);
-    auto pos = strPath.rfind("\\");
-    if (pos != std::string::npos)
+    moduleDir = path;
     {
-        strPath = strPath.substr(0, pos + 1);
+        auto pos = moduleDir.find_last_of("\\/");
+        if (pos != std::string::npos)
+            moduleDir = moduleDir.substr(0, pos);
     }
-    strPath += "\\xlang";
-    paramCfg.appPath = strPath;
 #else
     Dl_info dl_info;
     dladdr((void*)PyInit_xlang, &dl_info);
-    std::string strPath = dl_info.dli_fname;
-    auto pos = strPath.rfind("/");
-    if (pos != std::string::npos)
+    moduleDir = dl_info.dli_fname;
     {
-        strPath = strPath.substr(0, pos + 1);
+        auto pos = moduleDir.find_last_of('/');
+        if (pos != std::string::npos)
+            moduleDir = moduleDir.substr(0, pos);
     }
-    strPath += "/xlang";
-    paramCfg.appPath = strPath;
 #endif
+
+    // ---------------------------------------------------------
+    // DEFAULT appPath (folder of xlang.pyd / xlang.so)
+    // ---------------------------------------------------------
+    paramCfg.appPath = moduleDir;
+
+    // ---------------------------------------------------------
+    // OVERRIDE if xlang_engine_path.txt exists
+    // ---------------------------------------------------------
+    std::string recordFile = moduleDir + "/xlang_engine_path.txt";
+    std::ifstream ifs(recordFile);
+    if (ifs.good()) {
+        std::string recorded;
+        std::getline(ifs, recorded);
+        if (!recorded.empty()) {
+            std::cout << "[xlang] Using engine path from record file:\n  "
+                << recorded << "\n";
+            paramCfg.appPath = recorded;
+        }
+    }
+    ifs.close();
+
+    // ---------------------------------------------------------
+    // Load the engine
+    // ---------------------------------------------------------
     PyObject* m = PyModule_Create(&XlangPackageTypeModule);
     std::string xlangSearchPath = paramCfg.appPath;
     X::PyBind::LoadXLangEngine(paramCfg, xlangSearchPath);
 
     X::g_pXHost->SetPyEngHost(&GrusPyEngHost::I());
 
-    // JITManager::I().SetThisModule(m);
     PyObject* gObj = PyDict_New();
-    if (PyModule_AddObject(m, "g", gObj) < 0)
-    {
+    if (PyModule_AddObject(m, "g", gObj) < 0) {
         Py_DECREF(gObj);
     }
     X::Value rootObj;
     PyObject* xlangObj = CreateXlangObjectWrapper(rootObj);
     PyModule_AddObject(m, "xobj", xlangObj);
-    // Register the cleanup function
-    register_cleanup();
 
+    register_cleanup();
     return m;
 }
+
 #endif

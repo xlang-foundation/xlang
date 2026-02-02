@@ -23,7 +23,6 @@ class Emitter;
 class EmitFromEvents : public EventHandler {
  public:
   EmitFromEvents(Emitter& emitter);
-  ~EmitFromEvents() override = default;
 
   void OnDocumentStart(const Mark& mark) override;
   void OnDocumentEnd() override;

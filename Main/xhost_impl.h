@@ -62,6 +62,8 @@ namespace X
 		virtual bool FromBytes(X::Value& input, X::Value& output) override;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
 		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
+		virtual bool MarshalToBytes(X::Value& v, X::XLStream* pStream = nullptr) override;
+		virtual bool MarshalFromBytes(X::Value& v, X::XLStream* pStream, X::XProxy* proxy) override;
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) override;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) override;
 		virtual bool RunCode(const char* moduleName, const char* code, int codeSize,X::Value& retVal) override;
@@ -104,6 +106,8 @@ namespace X
 		virtual bool PyRun(const char* code, X::ARGS& args) override;
 		virtual bool PyImport(XRuntime* rt, const char* moduleName,
 			const char* from, const char* currentPath,X::Value& pyObj) override;
+		virtual bool PyImportWithGlobals(XRuntime* rt, const char* moduleName,
+			const char* from, const char* currentPath, X::KWARGS& globals, X::Value& pyObj) override;
 		virtual bool PySerialize(X::Value& input, X::Value& output) override;
 		virtual bool PyDeserialize(X::Value& input, X::Value& output) override;
 		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) override;
@@ -112,6 +116,9 @@ namespace X
 		virtual void EnalbePython(bool bEnable, bool bEnablePythonDebug) override;
 		virtual void EnableDebug(bool bEnable, int port=3142) override;
 		virtual void* GetLogger() override;
+		virtual void ActivePythonVEnv(const char* venvPath) override;
+		virtual void DeactivePythonVEnv(const char* venvPath) override;
+		virtual unsigned long long GetObjectCount() override;
 	};
 	X::XHost* CreatXHost();
 	void DestoryXHost();

@@ -323,6 +323,10 @@ bool Func::Call(XRuntime* rt0,
 	Value v0;
 	ExecAction action;
 	Block::Exec(rt,action,pContext, v0);
+	if (action.type == ExecActionType::Throw)
+	{
+		rt->SetException(action.exceptionValue);
+	}
 	rt->PopFrame();
 	retValue = pCurFrame->GetReturnValue();
 	delete pCurFrame;

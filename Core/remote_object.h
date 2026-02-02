@@ -70,7 +70,7 @@ namespace X
 				m_NameToIndex.emplace(std::make_pair(name, idx));
 				if (m_stackFrame)
 				{
-					m_stackFrame->SetVarCount(m_NameToIndex.size());
+					m_stackFrame->SetVarCount((int)m_NameToIndex.size());
 				}
 				return idx;
 			}
@@ -82,6 +82,10 @@ namespace X
 		FORCE_INLINE int GetNameCacheNum()
 		{
 			return (int)m_NameToIndex.size();
+		}
+		bool SupportExternVars() override
+		{
+			return true;
 		}
 	public:
 		//if XProxy is null, means this process just keep this RemoteObject

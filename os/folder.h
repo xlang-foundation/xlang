@@ -40,6 +40,25 @@ namespace X {
             APISET().AddFunc<1>("RelativePath", &Folder::RelativePath);
             APISET().AddFunc<1>("IsAbsolutePath", &Folder::IsAbsolutePath);
             APISET().AddFunc<0>("Exists", &Folder::Exists);
+
+            // New Python-like APIs and os module equivalence
+            APISET().AddFunc<1>("glob", &Folder::glob);
+            APISET().AddFunc<1>("walk", &Folder::walk);
+            APISET().AddFunc<1>("is_under", &Folder::is_under);
+            
+            // os module aliases/wrappers
+            APISET().AddFunc<1>("mkdir", &Folder::CreateFolder); // alias
+            APISET().AddFunc<1>("makedirs", &Folder::makedirs);
+            APISET().AddFunc<1>("remove", &Folder::DeleteFileImpl); // alias
+            APISET().AddFunc<1>("rmdir", &Folder::rmdir);
+            APISET().AddFunc<1>("removedirs", &Folder::removedirs);
+            APISET().AddFunc<2>("rename", &Folder::Rename); // alias
+            APISET().AddFunc<1>("stat", &Folder::stat);
+            APISET().AddFunc<2>("access", &Folder::access);
+            APISET().AddFunc<2>("chmod", &Folder::chmod);
+            APISET().AddFunc<0>("getcwd", &Folder::getcwd);
+            APISET().AddFunc<1>("chdir", &Folder::chdir);
+            
         END_PACKAGE
 
         explicit Folder(const std::string& path);
@@ -58,6 +77,21 @@ namespace X {
         std::string RelativePath(const std::string& basePath) const;
         bool IsAbsolutePath(const std::string& path) const;
         bool Exists();
+        
+        // New APIs
+        X::List glob(const std::string& pattern);
+        X::List walk(bool topdown = true); // Simplified walk
+        bool is_under(const std::string& path);
+        
+        bool makedirs(const std::string& path);
+        bool rmdir(const std::string& path);
+        bool removedirs(const std::string& path);
+        X::Value stat(const std::string& path);
+        bool access(const std::string& path, int mode = 0);
+        bool chmod(const std::string& path, int mode);
+        std::string getcwd();
+        bool chdir(const std::string& path);
+
     private:
         std::string folderPath;
     };

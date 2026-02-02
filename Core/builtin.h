@@ -107,7 +107,7 @@ namespace X {
 		virtual void SetEmbedObj(void* p) override {}
 		virtual bool Init(int varNum) override;
 		virtual bool SetIndexValue(int idx, Value& v) override;
-		virtual bool GetIndexValue(int idx, Value& v) override;
+		virtual bool GetIndexValue(long long idx, Value& v) override;
 		virtual void RemoveALl() override;
 	};
 }

@@ -38,6 +38,12 @@ namespace X
 		std::cout << "http:" << input.ToString() << std::endl;
 		return input;
 	}
+	bool HttpServer::SetAuthenticationCallback(X::Value callback, X::Value parameters)
+	{
+		m_auth_callback = callback;
+		m_auth_parameters = parameters;
+		return true;
+	}
 	void HttpServer::Init(bool asHttps)
 	{
 		//valid only for the first matched
@@ -62,7 +68,7 @@ namespace X
 						X::ARGS params(matches.size() - 1 + pat.params.size());
 						for (size_t i = 1; i < matches.size(); ++i)
 						{
-							std::cout << i << ": '" << matches[i].str() << "'\n";
+							//std::cout << i << ": '" << matches[i].str() << "'\n";
 							std::string strParam(matches[i].str());
 							params.push_back(strParam);
 						}
@@ -76,6 +82,25 @@ namespace X
 						for (auto& it : pat.kwParams)
 						{
 							kwargs.Add(it);
+						}
+						if (m_auth_callback.IsValid())
+						{
+							X::ARGS params_cb(3);
+							X::List listParams;
+							for (auto& arg : params)
+							{
+								listParams += arg;
+							}
+							params_cb.push_back(listParams);
+							params_cb.push_back(m_auth_parameters);
+							params_cb.push_back(pat.strRule);
+							X::Value canAccess = m_auth_callback.ObjCall(params_cb, kwargs);
+							if (!canAccess.IsTrue())
+							{
+								res.status = 403;
+								res.set_content("Forbidden", "text/plain");
+								return true; // request handled
+							}
 						}
 						X::Value retValue;
 						bool bCallOK = pat.handler.GetObj()->Call(nullptr,
@@ -107,6 +132,24 @@ namespace X
 				}
 				if (!bHandled)
 				{
+					if (m_auth_callback.IsValid())
+					{
+						X::ARGS params_cb(2);
+						X::List listParams;
+						listParams += url;
+						params_cb.push_back(listParams);
+						params_cb.push_back(m_auth_parameters);
+						X::KWARGS kwargs(2);
+						kwargs.Add("req", valReq);
+						kwargs.Add("res", valResp);
+						X::Value canAccess = m_auth_callback.ObjCall(params_cb, kwargs);
+						if (!canAccess.IsTrue())
+						{
+							res.status = 403;
+							res.set_content("Forbidden", "text/plain");
+							return true; // request handled
+						}
+					}
 					//if not handled, check if this server support static files
 					bHandled = HandleStaticFile(url, (void*)&req, (void*)&res);
 				}
@@ -176,13 +219,11 @@ namespace X
 		list += isBinary;
 		return list;
 	}
-	bool HttpServer::Listen(std::string srvName, int port)
+	bool HttpServer::Listen(std::string srvName, int port, int backlog)
 	{
 		httplib::Server* pSrv = (httplib::Server*)m_pSrv;
-
-		//HandlerWithResponse
-		bool bOK = ((httplib::Server*)m_pSrv)->listen(
-			srvName.c_str(), port);
+		pSrv->set_listen_backlog(backlog);
+		bool bOK = pSrv->listen(srvName.c_str(), port);
 		return bOK;
 	}
 	bool HttpServer::Stop()
@@ -247,7 +288,8 @@ namespace X
 		std::stringstream result;
 		std::regex_replace(std::ostream_iterator<char>(result),
 			url.begin(), url.end(), r, target);
-		return result.str();
+		// Add anchors: ^ at start, and (?:\?.*)?$ at end to handle optional query strings
+		return "^" + result.str() + "(?:\\?.*)?$";
 	}
 
 	// Function to extract the file extension from a file path
@@ -579,8 +621,8 @@ namespace X
 			{
 				url = p0.ToString();
 			}
-			int p_size = (int)params.size() - 1;
-			X::ARGS params1(p_size);
+			int p_size = (int)params.size();
+			X::ARGS params1(p_size - 1);
 			for (int i = 1; i < p_size; i++)
 			{
 				X::Value realVal;
@@ -593,6 +635,11 @@ namespace X
 					if (pi.GetObj()->Call(rt, pContext, params0, kwParams0, exprValue))
 					{
 						realVal = exprValue;
+					}
+					else
+					{
+						X::XExpr* pExpr = dynamic_cast<X::XExpr*>(pi.GetObj());
+						realVal = pExpr->ToKV();
 					}
 				}
 				else
@@ -608,6 +655,28 @@ namespace X
 		}
 		return true;
 	}
+	X::Value HttpServer::GetRoutes()
+	{
+		X::List pats;
+		for (auto& pat : m_patters)
+		{
+			X::Dict dict;
+			dict->Set("url", pat.strRule);
+			X::List params;
+			for (auto& arg : pat.params)
+			{
+				params += arg;
+			}
+			dict->Set("params", params);
+			for (auto& kwarg : pat.kwParams)
+			{
+				dict->Set(kwarg.key, kwarg.val);
+			}
+			pats->append(dict);
+		}
+		return pats;
+	}
+
 	bool HttpResponse::AddHeader(std::string headName, X::Value& headValue)
 	{
 		auto* pResp = (httplib::Response*)m_pResponse;
@@ -654,9 +723,9 @@ namespace X
 		return true;
 	}
 
-	#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-	bool HttpResponse::StreamFile(std::string filePath, 
+	bool HttpResponse::StreamFile(std::string filePath,
 		long long start, long long end, std::string contentType)
 	{
 		auto* pResp = (httplib::Response*)m_pResponse;
@@ -677,40 +746,40 @@ namespace X
 			contentType.c_str(),
 
 			// This callback is called ONCE but YOU loop inside to send chunks
-			[file, start, end, CHUNK_SIZE](size_t offset, size_t length, 
+			[file, start, end, CHUNK_SIZE](size_t offset, size_t length,
 				httplib::DataSink& sink) {
-				// Seek to start position
-				long long file_position = start + offset;
-				fseek(file, file_position, SEEK_SET);
+					// Seek to start position
+					long long file_position = start + offset;
+					fseek(file, file_position, SEEK_SET);
 
-				size_t remaining = length;
+					size_t remaining = length;
 
-				std::cout << "Starting to stream " << length << " bytes from position " << file_position << std::endl;
-				// Loop through and send in chunks
-				while (remaining > 0) {
-					size_t chunk_to_read = MIN(remaining, CHUNK_SIZE);
+					std::cout << "Starting to stream " << length << " bytes from position " << file_position << std::endl;
+					// Loop through and send in chunks
+					while (remaining > 0) {
+						size_t chunk_to_read = MIN(remaining, CHUNK_SIZE);
 
-					std::vector<char> buffer(chunk_to_read);
-					size_t bytes_read = fread(buffer.data(), 1, chunk_to_read, file);
+						std::vector<char> buffer(chunk_to_read);
+						size_t bytes_read = fread(buffer.data(), 1, chunk_to_read, file);
 
-					if (bytes_read == 0) {
-						break;  // EOF or error
+						if (bytes_read == 0) {
+							break;  // EOF or error
+						}
+
+						// Write chunk - if client disconnects, this returns false
+						if (!sink.write(buffer.data(), bytes_read)) {
+							return false;  // Client disconnected, stop!
+						}
+
+						remaining -= bytes_read;
+
+						// Check if client still connected
+						if (!sink.is_writable()) {
+							return false;  // Stop if client disconnected
+						}
 					}
-
-					// Write chunk - if client disconnects, this returns false
-					if (!sink.write(buffer.data(), bytes_read)) {
-						return false;  // Client disconnected, stop!
-					}
-
-					remaining -= bytes_read;
-
-					// Check if client still connected
-					if (!sink.is_writable()) {
-						return false;  // Stop if client disconnected
-					}
-				}
-				std::cout << "Finished streaming requested data." << std::endl;
-				return remaining == 0;  // Success if sent all requested data
+					std::cout << "Finished streaming requested data." << std::endl;
+					return remaining == 0;  // Success if sent all requested data
 			},
 
 			[file](bool success) {
@@ -735,7 +804,7 @@ namespace X
 		std::string file_path;
 	};
 
-	bool HttpResponse::StreamFileWithCallback(std::string filePath, 
+	bool HttpResponse::StreamFileWithCallback(std::string filePath,
 		long long start, long long end,
 		std::string contentType, X::Value progressCallback)
 	{
@@ -1160,6 +1229,57 @@ namespace X
 		return true;
 	}
 
+	bool HttpClient::PostWithCallback(std::string path, std::string content_type, std::string body, X::Value callback)
+	{
+		httplib::Client* client = (httplib::Client*)m_pClient;
+		if (!client) {
+			return false;
+		}
+
+		httplib::Request req;
+		req.method = "POST";
+		req.path = path;
+		
+		m_headers->Enum([&](X::Value& key, X::Value& value){
+			req.headers.emplace(key.ToString(), value.ToString());
+		});
+
+		req.body = body;
+		if (!content_type.empty()) {
+			req.set_header("Content-Type", content_type);
+		}
+
+		req.content_receiver = [callback](const char* data, size_t data_length, uint64_t /*offset*/, uint64_t /*total_length*/) mutable {
+			if (callback.IsObject()) {
+				std::string chunk(data, data_length);
+				X::Value valChunk(chunk);
+				X::ARGS args;
+				args.push_back(valChunk);
+				callback.ObjCall(args);
+				return true; 
+			}
+			return true;
+		};
+
+		auto res = client->send(req);
+		if (res) {
+			m_status = res->status;
+			m_body = res->body;
+
+			X::Dict dict;
+			for (auto& kv : res->headers)
+			{
+				X::Str key(kv.first.c_str(), (int)kv.first.size());
+				X::Str val(kv.second.c_str(), (int)kv.second.size());
+				dict->Set(key, val);
+			}
+			m_response_headers = dict;
+			return true;
+		}
+		
+		return false;
+	}
+
 	bool HttpClient::Post(std::string path, std::string content_type, std::string body)
 	{
 		if (m_pClient)
@@ -1267,4 +1387,5 @@ namespace X
 		return true;
 	}
 }
+
 

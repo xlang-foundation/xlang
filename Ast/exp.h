@@ -74,6 +74,15 @@ enum class ObType
 	Import,
 	NamespaceVar,
 	RefOp,
+	TernaryOp,           // For inline if-else: x if cond else y
+	ListComprehension,   // For [expr for x in iter]
+	DictComprehension,   // For {k:v for x in iter}
+	InlineForOp,		 // Parser helper for inline for
+	InlineIfOp,          // Parser helper for inline if
+	InlineElseOp,        // Parser helper for inline else
+	Try,
+	Except,
+	Finally,
 };
 enum class ExecActionType
 {
@@ -81,11 +90,13 @@ enum class ExecActionType
 	Break,
 	Continue,
 	Return,
+	Throw,
 };
 
 struct ExecAction
 {
 	ExecActionType type = ExecActionType::None;
+	Value exceptionValue;
 };
 class Func;
 class Scope;
@@ -306,7 +317,7 @@ public:
 		}
 	}
 	bool RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
-		const char* s_in,int size,std::string& outStr,bool UseBindMode,
+		const char* s_in,int size,std::string& outStr,bool isFString, bool UseBindMode,
 		std::vector<X::Value>& bind_data_list);
 	ObType m_type = ObType::Base;
 };
@@ -333,6 +344,7 @@ class Str :
 	public Expression
 {
 	bool m_haveFormat = false;
+	bool m_isFString = false;
 	char* m_s = nil;
 	bool m_needRelease = false;//m_s is created by this Str,then = true
 	int m_size = 0;
@@ -342,10 +354,11 @@ public:
 	{
 		m_type = ObType::Str;
 	}
-	Str(char* s, int size,bool haveFormat)
+	Str(char* s, int size,bool haveFormat, bool isFString = false)
 	{
 		m_type = ObType::Str;
 		m_haveFormat = haveFormat;
+		m_isFString = isFString;
 		m_s = s;
 		m_needRelease = false;
 		m_size = size;
@@ -391,26 +404,8 @@ public:
 	}
 	bool RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v);
 
-	virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
-	{
-		if (m_haveFormat)
-		{
-			return RunWithFormat(rt, pContext, v);
-		}
-		else if (m_isCharSequence && m_size == 1)
-		{//for case: 'A', 'a'...., return a long long as its value
-		 //todo: check if it can be accept as +='s right value for example:
-		// str_x +='A'
-			long long lv = m_s[0];
-			v = Value(lv);
-			return true;
-		}
-		else
-		{
-			v = Value(m_s, m_size);
-			return true;
-		}
-	}
+	//Moved to cpp
+	bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override final;
 };
 
 //deal with built-in constants such as None
@@ -488,18 +483,17 @@ public:
 	}
 	FORCE_INLINE long long GetVal() { return m_val; }
 	FORCE_INLINE int GetDigiNum() { return m_digiNum; }
-	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override
-	{
-		Value v0(m_val);
+	FORCE_INLINE bool Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue=nullptr) override final
+	{ 
+		v = m_val;
 		if (m_isBool)
 		{
-			v0.AsBool();
+			v.AsBool();
 		}
 		else
 		{
-			v0.SetDigitNum(m_digiNum);
+			v.SetDigitNum(m_digiNum);
 		}
-		v = v0;
 		return true;
 	}
 	FORCE_INLINE X::Value GetValue()
@@ -541,6 +535,11 @@ public:
 	{
 		Expression::FromBytes(stream);
 		stream >> m_val;
+		return true;
+	}
+	FORCE_INLINE bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	{
+		v = m_val;
 		return true;
 	}
 	FORCE_INLINE double GetVal() { return m_val; }
@@ -593,8 +592,8 @@ public:
 			delete e;
 		}
 	}
-	virtual bool Exec(XlangRuntime* rt, ExecAction& action,
-		XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+	bool Exec(XlangRuntime* rt, ExecAction& action,
+		XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream)
 	{
 		Expression::ToBytes(rt,pContext,stream);
@@ -731,7 +730,7 @@ public:
 	bool Parse(std::string& strVarName,
 		std::string& strVarType,
 		Value& defaultValue);
-	virtual bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr);
+	bool Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<AST::Expression*>& callables) override
 	{

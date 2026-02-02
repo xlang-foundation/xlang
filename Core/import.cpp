@@ -355,16 +355,20 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 	else
 	{
 		std::string curPath;
-		if (rt->M())
+		if (rt && rt->M())
 		{
 			curPath = rt->M()->GetModulePath();
 		}
-		bool bLoaded = FindAndLoadExtensions(rt, curPath, m_path);
-		if (bLoaded)
+		//chec if it is .x  or .py
+		if (!m_path.ends_with(".x") && !m_path.ends_with(".py"))
 		{
-			if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
+			bool bLoaded = FindAndLoadExtensions(rt, curPath, m_path);
+			if (bLoaded)
 			{
-				return true;
+				if (Manager::I().QueryAndCreatePackage(rt, im.name, v))
+				{
+					return true;
+				}
 			}
 		}
 	}

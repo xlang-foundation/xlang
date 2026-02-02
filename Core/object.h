@@ -321,6 +321,19 @@ namespace Data {
 			{
 				return 1;//object is nor None,
 			}
+			if (r->IsObject())
+			{
+				Object* pRObj = dynamic_cast<Object*>(r->GetObj());
+				if(pRObj == this)
+				{
+					return 0;
+
+				}
+				else
+				{
+					return 1;
+				}
+			}
 			return 0;
 		}
 		virtual bool Get(long long idx, X::Value& val) { return false; }
@@ -330,12 +343,14 @@ namespace Data {
 	};
 
 	class Expr
-		: public virtual Object
+		:virtual public XExpr, 
+		virtual public  Object
 	{//any valid AST tree with one root
 	protected:
 		AST::Expression* m_expr = nullptr;
 	public:
-		Expr(AST::Expression* e)
+		Expr(AST::Expression* e):
+			XExpr(0), Object()
 		{
 			m_t = ObjType::Expr;
 			m_expr = e;
@@ -355,6 +370,7 @@ namespace Data {
 				return true;
 			}
 		}
+		X::Value ToKV() override;
 		virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream)
 		{
 			AST::Expression exp;

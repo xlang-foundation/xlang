@@ -119,6 +119,13 @@ public:
 #endif
 		m_decors.clear();
 	}
+	//we don't want to use virtual here to avoid vtable overhead
+	//so hardcode the type check
+	//just for in Object function level want to check if this is a external func
+	//and find it is a FuncEx
+	FORCE_INLINE bool IsBuiltinFunc() 	{
+		return m_type == ObType::BuiltinFunc;
+	}
 	FORCE_INLINE Module* GetMyModule()
 	{
 		if (m_myModule == nullptr)
@@ -403,6 +410,7 @@ public:
 			m_pContext->DecRef();
 		}
 	}
+	FORCE_INLINE bool IsFuncEx() { return (m_func_ex); }
 	FORCE_INLINE virtual std::string GetFuncName() override
 	{
 		return m_funcName;

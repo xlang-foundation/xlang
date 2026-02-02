@@ -207,15 +207,17 @@ namespace Data
 			vals.push_back(X::Value(nPos));
 			return true;
 		}
-		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
+		FORCE_INLINE virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams,
 			X::Value& retValue) override
 		{
+			//just in case we use str() as function call
+			retValue = m_s;
 			return true;
 		}
 		FORCE_INLINE virtual bool Get(long long idx, X::Value& val) override
 		{
-			if (idx >=0 && m_s.size() >= idx)
+			if (idx >=0 && (long long)m_s.size() >= idx)
 			{
 				val = X::Value((long long)m_s[idx]);
 				return true;
@@ -225,9 +227,13 @@ namespace Data
 				return false;
 			}
 		}
+		FORCE_INLINE virtual bool GetIndexValue(long long idx, Value& v) override
+		{
+			return Get(idx, v);
+		}
 		FORCE_INLINE virtual bool Set(long long idx, X::Value& val) override
 		{
-			if (idx >= 0 && m_s.size() >= idx)
+			if (idx >= 0 && (long long)m_s.size() >= idx)
 			{
 				m_s[idx] = (char)val.GetLongLong();
 				return true;

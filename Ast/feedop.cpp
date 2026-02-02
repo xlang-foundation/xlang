@@ -31,12 +31,12 @@ namespace X
 			if (padCount > padUsingDataBindingCount)
 			{
 				RunStringExpWithFormat(rt, pContext, m_s + 1, m_size - 1, fmtString,
-					false, Value_Bind_list);
+					false, false, Value_Bind_list);
 			}
 			if (padUsingDataBindingCount)
 			{
 				RunStringExpWithFormat(rt, pContext, m_s + 1, m_size - 1, fmtBindingString,
-					true, Value_Bind_list);
+					false, true, Value_Bind_list);
 			}
 			X::Value valIndex;
 			X::Value valFmtInfo = fmtString;

@@ -1,13 +1,13 @@
 {
   "name": "xlang",
   "displayName": "xlang",
-  "version": "1.2.6",
+  "version": "1.2.8",
   "publisher": "cantorai",
   "description": "XLang's debugger and more",
   "author": {
     "name": "The XLang Foundation"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "multi-root ready"
   ],
@@ -97,14 +97,18 @@
       },
       {
         "id": "yml",
-        "extensions": [".yml"],
-        "aliases": ["yml"]
+        "extensions": [
+          ".yml"
+        ],
+        "aliases": [
+          "yml"
+        ]
       }
     ],
     "grammars": [
       {
         "language": "xlang",
-        "scopeName": "source.x",
+        "scopeName": "source.xlang",
         "path": "./syntaxes/MagicPython.tmLanguage.json"
       },
       {

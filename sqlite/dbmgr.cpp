@@ -1,4 +1,6 @@
 ﻿/*
+#include "../Core/runtime.h" // for X::XlangRuntime::SetException
+
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,6 +16,7 @@ limitations under the License.
 */
 
 #include "dbmgr.h"
+#include "xhost.h"
 #include "sqlite/sqlite3.h"
 #include "utility.h"
 #include "dbop.h"
@@ -101,6 +104,11 @@ namespace X
 				m_stmt = new DBStatement(m_db, m_sql.c_str());
 				if (m_stmt->SC() != (int)DBState::Ok)
 				{
+					// Raise so callers using Cursor API also get exceptions
+					std::string msg = "SQLite prepare failed (code=" + std::to_string(m_stmt->SC()) + ") SQL: " + m_sql;
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(m_stmt->SC(), msg.c_str()), /*AddRef=*/false);
+					auto* rt = X::g_pXHost->GetCurrentRuntime();
+					if (rt) rt->SetException(errVal);
 					return X::Value(false);
 				}
 				if (m_BindingDataList.IsList())
@@ -153,6 +161,276 @@ namespace X
 				return X::Value();//None
 			}
 		}
+		int Cursor::Step()
+		{
+			if (!Open())
+			{
+				return 0;
+			}
+			if (m_stmt)
+			{
+				return (int)m_stmt->step();
+			}
+			return 0;
+		}
+		int Cursor::getcolnum()
+		{
+			if (!Open())
+			{
+				return 0;
+			}
+			if (m_stmt)
+			{
+				return m_stmt->getcolnum();
+			}
+			return 0;
+		}
+		bool Cursor::reset()
+		{
+			if (!Open())
+			{
+				return 0;
+			}
+			if (m_stmt)
+			{
+				return m_stmt->reset();
+			}
+			return true;
+		}
+		bool Cursor::Close()
+		{
+			if (m_stmt)
+			{
+				bool bOK =  m_stmt->Close();
+				delete m_stmt;
+				m_stmt = nullptr;
+				return bOK;
+			}
+			return true;
+		}
+		std::string Cursor::getColName(int idx)
+		{
+			if (!Open())
+			{
+				return "";
+			}
+			if (m_stmt)
+			{
+				return m_stmt->getColName(idx);
+			}
+			return "";
+		}
+		bool Cursor::fetchall(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+		{
+			if (!Open())
+			{
+				return false;
+			}
+			int limit = -1;
+			if (params.size() >= 1)
+			{
+				X::Value vLimit = params[0];
+				if (vLimit.IsLong())
+				{
+					limit = (int)(long long)vLimit;
+				}
+			}
+			else
+			{
+				auto it = kwParams.find("limit");
+				if (it)
+				{
+					X::Value vLimit = it->val;
+					if (vLimit.IsLong())
+					{
+						limit = (int)(long long)vLimit;
+					}
+				}
+			}
+			X::List resultList;
+			if (m_stmt == nullptr)
+			{
+				return false;
+			}
+
+			int colCount = m_stmt->getcolnum();
+			int rowCount = 0;
+
+			while (true)
+			{
+				// Check limit
+				if (limit > 0 && rowCount >= limit)
+				{
+					break;
+				}
+
+				DBState state = m_stmt->step();
+				if (state != DBState::Row)
+				{
+					break;
+				}
+
+				// Create a list for this row
+				X::List rowList;
+				for (int i = 0; i < colCount; i++)
+				{
+					X::Value val;
+					m_stmt->getValue(i, val);
+					rowList += val;
+				}
+
+				resultList->append(rowList);
+				rowCount++;
+			}
+			retValue = resultList;
+			return true;
+		}
+
+		bool Cursor::fetchallDict(X::XRuntime* rt, X::XObj* pContext,
+			X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+		{
+			if (!Open())
+			{
+				return false;
+			}
+			int limit = -1;
+			if (params.size() >= 1)
+			{
+				X::Value vLimit = params[0];
+				if (vLimit.IsLong())
+				{
+					limit = (int)(long long)vLimit;
+				}
+			}
+			else
+			{
+				auto it = kwParams.find("limit");
+				if (it)
+				{
+					X::Value vLimit = it->val;
+					if (vLimit.IsLong())
+					{
+						limit = (int)(long long)vLimit;
+					}
+				}
+			}
+
+			X::List resultList;
+			if (m_stmt == nullptr)
+			{
+				return false;
+			}
+
+			int colCount = m_stmt->getcolnum();
+			if (colCount == 0)
+			{
+				return true;
+			}
+
+			// Build column names with duplicate handling
+			// Step 1: Get raw column names and extract base names (remove table prefix like "o.")
+			std::vector<std::string> rawNames(colCount);
+			std::vector<std::string> baseNames(colCount);
+
+			for (int i = 0; i < colCount; i++)
+			{
+				rawNames[i] = m_stmt->getColName(i);
+				std::string baseName = rawNames[i];
+
+				// Remove table prefix (e.g., "o.colname" -> "colname")
+				size_t dotPos = baseName.find('.');
+				if (dotPos != std::string::npos)
+				{
+					baseName = baseName.substr(dotPos + 1);
+				}
+				baseNames[i] = baseName;
+			}
+
+			// Step 2: Count occurrences of each base name to detect duplicates
+			std::unordered_map<std::string, int> nameCount;
+			for (int i = 0; i < colCount; i++)
+			{
+				nameCount[baseNames[i]]++;
+			}
+
+			// Step 3: Build final column names
+			// If base name is unique, use it directly
+			// If base name has duplicates, use prefix_colname format (replace . with _)
+			std::vector<std::string> finalNames(colCount);
+			std::unordered_map<std::string, int> usedNames; // Track used names for additional disambiguation
+
+			for (int i = 0; i < colCount; i++)
+			{
+				std::string finalName;
+
+				if (nameCount[baseNames[i]] > 1)
+				{
+					// Duplicate base name - use full name with . replaced by _
+					finalName = rawNames[i];
+					// Replace all dots with underscores
+					for (size_t j = 0; j < finalName.length(); j++)
+					{
+						if (finalName[j] == '.')
+						{
+							finalName[j] = '_';
+						}
+					}
+				}
+				else
+				{
+					// Unique base name
+					finalName = baseNames[i];
+				}
+
+				// Handle edge case: if the transformed name still conflicts
+				if (usedNames.find(finalName) != usedNames.end())
+				{
+					// Append index to make it unique
+					usedNames[finalName]++;
+					finalName = finalName + "_" + std::to_string(usedNames[finalName]);
+				}
+				else
+				{
+					usedNames[finalName] = 0;
+				}
+
+				finalNames[i] = finalName;
+			}
+
+			// Step 4: Fetch rows and build dictionaries
+			int rowCount = 0;
+
+			while (true)
+			{
+				// Check limit
+				if (limit > 0 && rowCount >= limit)
+				{
+					break;
+				}
+
+				DBState state = m_stmt->step();
+				if (state != DBState::Row)
+				{
+					break;
+				}
+
+				// Create a dict for this row
+				X::Dict rowDict;
+				for (int i = 0; i < colCount; i++)
+				{
+					X::Value val;
+					m_stmt->getValue(i, val);
+					rowDict->Set(finalNames[i], val);
+				}
+
+				resultList->append(rowDict);
+				rowCount++;
+			}
+
+			retValue = resultList;
+			return true;
+		}
 		bool Manager::LiteParseStatement(std::string& strSql,
 			std::string& varName,std::string& outSql)
 		{
@@ -180,7 +458,19 @@ namespace X
 			DBStatement dbsmt(pDb, strSql.c_str());
 			if (dbsmt.SC() != (int)DBState::Ok)
 			{
-				std::cout << "Error code:" << dbsmt.SC() << std::endl;
+				// Raise an XLang exception instead of only printing/returning false.
+				// We don't have sqlite3_errmsg() here (db handle is inside SqliteDB),
+				// but we can still provide the sqlite return code + SQL statement.
+				// We cannot include Core/runtime.h cleanly in this sqlite project (include paths).
+				// But we can still raise an Error via the host API.
+				auto* xrt = rt;
+				if (xrt)
+				{
+					std::string msg = "SQLite prepare failed (code=" + std::to_string(dbsmt.SC()) + ") SQL: " + strSql;
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(dbsmt.SC(), msg.c_str()), /*AddRef=*/false);
+					// Raise exception through the public XRuntime API
+					rt->SetException(errVal);
+				}
 				return false;
 			}
 			if (BindingDataList.IsList())
@@ -282,6 +572,11 @@ namespace X
 				std::string dbPath = strSql.substr(pos + 4);
 				dbPath = norm_db_path(rt,dbPath,m_curPath);
 				X::Value valDb = UseDatabase(rt, pContext, dbPath);
+				if (valDb.IsInvalid())
+				{
+					// UseDatabase should have set exception on rt
+					return X::Value(false);
+				}
 				PushThreadDbStack(pad_index,valDb);
 			}
 			else
@@ -324,13 +619,30 @@ namespace X
 			rc = sqlite3_open(dbPath.c_str(), &db);
 			if (rc)
 			{
-				sqlite3_close(db);
+				if (db) sqlite3_close(db);
+				return false;
 			}
 			else
 			{
-				//sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
+				char* err = nullptr;
+
+				sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, &err);
+				if (err) 
+				{ 
+					sqlite3_free(err); 
+				}
+
+				sqlite3_exec(db, "PRAGMA synchronous=NORMAL;", nullptr, nullptr, &err);
+				if (err) 
+				{ 
+					sqlite3_free(err); 
+				}
+
+				sqlite3_busy_timeout(db, 1000);  // 1000 ms
 				mdb = db;
 			}
+
+
 			return true;
 		}
 

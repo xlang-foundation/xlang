@@ -33,6 +33,7 @@ namespace X
 			{
 				m_t = ObjType::Function;
 			}
+			static void Init();
 			static void cleanup();
 			Function(AST::Func* p,bool bOwnIt = false);
 			~Function();
@@ -50,6 +51,8 @@ namespace X
 				pNewFunc->IncRef();
 				return dynamic_cast<XObj*>(pNewFunc);
 			}
+			bool IsFuncEx() override;
+
 			virtual X::Value GetName() override
 			{
 				return m_func->GetFuncName();
@@ -82,8 +85,6 @@ namespace X
 				return m_func?m_func->CalcCallables(rt,pContext,callables):false;
 			}
 			virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override;
-			virtual int QueryMethod(const char* name, int* pFlags) override;
-			virtual bool GetIndexValue(int idx, Value& v) override;
 
 			std::string GetDoc()
 			{

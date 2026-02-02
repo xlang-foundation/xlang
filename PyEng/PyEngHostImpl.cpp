@@ -22,6 +22,9 @@ limitations under the License.
 #include "PyObjectXLangConverter.h"
 #include "PyGILState.h"
 #include <cstring>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -46,6 +49,8 @@ extern "C"
 }
 
 #include "PyBinarySerializer.h"
+#include "PythonModulePathManager.h"
+
 
 static void LoadNumpy()
 {
@@ -57,8 +62,8 @@ static void LoadNumpy()
 #define SURE_NUMPY_API() LoadNumpy()
 
 
-std::mutex MGil::s_mutex;
-thread_local int MGil::s_lockCounter = 0;
+std::mutex MGil3::s_mutex;
+thread_local int MGil3::s_lockCounter = 0;
 
 GrusPyEngHost::GrusPyEngHost():
 	m_pyTaskPool(3)
@@ -296,6 +301,14 @@ PyEngObjectPtr GrusPyEngHost::Get(PyEngObjectPtr objs, const char* key)
 			else
 			{
 				pRetOb = PyObject_GetAttrString(pOb, key);//New reference
+				if (!pRetOb) 
+				{
+					//we have to do here if not, the up layer if query 
+					// non-existing attribute will cause Python error
+					// and then python code will not run correctly
+					// Attribute is missing → clear Python error
+					PyErr_Clear();
+				}
 			}
 		}
 		else
@@ -413,6 +426,12 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEn
 	//PyRun_SimpleString("import pdb; pdb.set_trace()");
 	//EnablePdbInThread();
 	pRetOb = PyObject_Call(pCallOb, (PyObject*)args, (PyObject*)kwargs);
+	// *** IMPORTANT: detect if Python raised an exception ***
+	if (PyErr_Occurred()) {
+
+		// print underlying Python traceback
+		PyErr_Print();
+	}
 	if (pRetOb == nullptr)
 	{
 		std::string err = GetPythonErrorString();
@@ -603,6 +622,252 @@ bool GrusPyEngHost::ImportWithFromList(
 	}
 	Py_DecRef(pModule);
 	return bOK;
+}
+
+bool GrusPyEngHost::ImportFromFullPathWithGlobals(
+	const char* moduleFullFileName,
+	X::KWARGS& globals,
+	X::Port::vector<const char*>& fromList,
+	X::Port::vector<PyEngObjectPtr>& subs)
+{
+	MGil gil;
+
+	fs::path p(moduleFullFileName);
+	if (!fs::exists(p) || !fs::is_regular_file(p))
+		return false;
+
+	fs::path absPath = fs::absolute(p);
+	fs::path folder = absPath.parent_path();
+	std::string moduleName = absPath.stem().string();
+
+	// -----------------------------------------
+	// Add path into Python sys.path (refcounted)
+	// -----------------------------------------
+	PythonModulePathManager::I().AddPath(folder);
+
+	// -----------------------------------------
+	// Prepare globals dict for module execution
+	// -----------------------------------------
+	PyObject* pyGlobals = PyDict_New();
+	if (!pyGlobals)
+		return false;
+
+	// __name__ is REQUIRED for module execution
+	PyDict_SetItemString(pyGlobals, "__name__", PyUnicode_FromString(moduleName.c_str()));
+
+	// ----------------------------------------------------------
+	// Inject custom globals BEFORE any Python code runs
+	// globals: vector of pair<char*, X::Value>
+	// ----------------------------------------------------------
+	for (auto& kv : globals)
+	{
+		const char* key = kv.key;
+		X::Value val = kv.val;
+
+		PyObject* pyVal = PyObjectXLangConverter::ConvertToPyObject(val);
+		if (!pyVal)
+		{
+			// still continue, but mark error
+			PyErr_Print();
+			continue;
+		}
+
+		if (PyDict_SetItemString(pyGlobals, key, pyVal) != 0)
+		{
+			PyErr_Print();
+		}
+
+		Py_DECREF(pyVal);
+	}
+
+	// -----------------------------------------
+	// Import & EXEC module using our globals
+	// -----------------------------------------
+	PyObject* module = PyImport_ImportModuleEx(
+		moduleName.c_str(),
+		pyGlobals,   // globals
+		pyGlobals,   // locals = globals
+		nullptr      // fromlist
+	);
+	Py_DECREF(pyGlobals);
+
+	if (!module)
+	{
+		PyErr_Print();
+		PythonModulePathManager::I().RemovePath(folder);
+		return false;
+	}
+
+	// -----------------------------------------
+	// No from-list? return the module itself
+	// -----------------------------------------
+	if (fromList.size() == 0)
+	{
+		subs.push_back(module);
+		return true;
+	}
+
+	// -----------------------------------------
+	// Extract attributes requested in fromList
+	// -----------------------------------------
+	bool ok = true;
+	for (auto& fromKey : fromList)
+	{
+		PyObject* attr = PyObject_GetAttrString(module, fromKey);
+		subs.push_back(attr);
+
+		if (!attr)
+		{
+			PyErr_Print();
+			ok = false;
+		}
+	}
+
+	Py_DECREF(module);
+	return ok;
+}
+
+bool GrusPyEngHost::ImportFromFullPath(
+	const char* moduleFullFileName,
+	X::Port::vector<const char*>& fromList,
+	X::Port::vector<PyEngObjectPtr>& subs)
+{
+	MGil gil;
+
+	fs::path p(moduleFullFileName);
+
+	// -------------------------------------------------------
+	// 1. Validate file exists
+	// -------------------------------------------------------
+	if (!fs::exists(p) || !fs::is_regular_file(p))
+	{
+		return false;
+	}
+
+	// Normalize paths
+	fs::path absPath = fs::absolute(p);
+	fs::path folder = absPath.parent_path();
+	std::string moduleName = absPath.stem().string();   // filename without .py
+
+	// -------------------------------------------------------
+	// 2. Add folder to sys.path with refcount
+	// -------------------------------------------------------
+	PythonModulePathManager::I().AddPath(folder);
+
+	// -------------------------------------------------------
+	// 3. Import module using standard Python import system
+	//    This supports relative imports and package imports
+	// -------------------------------------------------------
+	if (PyErr_Occurred()) {
+		PyErr_Print();
+		PyErr_Clear();
+	}
+	PyObject* module = PyImport_ImportModule(moduleName.c_str());
+	if (!module)
+	{
+		PyErr_Print();
+		PyErr_Clear();
+		// Important: remove path refcount even on failure
+		PythonModulePathManager::I().RemovePath(folder);
+		return false;
+	}
+
+	// -------------------------------------------------------
+	// 4. No from-list? Return module directly
+	// -------------------------------------------------------
+	if (fromList.size() == 0)
+	{
+		subs.push_back(module);  // caller takes ownership
+		// caller must call RemovePath(folder) when module is destroyed
+		return true;
+	}
+
+	// -------------------------------------------------------
+	// 5. Extract attributes listed in fromList
+	// -------------------------------------------------------
+	bool ok = true;
+
+	for (auto& fromName : fromList)
+	{
+		PyObject* attr = PyObject_GetAttrString(module, fromName);
+		subs.push_back(attr);  // even if NULL, consistent with your API
+
+		if (!attr)
+		{
+			PyErr_Print();
+			ok = false;
+		}
+	}
+
+	Py_DECREF(module);
+	return ok;
+}
+
+bool GrusPyEngHost::ForceUnloadModule(PyEngObjectPtr moduleObj)
+{
+	if (!moduleObj || !PyModule_Check(moduleObj))
+		return false;
+
+	PyObject* pModuleObj = (PyObject*)moduleObj;
+	MGil gil;
+
+	const char* modName = PyModule_GetName(pModuleObj);
+	if (!modName)
+		return false;
+
+	// 1. Remove from sys.modules
+	PyObject* sysModules = PyImport_GetModuleDict();
+	PyDict_DelItemString(sysModules, modName);
+
+	// 2. Break all references inside module dict
+	PyObject* dict = PyModule_GetDict(pModuleObj);
+	if (dict)
+	{
+		PyDict_Clear(dict);
+	}
+
+	// 3. Clear Python exception state
+	PyErr_Clear();
+	PyRun_SimpleString("import sys; sys.exc_info = lambda: (None, None, None)");
+
+	// 4. Force garbage collection repeatedly
+	PyRun_SimpleString(
+		"import gc\n"
+		"gc.collect()\n"
+		"gc.collect()\n"
+		"gc.collect()\n"
+	);
+
+	return true;
+}
+
+bool GrusPyEngHost::UnloadModuleFromCache(const char* moduleNameOrPath)
+{
+	MGil gil;  // Ensure GIL is held
+
+	if (!moduleNameOrPath || moduleNameOrPath[0] == 0)
+		return false;
+
+	PyObject* sysModules = PyImport_GetModuleDict();
+	if (!sysModules)
+		return false;
+
+	// Try remove by key (name or full path)
+	int ret = PyDict_DelItemString(sysModules, moduleNameOrPath);
+
+	// ret == 0 → removed
+	// ret < 0 → not found or error, but safe to ignore
+	PyErr_Clear();   // clear possible KeyError
+
+	return (ret == 0);
+}
+
+void GrusPyEngHost::RemovePathForImportWhenModuleUnload(const char* moduleFullName)
+{
+	fs::path p(moduleFullName);
+	fs::path absPath = fs::absolute(p);
+	fs::path folder = absPath.parent_path();
+	PythonModulePathManager::I().RemovePath(folder);
 }
 
 void GrusPyEngHost::Release(PyEngObjectPtr obj)
@@ -960,6 +1225,94 @@ bool GrusPyEngHost::PyDeserialize(X::Value& input, X::Value& output)
 	PyObject* restored = pb.Load(data_ptr, data_len, PyDeserOptions());
 	return X::g_pXHost->PyObjToValue(restored, output);
 }
+
+void GrusPyEngHost::ActivePythonVEnv(const char* venvPath)
+{
+	fs::path venv(venvPath);
+	fs::path site;
+
+#ifdef _WIN32
+	// Example: C:\proj\.venv\Lib\site-packages
+	site = venv / "Lib" / "site-packages";
+#else
+	// Linux/Mac: /proj/.venv/lib/python3.X/site-packages
+	fs::path lib = venv / "lib";
+	bool found = false;
+
+	for (auto& entry : fs::directory_iterator(lib))
+	{
+		if (entry.is_directory())
+		{
+			auto name = entry.path().filename().string();
+			// match: python3.8, python3.10, python3.12, etc.
+			if (name.rfind("python3", 0) == 0)
+			{
+				site = entry.path() / "site-packages";
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (!found)
+	{
+		printf("ActivePythonVEnv: Cannot locate pythonX.Y directory in: %s\n", venvPath);
+		return;
+	}
+#endif
+
+	if (!fs::exists(site))
+	{
+		printf("ActivePythonVEnv: site-packages not found: %s\n",
+			site.string().c_str());
+		return;
+	}
+
+	// Insert site-packages at *front* of sys.path with refcounting
+	PythonModulePathManager::I().AddPath(site);
+}
+
+void GrusPyEngHost::DeactivePythonVEnv(const char* venvPath)
+{
+	fs::path venv(venvPath);
+	fs::path site;
+
+#ifdef _WIN32
+	site = venv / "Lib" / "site-packages";
+#else
+	fs::path lib = venv / "lib";
+	bool found = false;
+
+	for (auto& entry : fs::directory_iterator(lib))
+	{
+		if (entry.is_directory())
+		{
+			auto name = entry.path().filename().string();
+			if (name.rfind("python3", 0) == 0)
+			{
+				site = entry.path() / "site-packages";
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (!found)
+	{
+		printf("DeactivePythonVEnv: Cannot locate pythonX.Y directory in: %s\n", venvPath);
+		return;
+	}
+#endif
+
+	if (!fs::exists(site))
+	{
+		return; // Already removed or invalid
+	}
+
+	// Remove path using refcounting
+	PythonModulePathManager::I().RemovePath(site);
+}
+
 
 //Don't call MGil here
 bool PyObjectXLangConverter::IsNumpyArray(PyObject* obj)

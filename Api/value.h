@@ -161,9 +161,9 @@ class Value
 {
 	//from high->low, second and third byte are digits number , mask is 0x00FFFF00 and shift >>8
 	//last 4 bits as subtype, mask is 0x0F
-	int flags = 0;
+	int flags;
 
-	ValueType t= ValueType::Invalid;
+	ValueType t;
 	union
 	{
 		long long l;
@@ -173,19 +173,19 @@ class Value
 	}x;
 	Value QueryMember(const char* key);
 public:
-	FORCE_INLINE bool IsLong() { return t == ValueType::Int64; }
-	FORCE_INLINE bool IsDouble() { return t == ValueType::Double; }
-	FORCE_INLINE bool IsNumber() { return IsLong() || IsDouble();}
-	FORCE_INLINE bool IsBool() { return IsLong() && (flags & (int)ValueSubType::BOOL); }
-	FORCE_INLINE bool IsInvalid()
+	FORCE_INLINE bool IsLong() const { return t == ValueType::Int64; }
+	FORCE_INLINE bool IsDouble()  const  { return t == ValueType::Double; }
+	FORCE_INLINE bool IsNumber() const  { return IsLong() || IsDouble();}
+	FORCE_INLINE bool IsBool() const  { return IsLong() && (flags & (int)ValueSubType::BOOL); }
+	FORCE_INLINE bool IsInvalid() const
 	{
 		return (t == ValueType::Invalid);
 	}
-	FORCE_INLINE bool IsNone()
+	FORCE_INLINE bool IsNone() const
 	{
 		return (t == ValueType::None);
 	}
-	FORCE_INLINE bool IsValid()
+	FORCE_INLINE bool IsValid() const
 	{
 		return (t != ValueType::Invalid);
 	}
@@ -284,25 +284,29 @@ public:
 			x.obj = nullptr;
 		}
 		t = ValueType::Invalid;
+		flags = 0;
 	}
 	FORCE_INLINE Value()
 	{
 		t = ValueType::Invalid;
+		flags = 0;
 		x.l = 0;
 	}
 	FORCE_INLINE Value(ValueType t0)
 	{
+		flags = 0;
 		t = t0;
 		x.l = 0;
 	}
 	FORCE_INLINE Value(bool b)
 	{//use 1 as true and 0 as false, set flag to -1
 		t = ValueType::Int64;
-		flags |= (int)ValueSubType::BOOL;
+		flags = (int)ValueSubType::BOOL;
 		x.l = b ? 1 : 0;
 	}
 	FORCE_INLINE void AsBool()
 	{
+		//this time flags initialized 
 		flags |= (int)ValueSubType::BOOL;
 		x.l = x.l>0?1 : 0;
 	}
@@ -310,68 +314,75 @@ public:
 	FORCE_INLINE Value(char c)
 	{
 		t = ValueType::Int64;
-		flags |= (int)ValueSubType::CHAR;
+		flags = (int)ValueSubType::CHAR;
 		x.l = c;
 	}
 	FORCE_INLINE Value(unsigned char c)
 	{
 		t = ValueType::Int64;
-		flags |= (int)ValueSubType::UCHAR;
+		flags = (int)ValueSubType::UCHAR;
 		x.l = c;
 	}
 	FORCE_INLINE Value(short s)
 	{
 		t = ValueType::Int64;
-		flags |= (int)ValueSubType::SHORT;
+		flags = (int)ValueSubType::SHORT;
 		x.l = s;
 	}
 	FORCE_INLINE Value(unsigned short s)
 	{
 		t = ValueType::Int64;
-		flags |= (int)ValueSubType::USHORT;
+		flags = (int)ValueSubType::USHORT;
 		x.l = s;
 	}
 	FORCE_INLINE Value(int l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
+		flags = 0;
 	}
 	FORCE_INLINE Value(unsigned int l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
+		flags = 0;
 	}
 	FORCE_INLINE Value(long l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
+		flags = 0;
 	}
 	FORCE_INLINE Value(unsigned long l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
+		flags = 0;
 	}
 	FORCE_INLINE Value(long long l)
 	{
 		t = ValueType::Int64;
 		x.l = l;
+		flags = 0;
 	}
 
 	FORCE_INLINE Value(void* pointer)
 	{
 		t = ValueType::Int64;
 		x.l = (long long)pointer;
+		flags = 0;
 	}
 	FORCE_INLINE Value(unsigned long long l)
 	{
 		t = ValueType::Int64;
-		flags |= (int)ValueSubType::UINT64;
+		flags = (int)ValueSubType::UINT64;
 		x.l = (long long)l;
 	}
 	FORCE_INLINE Value(double d)
 	{
 		t = ValueType::Double;
 		x.d = d;
+		flags = 0;
 	}
 	FORCE_INLINE Value(const char* s)
 	{
@@ -389,11 +400,13 @@ public:
 	{
 		t = ValueType::Object;
 		x.obj = nullptr;
+		flags = 0;
 		AssignObject(p, AddRef);
 	}
 	Value(std::string& s);
 	Value(const std::string& s)
 	{
+		flags = 0;
 		SetString((std::string&)s);
 	}
 	Value(std::string&& s);
@@ -581,7 +594,26 @@ public:
 	bool IsString() const;
 	FORCE_INLINE bool IsTrue()
 	{
-		return !IsZero();
+		bool bRet = false;
+		switch (t)
+		{
+		case ValueType::Invalid:
+		case ValueType::None:
+			bRet = false;
+			break;
+		case ValueType::Int64:
+			bRet = (x.l != 0);
+			break;
+		case ValueType::Double:
+			bRet = (x.d != 0);
+			break;
+		case ValueType::Object:
+			bRet = (x.obj != nullptr);
+			break;
+		default:
+			break;
+		}
+		return bRet;
 	}
 	FORCE_INLINE bool IsZero()
 	{
@@ -782,7 +814,7 @@ public:
 	}
 	FORCE_INLINE long long ToLongLong()
 	{
-		return (long long)(*this);
+		return (t == ValueType::Int64) ? x.l : (long long)x.d;
 	}
 	FORCE_INLINE bool ToBool()
 	{

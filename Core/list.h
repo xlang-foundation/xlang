@@ -80,7 +80,7 @@ public:
 		}
 		return outs;
 	}
-	FORCE_INLINE virtual bool GetIndexValue(int idx, Value& v) override
+	FORCE_INLINE virtual bool GetIndexValue(long long idx, Value& v) override
 	{
 		return Get(idx, v);
 	}
@@ -215,10 +215,14 @@ public:
 		strList += "]";
 		return GetABIString(strList);
 	}
-	FORCE_INLINE virtual long long Size() override 
+	FORCE_INLINE virtual long long Size() override final
 	{
 		AutoLock autoLock(m_lock);
 		return m_useLValue ? m_ptrs.size() : m_data.size();
+	}
+	void RemoveAll() override
+	{
+		Clear();
 	}
 	FORCE_INLINE void Clear()
 	{
@@ -231,11 +235,11 @@ public:
 		m_ptrs.clear();
 		m_data.clear();
 	}
-	std::vector<X::Value>& Data()
+	FORCE_INLINE std::vector<X::Value>& Data()
 	{
 		return m_data;
 	}
-	virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
+	FORCE_INLINE void GetBaseScopes(std::vector<AST::Scope*>& bases) override final
 	{ 
 		Object::GetBaseScopes(bases);
 		for (auto it : m_bases)
@@ -243,7 +247,7 @@ public:
 			bases.push_back(it);
 		}
 	}
-	virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
+	FORCE_INLINE bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 		KWARGS& kwParams,X::Value& retValue) override;
 	FORCE_INLINE void Add(X::LValue p)
 	{
@@ -363,6 +367,11 @@ public:
 		}
 		m_data.insert(m_data.begin()+ idx,v);
 	}
+	FORCE_INLINE void FastAdd(X::Value& v)
+	{
+		AutoLock autoLock(m_lock);
+		m_data.push_back(v);
+	}
 	FORCE_INLINE void Add(XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
@@ -400,7 +409,7 @@ public:
 	virtual X::Value UpdateItemValue(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdList, int id_offset,
 		std::string itemName, X::Value& val) override;
-	FORCE_INLINE virtual bool Set(X::Value context, X::Value& val) override
+	FORCE_INLINE bool Set(X::Value context, X::Value& val) override final
 	{
 		if (context.IsLong())
 		{
@@ -411,7 +420,7 @@ public:
 			return false;
 		}
 	}
-	FORCE_INLINE virtual bool Set(long long index, X::Value& v) override
+	FORCE_INLINE bool Set(long long index, X::Value& v) override final
 	{
 		AutoLock autoLock(m_lock);
 		if (m_useLValue)
@@ -428,8 +437,8 @@ public:
 		}
 		return true;
 	}
-	FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos,
-		std::vector<Value>& vals, bool getOnly) override
+	FORCE_INLINE bool GetAndUpdatePos(Iterator_Pos& pos,
+		std::vector<Value>& vals, bool getOnly) override final
 	{
 		long long it = (long long)pos;
 		X::Value val0;
@@ -463,7 +472,7 @@ public:
 		vals.push_back(X::Value(nPos));
 		return true;
 	}
-	virtual bool IsContain(X::Value& val) override
+	FORCE_INLINE bool IsContain(X::Value& val) override final
 	{
 		AutoLock autoLock(m_lock);
 		if (m_useLValue)
@@ -488,7 +497,7 @@ public:
 		}
 		return false;
 	}
-	virtual Value Get(long long idx) override
+	FORCE_INLINE Value Get(long long idx) override final
 	{
 		Value v0;
 		Get(idx, v0);
@@ -519,7 +528,7 @@ public:
 		{
 			if (idx < 0)
 			{
-				idx = (long long)m_ptrs.size() + idx;
+				idx = (long long)m_data.size() + idx;
 			}
 			if (idx < 0)
 			{

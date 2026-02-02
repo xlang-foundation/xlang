@@ -37,6 +37,9 @@ namespace X
 	{
 		std::vector<UrlPattern> m_patters;
 
+		X::Value m_auth_callback;
+		X::Value m_auth_parameters;
+
 		void* m_pSrv = nullptr;
 		bool m_bAsHttps = false;
 		std::string m_cert_path;
@@ -87,12 +90,14 @@ namespace X
 					}
 					return l;
 				});
-			APISET().AddFunc<2>("listen", &HttpServer::Listen);
+			APISET().AddFunc<3>("listen", &HttpServer::Listen);
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
 			APISET().AddVarFuncEx("route", &HttpServer::Route);
 			APISET().AddFunc<2>("add_route", &HttpServer::AddRoute);
+			APISET().AddFunc<0>("get_routes", &HttpServer::GetRoutes);
 			APISET().AddFunc<1>("getMimeType", &HttpServer::GetMimeType);
+			APISET().AddFunc<2>("set_authentication_callback", &HttpServer::SetAuthenticationCallback);
 			END_PACKAGE
 	public:
 
@@ -124,13 +129,15 @@ namespace X
 		~HttpServer();
 		X::Value GetMimeType(std::string extName);
 		void Init(bool asHttps);
-		bool Listen(std::string srvName, int port);
+		bool Listen(std::string srvName, int port, int backlog = 128);
 		bool Stop();
 		bool Get(std::string pattern, X::Value& valHandler);
 		bool AddRoute(std::string urlPattern, X::Value& func);
 		bool Route(X::XRuntime* rt, X::XObj* pThis,X::XObj* pContext,
 			X::ARGS& params, X::KWARGS& kwParams,
 			X::Value& trailer, X::Value& retValue);
+		X::Value GetRoutes();
+		bool SetAuthenticationCallback(X::Value callback, X::Value parameters);
 	};
 	class HttpRequest
 	{
@@ -200,6 +207,7 @@ namespace X
 		BEGIN_PACKAGE(HttpClient)
 			APISET().AddFunc<1>("get", &HttpClient::Get);
 			APISET().AddFunc<3>("post", &HttpClient::Post);
+			APISET().AddFunc<4>("post_with_callback", &HttpClient::PostWithCallback);
 			APISET().AddFunc<1>("setHeaders", &HttpClient::SetHeaders);
 			APISET().AddProp0("headers", &HttpClient::m_headers);
 			APISET().AddPropL("enable_server_certificate_verification", 
@@ -218,6 +226,7 @@ namespace X
 		~HttpClient();
 		bool Get(std::string path);
 		bool Post(std::string path, std::string content_type, std::string body);
+		bool PostWithCallback(std::string path, std::string content_type, std::string body, X::Value callback);
 		X::Value GetStatus();
 		X::Value GetBody();
 		X::Value GetResponseHeaders() { return m_response_headers; }

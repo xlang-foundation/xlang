@@ -115,7 +115,7 @@ public:
 	}
 	virtual bool CalcCallables(XlangRuntime* rt, XObj* pContext,
 		std::vector<AST::Expression*>& callables) override;
-	FORCE_INLINE virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
+	FORCE_INLINE bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final
 	{
 		if (Index == -1 || m_scope == nullptr || rt == nullptr)
 		{//case 1:RunExpression in XHost will call with rt is null,

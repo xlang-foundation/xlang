@@ -113,6 +113,17 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		Value v0;
 		ExecAction action0;
 		bOk = ExpExec(i, rt, action0, pContext, v0, lValue);
+		if (rt->GetExceptionRef().IsValid())
+		{
+			action0.type = ExecActionType::Throw;
+			action0.exceptionValue = rt->GetExceptionRef();
+			rt->ClearException();
+		}
+		if (!bOk)
+		{
+			LOG << "DEBUG: ExpExec returned false for type: " << (int)i->m_type 
+				<< " Code: " << i->GetCode() << LINE_END;
+		}
 		//if break or cotinue action passed back
 		//break this loop,and pass back to caller
 		if (action0.type == ExecActionType::Break ||
@@ -133,7 +144,7 @@ bool Block::ExecForTrace(XlangRuntime* rt, ExecAction& action,XObj* pContext, Va
 		{
 			v = v0;
 		}
-		if (action0.type == ExecActionType::Return)
+		if (action0.type == ExecActionType::Return || action0.type == ExecActionType::Throw)
 		{
 			action = action0;
 			break;
@@ -234,7 +245,7 @@ bool Block::RunLast(XRuntime* rt0, XObj* pContext, Value& v, LValue* lValue)
 	}
 	return bOk;
 }
-bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
+FORCE_INLINE bool While::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
 	if (R == nil)
 	{
@@ -409,6 +420,117 @@ bool If::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue
 		bRet = ExpExec(m_next,rt,action,pContext,v);
 	}
 	return bRet;
+}
+
+bool Except::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+{
+	return Block::Exec(rt, action, pContext, v, lValue);
+}
+void Except::ScopeLayout()
+{
+	if (R) R->ScopeLayout();
+	Block::ScopeLayout();
+}
+
+bool Finally::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+{
+	return Block::Exec(rt, action, pContext, v, lValue);
+}
+
+bool Try::EatMe(Expression* other)
+{
+	if (other->m_type == ObType::Except)
+	{
+		Except* e = dynamic_cast<Except*>(other);
+		AddExcept(e);
+		return true;
+	}
+	else if (other->m_type == ObType::Finally)
+	{
+		Finally* f = dynamic_cast<Finally*>(other);
+		SetFinally(f);
+		return true;
+	}
+	return false;
+}
+
+void Try::ScopeLayout()
+{
+	Block::ScopeLayout();
+	for (auto* e : m_excepts)
+	{
+		e->ScopeLayout();
+	}
+	if (m_finally)
+	{
+		m_finally->ScopeLayout();
+	}
+}
+
+bool Try::Exec(XlangRuntime* rt, ExecAction& action, XObj* pContext, Value& v, LValue* lValue)
+{
+	ExecAction tryAction;
+	Value v0;
+	Block::Exec(rt, tryAction, pContext, v0, lValue);
+
+	if (tryAction.type == ExecActionType::Throw)
+	{
+		bool handled = false;
+		Value eVal = tryAction.exceptionValue;
+		for (auto* e : m_excepts)
+		{
+			bool match = false;
+			Expression* R = e->GetR();
+			if (R == nullptr)
+			{
+				match = true;
+			}
+			else
+			{
+				if (R->m_type == ObType::Var)
+				{
+					match = true;
+					R->Set(rt, pContext, eVal);
+				}
+				else
+				{
+					match = true; 
+				}
+			}
+
+			if (match)
+			{
+				handled = true;
+				ExecAction exceptAction;
+				e->Exec(rt, exceptAction, pContext, v);
+				if (exceptAction.type != ExecActionType::None)
+				{
+					action = exceptAction;
+				}
+				break;
+			}
+		}
+		if (!handled)
+		{
+			action = tryAction;
+		}
+	}
+	else
+	{
+		action = tryAction;
+	}
+
+	if (m_finally)
+	{
+		ExecAction finallyAction;
+		m_finally->Exec(rt, finallyAction, pContext, v);
+		if (finallyAction.type != ExecActionType::None)
+		{
+			action = finallyAction;
+		}
+	}
+	
+	return true;
 }
 }
 }

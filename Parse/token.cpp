@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "token.h"
 #include "token.h"
 #include <iostream>
 #include <string>
@@ -81,86 +82,305 @@ namespace X {
 		int lineBeginSpaceTabCount = 0;
 		bool newTokenStartedForSpeicalPosMeet = false;
 
-		auto default_proc = [&](char c)
-		{
-			if (InSpace)
+		// Helper lambda to check if char is a digit
+		auto isDigit = [](char c) -> bool {
+			return c >= '0' && c <= '9';
+			};
+
+		// Helper lambda to check if char is hex digit
+		auto isHexDigit = [](char c) -> bool {
+			return (c >= '0' && c <= '9') ||
+				(c >= 'a' && c <= 'f') ||
+				(c >= 'A' && c <= 'F');
+			};
+
+		// Helper lambda to check if we're currently building a numeric token
+		// and if the given char should continue the number
+		auto shouldContinueNumber = [&](char c, char prevC) -> bool {
+			if (_context.token_start == nil) return false;
+
+			// Get token so far
+			int tokenLen = (int)(_context.spos - 1 - _context.token_start);
+			if (tokenLen <= 0) return false;
+
+			char firstChar = *_context.token_start;
+
+			// Must start with digit to be a number
+			if (!isDigit(firstChar)) return false;
+
+			// Check if this is a hex number (0x...)
+			bool isHexNumber = false;
+			if (tokenLen >= 2 && firstChar == '0')
 			{
-				InSpace = false;
-				ClearToken();
-			}
-			if (InQuote)
-			{//meet other, break the 3-quotes rules like """ or '''
-				if (begin_quoteCnt == 2)//empty string with ""  or ''
+				char secondChar = *(_context.token_start + 1);
+				if (secondChar == 'x' || secondChar == 'X')
 				{
-					token_out((meetDollar || meetSlash || haveEscapeCode)
-						? TokenStrWithFormat :
-						(NotCharSequnce ? TokenStr : TokenCharSequence));
-					NotCharSequnce = false;
-					InQuote = false;
-					//also reset lines below for string
-					meetDollar = false;
-					meetSlash = false;
-					haveEscapeCode = false;
-					//begin_quoteCnt = 0;//reset
-					//this string finished, continue run to check the current char
-				}
-				else if (begin_quoteCnt != 3)
-				{
-					//not begin with 3 " which means such pattern""" .... """
-					//so reset to 0 as regular string
-					begin_quoteCnt = 0;//reset
-					//go back to next char, because it is still inside string
-					return;
-				}
-				else
-				{
-					//go back to next char, because it is still inside string
-					return;
+					isHexNumber = true;
 				}
 			}
-			if (c == '%' && _context.lineCharCount == 1)
+
+			// Case: decimal point in number
+			if (c == '.' && isDigit(prevC))
 			{
-				token_out(GetLastMatchedNodeIndex());
-				InFeedOp = true;
-				InMatching = false;
-				new_token_start();
-			}
-			else if (!InLineComment && !InFeedOp)
-			{
-				ifnotstart_token_start();
-				if (InMatching)
+				// Peek at next char to see if it's a valid digit for this number type
+				char nextC = *_context.spos;
+				if (isHexNumber)
 				{
-					if (!MatchInTree(c))
+					// For hex floats, next char can be hex digit or 'p'/'P'
+					if (isHexDigit(nextC) || nextC == 'p' || nextC == 'P')
 					{
-						if (InStr(PrevChar(), OPS) || InStr(c, OPS))
-						{//except both are alpha chars, will start a new token
-							token_out(GetLastMatchedNodeIndex());
-							ifnotstart_token_start();
-							InMatching = MatchInTree(c);//after reset
-						}
-						else
-						{//for example class is a term, but input is classX
-						//
-							ResetToRoot();
-							InMatching = false;
-						}
+						return true;
 					}
 				}
 				else
 				{
-					char p_c = PrevChar();
-					if (InStr(p_c, OPS) || InStr(c, OPS))
-					{//except both are alpha chars, will start a new token
-						token_out(GetLastMatchedNodeIndex());
-						ifnotstart_token_start();
-						if (MatchInTree(c))
+					// For decimal floats, next char must be digit
+					if (isDigit(nextC))
+					{
+						return true;
+					}
+				}
+				// If next char is not valid, don't treat . as part of number
+				return false;
+			}
+
+			// Case: decimal point after hex digit (for hex float like 0x1.F)
+			if (c == '.' && isHexNumber && isHexDigit(prevC))
+			{
+				char nextC = *_context.spos;
+				if (isHexDigit(nextC) || nextC == 'p' || nextC == 'P')
+				{
+					return true;
+				}
+				return false;
+			}
+
+			// Case: digit after decimal point (e.g., "2" after "0.")
+			if (isDigit(c) && prevC == '.')
+			{
+				// Check if there's a digit before the dot
+				if (tokenLen >= 2)
+				{
+					char beforeDot = *(_context.spos - 3);
+					if (isDigit(beforeDot)) return true;
+				}
+				else if (tokenLen == 1 && isDigit(firstChar))
+				{
+					return true;
+				}
+			}
+
+			// Case: hex digit after decimal point in hex float (e.g., "F" after "0x1.")
+			if (isHexNumber && isHexDigit(c) && prevC == '.')
+			{
+				return true;
+			}
+
+			// Case: 0x, 0X, 0b, 0B, 0o, 0O prefix
+			if (tokenLen == 1 && firstChar == '0')
+			{
+				if (c == 'x' || c == 'X' || c == 'b' || c == 'B' || c == 'o' || c == 'O')
+				{
+					return true;
+				}
+			}
+
+			// Case: hex digits after 0x (including p/P for hex float exponent)
+			if (tokenLen >= 2 && firstChar == '0')
+			{
+				char secondChar = *(_context.token_start + 1);
+				if (secondChar == 'x' || secondChar == 'X')
+				{
+					if (isHexDigit(c) || c == '_') return true;
+					// p/P starts the exponent in hex float
+					if (c == 'p' || c == 'P') return true;
+				}
+				else if (secondChar == 'b' || secondChar == 'B')
+				{
+					if (c == '0' || c == '1' || c == '_') return true;
+				}
+				else if (secondChar == 'o' || secondChar == 'O')
+				{
+					if ((c >= '0' && c <= '7') || c == '_') return true;
+				}
+			}
+
+			// Case: +/- after p/P in hex float exponent
+			if (isHexNumber && (c == '+' || c == '-') && (prevC == 'p' || prevC == 'P'))
+			{
+				return true;
+			}
+
+			// Case: digits after p, p+, p- in hex float
+			if (isHexNumber && isDigit(c) && (prevC == 'p' || prevC == 'P' || prevC == '+' || prevC == '-'))
+			{
+				return true;
+			}
+
+			// Case: underscore in numbers (1_000_000)
+			if (c == '_' && (isDigit(prevC) || (isHexNumber && isHexDigit(prevC)))) return true;
+			if ((isDigit(c) || (isHexNumber && isHexDigit(c))) && prevC == '_') return true;
+
+			// Case: scientific notation e/E (for decimal numbers only)
+			if (!isHexNumber && (c == 'e' || c == 'E') && (isDigit(prevC) || prevC == '.'))
+			{
+				return true;
+			}
+
+			// Case: +/- after e/E in scientific notation
+			if (!isHexNumber && (c == '+' || c == '-') && (prevC == 'e' || prevC == 'E'))
+			{
+				return true;
+			}
+
+			// Case: digits after e, e+, e-
+			if (!isHexNumber && isDigit(c) && (prevC == 'e' || prevC == 'E' || prevC == '+' || prevC == '-'))
+			{
+				return true;
+			}
+
+			// Case: complex number suffix j/J
+			if ((c == 'j' || c == 'J') && (isDigit(prevC) || prevC == '.' || (isHexNumber && isHexDigit(prevC))))
+			{
+				return true;
+			}
+
+			return false;
+			};
+
+		auto default_proc = [&](char c)
+			{
+				if (InSpace)
+				{
+					InSpace = false;
+					ClearToken();
+				}
+				if (InQuote)
+				{//meet other, break the 3-quotes rules like """ or '''
+					if (begin_quoteCnt == 2)//empty string with ""  or ''
+					{
+						token_out((meetDollar || meetSlash || haveEscapeCode)
+							? TokenStrWithFormat :
+							(NotCharSequnce ? TokenStr : TokenCharSequence));
+						NotCharSequnce = false;
+						InQuote = false;
+						//also reset lines below for string
+						meetDollar = false;
+						meetSlash = false;
+						haveEscapeCode = false;
+						//begin_quoteCnt = 0;//reset
+						//this string finished, continue run to check the current char
+					}
+					else if (begin_quoteCnt != 3)
+					{
+						//not begin with 3 " which means such pattern""" .... """
+						//so reset to 0 as regular string
+						begin_quoteCnt = 0;//reset
+						//go back to next char, because it is still inside string
+						return;
+					}
+					else
+					{
+						//go back to next char, because it is still inside string
+						return;
+					}
+				}
+				if (c == '%' && _context.lineCharCount == 1)
+				{
+					token_out(GetLastMatchedNodeIndex());
+					InFeedOp = true;
+					InMatching = false;
+					new_token_start();
+				}
+				else if (!InLineComment && !InFeedOp)
+				{
+					ifnotstart_token_start();
+					bool bCheckFString = !InMatching;
+					if (InMatching)
+					{
+						// If matching, check if it's the start of token OR previous is OP
+						long long termLen = (long long)(_context.spos - _context.token_start);
+						if (termLen <= 1 || InStr(*_context.token_start, OPS))
 						{
-							InMatching = true;
+							bCheckFString = true;
+						}
+					}
+					if (bCheckFString && (c == 'f' || c == 'F'))
+					{
+						char nextC = *_context.spos; //spos has been advanced by GetChar
+						if (nextC == '"' || nextC == '\'')
+						{
+							if (InSpace)
+							{
+								InSpace = false;
+								ClearToken();
+							}
+							if (InMatching)
+							{
+								token_out(GetLastMatchedNodeIndex());
+								InMatching = false;
+								ResetToRoot();
+							}
+							_context.leadingSpaceCount = 0;
+							//Force set token start to current 'f'
+							//because ifnotstart_token_start might be confused by above token_out
+							_context.token_start = _context.spos - 1;
+							
+							InFString = true;
+							NotCharSequnce = true;
+							InQuote = true;
+							quoteBeginChar = nextC;
+							begin_quoteCnt = 1;
+							end_quoteCnt = 0;
+							//current token start is already set by ifnotstart_token_start()
+							//and it points to 'f'
+							GetChar();//consume quote
+							return;
+						}
+					}
+					if (InMatching)
+					{
+						if (!MatchInTree(c))
+						{
+							if (InStr(PrevChar(), OPS) || InStr(c, OPS))
+							{
+								// Check if this should continue a numeric literal
+								if (!shouldContinueNumber(c, PrevChar()))
+								{
+									//except both are alpha chars, will start a new token
+									token_out(GetLastMatchedNodeIndex());
+									ifnotstart_token_start();
+									InMatching = MatchInTree(c);//after reset
+								}
+							}
+							else
+							{//for example class is a term, but input is classX
+							//
+								ResetToRoot();
+								InMatching = false;
+							}
+						}
+					}
+					else
+					{
+						char p_c = PrevChar();
+						if (InStr(p_c, OPS) || InStr(c, OPS))
+						{
+							// Check if this should continue a numeric literal
+							if (!shouldContinueNumber(c, p_c))
+							{
+								//except both are alpha chars, will start a new token
+								token_out(GetLastMatchedNodeIndex());
+								ifnotstart_token_start();
+								if (MatchInTree(c))
+								{
+									InMatching = true;
+								}
+							}
 						}
 					}
 				}
-			}
-		};
+			};
 
 		bool bom_checked = false;
 
@@ -168,10 +388,10 @@ namespace X {
 		{
 			char c = GetChar();
 
-			if (!bom_checked) 
+			if (!bom_checked)
 			{
 				bom_checked = true;
-				if (c == static_cast<char>(0xEF)) 
+				if (c == static_cast<char>(0xEF))
 				{
 					char c2 = GetChar();
 					char c3 = GetChar();
@@ -301,7 +521,7 @@ namespace X {
 				{//meet other, break the 3-quotes rules like """ or '''
 					if (begin_quoteCnt == 2)//empty string with ""  or ''
 					{
-						token_out((meetDollar || meetSlash|| haveEscapeCode)
+						token_out((meetDollar || meetSlash || haveEscapeCode)
 							? TokenStrWithFormat :
 							(NotCharSequnce ? TokenStr : TokenCharSequence), -1);
 						NotCharSequnce = false;
@@ -424,10 +644,11 @@ namespace X {
 							if (c == quoteBeginChar)
 							{//meet end char
 								token_out((meetDollar || meetSlash || haveEscapeCode)
-									? TokenStrWithFormat :
-									(NotCharSequnce ? TokenStr : TokenCharSequence), 0);
+									? (InFString ? TokenStrFmt : TokenStrWithFormat) :
+									(NotCharSequnce ? (InFString ? TokenStrFmt : TokenStr) : TokenCharSequence), 0);
 								NotCharSequnce = false;
 								InQuote = false;
+								InFString = false;
 								//also reset lines below for string
 								meetDollar = false;
 								meetSlash = false;

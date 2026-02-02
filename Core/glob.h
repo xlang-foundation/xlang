@@ -225,12 +225,13 @@ namespace X {
 
 		void Lock();
 		void UnLock();
-		void Check()
+		unsigned long long Check()
 		{
 			Lock();
 			auto size = Objects.size();
 			UnLock();
 			//std::cout << "Left Objects:" << size << std::endl;
+			return size;
 		}
 #if XLANG_ENG_DBG
 		void ObjBindToStack(XObj* pXObj, AST::StackFrame* pStack);

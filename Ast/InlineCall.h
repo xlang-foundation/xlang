@@ -31,6 +31,8 @@ limitations under the License.
 #endif
 #endif
 
+//#define CHECK_IF_INLINE 1
+
 namespace X
 {
 	namespace AST

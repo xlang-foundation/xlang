@@ -30,6 +30,42 @@ namespace X
 {
 	namespace Data
 	{
+		inline float HalfToFloat(uint16_t h) {
+			uint32_t sign = (h & 0x8000) << 16;
+			uint32_t exponent = (h >> 10) & 0x1F;
+			uint32_t mantissa = h & 0x03FF;
+
+			uint32_t f;
+			if (exponent == 0) {
+				if (mantissa == 0) {
+					// Zero
+					f = sign;
+				}
+				else {
+					// Denormalized number - convert to normalized
+					exponent = 1;
+					while (!(mantissa & 0x0400)) {
+						mantissa <<= 1;
+						exponent--;
+					}
+					mantissa &= 0x03FF;
+					f = sign | ((exponent + 127 - 15) << 23) | (mantissa << 13);
+				}
+			}
+			else if (exponent == 31) {
+				// Inf or NaN
+				f = sign | 0x7F800000 | (mantissa << 13);
+			}
+			else {
+				// Normalized number
+				f = sign | ((exponent + 127 - 15) << 23) | (mantissa << 13);
+			}
+
+			float result;
+			memcpy(&result, &f, sizeof(float));
+			return result;
+		}
+
 		#define CONST_NUM 18
 		static Obj_Func_Scope<3+ CONST_NUM> _tensorScope;
 		void Tensor::Init()
@@ -361,8 +397,11 @@ namespace X
 				retVal = X::Value((int)*(unsigned short*)pAddr);
 				break;
 			case X::TensorDataType::HALFFLOAT:
-				retVal = X::Value((float)*(short*)pAddr);
+			{
+				uint16_t h = *(uint16_t*)pAddr;
+				retVal = X::Value(HalfToFloat(h));
 				break;
+			}
 			case X::TensorDataType::INT:
 				retVal = X::Value(*(int*)pAddr);
 				break;

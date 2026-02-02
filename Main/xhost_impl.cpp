@@ -450,6 +450,7 @@ namespace X
 		stream >> output;
 		return true;
 	}
+
 	bool XHost_Impl::ConvertToBytes(X::Value& v, X::XLStream* pStreamExternal)
 	{
 		X::XLangStream* pStream = nullptr;
@@ -475,6 +476,31 @@ namespace X
 		stream.SetProvider(pStreamExternal);
 		stream >> v;
 		return true;
+	}
+	bool XHost_Impl::MarshalToBytes(X::Value& v, X::XLStream* pStreamExternal)
+	{
+		X::XLangStream* pStream = nullptr;
+		if (pStreamExternal == nullptr)
+		{
+			pStream = new X::BlockStream();
+		}
+		else
+		{
+			pStream = new XLangStream();
+			pStream->SetProvider(pStreamExternal);
+		}
+		bool bOK = pStream->MarshalToBytes(v);
+		if (pStream)
+		{
+			delete pStream;
+		}
+		return bOK;
+	}
+	bool XHost_Impl::MarshalFromBytes(X::Value& v, X::XLStream* pStreamExternal, X::XProxy* proxy)
+	{
+		X::XLangStream stream;
+		stream.SetProvider(pStreamExternal);
+		return stream.MarshalFromBytes(v, proxy);
 	}
 	bool XHost_Impl::WriteToStream(char* data, long long size, X::XLStream* pStream)
 	{
@@ -860,6 +886,27 @@ namespace X
 		XlangRuntime* pRT = dynamic_cast<XlangRuntime*>(rt);
 		X::Data::PyProxyObject* pProxyObj = new X::Data::PyProxyObject(pRT,
 			nullptr, strModuleName, strFrom, strCurrentPath);
+		//pProxyObj already add one ref in constructor
+		pyObj = X::Value(pProxyObj,false);
+		return true;
+	}
+	bool XHost_Impl::PyImportWithGlobals(XRuntime* rt, const char* moduleName,
+		const char* from, const char* currentPath, X::KWARGS& globals, X::Value& pyObj)
+	{
+		std::string strModuleName(moduleName);
+		std::string strFrom;
+		if (from)
+		{
+			strFrom = from;
+		}
+		std::string strCurrentPath;
+		if (currentPath)
+		{
+			strCurrentPath = currentPath;
+		}
+		XlangRuntime* pRT = dynamic_cast<XlangRuntime*>(rt);
+		X::Data::PyProxyObject* pProxyObj = new X::Data::PyProxyObject(pRT,
+			nullptr, strModuleName, strFrom, strCurrentPath, globals);
 		pyObj = X::Value(pProxyObj);
 		return true;
 	}
@@ -928,6 +975,18 @@ namespace X
 	void* XHost_Impl::GetLogger()
 	{
 		return (void*)&X::log;
+	}
+	void XHost_Impl::ActivePythonVEnv(const char* venvPath)
+	{
+		g_pPyHost->ActivePythonVEnv(venvPath);
+	}
+	void XHost_Impl::DeactivePythonVEnv(const char* venvPath)
+	{
+		g_pPyHost->ActivePythonVEnv(venvPath);
+	}
+	unsigned long long XHost_Impl::GetObjectCount()
+	{
+		return G::I().Check();
 	}
 	bool XHost_Impl::IsModuleLoadedMd5(const char* md5)
 	{

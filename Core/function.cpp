@@ -15,93 +15,127 @@ limitations under the License.
 
 #include "function.h"
 
+#include "obj_func_scope.h"
+
 namespace X
 {
 	namespace Data 
 	{
-		class FunctionOp :
-			public AST::Scope
+		static Obj_Func_Scope<2> _funcScope;
+
+		void Function::Init()
 		{
-			std::vector<X::Value> m_funcs;
-		public:
-			FunctionOp()
+			_funcScope.Init();
+			//API: getcode
 			{
-				m_Vars =
-				{
-					{"getcode",0},
-				};
-				//API: getcode
-				{
-					std::string name("getcode");
-					auto f = [](X::XRuntime* rt, XObj* pThis,XObj* pContext,
-						ARGS& params,
-						KWARGS& kwParams,
-						X::Value& retValue)
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params,
+					KWARGS& kwParams,
+					X::Value& retValue)
 					{
 						Function* pFuncObj = dynamic_cast<Function*>(pContext);
-						auto code = pFuncObj->GetFunc()->getcode(false);
+						bool includeHeader = false;
+						if (params.size() > 0 && params[0].IsBool())
+						{
+							includeHeader = (bool)params[0];
+						}
+						auto code = pFuncObj->GetFunc()->getcode(includeHeader);
 						retValue = X::Value(code);
 						return true;
 					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(name,"retVal = getcode()",func);
-					auto* pFuncObj = new Data::Function(extFunc, true);
-					m_funcs.push_back(X::Value(pFuncObj));
-				}
+				_funcScope.AddFunc("getcode", "retVal = getcode(includeHeader=False)", f);
 			}
-			int QueryMethod(const char* name)
+			//API: call
 			{
-				auto it = m_Vars.find(name);
-				if (it != m_Vars.end())
-				{
-					return it->second;
-				}
-				else
-				{
-					return false;
-				}
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					ARGS& params,
+					KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						bool bOK = false;
+						Function* pFuncObj = dynamic_cast<Function*>(pContext);
+						if (params.size() > 0)
+						{
+							//if one parameter and it is list used as params
+							//or dict, we use it as kwParams
+							//also support first one is list, second is dict
+							if (params.size() >= 1)
+							{
+								X::Value& firstParam = params[0];
+								bool bUseFirstParam = false;
+								if (firstParam.IsList())
+								{
+									X::List listArgs(firstParam);
+									X::ARGS newParams(listArgs->Size());
+									for (auto li : *listArgs)
+									{
+										newParams.push_back(li);
+									}
+									X::KWARGS newKwParams;
+									if (params.size() >= 2)
+									{
+										//second param as kwParams
+										X::Value& secondParam = params[1];
+										if (secondParam.IsDict())
+										{
+											X::Dict dictArgs(secondParam);
+											dictArgs->Enum(
+												[&newKwParams](X::Value& key, X::Value& val)
+												{
+													std::string strKey = key.asString();
+													newKwParams.Add(strKey.c_str(), val);
+												});
+										}
+									}
+									bOK = pFuncObj->GetFunc()->Call(rt, pFuncObj,
+										pThis, newParams, newKwParams, retValue); // Use new call signature maybe? No, calling inner func
+									bUseFirstParam = true;
+								} //End
+								else if (firstParam.IsDict())
+								{
+									X::ARGS newParams;
+									X::Dict dictArgs(firstParam);
+									X::KWARGS newKwParams(1);
+									dictArgs->Enum(
+										[&newKwParams](X::Value& key, X::Value& val)
+										{
+											std::string strKey = key.asString();
+											newKwParams.Add(strKey.c_str(), val,true);
+										});
+									bOK = pFuncObj->GetFunc()->Call(rt, pFuncObj,
+										pThis, newParams, newKwParams, retValue);
+									bUseFirstParam = true;
+								}
+								if (!bUseFirstParam)
+								{
+									//call with direct params
+									//params passed in are arguments for the function
+									bOK = pFuncObj->GetFunc()->Call(rt, pFuncObj,
+										pThis, params, kwParams, retValue);
+								}
+							}
+						}
+						else
+						{
+							//call with no params
+							bOK = pFuncObj->GetFunc()->Call(rt, pFuncObj,
+								pThis, params, kwParams, retValue);
+						}
+
+						return bOK;
+					};
+				_funcScope.AddFunc("call", "retVal = func.call(dynamic parameters)", f);
 			}
-			FORCE_INLINE virtual bool Get(XlangRuntime* rt, XObj* pContext,
-				int idx, X::Value& v, X::LValue* lValue = nullptr)
-			{
-				v = m_funcs[idx];
-				return true;
-			}
-			void clean()
-			{
-				m_funcs.clear();
-			}
-			virtual Scope* GetParentScope()
-			{
-				return nullptr;
-			}
-		};
-		static FunctionOp* _function_op = nullptr;
+			_funcScope.Close();
+		}
 		void Function::cleanup()
 		{
-			if (_function_op)
-			{
-				_function_op->clean();
-				delete _function_op;
-				_function_op = nullptr;
-			}
+			_funcScope.Clean();
 		}
 		void Function::GetBaseScopes(std::vector<AST::Scope*>& bases)
 		{
 			Object::GetBaseScopes(bases);
-			if (_function_op == nullptr)
-			{
-				_function_op = new FunctionOp();
-			}
-			bases.push_back(_function_op);
-		}
-		int Function::QueryMethod(const char* name, int* pFlags)
-		{
-			return _function_op?_function_op->QueryMethod(name):-1;
-		}
-		bool Function::GetIndexValue(int idx, Value& v)
-		{
-			return _function_op?_function_op->Get(nullptr, nullptr, idx, v):false;
+			bases.push_back(_funcScope.GetMyScope());
 		}
 		Function::Function(AST::Func* p, bool bOwnIt):Object()
 		{
@@ -127,6 +161,18 @@ namespace X
 			X::Value& retValue)
 		{
 			return m_func->Call(rt, this,pContext, params, kwParams, retValue);
+		}
+		bool Function::IsFuncEx()
+		{
+			if(m_func->IsBuiltinFunc())
+			{
+				X::AST::ExternFunc* pExtFunc = dynamic_cast<X::AST::ExternFunc*>(m_func);
+				if (pExtFunc)
+				{
+					return pExtFunc->IsFuncEx();
+				}
+			}
+			return false;
 		}
 		bool Function::CallEx(XRuntime* rt, XObj* pContext, 
 			ARGS& params, KWARGS& kwParams, X::Value& trailer, X::Value& retValue)

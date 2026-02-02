@@ -25,7 +25,7 @@ limitations under the License.
 #include "PyBinarySerializer.h"
 #include <cstring>
 #include <filesystem>
-
+#include "utility.h"
 
 enum class PyProxyType
 {
@@ -69,35 +69,91 @@ static bool get_callable_source_path(PyObject* obj, std::string& out_path)
 	}
 	return false;
 }
+
+PyObject* GetModuleFromFunction(PyObject* pyFunc)
+{
+	// Step 1 — get globals dict of the function
+	PyObject* globs = PyFunction_GetGlobals(pyFunc);  // borrowed ref
+	if (!globs) return nullptr;
+
+	// Step 2 — get __name__ inside globals — this is the module name
+	PyObject* modNameObj = PyDict_GetItemString(globs, "__name__"); // borrowed
+	if (!modNameObj || !PyUnicode_Check(modNameObj))
+		return nullptr;
+
+	const char* modName = PyUnicode_AsUTF8(modNameObj);
+
+	// Step 3 — lookup module in sys.modules
+	PyObject* sysModules = PyImport_GetModuleDict(); // borrowed
+	PyObject* module = PyDict_GetItemString(sysModules, modName); // borrowed
+
+	return module;  // borrowed ref – DO NOT DECREF!
+}
+
 static PyObject*
 XlangFuncPythonWrapper(PyObject* self, PyObject* args)
 {
 	MGil gil;
+
 	PyXlangObject* pWrapFunc = (PyXlangObject*)self;
+	PyObject* pModuleObject = nullptr;
+
 	Py_ssize_t size = PyTuple_Size(args);
+	for (Py_ssize_t i = 0; i < size; ++i)
+	{
+		PyObject* pyRealFunc = PyTuple_GetItem(args, i);
+
+		if (PyFunction_Check(pyRealFunc) || PyMethod_Check(pyRealFunc))
+		{
+			pModuleObject = GetModuleFromFunction(pyRealFunc);
+		}
+	}
+
+	bool doSerialization = true;
+	auto it = pWrapFunc->kwArgs.find("Serialization");
+	if (it)
+	{
+		doSerialization = it->val.ToBool();
+	}
+
 	X::Value pyFuncObj;
 	for (Py_ssize_t i = 0; i < size; ++i) {
 		PyObject* pyRealFunc = PyTuple_GetItem(args, i);
-		std::string funcPath;
-		get_callable_source_path(pyRealFunc, funcPath);
-		std::filesystem::path p(funcPath);
-		std::string folderPath = p.parent_path().string();
-		std::string src = get_function_source(pyRealFunc);
-
-		std::string outBytes;
-		PyBinarySerializer pb;
-		pb.SetBasePath(folderPath);
-		if (!pb.Dump(pyRealFunc, outBytes, PySerOptions()))
+		X::Value secondParam = GetPID();
+		pWrapFunc->args.resize((int)pWrapFunc->args.size() + 3);
+		if (doSerialization)
 		{
-			return nullptr;
-		}
-		X::Bin binObj((unsigned long long)outBytes.size(), true);
-		std::memcpy(binObj->Data(), outBytes.data(), outBytes.size());
-		pWrapFunc->args.resize((int)pWrapFunc->args.size() + 1);
-		//pyFuncObj = PyObjectXLangConverter::ConvertToXValue(pyRealFunc);
-		//pWrapFunc->args.push_back(pyFuncObj);
+			std::string funcPath;
+			get_callable_source_path(pyRealFunc, funcPath);
+			std::filesystem::path p(funcPath);
+			std::string folderPath = p.parent_path().string();
+			std::string src = get_function_source(pyRealFunc);
 
-		pWrapFunc->args.push_back(binObj);
+			std::string outBytes;
+			PyBinarySerializer pb;
+			pb.SetBasePath(folderPath);
+			if (!pb.Dump(pyRealFunc, outBytes, PySerOptions()))
+			{
+				return nullptr;
+			}
+			X::Bin binObj((unsigned long long)outBytes.size(), true);
+			std::memcpy(binObj->Data(), outBytes.data(), outBytes.size());
+			X::Value firstParam = binObj;
+			pWrapFunc->args.push_back(firstParam);
+		}
+		else
+		{
+			std::string funcPath;
+			get_callable_source_path(pyRealFunc, funcPath);
+			X::Value varFilePath(funcPath);
+			pWrapFunc->kwArgs.Add("__file__", varFilePath);
+			X::Value firstParam = PyObjectXLangConverter::ConvertToXValue(pyRealFunc);
+			pWrapFunc->args.push_back(firstParam);
+		}
+		//Convert Globals to X::Value as third param
+		X::Value thirdParam = PyObjectXLangConverter::ConvertToXValue(pModuleObject);
+		pWrapFunc->args.push_back(secondParam);
+		pWrapFunc->args.push_back(thirdParam);
 		//only one need to support for python decorator
 		break;
 	}
@@ -219,16 +275,31 @@ static PyObject* XlangObject_getattr(PyXlangObject* self, PyObject* name) {
 	{
 		return PyObjectXLangConverter::ConvertToPyObject(newObj);
 	}
-	if (newObj.IsObject() && newObj.GetObj()->GetType() == X::ObjType::RemoteObject)
+	if (newObj.IsObject())
 	{
 		X::XObj* pXObj = newObj.GetObj();
-		X::XRemoteObject* pRemoteObj = dynamic_cast<X::XRemoteObject*>(pXObj);
-		if (pRemoteObj)
+		if (newObj.GetObj()->GetType() == X::ObjType::RemoteObject)
 		{
-			int memberFlags = pRemoteObj->GetMemberFlags();
-			if ((memberFlags & 0xFF) == (int)X::PackageMemberType::FuncEx)
+			X::XRemoteObject* pRemoteObj = dynamic_cast<X::XRemoteObject*>(pXObj);
+			if (pRemoteObj)
 			{
-				return CreateXlangFuncWrapper(newObj);
+				int memberFlags = pRemoteObj->GetMemberFlags();
+				if ((memberFlags & 0xFF) == (int)X::PackageMemberType::FuncEx)
+				{
+					return CreateXlangFuncWrapper(newObj);
+				}
+			}
+		}
+		else
+		{
+			int objType = (int)newObj.GetObj()->GetType();
+			if (objType == (int)X::ObjType::Function)
+			{
+				X::Func func(newObj);
+				if (func->IsFuncEx())
+				{
+					return CreateXlangFuncWrapper(newObj);
+				}
 			}
 		}
 	}

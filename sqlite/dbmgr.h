@@ -74,7 +74,14 @@ namespace X
 			std::string m_sql;
 			BEGIN_PACKAGE(Cursor)
 				APISET().AddFunc<0>("fetch",&Cursor::fetch);
+				APISET().AddFunc<0>("step", &Cursor::Step);
+				APISET().AddVarFunc("fetchall", &Cursor::fetchall);
+				APISET().AddVarFunc("fetchallDict", &Cursor::fetchallDict);
 				APISET().AddProp("cols", &Cursor::GetCols);
+				APISET().AddFunc<0>("reset", &Cursor::reset);
+				APISET().AddFunc<0>("close", &Cursor::Close);
+				APISET().AddFunc<0>("colnum", &Cursor::getcolnum);
+				APISET().AddFunc<1>("colname", &Cursor::getColName);
 			END_PACKAGE
 		bool Open();
 		public:
@@ -94,13 +101,21 @@ namespace X
 			{
 				m_db = db;
 			}
+			int Step();
+			int getcolnum();
+			bool reset();
+			bool Close();
+			std::string getColName(int idx);
 			void SetBindings(X::Value& bindings)
 			{
 				m_BindingDataList = bindings;
 			}
 			X::Value fetch();
 			X::Value  GetCols();
-
+			bool fetchall(X::XRuntime* rt, X::XObj* pContext,
+				X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
+			bool fetchallDict(X::XRuntime* rt, X::XObj* pContext,
+				X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue);
 		};
 
 		class Manager :
@@ -226,7 +241,15 @@ namespace X
 
 				X::XPackageValue<SqliteDB> packDb;
 				SqliteDB* pDb = packDb.GetRealObj();
-				pDb->Open(dbPath);
+				bool ok = pDb->Open(dbPath);
+				if (!ok)
+				{
+					// Raise exception so callers (WritePad / scripts) can catch it.
+					std::string msg = "SQLite open failed for db: " + dbPath;
+					X::Value errVal((XObj*)X::g_pXHost->CreateError(SQLITE_CANTOPEN, msg.c_str()), /*AddRef=*/false);
+					rt->SetException(errVal);
+					return X::Value();
+				}
 				X::Value valDb(packDb);
 				std::lock_guard<std::mutex> lock(m_mutexOpenDbs);
 				X::Dict dictDbs(varDbs);

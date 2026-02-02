@@ -996,6 +996,7 @@ public:
   Server &set_idle_interval(const std::chrono::duration<Rep, Period> &duration);
 
   Server &set_payload_max_length(size_t length);
+  Server &set_listen_backlog(int backlog);
 
   bool bind_to_port(const std::string &host, int port, int socket_flags = 0);
   int bind_to_any_port(const std::string &host, int socket_flags = 0);
@@ -1027,6 +1028,7 @@ protected:
   time_t idle_interval_sec_ = CPPHTTPLIB_IDLE_INTERVAL_SECOND;
   time_t idle_interval_usec_ = CPPHTTPLIB_IDLE_INTERVAL_USECOND;
   size_t payload_max_length_ = CPPHTTPLIB_PAYLOAD_MAX_LENGTH;
+  int listen_backlog_ = CPPHTTPLIB_LISTEN_BACKLOG;
 
 private:
   using Handlers =
@@ -6252,6 +6254,11 @@ inline Server &Server::set_payload_max_length(size_t length) {
   return *this;
 }
 
+inline Server &Server::set_listen_backlog(int backlog) {
+  listen_backlog_ = backlog;
+  return *this;
+}
+
 inline bool Server::bind_to_port(const std::string &host, int port,
                                  int socket_flags) {
   auto ret = bind_internal(host, port, socket_flags);
@@ -6634,14 +6641,15 @@ inline socket_t
 Server::create_server_socket(const std::string &host, int port,
                              int socket_flags,
                              SocketOptions socket_options) const {
+  int backlog = listen_backlog_;
   return detail::create_socket(
       host, std::string(), port, address_family_, socket_flags, tcp_nodelay_,
       ipv6_v6only_, std::move(socket_options),
-      [](socket_t sock, struct addrinfo &ai, bool & /*quit*/) -> bool {
+      [backlog](socket_t sock, struct addrinfo &ai, bool & /*quit*/) -> bool {
         if (::bind(sock, ai.ai_addr, static_cast<socklen_t>(ai.ai_addrlen))) {
           return false;
         }
-        if (::listen(sock, CPPHTTPLIB_LISTEN_BACKLOG)) { return false; }
+        if (::listen(sock, backlog)) { return false; }
         return true;
       });
 }

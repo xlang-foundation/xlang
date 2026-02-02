@@ -176,7 +176,7 @@ namespace X
 		FORCE_INLINE virtual bool SupportAssign() { return false; }
 		FORCE_INLINE virtual bool Assign(const X::Value& val) { return false; }
 		virtual int QueryMethod(const char* name, int* pFlags = nullptr) { return -1; };
-		virtual bool GetIndexValue(int idx, Value& v) { return false; };
+		virtual bool GetIndexValue(long long idx, Value& v) { return false; };
 		virtual bool Get(XRuntime* rt, XObj* pContext, X::Port::vector<X::Value>& IdxAry, X::Value& val) { return false; }
 		virtual bool Set(Value valIdx, X::Value& val) { return false; }
 		virtual int IncRef() { return 0; }
@@ -324,6 +324,12 @@ namespace X
 		virtual int GetTopStackCurrentLine() = 0;
 		virtual bool AddVar(const char* name, X::Value& val) = 0;
 		virtual X::Value GetModuleObject() = 0;
+
+		// Exception API: allow any code with only XRuntime* to raise an exception.
+		// The engine will convert it to ExecActionType::Throw at block boundaries.
+		virtual void SetException(X::Value& e) = 0;
+		virtual X::Value GetException() = 0;
+		virtual void ClearException() = 0;
 	};
 	class XModule :
 		virtual public XObj
@@ -338,6 +344,13 @@ namespace X
 	{
 	public:
 		Internal_Reserve(XConstExpr)
+	};
+	class XExpr :
+		virtual public XObj
+	{
+	public:
+		Internal_Reserve(XExpr)
+		virtual X::Value ToKV() = 0;
 	};
 	class XStr :
 		virtual public XObj
@@ -366,6 +379,7 @@ namespace X
 		Internal_Reserve(XList)
 		virtual Value Get(long long idx) = 0;
 		virtual void AddItem(X::Value& v) = 0;
+		virtual void RemoveAll() = 0;
 		FORCE_INLINE void append(X::Value& v)
 		{
 			AddItem(v);
@@ -379,6 +393,7 @@ namespace X
 		Internal_Reserve(XDict)
 		virtual void Set(const X::Value& key, const X::Value& val) = 0;
 		virtual X::Value Get(const X::Value& key) = 0;
+		virtual X::Value Get(const X::Value& key,const X::Value& defaultValue) = 0;
 		virtual bool Has(const X::Value& key) = 0;
 		virtual void Enum(Dict_Enum proc) = 0;
 		virtual bool Compare(X::Value& dict) = 0;
@@ -400,16 +415,33 @@ namespace X
 	public:
 		Internal_Reserve(XSet)
 	};
-	class XStruct :
-		virtual public XObj
+	class XStruct : virtual public XObj
 	{
 	public:
 		Internal_Reserve(XStruct)
-		virtual void addField(
-			const char* name,const char* type, bool isPointer = false, int bits = 0) = 0;
+
+			virtual void addField(
+				const char* name, const char* type,
+				bool isPointer = false, int bits = 0) = 0;
+
 		virtual bool Build() = 0;
+
 		virtual char* Data() = 0;
+
+		template<typename T>
+		T* As()
+		{
+			return reinterpret_cast<T*>(Data());
+		}
+
+		template<typename T>
+		const T* As() const
+		{
+			auto* self = const_cast<XStruct*>(this);
+			return reinterpret_cast<const T*>(self->Data());
+		}
 	};
+
 
 	enum class TensorDataType 
 	{
@@ -480,6 +512,7 @@ namespace X
 		virtual void SetDesc(X::Value& v) = 0;
 		virtual X::Value GetName() = 0;
 		virtual void SetName(X::Value& name) = 0;
+		virtual X::Value ToType(TensorDataType type) = 0;
 	};
 	class XTensorExpression :
 		virtual public XObj
@@ -553,6 +586,7 @@ namespace X
 		virtual X::Value GetParameterNameList() = 0;
 		virtual void ChangeStatmentsIntoTranslateMode(
 			bool changeIfStatment,bool changeLoopStatment) = 0;
+		virtual bool IsFuncEx() = 0;
 	};
 	class XLangClass :
 		virtual public XObj
@@ -608,6 +642,7 @@ namespace X
 		virtual bool Get(int idx, X::Value& v, void* lValue = nullptr) = 0;
 		virtual bool Set(int idx, X::Value& v) = 0;
 		virtual bool VerifyNameIndex(const char* name, int idx) = 0;
+		virtual bool SupportExternVars() = 0;
 	};
 	class XPackage:
 		virtual public XObj
@@ -655,6 +690,7 @@ namespace X
 				delete m_obj;
 			}
 		}
+
 		XPackageValue(T* p) //only used in Android 
 		{
 			m_obj = p;
@@ -689,6 +725,20 @@ namespace X
 				}
 			}
 		}
+		//first parameter can't be X::Value or T*
+		template<typename First, typename... Rest,
+			typename = std::enable_if_t<
+			!std::is_same_v<std::decay_t<First>, X::Value> &&
+			!std::is_same_v<std::decay_t<First>, T*> &&
+			!std::is_same_v<std::decay_t<First>, XPackageValue<T>>
+			>
+		>
+		explicit XPackageValue(First&& first, Rest&&... rest)
+		{
+			m_obj = new T(std::forward<First>(first),
+				std::forward<Rest>(rest)...);
+			m_ownObj = true;
+		}
 		operator Value()
 		{
 			if (m_obj)
@@ -722,8 +772,17 @@ namespace X
 		{
 			return *m_obj; 
 		}
+		T* operator->() { return m_obj; }
+		const T* operator->() const { return m_obj; }
+
 		T* GetRealObj() { return m_obj; }
 	};
+	template<typename T>
+	XPackageValue<T> Fetch(X::Value& v)
+	{
+		return XPackageValue<T>(v);
+	}
+
 	class XLangException
 		: public std::exception
 	{

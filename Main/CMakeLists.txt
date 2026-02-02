@@ -5,8 +5,9 @@ cmake_minimum_required (VERSION 3.20)
 
 project ("xlang_eng")
 
-# add_compile_definitions(XLANG_ENG_DBG=1)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+if(MSVC)
+    add_compile_options(/bigobj)
+endif()
 
 include_directories("../ThirdParty")
 include_directories("../Api")
@@ -40,15 +41,12 @@ FILE(GLOB Text_SRC "../Text/*.cpp")
 FILE(GLOB Ipc_SRC "../Ipc/*.cpp")
 FILE(GLOB Nn_SRC "../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../Jit/*.cpp")
-FILE(GLOB Main_SRC "*.cpp" "../log/log.cpp")
+FILE(GLOB Main_SRC "*.cpp")
+FILE(GLOB Log_SRC "../log/log.cpp")
 
 add_library(${PROJECT_NAME} SHARED 
-	${Api_SRC}
 	${Utils_SRC}
-	${Executor_SRC}
-	${Core_SRC}
-	${Ast_SRC}
-	${Parse_SRC}
+	${Log_SRC}
 	${Serialize_SRC}
 	${Thread_SRC}
 	${Ext_SRC}
@@ -65,3 +63,5 @@ if (WIN32)
 else()
     target_link_libraries(${PROJECT_NAME} pthread dl)
 endif()
+
+# Trigger CMake re-scan for new files

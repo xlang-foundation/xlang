@@ -31,7 +31,7 @@ namespace X
 {
 namespace AST
 {
-	bool InOp::Exec(XlangRuntime* rt, ExecAction& action, 
+	FORCE_INLINE bool InOp::Exec(XlangRuntime* rt, ExecAction& action,
 		XObj* pContext, Value& v, LValue* lValue)
 	{
 		bool bOK = true;
@@ -55,11 +55,19 @@ namespace AST
 		if (containerObj.IsObject())
 		{
 			auto* pObj = dynamic_cast<X::Data::Object*>(containerObj.GetObj());
-			v = pObj->IsContain(valLeft);
+			bool bIn = pObj->IsContain(valLeft);
+			if (m_bIsNot)
+			{
+				v = !bIn;
+			}
+			else
+			{
+				v = bIn;
+			}
 		}
 		else
 		{
-			v = Value(false);
+			v = Value(m_bIsNot ? true : false);
 		}
 		return bOK;
 	}
@@ -264,6 +272,17 @@ namespace AST
 
 bool UnaryOp::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext,Value& v,LValue* lValue)
 {
+	if (opId == OP_ID::Raise)
+	{
+		Value v_r;
+		if (R)
+		{
+			if (!ExpExec(R, rt, action, pContext, v_r)) return false;
+		}
+		action.type = ExecActionType::Throw;
+		action.exceptionValue = v_r;
+		return true;
+	}
 	//for case: return without value
 	if (opId == OP_ID::ReturnOp && R == nullptr)
 	{

@@ -5,6 +5,10 @@ cmake_minimum_required(VERSION 3.10)
 project ("xone")
 set(CMAKE_CXX_STANDARD 20)
 
+if(MSVC)
+    add_compile_options(/bigobj)
+endif()
+
 include_directories("..")
 include_directories("../ThirdParty")
 include_directories("../Api")
@@ -40,22 +44,22 @@ FILE(GLOB Rpc_SRC "../rpc/*.cpp")
 FILE(GLOB Ipc_SRC "../Ipc/*.cpp")
 FILE(GLOB Nn_SRC "../Tensor/*.cpp")
 FILE(GLOB Jit_SRC "../Jit/*.cpp")
-FILE(GLOB Main_SRC "../Main/AddScripts.cpp" "../Main/Hosting.cpp" "../Main/xhost_impl.cpp" "../log/log.cpp")
+FILE(GLOB Main_SRC "../Main/AddScripts.cpp" 
+				"../Main/Hosting.cpp" 
+				"../Main/xhost_impl.cpp" 
+				"../Main/ALL.cpp" 
+				"../log/log.cpp")
 
 FILE(GLOB AppEntry_SRC "../cli.cpp" "./*.cpp")
 FILE(GLOB XOne_SRC "./*.cpp")
 
 #Add xlang os module into this standalone app
 
-FILE(GLOB Os_SRC "../os/fs.cpp" "../os/folder.cpp")
+FILE(GLOB Os_SRC "../os/fs.cpp" "../os/folder.cpp" "../os/file.cpp")
 
 
 add_executable (${PROJECT_NAME}
-	${Api_SRC}
 	${Utils_SRC}
-	${Core_SRC}
-	${Ast_SRC}
-	${Parse_SRC}
 	${Serialize_SRC}
 	${Thread_SRC}
 	${Ext_SRC}

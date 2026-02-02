@@ -232,6 +232,7 @@ int main(int argc, char* argv[])
 	//::MessageBox(NULL, "In Dbg", "XLang", MB_OK);
 	//Workaround_WSLThread_Problem();
 	std::vector<std::string> params(argv, argv+argc);
+	//params.push_back("D:\\CantorAI\\xlang\\test\\inline_expr\\test101.x");
 	ParamConfig paramConfig;
 	ParseCommandLine(params, paramConfig);
 	if (paramConfig.print_usage)

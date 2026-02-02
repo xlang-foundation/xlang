@@ -112,7 +112,8 @@ namespace X
 				X::List list;
 				for (const auto& element : j)
 				{
-					list += ConvertJsonToXValue(element);
+					X::Value varE = ConvertJsonToXValue(element);
+					list->AddItem(varE);
 				}
 				return list;
 			}

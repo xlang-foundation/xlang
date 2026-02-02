@@ -18,6 +18,7 @@ limitations under the License.
 #include <iostream>
 #include "object.h"
 #include "runtime.h"
+#include "../Parse/parser.h"
 #include "op.h"
 #include "var.h"
 #include "block.h"
@@ -29,7 +30,7 @@ limitations under the License.
 #include "module.h"
 #include "complex.h"
 #include "list.h"
-
+#include "inline_expr.h"
 namespace X 
 {
 namespace AST 
@@ -168,6 +169,21 @@ Expression *Expression::CreateByType(ObType t)
 	case ObType::Import:
 		pExp = new Import();
 		break;
+	case ObType::TernaryOp:
+		pExp = new TernaryOp();
+		break;
+	case ObType::ListComprehension:
+		pExp = new ListComprehension();
+		break;
+	case ObType::DictComprehension:
+		pExp = new DictComprehension();
+		break;
+	case ObType::InlineIfOp:
+		pExp = new InlineIfOp();
+		break;
+	case ObType::InlineElseOp:
+		pExp = new InlineElseOp();
+		break;
 	default:
 		break;
 	}
@@ -283,8 +299,10 @@ bool Param::Parse(std::string& strVarName,
 	}
 	return true;
 }
+
+
 bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
-	const char* s_in, int size,std::string& outStr,bool UseBindMode,
+	const char* s_in, int size, std::string& outStr, bool isFString, bool UseBindMode,
 	std::vector<X::Value>& bind_data_list)
 {
 	std::string& str0 = outStr;
@@ -294,101 +312,160 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 	int digitCount = 0;
 	bool IsHex = false;
 	int i = 0;
-	while(i< size)
+	//std::cout << "DEBUG: i=" << i << ", char=" << s_in[i] << ", isF=" << isFString << std::endl;
+	while (i < size)
 	{
-		char c = s_in[i++];
-		if (c == '$')
+		char c = s_in[i];
+		bool bTrigger = false;
+		if (isFString)
 		{
-			if(i < size)
+			if (c == '{')
 			{
-				if (s_in[i] == '{')
-				{//enter case $${var}
-					int j = i;
-					bool bMeetEnd = false;
-					while (j < size)
+				if (i + 1 < size && s_in[i + 1] == '{')
+				{
+					str0 += '{';
+					i += 2;
+					continue;
+				}
+				bTrigger = true;
+				i++;//skip {
+			}
+			else if (c == '$' && i + 1 < size && s_in[i + 1] == '{')
+			{
+				bTrigger = true;
+				i += 2;//skip ${
+			}
+		}
+		else
+		{
+			if (c == '$' && i + 1 < size && s_in[i + 1] == '{')
+			{
+				bTrigger = true;
+				i += 2;//skip ${
+			}
+		}
+
+		if (bTrigger)
+		{
+			//find end of } handling nesting
+			int j = i;
+			int braceCnt = 1;
+			bool inQuote = false;
+			char quoteChar = 0;
+			while (j < size && braceCnt > 0)
+			{
+				char cc = s_in[j];
+				if (inQuote)
+				{
+					if (cc == '\\')
 					{
-						if (s_in[j] == '}')
-						{
-							bMeetEnd = true;
-							break;
-						}
 						j++;
 					}
-					if (bMeetEnd)
+					else if (cc == quoteChar)
 					{
-						bool bGotVal = false;
-						std::string strPart;
-						Scope* pMyScope = GetScope();
-						if (pMyScope)
+						inQuote = false;
+					}
+				}
+				else
+				{
+					if (cc == '"' || cc == '\'')
+					{
+						inQuote = true;
+						quoteChar = cc;
+					}
+					else if (cc == '{')
+					{
+						braceCnt++;
+					}
+					else if (cc == '}')
+					{
+						braceCnt--;
+					}
+				}
+				if (braceCnt > 0)
+				{
+					j++;
+				}
+			}
+			if (braceCnt == 0) // Found matching } at j
+			{
+				int len = j - i;
+				if (len > 0)
+				{
+					std::string code(s_in + i, len);
+					X::Value retVal;
+					bool bEvalOK = false;
+					
+					AST::Module* pTempModule = new AST::Module();
+					
+					Scope* pMyScope = GetScope();
+					if(!pMyScope)
+					{
+						Expression* p = m_parent;
+						while(p)
 						{
-							std::string varName(s_in + i + 1, j - i - 1);
-							std::vector<std::string> listVars 
-								= split(varName, ',');
-							for (auto it : listVars)
+							pMyScope = p->GetScope();
+							if(pMyScope) break;
+							p = p->GetParent();
+						}
+					}
+					
+					if (pMyScope)
+					{
+						pTempModule->SetScope(pMyScope);
+						X::Parser parser;
+						if (parser.Init())
+						{
+							parser.Compile(pTempModule, (char*)code.c_str(), (int)code.size());
+							auto& body = pTempModule->GetBody();
+							if (body.size() > 0)
 							{
-								SCOPE_FAST_CALL_AddOrGet(idx,pMyScope,it, true,nullptr);
-								if (idx >= 0)
+								auto* exp = body[0];
+								//bind scope for variables
+								//Use pMyScope (the execution context).
+								exp->SetScope(pMyScope);
+								
+								//We need to layout the expression to resolve variables to indices
+								exp->ScopeLayout();
+								
+								ExecAction action;
+								if (exp->Exec(rt, action, pContext, retVal))
 								{
-									if (UseBindMode)
-									{
-										strPart += " ? ";
-										Value v0;
-										if (rt->Get(pMyScope, pContext, idx, v0))
-										{
-											bind_data_list.push_back(v0);
-											bGotVal = true;
-										}
-										bGotVal = true;
-									}
-									else
-									{
-										Value v0;
-										if (rt->Get(pMyScope, pContext, idx, v0))
-										{
-											strPart += v0.ToString();
-											bGotVal = true;
-										}
-									}
-								}
-								else if (it == "&COMMA" || it == "&comma"
-									||it =="\\")//for cause {\,,var}
-								{
-									strPart += ",";
-								}
-								else if (it == "\\n")
-								{
-									strPart += '\n';
-								}
-								else if (it == "\\t")
-								{
-									strPart += '\t';
-								}
-								else if (it == "\\r")
-								{
-									strPart += '\r';
-								}
-								else
-								{//if not find, just out as a string
-								//usage ${my name is,Name},but can't use ,
-									strPart += it;
+									bEvalOK = true;
 								}
 							}
 						}
-						//at least find one var, then bGotVal is true
-						if (bGotVal)
+					}
+					delete pTempModule;
+
+					if (bEvalOK)
+					{
+						if (UseBindMode)
 						{
-							str0 += strPart;
-							i = j + 1;
-							continue;
+							str0 += "?";
+							bind_data_list.push_back(retVal);
 						}
-						//if not, treat as char to output
+						else
+						{
+							str0 += retVal.ToString();
+						}
 					}
 				}
+				i = j + 1;//skip }
+				continue;
+			}
+			else
+			{
+				//Not closed...
 			}
 		}
+
+		//Normal char processing (escape handling)
+		
 		if ((!bMeetSlash) && (c == '\\'))
 		{
 			bMeetSlash = true;
+			i++;
 			continue;
 		}
 		else
@@ -411,6 +488,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 						digitCount = 0;
 						ecsVal = 0;
 						//keep bMeetSlash as true for next one
+						i++;
 						continue;
 					}
 					else if (IsHex)
@@ -421,6 +499,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 						digitCount = 0;
 						ecsVal = 0;
 						//keep bMeetSlash as true for next one
+						i++;
 						continue;
 					}
 					//then will output '\'
@@ -443,6 +522,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 				case 'x':
 				case 'X':
 					IsHex = true;
+					i++;
 					continue;
 				default:
 					if (c >= '0' && c <= '7')
@@ -454,6 +534,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 							digitCount++;
 							if (digitCount < 3)
 							{
+								i++;
 								continue;
 							}
 						}
@@ -467,6 +548,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 						bMeetSlash = false;
 						digitCount = 0;
 						ecsVal = 0;
+						i++;
 						continue;
 					}
 					//for hex
@@ -491,6 +573,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 								digitCount = 0;
 								ecsVal = 0;
 							}
+							i++;
 							continue;
 						}
 						else if (digitCount > 0)
@@ -501,6 +584,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 							IsHex = false;
 							digitCount = 0;
 							ecsVal = 0;
+							i++;
 							continue;
 						}
 						else
@@ -518,6 +602,7 @@ bool Expression::RunStringExpWithFormat(XlangRuntime* rt, XObj* pContext,
 			str0 += c;
 			bMeetSlash = false;
 		}
+		i++;
 	}
 	return true;
 }
@@ -529,12 +614,37 @@ bool ImaginaryNumber::Exec(XlangRuntime* rt, ExecAction& action,
 	v = X::Value(pComplexObj);
 	return true;
 }
+bool Str::Exec(XlangRuntime* rt,ExecAction& action,XObj* pContext, Value& v,LValue* lValue)
+{
+	if (m_haveFormat)
+	{
+		bool bOK = RunWithFormat(rt, pContext, v);
+		if(!bOK)
+		{
+			LOG << "Str::Exec calling RunWithFormat returned FALSE" << LINE_END;
+		}
+		return bOK;
+	}
+	else if (m_isCharSequence && m_size == 1)
+	{
+		long long lv = m_s[0];
+		v = Value(lv);
+		return true;
+	}
+	else
+	{
+		v = Value(m_s, m_size);
+		return true;
+	}
+}
+
 bool Str::RunWithFormat(XlangRuntime* rt, XObj* pContext, Value& v)
 {
 	std::string stOut;
 	std::vector<Value> val_list;
-	bool bOK = RunStringExpWithFormat(rt, pContext, m_s, m_size, stOut,false,
+	bool bOK = RunStringExpWithFormat(rt, pContext, m_s, m_size, stOut, m_isFString, false,
 		val_list);
+
 	if (bOK)
 	{
 		Data::Str* pStrObj = new Data::Str(stOut);

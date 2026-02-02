@@ -25,7 +25,10 @@ class PyObjectXLangConverter {
 public:
     static X::Value ConvertToXValue(PyObject* obj) {
         MGil gil;
-        if (PyLong_Check(obj)) {
+        if (obj == Py_None) {
+			return X::Value();
+        }
+        else if (PyLong_Check(obj)) {
             return X::Value(PyLong_AsLongLong(obj));
         }
         else if (PyFloat_Check(obj)) {
@@ -38,9 +41,24 @@ public:
             gil.Unlock();
             return ConvertListToXValue(obj);
         }
+        else if (PyTuple_Check(obj)) {
+            gil.Unlock();
+            return ConvertTupleToXValue(obj);
+        }
         else if (PyDict_Check(obj)) {
             gil.Unlock();
             return ConvertDictToXValue(obj);
+        }
+        else if (PyBytes_Check(obj)) {
+            char* buf = nullptr;
+            Py_ssize_t len = 0;
+            PyBytes_AsStringAndSize(obj, &buf, &len);
+
+            // Make an X::Bin (or however your system stores raw data)
+            X::Bin bin((unsigned long long)len, true);
+            memcpy(bin->Data(), buf, len);
+
+            return X::Value(bin);
         }
         else if (IsNumpyArray(obj)) {
             gil.Unlock();
@@ -69,6 +87,14 @@ public:
         else if (value.IsString()) {
             MGil gil;
             return PyUnicode_FromString(value.ToString().c_str());
+        }
+        else if (value.IsBin()) {
+            MGil gil;
+            X::Bin binValue(value);
+            return PyBytes_FromStringAndSize(
+                static_cast<const char*>(binValue->Data()),
+                binValue->Size()
+            );
         }
         else if (value.IsList()) {
             return ConvertListToPyObject(value);
@@ -181,9 +207,25 @@ private:
         for (Py_ssize_t i = 0; i < size; ++i) {
             PyObject* item = PyList_GetItem(obj, i);
 			gil.Unlock();
-            list += ConvertToXValue(item);
+            X::Value varItem = ConvertToXValue(item);
+            //don't use += will flat the list
+            list->AddItem(varItem);
 			gil.Lock();
         }
+        return static_cast<X::Value>(list);
+    }
+    static X::Value ConvertTupleToXValue(PyObject* obj) {
+        MGil gil;
+        X::List list;
+
+        Py_ssize_t size = PyTuple_Size(obj);
+        for (Py_ssize_t i = 0; i < size; ++i) {
+            PyObject* item = PyTuple_GetItem(obj, i); // borrowed reference
+            gil.Unlock();
+            list += ConvertToXValue(item);
+            gil.Lock();
+        }
+
         return static_cast<X::Value>(list);
     }
 

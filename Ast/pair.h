@@ -32,10 +32,10 @@ namespace AST
 		public BinaryOp
 	{
 		short m_preceding_token = 0;
-		bool ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
-		bool BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
-		bool CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
-		bool TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
+		FORCE_INLINE bool ParentRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
+		FORCE_INLINE bool BracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
+		FORCE_INLINE bool CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
+		FORCE_INLINE bool TableBracketRun(XlangRuntime* rt, XObj* pContext, Value& v, LValue* lValue);
 		bool GetItemFromList(XlangRuntime* rt, XObj* pContext,
 			Data::List* pDataList, Expression* r,
 			Value& v, LValue* lValue);
@@ -99,8 +99,8 @@ namespace AST
 				R->SetIsLeftValue(b);
 			}
 		}
-		virtual bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override;
-		FORCE_INLINE virtual bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override
+		FORCE_INLINE bool Set(XlangRuntime* rt, XObj* pContext, Value& v) override final;
+		FORCE_INLINE bool SetArry(XlangRuntime* rt, XObj* pContext, std::vector<Value>& ary) override final
 		{
 			if (ary.size() == 0)
 			{
@@ -191,7 +191,7 @@ namespace AST
 			}
 			return bOK;
 		}
-		virtual bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override;
+		FORCE_INLINE bool Exec(XlangRuntime* rt,ExecAction& action, XObj* pContext, Value& v, LValue* lValue = nullptr) override final;
 	};
 }
 }

@@ -266,6 +266,7 @@ static void XLangInternalInit()
 	X::Data::TypeObject::Init();
 	X::Data::XlangStruct::Init();
 	X::Data::Error::Init();
+	X::Data::Function::Init();
 }
 void XLangRun()
 {

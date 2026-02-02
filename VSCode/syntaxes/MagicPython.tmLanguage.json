@@ -6,7 +6,7 @@
   ],
   "version": "https://github.com/MagicStack/MagicPython/commit/b2b4f4ae7b4e6284e80bda8080106b93bd588f9e",
   "name": "MagicPython",
-  "scopeName": "source.x",
+  "scopeName": "source.xlang",
   "patterns": [
     {
       "include": "#statement"
@@ -54,7 +54,7 @@
     "semicolon": {
       "patterns": [
         {
-          "name": "invalid.deprecated.semicolon.x",
+          "name": "punctuation.terminator.statement.x",
           "match": "\\;$"
         }
       ]
@@ -1601,7 +1601,7 @@
         },
         {
           "comment": "Some color schemas support meta.function-call.generic scope",
-          "name": "meta.function-call.generic.x",
+          "name": "entity.name.function.x",
           "match": "(?x)\n  \\b ([[:alpha:]_]\\w*) \\b\n"
         }
       ]

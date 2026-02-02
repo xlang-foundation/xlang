@@ -39,6 +39,9 @@ namespace X
 		pObj->GetIndexValue(idx, retVal);
 		return retVal;
 	}
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
 	Value Value::operator* (const Value& right)
 	{
 		Value ret;
@@ -60,6 +63,9 @@ namespace X
 		}
 		return ret;
 	}
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
 	Value Value::operator/ (const Value& right)
 	{
 		Value ret;
@@ -103,6 +109,9 @@ namespace X
 		}
 		return ret;
 	}
+#if defined(_MSC_VER)
+	FORCE_INLINE
+#endif
 	Value Value::operator- (const Value& right)
 	{
 		if (t == ValueType::Invalid || right.t == ValueType::Invalid)
@@ -137,6 +146,7 @@ namespace X
 		return ret;
 	}
 
+	FORCE_INLINE
 	void Value::operator -= (const Value& v)
 	{
 		if (t == ValueType::Invalid || v.t == ValueType::Invalid)
@@ -173,7 +183,7 @@ namespace X
 				ChangeToStrObject();
 				break;
 			default:
-				*this -= v;
+				// Unreachable - all value types covered above
 				break;
 			}
 		}
@@ -550,10 +560,12 @@ namespace X
 	}
 	Value::Value(std::string& s)
 	{
+		flags = 0;
 		SetString(s);
 	}
 	Value::Value(std::string&& s)
 	{
+		flags = 0;
 		SetString(s);
 	}
 
@@ -858,6 +870,52 @@ namespace X
 	{
 		Value v0;
 		if (g_pXHost->PyImport(rt, moduleName, from, currentPath, v0))
+		{
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
+		}
+	}
+	template<>
+	template<>
+	void V<XPyObject>::Create(Runtime rt, X::KWARGS& globals,const char* moduleName,
+		const char* from, const char* currentPath)
+	{
+		Value v0;
+		if (g_pXHost->PyImportWithGlobals(rt, moduleName, from, currentPath, globals,v0))
+		{
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
+		}
+	}
+	template<>
+	template<>
+	void V<XPyObject>::Create(Runtime rt, const char* moduleFullName)
+	{
+		Value v0;
+		if (g_pXHost->PyImport(rt, moduleFullName, nullptr, nullptr, v0))
+		{
+			auto* pObj = v0.GetObj();
+			if (pObj)
+			{
+				pObj->IncRef();
+				SetObj(pObj);
+			}
+		}
+	}
+	template<>
+	template<>
+	void V<XPyObject>::Create(Runtime rt, X::KWARGS* globals,const char* moduleFullName)
+	{
+		Value v0;
+		if (g_pXHost->PyImportWithGlobals(rt, moduleFullName, nullptr, nullptr, *globals,v0))
 		{
 			auto* pObj = v0.GetObj();
 			if (pObj)

@@ -113,9 +113,11 @@ namespace X
 		virtual void ReleaseStream(X::XLStream* pStream) = 0;
 		virtual XRemoteObject* CreateRemoteObject(XProxy* proxy) = 0;
 		virtual bool ConvertToBytes(X::Value& v, X::XLStream* pStream=nullptr) = 0;
+		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
+		virtual bool MarshalToBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
+		virtual bool MarshalFromBytes(X::Value& v, X::XLStream* pStream,X::XProxy* proxy) = 0;
 		virtual bool ToBytes(X::Value& input, X::Value& output) = 0;
 		virtual bool FromBytes(X::Value& input, X::Value& output) = 0;
-		virtual bool ConvertFromBytes(X::Value& v, X::XLStream* pStream = nullptr) = 0;
 		virtual bool WriteToStream(char* data, long long size, X::XLStream* pStream) = 0;
 		virtual bool ReadFromStream(char* buffer, long long size, X::XLStream* pStream) = 0;
 		virtual bool RunCode(const char* moduleName,const char* code, int codeSize,X::Value& retVal) = 0;
@@ -154,6 +156,8 @@ namespace X
 		virtual bool PyRun(const char* code, X::ARGS& args) = 0;
 		virtual bool PyImport(XRuntime* rt, const char* moduleName,
 			const char* from, const char* currentPath,X::Value& pyObj) = 0;
+		virtual bool PyImportWithGlobals(XRuntime* rt, const char* moduleName,
+			const char* from, const char* currentPath,X::KWARGS& globals, X::Value& pyObj) = 0;
 		virtual bool PySerialize(X::Value& input, X::Value& output) = 0;
 		virtual bool PyDeserialize(X::Value& input, X::Value& output) = 0;
 		virtual bool PyObjToValue(void* pyObj, X::Value& valObject) = 0;
@@ -162,6 +166,9 @@ namespace X
 		virtual void EnalbePython(bool bEnable,bool bEnablePythonDebug) = 0;
 		virtual void EnableDebug(bool bEnable, int port=3142) = 0;
 		virtual void* GetLogger() = 0;
+		virtual void ActivePythonVEnv(const char* venvPath) = 0;
+		virtual void DeactivePythonVEnv(const char* venvPath) = 0;
+		virtual unsigned long long GetObjectCount() = 0;
 	};
 	extern XHost* g_pXHost;
 }

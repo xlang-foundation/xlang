@@ -16,6 +16,7 @@ limitations under the License.
 #pragma once
 
 #include <string.h> //for memcpy
+#include <stddef.h>
 #include <utility>
 
 #if !defined(FORCE_INLINE)
@@ -25,8 +26,8 @@ limitations under the License.
 #elif defined(BARE_METAL)
 #define FORCE_INLINE inline
 #elif defined(__GNUC__) || defined(__clang__)
-// GCC or Clang Compiler
-#define FORCE_INLINE __attribute__((always_inline)) inline
+// GCC or Clang Compiler - use just inline for compatibility with cpp-defined functions
+#define FORCE_INLINE inline
 #else
 // Fallback for other compilers
 #define FORCE_INLINE inline
@@ -47,7 +48,7 @@ namespace X
 		class Function<R(Args...)>
 		{
 			typedef R(*invoke_fn_t)(char*, Args&&...);
-			typedef char* (*construct_fn_t)(int, char*);
+			typedef char* (*construct_fn_t)(size_t, char*);
 			typedef void (*destroy_fn_t)(char*);
 
 			template <typename Functor>
@@ -56,7 +57,7 @@ namespace X
 				return (*fn)(std::forward<Args>(args)...);
 			}
 			template <typename Functor>
-			static char* construct_fn(int allocSize,Functor* construct_src)
+			static char* construct_fn(size_t allocSize,Functor* construct_src)
 			{
 				char* pFuncMem = new char[allocSize];
 				Functor* construct_dst = (Functor*)pFuncMem;

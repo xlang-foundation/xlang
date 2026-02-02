@@ -147,7 +147,7 @@ extern "C"  X_EXPORT void Unload()
 	// directly without restoring the thread state.
 	// so we don't need to call:PyEval_RestoreThread(GrusPyEngHost::I().GetPyThreadState());
 	X::g_pXHost = nullptr;
-	Py_FinalizeEx();
+	//Py_FinalizeEx();
 #if !(WIN32)
 	UnloadPython();
 #endif

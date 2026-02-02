@@ -49,19 +49,22 @@ namespace X
 				m_realObj = val;
 			}
 			//help function for type object
-			bool IsType(std::string name) 
-			{ 
+			bool IsType(const std::string& name)
+			{
 				auto typeName = GetTypeNameString();
+
 				if (typeName == name)
-				{
 					return true;
-				}
-				else if (typeName.find("'" + name + "'") > 0)
-				{
+
+				// check pattern `'name'`
+				std::string wrapped = "'" + name + "'";
+
+				if (typeName.find(wrapped) != std::string::npos)
 					return true;
-				}
-				return false; 
+
+				return false;
 			}
+
 			FORCE_INLINE std::string GetTypeNameString()
 			{
 				std::string strType;

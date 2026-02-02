@@ -210,16 +210,25 @@ namespace X
 			//will happen in decor function
 			//just treat as local var
 			bool isExtern = (Index != -1)
-#if __TODO_SCOPE__
-				&& (dynamic_cast<X::Data::ExpressionScope*>(m_scope) == nullptr)
-#endif
 				&& (m_scope != stream.ScopeSpace().GetCurrentScope())
 				&& (m_scope != stream.ScopeSpace().GetCurrentClassScope());
+			if (isExtern)
+			{
+				//to some custom scope, may not need serialize extern var
+				if (m_scope && !m_scope->NeedSerializeExternVars())
+				{
+					isExtern = false;
+				}
+			}
 			stream << isExtern;
 			//check the value if it is external
 			if (isExtern)
 			{
-				EncodeExtern(rt, pContext, stream);
+				//to some custom scope, may not need serialize extern var
+				if (m_scope == nullptr || m_scope->NeedSerializeExternVars())
+				{
+					EncodeExtern(rt, pContext, stream);
+				}
 			}
 			return true;
 		}
@@ -247,7 +256,7 @@ namespace X
 			}
 			return true;
 		}
-		bool Var::GetPropValue(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& val)
+		FORCE_INLINE bool Var::GetPropValue(XlangRuntime* rt, XObj* pContext, XObj* pObj, Value& val)
 		{
 			bool bOK = false;
 			if (pObj->GetType() == ObjType::StructField)
@@ -268,7 +277,7 @@ namespace X
 			}
 			return bOK;
 		}
-		bool Var::CalcCallables(XlangRuntime* rt, XObj* pContext,
+		FORCE_INLINE bool Var::CalcCallables(XlangRuntime* rt, XObj* pContext,
 			std::vector<AST::Expression*>& callables)
 		{
 			Value val;
@@ -281,7 +290,7 @@ namespace X
 			}
 			return bOK;
 		}
-		void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
+		FORCE_INLINE void Var::ScopeLayout(std::vector<AST::Scope*>& candidates)
 		{
 			bool matched = false;
 			if (m_scope && Index != -1)
@@ -331,7 +340,7 @@ namespace X
 		// so here we check if it is inside a Pair
 		//TODO(Shawn) 6/15/2023: check lambda function with { } some var define, if it is still correct
 
-		void Var::ScopeLayout()
+		FORCE_INLINE void Var::ScopeLayout()
 		{
 			Scope* pMyScope = GetScope();
 			int idx = -1;
