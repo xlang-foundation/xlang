@@ -570,23 +570,31 @@ namespace X
 		}
 		return modulePath;
 	}
-
 	std::string HttpServer::ConvertReletivePathToFullPath(std::string strPath)
 	{
-		std::string modulePath = GetModulePath();
-		std::filesystem::path rootPath = modulePath;
-		std::filesystem::path fullPath;
-		// Check if the path is already absolute
-		if (std::filesystem::path(strPath).is_absolute())
-		{
-			fullPath = std::filesystem::canonical(strPath);
+		namespace fs = std::filesystem;
+
+		fs::path rootPath = GetModulePath(); // assume this is a directory path
+		fs::path input(strPath);
+		fs::path combined = input.is_absolute() ? input : (rootPath / input);
+
+		std::error_code ec;
+
+		// absolute() does not check existence, and doesn't throw with error_code overload
+		fs::path abs = fs::absolute(combined, ec);
+		if (ec) {
+			// fallback: return best-effort string
+			return combined.lexically_normal().string();
 		}
-		else {
-			// Combine the paths and normalize
-			fullPath = std::filesystem::absolute(rootPath / strPath);
-			fullPath = std::filesystem::canonical(fullPath);
+
+		// weakly_canonical won't fail just because the last component doesn't exist
+		fs::path normalized = fs::weakly_canonical(abs, ec);
+		if (ec) {
+			// fallback if something still goes wrong (bad root, permissions, etc.)
+			normalized = abs.lexically_normal();
 		}
-		return fullPath.string();
+
+		return normalized.string();
 	}
 	bool HttpServer::AddRoute(std::string urlPattern, X::Value& func)
 	{

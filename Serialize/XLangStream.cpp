@@ -305,6 +305,7 @@ namespace X
 			(*this) << v.GetDouble();
 			break;
 		case X::ValueType::Object:
+		if(v.GetObj())
 		{
 			X::Data::Object* pObj = dynamic_cast<X::Data::Object*>(v.GetObj());
 			//save pObj as Id and with a flag to indicate it's a object embeded here or just
