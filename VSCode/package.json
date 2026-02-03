@@ -103,6 +103,17 @@
         "aliases": [
           "yml"
         ]
+      },
+      {
+        "id": "cas",
+        "extensions": [
+          ".cas"
+        ],
+        "aliases": [
+          "CasLang",
+          "cas"
+        ],
+        "configuration": "./cas-language-configuration.json"
       }
     ],
     "grammars": [
@@ -114,6 +125,11 @@
       {
         "scopeName": "source.regexp.x",
         "path": "./syntaxes/MagicRegExp.tmLanguage.json"
+      },
+      {
+        "language": "cas",
+        "scopeName": "source.cas",
+        "path": "./syntaxes/cas.tmLanguage.json"
       }
     ],
     "menus": {

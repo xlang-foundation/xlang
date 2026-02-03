@@ -1,0 +1,121 @@
+{
+	"scopeName": "source.cas",
+	"patterns": [
+		{ "include": "#command-flow" },
+		{ "include": "#command-lib" },
+		{ "include": "#command-generic" }
+	],
+	"repository": {
+		"command-flow": {
+			"match": "(#)(flow)(\\.)([a-zA-Z0-9_]+)(\\s*)(\\{)",
+			"captures": {
+				"1": { "name": "punctuation.definition.tag.cas" },
+				"2": { "name": "keyword.control.cas" },
+				"3": { "name": "punctuation.accessor.cas" },
+				"4": { "name": "support.function.control.cas" },
+                "6": { "name": "punctuation.section.block.begin.cas" }
+			},
+            "push": { "include": "#args-body" }
+		},
+		"command-lib": {
+			"match": "(#)(str|num|fs|time)(\\.)([a-zA-Z0-9_]+)(\\s*)(\\{)",
+			"captures": {
+				"1": { "name": "punctuation.definition.tag.cas" },
+				"2": { "name": "support.class.cas" },
+				"3": { "name": "punctuation.accessor.cas" },
+				"4": { "name": "support.function.library.cas" },
+                "6": { "name": "punctuation.section.block.begin.cas" }
+			},
+            "push": { "include": "#args-body" }
+		},
+		"command-generic": {
+			"match": "(#)([a-zA-Z0-9_\\.]+)(?:\\.)([a-zA-Z0-9_]+)(\\s*)(\\{)",
+			"captures": {
+				"1": { "name": "punctuation.definition.tag.cas" },
+				"2": { "name": "entity.name.type.module.cas" },
+                "3": { "name": "entity.name.function.cas" },
+				"5": { "name": "punctuation.section.block.begin.cas" }
+			},
+            "push": { "include": "#args-body" }
+		},
+        "args-body": {
+            "end": "\\}",
+            "endCaptures": { "0": { "name": "punctuation.section.block.end.cas" } },
+            "patterns": [
+                { "include": "#known-keys" },
+                { "include": "#object-key" },
+                { "include": "#values" }
+            ]
+        },
+        "known-keys": {
+            "match": "(\")(cond|var|in|as|value|name|path|dir|msg|s)(\")\\s*(:)",
+            "captures": {
+                "1": { "name": "punctuation.definition.string.begin.cas" },
+                "2": { "name": "entity.name.tag.cas" },
+                "3": { "name": "punctuation.definition.string.end.cas" },
+                "4": { "name": "punctuation.separator.key-value.cas" }
+            }
+        },
+		"object-key": {
+			"match": "(\")([a-zA-Z0-9_\\.]+)(\")\\s*(:)",
+			"captures": {
+                "1": { "name": "punctuation.definition.string.begin.cas" },
+				"2": { "name": "entity.name.tag.cas" },
+                "3": { "name": "punctuation.definition.string.end.cas" },
+				"4": { "name": "punctuation.separator.key-value.cas" }
+			}
+		},
+        "values": {
+            "patterns": [
+                { "include": "#string" },
+                { "include": "#number" },
+                { "include": "#boolean" },
+                { "include": "#null" },
+                { "include": "#array" }
+            ]
+        },
+		"string": {
+			"begin": "\"",
+			"beginCaptures": { "0": { "name": "punctuation.definition.string.begin.cas" } },
+			"end": "\"",
+			"endCaptures": { "0": { "name": "punctuation.definition.string.end.cas" } },
+			"name": "string.quoted.double.cas",
+			"patterns": [
+                { "include": "#variable" },
+                { "include": "#operators" },
+                { "match": "\\\\.", "name": "constant.character.escape.cas" }
+			]
+		},
+        "variable": {
+            "patterns": [
+				{
+					"match": "\\$\\{_last\\}",
+					"name": "variable.language.cas"
+				},
+				{
+					"match": "\\$\\{[a-zA-Z0-9_]+\\}",
+					"name": "variable.other.cas"
+				}
+            ]
+        },
+        "operators": {
+            "patterns": [
+                { "match": "==|!=|<=|>=|<|>", "name": "keyword.operator.comparison.cas" },
+                { "match": "!", "name": "keyword.operator.logical.cas" }
+            ]
+        },
+		"number": { "match": "-?\\d+(\\.\\d+)?", "name": "constant.numeric.cas" },
+		"boolean": { "match": "\\b(true|false)\\b", "name": "constant.language.boolean.cas" },
+		"null": { "match": "\\bnull\\b", "name": "constant.language.null.cas" },
+        "array": {
+            "begin": "\\[",
+            "beginCaptures": { "0": { "name": "punctuation.section.brackets.begin.cas" } },
+            "end": "\\]",
+            "endCaptures": { "0": { "name": "punctuation.section.brackets.end.cas" } },
+            "patterns": [
+                { "include": "#values" },
+                { "match": ",", "name": "punctuation.separator.comma.cas" }
+            ]
+        }
+	}
+}
