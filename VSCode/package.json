@@ -1,7 +1,7 @@
 {
   "name": "xlang",
   "displayName": "xlang",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "publisher": "cantorai",
   "description": "XLang's debugger and more",
   "author": {
@@ -120,11 +120,7 @@
       {
         "language": "xlang",
         "scopeName": "source.xlang",
-        "path": "./syntaxes/MagicPython.tmLanguage.json"
-      },
-      {
-        "scopeName": "source.regexp.x",
-        "path": "./syntaxes/MagicRegExp.tmLanguage.json"
+        "path": "./syntaxes/xlang.tmLanguage.json"
       },
       {
         "language": "cas",
