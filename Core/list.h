@@ -340,6 +340,16 @@ public:
 		AutoLock autoLock(m_lock);
 		m_data.erase(std::next(m_data.begin(), idx));
 	}
+	bool RemoveAt(long long idx) override
+	{
+		AutoLock autoLock(m_lock);
+		if (idx < 0 || idx >= (long long)m_data.size())
+		{
+			return false;
+		}
+		m_data.erase(std::next(m_data.begin(), idx));
+		return true;
+	}
 	FORCE_INLINE void Insert(long long idx,XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
