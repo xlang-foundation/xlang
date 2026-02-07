@@ -1,17 +1,3 @@
-/*
-Copyright (C) 2024 The XLang Foundation
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 
 #include "json.h"
 #include "utility.h"
@@ -27,17 +13,12 @@ limitations under the License.
 #include <sstream>
 #include <functional>
 #include <iostream>
+#include <algorithm> // For std::sort
 
 namespace fs = std::filesystem;
 
 namespace X
 {
-	// ============================================================================
-	// Helper: Parse Template to Regex
-	// Syntax: "root/${year:4}/dev_${id}" -> Regex + Keys
-	// ${key} -> ([a-zA-Z0-9_]+)
-	// ${key:N} -> ([a-zA-Z0-9]{N})
-	// ============================================================================
 	// ============================================================================
 	// Helper: Parse Template to Regex
 	// Syntax: "root/${year:4}/dev_${id}" -> Regex + Keys
@@ -253,19 +234,31 @@ namespace X
 		return true;
 	}
 
-	// Evaluate RPN against Metadata
-	static bool EvaluateFilter(const std::vector<FilterToken>& rpn, X::Dict& meta) {
+	// Evaluate RPN against Metadata/Row
+	// priority: row -> meta
+	static bool EvaluateFilter(const std::vector<FilterToken>& rpn, X::Dict& meta, X::Value& row) {
 		std::stack<X::Value> stack;
-		
+		X::Dict rowDict;
+		if (row.IsDict()) rowDict = row;
+
 		for(const auto& t : rpn) {
 			if (t.type == T_NUM) stack.push(X::Value(t.dVal));
 			else if (t.type == T_STR) stack.push(X::Value(t.sVal));
 			else if (t.type == T_ID) {
-				// Lookup in meta
-				X::Value val = meta->Get(t.sVal); // Returns null if missing
-				// Meta values are strings. Try to auto-convert to number if needed during comparison?
-				// For now push as is (String or Null)
-				// If meta value looks like number, we might want to convert 'on demand' in ops
+				// Lookup in row first, then meta
+				X::Value val;
+				bool found = false;
+			if (rowDict) {
+					if (rowDict->Has(t.sVal)) {
+						val = rowDict->Get(t.sVal);
+						found = true;
+					}
+				}
+				if (!found && meta) {
+					if (meta->Has(t.sVal)) {
+						val = meta->Get(t.sVal);
+					}
+				}
 				stack.push(val);
 			}
 			else {
@@ -336,6 +329,33 @@ namespace X
 	}
 
 	// ============================================================================
+	// Sorting Helpers
+	// ============================================================================
+	struct SortSpec {
+		std::string key;
+		bool numeric;
+		bool reverse;
+	};
+
+	static double ExtractNumber(const std::string& str) {
+		// Keep [0-9], ., +, -
+		std::string numStr;
+		bool hasDigit = false;
+		for(char c : str) {
+			if (isdigit(c) || c == '.' || c == '+' || c == '-') {
+				numStr += c;
+				if (isdigit(c)) hasDigit = true;
+			}
+		}
+		if (numStr.empty() || !hasDigit) return 0.0;
+		try {
+			return std::stod(numStr);
+		} catch(...) {
+			return 0.0;
+		}
+	}
+
+	// ============================================================================
 	// LoadRaw: Implementation
 	// ============================================================================
 	X::Value JsonWrapper::LoadRaw(X::XRuntime* rt, X::XObj* pContext,
@@ -350,27 +370,104 @@ namespace X
 		std::string extract_pattern = "";
 		std::string filter_expr = "";
 		X::Dict filter_meta;
-		// X::Value filter_func; // Supported via kwParams lookup
+		
+		// Sorting defaults
+		bool global_reverse = false;
+		bool global_numeric = false;
+		std::vector<SortSpec> sortSpecs;
+		
+		long long offset = 0;
+		long long limit = -1;
 
 		// Parse KW Params
-		auto it = kwParams.find("pattern");
-		if (it) pattern = it->val.ToString();
+		for(auto& kw : kwParams) {
+			std::string key = kw.key;
+			if (key == "pattern") pattern = kw.val.ToString();
+			else if (key == "recursive") recursive = (bool)kw.val;
+			else if (key == "extract_pattern") extract_pattern = kw.val.ToString();
+			else if (key == "filter_expr") filter_expr = kw.val.ToString();
+			else if (key == "filter_meta" && kw.val.IsDict()) filter_meta = kw.val;
+			else if (key == "filter_func") {
+				// handled via search, or store here? 
+				// The original code used itFunc iterator later. Let's store X::Value.
+				// But we need to check if it's there. 
+				// Let's use a flag or X::Value holder.
+			}
+			else if (key == "reverse") {
+				global_reverse = (bool)kw.val;
+			}
+			else if (key == "numeric") {
+				global_numeric = (bool)kw.val;
+			}
+			else if (key == "offset") {
+				offset = kw.val.GetLongLong();
+			}
+			else if (key == "limit") {
+				limit = kw.val.GetLongLong();
+			}
+		}
 		
-		it = kwParams.find("recursive");
-		if (it) recursive = (bool)it->val;
-		
-		it = kwParams.find("extract_pattern");
-		if (it) extract_pattern = it->val.ToString();
-		
-		it = kwParams.find("filter_expr");
-		if (it) filter_expr = it->val.ToString();
+		// Handle sort and filter_func separately or in loop?
+		// Sort needs precedence or complex struct? No, just parsing.
+		// Re-scan for complex handling or usage?
+		// filter_func was used as 'itFunc'.
+		X::Value funcFilter; 
+		X::Value sortVal;
 
-		it = kwParams.find("filter_meta");
-		if (it && it->val.IsDict()) filter_meta = it->val;
+		for(auto& kw : kwParams) {
+			if (kw.key == std::string("filter_func")) funcFilter = kw.val;
+			if (kw.key == std::string("sort")) sortVal = kw.val;
+		}
 
-		auto itFunc = kwParams.find("filter_func"); 
+		if (sortVal.IsValid()) {
+			X::Value s = sortVal;
+			if (s.IsList()) {
+				X::List l(s);
+				for(auto item : *l) {
+					if (item.IsDict()) {
+						X::Dict d(item);
+						std::string k;
+						if (d->Has("name")) k = d->Get("name").ToString();
+						else if (d->Has("field")) k = d->Get("field").ToString();
+						
+						bool rev = global_reverse;
+						if (d->Has("reverse")) rev = (bool)d->Get("reverse");
 
-// Prepare Extraction Regex
+						bool num = global_numeric;
+						if (d->Has("numeric")) num = (bool)d->Get("numeric");
+
+						if (!k.empty()) sortSpecs.push_back({k, num, rev});
+					} else {
+						sortSpecs.push_back({item.ToString(), global_numeric, global_reverse});
+					}
+				}
+			} else if (s.IsString()) {
+				sortSpecs.push_back({s.ToString(), global_numeric, global_reverse});
+			} else if (s.IsObject()) {
+				// Treat generic Object as Dict-like source (e.g. PyProxy)
+				std::string k;
+				X::Value v = s["name"];
+				if (v.IsValid()) k = v.ToString();
+				else {
+					v = s["field"];
+					if (v.IsValid()) k = v.ToString();
+				}
+				
+				bool rev = global_reverse;
+				v = s["reverse"];
+				if (v.IsValid()) rev = (bool)v;
+
+				bool num = global_numeric;
+				v = s["numeric"];
+				if (v.IsValid()) num = (bool)v;
+
+				if (!k.empty()) sortSpecs.push_back({k, num, rev});
+			} else {
+				sortSpecs.push_back({s.ToString(), global_numeric, global_reverse});
+			}
+		}
+
+		// Prepare Extraction Regex
 		std::regex pathRegex;
 		std::vector<std::string> extractKeys;
 		bool useExtraction = !extract_pattern.empty();
@@ -380,7 +477,6 @@ namespace X
 			try {
 				pathRegex = std::regex(regexStr);
 			} catch(...) {
-				// Invalid regex from template
 				useExtraction = false;
 			}
 		}
@@ -388,15 +484,30 @@ namespace X
 		// Prepare Filter Expression
 		std::vector<FilterToken> rpn;
 		bool useExpr = !filter_expr.empty();
+		bool fileLevelFilter = false;
 		if (useExpr) {
-			if (!CompileFilterExpression(filter_expr, rpn)) {
+			if (CompileFilterExpression(filter_expr, rpn)) {
+				// Check if all IDs in RPN are in extractKeys
+				// If so, we can filter at file level
+				bool allKnown = true;
+				for(const auto& t : rpn) {
+					if (t.type == T_ID) {
+						bool known = false;
+						for(const auto& k : extractKeys) {
+							if (k == t.sVal) { known = true; break; }
+						}
+						if (!known) { allKnown = false; break; }
+					}
+				}
+				fileLevelFilter = allKnown;
+			} else {
 				useExpr = false;
 			}
 		}
 
-		X::List resultList;
+		std::vector<X::Value> items; // Collect here for sort
 
-	// Normalize Path separator to '/'
+		// Normalize Path separator
 		std::string normPath = path;
 		std::replace(normPath.begin(), normPath.end(), '\\', '/');
 		
@@ -408,7 +519,9 @@ namespace X
 		}
 
 		if (!fs::exists(normPath)) {
-			return resultList;
+			X::List emptyList;
+			retValue = emptyList;
+			return emptyList;
 		}
 
 		// Define Scan Logic
@@ -417,15 +530,11 @@ namespace X
 			std::string fPath = entry.path().string();
 			std::string fName = entry.path().filename().string();
 			
-			// Normalize file path for matching
+			// Normalize for matching
 			std::string target = fPath;
 			std::replace(target.begin(), target.end(), '\\', '/');
 			
-			// Pattern Check (Glob match)
-			// Reuse regex engine for simple pattern check logic or strict glob?
-			// Current simple logic:
 			if (pattern != "*") {
-				// Simple suffix check if starts with *
 				if (pattern.size() > 0 && pattern[0] == '*') {
 					std::string ext = pattern.substr(1);
 					if (fName.size() < ext.size() || fName.substr(fName.size() - ext.size()) != ext) return;
@@ -444,24 +553,15 @@ namespace X
 				}
 			}
 
-			// Filters
-			if (filter_meta.IsValid()) {
+			// File Level Filters
+			if (filter_meta) {
 				if (!CheckMetaFilter(meta, filter_meta)) return;
 			}
-			if (useExpr) {
-				if (!EvaluateFilter(rpn, meta)) return;
-			}
-			if (itFunc) { // filter_func
-				X::Value ret;
-				X::ARGS args(1); 
-				args.push_back(meta);
-				X::KWARGS kw;
-				X::Value func = itFunc->val;
-				if (func.IsObject()) {
-					X::XObj* pObj = func.GetObj();
-					pObj->Call(rt, pContext, args, kw, ret);
-					if (!ret) return;
-				}
+			
+			// Optimization: Apply filter expr here if it ONLY depends on meta
+			X::Value dummy;
+			if (useExpr && fileLevelFilter) {
+				if (!EvaluateFilter(rpn, meta, dummy)) return;
 			}
 
 			// Load & Parse
@@ -473,12 +573,33 @@ namespace X
 				try {
 					nlohmann::json j = nlohmann::json::parse(line);
 					X::Value row = ConvertJsonToXValue(j);
+
+					// Row Level Filter: Check filter expr if it depends on row content
+					if (useExpr && !fileLevelFilter) {
+						if (!EvaluateFilter(rpn, meta, row)) continue;
+					}
+
 					if (row.IsDict()) {
 						X::Dict d(row);
 						d->Set("_meta", meta);
 						d->Set("_file", X::Value(fPath));
 					}
-					resultList->AddItem(row);
+					
+					// Filter Func check (post-parse)
+					if (funcFilter.IsValid()) { 
+						X::Value ret;
+						X::ARGS args(1); 
+						args.push_back(row); // Pass full row
+						X::KWARGS kw;
+						X::Value func = funcFilter;
+						if (func.IsObject()) {
+							X::XObj* pObj = func.GetObj();
+							pObj->Call(rt, pContext, args, kw, ret);
+							if (!ret) continue;
+						}
+					}
+
+					items.push_back(row);
 					processed++;
 				} catch(...) {
 					// Skip invalid lines
@@ -493,12 +614,58 @@ namespace X
 			} else {
 				for (const auto& entry : fs::directory_iterator(normPath)) processFile(entry);
 			}
-		} catch(std::exception& e) {
-			// std::cout << "[LoadRaw] Scan Exception: " << e.what() << std::endl;
 		} catch(...) {
-			// std::cout << "[LoadRaw] Scan Unknown Exception" << std::endl;
 		}
 
+		// Sort
+		if (!sortSpecs.empty()) {
+			std::sort(items.begin(), items.end(), [&](const X::Value& a, const X::Value& b) -> bool {
+				X::Dict da(a);
+				X::Dict db(b);
+				
+				for(const auto& spec : sortSpecs) {
+					X::Value va = da->Get(spec.key);
+					X::Value vb = db->Get(spec.key);
+					
+					// Compare
+					int diff = 0;
+					
+					if (spec.numeric) {
+						double na = ExtractNumber(va.ToString());
+						double nb = ExtractNumber(vb.ToString());
+						if (na < nb) diff = -1;
+						else if (na > nb) diff = 1;
+					} else {
+						// Lexical with X::Value comparison
+                        // operator== and operator< are available
+                        if (va == vb) diff = 0;
+						else if (va < vb) diff = -1;
+						else diff = 1;
+					}
+
+					if (diff != 0) {
+						if (spec.reverse) return diff > 0;
+						else return diff < 0;
+					}
+				}
+				return false; // Equal
+			});
+		}
+
+		// Slice
+		if (offset > 0) {
+			if (offset >= (long long)items.size()) {
+				items.clear();
+			} else {
+				items.erase(items.begin(), items.begin() + offset);
+			}
+		}
+		if (limit >= 0 && limit < (long long)items.size()) {
+			items.resize(limit); // reduce size
+		}
+
+		X::List resultList;
+		for(auto& i : items) resultList->AddItem(i);
 		retValue = resultList;
 		return retValue;
 	}
