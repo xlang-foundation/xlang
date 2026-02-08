@@ -95,11 +95,15 @@ namespace X
 							params_cb.push_back(m_auth_parameters);
 							params_cb.push_back(pat.strRule);
 							X::Value canAccess = m_auth_callback.ObjCall(params_cb, kwargs);
-							if (!canAccess.IsTrue())
+							if (canAccess.IsDict())
 							{
-								res.status = 403;
-								res.set_content("Forbidden", "text/plain");
-								return true; // request handled
+								X::Dict dictAccess(canAccess);
+								if (!dictAccess->Get("success").ToBool())
+								{
+									res.status = dictAccess->Get("code").ToInt();
+									res.set_content(dictAccess->Get("error").ToString(), "text/plain");
+									return true; // request handled
+								}
 							}
 						}
 						X::Value retValue;
