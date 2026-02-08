@@ -375,6 +375,7 @@ class Import :
 		Module** ppSubModule);
 	bool LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 		XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange);
+	bool GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams);
 public:
 	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 	{

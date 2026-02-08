@@ -398,10 +398,19 @@ public:
 	}
 	FORCE_INLINE Value(XObj* p,bool AddRef = true)
 	{
-		t = ValueType::Object;
-		x.obj = nullptr;
-		flags = 0;
-		AssignObject(p, AddRef);
+		if (p == nullptr)
+		{
+			t = ValueType::None;
+			x.l = 0;
+			flags = 0;
+		}
+		else
+		{
+			t = ValueType::Object;
+			x.obj = nullptr;
+			flags = 0;
+			AssignObject(p, AddRef);
+		}
 	}
 	Value(std::string& s);
 	Value(const std::string& s)

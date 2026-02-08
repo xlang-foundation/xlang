@@ -373,6 +373,7 @@ namespace X
 						item.Free();
 					}
 					delete[] m_data;
+					m_size = 0;
 				}
 			}
 			~StringMap()

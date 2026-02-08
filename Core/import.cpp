@@ -309,6 +309,88 @@ bool X::AST::Import::ExpRun(XlangRuntime* rt, X::XObj* pContext, X::Exp::ValueSt
 
 	return true;
 }
+bool X::AST::Import::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params, KWARGS& kwParams)
+{
+	std::vector<X::Value> vecParam;
+	std::vector<std::pair<std::string, X::Value>> vecKwParam;
+	auto proc = [&](Expression* i)
+		{
+			bool bOK = true;
+			if (i->m_type == ObType::Assign)
+			{
+				Assign* assign = dynamic_cast<Assign*>(i);
+				Var* varName = dynamic_cast<Var*>(assign->GetL());
+				String& szName = varName->GetName();
+				std::string strVarName = std::string(szName.s, szName.size);
+				Expression* valExpr = assign->GetR();
+				Value v0;
+				ExecAction action;
+				bOK = ExpExec(valExpr, rt, action, nullptr, v0);
+				if (bOK)
+				{
+					vecKwParam.push_back(std::make_pair(strVarName, v0));
+				}
+			}
+			else if (i->m_type == ObType::Var)
+			{
+				//we can use import m(var1,var2) ->same as import m(var1=var1,var2=var2)
+				Var* varName = dynamic_cast<Var*>(i);
+				std::string strVarName = varName->GetNameString();
+				Value v0;
+				ExecAction action;
+				bOK = ExpExec(i, rt, action, nullptr, v0);
+				if (bOK)
+				{
+					vecKwParam.push_back(std::make_pair(strVarName, v0));
+				}
+			}
+			else
+			{
+				Value v0;
+				ExecAction action;
+				bOK = ExpExec(i, rt, action, nullptr, v0);
+				if (bOK)
+				{
+					vecParam.push_back(v0);
+				}
+			}
+			return bOK;
+		};
+	bool bOK = true;
+	if (e->m_type != ObType::List)
+	{
+		bOK = proc(e);
+	}
+	else
+	{
+		auto& list = (dynamic_cast<List*>(e))->GetList();
+		for (auto i : list)
+		{
+			bOK = proc(i);
+			if (!bOK)
+			{
+				break;
+			}
+		}
+	}
+	if (vecParam.size() > 0)
+	{
+		params.resize(vecParam.size());
+		for (auto& v : vecParam)
+		{
+			params.push_back(v);
+		}
+	}
+	if (vecKwParam.size() > 0)
+	{
+		kwParams.resize(vecKwParam.size());
+		for (auto& item : vecKwParam)
+		{
+			kwParams.Add(item.first.c_str(), item.second, true);
+		}
+	}
+	return bOK;
+}
 
 bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 	XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange)
