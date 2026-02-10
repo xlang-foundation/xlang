@@ -22,7 +22,7 @@ limitations under the License.
 #include "X.h"
 #include "xload.h"
 #include "cli.h"
-
+#include "xlang.h"
 
 #if (WIN32)
 #include <Windows.h>
@@ -48,6 +48,8 @@ struct ParamConfig
 	X::Config config;
 	bool print_usage = false;//-help |-? |-h
 	bool cli = false;
+	bool runCasLang = false;
+	std::string caslangFile;
 };
 
 X::XLoad g_xLoad;
@@ -76,6 +78,7 @@ void PrintUsage()
       [-run_as_backend|-backend] [-event_loop]\n\
       [-c \"code,use \\n as line separator\"]\n\
       [-cli]\n\
+      [-caslang file_name]\n\
       [file parameters]" << std::endl;
 	std::cout << "xlang -help | -? | -h for help" << std::endl;
 }
@@ -138,6 +141,17 @@ bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
 					auto& s_i = params[i];
 					paramCfg.config.inlineCode = new char[s_i.length() + 1];
 					memcpy((char*)paramCfg.config.inlineCode, s_i.data(), s_i.length() + 1);
+					i++;
+				}
+			}
+			if (s == "-caslang")
+			{//pass code as string
+				i++;
+				if (i < (int)params.size())
+				{
+					auto& s_i = params[i];
+					paramCfg.runCasLang = true;
+					paramCfg.caslangFile = s_i;
 					i++;
 				}
 			}
@@ -245,8 +259,13 @@ int main(int argc, char* argv[])
 	if (retCode == 0)
 	{
 		retCode = g_xLoad.Run();
-
-		if (paramConfig.cli)
+		if(paramConfig.runCasLang)
+		{
+			X::Runtime rt;
+			X::Package caslang(rt, "caslang", "caslang");
+			caslang["run"](paramConfig.caslangFile);
+		}
+		else if (paramConfig.cli)
 		{
 			X::CLI cli;
 			cli.MainLoop();
