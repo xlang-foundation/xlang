@@ -997,6 +997,7 @@ public:
 
   Server &set_payload_max_length(size_t length);
   Server &set_listen_backlog(int backlog);
+  Server &set_thread_pool_count(int count);
 
   bool bind_to_port(const std::string &host, int port, int socket_flags = 0);
   int bind_to_any_port(const std::string &host, int socket_flags = 0);
@@ -1029,6 +1030,7 @@ protected:
   time_t idle_interval_usec_ = CPPHTTPLIB_IDLE_INTERVAL_USECOND;
   size_t payload_max_length_ = CPPHTTPLIB_PAYLOAD_MAX_LENGTH;
   int listen_backlog_ = CPPHTTPLIB_LISTEN_BACKLOG;
+  int thread_pool_count_ = CPPHTTPLIB_THREAD_POOL_COUNT;
 
 private:
   using Handlers =
@@ -6025,7 +6027,7 @@ inline bool RegexMatcher::match(Request &request) const {
 // HTTP server implementation
 inline Server::Server()
     : new_task_queue(
-          [] { return new ThreadPool(CPPHTTPLIB_THREAD_POOL_COUNT); }) {
+          [this] { return new ThreadPool(thread_pool_count_); }) {
 #ifndef _WIN32
   signal(SIGPIPE, SIG_IGN);
 #endif
@@ -6256,6 +6258,11 @@ inline Server &Server::set_payload_max_length(size_t length) {
 
 inline Server &Server::set_listen_backlog(int backlog) {
   listen_backlog_ = backlog;
+  return *this;
+}
+
+inline Server &Server::set_thread_pool_count(int count) {
+  thread_pool_count_ = count;
   return *this;
 }
 
