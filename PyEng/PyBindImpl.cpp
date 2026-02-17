@@ -16,6 +16,7 @@ limitations under the License.
 #include "xlang.h"
 #include "xhost.h"
 #include <cstring>
+#include "utility.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -43,6 +44,38 @@ Xlang_main(PyObject* self, PyObject* args, PyObject* kwargs)
 	printf("inside Xlang_main\r\n");
 	return PyLong_FromLong(0);
 }
+
+// Helper function to get a Python function by name from __main__ globals
+static X::Value GetPythonFunctionByName(const std::string& funcName)
+{
+	// Get the __main__ module
+	PyObject* mainModule = PyImport_AddModule("__main__");
+	if (!mainModule) {
+		return X::Value();
+	}
+
+	// Get the globals dictionary from __main__
+	PyObject* globalsDict = PyModule_GetDict(mainModule);
+	if (!globalsDict) {
+		return X::Value();
+	}
+
+	// Get the function object by name
+	PyObject* funcObj = PyDict_GetItemString(globalsDict, funcName.c_str());
+	if (!funcObj) {
+		return X::Value();
+	}
+
+	// Check if it's callable
+	if (!PyCallable_Check(funcObj)) {
+		return X::Value();
+	}
+
+	// Convert PyObject to X::Value
+	X::Value funcValue = PyObjectXLangConverter::ConvertToXValue(funcObj);
+	return funcValue;
+}
+
 //#include <Windows.h>
 static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
 {
@@ -111,7 +144,11 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
 
 	X::KWARGS varKwargs;
 	varKwargs.Add("__file__", varFileName);
-
+	// Add current process ID for PullEvents
+    unsigned long processId = GetPID();
+	varKwargs.Add("__pid__", X::Value((long long)processId));
+    X::Value varPullEvents = varEventSource["PullEvents"];
+    X::Value varSetResults = varEventSource["PythonProcessSetResults"];
     bool running = true;
     while (running) {
         // Allow Python to handle signals and other threads
@@ -120,8 +157,7 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
             break;
         }
 
-        // Call varEventSource["PullEvents"](varArgs)
-        X::Value eventsList = varEventSource["PullEvents"].ObjCall(varArgs,varKwargs);
+        X::Value eventsList = varPullEvents.ObjCall(varArgs,varKwargs);
 
         if (eventsList.IsList()) {
             X::List outerList(eventsList);
@@ -136,15 +172,23 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
                     if (eventPair.Size() >= 2) {
                         X::Value funcVal = eventPair[0];
                         if (funcVal.isString()) {
-                            //Check if it is Stop, or Exit or Bye
+                            // Check if it is Stop, or Exit or Bye
                             std::string strSigal = funcVal.ToString();
                             if (strSigal == "Stop" || strSigal == "Exit" || strSigal == "Bye") {
                                 running = false;
                                 break;
                             }
+                            else {
+                                // It's a function name, get the function from Python globals
+                                funcVal = GetPythonFunctionByName(strSigal);
+                                if (!funcVal.IsValid()) {
+                                    // Function not found, skip this event
+                                    continue;
+                                }
+                            }
                         }
                         X::Value paramVal = eventPair[1];
-
+                        X::Value varCallRetValue;
                         if (paramVal.IsList())
                         {
                             X::List paramList(paramVal);
@@ -156,22 +200,31 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
                                 {
                                     args.push_back(paramList[j]);
                                 }
-                                funcVal.ObjCall(args);
+                                varCallRetValue = funcVal.ObjCall(args);
                             }
                             else
                             {
                                 X::ARGS args(1);
 								args.push_back(paramVal);
-                                funcVal.ObjCall(args);
+                                varCallRetValue = funcVal.ObjCall(args);
                             }
                         }
                         else
                         {
                             X::ARGS args(1);
                             args.push_back(paramVal);
-                            funcVal.ObjCall(args);
+                            varCallRetValue = funcVal.ObjCall(args);
                         }
-	
+                        if (varSetResults.IsValid() && eventPair.Size() >= 3)
+                        {
+                            X::KWARGS kwargs0;
+                            kwargs0.Add("__file__", varFileName);
+                            kwargs0.Add("__pid__", X::Value((long long)processId));
+                            kwargs0.Add("__callId__", eventPair[2]);
+                            X::ARGS args0(1);
+                            args0.push_back(varCallRetValue);
+                            varSetResults.ObjCall(args0, kwargs0);
+                        }
                     }
                 }
             }
