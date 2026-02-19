@@ -220,7 +220,7 @@ namespace X
 	template<>
 	void V<XRuntime>::Create()
 	{
-		SetObj(g_pXHost->CreateRuntime());
+		SetObj(g_pXHost->GetCurrentRuntime());
 	}
 	template<>
 	template<>
