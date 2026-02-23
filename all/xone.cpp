@@ -178,7 +178,7 @@ namespace X
 		X::Data::List::Init();
 		X::Data::Binary::Init();
 		X::Data::Dict::Init();
-		X::Data::mSet::Init();
+		X::Data::XlangSet::Init();
 		X::Data::Tensor::Init();
 		X::Data::TensorGraph::Init();
 		X::AST::MetaScope().I().Init();

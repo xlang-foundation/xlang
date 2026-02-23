@@ -24,7 +24,7 @@ namespace X
 	namespace Data { class List; 
 				class Dict; 
 				class Tensor; 
-				class mSet; 
+				class XlangSet; 
 				class Binary; }
 namespace AST
 {

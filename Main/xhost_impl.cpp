@@ -353,7 +353,7 @@ namespace X
 	}
 	XSet* XHost_Impl::CreateSet()
 	{
-		auto* pSet = new X::Data::mSet();
+		auto* pSet = new X::Data::XlangSet();
 		pSet->IncRef();
 		return pSet;
 	}

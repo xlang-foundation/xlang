@@ -1744,12 +1744,12 @@ bool U_CreateSetObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	X::Data::mSet* pSetObj;
+	X::Data::XlangSet* pSetObj;
 	if (params.size() == 0) {
-		pSetObj = new X::Data::mSet();
+		pSetObj = new X::Data::XlangSet();
 	}
 	else {
-		pSetObj = new X::Data::mSet(params);
+		pSetObj = new X::Data::XlangSet(params);
 	}
 
 	retValue = X::Value(pSetObj);

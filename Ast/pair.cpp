@@ -590,7 +590,7 @@ FORCE_INLINE bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Valu
 				break;
 		}
 		Data::Dict* pDict = nullptr;
-		Data::mSet* pSet = nullptr;
+		Data::XlangSet* pSet = nullptr;
 		if (isDict)
 		{
 			pDict = new Data::Dict();
@@ -598,7 +598,7 @@ FORCE_INLINE bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Valu
 		}
 		else 
 		{
-			pSet = new Data::mSet();
+			pSet = new Data::XlangSet();
 			v = Value(pSet);
 		}
 		for (auto& i : list)
@@ -612,7 +612,7 @@ FORCE_INLINE bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Valu
 				Value Val;
 				ExecAction action;
 				ExpExec(i,rt,action, pContext, Val);
-				pSet->Set(Val);
+				pSet->AddUnique(Val);
 			}
 		}
 	}
@@ -627,11 +627,11 @@ FORCE_INLINE bool PairOp::CurlyBracketRun(XlangRuntime* rt, XObj* pContext, Valu
 		}
 		else 
 		{
-			auto* pSet = new Data::mSet();
+			auto* pSet = new Data::XlangSet();
 			Value Val;
 			ExecAction action;
 			ExpExec(R,rt,action, pContext, Val);
-			pSet->Set(Val);
+			pSet->AddUnique(Val);
 			v = Value(pSet);
 		}
 	}

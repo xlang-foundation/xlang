@@ -258,7 +258,7 @@ static void XLangInternalInit()
 	X::Data::List::Init();
 	X::Data::Binary::Init();
 	X::Data::Dict::Init();
-	X::Data::mSet::Init();
+	X::Data::XlangSet::Init();
 	X::Data::Tensor::Init();
 	X::Data::TensorGraph::Init();
 	X::AST::MetaScope().I().Init();
@@ -421,7 +421,7 @@ void XLangUnload()
 	X::Data::List::cleanup();
 	X::Data::Binary::cleanup();
 	X::Data::Dict::cleanup();
-	X::Data::mSet::cleanup();
+	X::Data::XlangSet::cleanup();
 	X::AST::MetaScope().I().Cleanup();
 	X::Data::DeferredObject::cleanup();
 	X::Data::TypeObject::cleanup();
