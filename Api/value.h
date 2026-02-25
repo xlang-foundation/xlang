@@ -598,6 +598,7 @@ public:
 	}
 	bool IsList() const;
 	bool IsDict() const;
+	bool IsError() const;
 	bool IsBin() const;
 	bool IsTensor() const;
 	bool IsString() const;
@@ -845,8 +846,8 @@ public:
 	bool ToBytes(XLStream* pStream = nullptr);
 	Value getattr(const char* attrName) const;
 	void setattr(const char* attrName, X::Value& attrVal) const;
-	long long Size();
-	inline long long size() { return Size(); }
+	long long Size() const;
+	inline long long size() const { return Size(); }
 };
 template<typename T>
 class V:

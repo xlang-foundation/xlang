@@ -88,7 +88,7 @@ namespace X
         X::AST::ModuleObject::Init();
         X::Data::List::Init();
         X::Data::Dict::Init();
-        X::Data::mSet::Init();
+        X::Data::XlangSet::Init();
         X::AST::MetaScope().I().Init();
         X::Data::DeferredObject::Init();
         X::Data::TypeObject::Init();

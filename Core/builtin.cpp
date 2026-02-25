@@ -1744,12 +1744,12 @@ bool U_CreateSetObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	X::Data::mSet* pSetObj;
+	X::Data::XlangSet* pSetObj;
 	if (params.size() == 0) {
-		pSetObj = new X::Data::mSet();
+		pSetObj = new X::Data::XlangSet();
 	}
 	else {
-		pSetObj = new X::Data::mSet(params);
+		pSetObj = new X::Data::XlangSet(params);
 	}
 
 	retValue = X::Value(pSetObj);
@@ -2084,6 +2084,22 @@ bool U_IsInstance(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	return false;
 }
 
+bool U_Abs(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(0LL);
+		return true;
+	}
+	X::Value v = params[0];
+	X::Value zero(0LL);
+	retValue = (v < zero) ? (zero-v) : v;
+	return true;
+}
+
 bool Builtin::RegisterInternals()
 {
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
@@ -2171,6 +2187,7 @@ bool Builtin::RegisterInternals()
 #if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 #endif
+	Register("abs", (X::U_FUNC)U_Abs, params, "abs(x) return the absolute value of x", true);
 	Register("isinstance", (X::U_FUNC)U_IsInstance, params);
 	Register("hash", (X::U_FUNC)U_Hash, params, "hash(obj) or obj.hash()", true);
 	Register("md5", (X::U_FUNC)U_MD5, params, "md5(obj) or obj.md5()", true);

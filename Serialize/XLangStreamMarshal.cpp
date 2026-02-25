@@ -253,7 +253,7 @@ namespace X
 
 					case X::ObjType::Set:
 					{
-						X::Data::mSet* pSet = dynamic_cast<X::Data::mSet*>(pObj);
+						X::Data::XlangSet* pSet = dynamic_cast<X::Data::XlangSet*>(pObj);
 						long long count = pSet->Size();
 						(*this) << count;
 						for (long long i = 0; i < count; i++)
@@ -464,7 +464,7 @@ namespace X
 
 					case X::ObjType::Set:
 					{
-						X::Data::mSet* pSet = new X::Data::mSet();
+						X::Data::XlangSet* pSet = new X::Data::XlangSet();
 						pSet->IncRef();
 						long long count;
 						(*this) >> count;

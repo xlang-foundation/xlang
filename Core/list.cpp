@@ -24,7 +24,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<12> _listScope;
+		static Obj_Func_Scope<14> _listScope;
 
 		void List::Init()
 		{
@@ -309,6 +309,61 @@ namespace X
 						return true;
 					};
 				_listScope.AddFunc("extend", "extend(other)", f);
+			}
+			// Max function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						if (pObj->Size() == 0)
+						{
+							retValue = X::Value(); // None
+							return true;
+						}
+						X::Value maxVal = pObj->Get(0);
+						for (long long i = 1; i < pObj->Size(); ++i)
+						{
+							X::Value cur = pObj->Get(i);
+							if (cur > maxVal)
+							{
+								maxVal = cur;
+							}
+						}
+						retValue = maxVal;
+						return true;
+					};
+				_listScope.AddFunc("max", "max()", f);
+			}
+
+			// Min function
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+					{
+						List* pObj = dynamic_cast<List*>(pContext);
+						if (pObj->Size() == 0)
+						{
+							retValue = X::Value(); // None
+							return true;
+						}
+						X::Value minVal = pObj->Get(0);
+						for (long long i = 1; i < pObj->Size(); ++i)
+						{
+							X::Value cur = pObj->Get(i);
+							if (cur < minVal)
+							{
+								minVal = cur;
+							}
+						}
+						retValue = minVal;
+						return true;
+					};
+				_listScope.AddFunc("min", "min()", f);
 			}
 			_listScope.Close();
 		}
