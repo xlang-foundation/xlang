@@ -134,8 +134,9 @@ namespace X
 		}
 		catch (const std::exception& e)
 		{
-			// Log error if logging is available, for now return null value
-			return X::Value();
+			std::string errMsg = e.what();
+			X::Value retValue = X::Error(-102, errMsg.c_str());
+			return retValue;
 		}
 	}
 
@@ -232,14 +233,14 @@ namespace X
 		}
 		catch (const nlohmann::json::parse_error& e)
 		{
-			// Parse error - return false to indicate failure
-			retValue = X::Value(false);
+			std::string errMsg = e.what();
+			retValue = X::Error(-100, errMsg.c_str());
 			return retValue;
 		}
 		catch (const std::exception& e)
 		{
-			// Other errors
-			retValue = X::Value(false);
+			std::string errMsg = e.what();
+			retValue = X::Error(-101, errMsg.c_str());
 			return retValue;
 		}
 	}
@@ -263,7 +264,8 @@ namespace X
 		bool bOK = LoadStringFromFile(fileName, jsonStr);
 		if (!bOK)
 		{
-			return X::Value(false);
+			X::Value retValue = X::Error(-100, "Failed to read from file");
+			return retValue;
 		}
 
 		// Parse JSON using nlohmann::json
@@ -275,13 +277,15 @@ namespace X
 		}
 		catch (const nlohmann::json::parse_error& e)
 		{
-			// Parse error
-			return X::Value(false);
+			std::string errMsg = e.what();
+			X::Value retValue = X::Error(-100, errMsg.c_str());
+			return retValue;
 		}
 		catch (const std::exception& e)
 		{
-			// Other errors
-			return X::Value(false);
+			std::string errMsg = e.what();
+			X::Value retValue = X::Error(-100, errMsg.c_str());
+			return retValue;
 		}
 	}
 
