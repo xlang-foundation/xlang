@@ -75,6 +75,7 @@ namespace Data
 			stream >> m_s;
 			return true;
 		}
+		virtual long long Size() { return (long long)m_s.size(); }
 		virtual bool IsContain(X::Value& val) override
 		{
 			return m_s.find(val.ToString()) != std::string::npos;
