@@ -121,6 +121,7 @@ public:
 	}
 	void CopyFrom(Scope* pScope)
 	{
+		AutoLock autoLock(m_lock);
 		m_type = pScope->m_type;
 		m_pExp = pScope->m_pExp;
 		m_pDynScope = pScope->m_pDynScope;
@@ -175,6 +176,7 @@ public:
 	bool FromBytes(X::XLangStream& stream);
 	FORCE_INLINE int GetVarNum()
 	{
+		AutoLock autoLock(m_lock);
 		return (int)m_Vars.size();
 	}
 	FORCE_INLINE std::unordered_map <std::string, int>& GetVarMap() 
@@ -183,6 +185,7 @@ public:
 	}
 	FORCE_INLINE std::vector<std::string> GetVarNames()
 	{
+		AutoLock autoLock(m_lock);
 		std::vector<std::string> names;
 		for (auto& it : m_Vars)
 		{
@@ -193,6 +196,7 @@ public:
 	void EachVar(XlangRuntime* rt,XObj* pContext,
 		std::function<void(std::string,X::Value&)> const& f)
 	{
+		AutoLock autoLock(m_lock);
 		for (auto it : m_Vars)
 		{
 			X::Value val;
@@ -209,6 +213,7 @@ public:
 
 	FORCE_INLINE int AddOrGet(std::string& name, bool bGetOnly, Scope** ppRightScope=nullptr)
 	{
+		AutoLock autoLock(m_lock);
 		if (m_pDynScope)
 		{
 			return m_pDynScope->AddOrGet(name.c_str(), bGetOnly);
