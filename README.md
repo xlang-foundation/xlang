@@ -28,6 +28,9 @@ If you're interested in contributing to the **XLang™** project, we would love 
 
 **XLang™** has been thoroughly tested on **Linux** and **Windows** platforms—including successful deployments on **Raspberry Pi** boards and the **Raspberry Pi Pico**. If you need specific build instructions or have any questions regarding the **Raspberry Pi Pico** setup, please contact us at the same email address. We're here to support you and ensure your **XLang™** experience is smooth and rewarding.
 
+	1. Contributed to by Parisa Bates <https://github.com/pbates1234>
+		- This is a new experience for me with github and learning to fork a branch, clone it, and now commit to is and push it to remote has been new and exciting
+		
 ## **Building XLang™**
 
 For **optimal performance**, please ensure that **XLang™** is built in **Release mode**. You can do this by running:
