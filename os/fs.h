@@ -133,6 +133,7 @@ namespace X
 			}
 			return true;
 		}
+		bool Exists(std::string path);
 		std::string ReadAllTexts(std::string fileName)
 		{
 			auto fullPath = ConvertReletivePathToFullPath(fileName);
@@ -170,6 +171,7 @@ namespace X
 			APISET().AddClass<1, Folder>("Folder");
 			APISET().AddFunc<1>("ReadAllTexts", &FileSystem::ReadAllTexts);
 			APISET().AddFunc<1>("CheckAndMakeFolder", &FileSystem::CheckAndMakeFolder);
+			APISET().AddFunc<1>("exists", &FileSystem::Exists);
 		END_PACKAGE
 	};
 }

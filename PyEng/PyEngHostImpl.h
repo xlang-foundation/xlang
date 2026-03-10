@@ -125,12 +125,19 @@ public:
 	virtual void GilUnlock(int state) override;
 	virtual void SubmitPythonTask(const std::function<void()>& task) override;
 	virtual void AddImportPaths(const char* path) override;
+	virtual void RemoveImportPaths(const char* path) override;
 	virtual bool PySerialize(PyEngObjectPtr input, X::Value& output) override;
 	virtual bool PyDeserialize(X::Value& input, X::Value& output) override;
 	virtual void ActivePythonVEnv(const char* venvPath) override;
 	virtual void DeactivePythonVEnv(const char* venvPath) override;
 	bool ForceUnloadModule(PyEngObjectPtr moduleObj) override;
 private:
+	std::vector<std::string> m_globalSysPath;
+	std::string m_globalSysPrefix;
+	std::string m_globalSysExecPrefix;
+	std::string m_globalSysExecutable;
+	bool m_globalStateSaved = false;
+
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 
 	// Inherited via PyEngHost
