@@ -1268,14 +1268,111 @@ void GrusPyEngHost::ActivePythonVEnv(const char* venvPath)
 		return;
 	}
 
+
+
+	{
+		MGil gil;
+		PyObject* sysModule = PyImport_ImportModule("sys");
+		if (sysModule)
+		{
+			if (!m_globalStateSaved)
+			{
+				PyObject* pPath = PyObject_GetAttrString(sysModule, "path");
+				PyObject* pPrefix = PyObject_GetAttrString(sysModule, "prefix");
+				PyObject* pExecPrefix = PyObject_GetAttrString(sysModule, "exec_prefix");
+				PyObject* pExecutable = PyObject_GetAttrString(sysModule, "executable");
+				
+				if (pPath && PyList_Check(pPath)) {
+					Py_ssize_t size = PyList_Size(pPath);
+					for (Py_ssize_t i = 0; i < size; ++i) {
+						PyObject* item = PyList_GetItem(pPath, i);
+						if (item) m_globalSysPath.push_back(PyUnicode_AsUTF8(PyObject_Str(item)));
+					}
+				}
+				if (pPrefix) m_globalSysPrefix = PyUnicode_AsUTF8(PyObject_Str(pPrefix));
+				if (pExecPrefix) m_globalSysExecPrefix = PyUnicode_AsUTF8(PyObject_Str(pExecPrefix));
+				if (pExecutable) m_globalSysExecutable = PyUnicode_AsUTF8(PyObject_Str(pExecutable));
+				
+				Py_XDECREF(pPath);
+				Py_XDECREF(pPrefix);
+				Py_XDECREF(pExecPrefix);
+				Py_XDECREF(pExecutable);
+				
+				m_globalStateSaved = true;
+			}
+
+			std::string venvPathStr = venv.string();
+			PyObject* venvPathObj = PyUnicode_FromString(venvPathStr.c_str());
+			PyObject_SetAttrString(sysModule, "prefix", venvPathObj);
+			PyObject_SetAttrString(sysModule, "exec_prefix", venvPathObj);
+			
+			std::string binPathStr = (venv / "Scripts").string();
+#ifndef _WIN32
+			binPathStr = (venv / "bin").string();
+#endif
+			PyObject* binPathObj = PyUnicode_FromString(binPathStr.c_str());
+			PyObject_SetAttrString(sysModule, "executable", binPathObj);
+			Py_DECREF(binPathObj);
+			Py_DECREF(venvPathObj);
+			Py_DECREF(sysModule);
+		}
+
+		std::string sitePathStr = site.string();
+		std::replace(sitePathStr.begin(), sitePathStr.end(), '\\', '/');
+
+		std::string pyCode = 
+			"import sys\n"
+			"import site\n"
+			"new_site = '" + sitePathStr + "'\n"
+			"to_remove = [p for p in sys.path if ('site-packages' in p.lower() or 'dist-packages' in p.lower()) and new_site.lower() not in p.lower()]\n"
+			"for p in to_remove:\n"
+			"    sys.path.remove(p)\n"
+			"site.addsitedir(new_site)\n";
+
+		PyRun_SimpleString(pyCode.c_str());
+	}
 	// Insert site-packages at *front* of sys.path with refcounting
 	PythonModulePathManager::I().AddPath(site);
 }
 
 void GrusPyEngHost::DeactivePythonVEnv(const char* venvPath)
 {
+	if (!m_globalStateSaved)
+	{
+		return;
+	}
+
 	fs::path venv(venvPath);
 	fs::path site;
+
+	{
+		MGil gil;
+		PyObject* sysModule = PyImport_ImportModule("sys");
+		if (sysModule) {
+			PyObject* newPathList = PyList_New(m_globalSysPath.size());
+			for (size_t i = 0; i < m_globalSysPath.size(); ++i) {
+				PyList_SetItem(newPathList, i, PyUnicode_FromString(m_globalSysPath[i].c_str()));
+			}
+			
+			PyObject_SetAttrString(sysModule, "path", newPathList);
+			Py_DECREF(newPathList);
+
+			PyObject* prefixObj = PyUnicode_FromString(m_globalSysPrefix.c_str());
+			PyObject_SetAttrString(sysModule, "prefix", prefixObj);
+			Py_DECREF(prefixObj);
+
+			PyObject* execPrefixObj = PyUnicode_FromString(m_globalSysExecPrefix.c_str());
+			PyObject_SetAttrString(sysModule, "exec_prefix", execPrefixObj);
+			Py_DECREF(execPrefixObj);
+
+			PyObject* executableObj = PyUnicode_FromString(m_globalSysExecutable.c_str());
+			PyObject_SetAttrString(sysModule, "executable", executableObj);
+			Py_DECREF(executableObj);
+			
+			Py_DECREF(sysModule);
+		}
+	}
+	m_globalStateSaved = false;
 
 #ifdef _WIN32
 	site = venv / "Lib" / "site-packages";

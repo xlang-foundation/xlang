@@ -978,11 +978,21 @@ namespace X
 	}
 	void XHost_Impl::ActivePythonVEnv(const char* venvPath)
 	{
-		g_pPyHost->ActivePythonVEnv(venvPath);
+		if (!g_pPyHost)
+		{
+			EnalbePython(true, false);
+		}
+		if (g_pPyHost)
+		{
+			g_pPyHost->ActivePythonVEnv(venvPath);
+		}
 	}
 	void XHost_Impl::DeactivePythonVEnv(const char* venvPath)
 	{
-		g_pPyHost->ActivePythonVEnv(venvPath);
+		if (g_pPyHost)
+		{
+			g_pPyHost->DeactivePythonVEnv(venvPath);
+		}
 	}
 	unsigned long long XHost_Impl::GetObjectCount()
 	{

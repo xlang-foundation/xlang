@@ -131,6 +131,12 @@ public:
 	virtual void DeactivePythonVEnv(const char* venvPath) override;
 	bool ForceUnloadModule(PyEngObjectPtr moduleObj) override;
 private:
+	std::vector<std::string> m_globalSysPath;
+	std::string m_globalSysPrefix;
+	std::string m_globalSysExecPrefix;
+	std::string m_globalSysExecutable;
+	bool m_globalStateSaved = false;
+
 	virtual PyEngObjectPtr CreateByteArray(const char* buf, long long size) override;
 
 	// Inherited via PyEngHost

@@ -499,6 +499,41 @@ bool U_Sleep(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 
 	return bOK;
 }
+bool U_PythonSwitchEnv(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		std::string venvPath = params[0].ToString();
+		X::g_pXHost->ActivePythonVEnv(venvPath.c_str());
+		retValue = X::Value(true);
+	}
+	else
+	{
+		retValue = X::Value(false);
+	}
+	return true;
+}
+bool U_PythonRestoreEnv(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		std::string venvPath = params[0].ToString();
+		X::g_pXHost->DeactivePythonVEnv(venvPath.c_str());
+		retValue = X::Value(true);
+	}
+	else
+	{
+		X::g_pXHost->DeactivePythonVEnv("");
+		retValue = X::Value(true);
+	}
+	return true;
+}
 bool U_Time(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -2117,6 +2152,8 @@ bool Builtin::RegisterInternals()
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("register_remote_object", (X::U_FUNC)U_RegisterRemoteObject, params, "register_remote_object(name[,obj])");
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
+	Register("python_switch_env", (X::U_FUNC)U_PythonSwitchEnv, params, "python_switch_env(venvPath)");
+	Register("python_restore_env", (X::U_FUNC)U_PythonRestoreEnv, params, "python_restore_env([venvPath])");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
 	Register("alert", (X::U_FUNC)U_Alert, params, "alert(...)");
 	Register("load", (X::U_FUNC)U_Load, params,"moodule = load(filename)");
