@@ -1188,12 +1188,39 @@ void GrusPyEngHost::AddImportPaths(const char* path)
 		return;
 	}
 
-	// Append the new path to sys.path list
-	if (PyList_Append(sysPath, pathObj) != 0) {
-		// Handle error: unable to append path
+	// Only append if it doesn't already exist
+	if (PySequence_Contains(sysPath, pathObj) != 1) {
+		if (PyList_Append(sysPath, pathObj) != 0) {
+			// Handle error: unable to append path
+		}
 	}
 
 	// Decrement reference count for the path object
+	Py_DECREF(pathObj);
+}
+
+void GrusPyEngHost::RemoveImportPaths(const char* path)
+{
+	MGil gil;
+	PyObject* sysPath = PySys_GetObject("path");
+	if (sysPath == nullptr) {
+		return;
+	}
+
+	PyObject* pathObj = PyUnicode_FromString(path);
+	if (pathObj == nullptr) {
+		return;
+	}
+
+	while (PySequence_Contains(sysPath, pathObj) == 1) {
+		PyObject* res = PyObject_CallMethod(sysPath, "remove", "O", pathObj);
+		Py_XDECREF(res);
+		if (PyErr_Occurred()) {
+			PyErr_Clear();
+			break;
+		}
+	}
+
 	Py_DECREF(pathObj);
 }
 

@@ -2120,6 +2120,32 @@ bool U_IsInstance(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	return false;
 }
 
+bool U_PythonAddPath(XRuntime* rt, XObj* pThis, XObj* pContext,
+	ARGS& params,
+	KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		X::g_pXHost->EnalbePython(true, false);
+		X::g_pXHost->PyAddImportPaths(params[0]);
+	}
+	return true;
+}
+
+bool U_PythonRemovePath(XRuntime* rt, XObj* pThis, XObj* pContext,
+	ARGS& params,
+	KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		X::g_pXHost->EnalbePython(true, false);
+		X::g_pXHost->PyRemoveImportPaths(params[0]);
+	}
+	return true;
+}
+
 bool U_Abs(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -2154,6 +2180,8 @@ bool Builtin::RegisterInternals()
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
 	Register("python_switch_env", (X::U_FUNC)U_PythonSwitchEnv, params, "python_switch_env(venvPath)");
 	Register("python_restore_env", (X::U_FUNC)U_PythonRestoreEnv, params, "python_restore_env([venvPath])");
+	Register("python_add_path", (X::U_FUNC)U_PythonAddPath, params, "python_add_path(path_string)");
+	Register("python_remove_path", (X::U_FUNC)U_PythonRemovePath, params, "python_remove_path(path_string)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
 	Register("alert", (X::U_FUNC)U_Alert, params, "alert(...)");
 	Register("load", (X::U_FUNC)U_Load, params,"moodule = load(filename)");
