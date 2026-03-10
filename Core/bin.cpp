@@ -20,7 +20,7 @@ namespace X
 {
 	namespace Data
 	{
-		static Obj_Func_Scope<1> _binScope;
+		static Obj_Func_Scope<2> _binScope;
 		void Binary::Init()
 		{
 			_binScope.Init();
@@ -48,12 +48,12 @@ namespace X
                         std::string strRet;
 
                         // Convert binary data to string based on the encoding type
-                        if (encodeType.empty() || encodeType == "utf8")
+                        if (encodeType.empty() || encodeType == "utf8" || encodeType == "utf-8")
                         {
                             // Interpret the binary data as UTF-8 string
                             strRet = std::string(pObj->Data(), pObj->Size());
                         }
-                        else if (encodeType == "utf16")
+                        else if (encodeType == "utf16" || encodeType == "utf-16")
                         {
 #if (WIN32)
                             // On Windows, use the Windows API to convert UTF-16 to UTF-8
@@ -91,6 +91,7 @@ namespace X
                     };
 
                 _binScope.AddFunc("convert_to_str", "s = convert_to_str(encoding_type)", f);
+                _binScope.AddFunc("decode", "s = decode(encoding_type)", f);
             }
 
 		}

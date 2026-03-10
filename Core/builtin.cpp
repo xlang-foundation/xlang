@@ -1073,7 +1073,7 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	X::Data::List* pFutureList = nil;
 	X::Value retFuture;
-	auto buildtask = [&](X::Value& valFunc) 
+	auto buildtask = [&](X::Value& valFunc,X::Value& contextObj) 
 	{
 		X::Task* tsk = new X::Task();
 		tsk->SetTaskPool(taskPool);
@@ -1099,8 +1099,8 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			pFutureList->Add((X::XlangRuntime*)rt, vFuture);
 			retFuture = X::Value(); // optional: clear single holder; list owns refs now
 		}
-
-		return tsk->Call(valFunc, (X::XlangRuntime*)rt, pContext, params0, kwParams);
+		auto* pCallContext = contextObj.GetObj();
+		return tsk->Call(valFunc, (X::XlangRuntime*)rt, pCallContext, params0, kwParams);
 	};
 	bool bOK = true;
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
@@ -1110,14 +1110,15 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		auto& list = pFuncCalls->GetList();
 		for (auto& i : list)
 		{
-			//todo:
-			//buildtask(i.m_func);
+			buildtask(i.m_func,i.contextObj);
+			break;//only first one
 		}
 	}
 	else
 	{
 		X::Value valFunc(pContext);
-		buildtask(valFunc);
+		X::Value noContextForFunc;
+		buildtask(valFunc, noContextForFunc);
 	}
 	if (pFutureList)
 	{
