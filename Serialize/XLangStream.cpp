@@ -21,6 +21,7 @@ limitations under the License.
 #include "dict.h"
 #include "bin.h"
 #include "function.h"
+#include "tensor.h"
 #include "remote_object.h"
 #include "moduleobject.h"
 #include "struct.h"
@@ -462,6 +463,10 @@ namespace X
 					break;
 				case X::ObjType::Dict:
 					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Dict());
+					pObjToRestore->IncRef();
+					break;
+				case X::ObjType::Tensor:
+					pObjToRestore = dynamic_cast<X::Data::Object*>(new X::Data::Tensor());
 					pObjToRestore->IncRef();
 					break;
 				case X::ObjType::Struct:
