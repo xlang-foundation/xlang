@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -55,10 +55,10 @@ namespace X
 				bool bHandled = false;
 
 				HttpRequest* pHttpReq = new HttpRequest((void*)&req);
-				X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq));
+				X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq), false);
 
 				HttpResponse* pHttpResp = new HttpResponse(&res);
-				X::Value valResp(pHttpResp->APISET().GetProxy(pHttpResp));
+				X::Value valResp(pHttpResp->APISET().GetProxy(pHttpResp), false);
 
 				for (auto& pat : m_patters)
 				{
@@ -261,10 +261,10 @@ namespace X
 				{
 					ARGS params0(2);
 					HttpRequest* pHttpReq = new HttpRequest((void*)&req);
-					params0.push_back(X::Value(pHttpReq->APISET().GetProxy(pHttpReq)));
+					params0.push_back(X::Value(pHttpReq->APISET().GetProxy(pHttpReq), false));
 
 					HttpResponse* pHttpResp = new HttpResponse(&res);
-					params0.push_back(X::Value(pHttpResp->APISET().GetProxy(pHttpResp)));
+					params0.push_back(X::Value(pHttpResp->APISET().GetProxy(pHttpResp), false));
 
 					KWARGS kwParams0;
 					X::Value retValue0;
