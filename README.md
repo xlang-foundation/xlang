@@ -24,7 +24,7 @@ Crafted specifically for **AI** and **IoT** applications, **XLang™** delivers 
 
 ## **Contributing**
 
-If you're interested in contributing to the **XLang™** project, we would love to hear from you. Whether you're a developer, tester, or simply passionate about advancing this technology, please reach out. For more information or to get involved, send us an email at [**info@xlangfoundation.org**](mailto:info@xlangfoundation.org) and we'll provide the necessary details.
+If you're interested in contributing to the **XLang™** project, we would love to hear from you. Whether you're a developer, tester, or simply passionate about advancing this technology, please reach out. For more information or to get involved, send us an email at [**info@xlangfoundation.org**](mailto:info@xlangfoundation.org) and we'll provide the necessary details. Contributors: Michael Lysiak. I learned a lot about coding while using this program.
 
 **XLang™** has been thoroughly tested on **Linux** and **Windows** platforms—including successful deployments on **Raspberry Pi** boards and the **Raspberry Pi Pico**. If you need specific build instructions or have any questions regarding the **Raspberry Pi Pico** setup, please contact us at the same email address. We're here to support you and ensure your **XLang™** experience is smooth and rewarding.
 
@@ -188,3 +188,4 @@ Under the `test` folder, you'll find numerous **XLang** and **Python** code exam
 
 Happy coding with **XLang™**!  
 For any questions or support, please reach out at [**info@xlangfoundation.org**](mailto:info@xlangfoundation.org).
+
