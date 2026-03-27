@@ -101,7 +101,6 @@ namespace X
 		case X::ObjType::Expr:
 		case X::ObjType::ConstExpr:
 		case X::ObjType::FuncCalls:
-		case X::ObjType::Package:
 		case X::ObjType::ModuleObject:
 		case X::ObjType::XClassObject:
 		case X::ObjType::DeferredObject:
@@ -200,7 +199,29 @@ namespace X
 			(*this) << (bool)false; // isNull flag
 
 			// Check if should always pass by reference
-			if (ShouldAlwaysPassByReference(objType))
+			if (objType == X::ObjType::Package)
+			{
+				auto* pPack = dynamic_cast<X::XPackage*>(pObj);
+				bool passByRef = !(pPack && pPack->IsValuePackage());
+				(*this) << passByRef;
+
+				if (passByRef)
+				{
+					X::ROBJ_ID retId = ConvertXObjToId(pObj);
+					(*this) << retId.pid;
+					(*this) << (unsigned long long)retId.objId;
+				}
+				else
+				{
+					// Serialize by value
+					X::Data::Object* pDataObj = dynamic_cast<X::Data::Object*>(pObj);
+					if (pDataObj)
+					{
+						pDataObj->ToBytes(m_scope_space->RT(), m_scope_space->Context(), *this);
+					}
+				}
+			}
+			else if (ShouldAlwaysPassByReference(objType))
 			{
 				X::ROBJ_ID retId = ConvertXObjToId(pObj);
 				(*this) << retId.pid;
@@ -366,7 +387,83 @@ namespace X
 			}
 
 			// Check if should always pass by reference
-			if (ShouldAlwaysPassByReference(objType))
+			if (objType == X::ObjType::Package)
+			{
+				bool passByRef;
+				(*this) >> passByRef;
+
+				if (passByRef)
+				{
+					X::ROBJ_ID retId;
+					(*this) >> retId.pid;
+					unsigned long long objIdVal;
+					(*this) >> objIdVal;
+					retId.objId = (void*)objIdVal;
+
+					X::XObj* pObj = ConvertIdToXObj(retId, proxy);
+					if (pObj != nullptr)
+					{
+						auto pid = GetPID();
+						if (pid == retId.pid)
+						{
+							v = X::Value(pObj, true);
+						}
+						else
+						{
+							v = X::Value(pObj, false);
+						}
+					}
+					else
+					{
+						v = X::Value();
+					}
+				}
+				else
+				{
+					X::Data::Object* pObjToRestore = nullptr;
+					unsigned long long embedId;
+					(*this) >> embedId;
+					bool bRefPackObj = false;
+					(*this) >> bRefPackObj;
+					if (bRefPackObj)
+					{
+						pObjToRestore = (X::Data::Object*)m_scope_space->Query(embedId);
+						if (pObjToRestore) pObjToRestore->IncRef();
+					}
+					else
+					{
+						std::string strPackUri;
+						(*this) >> strPackUri;
+						X::Value varPackCreate = g_pXHost->CreatePackageWithUri(strPackUri.c_str(), this);
+						if (varPackCreate.IsObject())
+						{
+							pObjToRestore = dynamic_cast<X::Data::Object*>(varPackCreate.GetObj());
+							m_scope_space->Add(embedId, (void*)pObjToRestore);
+							if (pObjToRestore->GetType() != X::ObjType::Package)
+							{
+								long long skip_size = 0;
+								(*this) >> skip_size;
+								if (skip_size) Skip(skip_size);
+							}
+							pObjToRestore->IncRef();
+						}
+					}
+					
+					if (pObjToRestore)
+					{
+						if (pObjToRestore->GetType() == X::ObjType::Package && !bRefPackObj)
+						{
+							pObjToRestore->FromBytes(*this);
+						}
+						v = X::Value(dynamic_cast<XObj*>(pObjToRestore), false);
+					}
+					else
+					{
+						v = X::Value();
+					}
+				}
+			}
+			else if (ShouldAlwaysPassByReference(objType))
 			{
 				X::ROBJ_ID retId;
 				(*this) >> retId.pid;
