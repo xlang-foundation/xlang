@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -206,6 +206,7 @@ namespace X
             LOG << "Message processing loop ended" << LINE_END;
         }
 
+#if (WIN32)
         std::string MsgService::GetMessageKey() const
         {
             std::string msgKey(PAS_MSG_KEY);
@@ -215,6 +216,7 @@ namespace X
             }
             return msgKey;
         }
+#endif
 
         void MsgService::HandleCreateSharedMemMessage(const pas_mesg_buffer& msg)
         {
@@ -266,7 +268,11 @@ namespace X
             mSemaphore_For_Process = CREATE_SEMAPHORE(sa, semaphoreName.c_str());
             if (mSemaphore_For_Process == nullptr)
             {
+#if (WIN32)
                 LogError("Create semaphore " + semaphoreName, GetLastError());
+#else
+                LogError("Create semaphore " + semaphoreName, errno);
+#endif
                 return false;
             }
 
@@ -412,7 +418,7 @@ namespace X
 
         bool MsgService::CreateMessageQueueWithRetry()
         {
-            key_t key = (mPort == 0) ? PAS_MSG_KEY : mPort;
+            key_t key = (mPort == 0) ? (key_t)PAS_MSG_KEY : (key_t)mPort.load();
             int retryCount = 0;
             bool errorLogged = false;
 
@@ -439,7 +445,7 @@ namespace X
                         LogSuccess("msgget");
                     }
 
-                    std::lock_guard<Locker> lock(mMsgLock);
+                    AutoLock lock(mMsgLock);
                     // mMsgId is already set above
                     return true;
                 }
@@ -493,7 +499,7 @@ namespace X
 
         void MsgService::CleanupMessageQueue()
         {
-            std::lock_guard<Locker> lock(mMsgLock);
+            AutoLock lock(mMsgLock);
             if (mMsgId != 0)
             {
                 if (msgctl(mMsgId, IPC_RMID, nullptr) == -1)
