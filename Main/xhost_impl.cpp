@@ -432,10 +432,10 @@ namespace X
 		X::BlockStream stream;
 		stream << input;
 		auto size = stream.Size();
-		char* pData = new char[size];
+		X::Bin binData(size, true);
+		char* pData = binData->Data();
 		stream.FullCopyTo(pData, size);
-		X::Data::Binary* pBinOut = new X::Data::Binary(pData, size, true);
-		output = X::Value(pBinOut);
+		output = binData;
 		return true;
 	}
 	bool XHost_Impl::FromBytes(X::Value& input, X::Value& output)

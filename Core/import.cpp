@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -46,6 +46,12 @@ bool X::AST::Import::FindAndLoadExtensions(XlangRuntime* rt,
 	std::string& curModulePath,
 	std::string& loadingModuleName)
 {
+	std::filesystem::path p(loadingModuleName);
+	if (p.is_absolute() && std::filesystem::exists(p))
+	{
+		return ExtensionLoader::I().Load(rt, loadingModuleName);
+	}
+
 	std::string loadDllName;
 	std::string loadingModuleFullName; 
 

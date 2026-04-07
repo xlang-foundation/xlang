@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -664,6 +664,7 @@ namespace X
 		virtual bool RunCodeWithThisScope(const char* code) = 0;
 		virtual void SetAPISet(void* pApiSet) = 0;
 		virtual bool IsSamePackage(XPackage* pPack) = 0;
+		virtual bool IsValuePackage() { return false; }
 	};
 	FORCE_INLINE long OnEvent(const char* evtName, EventHandler handler)
 	{

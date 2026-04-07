@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -201,7 +201,10 @@ namespace X
 		PackageFromBytesFunc m_funcFromBytes = nullptr;
 		PackageInstanceIdentity m_funcInstanceIdentity = nullptr;
 		PackageGetEmbededParentObject m_funcGetEmbededParentObject = nullptr;
+		bool m_bIsValuePackage = false;
 	public:
+		void SetIsValuePackage(bool b = true) { m_bIsValuePackage = b; }
+		bool IsValuePackage() { return m_bIsValuePackage; }
 		void SetPackageContentProc(
 			PackageGetContentSizeFunc sizeFunc,
 			PackageToBytesFunc toBytesFunc,
