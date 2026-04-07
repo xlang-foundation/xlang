@@ -1,190 +1,94 @@
+# XLang™
 
----
+**XLang™ is an agent-native programming language for AI, systems, and distributed computing.**
 
-# **XLang™**
+Built with a Python-like syntax and a native high-performance runtime, XLang is designed for a new generation of software where models, tools, devices, processes, and distributed nodes must work together as one system.
 
-**XLang™** is a **high-performance glue language** designed to seamlessly integrate system components and application subsystems. It also serves as an excellent **embedding language** that can be easily integrated with application and game systems, thanks to its **lightweight stack**, **complete syntax**, and **robust runtime** for application integration. Moreover, **XLang™** features a syntax that is similar to **Python**, making it familiar and easy to adopt for developers.
+Unlike traditional scripting languages that rely on many disconnected external layers, XLang brings **concurrency, IPC, system integration, tensor execution, and distributed orchestration** into a unified language and runtime model.
 
-Crafted specifically for **AI** and **IoT** applications, **XLang™** delivers dynamic, high-performance computing by leveraging advanced features such as **optimized tensor expressions** with partial optimization. This approach enables efficient neural network construction and data-intensive computing, making **XLang™** an ideal choice for **distributed environments** and **deep learning tasks**.
+## Why XLang
 
-## **Key Features**
+Modern AI software is no longer just about calling libraries.
 
-- **High Efficiency:**  
-  **XLang™** exhibits a significant performance advantage over **Python**, delivering much faster execution times in **AI** and **deep learning** applications.
-- **High-Performance Glue Capabilities:**  
-  Seamlessly integrate system components and application subsystems with **fast method calls** (efficient inter-process communication even with large data payloads), a **robust event and notification system** for handling high-volume data exchanges, and **enhanced performance** through direct **AST execution** and **parallel expression-based data flows**.
-- **Effortless API Exposure:**  
-  Expose APIs within developed systems or applications without the complexity of traditional methods (e.g., **Python C extensions**). **XLang™** allows direct, in-site API exposure for rapid integration.
-- **Native Thread Safety and Asynchronous Programming:**  
-  Designed from the ground up to be **thread safe**, **XLang™** includes built-in support for **threads**, **asynchronous operations**, and natural **task management**, making it simple to write concurrent code and handle large-scale data exchanges.
-- **Optimized Tensor Computing:**  
-  A fully optimized **tensor computing architecture** enables effortless neural network construction via **tensor expressions**.
-- **GPU Performance Boost:**  
-  In **CUDA-enabled GPU** environments, inference and training performance can be enhanced by 6 to 10 times thanks to automated **tensor data flow graph generation** and **target-specific compilation**.
+It increasingly involves:
 
-## **Contributing**
+- AI agents coordinating tools and workflows
+- real-time data moving across processes and machines
+- edge and cloud nodes working together
+- tensor-heavy computation mixed with systems code
+- native APIs, devices, services, and application components interacting directly
 
-If you're interested in contributing to the **XLang™** project, we would love to hear from you. Whether you're a developer, tester, or simply passionate about advancing this technology, please reach out. For more information or to get involved, send us an email at [**info@xlangfoundation.org**](mailto:info@xlangfoundation.org) and we'll provide the necessary details.
+XLang is designed for this world from the start.
 
-**XLang™** has been thoroughly tested on **Linux** and **Windows** platforms—including successful deployments on **Raspberry Pi** boards and the **Raspberry Pi Pico**. If you need specific build instructions or have any questions regarding the **Raspberry Pi Pico** setup, please contact us at the same email address. We're here to support you and ensure your **XLang™** experience is smooth and rewarding.
+## What Makes XLang Different
 
-## **Building XLang™**
+### Agent-Native by Design
+XLang is built for software that acts, coordinates, and interacts with real systems. It is a natural fit for AI agents, tool execution, workflow orchestration, event-driven systems, and multi-step automation.
 
-For **optimal performance**, please ensure that **XLang™** is built in **Release mode**. You can do this by running:
+### Systems and AI in One Runtime
+XLang is not just a scripting layer on top of external components. It is designed so that system integration, concurrency, inter-process communication, and AI-oriented execution all live inside one runtime model.
 
-```bash
-cmake -DCMAKE_BUILD_TYPE=Release ..
-```
+### Built-In Tensor and Kernel-Oriented Execution
+Tensor computing in XLang is not a bolt-on library concept. Tensor expressions and optimization are integrated into the language architecture itself, enabling efficient neural network construction and data-intensive computing.
 
-### **Windows**
+### Distributed from the Ground Up
+XLang is built with distributed computing in mind. It is suitable for edge nodes, cloud nodes, embedded environments, and applications that need to coordinate work across many systems.
 
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/xlang-foundation/xlang.git
-    ```
-2. Open the **XLang™** folder in **Visual Studio**.
-3. Select your configuration (e.g., **Local Machine/x64-Debug**, **WSL:Ubuntu/WSL-GCC-Debug**).
-4. Build via Visual Studio's build menu.
+### Native API Exposure and Embedding
+XLang can be embedded into applications and can expose native APIs directly, making it practical for integrating with C++, application runtimes, services, devices, and existing software stacks.
 
-### **Linux (Ubuntu)**
+## Core Capabilities
 
-1. Install prerequisites:
-    - **UUID (required):**
-      ```bash
-      sudo apt-get install uuid-dev
-      ```
-    - **OpenSSL (for HTTP plugin):**
-      ```bash
-      sudo apt-get install libssl-dev
-      sudo apt-get install libcurl4-openssl-dev
-      ```
-    - **Python3 (optional for Python library integration):**
-      ```bash
-      sudo apt-get install python3-dev
-      pip install numpy
-      ```
-      *(To disable Python integration, comment out `add_subdirectory("PyEng")` in `CMakeLists.txt`.)*
-2. Clone the repository:
-    ```bash
-    git clone https://github.com/xlang-foundation/xlang.git
-    ```
-3. Navigate to the cloned directory:
-    ```bash
-    cd xlang
-    ```
-4. Create and enter the build directory:
-    ```bash
-    mkdir out && cd out
-    ```
-5. Generate build files:
-    ```bash
-    cmake ..
-    ```
-6. Compile:
-    ```bash
-    make
-    ```
+- Python-like syntax for fast adoption
+- High-performance runtime for dynamic execution
+- Native concurrency and asynchronous programming
+- Efficient inter-process communication for large data exchange
+- Event and notification mechanisms for real-time systems
+- Built-in tensor execution model
+- Target-aware optimization for compute-intensive workloads
+- Easy embedding into applications and engines
+- Direct API exposure without heavy extension-layer complexity
+- Strong fit for edge, IoT, AI, and distributed systems
 
-### **macOS**
+## Where XLang Fits
 
-1. Install prerequisites:
-    - **UUID (required):**
-      ```bash
-      brew install ossp-uuid
-      ```
-    - **OpenSSL (for HTTP plugin):**
-      ```bash
-      brew install openssl
-      brew install curl
-      ```
-    - **Turbo-jpeg (optional for image module):**
-      ```bash
-      brew install jpeg-turbo
-      ```
-    - **Python3 (optional for Python library integration):**
-      ```bash
-      brew install python3
-      pip install numpy
-      ```
-      *(To disable Python integration, comment out `add_subdirectory("PyEng")` in `CMakeLists.txt`.)*
-2. Clone the repository:
-    ```bash
-    git clone https://github.com/xlang-foundation/xlang.git
-    ```
-3. Navigate to the cloned directory:
-    ```bash
-    cd xlang
-    ```
-4. Create and enter the build directory:
-    ```bash
-    mkdir out && cd out
-    ```
-5. Generate build files:
-    ```bash
-    cmake ..
-    ```
-6. Compile:
-    ```bash
-    make
-    ```
+XLang is particularly well suited for:
 
-*You can also use **Xcode** to open the **XLang™** folder for compilation.*
+- AI agents and tool-calling systems
+- edge AI and IoT applications
+- distributed execution pipelines
+- high-performance application scripting
+- native application embedding
+- model-serving and inference workflows
+- systems that combine real-time events, devices, and tensor workloads
 
-### **Building for Android**
+## Design Goal
 
-1. On **Windows**, install **Android Studio**.
-2. Open the **XLang™** project from the `xlang\Android` folder.
-3. Build using **Android Studio's Build menu**.
+XLang aims to reduce the fragmentation common in modern AI systems.
 
-## **Running XLang™**
+Instead of splitting one application across:
+- a scripting layer,
+- a systems layer,
+- an IPC layer,
+- a workflow layer,
+- and a separate tensor/kernel optimization layer,
 
-Navigate to the **XLang™** executable folder and run the `xlang` command:
+XLang aims to unify them into one coherent programming model.
 
-```bash
-$ ./xlang
-xlang [-dbg] [-enable_python|-python]
-      [-run_as_backend|-backend] [-event_loop]
-      [-c "code,use \n as line separator"]
-      [-cli]
-      [file parameters]
-xlang -help | -? | -h for help
-```
+## Contributing
 
-### **Example Commands**
+We welcome contributors, testers, and collaborators interested in advancing XLang.
 
-- **Running a Script File:**  
-  To run an **XLang™** script file:
-  ```bash
-  $ ./xlang your_script.x
-  ```
+For contribution inquiries, please contact: **info@xlangfoundation.org**
 
-- **Running Inline Code with Event Loop:**  
-  To execute inline code:
-  ```bash
-  $ ./xlang -c "print('Hello, XLang!')"
-  ```
+## Documentation
 
-- **Running in Command-Line Interface (CLI) Mode:**  
-  To start in **CLI** mode without executing a file:
-  ```bash
-  $ ./xlang -cli
-  ```
+Additional documentation is organized separately:
 
-Under the `test` folder, you'll find numerous **XLang** and **Python** code examples for testing. While some files may currently break, we are actively working to improve compatibility with **Python syntax** and its ecosystem.
-
-## **Debugging in VS Code**
-
-- Install the **XLang™ plugin**.
-- Start **XLang™** with:
-  ```bash
-  -event_loop -dbg -enable_python
-  ```
-- You can launch a new **XLang™** instance or attach to an existing application/process that uses **XLang™ embedding**.
-- Open or create a `.x` file and begin debugging from the **VS Code** menu.
-
-> **Note:** Debugging in **VS Code** has not been tested on **macOS**.
-
----
-
-Happy coding with **XLang™**!  
-For any questions or support, please reach out at [**info@xlangfoundation.org**](mailto:info@xlangfoundation.org).
+- [Getting Started](Docs/GETTING_STARTED.md)
+- [Build Guide](Docs/BUILD.md)
+- [Examples](Docs/EXAMPLES.md)
+- [Embedding and API Exposure](Docs/EMBEDDING.md)
+- [Tensor and Compute Model](Docs/TENSOR.md)
+- [Distributed and IPC Overview](Docs/DISTRIBUTED.md)
+- [Using XLang IPC to Enforce GPL 3.0](Docs/Using%20XLang%20IPC%20to%20Enforce%20GPL%203.md)
