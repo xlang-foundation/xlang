@@ -91,3 +91,4 @@ Additional documentation is organized separately:
 - [Embedding and API Exposure](docs/EMBEDDING.md)
 - [Tensor and Compute Model](docs/TENSOR.md)
 - [Distributed and IPC Overview](docs/DISTRIBUTED.md)
+- [Using XLang IPC to Enforce GPL 3.0](docs/Using%20XLang%20IPC%20to%20Enforce%20GPL%203.md)
