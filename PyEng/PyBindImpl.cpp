@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -146,7 +146,8 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
 	varKwargs.Add("__file__", varFileName);
 	// Add current process ID for PullEvents
     unsigned long processId = GetPID();
-	varKwargs.Add("__pid__", X::Value((long long)processId));
+    X::Value valPid((long long)processId);
+	varKwargs.Add("__pid__", valPid);
     X::Value varPullEvents = varEventSource["PullEvents"];
     X::Value varSetResults = varEventSource["PythonProcessSetResults"];
     bool running = true;
@@ -219,8 +220,10 @@ static PyObject* MainEventLoop(PyObject* self, PyObject* args, PyObject* kwargs)
                         {
                             X::KWARGS kwargs0;
                             kwargs0.Add("__file__", varFileName);
-                            kwargs0.Add("__pid__", X::Value((long long)processId));
-                            kwargs0.Add("__callId__", eventPair[2]);
+                            X::Value valPid0((long long)processId);
+                            kwargs0.Add("__pid__", valPid0);
+                            X::Value valCallId = eventPair[2];
+                            kwargs0.Add("__callId__", valCallId);
                             X::ARGS args0(1);
                             args0.push_back(varCallRetValue);
                             varSetResults.ObjCall(args0, kwargs0);
@@ -240,7 +243,7 @@ Xlang_import(PyObject* self, PyObject* args, PyObject* kwargs)
 	const char* moduleName = nullptr;
 	const char* from = nullptr;
 	const char* thru = nullptr;
-	static char* kwlist[] = { "moduleName", "fromPath", "thru", nullptr };
+	static char* kwlist[] = { (char*)"moduleName", (char*)"fromPath", (char*)"thru", nullptr };
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ss", kwlist, &moduleName, &from, &thru))
 	{
