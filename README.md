@@ -85,10 +85,10 @@ For contribution inquiries, please contact: **info@xlangfoundation.org**
 
 Additional documentation is organized separately:
 
-- [Getting Started](docs/GETTING_STARTED.md)
-- [Build Guide](docs/BUILD.md)
-- [Examples](docs/EXAMPLES.md)
-- [Embedding and API Exposure](docs/EMBEDDING.md)
-- [Tensor and Compute Model](docs/TENSOR.md)
-- [Distributed and IPC Overview](docs/DISTRIBUTED.md)
-- [Using XLang IPC to Enforce GPL 3.0](docs/Using%20XLang%20IPC%20to%20Enforce%20GPL%203.md)
+- [Getting Started](Docs/GETTING_STARTED.md)
+- [Build Guide](Docs/BUILD.md)
+- [Examples](Docs/EXAMPLES.md)
+- [Embedding and API Exposure](Docs/EMBEDDING.md)
+- [Tensor and Compute Model](Docs/TENSOR.md)
+- [Distributed and IPC Overview](Docs/DISTRIBUTED.md)
+- [Using XLang IPC to Enforce GPL 3.0](Docs/Using%20XLang%20IPC%20to%20Enforce%20GPL%203.md)
