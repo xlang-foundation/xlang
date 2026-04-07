@@ -90,7 +90,7 @@ namespace X
 					}
 					return l;
 				});
-			APISET().AddFunc<3>("listen", &HttpServer::Listen);
+			APISET().AddFunc<4>("listen", &HttpServer::Listen);
 			APISET().AddFunc<0>("stop", &HttpServer::Stop);
 			APISET().AddFunc<2>("get", &HttpServer::Get);
 			APISET().AddVarFuncEx("route", &HttpServer::Route);
@@ -129,7 +129,7 @@ namespace X
 		~HttpServer();
 		X::Value GetMimeType(std::string extName);
 		void Init(bool asHttps);
-		bool Listen(std::string srvName, int port, int backlog = 128);
+		bool Listen(std::string srvName, int port, int backlog = 128, int thread_pool_count = 0);
 		bool Stop();
 		bool Get(std::string pattern, X::Value& valHandler);
 		bool AddRoute(std::string urlPattern, X::Value& func);

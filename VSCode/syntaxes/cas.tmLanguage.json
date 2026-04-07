@@ -1,0 +1,357 @@
+{
+	"scopeName": "source.cas",
+	"patterns": [
+		{
+			"include": "#line-comment"
+		},
+		{
+			"include": "#jsonl-line"
+		}
+	],
+	"repository": {
+		"line-comment": {
+			"match": "^\\s*(//|#).*$",
+			"name": "comment.line.cas"
+		},
+		"jsonl-line": {
+			"begin": "\\{",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.section.block.begin.cas"
+				}
+			},
+			"end": "\\}",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.section.block.end.cas"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#op-key"
+				},
+				{
+					"include": "#known-keys"
+				},
+				{
+					"include": "#object-key"
+				},
+				{
+					"include": "#values"
+				},
+				{
+					"match": ",",
+					"name": "punctuation.separator.comma.cas"
+				},
+				{
+					"match": ":",
+					"name": "punctuation.separator.key-value.cas"
+				}
+			]
+		},
+		"op-key": {
+			"comment": "Match \"op\":\"ns.cmd\" — the core command dispatch",
+			"match": "(\")(op)(\")\\s*(:)\\s*(\")(flow)(\\.)([a-zA-Z0-9_]+)(\")",
+			"captures": {
+				"1": {
+					"name": "punctuation.definition.string.begin.cas"
+				},
+				"2": {
+					"name": "support.type.property-name.cas"
+				},
+				"3": {
+					"name": "punctuation.definition.string.end.cas"
+				},
+				"4": {
+					"name": "punctuation.separator.key-value.cas"
+				},
+				"5": {
+					"name": "punctuation.definition.string.begin.cas"
+				},
+				"6": {
+					"name": "keyword.control.cas"
+				},
+				"7": {
+					"name": "punctuation.accessor.cas"
+				},
+				"8": {
+					"name": "support.function.control.cas"
+				},
+				"9": {
+					"name": "punctuation.definition.string.end.cas"
+				}
+			}
+		},
+		"known-keys": {
+			"patterns": [
+				{
+					"comment": "Match \"op\":\"lib.cmd\" — library commands",
+					"match": "(\")(op)(\")\\s*(:)\\s*(\")(str|fs|time|list|dict|sandbox|tool)(\\.)([a-zA-Z0-9_]+)(\")",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.string.begin.cas"
+						},
+						"2": {
+							"name": "support.type.property-name.cas"
+						},
+						"3": {
+							"name": "punctuation.definition.string.end.cas"
+						},
+						"4": {
+							"name": "punctuation.separator.key-value.cas"
+						},
+						"5": {
+							"name": "punctuation.definition.string.begin.cas"
+						},
+						"6": {
+							"name": "support.class.cas"
+						},
+						"7": {
+							"name": "punctuation.accessor.cas"
+						},
+						"8": {
+							"name": "support.function.library.cas"
+						},
+						"9": {
+							"name": "punctuation.definition.string.end.cas"
+						}
+					}
+				},
+				{
+					"comment": "Match \"op\":\"other.cmd\" — generic commands",
+					"match": "(\")(op)(\")\\s*(:)\\s*(\")([a-zA-Z0-9_]+)(\\.)([a-zA-Z0-9_]+)(\")",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.string.begin.cas"
+						},
+						"2": {
+							"name": "support.type.property-name.cas"
+						},
+						"3": {
+							"name": "punctuation.definition.string.end.cas"
+						},
+						"4": {
+							"name": "punctuation.separator.key-value.cas"
+						},
+						"5": {
+							"name": "punctuation.definition.string.begin.cas"
+						},
+						"6": {
+							"name": "entity.name.type.module.cas"
+						},
+						"7": {
+							"name": "punctuation.accessor.cas"
+						},
+						"8": {
+							"name": "entity.name.function.cas"
+						},
+						"9": {
+							"name": "punctuation.definition.string.end.cas"
+						}
+					}
+				},
+				{
+					"comment": "Well-known argument keys",
+					"match": "(\")(cond|var|in|as|value|name|path|dir|msg|mode|nonce|times|backoff_ms|cmd|list|dict|key|index|from|to|step|limit|s|sub|src|dst|data|pattern|recursive|regex|case)(\")(\\s*:)",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.string.begin.cas"
+						},
+						"2": {
+							"name": "entity.name.tag.cas"
+						},
+						"3": {
+							"name": "punctuation.definition.string.end.cas"
+						},
+						"4": {
+							"name": "punctuation.separator.key-value.cas"
+						}
+					}
+				}
+			]
+		},
+		"object-key": {
+			"match": "(\")([a-zA-Z0-9_\\.]+)(\")\\s*(:)",
+			"captures": {
+				"1": {
+					"name": "punctuation.definition.string.begin.cas"
+				},
+				"2": {
+					"name": "entity.name.tag.cas"
+				},
+				"3": {
+					"name": "punctuation.definition.string.end.cas"
+				},
+				"4": {
+					"name": "punctuation.separator.key-value.cas"
+				}
+			}
+		},
+		"values": {
+			"patterns": [
+				{
+					"include": "#string"
+				},
+				{
+					"include": "#number"
+				},
+				{
+					"include": "#boolean"
+				},
+				{
+					"include": "#null"
+				},
+				{
+					"include": "#array"
+				},
+				{
+					"include": "#nested-object"
+				}
+			]
+		},
+		"string": {
+			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.cas"
+				}
+			},
+			"end": "\"",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.cas"
+				}
+			},
+			"name": "string.quoted.double.cas",
+			"patterns": [
+				{
+					"include": "#variable-bracket"
+				},
+				{
+					"include": "#variable"
+				},
+				{
+					"include": "#expression-prefix"
+				},
+				{
+					"include": "#operators"
+				},
+				{
+					"match": "\\\\.",
+					"name": "constant.character.escape.cas"
+				}
+			]
+		},
+		"variable-bracket": {
+			"comment": "Bracket access: ${d['key']} or ${a[0]} or ${a[${i}]}",
+			"match": "\\$\\{([a-zA-Z0-9_]+)\\[([^\\]]+)\\]\\}",
+			"name": "variable.other.bracket.cas",
+			"captures": {
+				"1": {
+					"name": "variable.other.cas"
+				},
+				"2": {
+					"name": "entity.name.tag.cas"
+				}
+			}
+		},
+		"variable": {
+			"patterns": [
+				{
+					"match": "\\$\\{_last\\}",
+					"name": "variable.language.cas"
+				},
+				{
+					"match": "\\$\\{[a-zA-Z0-9_]+\\}",
+					"name": "variable.other.cas"
+				}
+			]
+		},
+		"expression-prefix": {
+			"comment": "Expression mode: value starting with =",
+			"match": "^=",
+			"name": "keyword.operator.expression.cas"
+		},
+		"operators": {
+			"patterns": [
+				{
+					"match": "==|!=|<=|>=|<|>",
+					"name": "keyword.operator.comparison.cas"
+				},
+				{
+					"match": "\\b(and|or|not)\\b",
+					"name": "keyword.operator.logical.cas"
+				},
+				{
+					"match": "!",
+					"name": "keyword.operator.logical.cas"
+				}
+			]
+		},
+		"number": {
+			"match": "-?\\d+(\\.\\d+)?",
+			"name": "constant.numeric.cas"
+		},
+		"boolean": {
+			"match": "\\b(true|false)\\b",
+			"name": "constant.language.boolean.cas"
+		},
+		"null": {
+			"match": "\\bnull\\b",
+			"name": "constant.language.null.cas"
+		},
+		"array": {
+			"begin": "\\[",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.section.brackets.begin.cas"
+				}
+			},
+			"end": "\\]",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.section.brackets.end.cas"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#values"
+				},
+				{
+					"match": ",",
+					"name": "punctuation.separator.comma.cas"
+				}
+			]
+		},
+		"nested-object": {
+			"begin": "\\{",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.section.block.begin.cas"
+				}
+			},
+			"end": "\\}",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.section.block.end.cas"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#object-key"
+				},
+				{
+					"include": "#values"
+				},
+				{
+					"match": ",",
+					"name": "punctuation.separator.comma.cas"
+				},
+				{
+					"match": ":",
+					"name": "punctuation.separator.key-value.cas"
+				}
+			]
+		}
+	}
+}

@@ -373,6 +373,7 @@ namespace X
 						item.Free();
 					}
 					delete[] m_data;
+					m_size = 0;
 				}
 			}
 			~StringMap()
@@ -489,34 +490,31 @@ namespace X
 				}
 				//we accept empty string as key 
 				char c = key[0];
-				MapItem* pMatchedItem = nullptr;
 				for (int i = 0; i < m_size; i++)
 				{
 					MapItem* item = &m_data[i];
 					if (c == item->key[0])
 					{
-						if (item->next == -1)
-						{
-							pMatchedItem = item;
-							break;
-						}
-						//if there is a bucket,loop to do exact match
-						while (item->next>=0)
+						// loop to do exact match within the bucket
+						while (item != nullptr)
 						{
 							if (matchKeys(key, item->key))
 							{
-								pMatchedItem = item;
-								break;
+								return item;
 							}
-							item = &m_data[item->next];
+							if (item->next >= 0)
+							{
+								item = &m_data[item->next];
+							}
+							else
+							{
+								item = nullptr;
+							}
 						}
-						if (pMatchedItem)
-						{
-							break;
-						}
+						return nullptr;
 					}
 				}
-				return pMatchedItem;
+				return nullptr;
 			}
 		};
 	}

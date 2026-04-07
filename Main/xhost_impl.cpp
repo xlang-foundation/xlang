@@ -353,7 +353,7 @@ namespace X
 	}
 	XSet* XHost_Impl::CreateSet()
 	{
-		auto* pSet = new X::Data::mSet();
+		auto* pSet = new X::Data::XlangSet();
 		pSet->IncRef();
 		return pSet;
 	}
@@ -432,10 +432,10 @@ namespace X
 		X::BlockStream stream;
 		stream << input;
 		auto size = stream.Size();
-		char* pData = new char[size];
+		X::Bin binData(size, true);
+		char* pData = binData->Data();
 		stream.FullCopyTo(pData, size);
-		X::Data::Binary* pBinOut = new X::Data::Binary(pData, size, true);
-		output = X::Value(pBinOut);
+		output = binData;
 		return true;
 	}
 	bool XHost_Impl::FromBytes(X::Value& input, X::Value& output)
@@ -859,6 +859,28 @@ namespace X
 		}
 		return true;
 	}
+	bool XHost_Impl::PyRemoveImportPaths(X::Value& paths)
+	{
+		if (g_pPyHost == nullptr)
+		{
+			return false;
+		}
+		if (paths.IsString())
+		{
+			std::string p = paths.ToString();
+			g_pPyHost->RemoveImportPaths(p.c_str());
+		}
+		else if (paths.IsList())
+		{
+			X::List list(paths);
+			for (auto it : *list)
+			{
+				std::string p = it.ToString();
+				g_pPyHost->RemoveImportPaths(p.c_str());
+			}
+		}
+		return true;
+	}
 	bool XHost_Impl::PyRun(const char* code, X::ARGS& args)
 	{
 		if (g_pPyHost)
@@ -978,11 +1000,21 @@ namespace X
 	}
 	void XHost_Impl::ActivePythonVEnv(const char* venvPath)
 	{
-		g_pPyHost->ActivePythonVEnv(venvPath);
+		if (!g_pPyHost)
+		{
+			EnalbePython(true, false);
+		}
+		if (g_pPyHost)
+		{
+			g_pPyHost->ActivePythonVEnv(venvPath);
+		}
 	}
 	void XHost_Impl::DeactivePythonVEnv(const char* venvPath)
 	{
-		g_pPyHost->ActivePythonVEnv(venvPath);
+		if (g_pPyHost)
+		{
+			g_pPyHost->DeactivePythonVEnv(venvPath);
+		}
 	}
 	unsigned long long XHost_Impl::GetObjectCount()
 	{

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -108,6 +108,15 @@ namespace X
 			}
 			m_loadedModules.clear();
 		}
+		bool Package::IsValuePackage()
+		{
+			APISetBase* pAPISet = (APISetBase*)GetAPISet();
+			return pAPISet ? pAPISet->IsValuePackage() : false;
+		}
+		bool PackageProxy::IsValuePackage()
+		{
+			return m_pPackage ? m_pPackage->IsValuePackage() : false;
+		}
 		int Package::GetPackageName(char* buffer, int bufferSize)
 		{
 			APISetBase* pAPISet = (APISetBase*)GetAPISet();
@@ -138,6 +147,7 @@ namespace X
 			long long startIndex, long long count)
 		{
 			AutoLock autoLock(m_lock);
+
 			if (id_offset < IdList.size())
 			{
 				auto& key = IdList[id_offset++];

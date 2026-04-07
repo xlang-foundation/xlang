@@ -51,6 +51,8 @@ void Func::ScopeLayout()
 		}
 	}
 	//process parameters' default values
+	// Clear for idempotent re-entry (lambda functions may re-run ScopeLayout)
+	m_DefaultExprs.clear();
 	if (Params)
 	{
 		auto& list = Params->GetList();
@@ -60,6 +62,7 @@ void Func::ScopeLayout()
 			std::string strVarName;
 			std::string strVarType;
 			Value defaultValue;
+			Expression* defaultExpr = nullptr; // raw AST node for default value
 			switch (i->m_type)
 			{
 			case ObType::Var:
@@ -67,6 +70,7 @@ void Func::ScopeLayout()
 				Var* varName = dynamic_cast<Var*>(i);
 				String& szName = varName->GetName();
 				strVarName = std::string(szName.s, szName.size);
+				// no default
 			}
 			break;
 			case ObType::Assign:
@@ -75,20 +79,26 @@ void Func::ScopeLayout()
 				Var* varName = dynamic_cast<Var*>(assign->GetL());
 				String& szName = varName->GetName();
 				strVarName = std::string(szName.s, szName.size);
-				Expression* defVal = assign->GetR();
-				auto* pExprForDefVal = new Data::Expr(defVal);
-				defaultValue = Value(pExprForDefVal);
+				defaultExpr = assign->GetR(); // raw AST node; Func owns the Assign, so lifetime is safe
 			}
 			break;
 			case ObType::Param:
 			{
 				Param* param = dynamic_cast<Param*>(i);
 				param->Parse(strVarName, strVarType, defaultValue);
+				// For Param (name:type=val), extract the default expression from the Assign inside Type
+				Expression* typeCombine = param->GetType();
+				if (typeCombine && typeCombine->m_type == ObType::Assign)
+				{
+					Assign* assign = dynamic_cast<Assign*>(typeCombine);
+					if (assign) defaultExpr = assign->GetR();
+				}
 			}
 			break;
 			}
 			SCOPE_FAST_CALL_AddOrGet0(idx,m_pMyScope,strVarName, false);
 			m_IndexofParamList.push_back(idx);
+			m_DefaultExprs.push_back(defaultExpr); // nullptr if no default
 		}
 		Params->ScopeLayout();
 	}
@@ -310,6 +320,21 @@ bool Func::Call(XRuntime* rt0,
 	for (int i = 0; i < num; i++)
 	{
 		pCurFrame->Set(m_IndexofParamList[i], params[i]);
+	}
+	// Apply default values for parameters not supplied by the caller
+	if (num < indexNum)
+	{
+		int defaultCount = (int)m_DefaultExprs.size();
+		for (int i = num; i < indexNum; i++)
+		{
+			if (i < defaultCount && m_DefaultExprs[i] != nullptr)
+			{
+				X::Value defVal;
+				ExecAction defAction;
+				ExpExec(m_DefaultExprs[i], rt, defAction, pContext, defVal);
+				pCurFrame->Set(m_IndexofParamList[i], defVal);
+			}
+		}
 	}
 	for (auto& kw : kwParams)
 	{

@@ -1,7 +1,7 @@
 {
   "name": "xlang",
   "displayName": "xlang",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "publisher": "cantorai",
   "description": "XLang's debugger and more",
   "author": {
@@ -103,17 +103,29 @@
         "aliases": [
           "yml"
         ]
+      },
+      {
+        "id": "cas",
+        "extensions": [
+          ".cas"
+        ],
+        "aliases": [
+          "CasLang",
+          "cas"
+        ],
+        "configuration": "./cas-language-configuration.json"
       }
     ],
     "grammars": [
       {
         "language": "xlang",
         "scopeName": "source.xlang",
-        "path": "./syntaxes/MagicPython.tmLanguage.json"
+        "path": "./syntaxes/xlang.tmLanguage.json"
       },
       {
-        "scopeName": "source.regexp.x",
-        "path": "./syntaxes/MagicRegExp.tmLanguage.json"
+        "language": "cas",
+        "scopeName": "source.cas",
+        "path": "./syntaxes/cas.tmLanguage.json"
       }
     ],
     "menus": {

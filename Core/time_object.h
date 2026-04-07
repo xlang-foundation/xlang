@@ -30,6 +30,8 @@ namespace X
             APISET().AddFunc<0>("time", &TimeObject::GetTime);
             APISET().AddVarFunc("localtime", &TimeObject::LocalTime); // Using AddVarFunc for default params
             APISET().AddVarFunc("gmtime", &TimeObject::GMTime);       // Using AddVarFunc for default params
+            APISET().AddVarFunc("mktime", &TimeObject::MkTime);   // local time -> epoch seconds
+            APISET().AddVarFunc("timegm", &TimeObject::TimeGm);   // UTC time -> epoch seconds (optional)
             APISET().AddVarFunc("strftime", &TimeObject::StrfTime);
             APISET().AddVarFunc("strptime", &TimeObject::StrpTime);
             APISET().AddVarFunc("timediff", &TimeObject::TimeDiff);
@@ -131,7 +133,70 @@ namespace X
             retValue = X::Value(formattedTime);
             return true;
         }
+        bool MkTime(X::XRuntime* rt, X::XObj* pContext,
+            X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+        {
+            // Usage:
+            //   time.mktime(tmStruct)                 -> seconds (local)
+            //   time.mktime(tmStruct, isdst=-1)       -> seconds (local, control DST)
+            X::Value structValue;
+            int isdst = -1;
 
+            if (params.size() >= 1) {
+                structValue = params[0];
+                if (params.size() >= 2) isdst = (int)params[1];
+            }
+            else {
+                structValue = pContext; // allow calling as method on a struct context
+            }
+
+            auto* xStruct = dynamic_cast<X::Data::XlangStruct*>(structValue.GetObj());
+            if (!xStruct) { retValue = X::Value(); return false; }
+
+            int milliseconds = 0;
+            std::tm tm = ConvertXlangStructToTM(xStruct, milliseconds);
+
+            // Match Python behavior: let system determine DST if not specified
+            tm.tm_isdst = isdst;
+
+            std::time_t t = std::mktime(&tm); // local time interpretation
+            if (t == (std::time_t)-1) { retValue = X::Value(); return false; }
+
+            retValue = X::Value((double)t + (milliseconds / 1000.0));
+            return true;
+        }
+
+        bool TimeGm(X::XRuntime* rt, X::XObj* pContext,
+            X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+        {
+            // Usage:
+            //   time.timegm(tmStruct) -> seconds (UTC)
+            X::Value structValue;
+            int isdst = -1;
+            if (params.size() >= 1) {
+                structValue = params[0];
+                if (params.size() >= 2) isdst = (int)params[1];
+            }
+            else {
+                structValue = pContext; // allow calling as method on a struct context
+            }
+
+            auto* xStruct = dynamic_cast<X::Data::XlangStruct*>(structValue.GetObj());
+            if (!xStruct) { retValue = X::Value(); return false; }
+
+            int milliseconds = 0;
+            std::tm tm = ConvertXlangStructToTM(xStruct, milliseconds);
+
+#ifdef _WIN32
+            std::time_t t = _mkgmtime(&tm);
+#else
+            std::time_t t = timegm(&tm);
+#endif
+            if (t == (std::time_t)-1) { retValue = X::Value(); return false; }
+
+            retValue = X::Value((double)t + (milliseconds / 1000.0));
+            return true;
+        }
         bool StrpTime(X::XRuntime* rt, X::XObj* pContext, X::ARGS& params, 
             X::KWARGS& kwParams, X::Value& retValue) {
             std::string timeStr = params[0].ToString();
@@ -139,6 +204,7 @@ namespace X
 
             std::tm tm = {};
             std::istringstream ss(timeStr);
+            ss.imbue(std::locale::classic());
             ss >> std::get_time(&tm, format.c_str());
 
             if (ss.fail()) {

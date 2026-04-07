@@ -1,11 +1,11 @@
-﻿{
+{
   "information_for_contributors": [
     "This file has been converted from https://github.com/MagicStack/MagicPython/blob/master/grammars/MagicPython.tmLanguage",
     "If you want to provide a fix or improvement, please create a pull request against the original repository.",
     "Once accepted there, we are happy to receive an update request."
   ],
   "version": "https://github.com/MagicStack/MagicPython/commit/b2b4f4ae7b4e6284e80bda8080106b93bd588f9e",
-  "name": "MagicPython",
+  "name": "xlang",
   "scopeName": "source.xlang",
   "patterns": [
     {
@@ -290,9 +290,6 @@
         },
         {
           "include": "#string"
-        },
-        {
-          "include": "#lambda"
         },
         {
           "include": "#generator"
@@ -945,7 +942,7 @@
       "match": "(}(?!}))"
     },
     "import": {
-      "comment": "Import statements used to correctly mark `from`, `import`, and `as`\n",
+      "comment": "Import statements for xlang, including parameter injection",
       "patterns": [
         {
           "begin": "\\b(?<!\\.)(from)\\b(?=.+import)",
@@ -974,6 +971,17 @@
             }
           },
           "patterns": [
+            {
+              "match": "\\b([a-zA-Z_]\\w*)\\s*(\\()",
+              "captures": {
+                "1": {
+                  "name": "entity.name.namespace.x"
+                },
+                "2": {
+                  "name": "punctuation.section.parameters.begin.x"
+                }
+              }
+            },
             {
               "name": "keyword.control.import.x",
               "match": "\\b(?<!\\.)as\\b"

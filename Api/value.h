@@ -398,10 +398,19 @@ public:
 	}
 	FORCE_INLINE Value(XObj* p,bool AddRef = true)
 	{
-		t = ValueType::Object;
-		x.obj = nullptr;
-		flags = 0;
-		AssignObject(p, AddRef);
+		if (p == nullptr)
+		{
+			t = ValueType::None;
+			x.l = 0;
+			flags = 0;
+		}
+		else
+		{
+			t = ValueType::Object;
+			x.obj = nullptr;
+			flags = 0;
+			AssignObject(p, AddRef);
+		}
 	}
 	Value(std::string& s);
 	Value(const std::string& s)
@@ -589,6 +598,7 @@ public:
 	}
 	bool IsList() const;
 	bool IsDict() const;
+	bool IsError() const;
 	bool IsBin() const;
 	bool IsTensor() const;
 	bool IsString() const;
@@ -836,8 +846,8 @@ public:
 	bool ToBytes(XLStream* pStream = nullptr);
 	Value getattr(const char* attrName) const;
 	void setattr(const char* attrName, X::Value& attrVal) const;
-	long long Size();
-	inline long long size() { return Size(); }
+	long long Size() const;
+	inline long long size() const { return Size(); }
 };
 template<typename T>
 class V:

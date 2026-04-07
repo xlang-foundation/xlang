@@ -499,6 +499,41 @@ bool U_Sleep(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 
 	return bOK;
 }
+bool U_PythonSwitchEnv(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		std::string venvPath = params[0].ToString();
+		X::g_pXHost->ActivePythonVEnv(venvPath.c_str());
+		retValue = X::Value(true);
+	}
+	else
+	{
+		retValue = X::Value(false);
+	}
+	return true;
+}
+bool U_PythonRestoreEnv(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		std::string venvPath = params[0].ToString();
+		X::g_pXHost->DeactivePythonVEnv(venvPath.c_str());
+		retValue = X::Value(true);
+	}
+	else
+	{
+		X::g_pXHost->DeactivePythonVEnv("");
+		retValue = X::Value(true);
+	}
+	return true;
+}
 bool U_Time(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	X::ARGS& params,
 	X::KWARGS& kwParams,
@@ -1073,7 +1108,7 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	}
 	X::Data::List* pFutureList = nil;
 	X::Value retFuture;
-	auto buildtask = [&](X::Value& valFunc) 
+	auto buildtask = [&](X::Value& valFunc,X::Value& contextObj) 
 	{
 		X::Task* tsk = new X::Task();
 		tsk->SetTaskPool(taskPool);
@@ -1099,8 +1134,8 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 			pFutureList->Add((X::XlangRuntime*)rt, vFuture);
 			retFuture = X::Value(); // optional: clear single holder; list owns refs now
 		}
-
-		return tsk->Call(valFunc, (X::XlangRuntime*)rt, pContext, params0, kwParams);
+		auto* pCallContext = contextObj.GetObj();
+		return tsk->Call(valFunc, (X::XlangRuntime*)rt, pCallContext, params0, kwParams);
 	};
 	bool bOK = true;
 	auto* pContextObj = dynamic_cast<X::Data::Object*>(pContext);
@@ -1110,14 +1145,15 @@ bool U_TaskRun(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 		auto& list = pFuncCalls->GetList();
 		for (auto& i : list)
 		{
-			//todo:
-			//buildtask(i.m_func);
+			buildtask(i.m_func,i.contextObj);
+			break;//only first one
 		}
 	}
 	else
 	{
 		X::Value valFunc(pContext);
-		buildtask(valFunc);
+		X::Value noContextForFunc;
+		buildtask(valFunc, noContextForFunc);
 	}
 	if (pFutureList)
 	{
@@ -1744,12 +1780,12 @@ bool U_CreateSetObject(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	X::KWARGS& kwParams,
 	X::Value& retValue)
 {
-	X::Data::mSet* pSetObj;
+	X::Data::XlangSet* pSetObj;
 	if (params.size() == 0) {
-		pSetObj = new X::Data::mSet();
+		pSetObj = new X::Data::XlangSet();
 	}
 	else {
-		pSetObj = new X::Data::mSet(params);
+		pSetObj = new X::Data::XlangSet(params);
 	}
 
 	retValue = X::Value(pSetObj);
@@ -2084,6 +2120,48 @@ bool U_IsInstance(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	return false;
 }
 
+bool U_PythonAddPath(XRuntime* rt, XObj* pThis, XObj* pContext,
+	ARGS& params,
+	KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		X::g_pXHost->EnalbePython(true, false);
+		X::g_pXHost->PyAddImportPaths(params[0]);
+	}
+	return true;
+}
+
+bool U_PythonRemovePath(XRuntime* rt, XObj* pThis, XObj* pContext,
+	ARGS& params,
+	KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() > 0)
+	{
+		X::g_pXHost->EnalbePython(true, false);
+		X::g_pXHost->PyRemoveImportPaths(params[0]);
+	}
+	return true;
+}
+
+bool U_Abs(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(0LL);
+		return true;
+	}
+	X::Value v = params[0];
+	X::Value zero(0LL);
+	retValue = (v < zero) ? (zero-v) : v;
+	return true;
+}
+
 bool Builtin::RegisterInternals()
 {
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
@@ -2100,6 +2178,10 @@ bool Builtin::RegisterInternals()
 	std::vector<std::pair<std::string, std::string>> params;
 	Register("register_remote_object", (X::U_FUNC)U_RegisterRemoteObject, params, "register_remote_object(name[,obj])");
 	Register("print", (X::U_FUNC)U_Print, params,"print(...)");
+	Register("python_switch_env", (X::U_FUNC)U_PythonSwitchEnv, params, "python_switch_env(venvPath)");
+	Register("python_restore_env", (X::U_FUNC)U_PythonRestoreEnv, params, "python_restore_env([venvPath])");
+	Register("python_add_path", (X::U_FUNC)U_PythonAddPath, params, "python_add_path(path_string)");
+	Register("python_remove_path", (X::U_FUNC)U_PythonRemovePath, params, "python_remove_path(path_string)");
 	Register("input", (X::U_FUNC)U_Input, params,"[var = ]input()");
 	Register("alert", (X::U_FUNC)U_Alert, params, "alert(...)");
 	Register("load", (X::U_FUNC)U_Load, params,"moodule = load(filename)");
@@ -2171,6 +2253,7 @@ bool Builtin::RegisterInternals()
 #if not defined(BARE_METAL)
 	RegisterWithScope("tensor", (X::U_FUNC)U_CreateTensor,X::Data::Tensor::GetBaseScope(),params, "t = tensor()|tensor(init values)");
 #endif
+	Register("abs", (X::U_FUNC)U_Abs, params, "abs(x) return the absolute value of x", true);
 	Register("isinstance", (X::U_FUNC)U_IsInstance, params);
 	Register("hash", (X::U_FUNC)U_Hash, params, "hash(obj) or obj.hash()", true);
 	Register("md5", (X::U_FUNC)U_MD5, params, "md5(obj) or obj.md5()", true);

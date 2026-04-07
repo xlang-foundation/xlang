@@ -220,7 +220,7 @@ namespace X
 	template<>
 	void V<XRuntime>::Create()
 	{
-		SetObj(g_pXHost->CreateRuntime());
+		SetObj(g_pXHost->GetCurrentRuntime());
 	}
 	template<>
 	template<>
@@ -770,7 +770,7 @@ namespace X
 		}
 		return false;
 	}
-	long long Value::Size()
+	long long Value::Size() const
 	{
 		long long  sizeRet = 0;
 		switch (t)
@@ -800,6 +800,11 @@ namespace X
 	{
 		return (t == ValueType::Object)
 			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Dict);
+	}
+	bool Value::IsError() const
+	{
+		return (t == ValueType::Object)
+			&& (x.obj != nullptr && x.obj->GetType() == ObjType::Error);
 	}
 	bool Value::IsBin() const
 	{

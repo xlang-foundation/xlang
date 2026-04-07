@@ -222,7 +222,7 @@ namespace X
 				return true;
 			}
 
-			bool Remove(X::Value& key)
+			bool Remove(const  X::Value& key) override
 			{
 				bool bOK = false;
 				auto it = mMap.find(key);

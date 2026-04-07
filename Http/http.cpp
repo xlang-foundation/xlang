@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -55,10 +55,10 @@ namespace X
 				bool bHandled = false;
 
 				HttpRequest* pHttpReq = new HttpRequest((void*)&req);
-				X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq));
+				X::Value valReq(pHttpReq->APISET().GetProxy(pHttpReq), false);
 
 				HttpResponse* pHttpResp = new HttpResponse(&res);
-				X::Value valResp(pHttpResp->APISET().GetProxy(pHttpResp));
+				X::Value valResp(pHttpResp->APISET().GetProxy(pHttpResp), false);
 
 				for (auto& pat : m_patters)
 				{
@@ -95,11 +95,15 @@ namespace X
 							params_cb.push_back(m_auth_parameters);
 							params_cb.push_back(pat.strRule);
 							X::Value canAccess = m_auth_callback.ObjCall(params_cb, kwargs);
-							if (!canAccess.IsTrue())
+							if (canAccess.IsDict())
 							{
-								res.status = 403;
-								res.set_content("Forbidden", "text/plain");
-								return true; // request handled
+								X::Dict dictAccess(canAccess);
+								if (!dictAccess->Get("success").ToBool())
+								{
+									res.status = dictAccess->Get("code").ToInt();
+									res.set_content(dictAccess->Get("error").ToString(), "text/plain");
+									return true; // request handled
+								}
 							}
 						}
 						X::Value retValue;
@@ -219,10 +223,14 @@ namespace X
 		list += isBinary;
 		return list;
 	}
-	bool HttpServer::Listen(std::string srvName, int port, int backlog)
+	bool HttpServer::Listen(std::string srvName, int port, int backlog, int thread_pool_count)
 	{
 		httplib::Server* pSrv = (httplib::Server*)m_pSrv;
 		pSrv->set_listen_backlog(backlog);
+		if (thread_pool_count > 0)
+		{
+			pSrv->set_thread_pool_count(thread_pool_count);
+		}
 		bool bOK = pSrv->listen(srvName.c_str(), port);
 		return bOK;
 	}
@@ -253,10 +261,10 @@ namespace X
 				{
 					ARGS params0(2);
 					HttpRequest* pHttpReq = new HttpRequest((void*)&req);
-					params0.push_back(X::Value(pHttpReq->APISET().GetProxy(pHttpReq)));
+					params0.push_back(X::Value(pHttpReq->APISET().GetProxy(pHttpReq), false));
 
 					HttpResponse* pHttpResp = new HttpResponse(&res);
-					params0.push_back(X::Value(pHttpResp->APISET().GetProxy(pHttpResp)));
+					params0.push_back(X::Value(pHttpResp->APISET().GetProxy(pHttpResp), false));
 
 					KWARGS kwParams0;
 					X::Value retValue0;
@@ -570,23 +578,31 @@ namespace X
 		}
 		return modulePath;
 	}
-
 	std::string HttpServer::ConvertReletivePathToFullPath(std::string strPath)
 	{
-		std::string modulePath = GetModulePath();
-		std::filesystem::path rootPath = modulePath;
-		std::filesystem::path fullPath;
-		// Check if the path is already absolute
-		if (std::filesystem::path(strPath).is_absolute())
-		{
-			fullPath = std::filesystem::canonical(strPath);
+		namespace fs = std::filesystem;
+
+		fs::path rootPath = GetModulePath(); // assume this is a directory path
+		fs::path input(strPath);
+		fs::path combined = input.is_absolute() ? input : (rootPath / input);
+
+		std::error_code ec;
+
+		// absolute() does not check existence, and doesn't throw with error_code overload
+		fs::path abs = fs::absolute(combined, ec);
+		if (ec) {
+			// fallback: return best-effort string
+			return combined.lexically_normal().string();
 		}
-		else {
-			// Combine the paths and normalize
-			fullPath = std::filesystem::absolute(rootPath / strPath);
-			fullPath = std::filesystem::canonical(fullPath);
+
+		// weakly_canonical won't fail just because the last component doesn't exist
+		fs::path normalized = fs::weakly_canonical(abs, ec);
+		if (ec) {
+			// fallback if something still goes wrong (bad root, permissions, etc.)
+			normalized = abs.lexically_normal();
 		}
-		return fullPath.string();
+
+		return normalized.string();
 	}
 	bool HttpServer::AddRoute(std::string urlPattern, X::Value& func)
 	{
@@ -601,6 +617,7 @@ namespace X
 		X::ARGS& params, X::KWARGS& kwParams,
 		X::Value& trailer, X::Value& retValue)
 	{
+		X::Value handler = trailer;
 		//if Route is working in decor mode, trailer will be the orgin function
 		//first parameter is the url
 		if (params.size() > 0)
@@ -623,6 +640,7 @@ namespace X
 			}
 			int p_size = (int)params.size();
 			X::ARGS params1(p_size - 1);
+			bool bGotPyHandler = false;
 			for (int i = 1; i < p_size; i++)
 			{
 				X::Value realVal;
@@ -642,6 +660,17 @@ namespace X
 						realVal = pExpr->ToKV();
 					}
 				}
+				else if (!bGotPyHandler && pi.IsObject())
+				{
+					if (pi.GetObj()->GetType() == X::ObjType::PyProxyObject)
+					{
+						//this case for python decor
+						//it is the handler itself
+						handler = pi;
+						bGotPyHandler = true;
+						realVal = pi;
+					}
+				}
 				else
 				{
 					realVal = pi;
@@ -650,7 +679,16 @@ namespace X
 			}
 			params1.Close();
 			auto url_reg = TranslateUrlToReqex(url);
-			m_patters.push_back(UrlPattern{ url,std::regex(url_reg),params1,kwParams,trailer });
+			if (bGotPyHandler)
+			{
+				X::ARGS dummyArgs;
+				X::KWARGS dummyKwArgs;
+				m_patters.push_back(UrlPattern{ url,std::regex(url_reg),dummyArgs,dummyKwArgs,handler });
+			}
+			else
+			{
+				m_patters.push_back(UrlPattern{ url,std::regex(url_reg),params1,kwParams,handler });
+			}
 
 		}
 		return true;

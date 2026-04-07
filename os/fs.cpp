@@ -23,7 +23,15 @@ namespace X
 {
 	// Helper function: UTF-8 to UTF-16
 	extern std::wstring UTF8ToWString(const std::string& utf8);
-
-// File implementation moved to file.cpp
+    extern std::filesystem::path U8Path(const std::string& utf8_str);
+    bool FileSystem::Exists(std::string path) {
+        try {
+            return std::filesystem::exists(U8Path(path));
+        }
+        catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Error checking existence: " << e.what() << std::endl;
+            return false;
+        }
+    }
 
 }

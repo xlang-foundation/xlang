@@ -17,29 +17,29 @@ limitations under the License.
 #include "object.h"
 #include "str.h"
 #include "scope.h"
-#include "stackframe.h"																																																												
+#include "stackframe.h"
 #include "xclass_object.h"
 #include "function.h"
 
 namespace X
-{																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																							
+{
 namespace Data
 {
-class mSet :
+class XlangSet :
 	virtual public XSet,
 	virtual public Object
 {
 protected:
 	bool m_useLValue = false;
 	std::vector<X::Value> m_data;
-	std::vector<X::LValue> m_ptrs;																																																																																																																										
+	std::vector<X::LValue> m_ptrs;
 	std::vector<AST::Scope*> m_bases;
 public:
 	static void Init();
 	static void cleanup();
-	mSet();
-	mSet(std::vector<std::string>& strs) :
-		mSet()
+	XlangSet();
+	XlangSet(std::vector<std::string>& strs) :
+		XlangSet()
 	{
 		AutoLock autoLock(m_lock);
 		for (auto& s : strs)
@@ -47,16 +47,16 @@ public:
 			m_data.push_back(X::Value(new Str(s.c_str(), (int)s.size())));
 		}
 	}
-	mSet(X::ARGS& params) :
-		mSet()
+	XlangSet(X::ARGS& params) :
+		XlangSet()
 	{
 		AutoLock autoLock(m_lock);
 		for (auto& param : params)
 		{
-			m_data.push_back(param);
+			AddUnique(param);
 		}
 	}
-	~mSet()
+	~XlangSet()
 	{
 		AutoLock autoLock(m_lock);
 		m_bases.clear();
@@ -96,7 +96,7 @@ public:
 			{
 				X::Value idx((int)i);
 				X::Value val(*m_ptrs[i]);
-				proc(rt, pContext,idx, val, params, kwParams);
+				proc(rt, pContext, idx, val, params, kwParams);
 			}
 		}
 		else
@@ -104,7 +104,7 @@ public:
 			for (size_t i = 0; i < m_data.size(); i++)
 			{
 				X::Value idx((int)i);
-				proc(rt, pContext, idx,m_data[i], params, kwParams);
+				proc(rt, pContext, idx, m_data[i], params, kwParams);
 			}
 		}
 		return true;
@@ -155,18 +155,20 @@ public:
 	}
 	virtual XObj* Clone() override
 	{
-		auto* newSet = new mSet();
+		auto* newSet = new XlangSet();
 		newSet->IncRef();
 		auto size = Size();
 		for (long long i = 0; i < size; i++)
 		{
 			Value v;
 			Get(i, v);
-			newSet->Add(v);
+			newSet->AddUnique(v);
 		}
 		return newSet;
 	}
-	virtual mSet& operator +=(X::Value& r) override
+
+	// += operator: in-place union (Python set |= / update semantics)
+	virtual XlangSet& operator +=(X::Value& r) override
 	{
 		AutoLock autoLock(m_lock);
 		if (r.IsObject())
@@ -174,26 +176,27 @@ public:
 			Object* pObj = dynamic_cast<Object*>(r.GetObj());
 			if (pObj->GetType() == ObjType::Set)
 			{
-				mSet* pOther = dynamic_cast<mSet*>(pObj);
+				XlangSet* pOther = dynamic_cast<XlangSet*>(pObj);
 				for (auto& it : pOther->m_data)
 				{
-					Add(nullptr,it);
+					X::Value v = it;
+					AddUnique_NoLock(v);
 				}
 			}
 			else
 			{
-				Add(nullptr,r);
+				AddUnique_NoLock(r);
 			}
 		}
 		else
 		{
-			Add(nullptr, r);
+			AddUnique_NoLock(r);
 		}
-
 		return *this;
 	}
 
-	mSet& operator -=(X::Value& r) 
+	// -= operator: in-place difference
+	XlangSet& operator -=(X::Value& r)
 	{
 		AutoLock autoLock(m_lock);
 		if (r.IsObject())
@@ -201,29 +204,29 @@ public:
 			Object* pObj = dynamic_cast<Object*>(r.GetObj());
 			if (pObj->GetType() == ObjType::Set)
 			{
-				mSet* pOther = dynamic_cast<mSet*>(pObj);
+				XlangSet* pOther = dynamic_cast<XlangSet*>(pObj);
 				for (auto& it : pOther->m_data)
 				{
-					Remove(nullptr,it);
+					X::Value v = it;
+					Remove_NoLock(v);
 				}
 			}
 			else
 			{
-				Remove(nullptr,r);
+				Remove_NoLock(r);
 			}
 		}
 		else
 		{
-			Remove(nullptr, r);
+			Remove_NoLock(r);
 		}
-
 		return *this;
 	}
 
-	virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
+	virtual bool ToBytes(XlangRuntime* rt, XObj* pContext, X::XLangStream& stream) override
 	{
 		AutoLock autoLock(m_lock);
-		Object::ToBytes(rt,pContext,stream);
+		Object::ToBytes(rt, pContext, stream);
 		size_t size = Size();
 		stream << size;
 		for (size_t i = 0; i < size; i++)
@@ -237,48 +240,48 @@ public:
 	virtual bool FromBytes(X::XLangStream& stream) override
 	{
 		AutoLock autoLock(m_lock);
-		//TODO:need to pass runtime,and calculate base class for some objects
 		size_t size;
 		stream >> size;
 		for (size_t i = 0; i < size; i++)
 		{
 			X::Value v0;
 			stream >> v0;
-			m_data.push_back(v0);
+			AddUnique_NoLock(v0);
 		}
 		return true;
 	}
+	// Python-style compact: {1, 2, 3}
 	virtual const char* ToString(bool WithFormat = false) override
 	{
 		AutoLock autoLock(m_lock);
-		std::string strSet = "{\n";
 		size_t size = Size();
+		if (size == 0)
+		{
+			std::string emptySet("set()");
+			return GetABIString(emptySet);
+		}
+		std::string strSet = "{";
 		for (size_t i = 0; i < size; i++)
 		{
 			X::Value v0;
 			Get(i, v0);
-			strSet += '\t' + v0.ToString(WithFormat);
+			strSet += v0.ToString(WithFormat);
 			if (i < (size - 1))
 			{
-				strSet+=",\n";
-			}
-			else
-			{
-				strSet += "\n";
+				strSet += ", ";
 			}
 		}
 		strSet += "}";
 		return GetABIString(strSet);
 	}
-	FORCE_INLINE virtual long long Size() override 
+	FORCE_INLINE virtual long long Size() override
 	{
-		AutoLock autoLock(m_lock);	
+		AutoLock autoLock(m_lock);
 		return m_useLValue ? m_ptrs.size() : m_data.size();
 	}
 	FORCE_INLINE void Clear()
 	{
 		AutoLock autoLock(m_lock);
-		m_bases.clear();
 		m_ptrs.clear();
 		m_data.clear();
 	}
@@ -287,7 +290,7 @@ public:
 		return m_data;
 	}
 	virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
-	{ 
+	{
 		Object::GetBaseScopes(bases);
 		for (auto it : m_bases)
 		{
@@ -295,14 +298,43 @@ public:
 		}
 	}
 	virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
-		KWARGS& kwParams,X::Value& retValue) override;
+		KWARGS& kwParams, X::Value& retValue) override;
+
+	// Internal: Add element without checking for duplicate (caller holds lock)
+	FORCE_INLINE void AddUnique_NoLock(X::Value& v)
+	{
+		for (size_t i = 0; i < m_data.size(); i++)
+		{
+			if (v == (X::Value)(m_data[i]))
+			{
+				return; // already exists
+			}
+		}
+		m_data.push_back(v);
+	}
+
+	// Internal: Remove by value without holding lock (caller holds lock)
+	FORCE_INLINE bool Remove_NoLock(X::Value& v)
+	{
+		for (size_t i = 0; i < m_data.size(); i++)
+		{
+			if (v == (X::Value)(m_data[i]))
+			{
+				m_data.erase(std::next(m_data.begin(), i));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Public add: acquire lock, deduplicate
 	FORCE_INLINE void Add(X::LValue p)
 	{
 		AutoLock autoLock(m_lock);
 		bool isDup = false;
 		for (size_t i = 0; i < m_ptrs.size(); i++)
 		{
-			if (p == (X::LValue) (*m_ptrs[i])) {
+			if (p == (X::LValue)(*m_ptrs[i])) {
 				isDup = true;
 				break;
 			}
@@ -314,16 +346,13 @@ public:
 	FORCE_INLINE void Add(X::Value v)
 	{
 		AutoLock autoLock(m_lock);
-		bool isDup = false;
-		for (size_t i = 0; i < m_data.size(); i++)
-		{
-			if (v == (X::Value) (m_data[i])) {
-				isDup = true;
-				break;
-			}
-		}
-		if (!isDup)
-			m_data.push_back(v);
+		AddUnique_NoLock(v);
+	}
+	// Thread-safe public add (unique)
+	FORCE_INLINE void AddUnique(X::Value& v)
+	{
+		AutoLock autoLock(m_lock);
+		AddUnique_NoLock(v);
 	}
 	FORCE_INLINE void Add(XlangRuntime* rt, X::Value& v)
 	{
@@ -350,76 +379,39 @@ public:
 				MakeCommonBases(rt->M(), dummy);
 			}
 		}
-
-		bool isDup = false;
-		for (size_t i = 0; i < m_data.size(); i++)
-		{
-			if (v == (X::Value) (m_data[i])) {
-				isDup = true;
-				break;
-			}
-		}
-		if (!isDup)
-			m_data.push_back(v);
-
+		AddUnique_NoLock(v);
 	}
 
-	FORCE_INLINE void Remove(X::LValue p)
+	// Remove by index (legacy support)
+	FORCE_INLINE void Remove(long long idx)
 	{
 		AutoLock autoLock(m_lock);
-		for (size_t i = 0; i < m_ptrs.size(); i++)
+		if (!m_useLValue)
 		{
-			if (p == (X::LValue) (*m_ptrs[i])) {
-				m_data.erase(std::next(m_data.begin(), i));
-				break;
+			if (idx >= 0 && idx < (long long)m_data.size())
+			{
+				m_data.erase(std::next(m_data.begin(), idx));
+			}
+		}
+		else
+		{
+			if (idx >= 0 && idx < (long long)m_ptrs.size())
+			{
+				m_ptrs.erase(std::next(m_ptrs.begin(), idx));
 			}
 		}
 	}
-	FORCE_INLINE void Remove(X::Value v)
+
+	// Remove by value — returns true if found and removed
+	FORCE_INLINE bool Remove(X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
-		for (size_t i = 0; i < m_data.size(); i++)
-		{
-			if (v == (X::Value) (m_data[i])) {
-				m_data.erase(std::next(m_data.begin(), i));
-				break;
-			}
-		}
+		return Remove_NoLock(v);
 	}
 	FORCE_INLINE void Remove(XlangRuntime* rt, X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
-		if (v.IsObject())
-		{
-			Object* obj = dynamic_cast<Object*>(v.GetObj());
-			if (obj->GetType() == ObjType::XClassObject)
-			{
-				XClassObject* pClassObj = dynamic_cast<XClassObject*>(obj);
-				if (pClassObj)
-				{
-					AST::XClass* pXClass = pClassObj->GetClassObj();
-					if (pXClass)
-					{
-						auto& bases_0 = pXClass->GetBases();
-						MakeCommonBases(pXClass, bases_0);
-					}
-				}
-			}
-			else if (obj->GetType() == ObjType::Function)
-			{
-				std::vector<Value> dummy;
-				MakeCommonBases(rt->M(), dummy);
-			}
-		}
-
-		for (size_t i = 0; i < m_data.size(); i++)
-		{
-			if (v == (X::Value) (m_data[i])) {
-				m_data.erase(std::next(m_data.begin(), i));
-				break;
-			}
-		}
-
+		Remove_NoLock(v);
 	}
 
 	FORCE_INLINE void MakeCommonBases(
@@ -500,13 +492,13 @@ public:
 	virtual List* FlatPack(XlangRuntime* rt, XObj* pContext,
 		std::vector<std::string>& IdSet, int id_offset,
 		long long startIndex, long long count) override;
-	FORCE_INLINE bool Set(X::Value& v) 
+	FORCE_INLINE bool SetVal(X::Value& v)
 	{
 		AutoLock autoLock(m_lock);
 		if (m_useLValue)
-		 	m_ptrs.push_back(v);
+			m_ptrs.push_back(v);
 		else
-			m_data.push_back(v);
+			AddUnique_NoLock(v);
 		return true;
 	}
 	FORCE_INLINE virtual bool Set(long long index, X::Value& v) override
@@ -561,12 +553,6 @@ public:
 		vals.push_back(X::Value(nPos));
 		return true;
 	}
-	//virtual Value Get(long long idx) override
-	//{
-//		Value v0;
-//		Get(idx, v0);
-//		return v0;
-//	}
 	FORCE_INLINE bool Get(long long idx, X::Value& v,
 		X::LValue* lValue = nullptr)
 	{
@@ -597,5 +583,9 @@ public:
 		return true;
 	}
 };
+
+// Forward alias: xlang and new code can use Set = XlangSet
+using Set = XlangSet;
+
 }
 }

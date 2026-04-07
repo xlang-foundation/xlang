@@ -1,16 +1,6 @@
 ﻿/*
 Copyright (C) 2024 The XLang Foundation
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Licensed under the Apache License, Version 2.0
 */
 
 #include "set.h"
@@ -19,139 +9,483 @@ limitations under the License.
 #include "list.h"
 #include "port.h"
 #include "function.h"
+#include "obj_func_scope.h"
 
 namespace X
 {
 	namespace Data
 	{
-		class SetScope :
-			virtual public AST::Scope
-		{
-			AST::StackFrame* m_stackFrame = nullptr;
-		public:
-			SetScope() :
-				Scope()
-			{
-				Init();
-			}
-			void clean()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-					m_stackFrame = nullptr;
-				}
-			}
-			~SetScope()
-			{
-				if (m_stackFrame)
-				{
-					delete m_stackFrame;
-				}
-			}
-			void Init()
-			{
-				m_stackFrame = new AST::StackFrame();
-				m_stackFrame->SetVarCount(3);
+		static Obj_Func_Scope<20> _setScope;
 
-				std::string strName;
-				{
-					strName = "remove";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						mSet* pObj = dynamic_cast<mSet*>(pContext);
-						long long idx = params[0];
-						pObj->Remove(idx);
-						retValue = Value(true);
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"remove(index)",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-				{
-					strName = "clear";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						mSet* pObj = dynamic_cast<mSet*>(pContext);
-						pObj->Clear();
-						retValue = Value(true);
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"clear()",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
-				{
-					strName = "size";
-					auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
-						X::ARGS& params,
-						X::KWARGS& kwParams,
-						X::Value& retValue)
-					{
-						std::cout << "Set.Size" << std::endl;
-						mSet* pObj = dynamic_cast<mSet*>(pContext);
-						retValue = Value(pObj->Size());
-						std::cout << "Set.Size->End" << std::endl;
-						return true;
-					};
-					X::U_FUNC func(f);
-					AST::ExternFunc* extFunc = new AST::ExternFunc(strName,
-						"size()",func);
-					auto* pFuncObj = new Function(extFunc);
-					pFuncObj->IncRef();
-					int idx = AddOrGet(strName, false);
-					Value funcVal(pFuncObj);
-					m_stackFrame->Set(idx, funcVal);
-				}
+		void XlangSet::Init()
+		{
+			_setScope.Init();
 
-			}
-		};
-		static SetScope* _SetScope = nullptr;
-		void mSet::Init()
-		{
-			_SetScope = new SetScope();
-		}
-		void mSet::cleanup()
-		{
-			if (_SetScope)
+			// add(item)
 			{
-				_SetScope->clean();
-				delete _SetScope;
-				_SetScope = nullptr;
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					if (params.size() >= 1) { X::Value v = params[0]; pObj->AddUnique(v); }
+					retValue = X::Value(); return true;
+				};
+				_setScope.AddFunc("add", "add(item)", f);
 			}
+
+			// discard(item)
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					if (params.size() >= 1) { X::Value v = params[0]; pObj->Remove_NoLock(v); }
+					retValue = X::Value(); return true;
+				};
+				_setScope.AddFunc("discard", "discard(item)", f);
+			}
+
+			// remove(item)
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					if (params.size() >= 1) { X::Value v = params[0]; pObj->Remove_NoLock(v); }
+					retValue = X::Value(); return true;
+				};
+				_setScope.AddFunc("remove", "remove(item)", f);
+			}
+
+			// pop()
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					AutoLock autoLock(pObj->m_lock);
+					if (!pObj->m_data.empty())
+					{
+						retValue = pObj->m_data.back();
+						pObj->m_data.pop_back();
+					}
+					else { retValue = X::Value(); }
+					return true;
+				};
+				_setScope.AddFunc("pop", "pop()", f);
+			}
+
+			// clear()
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					AutoLock autoLock(pObj->m_lock);
+					pObj->m_data.clear();
+					retValue = X::Value(); return true;
+				};
+				_setScope.AddFunc("clear", "clear()", f);
+			}
+
+			// copy()
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					XlangSet* pCopy = dynamic_cast<XlangSet*>(pObj->Clone());
+					retValue = X::Value(pCopy); return true;
+				};
+				_setScope.AddFunc("copy", "copy()", f);
+			}
+
+			// size()
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					retValue = X::Value((long long)pObj->Size()); return true;
+				};
+				_setScope.AddFunc("size", "size()", f);
+			}
+
+			// count() - alias for size
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					retValue = X::Value((long long)pObj->Size()); return true;
+				};
+				_setScope.AddFunc("count", "count()", f);
+			}
+
+			// update(*others) - in-place union
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					for (size_t pi = 0; pi < params.size(); pi++)
+					{
+						X::Value other = params[pi];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								long long sz = pOtherSet->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pOtherSet->Get(i, v); pObj->AddUnique(v);
+								}
+							}
+						}
+					}
+					retValue = X::Value(); return true;
+				};
+				_setScope.AddFunc("update", "update(*others)", f);
+			}
+
+			// union(other) - return new set
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					XlangSet* pResult = dynamic_cast<XlangSet*>(pObj->Clone());
+					for (size_t pi = 0; pi < params.size(); pi++)
+					{
+						X::Value other = params[pi];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								long long sz = pOtherSet->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pOtherSet->Get(i, v); pResult->AddUnique(v);
+								}
+							}
+						}
+					}
+					retValue = X::Value(pResult); return true;
+				};
+				_setScope.AddFunc("union", "union(other)", f);
+			}
+
+			// intersection(other) - return new set
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					XlangSet* pResult = new XlangSet();
+					pResult->IncRef();
+					if (params.size() >= 1)
+					{
+						X::Value other = params[0];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								long long sz = pObj->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pObj->Get(i, v);
+									if (pOtherSet->IsContain(v)) { pResult->AddUnique(v); }
+								}
+							}
+						}
+					}
+					retValue = X::Value(pResult); return true;
+				};
+				_setScope.AddFunc("intersection", "intersection(other)", f);
+			}
+
+			// intersection_update(other) - in-place
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					if (params.size() >= 1)
+					{
+						X::Value other = params[0];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								AutoLock autoLock(pObj->m_lock);
+								std::vector<X::Value> kept;
+								for (auto& v : pObj->m_data)
+								{
+									if (pOtherSet->IsContain(v)) { kept.push_back(v); }
+								}
+								pObj->m_data = std::move(kept);
+							}
+						}
+					}
+					retValue = X::Value(); return true;
+				};
+				_setScope.AddFunc("intersection_update", "intersection_update(other)", f);
+			}
+
+			// difference(other) - return new set
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					XlangSet* pResult = new XlangSet();
+					pResult->IncRef();
+					long long sz = pObj->Size();
+					for (long long i = 0; i < sz; i++)
+					{
+						X::Value v; pObj->Get(i, v);
+						bool inOther = false;
+						for (size_t pi = 0; pi < params.size() && !inOther; pi++)
+						{
+							X::Value other = params[pi];
+							if (other.IsObject())
+							{
+								Object* pOther = dynamic_cast<Object*>(other.GetObj());
+								if (pOther && pOther->GetType() == ObjType::Set)
+								{
+									XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+									if (pOtherSet->IsContain(v)) { inOther = true; }
+								}
+							}
+						}
+						if (!inOther) { pResult->AddUnique(v); }
+					}
+					retValue = X::Value(pResult); return true;
+				};
+				_setScope.AddFunc("difference", "difference(other)", f);
+			}
+
+			// difference_update(other) - in-place
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					for (size_t pi = 0; pi < params.size(); pi++)
+					{
+						X::Value other = params[pi];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								long long sz = pOtherSet->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pOtherSet->Get(i, v); pObj->Remove_NoLock(v);
+								}
+							}
+						}
+					}
+					retValue = X::Value(); return true;
+				};
+				_setScope.AddFunc("difference_update", "difference_update(other)", f);
+			}
+
+			// symmetric_difference(other) - return new set
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					XlangSet* pResult = new XlangSet();
+					pResult->IncRef();
+					if (params.size() >= 1)
+					{
+						X::Value other = params[0];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								long long sz = pObj->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pObj->Get(i, v);
+									if (!pOtherSet->IsContain(v)) { pResult->AddUnique(v); }
+								}
+								sz = pOtherSet->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pOtherSet->Get(i, v);
+									if (!pObj->IsContain(v)) { pResult->AddUnique(v); }
+								}
+							}
+						}
+					}
+					retValue = X::Value(pResult); return true;
+				};
+				_setScope.AddFunc("symmetric_difference", "symmetric_difference(other)", f);
+			}
+
+			// symmetric_difference_update(other) - in-place
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					if (params.size() >= 1)
+					{
+						X::Value other = params[0];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								long long sz = pOtherSet->Size();
+								std::vector<X::Value> toAdd;
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pOtherSet->Get(i, v);
+									if (!pObj->IsContain(v)) { toAdd.push_back(v); }
+								}
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pOtherSet->Get(i, v);
+									if (pObj->IsContain(v)) { pObj->Remove_NoLock(v); }
+								}
+								for (auto& v : toAdd) { X::Value vv = v; pObj->AddUnique(vv); }
+							}
+						}
+					}
+					retValue = X::Value(); return true;
+				};
+				_setScope.AddFunc("symmetric_difference_update",
+					"symmetric_difference_update(other)", f);
+			}
+
+			// issubset(other) - return bool
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					bool result = false;
+					if (params.size() >= 1)
+					{
+						X::Value other = params[0];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								result = true;
+								long long sz = pObj->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pObj->Get(i, v);
+									if (!pOtherSet->IsContain(v)) { result = false; break; }
+								}
+							}
+						}
+					}
+					retValue = X::Value(result); return true;
+				};
+				_setScope.AddFunc("issubset", "issubset(other)", f);
+			}
+
+			// issuperset(other) - return bool
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					bool result = false;
+					if (params.size() >= 1)
+					{
+						X::Value other = params[0];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								result = true;
+								long long sz = pOtherSet->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pOtherSet->Get(i, v);
+									if (!pObj->IsContain(v)) { result = false; break; }
+								}
+							}
+						}
+					}
+					retValue = X::Value(result); return true;
+				};
+				_setScope.AddFunc("issuperset", "issuperset(other)", f);
+			}
+
+			// isdisjoint(other) - return bool
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params, X::KWARGS& kwParams, X::Value& retValue)
+				{
+					XlangSet* pObj = dynamic_cast<XlangSet*>(pContext);
+					bool result = true;
+					if (params.size() >= 1)
+					{
+						X::Value other = params[0];
+						if (other.IsObject())
+						{
+							Object* pOther = dynamic_cast<Object*>(other.GetObj());
+							if (pOther && pOther->GetType() == ObjType::Set)
+							{
+								XlangSet* pOtherSet = dynamic_cast<XlangSet*>(pOther);
+								long long sz = pObj->Size();
+								for (long long i = 0; i < sz; i++)
+								{
+									X::Value v; pObj->Get(i, v);
+									if (pOtherSet->IsContain(v)) { result = false; break; }
+								}
+							}
+						}
+					}
+					retValue = X::Value(result); return true;
+				};
+				_setScope.AddFunc("isdisjoint", "isdisjoint(other)", f);
+			}
+
+			_setScope.Close();
 		}
-		mSet::mSet() :
+
+		void XlangSet::cleanup()
+		{
+			_setScope.Clean();
+		}
+
+		XlangSet::XlangSet() :
 			XSet(0),
 			Object()
 		{
 			m_t = ObjType::Set;
-			m_bases.push_back(_SetScope);
-
+			m_bases.push_back(_setScope.GetMyScope());
 		}
-		bool mSet::Call(XRuntime* rt, XObj* pContext,
-			ARGS& params,
-			KWARGS& kwParams,
-			X::Value& retValue)
+
+		bool XlangSet::Call(XRuntime* rt, XObj* pContext,
+			ARGS& params, KWARGS& kwParams, X::Value& retValue)
 		{
-			//do twice, first to do size or other call with
-			//memory allocation
 			for (auto it : kwParams)
 			{
 				if (it.Match("size"))
@@ -167,27 +501,20 @@ namespace X
 				if (it.Match("init"))
 				{
 					auto v0 = it.val;
-					if (v0.IsObject() 
-						&& v0.GetObj()->GetType() ==ObjType::Str
-						&& v0.ToString().find("rand")==0)
+					if (v0.IsObject()
+						&& v0.GetObj()->GetType() == ObjType::Str
+						&& v0.ToString().find("rand") == 0)
 					{
 						auto strV = v0.ToString();
-						double d1 = 0;
-						double d2 = 1;
-						SCANF(strV.c_str(),"rand(%lf,%lf)",&d1,&d2);
+						double d1 = 0, d2 = 1;
+						SCANF(strV.c_str(), "rand(%lf,%lf)", &d1, &d2);
 						AutoLock autoLock(m_lock);
-						for (auto& v : m_data)
-						{
-							v = randDouble(d1,d2);
-						}
+						for (auto& v : m_data) { v = randDouble(d1, d2); }
 					}
 					else
 					{
 						AutoLock autoLock(m_lock);
-						for (auto& v : m_data)
-						{
-							v = v0;
-						}
+						for (auto& v : m_data) { v = v0; }
 					}
 					break;
 				}
@@ -195,13 +522,13 @@ namespace X
 			retValue = X::Value(this);
 			return true;
 		}
-		
-		List* mSet::FlatPack(XlangRuntime* rt, XObj* pContext,
+
+		List* XlangSet::FlatPack(XlangRuntime* rt, XObj* pContext,
 			std::vector<std::string>& IdSet, int id_offset,
 			long long startIndex, long long count)
 		{
 			AutoLock autoLock(m_lock);
-			if (id_offset < IdSet.size())
+			if (id_offset < (int)IdSet.size())
 			{
 				unsigned long long index = 0;
 				SCANF(IdSet[id_offset++].c_str(), "%llu", &index);
@@ -212,27 +539,17 @@ namespace X
 					Object* pChildObj = dynamic_cast<Object*>(item.GetObj());
 					if (pChildObj)
 					{
-						return pChildObj->FlatPack(rt, pContext, IdSet, id_offset, startIndex, count);
+						return pChildObj->FlatPack(rt, pContext, IdSet, id_offset,
+							startIndex, count);
 					}
 				}
-				//all elses, return an empty list
 				List* pOutList = new List();
 				pOutList->IncRef();
 				return pOutList;
-
 			}
-			if (startIndex < 0 || startIndex >= Size())
-			{
-				return nullptr;
-			}
-			if (count == -1)
-			{
-				count = Size()- startIndex;
-			}
-			if ((startIndex + count) > Size())
-			{
-				return nullptr;
-			}
+			if (startIndex < 0 || startIndex >= Size()) { return nullptr; }
+			if (count == -1) { count = Size() - startIndex; }
+			if ((startIndex + count) > Size()) { return nullptr; }
 			List* pOutList = new List();
 			pOutList->IncRef();
 			for (long long i = 0; i < count; i++)
@@ -242,30 +559,29 @@ namespace X
 				Get(idx, val);
 				Dict* dict = new Dict();
 				auto objIds = CombinObjectIds(IdSet, (unsigned long long)idx);
-				dict->Set("Id", objIds);
-				//Data::Str* pStrName = new Data::Str(it.first);
-				//dict->Set("Name", X::Value(pStrName));
+				dict->Set(X::Value(new Str(objIds.c_str(), (int)objIds.size())),
+					X::Value(new Str("Id", 2)));
 				auto valType = val.GetValueType();
 				Data::Str* pStrType = new Data::Str(valType);
-				dict->Set("Type", X::Value(pStrType));
-				if (!val.IsObject() || (val.IsObject() && 
-					dynamic_cast<Object*>(val.GetObj())->IsStr()))
+				dict->Set(X::Value(new Str("Type", 4)), X::Value(pStrType));
+				if (!val.IsObject() ||
+					(val.IsObject() && dynamic_cast<Object*>(val.GetObj())->IsStr()))
 				{
-					dict->Set("Value", val);
+					dict->Set(X::Value(new Str("Value", 5)), val);
 				}
 				else if (val.IsObject())
 				{
 					X::Value objId((unsigned long long)val.GetObj());
-					dict->Set("Value", objId);
+					dict->Set(X::Value(new Str("Value", 5)), objId);
 					X::Value valShape = val.GetObj()->Shapes();
 					if (valShape.IsList())
 					{
-						dict->Set("Size", valShape);
+						dict->Set(X::Value(new Str("Size", 4)), valShape);
 					}
 					else
 					{
 						X::Value valSize(val.GetObj()->Size());
-						dict->Set("Size", valSize);
+						dict->Set(X::Value(new Str("Size", 4)), valSize);
 					}
 				}
 				X::Value valDict(dict);

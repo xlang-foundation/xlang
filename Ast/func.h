@@ -46,6 +46,8 @@ protected:
 	bool m_needSetHint = false;
 	List* Params = nil;
 	std::vector<int> m_IndexofParamList;//same size with input positional param
+	// Parallel to m_IndexofParamList: nullptr = no default; non-null = AST Expression to evaluate as default
+	std::vector<Expression*> m_DefaultExprs;
 	Expression* RetType = nil;
 	void FindMyModule();
 	void SetName(Expression* n)

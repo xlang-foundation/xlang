@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ class Package :
 	void UnloadAddedModules();
 	Locker m_lock;
 public:
+	virtual bool IsValuePackage() override;
 	FORCE_INLINE std::vector<MemberIndexInfo>& GetMemberInfo() { return m_memberInfos; }
 	Package(void* pObj):
 		Data::Object()
@@ -300,6 +301,7 @@ class PackageProxy :
 		return (m_pPackage->GetAPISet() == pPackage->GetAPISet());
 	}
 public:
+	virtual bool IsValuePackage() override;
 	Package* GetPackage() { return m_pPackage; }
 	virtual void SetPackageAccessor(PackageAccessor func) override
 	{

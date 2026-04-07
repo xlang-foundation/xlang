@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -380,6 +380,7 @@ namespace X
 		virtual Value Get(long long idx) = 0;
 		virtual void AddItem(X::Value& v) = 0;
 		virtual void RemoveAll() = 0;
+		virtual bool RemoveAt(long long idx) = 0;
 		FORCE_INLINE void append(X::Value& v)
 		{
 			AddItem(v);
@@ -395,6 +396,7 @@ namespace X
 		virtual X::Value Get(const X::Value& key) = 0;
 		virtual X::Value Get(const X::Value& key,const X::Value& defaultValue) = 0;
 		virtual bool Has(const X::Value& key) = 0;
+		virtual bool Remove(const X::Value& key) = 0;
 		virtual void Enum(Dict_Enum proc) = 0;
 		virtual bool Compare(X::Value& dict) = 0;
 		FORCE_INLINE void Set(const char* key, X::Value val)
@@ -662,6 +664,7 @@ namespace X
 		virtual bool RunCodeWithThisScope(const char* code) = 0;
 		virtual void SetAPISet(void* pApiSet) = 0;
 		virtual bool IsSamePackage(XPackage* pPack) = 0;
+		virtual bool IsValuePackage() { return false; }
 	};
 	FORCE_INLINE long OnEvent(const char* evtName, EventHandler handler)
 	{
