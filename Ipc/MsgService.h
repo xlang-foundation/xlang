@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -88,7 +88,9 @@ namespace X
 #endif
 
             // Helper methods
+#if (WIN32)
             std::string GetMessageKey() const;
+#endif
             void HandleCreateSharedMemMessage(const pas_mesg_buffer& msg);
             void LogError(const std::string& operation, int errorCode = 0);
             void LogSuccess(const std::string& operation);

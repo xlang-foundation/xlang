@@ -32,8 +32,11 @@ def run_tests():
     rel_xlang_exe_2 = os.path.join(rel_repo_root_parent, 'out', 'build', 'x64-Debug', 'bin', 'xlang.exe')
 
     legacy_xlang_exe = r"d:\\CantorAI\\xlang\\out\\build\\x64-Debug\\bin\\xlang.exe"
+    linux_xlang_exe = os.path.join(rel_repo_root, 'build_linux', 'bin', 'xlang')
 
-    if os.path.exists(rel_xlang_exe):
+    if os.path.exists(linux_xlang_exe):
+        xlang_exe = linux_xlang_exe
+    elif os.path.exists(rel_xlang_exe):
         xlang_exe = rel_xlang_exe
     elif os.path.exists(rel_xlang_exe_2):
         xlang_exe = rel_xlang_exe_2
@@ -42,6 +45,7 @@ def run_tests():
     else:
         raise FileNotFoundError(
             "xlang executable not found. Tried:\n"
+            f"  - {linux_xlang_exe}\n"
             f"  - {rel_xlang_exe}\n"
             f"  - {legacy_xlang_exe}\n"
         )
