@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -170,6 +170,7 @@ namespace X
 		virtual void ActivePythonVEnv(const char* venvPath) = 0;
 		virtual void DeactivePythonVEnv(const char* venvPath) = 0;
 		virtual unsigned long long GetObjectCount() = 0;
+		virtual void GetBuiltins(X::Value& retList) = 0;
 	};
 	extern XHost* g_pXHost;
 }

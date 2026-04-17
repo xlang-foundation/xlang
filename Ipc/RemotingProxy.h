@@ -105,7 +105,7 @@ namespace X
 		protected:
 			bool mRun = true;
 			void Cleanup();
-
+			void FireServerExitEvent();
 		private:
 			bool mHostUseGlobal = false;
 

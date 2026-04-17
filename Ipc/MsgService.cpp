@@ -81,6 +81,53 @@ namespace X
             LOG << "MsgService stopped" << LINE_END;
         }
 
+        bool MsgService::CheckLrpcServer(const std::string& url)
+        {
+            std::string portStr = url;
+            auto pos = url.find("lrpc:");
+            if (pos != std::string::npos)
+            {
+                portStr = url.substr(pos + 5);
+            }
+            long port = 0;
+#if (WIN32)
+            sscanf_s(portStr.c_str(), "%ld", &port);
+#else
+            sscanf(portStr.c_str(), "%ld", &port);
+#endif
+
+            // See if server's message interface operates
+            std::string msgKey(PAS_MSG_KEY);
+            if (port != 0)
+            {
+                msgKey += std::to_string(port);
+            }
+
+#if (WIN32)
+            HANDLE hFileMailSlot = CreateFileA(msgKey.c_str(),
+                GENERIC_WRITE,
+                FILE_SHARE_READ,
+                (LPSECURITY_ATTRIBUTES)NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                (HANDLE)NULL);
+            if (hFileMailSlot == INVALID_HANDLE_VALUE)
+            {
+                return false;
+            }
+            CloseHandle(hFileMailSlot);
+            return true;
+#else
+            key_t msgkey = (port == 0) ? (key_t)PAS_MSG_KEY : (key_t)port;
+            int msgid = msgget(msgkey, 0666);
+            if (msgid == -1)
+            {
+                return false;
+            }
+            return true;
+#endif
+        }
+
         void MsgService::run()
         {
             LOG << "MsgService thread starting..." << LINE_END;

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -428,6 +428,9 @@ static PyNumberMethods XlangObject_as_number = {
 };
 
 
+extern X::Value CheckXlangObjectAndConvert(PyObject* obj);
+static PyObject* XlangObject_richcompare(PyObject* self, PyObject* other, int op);
+
 static PyTypeObject XlangObjectType = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"XlangObject",                      /* tp_name */
@@ -452,7 +455,7 @@ static PyTypeObject XlangObjectType = {
 	"Xlang Python Object",              /* tp_doc */
 	0,                                  /* tp_traverse */
 	0,                                  /* tp_clear */
-	0,                                  /* tp_richcompare */
+	(richcmpfunc)XlangObject_richcompare, /* tp_richcompare */
 	0,                                  /* tp_weaklistoffset */
 	0,                                  /* tp_iter */
 	0,                                  /* tp_iternext */
@@ -479,6 +482,41 @@ static PyTypeObject XlangObjectType = {
 	0,                                  /* tp_finalize */
 	0,                                  /* tp_vectorcall */
 };
+
+static PyObject* XlangObject_richcompare(PyObject* self, PyObject* other, int op)
+{
+	MGil gil;
+	if (!PyObject_TypeCheck(self, &XlangObjectType)) {
+		Py_RETURN_NOTIMPLEMENTED;
+	}
+
+	PyXlangObject* pSelf = (PyXlangObject*)self;
+	X::Value valOther = CheckXlangObjectAndConvert(other);
+
+	if (valOther.IsInvalid()) {
+		Py_RETURN_NOTIMPLEMENTED;
+	}
+
+	bool bRet = false;
+	switch (op)
+	{
+	case Py_EQ:
+		bRet = (pSelf->realObj == valOther);
+		break;
+	case Py_NE:
+		bRet = (pSelf->realObj != valOther);
+		break;
+	default:
+		Py_RETURN_NOTIMPLEMENTED;
+	}
+
+	if (bRet) {
+		Py_RETURN_TRUE;
+	}
+	else {
+		Py_RETURN_FALSE;
+	}
+}
 
 static bool __XlangObjectType_Prepared = false;
 void PrepareXlangObjectType() {

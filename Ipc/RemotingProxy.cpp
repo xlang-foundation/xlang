@@ -190,6 +190,15 @@ namespace X
 				CLOSE_SEMAPHORE(semaphore);
 			}
 		}
+		void RemotingProxy::FireServerExitEvent()
+		{
+			// Fire event so the client script can handle the disconnect
+			std::string evtName = "ServerExit";
+			X::ARGS params(1);
+			params.push_back(X::Value(mHostProcessId));
+			X::KWARGS kwargs;
+			X::EventSystem::I().Fire(nullptr, nullptr, evtName, params, kwargs, false);
+		}
 		void RemotingProxy::SessionRun()
 		{
 			AddRef();
@@ -218,6 +227,7 @@ namespace X
 					MS_SLEEP(100);
 				}
 				CallHandler::Close();
+				FireServerExitEvent();
 				if (m_ExitOnHostExit)
 				{
 					m_ConnectLock.Lock();

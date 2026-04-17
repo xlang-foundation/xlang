@@ -46,6 +46,7 @@ namespace X
             // Status checking
             bool IsRunning() const { return mRun.load(); }
             bool IsInitialized() const { return mInitialized.load(); }
+            static bool CheckLrpcServer(const std::string& url);
 
         private:
             // Configuration

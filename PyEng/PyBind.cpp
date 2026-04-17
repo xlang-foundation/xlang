@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ extern "C"
 #include "XlangLoad.h"
 #include "PyEngHostImpl.h"
 #include <fstream>
+
 
 extern PyMethodDef RootMethods[];
 
@@ -158,6 +159,27 @@ PyMODINIT_FUNC PyInit_xlang(void)
     X::Value rootObj;
     PyObject* xlangObj = CreateXlangObjectWrapper(rootObj);
     PyModule_AddObject(m, "xobj", xlangObj);
+
+    // Inject all builtin functions into the root module
+    X::Value builtinsValue;
+    X::g_pXHost->GetBuiltins(builtinsValue);
+    if (builtinsValue.IsList()) {
+        X::List builtinList(builtinsValue);
+        long long count = builtinList.Size();
+        for (long long i = 0; i < count; ++i) {
+            X::Value itemVals = builtinList[i];
+            if (itemVals.IsList()) {
+                X::List pair(itemVals);
+                if (pair.Size() >= 2) {
+                    X::Value nameVal = pair[0];
+                    X::Value funcVal = pair[1];
+                    std::string funcName = nameVal.ToString();
+                    PyObject* pyFunc = CreateXlangObjectWrapper(funcVal);
+                    PyModule_AddObject(m, funcName.c_str(), pyFunc);
+                }
+            }
+        }
+    }
 
     register_cleanup();
     return m;

@@ -21,6 +21,9 @@ limitations under the License.
 
 namespace X
 {
+#define PID_PROP "pid"  //for RemoteObject prop pid
+#define PID_PROP_INDEX 0x0FFFFFFFL
+
 	class RemoteObject :
 		public virtual XRemoteObject,
 		public virtual X::XCustomScope,
@@ -63,6 +66,10 @@ namespace X
 			if (it != m_NameToIndex.end())
 			{
 				return it->second;
+			}
+			else if (name == PID_PROP)
+			{
+				return PID_PROP_INDEX;
 			}
 			else if (!bGetOnly)
 			{
@@ -369,6 +376,11 @@ namespace X
 		}
 		FORCE_INLINE virtual bool Get(int idx, X::Value& v, void* lValue = nullptr) override final
 		{
+			if (idx == PID_PROP_INDEX)
+			{
+				v = Value((long long)m_remote_Obj_id.pid);
+				return true;
+			}
 			m_stackFrame->Get(idx, v, (X::LValue*)lValue);
 			return true;
 		}

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -1187,11 +1187,10 @@ bool U_OnEvent(X::XRuntime* rt,X::XObj* pThis,X::XObj* pContext,
 	if (handler.IsObject())
 	{
 		auto* pObjHandler = dynamic_cast<X::Data::Object*>(handler.GetObj());
-		if (pObjHandler && pObjHandler->GetType() == ObjType::Function)
+		if (pObjHandler)
 		{
-			auto* pFuncHandler = dynamic_cast<X::Data::Function*>(pObjHandler);
-			pFuncHandler->IncRef();
-			pEvt->Add(pFuncHandler);
+			pObjHandler->IncRef();
+			pEvt->Add(pObjHandler);
 		}
 	}
 
@@ -2162,6 +2161,22 @@ bool U_Abs(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
 	return true;
 }
 
+bool U_CheckLrpcServer(X::XRuntime* rt, X::XObj* pThis, X::XObj* pContext,
+	X::ARGS& params,
+	X::KWARGS& kwParams,
+	X::Value& retValue)
+{
+	if (params.size() == 0)
+	{
+		retValue = X::Value(false);
+		return true;
+	}
+	std::string url = params[0].ToString();
+	bool isStarted = X::IPC::MsgService::CheckLrpcServer(url);
+	retValue = X::Value(isStarted);
+	return true;
+}
+
 bool Builtin::RegisterInternals()
 {
 	XPackage* pBuiltinPack = dynamic_cast<XPackage*>(this);
@@ -2198,6 +2213,7 @@ bool Builtin::RegisterInternals()
 		after the sleep will call this function");
 	Register("time", (X::U_FUNC)U_Time, params);
 	Register("range", (X::U_FUNC)U_CreateRange, params,"range(start,stop,step) or range(stop)");
+	Register("checkLrpcServer", (X::U_FUNC)U_CheckLrpcServer, params, "checkLrpcServer(url)");
 	Register("breakpoint", (X::U_FUNC)U_BreakPoint, params);
 	Register("pushWritepad", (X::U_FUNC)U_PushWritePad, params,"pushWritepad(obj which has WritePad(input) func)");
 	Register("popWritepad", (X::U_FUNC)U_PopWritePad, params,"popWritepad() pop up last WritePad");

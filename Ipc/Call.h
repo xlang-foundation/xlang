@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -292,6 +292,10 @@ namespace X
 					if (!m_running)
 					{
 						//if not exit, will get last dirty block
+						if (mRBuffer->IsBeginRead())
+						{
+							mRBuffer->EndRead();
+						}
 						break;
 					}
 					PayloadFrameHead& head = mRBuffer->GetHead();

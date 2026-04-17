@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ limitations under the License.
 #include "../Jit/md5.h"
 #include <filesystem>
 #include "log.h"
+#include "builtin.h"
 
 namespace X
 {
@@ -1019,6 +1020,18 @@ namespace X
 	unsigned long long XHost_Impl::GetObjectCount()
 	{
 		return G::I().Check();
+	}
+	void XHost_Impl::GetBuiltins(X::Value& retList)
+	{
+		X::List list;
+		auto& builtins = Builtin::I().All();
+		for (auto& bi : builtins) {
+			X::List pair;
+			pair += X::Value(bi.name);
+			pair += X::Value(bi.funcObj);
+			list->append(pair);
+		}
+		retList = list;
 	}
 	bool XHost_Impl::IsModuleLoadedMd5(const char* md5)
 	{
