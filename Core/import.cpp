@@ -401,9 +401,19 @@ bool X::AST::Import::GetParamList(XlangRuntime* rt, Expression* e, ARGS& params,
 bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 	XObj* pContext, Value& v, ImportInfo& im, std::string& varNameForChange)
 {
+	std::string cacheKey = im.name;
 	if (!m_thruUrl.empty())
 	{
-		bool bFind = Manager::I().QueryPackage(im.name, v);
+		cacheKey += "@" + m_thruUrl;
+	}
+	else if (!m_path.empty())
+	{
+		cacheKey += "@" + m_path;
+	}
+
+	if (!m_thruUrl.empty())
+	{
+		bool bFind = Manager::I().QueryPackage(cacheKey, v);
 		if (bFind)
 		{
 			return true;
@@ -417,9 +427,8 @@ bool X::AST::Import::LoadOneModule(XlangRuntime* rt, Scope* pMyScope,
 				proxy->SetRootObjectName(im.name.c_str());
 				auto* remoteObj = new RemoteObject(proxy);
 				remoteObj->SetObjName(im.name);
-				//todo: need to check here
 				v = Value(dynamic_cast<XObj*>(remoteObj));
-				Manager::I().Register(im.name.c_str(), v);
+				Manager::I().Register(cacheKey.c_str(), v);
 				return true;
 			}
 			//for proxy == nullptr, means some errors happened with this url
