@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -131,8 +131,8 @@ namespace X
 		}
 		void RemoveProxy(const char* name,std::string& rootObjectName,XProxy* pProxy)
 		{
-			UnloadPackage(rootObjectName);
 			std::string strName(name);
+			std::string full_url;
 			m_proxyMapLock.Lock();
 			auto it = m_mapXProxy.find(strName);
 			if (it != m_mapXProxy.end())
@@ -142,6 +142,7 @@ namespace X
 				{
 					if(it2->second == pProxy)
 					{
+						full_url = it2->first;
 						proxyInfo.Instances.erase(it2);
 						break;
 					}
@@ -149,6 +150,17 @@ namespace X
 				}
 			}
 			m_proxyMapLock.Unlock();
+
+			if (!full_url.empty())
+			{
+				std::string cacheKey = rootObjectName + "@" + full_url;
+				if (HasPackage(cacheKey))
+				{
+					UnloadPackage(cacheKey);
+					return;
+				}
+			}
+			UnloadPackage(rootObjectName);
 		}
 		XProxy* QueryProxy(std::string& url,bool& bFilterOut)
 		{
@@ -187,7 +199,7 @@ namespace X
 					if (it2 == proxyInfo.Instances.end())
 					{
 						pProxy = proxyInfo.creator(endpoint_url.c_str());
-						proxyInfo.Instances.emplace(std::make_pair(endpoint_url, pProxy));
+						proxyInfo.Instances.emplace(std::make_pair(url, pProxy));
 					}
 					else
 					{
