@@ -1,0 +1,15 @@
+[910-910-1775543292189910,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8
+(cp1) +: 13
+(cp2) -: 7
+(cp3) *: 30
+(cp4) /: 3
+(cp5) True and True
+(cp6) True or False
+(cp7) not False
+(cp8) Precedence 2+3*4: 14
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8']

@@ -1,0 +1,19 @@
+[670-670-1775543291728812,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6
+(cp1) newline-split: line1
+(cp1-check) newline-split: line1
+(cp2) tab-split: beta
+(cp2-check) tab-split: beta
+(cp3) backslash-split: before
+(cp3-check) backslash-split: before
+(cp4) fstring-newline: World
+(cp4-check) fstring-newline: World
+(cp5) hex-escape: \x41\x42\x43
+(cp5-check) hex-escape: ABC
+(cp6) combined-escape: b
+(cp6-check) combined-escape: b
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6']

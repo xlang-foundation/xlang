@@ -1,0 +1,45 @@
+XLang Test Report
+=================
+
+debug.x: WARN (No Verification Found)
+class/1_class.x: PASS
+exception/1_basic_try.x: PASS
+exception/2_early_return.x: PASS
+func/1_functions.x: PASS
+func/2_default_basic.x: PASS
+func/3_default_partial.x: PASS
+func/4_default_override.x: PASS
+func/5_default_complex.x: PASS
+func/6_default_string_default.x: PASS
+general/1_vars.x: PASS
+general/2_def_typehint.x: PASS
+general/3_indent.x: PASS
+general/5_is_not.x: FAIL (Missing Expected Output: ['T03: y is not None: True', 'T05: assigned is not result: True', 'T06: compound is/is not: passed', 'T08: str is not None: True', 'T10: True'])
+general/fstring.x: PASS
+general/fstring_advanced.x: PASS
+general/multiple_lines_str.x: WARN (No Verification Found)
+general/string_escape.x: PASS
+general/string_ops.x: PASS
+general/tuple_ops.x: PASS
+if/1_inline_basic.x: PASS
+if/2_block_basic.x: PASS
+if/3_elif_chain.x: PASS
+if/4_nested.x: PASS
+if/5_complex_flow.x: PASS
+json/test_raw_json.x: FAIL (Missing Expected Output: ['Found 3 records', 'Extraction Verified: 2023/01', 'Filter Verified: Only 2023 files', 'Sort Verified: 1, 2, 3', 'Reverse Sort Verified: 3, 2, 1', 'Row Filter Verified: Found 1 high voltage', 'Offset/Limit Verified: ID 1', 'Multi-Key Sort Verified', 'Complex Filter Verified', 'Missing Field Sort Verified: Safe'])
+json/test_raw_json_perf.x: WARN (No Verification Found)
+list/1_list.x: PASS
+list/2_list_max_min.x: PASS
+list/3_list_sort.x: PASS
+loops/1_loops.x: PASS
+loops/2_inline_loops.x: PASS
+ops/1_arithmetic_logic.x: PASS
+python_import/test_path_import.x: PASS
+python_import/test_venv_switch.x: PASS
+set/1_set_basic.x: PASS
+set/2_set_ops.x: PASS
+set/3_set_predicates.x: PASS
+set/4_set_update.x: PASS
+sqlite/1_raise_on_bad_sql.x: FAIL (Missing Expected Output: ['CAUGHT'])
+sqlite/2_raise_on_missing_column.x: FAIL (Missing Expected Output: ['CAUGHT'])
+sqlite/3_raise_on_use_database_fail.x: FAIL (Missing Expected Output: ['CAUGHT'])

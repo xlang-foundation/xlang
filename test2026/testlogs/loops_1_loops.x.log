@@ -1,0 +1,26 @@
+[878-878-1775543292133701,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9
+(cp1) while i: 0
+(cp1) while i: 1
+(cp1) while i: 2
+(cp3) jj: 0
+(cp3) jj: 1
+(cp2) breaking at 2
+(cp5) k: 1
+(cp4) skipping 2
+(cp5) k: 3
+(cp6) for x: 1
+(cp6) for x: 2
+(cp6) for x: 3
+(cp7) outer: 0
+(cp8) inner: 0
+(cp8) inner: 1
+(cp7) outer: 1
+(cp8) inner: 0
+(cp8) inner: 1
+(cp9) Done
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8', 'cp9']

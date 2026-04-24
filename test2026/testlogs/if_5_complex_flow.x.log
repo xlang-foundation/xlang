@@ -1,0 +1,22 @@
+[782-782-1775543291929365,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10
+(cp1) Starting Complex Flow Test
+(cp2) Inline if executed
+(cp3) Block if executed
+(cp4) Nested inline if executed
+(cp5) High B
+Grade: B
+Loop iteration: 0
+(cp6) First
+Loop iteration: 1
+(cp7) Second
+Loop iteration: 2
+(cp8) Third
+(cp9) Inline True 1
+(cp10) True: Else block executed for False condition
+Done
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8', 'cp9', 'cp10']

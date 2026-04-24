@@ -1,0 +1,53 @@
+[686-686-1775543291760856,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10, cp11, cp12, cp13, cp14, cp15, cp16, cp17, cp18, cp19, cp20, cp21, cp22, cp23
+(cp1) startswith: True
+(cp1-check) startswith: True
+(cp2) endswith: True
+(cp2-check) endswith: True
+(cp3) isalpha: True
+(cp3-check) isalpha: True
+(cp4) isdigit: True
+(cp4-check) isdigit: True
+(cp5) isalnum: True
+(cp5-check) isalnum: True
+(cp6) isspace: True
+(cp6-check) isspace: True
+(cp7) isupper: True
+(cp7-check) isupper: True
+(cp8) islower: True
+(cp8-check) islower: True
+(cp9) capitalize: Hello world
+(cp9-check) capitalize: Hello world
+(cp10) title: Hello World
+(cp10-check) title: Hello World
+(cp11) swapcase: hELLO wORLD
+(cp11-check) swapcase: hELLO wORLD
+(cp12) lstrip: banana   
+(cp12-check) lstrip: banana   
+(cp13) rstrip:    banana
+(cp13-check) rstrip:    banana
+(cp14) center:        banana       
+(cp14-check) center:        banana       
+(cp15) ljust: banana              
+(cp15-check) ljust: banana              
+(cp16) rjust:               banana
+(cp16-check) rjust:               banana
+(cp17) zfill: 0000000050
+(cp17-check) zfill: 0000000050
+(cp18) count: 2
+(cp18-check) count: 2
+(cp19) index: 7
+(cp19-check) index: 7
+(cp20) split[0]: apple
+(cp20-check) split[0]: apple
+(cp21) split[-1]: cherry
+(cp21-check) split[-1]: cherry
+(cp22) split[1]: to
+(cp22-check) split[1]: to
+(cp23) chain: Hello world
+(cp23-check) chain: Hello world
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8', 'cp9', 'cp10', 'cp11', 'cp12', 'cp13', 'cp14', 'cp15', 'cp16', 'cp17', 'cp18', 'cp19', 'cp20', 'cp21', 'cp22', 'cp23']

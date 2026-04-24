@@ -1,0 +1,63 @@
+[798-798-1775543291957096,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+[798-798-1775543291971765,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:18[0m
+[798-798-1775543291971803,block.h:286] [31m*** root_folder = fs.Folder(root_path)[0m
+[798-798-1775543291971808,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:24[0m
+[798-798-1775543291971810,block.h:286] [31m*** path_23 = root_folder.BuildPath("2023/01")[0m
+[798-798-1775543291971812,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:25[0m
+[798-798-1775543291971814,block.h:286] [31m*** fs.Folder(path_23).makedirs(path_23)[0m
+[798-798-1775543291971815,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:27[0m
+[798-798-1775543291971817,block.h:286] [31m*** path_22 = root_folder.BuildPath("2022/12")[0m
+[798-798-1775543291971818,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:28[0m
+[798-798-1775543291971820,block.h:286] [31m*** fs.Folder(path_22).makedirs(path_22)[0m
+[798-798-1775543291971822,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:31[0m
+[798-798-1775543291971823,block.h:286] [31m*** f1_path = fs.Folder(path_23).BuildPath("data.jsonl")[0m
+[798-798-1775543291971825,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:32[0m
+[798-798-1775543291971827,block.h:286] [31m*** f1 = fs.File(f1_path, "w")[0m
+[798-798-1775543291971828,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:33[0m
+[798-798-1775543291971830,block.h:286] [31m*** f1.write('''{"id": 1, "val": "A", "vol": "5V", "cat": "X", "rank": 10}
+{"id": 2, "val": "B", "vol": "100V", "cat": "X", "rank": 5}''')[0m
+[798-798-1775543291971831,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:35[0m
+[798-798-1775543291971833,block.h:286] [31m*** f1.close()[0m
+[798-798-1775543291971835,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:37[0m
+[798-798-1775543291971836,block.h:286] [31m*** f2_path = fs.Folder(path_22).BuildPath("old.jsonl")[0m
+[798-798-1775543291971838,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:38[0m
+[798-798-1775543291971840,block.h:286] [31m*** f2 = fs.File(f2_path, "w")[0m
+[798-798-1775543291971841,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:39[0m
+[798-798-1775543291971843,block.h:286] [31m*** f2.write('''{"id": 0, "val": "Old", "vol": "20V", "cat": "Y", "rank": 10}''')[0m
+[798-798-1775543291971844,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:40[0m
+[798-798-1775543291971846,block.h:286] [31m*** f2.close()[0m
+Found 0 records
+Filter Failed: Got 0
+Sort Failed: [
+]
+Reverse Sort Failed: [
+]
+Smart Numeric Sort Verified: 5V, 20V, 100V
+Row Filter Failed. Count: 1
+Offset/Limit Failed: [
+	
+]
+Multi-Key Sort Failed: [
+]
+Complex Filter Failed: [
+]
+[798-798-1775543291977156,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:187[0m
+[798-798-1775543291977185,block.h:286] [31m*** f3_path = fs.Folder(path_23).BuildPath("missing.jsonl")[0m
+[798-798-1775543291977189,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:188[0m
+[798-798-1775543291977191,block.h:286] [31m*** f3 = fs.File(f3_path, "w")[0m
+[798-798-1775543291977193,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:189[0m
+[798-798-1775543291977194,block.h:286] [31m*** f3.write('''{"id": 3, "val": "C"}''')[0m
+[798-798-1775543291977196,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/json/test_raw_json.x:190[0m
+[798-798-1775543291977197,block.h:286] [31m*** f3.close()[0m
+Missing Field Sort Failed: [
+	
+]
+Testing Dual Scope...
+Dual Scope Numeric Verified
+Dual Scope Reverse Failed: [
+]
+
+
+
+--- VERIFICATION ---
+Expected Lines: 11

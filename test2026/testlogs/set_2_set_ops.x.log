@@ -1,0 +1,11 @@
+[974-974-1775543292314064,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4
+(cp1) union size: 5
+(cp2) intersection size: 1
+(cp3) difference size: 2
+(cp4) sym_diff size: 4
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4']

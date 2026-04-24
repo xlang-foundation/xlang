@@ -1,0 +1,12 @@
+[478-478-1775543291395807,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5
+(cp1) Hello World
+(cp2) Hi World
+(cp3) result: 42
+(cp4) pi: 3.140000
+(cp5) none: none_default
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5']

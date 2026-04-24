@@ -1,0 +1,16 @@
+[958-958-1775543292285161,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8
+(cp1) set: {1, 2, 3}
+(cp2) after add: 4
+(cp3) after discard: 3
+(cp4) remove ok: 
+(cp5) 1 in s: True
+(cp6) popped, new size: 1
+(cp7) a.size: 3 b.size: 4
+(cp8) after clear: 0
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8']
+Expected Lines: 1

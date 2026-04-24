@@ -1,0 +1,47 @@
+[862-862-1775543292103832,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6
+(cp1) sorted asc: [
+	1,
+	2,
+	3,
+	5,
+	8,
+	9
+]
+(cp2) sorted desc: [
+	9,
+	8,
+	5,
+	3,
+	2,
+	1
+]
+(cp3) already sorted: [
+	1,
+	2,
+	3,
+	4,
+	5
+]
+(cp4) single element: [
+	42
+]
+(cp5) float asc: [
+	1.410000,
+	1.730000,
+	2.710000,
+	3.140000
+]
+(cp6) custom abs sort: [
+	-1,
+	-2,
+	3,
+	4,
+	-5
+]
+Done
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6']

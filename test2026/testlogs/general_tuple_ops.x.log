@@ -1,0 +1,78 @@
+[702-702-1775543291790714,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10, cp11, cp12, cp13, cp14, cp15, cp16, cp17, cp18
+(cp1) tuple creation: [
+	1,
+	2,
+	3
+]
+(cp1-check) tuple creation: (1, 2, 3)
+(cp2) implicit tuple: 10
+(cp2-check) implicit tuple: (10, 20, 30)
+(cp3) single element: [
+	42
+]
+(cp3-check) single element: (42,)
+(cp4) index [0]: apple
+(cp4-check) index [0]: apple
+(cp5) index [-1]: cherry
+(cp5-check) index [-1]: cherry
+(cp6) unpack: a=, b=, c=[
+	100,
+	200,
+	300
+]
+(cp6-check) unpack: a=100, b=200, c=300
+(cp7) direct unpack: x=, y=, z=1
+(cp7-check) direct unpack: x=1, y=2, z=3
+(cp8) swap: a=10, b=20
+(cp8-check) swap: a=20, b=10
+(cp9) function return tuple: 10
+(cp9-check) function return tuple: (10, 20)
+(cp10) unpack return: x=, y=5
+(cp10-check) unpack return: x=5, y=15
+(cp11) mixed types: [
+	1,
+	hello,
+	3.140000,
+	True
+]
+(cp11-check) mixed types: (1, hello, 3.14, True)
+(cp12) nested: [
+	1,
+	2,
+	3,
+	4
+]
+(cp12-check) nested: (1, (2, 3), 4)
+[702-702-1775543291796155,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/general/tuple_ops.x:80[0m
+[702-702-1775543291796184,block.h:286] [31m*** val = inner[0][0m
+(cp13) nested access: 
+(cp13-check) nested access: 2
+(cp14) length: 4
+(cp14-check) length: 4
+(cp15) slice [1:4]: [
+	2,
+	3,
+	4,
+	5
+]
+(cp15-check) slice [1:4]: (2, 3, 4)
+(cp16) concatenation: [
+	1,
+	2,
+	3,
+	4
+]
+(cp16-check) concatenation: (1, 2, 3, 4)
+(cp17) repetition: [
+	1,
+	2
+]
+(cp17-check) repetition: (1, 2, 1, 2, 1, 2)
+(cp18) tuple iteration sum: 60
+(cp18-check) tuple iteration sum: 60
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8', 'cp9', 'cp10', 'cp11', 'cp12', 'cp13', 'cp14', 'cp15', 'cp16', 'cp17', 'cp18']

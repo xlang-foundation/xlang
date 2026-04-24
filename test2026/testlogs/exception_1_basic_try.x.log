@@ -1,0 +1,26 @@
+[430-430-1775543291295976,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10
+(cp1) Start Try/Except Test
+Test 1: Catching Raise
+Inside try 1
+(cp2) Caught exception: Error1
+Test 2: No Error
+(cp3) Inside try no error
+Test 3: Finally
+Inside try for finally
+(cp4) Inside finally
+Test 4: Full flow
+(cp5) Caught: 42
+(cp6) Finally executed
+Test 5: Nested
+(cp7) Caught Inner: Inner
+(cp8) Caught Outer: Outer
+Test 6: Propagation
+(cp9) Inner finally
+(cp10) Caught propagated: Propagate
+Done
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8', 'cp9', 'cp10']

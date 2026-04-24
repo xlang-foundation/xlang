@@ -1,0 +1,30 @@
+[638-638-1775543291670010,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10
+Start Advanced Tests
+(cp1) WS: 100
+(cp1-check) WS: 100
+(cp2) Calc: 250
+(cp2-check) Calc: 250
+(cp3) List: 20
+(cp3-check) List: 20
+(cp4) Dict: v
+(cp4-check) Dict: v
+(cp5) Func: 25
+(cp5-check) Func: 25
+(cp6) Nested: 101
+(cp6-check) Nested: 101
+(cp7) Multi: 1 -- 2 -- 3
+(cp7-check) Multi: 1 -- 2 -- 3
+(cp8) Braces: { and }} with 1
+(cp8-check) Braces: { and } with 1
+(cp9) Legacy in F: 3
+(cp9-check) Legacy in F: 3
+(cp10) Special: Tab	Newline
+End
+(cp10-check) Special: Tab	Newline
+End Advanced Tests
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8', 'cp9', 'cp10']

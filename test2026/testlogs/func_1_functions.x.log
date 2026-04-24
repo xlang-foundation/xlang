@@ -1,0 +1,14 @@
+[462-462-1775543291365769,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6
+(cp1) add(10,20): 30
+(cp2) fact(5): 120
+(cp3) Hello World
+(cp3) Hi Xlang
+(cp4) closure result: 50
+(cp5) Done
+(cp6) Final
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6']

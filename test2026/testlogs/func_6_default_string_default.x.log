@@ -1,0 +1,10 @@
+[542-542-1775543291502861,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3
+(cp1) join: hello world
+(cp2) bool: light:OFF
+(cp3) all defaults: 6
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3']

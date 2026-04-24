@@ -1,0 +1,16 @@
+[942-942-1775543292252725,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+[942-942-1775543292258415,xhost_impl.cpp:975] [31mPython engine not found[0m
+CHECKPOINTS: cp1
+[942-942-1775543292260847,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/python_import/test_venv_switch.x:6[0m
+[942-942-1775543292260868,block.h:286] [31m*** vision_detect_impl_sim.check_isolation()[0m
+[942-942-1775543292260871,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/python_import/test_venv_switch.x:9[0m
+[942-942-1775543292260874,block.h:286] [31m*** vision_detect_impl_sim.test_func()[0m
+[942-942-1775543292260877,block.h:284] [31mError Occurs in Module: /mnt/d/CantorAI/xlang/test2026/python_import/test_venv_switch.x:15[0m
+[942-942-1775543292260879,block.h:286] [31m*** vision_detect_impl_sim.check_restore_state()[0m
+(cp1)
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1']
+Expected Lines: 4

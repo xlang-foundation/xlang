@@ -1,0 +1,11 @@
+[766-766-1775543291903001,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2, cp3, cp4
+(cp1) x is 10
+(cp2) y is 20
+(cp3) x < y inline nested
+(cp4) Done
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4']

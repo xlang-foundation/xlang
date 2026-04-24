@@ -1,0 +1,9 @@
+[574-574-1775543291557466,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+CHECKPOINTS: cp1, cp2
+(cp1) x is 10
+(cp2) Done
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2']

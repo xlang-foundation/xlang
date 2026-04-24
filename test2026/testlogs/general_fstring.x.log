@@ -1,0 +1,28 @@
+[622-622-1775543291642265,DllEntry.cpp:279] [31mPython engine not found, disable python engine[0m
+{1, 23}
+CHECKPOINTS: cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10
+(cp1) Basic: 10
+(cp1-check) Basic: 10
+(cp2) Expr: 11
+(cp2-check) Expr: 11
+(cp3) Calc: 10 + 20 = 30
+(cp3-check) Calc: 10 + 20 = 30
+(cp4) Hello World
+(cp4-check) Hello World
+(cp5) Escaped Brace: { }}
+(cp5-check) Escaped Brace: { }
+(cp6) Escaped Brace with val: { 10 }}
+(cp6-check) Escaped Brace with val: { 10 }
+(cp7) Dollar Exp: 20
+(cp7-check) Dollar Exp: 20
+(cp8) Mixed: 10 and 20
+(cp8-check) Mixed: 10 and 20
+(cp9) Legacy: 20
+(cp9-check) Legacy: 20
+(cp10) Legacy Const: 100
+(cp10-check) Legacy Const: 100
+
+
+
+--- VERIFICATION ---
+Declared Checkpoints: ['cp1', 'cp2', 'cp3', 'cp4', 'cp5', 'cp6', 'cp7', 'cp8', 'cp9', 'cp10']
