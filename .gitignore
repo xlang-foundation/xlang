@@ -1,2 +1,8 @@
 /build
 /Http/depends/windows/lib/*/libcrypto_static.lib
+Interop/xlang.net/obj/
+Interop/xlang.net/bin/
+Interop/xlang.netframework/obj/
+Interop/xlang.netframework/bin/
+VSCode/dist/
+VSCode/node_modules/
