@@ -6,3 +6,5 @@ Interop/xlang.netframework/obj/
 Interop/xlang.netframework/bin/
 VSCode/dist/
 VSCode/node_modules/
+VSCode/out/
+*.vsix
