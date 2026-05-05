@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ limitations under the License.
 #include "obj_func_scope.h"
 #include <unordered_map>
 #include <string>
+#include "tensor_cpu.h"
 
 
 namespace X
@@ -67,7 +68,7 @@ namespace X
 		}
 
 		#define CONST_NUM 18
-		static Obj_Func_Scope<3+ CONST_NUM> _tensorScope;
+		static Obj_Func_Scope<6+ CONST_NUM> _tensorScope;
 		void Tensor::Init()
 		{
 			_tensorScope.Init();
@@ -273,6 +274,61 @@ namespace X
 				};
 				_tensorScope.AddFunc("reshape",
 					"reshape(list of shape: [10,40,10], need to have same amount of items)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					CpuTensor cpuTensor;
+					X::Value graph;
+					X::Value input(pContext);
+					retValue = X::Value(new Tensor()); // Pre-allocate output tensor
+					cpuTensor.Permute(graph, params, kwParams, input, retValue);
+					return true;
+				};
+				_tensorScope.AddFunc("permute", "permute(axes)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					if (params.size() > 0)
+					{
+						int axis = 0;
+						if (params.size() > 1)
+						{
+							axis = (int)params[1];
+						}
+						retValue = pObj->Stack(params[0], axis);
+					}
+					else
+					{
+						X::Value emptyList;
+						retValue = pObj->Stack(emptyList, 0);
+					}
+					return true;
+				};
+				_tensorScope.AddFunc("Stack", "Stack(tensors, axis)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					if (params.size() > 0)
+					{
+						retValue = pObj->asType((int)params[0]);
+					}
+					return true;
+				};
+				_tensorScope.AddFunc("ToType", "ToType(type)", f);
 			}
 			_tensorScope.Close();
 		}
@@ -940,6 +996,77 @@ namespace X
 			newTensor->SetName(newName);
 			retVal = newTensor;
 			return true;
+		}
+
+		X::Value Tensor::Stack(X::Value& tensors, int axis)
+		{
+			std::vector<Tensor*> tensorList;
+			tensorList.push_back(this);
+
+			if (tensors.IsList())
+			{
+				X::List list(tensors);
+				for (long long i = 0; i < list.Size(); ++i)
+				{
+					X::Value v = list[i];
+					if (v.IsObject() && v.GetObj()->GetType() == X::ObjType::Tensor)
+					{
+						tensorList.push_back(dynamic_cast<Tensor*>(v.GetObj()));
+					}
+				}
+			}
+			else if (tensors.IsObject() && tensors.GetObj()->GetType() == X::ObjType::Tensor)
+			{
+				tensorList.push_back(dynamic_cast<Tensor*>(tensors.GetObj()));
+			}
+
+			int numTensors = (int)tensorList.size();
+			if (numTensors == 0) return X::Value();
+
+			TensorDataType type = this->GetDataType();
+			std::vector<int> orgShape;
+			for (auto& d : m_dims) orgShape.push_back((int)d.size);
+
+			for (int i = 1; i < numTensors; ++i)
+			{
+				Tensor* t = tensorList[i];
+				if (t->GetDataType() != type) return X::Value();
+				if (t->GetDimCount() != (int)orgShape.size()) return X::Value();
+				for (int j = 0; j < t->GetDimCount(); ++j)
+				{
+					if (t->GetDimSize(j) != orgShape[j]) return X::Value();
+				}
+			}
+
+			std::vector<int> newShape = orgShape;
+			if (axis < 0) axis = 0;
+			if (axis > (int)newShape.size()) axis = (int)newShape.size();
+			newShape.insert(newShape.begin() + axis, numTensors);
+
+			Tensor* pNewTensor = new Tensor();
+			pNewTensor->SetDataType(type);
+			pNewTensor->CreateBaseOnShape(newShape);
+
+			if (numTensors == 1 || axis == 0)
+			{
+				size_t singleSize = this->GetCount() * this->GetItemSize();
+				char* dst = pNewTensor->GetData();
+				for (int i = 0; i < numTensors; ++i)
+				{
+					if (dst && tensorList[i]->GetData())
+					{
+						memcpy(dst + i * singleSize, tensorList[i]->GetData(), singleSize);
+					}
+				}
+			}
+			else
+			{
+				// TODO: Implement interleaved stacking for axis > 0
+				std::cout << "[XLang] Stacking on axis > 0 with multiple tensors is not yet supported." << std::endl;
+				return X::Value();
+			}
+
+			return X::Value(pNewTensor);
 		}
 	}
 }

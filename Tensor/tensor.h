@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -249,6 +249,7 @@ namespace X
 			{
 				return GetCount() * GetItemSize();
 			}
+			X::Value Stack(X::Value& tensors, int axis = 0) override;
 			virtual char* GetData() override
 			{
 				return m_data+ m_startItemOffet* GetItemSize();
@@ -291,6 +292,7 @@ namespace X
 				{
 					m_dims.push_back(TensorDim{0,i,i});
 				}
+				CalcDimProd();
 			}
 			//used by tensorOP to allocate data bases on pBaseTensor
 			bool CreateBaseOnTensor(Tensor* pBaseTensor)
@@ -507,7 +509,7 @@ namespace X
 				Port::vector<int> dims(dimCnt);
 				for (int i = 0; i < dimCnt; i++)
 				{
-					dims.push_back((int)m_dims[i].size);
+					dims[i] = (int)m_dims[i].size;
 				}
 				pNewTensor->SetShape(dims);
 				X::Value initData;

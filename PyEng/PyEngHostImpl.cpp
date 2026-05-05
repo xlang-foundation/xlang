@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -56,7 +56,23 @@ static void LoadNumpy()
 {
 	if (PyArray_API == NULL)
 	{
-		_import_array();
+		if (_import_array() < 0) {
+			PyErr_Clear();
+			// Numpy 2.0+ compatibility
+			PyObject *numpy = PyImport_ImportModule("numpy._core.multiarray");
+			if (numpy) {
+				PyObject *c_api = PyObject_GetAttrString(numpy, "_ARRAY_API");
+				if (c_api) {
+					// Use PyCapsule API for Python 3.x
+					PyArray_API = (void **)PyCapsule_GetPointer(c_api, NULL);
+					Py_DECREF(c_api);
+				}
+				Py_DECREF(numpy);
+			}
+			if (PyArray_API == NULL) {
+				PyErr_Clear(); // ensure we don't leave an active exception
+			}
+		}
 	}
 }
 #define SURE_NUMPY_API() LoadNumpy()
@@ -889,6 +905,7 @@ void* GrusPyEngHost::GetDataPtr(PyEngObjectPtr obj)
 {
 	MGil gil;
 	SURE_NUMPY_API();
+	if (PyArray_API == NULL) return nullptr;
 	PyObject* pOb = (PyObject*)obj;
 	if (PyArray_Check(pOb))
 	{
@@ -909,6 +926,7 @@ bool GrusPyEngHost::GetDataDesc(PyEngObjectPtr obj,
 {
 	MGil gil;
 	SURE_NUMPY_API();
+	if (PyArray_API == NULL) return false;
 	PyObject* pOb = (PyObject*)obj;
 	if (PyArray_Check(pOb))
 	{
@@ -950,6 +968,7 @@ bool GrusPyEngHost::IsArray(PyEngObjectPtr obj)
 {
 	MGil gil;
 	SURE_NUMPY_API();
+	if (PyArray_API == NULL) return false;
 	return PyArray_Check((PyObject*)obj);
 }
 bool GrusPyEngHost::IsList(PyEngObjectPtr obj)
@@ -1442,6 +1461,7 @@ void GrusPyEngHost::DeactivePythonVEnv(const char* venvPath)
 bool PyObjectXLangConverter::IsNumpyArray(PyObject* obj)
 {
 	SURE_NUMPY_API();
+	if (PyArray_API == NULL) return false;
 	return PyArray_Check(obj);
 }
 
@@ -1470,6 +1490,7 @@ X::TensorDataType PyObjectXLangConverter::NumpyTypeToXTensorDataType(int npType)
 X::Value PyObjectXLangConverter::ConvertNumpyArrayToXValue(PyObject* obj) {
 	MGil gil;
 	SURE_NUMPY_API();
+	if (PyArray_API == NULL) return X::Value();
 	if (!PyArray_Check(obj)) {
 		return X::Value();
 	}
