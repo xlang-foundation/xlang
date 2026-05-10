@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -168,6 +168,13 @@ namespace X
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
 			KWARGS& kwParams, X::Value& retValue) override;
+		virtual bool Add(const X::Value& r, X::Value& retVal) override
+		{
+			X::Value r_copy = r;
+			operator+=(r_copy);
+			retVal = this;
+			return true;
+		}
 		virtual ObjectEvent& operator +=(X::Value& r) override
 		{
 			CleanupUnCallableHandlers();
