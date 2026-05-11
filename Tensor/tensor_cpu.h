@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -111,11 +111,7 @@ namespace X
 			{
 				return X::Value();
 			}
-			if (!input.IsObject())
-			{
-				return X::Value();
-			}
-			auto* pInputTensor = dynamic_cast<X::Data::Tensor*>(input.GetObj());
+			X::Data::Tensor* pInputTensor = dynamic_cast<X::Data::Tensor*>(input.GetObj());
 			if (pInputTensor == nullptr)
 			{
 				return X::Value();
@@ -126,6 +122,7 @@ namespace X
 				return X::Value();
 			}
 			pNewTensor->CreateBaseOnTensorWithPermute(pInputTensor, axes);
+
 			int dimCnt = (int)pInputTensor->GetDimCount();
 			std::vector<long long> orgial_indices(dimCnt);
 			auto it_proc = [pNewTensor, pInputTensor, dimCnt, axes, &orgial_indices](std::vector<long long>& indices)

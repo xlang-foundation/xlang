@@ -61,6 +61,7 @@ namespace X
 			virtual public XTensor,
 			virtual public Object
 		{
+		protected:
 			std::string m_name;
 
 			long long m_dataSize = 0;//calculated from m_dims,keep for fast calculation
@@ -73,6 +74,10 @@ namespace X
 			TensorDataType m_dataType = TensorDataType::UNKNOWN;
 			X::Value m_desc;//used to hold extra info
 			X::AST::Expression* m_currentLine = nullptr;
+			
+			TensorDeviceType m_deviceType = TensorDeviceType::CPU;
+			X::Value m_deviceOps;
+			X::Value m_deviceContext;
 
 			FORCE_INLINE virtual X::Value GetDesc() override
 			{
@@ -226,12 +231,32 @@ namespace X
 			static void Init();
 			static void cleanup();
 			Tensor();
-			~Tensor();
+			virtual ~Tensor();
 
 			FORCE_INLINE void SetName(std::string& n)
 			{
 				m_name = n;
 			}
+			
+			virtual TensorDeviceType GetDeviceType() override {
+				return m_deviceType;
+			}
+			virtual void SetDeviceType(TensorDeviceType type) override {
+				m_deviceType = type;
+			}
+			virtual X::Value GetDeviceOps() override {
+				return m_deviceOps;
+			}
+			virtual void SetDeviceOps(X::Value ops) override {
+				m_deviceOps = ops;
+			}
+			virtual X::Value GetDeviceContext() override {
+				return m_deviceContext;
+			}
+			virtual void SetDeviceContext(X::Value ctx) override {
+				m_deviceContext = ctx;
+			}
+
 			//this function only return first dim's size
 			//because debug will use it as first level
 			virtual long long Size() override
@@ -250,6 +275,8 @@ namespace X
 				return GetCount() * GetItemSize();
 			}
 			X::Value Stack(X::Value& tensors, int axis = 0) override;
+			X::Value Permute(X::Value& axes) override;
+			X::Value Normalize(X::Value& meanList, X::Value& stdList) override;
 			virtual char* GetData() override
 			{
 				return m_data+ m_startItemOffet* GetItemSize();
@@ -345,6 +372,7 @@ namespace X
 				{
 					m_data = new char[totalSize];
 					m_dataSize = totalSize;
+					return true;
 				}
 				return true;
 			}
@@ -371,10 +399,19 @@ namespace X
 				}
 				int axCnt = (int)axes.size();
 				int dimCnt = (int)newDims.size();
+				if (axCnt > dimCnt)
+				{
+					return false; // Cannot permute with more axes than dimensions
+				}
 				m_dims.resize(dimCnt);
 				for (int i=0;i< dimCnt;i++)
 				{
-					m_dims[i] = (i < axCnt) ? newDims[axes[i]] : newDims[i];
+					int target_idx = (i < axCnt) ? axes[i] : i;
+					if (target_idx < 0 || target_idx >= dimCnt)
+					{
+						return false; // Invalid axis index
+					}
+					m_dims[i] = newDims[target_idx];
 				}
 				CalcDimProd();
 				long long totalSize = GetCount() * GetItemSize();
@@ -382,6 +419,7 @@ namespace X
 				{
 					m_data = new char[totalSize];
 					m_dataSize = totalSize;
+					return true;
 				}
 				return true;
 			}

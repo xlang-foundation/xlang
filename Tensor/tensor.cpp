@@ -281,14 +281,29 @@ namespace X
 					X::KWARGS& kwParams,
 					X::Value& retValue)
 				{
-					CpuTensor cpuTensor;
-					X::Value graph;
-					X::Value input(pContext);
-					retValue = X::Value(new Tensor()); // Pre-allocate output tensor
-					cpuTensor.Permute(graph, params, kwParams, input, retValue);
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					if (pObj && params.size() > 0)
+					{
+						retValue = pObj->Permute(params[0]);
+					}
 					return true;
 				};
 				_tensorScope.AddFunc("permute", "permute(axes)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					if (pObj && params.size() >= 2)
+					{
+						retValue = pObj->Normalize(params[0], params[1]);
+					}
+					return true;
+				};
+				_tensorScope.AddFunc("normalize", "normalize(mean_list, std_list)", f);
 			}
 			{
 				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
@@ -879,13 +894,27 @@ namespace X
 		}
 		Tensor::~Tensor()
 		{
+			if (m_deviceType != TensorDeviceType::CPU && m_deviceOps.IsObject())
+			{
+				X::Value freeFunc = m_deviceOps["free"];
+				if (freeFunc.IsObject() && freeFunc.GetObj())
+				{
+					X::ARGS args(1);
+					args.push_back(X::Value(this));
+					X::KWARGS kw;
+					X::Value retValue;
+					freeFunc.GetObj()->Call(nullptr, nullptr, args, kw, retValue);
+				}
+				m_data = nullptr;
+			}
+
 			if (m_pTensorToOwneData)
 			{
 				m_pTensorToOwneData->DecRef();
 			}
 			else if (m_data != nullptr)
 			{
-				delete m_data;
+				delete[] m_data;
 			}
 		}
 		Tensor& Tensor::operator *=(X::Value& r)
@@ -1000,6 +1029,21 @@ namespace X
 
 		X::Value Tensor::Stack(X::Value& tensors, int axis)
 		{
+			if (m_deviceType != TensorDeviceType::CPU)
+			{
+				if (m_deviceOps.IsObject() && m_deviceOps["Stack"].IsObject())
+				{
+					X::ARGS params(2);
+					params.push_back(tensors);
+					params.push_back(X::Value(axis));
+					X::KWARGS kwParams;
+					X::Value retValue;
+					m_deviceOps["Stack"].GetObj()->Call(nullptr, this, params, kwParams, retValue);
+					return retValue;
+				}
+			}
+
+			// Validate input
 			std::vector<Tensor*> tensorList;
 			tensorList.push_back(this);
 
@@ -1068,5 +1112,49 @@ namespace X
 
 			return X::Value(pNewTensor);
 		}
+		X::Value Tensor::Permute(X::Value& axes)
+		{
+			X::Value retValue;
+			if (m_deviceType != TensorDeviceType::CPU)
+			{
+				if (m_deviceOps.IsObject() && m_deviceOps["permute"].IsObject())
+				{
+					X::ARGS params(1);
+					params.push_back(axes);
+					X::KWARGS kwParams;
+					m_deviceOps["permute"].GetObj()->Call(nullptr, this, params, kwParams, retValue);
+					return retValue;
+				}
+			}
+			CpuTensor cpuTensor;
+			X::Value graph;
+			X::Value input(this);
+			retValue = X::Value(new Tensor());
+			X::ARGS params(1);
+			params.push_back(axes);
+			X::KWARGS kwParams;
+			cpuTensor.Permute(graph, params, kwParams, input, retValue);
+			return retValue;
+		}
+
+		X::Value Tensor::Normalize(X::Value& meanList, X::Value& stdList)
+		{
+			X::Value retValue;
+			if (m_deviceType != TensorDeviceType::CPU)
+			{
+				if (m_deviceOps.IsObject() && m_deviceOps["normalize"].IsObject())
+				{
+					X::ARGS params(2);
+					params.push_back(meanList);
+					params.push_back(stdList);
+					X::KWARGS kwParams;
+					m_deviceOps["normalize"].GetObj()->Call(nullptr, this, params, kwParams, retValue);
+					return retValue;
+				}
+			}
+			// CPU normalize not implemented natively in xlang yet
+			return retValue;
+		}
+
 	}
 }

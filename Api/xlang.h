@@ -445,6 +445,12 @@ namespace X
 	};
 
 
+	enum class TensorDeviceType 
+	{
+		CPU = 0,
+		GPU = 1,
+	};
+
 	enum class TensorDataType 
 	{
 		BOOL = 0,
@@ -516,6 +522,15 @@ namespace X
 		virtual void SetName(X::Value& name) = 0;
 		virtual X::Value ToType(TensorDataType type) = 0;
 		virtual X::Value Stack(X::Value& tensors, int axis = 0) = 0;
+		virtual X::Value Permute(X::Value& axes) = 0;
+		virtual X::Value Normalize(X::Value& meanList, X::Value& stdList) = 0;
+
+		virtual TensorDeviceType GetDeviceType() = 0;
+		virtual void SetDeviceType(TensorDeviceType type) = 0;
+		virtual X::Value GetDeviceOps() = 0;
+		virtual void SetDeviceOps(X::Value ops) = 0;
+		virtual X::Value GetDeviceContext() = 0;
+		virtual void SetDeviceContext(X::Value ctx) = 0;
 	};
 	class XTensorExpression :
 		virtual public XObj
