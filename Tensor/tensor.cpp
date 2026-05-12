@@ -896,14 +896,17 @@ namespace X
 		{
 			if (m_deviceType != TensorDeviceType::CPU && m_deviceOps.IsObject())
 			{
-				X::Value freeFunc = m_deviceOps["free"];
-				if (freeFunc.IsObject() && freeFunc.GetObj())
+				X::Dict ops(m_deviceOps);
+				if (ops)
 				{
-					X::ARGS args(1);
-					args.push_back(X::Value(this));
-					X::KWARGS kw;
-					X::Value retValue;
-					freeFunc.GetObj()->Call(nullptr, nullptr, args, kw, retValue);
+					X::Value freeFunc = ops->Get("free");
+					if (freeFunc.IsObject() && freeFunc.GetObj())
+					{
+						X::ARGS args(0);
+						X::KWARGS kw;
+						X::Value retValue;
+						freeFunc.GetObj()->Call(nullptr, nullptr, args, kw, retValue);
+					}
 				}
 				m_data = nullptr;
 			}
