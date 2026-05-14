@@ -902,13 +902,16 @@ namespace X
 					X::Value freeFunc = ops->Get("free");
 					if (freeFunc.IsObject() && freeFunc.GetObj())
 					{
-						X::ARGS args(0);
+						X::ARGS args(2);
+						args.push_back((unsigned long long)m_data);
+						args.push_back(m_dataSize);
 						X::KWARGS kw;
 						X::Value retValue;
 						freeFunc.GetObj()->Call(nullptr, nullptr, args, kw, retValue);
 					}
 				}
 				m_data = nullptr;
+				m_dataSize = 0;
 			}
 
 			if (m_pTensorToOwneData)

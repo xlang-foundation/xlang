@@ -299,6 +299,11 @@ namespace X
 				}
 				memcpy(m_data, data, size);
 			}
+			virtual void DirectSetData(char* data, long long size) override
+			{
+				m_data = data;
+				m_dataSize = size;
+			}
 			std::vector<TensorDim> GetDims() 
 			{
 				return m_dims;
