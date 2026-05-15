@@ -135,6 +135,9 @@ PyMODINIT_FUNC PyInit_xlang(void)
     if (ifs.good()) {
         std::string recorded;
         std::getline(ifs, recorded);
+        if (!recorded.empty() && recorded.back() == '\r') {
+            recorded.pop_back();
+        }
         if (!recorded.empty()) {
             std::cout << "[xlang] Using engine path from record file:\n  "
                 << recorded << "\n";

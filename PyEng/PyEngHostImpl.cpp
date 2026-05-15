@@ -80,6 +80,7 @@ static void LoadNumpy()
 
 std::mutex MGil3::s_mutex;
 thread_local int MGil3::s_lockCounter = 0;
+std::mutex MGil::s_gil_mutex;
 
 GrusPyEngHost::GrusPyEngHost():
 	m_pyTaskPool(3)
@@ -438,9 +439,6 @@ PyEngObjectPtr GrusPyEngHost::Call(PyEngObjectPtr obj, PyEngObjectPtr args, PyEn
 		Py_IncRef(pRetOb);
 		return pRetOb;
 	}
-	// Trigger pdb.set_trace() to enter Python's interactive debugger
-	//PyRun_SimpleString("import pdb; pdb.set_trace()");
-	//EnablePdbInThread();
 	pRetOb = PyObject_Call(pCallOb, (PyObject*)args, (PyObject*)kwargs);
 	// *** IMPORTANT: detect if Python raised an exception ***
 	if (PyErr_Occurred()) {

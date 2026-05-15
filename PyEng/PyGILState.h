@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -74,6 +74,9 @@ public:
     }
 };
 class MGil {
+    PyGILState_STATE m_state;
+    bool m_locked = false;
+    static std::mutex s_gil_mutex;
 public:
     MGil(bool autoLock = true) {
         if (autoLock) Lock();
@@ -84,28 +87,19 @@ public:
     }
 
     void Lock() {
-        // If thread already has the GIL, do nothing
-        if (PyGILState_Check()) {
-            m_holdsGil = false;
-            return;
+        if (!m_locked) {
+            std::lock_guard<std::mutex> lock(s_gil_mutex);
+            m_state = PyGILState_Ensure();
+            m_locked = true;
         }
-
-        // Thread does NOT own GIL → acquire it
-        m_state = PyGILState_Ensure();
-        m_holdsGil = true;
     }
 
     void Unlock() {
-        // Only release GIL if we acquired it
-        if (m_holdsGil) {
+        if (m_locked) {
             PyGILState_Release(m_state);
-            m_holdsGil = false;
+            m_locked = false;
         }
     }
-
-private:
-    PyGILState_STATE m_state;
-    bool m_holdsGil = false;
 };
 
 class MGil3 {

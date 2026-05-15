@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -252,6 +252,8 @@ namespace X
 		std::string m_httpModulePath;
 	public:
 		BEGIN_PACKAGE(Http)
+			APISET().AddEvent("TestEvent");
+			APISET().AddFunc<0>("FireTestEvent", &Http::FireTestEvent);
 			APISET().AddFunc<1>("WritePad", &Http::WritePad);
 			APISET().AddVarClass<HttpServer>("Server",
 				"for http server,no parameters,for https with ssl,"
@@ -263,6 +265,7 @@ namespace X
 			APISET().AddClass<0, Curl>("Curl");
 		END_PACKAGE
 		X::Value WritePad(X::Value& input);
+		X::Value FireTestEvent();
 		std::string& GetModulePath()
 		{
 			return m_curModulePath;

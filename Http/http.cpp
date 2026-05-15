@@ -16,6 +16,7 @@ limitations under the License.
 #include "http.h"
 #include "httplib.h"
 #include <iterator>
+#include <thread>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -38,6 +39,28 @@ namespace X
 		std::cout << "http:" << input.ToString() << std::endl;
 		return input;
 	}
+
+	X::Value Http::FireTestEvent()
+	{
+		std::vector<std::thread> threads;
+		for (int i = 0; i < 10; ++i)
+		{
+			threads.emplace_back([this, i]() {
+				X::Dict dict;
+				dict->Set("thread_id", i);
+				dict->Set("message", "Hello from thread");
+				X::ARGS args(1);
+				args[0] = dict;
+				X::KWARGS kwargs;
+				Fire(0, args, kwargs);
+			});
+		}
+		for (auto& t : threads) {
+			t.join();
+		}
+		return X::Value(true);
+	}
+
 	bool HttpServer::SetAuthenticationCallback(X::Value callback, X::Value parameters)
 	{
 		m_auth_callback = callback;
