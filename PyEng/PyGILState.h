@@ -76,7 +76,6 @@ public:
 class MGil {
     PyGILState_STATE m_state;
     bool m_locked = false;
-    static std::mutex s_gil_mutex;
 public:
     MGil(bool autoLock = true) {
         if (autoLock) Lock();
@@ -88,7 +87,6 @@ public:
 
     void Lock() {
         if (!m_locked) {
-            std::lock_guard<std::mutex> lock(s_gil_mutex);
             m_state = PyGILState_Ensure();
             m_locked = true;
         }
