@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2024 The XLang Foundation
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -508,7 +508,6 @@ public:
 		//todo: check 
 		//make sure to call Object's deconstructor
 		//g_pPyHost->CallReleaseForTupleItems(m_p);
-		g_pPyHost->Release(m_p);
 	}
 	Tuple(long long size) :
 		Object()

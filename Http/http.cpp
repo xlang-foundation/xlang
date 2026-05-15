@@ -46,13 +46,19 @@ namespace X
 		for (int i = 0; i < 10; ++i)
 		{
 			threads.emplace_back([this, i]() {
-				X::Dict dict;
-				dict->Set("thread_id", i);
-				dict->Set("message", "Hello from thread");
-				X::ARGS args(1);
-				args[0] = dict;
-				X::KWARGS kwargs;
-				Fire(0, args, kwargs);
+                for (int j = 0; j < 10000; ++j) {
+                    X::Dict dict;
+                    dict->Set("thread_id", i);
+                    dict->Set("iteration", j);
+                    dict->Set("message", "High frequency event");
+                    // Add a large 100KB payload to test memory leaks
+                    std::string large_str(1024 * 100, 'X'); 
+                    dict->Set("large_payload", large_str);
+                    X::ARGS args(1);
+                    args[0] = dict;
+                    X::KWARGS kwargs;
+                    Fire(0, args, kwargs);
+                }
 			});
 		}
 		for (auto& t : threads) {
