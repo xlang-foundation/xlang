@@ -68,7 +68,7 @@ namespace X
 		}
 
 		#define CONST_NUM 18
-		static Obj_Func_Scope<6+ CONST_NUM> _tensorScope;
+		static Obj_Func_Scope<9+ CONST_NUM> _tensorScope;
 		void Tensor::Init()
 		{
 			_tensorScope.Init();
@@ -344,6 +344,70 @@ namespace X
 					return true;
 				};
 				_tensorScope.AddFunc("ToType", "ToType(type)", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					if (pObj)
+					{
+						X::List retList;
+						auto it_proc = [&retList, pObj](std::vector<long long>& indices)
+						{
+							X::Value val = pObj->GetDataWithIndices(indices);
+							retList += val;
+						};
+						pObj->IterateAll(it_proc);
+						retValue = retList;
+					}
+					return true;
+				};
+				_tensorScope.AddFunc("tolist", "tolist() -> flat list of tensor elements", f);
+			}
+			{
+				auto f = [](X::XRuntime* rt, XObj* pThis, XObj* pContext,
+					X::ARGS& params,
+					X::KWARGS& kwParams,
+					X::Value& retValue)
+				{
+					Tensor* pObj = dynamic_cast<Tensor*>(pContext);
+					if (pObj && X::g_pXHost)
+					{
+						int ndim = pObj->GetDimCount();
+						std::vector<unsigned long long> dims(ndim);
+						for (int i = 0; i < ndim; ++i) {
+							dims[i] = (unsigned long long)pObj->GetDimSize(i);
+						}
+						
+						int npType = -1;
+						switch (pObj->GetDataType()) {
+						case TensorDataType::BOOL:       npType = 0; break;
+						case TensorDataType::BYTE:       npType = 1; break;
+						case TensorDataType::UBYTE:      npType = 2; break;
+						case TensorDataType::SHORT:      npType = 3; break;
+						case TensorDataType::USHORT:     npType = 4; break;
+						case TensorDataType::INT:        npType = 7; break; // NPY_INT32/LONG
+						case TensorDataType::UINT:       npType = 8; break; // NPY_UINT32
+						case TensorDataType::LONGLONG:   npType = 9; break; // NPY_LONGLONG
+						case TensorDataType::ULONGLONG:  npType = 10; break; // NPY_ULONGLONG
+						case TensorDataType::FLOAT16:    npType = 23; break; // NPY_HALF
+						case TensorDataType::FLOAT:      npType = 11; break; // NPY_FLOAT32
+						case TensorDataType::DOUBLE:     npType = 12; break; // NPY_FLOAT64
+						case TensorDataType::CFLOAT:     npType = 14; break; // NPY_CFLOAT
+						case TensorDataType::CDOUBLE:    npType = 15; break; // NPY_CDOUBLE
+						default: break;
+						}
+						
+						if (npType != -1) {
+							retValue = X::g_pXHost->CreateNdarray(ndim, dims.data(), npType, pObj->GetData());
+						}
+					}
+					return true;
+				};
+				_tensorScope.AddFunc("toarray", "toarray() -> convert tensor to numpy array via host API", f);
 			}
 			_tensorScope.Close();
 		}
