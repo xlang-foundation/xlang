@@ -8,3 +8,7 @@ VSCode/dist/
 VSCode/node_modules/
 VSCode/out/
 *.vsix
+*.log
+*.db
+*.db-shm
+*.db-wal
