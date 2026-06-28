@@ -1298,8 +1298,7 @@ namespace X
 
 	bool HttpClient::PostWithCallback(std::string path, std::string content_type, std::string body, X::Value callback)
 	{
-		httplib::Client* client = (httplib::Client*)m_pClient;
-		if (!client) {
+		if (!m_pClient) {
 			return false;
 		}
 
@@ -1320,7 +1319,7 @@ namespace X
 			if (callback.IsObject()) {
 				std::string chunk(data, data_length);
 				X::Value valChunk(chunk);
-				X::ARGS args;
+				X::ARGS args(1);
 				args.push_back(valChunk);
 				callback.ObjCall(args);
 				return true; 
@@ -1328,7 +1327,14 @@ namespace X
 			return true;
 		};
 
-		auto res = client->send(req);
+		httplib::Result res;
+		if (m_isHttps) {
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+			res = ((httplib::SSLClient*)m_pClient)->send(req);
+#endif
+		} else {
+			res = ((httplib::Client*)m_pClient)->send(req);
+		}
 		if (res) {
 			m_status = res->status;
 			m_body = res->body;

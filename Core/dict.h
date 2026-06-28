@@ -53,10 +53,12 @@ namespace X
 			}
 			FORCE_INLINE virtual long long Size() override
 			{
+				AutoLock autoLock(m_lock);
 				return mMap.size();
 			}
 			virtual X::Value Get(const X::Value& key, const X::Value& defaultValue) override
 			{
+				AutoLock autoLock(m_lock);
 				auto it = mMap.find(key);
 				if (it != mMap.end())
 				{
@@ -66,6 +68,7 @@ namespace X
 			}
 			virtual X::Value Get(const X::Value& key) override
 			{
+				AutoLock autoLock(m_lock);
 				return mMap[key];
 			}
 			virtual Value Member(XRuntime* rt, const char* name) override
@@ -77,12 +80,14 @@ namespace X
 			}
 			virtual bool IsContain(X::Value& val) override
 			{
+				AutoLock autoLock(m_lock);
 				//search the key
 				auto it = mMap.find(val);
 				return it != mMap.end();
 			}
 			virtual Value& operator[](X::Value& key) override
 			{
+				AutoLock autoLock(m_lock);
 				auto it = mMap.find(key);
 				if (it == mMap.end())
 				{
@@ -92,6 +97,7 @@ namespace X
 			}
 			virtual bool Set(X::Value valIdx, X::Value& val) override
 			{
+				AutoLock autoLock(m_lock);
 				auto it = mMap.find(valIdx);
 				if (it != mMap.end())
 				{
@@ -106,6 +112,7 @@ namespace X
 			}
 			virtual void Set(const X::Value& key, const X::Value& val) override
 			{
+				AutoLock autoLock(m_lock);
 				auto it = mMap.find(key);
 				if (it != mMap.end())
 				{
@@ -119,6 +126,7 @@ namespace X
 			}
 			void SetKV(X::Value& key,const X::Value& val)
 			{
+				AutoLock autoLock(m_lock);
 				mIndex.push_back(key);
 				mMap.emplace(std::make_pair(key, val));
 			}
@@ -132,12 +140,14 @@ namespace X
 			}
 			void Set(const char* key, X::Value val)
 			{
+				AutoLock autoLock(m_lock);
 				X::Value k(key);
 				mIndex.push_back(k);
 				mMap.emplace(std::make_pair(k, val));
 			}
 			void AddKeyValue(Value& key, const Value& v)
 			{
+				AutoLock autoLock(m_lock);
 				auto it = mMap.find(key);
 				if (it != mMap.end())
 				{
@@ -151,6 +161,7 @@ namespace X
 			}
 			virtual Dict& operator +=(X::Value& r)
 			{
+				AutoLock autoLock(m_lock);
 				if (r.IsObject())
 				{
 					Object* pObj = dynamic_cast<Object*>(r.GetObj());
@@ -176,11 +187,13 @@ namespace X
 			}
 			virtual bool Has(const X::Value& key) override
 			{
+				AutoLock autoLock(m_lock);
 				auto it = mMap.find(key);
 				return it != mMap.end();
 			}
 			bool Has(X::Value& key)
 			{
+				AutoLock autoLock(m_lock);
 				bool bOK = false;
 				auto it = mMap.find(key);
 				if (it != mMap.end())
@@ -191,6 +204,7 @@ namespace X
 			}
 			virtual bool Compare(X::Value& dict) override
 			{
+				AutoLock autoLock(m_lock);
 				// Verify that 'dict' is a valid Dict object.
 				if (!dict.IsObject())
 					return false;
@@ -224,6 +238,7 @@ namespace X
 
 			bool Remove(const  X::Value& key) override
 			{
+				AutoLock autoLock(m_lock);
 				bool bOK = false;
 				auto it = mMap.find(key);
 				if (it != mMap.end())
@@ -244,6 +259,7 @@ namespace X
 			bool Get(X::Value& key, X::Value& val,
 				X::LValue* lValue = nullptr)
 			{
+				AutoLock autoLock(m_lock);
 				auto it = mMap.find(key);
 				if (it != mMap.end())
 				{
@@ -264,6 +280,7 @@ namespace X
 			}
 			virtual bool ToBytes(XlangRuntime* rt,XObj* pContext,X::XLangStream& stream) override
 			{
+				AutoLock autoLock(m_lock);
 				Object::ToBytes(rt,pContext,stream);
 				size_t size = Size();
 				stream << size;
@@ -280,6 +297,7 @@ namespace X
 			}
 			virtual bool FromBytes(X::XLangStream& stream) override
 			{
+				AutoLock autoLock(m_lock);
 				//TODO:need to pass runtime,and calculate base class for some objects
 				size_t size;
 				stream >> size;
@@ -294,6 +312,7 @@ namespace X
 			}
 			virtual const char* ToString(bool WithFormat = false) override
 			{
+				AutoLock autoLock(m_lock);
 				std::string strOut = "{\n";
 				int cnt = (int)mIndex.size();
 				int i = 0;
@@ -336,6 +355,7 @@ namespace X
 			FORCE_INLINE virtual bool GetAndUpdatePos(Iterator_Pos& pos,
 				std::vector<Value>& vals, bool getOnly) override
 			{
+				AutoLock autoLock(m_lock);
 				long long offset = (long long)pos;
 				if (offset >= (long long)mIndex.size())
 				{
