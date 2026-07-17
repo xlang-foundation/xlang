@@ -96,6 +96,7 @@ namespace X
             sscanf(portStr.c_str(), "%ld", &port);
 #endif
 
+#if (WIN32)
             // See if server's message interface operates
             std::string msgKey(PAS_MSG_KEY);
             if (port != 0)
@@ -103,7 +104,6 @@ namespace X
                 msgKey += std::to_string(port);
             }
 
-#if (WIN32)
             HANDLE hFileMailSlot = CreateFileA(msgKey.c_str(),
                 GENERIC_WRITE,
                 FILE_SHARE_READ,
