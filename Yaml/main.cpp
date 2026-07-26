@@ -33,7 +33,8 @@ static bool GetCurLibInfo(void* EntryFuncName, std::string& strFullPath,
 #if (WIN32)
 	HMODULE  hModule = NULL;
 	GetModuleHandleEx(
-		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+			GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
 		(LPCTSTR)EntryFuncName,
 		&hModule);
 	char path[MAX_PATH];

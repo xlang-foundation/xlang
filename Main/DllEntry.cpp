@@ -505,4 +505,7 @@ extern "C"  X_EXPORT void QuitEventLoop()
 extern "C"  X_EXPORT void Unload()
 {
 	X::XLangUnload();
+	auto& config = X::g_pXload->GetConfig();
+	delete[] config.xlangEnginePath;
+	config.xlangEnginePath = nullptr;
 }
