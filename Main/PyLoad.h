@@ -15,5 +15,15 @@ limitations under the License.
 
 #pragma once
 #include <string>
+#include "PythonRuntime.h"
 
-std::string resolve_pyeng_path(const std::string& folder);
+std::string resolve_pyeng_path(const std::string& folder,
+	const std::string& pythonExecutable,
+	PythonRuntimeInfo* runtimeInfo = nullptr);
+
+// Preserves the existing system-Python behavior for callers that do not
+// provide a host-selected Python executable.
+inline std::string resolve_pyeng_path(const std::string& folder)
+{
+	return resolve_pyeng_path(folder, std::string(), nullptr);
+}

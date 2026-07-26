@@ -49,11 +49,15 @@ limitations under the License.
 #include "RemotingProxy.h"
 #include "error_obj.h"
 #include "log.h"
-#if (WIN32)
 #include "PyLoad.h"
+#include "PyEngConfig.h"
+
+#if !defined(WIN32)
+#include <dlfcn.h>
 #endif
 
 PyEngHost* g_pPyHost = nullptr;
+static void* g_pythonRuntimeLibHandler = nullptr;
 
 namespace X
 {
@@ -71,6 +75,11 @@ void UnloadPythonEngine()
 		}
 		UNLOADLIB(g_pXload->GetPythonLibHandler());
 		g_pXload->SetPythonLibHandler(nullptr);
+	}
+	if (g_pythonRuntimeLibHandler)
+	{
+		UNLOADLIB(g_pythonRuntimeLibHandler);
+		g_pythonRuntimeLibHandler = nullptr;
 	}
 }
 void UnloadDevopsEngine()
@@ -166,53 +175,94 @@ PyEngObjectPtr Xlang_CallFunc_Impl(
 bool LoadPythonEngine()
 {
 	typedef void (*LOAD)(void* pHost,void** ppHost);
-#if (WIN32)
-	std::string folder(g_pXload->GetConfig().appPath);
-	std::string loadDllName = resolve_pyeng_path(folder);
-#else
-	std::string loadDllName;
-	bool bHaveDll = false;
-	std::vector<std::string> candiateFiles;
-	std::string engName("pyeng");
-	bool bRet = file_search(g_pXload->GetConfig().appPath,
-		LibPrefix + engName + ShareLibExt, candiateFiles);
-	if (bRet && candiateFiles.size() > 0)
+	typedef bool (*LOAD_EX)(void* pHost, void** ppHost,
+		const PyEngConfig* config);
+
+	auto& config = g_pXload->GetConfig();
+	const std::string configuredPython =
+		config.pythonExecutable ? config.pythonExecutable : "";
+
+	PythonRuntimeInfo runtime;
+	std::string loadDllName = resolve_pyeng_path(
+		config.appPath, configuredPython, &runtime);
+	if (loadDllName.empty() && config.dllSearchPath)
 	{
-		loadDllName = candiateFiles[0];
-		bHaveDll = true;
-	}
-	else if (g_pXload->GetConfig().dllSearchPath)
-	{
-		std::string strPaths(g_pXload->GetConfig().dllSearchPath);
+		std::string strPaths(config.dllSearchPath);
 		std::vector<std::string> otherSearchPaths = split(strPaths, '\n');
-		for (auto& pa : otherSearchPaths)
+		for (auto& path : otherSearchPaths)
 		{
-			bRet = file_search(pa,
-				LibPrefix + engName + ShareLibExt, candiateFiles);
-			if (bRet && candiateFiles.size() > 0)
+			loadDllName = resolve_pyeng_path(
+				path, configuredPython, &runtime);
+			if (!loadDllName.empty())
 			{
-				loadDllName = candiateFiles[0];
-				bHaveDll = true;
-				//break;
+				break;
 			}
 		}
 	}
-	if (!bHaveDll)
+	if (loadDllName.empty())
 	{
 		return false;
 	}
-	if (!bHaveDll)
+
+	// When the host selects an exact Python, preload that runtime library so
+	// the ABI-matched PyEng dependency cannot bind to a different OS install.
+	if (!configuredPython.empty())
 	{
-		return false;
-	}
+#if defined(WIN32)
+		g_pythonRuntimeLibHandler = (void*)LoadLibraryExA(
+			runtime.runtimeLibrary.c_str(), nullptr,
+			LOAD_WITH_ALTERED_SEARCH_PATH);
+#else
+		g_pythonRuntimeLibHandler = dlopen(
+			runtime.runtimeLibrary.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
+		if (!g_pythonRuntimeLibHandler)
+		{
+			LOG7 << LOG_RED << "Unable to load configured Python runtime: "
+				<< runtime.runtimeLibrary << LOG_RESET << LINE_END;
+			return false;
+		}
+	}
+
 	void* libHandle = LOADLIB(loadDllName.c_str());
 	if (libHandle)
 	{
+		LOAD_EX loadEx = (LOAD_EX)GetProc(libHandle, "LoadEx");
 		LOAD load = (LOAD)GetProc(libHandle, "Load");
-		if (load)
+		bool loaded = false;
+		if (!configuredPython.empty())
 		{
-			load((void*)X::g_pXHost,(void**)&g_pPyHost);
+			if (loadEx)
+			{
+				PyEngConfig pyConfig;
+				pyConfig.pythonExecutable = runtime.executable.c_str();
+				pyConfig.pythonHome = runtime.home.c_str();
+				pyConfig.isolated = true;
+				loaded = loadEx((void*)X::g_pXHost,
+					(void**)&g_pPyHost, &pyConfig);
+			}
+			else
+			{
+				LOG7 << LOG_RED
+					<< "Configured Python requires a PyEng build with LoadEx"
+					<< LOG_RESET << LINE_END;
+			}
+		}
+		else if (load)
+		{
+			load((void*)X::g_pXHost, (void**)&g_pPyHost);
+			loaded = g_pPyHost != nullptr;
+		}
+
+		if (!loaded)
+		{
+			UNLOADLIB(libHandle);
+			if (g_pythonRuntimeLibHandler)
+			{
+				UNLOADLIB(g_pythonRuntimeLibHandler);
+				g_pythonRuntimeLibHandler = nullptr;
+			}
+			return false;
 		}
 		g_pXload->SetPythonLibHandler(libHandle);
 		if (g_pPyHost)

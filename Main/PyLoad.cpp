@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "PyLoad.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -82,27 +84,27 @@ std::string run_python_cmd(const std::string& code) {
     return result;
 }
 
-// --- Find ABI-matching pyeng file in folder ---
-std::string find_pyeng_module(const std::string& folder) {
-    std::string ext_suffix = run_python_cmd("import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))");
-    if (ext_suffix.empty()) return {};
-
+// --- Find the PyEng binary matching the selected Python ABI ---
+std::string find_pyeng_module(const std::string& folder,
+    const std::string& abiTag) {
+    std::vector<fs::path> candidates;
 #ifdef _WIN32
-    // Build expected .dll (not .pyd)
-    fs::path expected = fs::path(folder) / ("pyeng" + ext_suffix.substr(0, ext_suffix.rfind(".")) + ".dll");
-    if (fs::exists(expected)) return expected.string();
-
-    // Fallback: scan for pyeng*.dll
-    for (auto& p : fs::directory_iterator(folder)) {
-        if (p.path().filename().string().rfind("pyeng", 0) == 0 &&
-            p.path().extension() == ".dll") {
-            return p.path().string();
+    candidates.emplace_back(fs::path(folder) / ("pyeng." + abiTag + ".dll"));
+    candidates.emplace_back(fs::path(folder) / "pyeng.dll");
+#elif defined(__APPLE__)
+    candidates.emplace_back(fs::path(folder) / ("pyeng." + abiTag + ".dylib"));
+    candidates.emplace_back(fs::path(folder) / ("pyeng." + abiTag + ".so"));
+    candidates.emplace_back(fs::path(folder) / "libpyeng.dylib");
+#else
+    candidates.emplace_back(fs::path(folder) / ("pyeng." + abiTag + ".so"));
+    candidates.emplace_back(fs::path(folder) / ("libpyeng." + abiTag + ".so"));
+    candidates.emplace_back(fs::path(folder) / "libpyeng.so");
+#endif
+    for (const auto& candidate : candidates) {
+        if (fs::exists(candidate)) {
+            return candidate.string();
         }
     }
-#else
-    fs::path expected = fs::path(folder) / ("pyeng" + ext_suffix);
-    if (fs::exists(expected)) return expected.string();
-#endif
     return {};
 }
 
@@ -224,8 +226,23 @@ inline std::time_t to_time_t(std::filesystem::file_time_type ftime) {
 }
 
 // --- Resolve path with cache file (extended) ---
-std::string resolve_pyeng_path(const std::string& folder) {
-    fs::path cacheFile = fs::path(folder) / "pyeng.cache.txt";
+std::string resolve_pyeng_path(const std::string& folder,
+    const std::string& pythonExecutable,
+    PythonRuntimeInfo* runtimeInfo) {
+    PythonRuntimeInfo runtime;
+    std::string runtimeError;
+    if (!query_python_runtime(pythonExecutable, runtime, runtimeError)) {
+        std::cerr << "Unable to use Python runtime"
+            << (pythonExecutable.empty() ? "" : ": " + pythonExecutable)
+            << ". " << runtimeError << "\n";
+        return {};
+    }
+    if (runtimeInfo) {
+        *runtimeInfo = runtime;
+    }
+
+    fs::path cacheFile = fs::path(folder) /
+        ("pyeng." + runtime.abiTag + ".cache.txt");
 
     std::string module;
     bool copied = false;
@@ -254,13 +271,19 @@ std::string resolve_pyeng_path(const std::string& folder) {
     }
 
     // Not cached or changed → detect
-    module = find_pyeng_module(folder);
+    module = find_pyeng_module(folder, runtime.abiTag);
     if (module.empty()) {
-        std::cerr << "No pyeng module found in: " << folder << "\n";
+        std::cerr << "No PyEng module for " << runtime.abiTag
+            << " found in: " << folder << "\n";
         return {};
     }
 
-    copied = install_into_lib(module);
+    // Preserve the legacy system-Python installation behavior. A host-selected
+    // runtime is treated as application-owned and must already contain its
+    // packaged xlang.pyd; loading an application must not mutate that runtime.
+    if (pythonExecutable.empty()) {
+        copied = install_into_lib(module);
+    }
 
     // Collect new metadata
     auto ftime = fs::last_write_time(module);

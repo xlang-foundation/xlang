@@ -23,6 +23,7 @@ limitations under the License.
 #include "xload.h"
 #include "cli.h"
 #include "xlang.h"
+#include "Tools/PythonCli.h"
 
 #if (WIN32)
 #include <Windows.h>
@@ -79,7 +80,10 @@ void PrintUsage()
       [-c \"code,use \\n as line separator\"]\n\
       [-cli]\n\
       [-caslang file_name]\n\
-      [file parameters]" << std::endl;
+      [file parameters]\n\
+xlang init python [project_path]\n\
+xlang python [python arguments]\n\
+xlang pip <pip arguments>" << std::endl;
 	std::cout << "xlang -help | -? | -h for help" << std::endl;
 }
 bool ParseCommandLine(std::vector<std::string>& params, ParamConfig& paramCfg)
@@ -245,6 +249,10 @@ int main(int argc, char* argv[])
 {
 	//::MessageBox(NULL, "In Dbg", "XLang", MB_OK);
 	//Workaround_WSLThread_Problem();
+	int pythonCliExitCode = 0;
+	if (X::Tools::TryRunPythonCli(argc, argv, pythonCliExitCode))
+		return pythonCliExitCode;
+
 	std::vector<std::string> params(argv, argv+argc);
 	//params.push_back("D:\\CantorAI\\xlang\\test\\inline_expr\\test101.x");
 	ParamConfig paramConfig;

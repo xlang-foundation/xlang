@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef _X_LOAD_H_
 #define _X_LOAD_H_
 #include <string>
+#include <cstring>
 
 #if !defined(FORCE_INLINE)
 #if defined(_MSC_VER)
@@ -60,6 +61,28 @@ namespace X
 		const char* xlangEnginePath = nullptr;//for XLang engine dll path
 		const char* dllSearchPath = nullptr;
 		int dbgPort = 3142;
+		// If set by a host application, XLang must use this exact Python
+		// executable instead of discovering Python from the operating system.
+		// Appended to preserve the offsets of all existing configuration fields.
+		const char* pythonExecutable = nullptr;
+
+		void SetPythonExecutable(const char* path)
+		{
+			if (pythonExecutable)
+			{
+				delete[] pythonExecutable;
+				pythonExecutable = nullptr;
+			}
+			if (!path)
+			{
+				return;
+			}
+			size_t len = std::strlen(path);
+			char* copy = new char[len + 1];
+			std::memcpy(copy, path, len + 1);
+			pythonExecutable = copy;
+		}
+
 		~Config()
 		{
 			if (inlineCode) delete[] inlineCode;
@@ -69,6 +92,7 @@ namespace X
 			if (appFullName) delete[] appFullName;
 			if (xlangEnginePath) delete[] xlangEnginePath;
 			if (dllSearchPath) delete[] dllSearchPath;
+			if (pythonExecutable) delete[] pythonExecutable;
 		}
 	};
 //review 4/10/2023

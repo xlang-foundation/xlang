@@ -20,6 +20,17 @@ function(add_pyeng_target target_name py_root py_tag abi_tag)
         set(python_exec "${py_root}/bin/python${py_tag}")
     endif()
 
+    execute_process(
+        COMMAND ${python_exec} -c "import platform; print(platform.python_version())"
+        OUTPUT_VARIABLE py_version
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    file(WRITE
+        "${CMAKE_BINARY_DIR}/bin/pyeng.${abi_tag}.version.txt"
+        "${py_version}\n"
+    )
+
     # Ask Python for include and numpy
     execute_process(
         COMMAND ${python_exec} -c "import sysconfig; print(sysconfig.get_paths()['include'])"
@@ -162,8 +173,25 @@ if(useDefaultPython)
     # Link against the imported target to prefer the shared Python library
     target_link_libraries(${target_name} PUBLIC Python3::Python)
 
+    set(default_abi_tag
+        "cp${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+    file(WRITE
+        "${CMAKE_BINARY_DIR}/bin/pyeng.${default_abi_tag}.version.txt"
+        "${Python3_VERSION}\n"
+    )
+    set_target_properties(${target_name} PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "pyeng.${default_abi_tag}"
+    )
+
     if(WIN32)
         target_link_libraries(${target_name} PUBLIC Ws2_32)
+        add_custom_command(TARGET ${target_name} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:${target_name}>"
+                "$<TARGET_FILE_DIR:${target_name}>/pyeng.dll"
+            COMMENT "Creating legacy pyeng.dll compatibility copy"
+        )
         configure_file("${PROJECT_SOURCE_DIR}/install_py_xlang.bat"
                        "${CMAKE_BINARY_DIR}/bin/install_py_xlang.bat")
     else()

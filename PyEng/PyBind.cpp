@@ -151,7 +151,13 @@ PyMODINIT_FUNC PyInit_xlang(void)
     // ---------------------------------------------------------
     PyObject* m = PyModule_Create(&XlangPackageTypeModule);
     std::string xlangSearchPath = paramCfg.appPath;
-    X::PyBind::LoadXLangEngine(paramCfg, xlangSearchPath);
+    if (!X::PyBind::LoadXLangEngine(paramCfg, xlangSearchPath))
+    {
+        Py_XDECREF(m);
+        PyErr_SetString(PyExc_ImportError,
+            "xlang_eng could not be loaded beside the xlang Python module");
+        return nullptr;
+    }
 
     X::g_pXHost->SetPyEngHost(&GrusPyEngHost::I());
 

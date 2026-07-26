@@ -57,7 +57,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include_directories("Api")
 
 FILE(GLOB Api_SRC "Api/*.cpp")
-FILE(GLOB AppEntry_SRC "X.cpp" "cli.cpp")
+FILE(GLOB AppEntry_SRC
+	"X.cpp"
+	"cli.cpp"
+	"Tools/PythonCli.cpp"
+	"Tools/PythonProcess.cpp"
+	"Tools/PythonProject.cpp"
+)
 
 
 
@@ -67,6 +73,8 @@ add_executable (${PROJECT_NAME}
 )
 if(NOT (WIN32))
 target_link_libraries(${PROJECT_NAME} pthread dl)
+else()
+target_link_libraries(${PROJECT_NAME} urlmon)
 endif()
 add_subdirectory("Main")
 add_subdirectory("os")

@@ -17,6 +17,7 @@ limitations under the License.
 #include <string>
 #include "xlang.h"
 #include "xhost.h"
+#include "PyEngConfig.h"
 
 //trick for win32 compile to avoid using pythonnn_d.lib
 #ifdef _DEBUG
@@ -122,21 +123,117 @@ static void UnloadPython()
 	}
 }
 #endif
-extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
+
+static bool SetPyConfigString(PyConfig& config, wchar_t** field,
+	const char* value, const char* fieldName)
+{
+	if (!value || value[0] == '\0')
+	{
+		return true;
+	}
+	PyStatus status = PyConfig_SetBytesString(&config, field, value);
+	if (PyStatus_Exception(status))
+	{
+		std::cerr << "Unable to configure Python " << fieldName << ": "
+			<< (status.err_msg ? status.err_msg : "unknown error")
+			<< std::endl;
+		return false;
+	}
+	return true;
+}
+
+static bool InitializeConfiguredPython(const PyEngConfig* appConfig)
+{
+	if (!appConfig || !appConfig->pythonExecutable)
+	{
+		Py_Initialize();
+		return Py_IsInitialized() != 0;
+	}
+
+	PyConfig config;
+	if (appConfig->isolated)
+	{
+		PyConfig_InitIsolatedConfig(&config);
+		config.use_environment = 0;
+		config.user_site_directory = 0;
+	}
+	else
+	{
+		PyConfig_InitPythonConfig(&config);
+	}
+	config.site_import = 1;
+
+	bool configured =
+		SetPyConfigString(config, &config.program_name,
+			appConfig->pythonExecutable, "program_name") &&
+		SetPyConfigString(config, &config.executable,
+			appConfig->pythonExecutable, "executable") &&
+		SetPyConfigString(config, &config.base_executable,
+			appConfig->pythonExecutable, "base_executable") &&
+		SetPyConfigString(config, &config.home,
+			appConfig->pythonHome, "home");
+	if (!configured)
+	{
+		PyConfig_Clear(&config);
+		return false;
+	}
+
+	PyStatus status = Py_InitializeFromConfig(&config);
+	if (PyStatus_Exception(status))
+	{
+		std::cerr << "Unable to initialize configured Python: "
+			<< (status.err_msg ? status.err_msg : "unknown error")
+			<< std::endl;
+		PyConfig_Clear(&config);
+		return false;
+	}
+	PyConfig_Clear(&config);
+	return true;
+}
+
+static bool FinishLoad(void* pXHost, void** ppHost,
+	const PyEngConfig* appConfig)
 {
 	X::g_pXHost = (X::XHost*)pXHost;
 #if !(WIN32)
 	PreloadPythonToSolveGlobaleExportTable();
 #endif
-	Py_Initialize();
+	if (!InitializeConfiguredPython(appConfig))
+	{
+		X::g_pXHost = nullptr;
+		if (ppHost)
+		{
+			*ppHost = nullptr;
+		}
+		return false;
+	}
 	PyEval_InitThreads();
 	PyThreadState* mainThreadState = PyEval_SaveThread();
 	GrusPyEngHost::I().SetPyThreadState(mainThreadState);
 	g_pPyHost = &GrusPyEngHost::I();
-	*ppHost = (void*)g_pPyHost;
+	if (ppHost)
+	{
+		*ppHost = (void*)g_pPyHost;
+	}
 	//todo: add lines below back for Python debug?
 	//auto ts = PyThreadState_GET();
 	//PyEval_SetTrace(x_Py_tracefunc, nullptr);
+	return true;
+}
+
+extern "C" X_EXPORT bool LoadEx(void* pXHost, void** ppHost,
+	const PyEngConfig* config)
+{
+	if (!config || config->structSize < sizeof(PyEngConfig))
+	{
+		return false;
+	}
+	return FinishLoad(pXHost, ppHost, config);
+}
+
+extern "C"  X_EXPORT void Load(void* pXHost,void** ppHost)
+{
+	FinishLoad(pXHost, ppHost, nullptr);
 }
 
 extern "C"  X_EXPORT void Unload()
