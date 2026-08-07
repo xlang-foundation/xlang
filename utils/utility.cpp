@@ -428,7 +428,10 @@ bool LoadStringFromFile(std::string& fileName, std::string& content) {
 bool GetCurLibInfo(void* EntryFuncName, std::string& strFullPath, std::string& strFolderPath, std::string& strLibName) {
 #if defined(WIN32)
     HMODULE hModule = NULL;
-    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)EntryFuncName, &hModule);
+    GetModuleHandleEx(
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCTSTR)EntryFuncName, &hModule);
     char path[MAX_PATH];
     GetModuleFileName(hModule, path, MAX_PATH);
     std::string strPath(path);

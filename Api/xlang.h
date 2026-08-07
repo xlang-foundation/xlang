@@ -82,6 +82,9 @@ namespace X
 		ClassInstance,
 		Module
 	};
+	inline constexpr const char* EventOperationKeyword = "__xlang_event_operation";
+	inline constexpr const char* EventSubscribeOperation = "subscribe";
+	inline constexpr const char* EventUnsubscribeOperation = "unsubscribe";
 #define Internal_Reserve(cls_name)  cls_name(int){}
 
 	//Used for XList or other XObj's derived class to do iteration
@@ -595,6 +598,9 @@ namespace X
 	public:
 		virtual void SetChangeHandler(OnEventHandlerChanged ch) = 0;
 		virtual void DoFire(XRuntime* rt, XObj* pContext, ARGS& params, KWARGS& kwargs) = 0;
+		virtual long AddHandler(EventHandler handler) = 0;
+		virtual long AddObjectHandler(XObj* handler) = 0;
+		virtual bool RemoveHandler(long cookie) = 0;
 	};
 	class XFunc:
 		virtual public XObj

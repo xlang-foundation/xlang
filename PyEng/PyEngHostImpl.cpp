@@ -14,6 +14,7 @@ limitations under the License.
 */
 
 #include "PyEngHostImpl.h"
+#include <algorithm>
 #include "utility.h"
 #include "PyFunc.h"
 #include <iostream>

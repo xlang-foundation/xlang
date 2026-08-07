@@ -330,7 +330,7 @@ namespace X
 #if (WIN32)
         PSECURITY_DESCRIPTOR MsgService::CreateSecurityDescriptor()
         {
-            LPCWSTR sddl = L"D:(D;;GRGW;;;SY)(A;;GRGW;;;IU)(A;;GRGW;;;NU)";
+            LPCWSTR sddl = L"D:(A;;GRGW;;;SY)(A;;GRGW;;;BA)(A;;GRGW;;;IU)(A;;GRGW;;;SU)(A;;GRGW;;;NU)";
             PSECURITY_DESCRIPTOR pSD = nullptr;
 
             if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(

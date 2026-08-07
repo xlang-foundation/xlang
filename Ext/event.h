@@ -83,6 +83,20 @@ namespace X
 		{
 			m_name = name;
 		}
+		virtual ~ObjectEvent()
+		{
+			std::vector<HandlerInfo> handlers;
+			m_lockHandlers.Lock();
+			handlers.swap(m_handlers);
+			m_lockHandlers.Unlock();
+			for (auto& handlerInfo : handlers)
+			{
+				if (handlerInfo.ObjectHandler)
+				{
+					handlerInfo.ObjectHandler->DecRef();
+				}
+			}
+		}
 		virtual const char* ToString(bool WithFormat = false)
 		{
 			std::string retVal;
@@ -107,6 +121,24 @@ namespace X
 		virtual void SetChangeHandler(OnEventHandlerChanged ch) override
 		{
 			m_changeHandler = ch;
+		}
+		virtual long AddHandler(EventHandler handler) override
+		{
+			return Add(handler);
+		}
+		virtual long AddObjectHandler(XObj* handler) override
+		{
+			auto* objectHandler = dynamic_cast<X::Data::Object*>(handler);
+			if (objectHandler == nullptr)
+			{
+				return 0;
+			}
+			objectHandler->IncRef();
+			return Add(objectHandler);
+		}
+		virtual bool RemoveHandler(long cookie) override
+		{
+			return Remove(cookie);
 		}
 		virtual void GetBaseScopes(std::vector<AST::Scope*>& bases) override
 		{
@@ -146,24 +178,33 @@ namespace X
 		{
 			//if a handler is remote object but its proxy is invalid, 
 			//here is the chance to remove from here to reduce memory usage
-			AutoLock autoLock(m_lock);
-			for (auto it = m_handlers.begin(); it != m_handlers.end();)
 			{
-				auto& handleInfo = *it;
-				if (handleInfo.ObjectHandler)
+				std::vector<X::Data::Object*> removedHandlers;
 				{
-					if (handleInfo.ObjectHandler->GetType() == X::ObjType::RemoteObject)
+					AutoLock autoLock(m_lockHandlers);
+					for (auto it = m_handlers.begin(); it != m_handlers.end();)
 					{
-						X::RemoteObject* pRemotObj = dynamic_cast<X::RemoteObject*>(handleInfo.ObjectHandler);
-						if (pRemotObj && !pRemotObj->IsValid())
+						auto& handleInfo = *it;
+						if (handleInfo.ObjectHandler &&
+							handleInfo.ObjectHandler->GetType() ==
+								X::ObjType::RemoteObject)
 						{
-							handleInfo.ObjectHandler->DecRef();
-							it = m_handlers.erase(it);
-							continue;
+							X::RemoteObject* pRemotObj =
+								dynamic_cast<X::RemoteObject*>(handleInfo.ObjectHandler);
+							if (pRemotObj && !pRemotObj->IsValid())
+							{
+								removedHandlers.push_back(handleInfo.ObjectHandler);
+								it = m_handlers.erase(it);
+								continue;
+							}
 						}
+						it++;
 					}
 				}
-				it++;
+				for (auto* handler : removedHandlers)
+				{
+					handler->DecRef();
+				}
 			}
 		}
 		virtual bool Call(XRuntime* rt, XObj* pContext, ARGS& params,
@@ -178,12 +219,9 @@ namespace X
 		virtual ObjectEvent& operator +=(X::Value& r) override
 		{
 			CleanupUnCallableHandlers();
-			AutoLock autoLock(m_lock);
 			if (r.IsObject())
 			{
-				auto* pObjHandler = dynamic_cast<X::Data::Object*>(r.GetObj());
-				pObjHandler->IncRef();
-				Add(pObjHandler);
+				AddObjectHandler(r.GetObj());
 			}
 			return *this;
 		}
@@ -236,33 +274,36 @@ namespace X
 			ARGS& params, KWARGS& kwargs);
 		virtual void DoFire(XRuntime* rt, XObj* pContext, ARGS& params, KWARGS& kwargs) override
 		{
+			// A handler can remove the last external reference to this event.
+			// Keep the event alive until every callback in the snapshot returns.
+			X::Value eventLifetime(this);
 			SetFire();
-			m_lockHandlers.Lock();
-			int iCnt = (int)m_handlers.size();
-			for (int i = 0; i < iCnt && i < (int)m_handlers.size(); ++i)
+			std::vector<HandlerInfo> handlers;
+			std::vector<X::Value> objectHandlerLifetimes;
 			{
-				auto& it = m_handlers[i];
-				//if (ownerThreadId ==-1 || it.OwnerThreadId == ownerThreadId)
+				AutoLock autoLock(m_lockHandlers);
+				handlers = m_handlers;
+				objectHandlerLifetimes.reserve(handlers.size());
+				for (auto& handlerInfo : handlers)
 				{
-					IncRef();
-					if (it.Handler)
+					if (handlerInfo.ObjectHandler)
 					{
-						Value retVal; 
-						m_lockHandlers.Unlock();
-						it.Handler(rt, pContext, params, kwargs, retVal);
-						m_lockHandlers.Lock();
+						objectHandlerLifetimes.emplace_back(handlerInfo.ObjectHandler);
 					}
-					else if (it.ObjectHandler)
-					{
-						Value retVal;
-						m_lockHandlers.Unlock();
-						it.ObjectHandler->Call(rt, pContext, params, kwargs, retVal);
-						m_lockHandlers.Lock();
-					}
-					DecRef();
 				}
 			}
-			m_lockHandlers.Unlock();
+			for (auto& handlerInfo : handlers)
+			{
+				Value retVal;
+				if (handlerInfo.Handler)
+				{
+					handlerInfo.Handler(rt, pContext, params, kwargs, retVal);
+				}
+				else if (handlerInfo.ObjectHandler)
+				{
+					handlerInfo.ObjectHandler->Call(rt, pContext, params, kwargs, retVal);
+				}
+			}
 		}
 		FORCE_INLINE X::Value Get(const char* name)
 		{
@@ -323,16 +364,20 @@ namespace X
 			}
 			return cookie;
 		}
-		FORCE_INLINE void Remove(long cookie)
+		FORCE_INLINE bool Remove(long cookie)
 		{
 			int cnt = 0;
+			X::Data::Object* removedObjectHandler = nullptr;
+			bool removed = false;
 			m_lockHandlers.Lock();
 			auto it = m_handlers.begin();
 			while (it != m_handlers.end())
 			{//todo: check here
 				if ((*it).cookie == cookie)
 				{
+					removedObjectHandler = it->ObjectHandler;
 					m_handlers.erase(it);
+					removed = true;
 					break;
 				}
 				else
@@ -342,10 +387,15 @@ namespace X
 			}
 			cnt = (int)m_handlers.size();
 			m_lockHandlers.Unlock();
-			if (m_changeHandler)
+			if (removedObjectHandler)
+			{
+				removedObjectHandler->DecRef();
+			}
+			if (removed && m_changeHandler)
 			{
 				m_changeHandler(false, cnt);
 			}
+			return removed;
 		}
 	};
 	class EventSystem :
@@ -439,8 +489,10 @@ namespace X
 					m_eventsOnFire.erase(m_eventsOnFire.begin());
 					ObjectEvent* pEvtToRun = fireInfo.pEvtObj;
 					m_lockEventOnFire.Unlock();
-					pEvtToRun->DecRef();//for m_eventsOnFire
-					//todo:
+					// Adopt the queue's reference and keep it through DoFire.
+					// Releasing it before the call can destroy the event while
+					// pEvtToRun is still being invoked.
+					X::Value queuedEventLifetime(pEvtToRun, false);
 					pEvtToRun->DoFire(fireInfo.rt, fireInfo.valContext.GetObj(),
 						fireInfo.params, fireInfo.kwParams);
 					m_lockEventOnFire.Lock();

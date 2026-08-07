@@ -21,6 +21,28 @@ namespace X
 		KWARGS& kwParams,
 		X::Value& retValue)
 	{
+		auto* eventOperation = kwParams.find(EventOperationKeyword);
+		if (eventOperation != nullptr)
+		{
+			std::string operation = eventOperation->val.ToString();
+			if (operation == EventSubscribeOperation && params.size() == 1
+				&& params[0].IsObject())
+			{
+				long cookie = AddObjectHandler(params[0].GetObj());
+				retValue = X::Value((long long)cookie);
+				return cookie != 0;
+			}
+			if (operation == EventUnsubscribeOperation && params.size() == 1)
+			{
+				retValue = X::Value(RemoveHandler((long)params[0].GetLongLong()));
+				// The operation itself succeeded even when the cookie was
+				// already absent; the return value reports what was removed.
+				return true;
+			}
+			retValue = X::Value(false);
+			return false;
+		}
+
 		auto* findSetValue = kwParams.find("SetValue");
 		if (findSetValue != nullptr && params.size()>0)
 		{
@@ -35,6 +57,7 @@ namespace X
 	void ObjectEvent::FireInMain(X::XRuntime* rt, XObj* pContext,
 		ARGS& params, KWARGS& kwargs)
 	{
+		X::Value eventLifetime(this);
 		SetFire();
 		EventSystem::I().FireInMain(this,rt,pContext,params,kwargs);
 	}
